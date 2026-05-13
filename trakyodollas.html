@@ -1,7 +1,19 @@
 
 <!DOCTYPE html>
 <html data-theme="dark"><head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="preconnect" href="https://www.gstatic.com">
+<link rel="dns-prefetch" href="https://firebaseapp.com">
+<script>
+// Restore theme before CSS renders to prevent flash
+(function(){
+  const t=localStorage.getItem('trakyo_theme')||'dark';
+  document.documentElement.setAttribute('data-theme',t);
+})();
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -62,13 +74,6 @@
   --amber-bg-mid:#D9770630;
   --amber-border:#D9770688;
   --amber-border-strong:#FBBF24;
-  /* 529 amber tokens in light — darken for contrast on white */
-  --amber-text:#B45309;
-  --amber-text-strong:#92400E;
-  --amber-bg:#FEF3C720;
-  --amber-bg-mid:#FEF3C740;
-  --amber-border:#D9770655;
-  --amber-border-strong:#D97706;
 
 /* Privacy modal boxes in light mode — improve contrast on tinted backgrounds */
 
@@ -77,6 +82,14 @@
 
 [data-theme="light"]{
   /* === LIGHT THEME overrides === */
+  /* Amber tokens — darker for contrast on white */
+  --amber-text:#B45309;
+  --amber-text-strong:#92400E;
+  --amber-bg:#FEF3C720;
+  --amber-bg-mid:#FEF3C740;
+  --amber-border:#D9770655;
+  --amber-border-strong:#D97706;
+
   /* Backgrounds */
   --bg-page:#F8FAFC;
   --bg-card:#FFFFFF;
@@ -119,7 +132,7 @@
   --toast-border:#E2E8F0;
 }
 
-body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page);color:var(--text-primary);font-size:14px}
+body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)!important;color:var(--text-primary);font-size:14px}
 .nav{display:flex;border-bottom:1px solid var(--border);background:var(--bg-page);position:sticky;top:0;z-index:25;transition:top .2s}
 .nav-btn{flex:1;background:none;border:none;border-bottom:3px solid transparent;padding:13px 4px 10px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);cursor:pointer;transition:all .15s}
 .nav-btn.active{color:#60A5FA;border-bottom-color:#60A5FA}
@@ -325,7 +338,7 @@ select option{background:var(--bg-card)}
 @media(max-width:600px){
   .hide-mobile{display:none!important}
   .show-mobile{display:inline!important}
-  #demo-nav-badge{font-size:8px;padding:2px 5px;letter-spacing:.03em;white-space:normal;text-align:center;max-width:44px;line-height:1.3}
+  #demo-nav-badge{font-size:8px;padding:4px 8px;letter-spacing:.03em;white-space:nowrap;text-align:center;line-height:1.3;max-width:none}
   .nav-btn{font-size:10px;padding:10px 2px 8px;letter-spacing:.03em}
   .page{padding:.65rem}
   .flex-between{flex-wrap:wrap;gap:.5rem}
@@ -366,6 +379,18 @@ select option{background:var(--bg-card)}
 
 /* Onboarding demo button */
 [data-theme="light"] .onboarding-btn-demo{background:#FEF3C7;color:#D97706;border-color:#D97706}
+
+/* Demo picker modal */
+.demo-picker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.25rem;-webkit-overflow-scrolling:touch}
+.demo-picker{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:16px;padding:1.75rem;width:min(420px,100%);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.demo-picker h2{font-size:1.15rem;font-weight:800;color:var(--text-bright);margin-bottom:.35rem;letter-spacing:-.01em}
+.demo-picker p{font-size:13px;color:var(--text-secondary);margin-bottom:1.25rem;line-height:1.5}
+.demo-profile-btn{width:100%;display:flex;align-items:center;gap:14px;padding:.85rem 1rem;background:var(--bg-deep);border:1.5px solid var(--border-mid);border-radius:12px;cursor:pointer;text-align:left;transition:border-color .15s,background .15s;margin-bottom:.65rem;font-family:inherit}
+.demo-profile-btn:hover{border-color:var(--accent-blue);background:#2563EB0A}
+.demo-profile-btn:last-of-type{margin-bottom:0}
+.demo-profile-icon{font-size:26px;flex-shrink:0;width:36px;text-align:center}
+.demo-profile-label{font-size:14px;font-weight:700;color:var(--text-bright);margin-bottom:2px}
+.demo-profile-desc{font-size:12px;color:var(--text-secondary);line-height:1.4;font-weight:400}
 
 /* Spend summary card */
 
@@ -446,13 +471,35 @@ select option{background:var(--bg-card)}
 
 <div id="toast" style="position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--toast-bg);border:1px solid var(--toast-border);color:#34D399;font-size:12px;font-weight:600;padding:.5rem 1.2rem;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.5);transition:transform .3s,opacity .3s;opacity:0;pointer-events:none;z-index:300;white-space:nowrap"></div>
 <div id="demo-chip" style="display:none"></div>
+
+<!-- Demo profile picker -->
+<div id="demo-picker-overlay" class="demo-picker-overlay" style="display:none">
+  <div class="demo-picker">
+    <h2>Which feels more like you right now?</h2>
+    <p>Pick a demo that fits — tap <strong style="color:var(--text-primary)">DEMO DATA</strong> at the top to switch anytime.</p>
+    <button class="demo-profile-btn" onclick="loadDemoProfile(1)">
+      <div class="demo-profile-icon">🌱</div>
+      <div>
+        <div class="demo-profile-label">Just getting started</div>
+        <div class="demo-profile-desc">One bank, one card, keeping it simple. Building the habit.</div>
+      </div>
+    </button>
+    <button class="demo-profile-btn" onclick="loadDemoProfile(2)">
+      <div class="demo-profile-icon">🌳</div>
+      <div>
+        <div class="demo-profile-label">More going on</div>
+        <div class="demo-profile-desc">Multiple accounts, investments, home, tracking it all.</div>
+      </div>
+    </button>
+  </div>
+</div>
 <nav class="nav">
   <button class="nav-btn active" onclick="showPage('dashboard',event)">Net Worth</button>
   <button class="nav-btn" onclick="showPage('spending',event)">Spending</button>
   <button class="nav-btn" onclick="showPage('budget',event)">Budget</button>
   <button class="nav-btn" onclick="showPage('accounts',event)">Accounts</button>
 <div id="auth-bar" style="display:flex;align-items:center;gap:6px;padding:0 10px;margin-left:auto;flex-shrink:0">
-  <div id="demo-nav-badge" style="font-size:9px;font-weight:800;letter-spacing:.06em;background:#78350F22;color:#D97706;border:1px solid #D9770644;border-radius:5px;padding:2px 7px;cursor:default" title="All data shown is placeholder demo data. Import your own CSV or edit balances to replace it.">DEMO DATA</div>
+  <div id="demo-nav-badge" style="font-size:9px;font-weight:800;letter-spacing:.06em;background:#78350F22;color:#D97706;border:1px solid #D9770644;border-radius:5px;padding:2px 7px;cursor:pointer" title="Switch demo profile" onclick="openDemoPicker(false)">DEMO DATA</div>
   <button onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle light/dark theme" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer;color:var(--text-muted)">🌙</button>
   <div id="auth-user-info" class="hidden" style="display:flex;align-items:center;gap:6px">
     <div id="auth-avatar" style="width:24px;height:24px;border-radius:50%;background:#2563EB;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
@@ -711,10 +758,10 @@ select option{background:var(--bg-card)}
 
     <!-- Format help -->
     <div id="fmt-help-ally" class="fmt-help help-box">
-      Ally, Fidelity, Vanguard, Bank of America, Wells Fargo, and most banks. Look for <strong style="color:var(--text-secondary)">Download transactions → CSV</strong> in your account activity.
+      Ally, Fidelity, Vanguard, Schwab, Bank of America, Wells Fargo, Marcus, SoFi, and most banks. Look for <strong style="color:var(--text-secondary)">Download transactions → CSV</strong> in your account activity.
     </div>
     <div id="fmt-help-chase" class="fmt-help hidden help-box">
-      Chase, Citi, Capital One, and most credit cards. Look for <strong style="color:var(--text-secondary)">Download activity → CSV</strong>.
+      Chase, Citi, Capital One, Amex, Discover, and most credit cards. Look for <strong style="color:var(--text-secondary)">Download activity → CSV</strong>.
     </div>
     <div id="fmt-help-generic" class="fmt-help hidden help-box">
       Any CSV with <strong style="color:var(--text-secondary)">date, description, and amount</strong> columns. First row must be headers.
@@ -837,7 +884,7 @@ select option{background:var(--bg-card)}
     <h3 id="add-modal-title">Add account</h3>
     <div class="form-group"><label class="form-label">Name</label><input type="text" id="f-name"/></div>
     <div class="form-group"><label class="form-label">Institution</label>
-      <select id="f-source"><option>Ally</option><option>Vanguard</option><option>Fidelity</option><option>Chase</option><option>Old National</option><option>Zillow</option><option>Other</option></select></div>
+      <select id="f-source"><option>Ally</option><option>Amex</option><option>Bank of America</option><option>Barclays</option><option>Capital One</option><option>Chase</option><option>Discover</option><option>E*TRADE</option><option>Fidelity</option><option>Marcus</option><option>Navy Federal</option><option>Old National</option><option>Redfin</option><option>Schwab</option><option>SoFi</option><option>TD Bank</option><option>Truist</option><option>USAA</option><option>Vanguard</option><option>Wells Fargo</option><option>Zillow</option><option>Other</option></select></div>
     <div class="form-group"><label class="form-label">Type</label>
       <select id="f-type"><option value="cash">Cash/Savings</option><option value="investment">Investment</option><option value="home">Home</option><option value="vehicle">Vehicle</option><option value="mortgage">Mortgage</option><option value="credit">Credit card</option><option value="other-asset">Other asset</option><option value="other-liability">Other liability</option></select></div>
     <div class="form-group"><label class="form-label">Balance ($)</label><input type="number" id="f-balance"/></div>
@@ -2444,7 +2491,7 @@ function renderBucketGrid(){
       const sparkline=vendorSparkline(vendor,vi);
       return`<div class="bucket-card ${isActive?'active-bucket':''}" style="border-color:${isActive?color:tc('#1E293B','#E2E8F0')};background:${isActive?color+'18':tc('#0F172A','#F8FAFC')};color:${color};${isSecondCycle?'opacity:.72;border-style:dashed':''}" onclick="toggleVendorFilter(window._vendorTiles[${vi}])">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
-          <div class="bucket-name" title="${vendor}" style="color:${color};margin:0">${esc(vendor)}${data.isCollapsed?` <span title="Individual check numbers collapsed — categorize a check to split it out" style="font-size:9px;opacity:.5;cursor:help" onclick="event.stopPropagation()">ⓘ</span>`:''}</div>
+          <div class="bucket-name" title="${vendor}" style="color:${color};margin:0">${esc(vendor)}${data.isCollapsed?` <span data-tip="Individual check numbers collapsed — categorize a check to split it out" style="font-size:9px;opacity:.5;cursor:pointer" onclick="event.stopPropagation();showPillTip(this)">ⓘ</span>`:''}</div>
           ${sparkline}
         </div>
         <div class="bucket-total" style="color:${color}">${fmt(data.total)}</div>
@@ -2467,7 +2514,7 @@ function renderBucketGrid(){
 
     const otherPct=grandTotal>0?Math.round(otherTotal/grandTotal*100):0;
     const otherBreakdown=otherVendors.map(([v,d])=>`${esc(v)}: ${fmt(d.total)} (${d.count} txn)`).join('&#10;');
-    const otherTile=otherVendors.length>0?`<div class="bucket-card" onclick="openOtherVendorsModal()" style="border-color:var(--border-mid);background:var(--bg-deep);cursor:pointer;opacity:.85" title="Click to see all ${otherVendors.length} vendors">
+    const otherTile=otherVendors.length>0?`<div class="bucket-card" onclick="openOtherVendorsModal()" style="border-color:var(--border-mid);background:var(--bg-deep);cursor:pointer;opacity:.85" data-tip="Click to see all ${otherVendors.length} vendors">
         <div class="bucket-name" style="color:var(--text-muted)">+ ${otherVendors.length} other vendors</div>
         <div class="bucket-total" style="color:var(--text-muted)">${fmt(otherTotal)}</div>
         <div class="bucket-meta">${otherCount} transactions · ${otherPct}% of spend · <span style="color:#60A5FA;font-weight:600">view all →</span></div>
@@ -2522,7 +2569,7 @@ function renderBucketGrid(){
     'Transfers':'Venmo/Zelle outgoing payments',
   };
   const otherCatBreakdown=hiddenCats.slice(0,10).map(([c,d])=>`${esc(c)}: ${fmt(d.total)}`).join('&#10;');
-  const otherCatTile=hiddenCount>0&&!showAllBucketCats?`<div class="bucket-card" title="${hiddenCount} categories:&#10;${otherCatBreakdown}" style="border-color:var(--border-mid);background:var(--bg-deep);cursor:default;opacity:.75">
+  const otherCatTile=hiddenCount>0&&!showAllBucketCats?`<div class="bucket-card" style="border-color:var(--border-mid);background:var(--bg-deep);cursor:pointer;opacity:.75" onclick="showPillTip(this)" data-tip="${hiddenCount} categories:&#10;${otherCatBreakdown}">
     <div class="bucket-name" style="color:var(--text-muted)">+ ${hiddenCount} other categories</div>
     <div class="bucket-total" style="color:var(--text-muted)">${fmt(hiddenTotal)}</div>
     <div class="bucket-meta">${grandCatTotal>0?Math.round(hiddenTotal/grandCatTotal*100):0}% of spend · hover for list</div>
@@ -2552,7 +2599,7 @@ function renderBucketGrid(){
     :`<button onclick="event.stopPropagation();openBudgetModal('${sc}')" style="margin-top:5px;width:100%;background:none;border:1px solid var(--border-mid);border-radius:5px;padding:2px 6px;font-size:9px;font-weight:600;color:var(--text-muted);cursor:pointer;text-align:center" title="Set a monthly budget for ${cat}">+ Set budget</button>`;
     return`<div class="bucket-card ${isActive?'active-bucket':''}" style="${dashed?'opacity:.75':''};border-color:${isActive?color:tc('#1E293B','#E2E8F0')};background:${isActive?color+'18':tc('#0F172A','#F8FAFC')};color:${color}" onclick="toggleCatFilter('${sc}')">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
-        <div class="bucket-name" title="${cat}" style="color:${color};margin:0">${cat}${hint?` <span title="${hint}" style="font-size:10px;opacity:.4;cursor:help" onclick="event.stopPropagation()">ⓘ</span>`:''}</div>
+        <div class="bucket-name" title="${cat}" style="color:${color};margin:0">${cat}${hint?` <span data-tip="${hint}" style="font-size:10px;opacity:.4;cursor:pointer" onclick="event.stopPropagation();showPillTip(this)">ⓘ</span>`:''}</div>
         ${catSparkline(cat,color,dashed)}
       </div>
       <div class="bucket-total" style="color:${color}">${fmt(s.total)}</div>
@@ -3069,8 +3116,8 @@ function saveEditTx(){
 /* ── ACCOUNTS ── */
 const TL_M={cash:'Cash',investment:'Investment',home:'Real estate',vehicle:'Vehicle',mortgage:'Mortgage',credit:'Credit card','other-asset':'Other asset','other-liability':'Other liab'};
 const TC_M={cash:'#60A5FA',investment:'#34D399',home:'#A78BFA',vehicle:'#2DD4BF',mortgage:'#F87171',credit:'#F97316','other-asset':tc('#475569','#64748B'),'other-liability':'#F87171'};
-const SC_M={Ally:{bg:tc('#1E3A5F','#EFF6FF'),fg:'#60A5FA'},Vanguard:{bg:'#7F1D1D22',fg:'#F87171'},Fidelity:{bg:'#7F1D1D22',fg:'#F87171'},Chase:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},'Old National':{bg:'#065F4622',fg:'#34D399'},Zillow:{bg:'#1E3A5F22',fg:'#60A5FA'},Other:{bg:tc('#334155','#E2E8F0'),fg:tc('#94A3B8','#64748B')}};
-const SA_M={Ally:'AL',Vanguard:'VG',Fidelity:'FD',Chase:'CH','Old National':'ON',Zillow:'ZL',Other:'OT'};
+const SC_M={Ally:{bg:tc('#1E3A5F','#EFF6FF'),fg:'#60A5FA'},Amex:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},Vanguard:{bg:'#7F1D1D22',fg:'#F87171'},Fidelity:{bg:'#7F1D1D22',fg:'#F87171'},Chase:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},'Old National':{bg:'#065F4622',fg:'#34D399'},Zillow:{bg:'#1E3A5F22',fg:'#60A5FA'},Redfin:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},'Bank of America':{bg:tc('#1E3A5F','#EFF6FF'),fg:'#F87171'},Barclays:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},'Capital One':{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Discover:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},'E*TRADE':{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Marcus:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},'Navy Federal':{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},Schwab:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},SoFi:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},'TD Bank':{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Truist:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},USAA:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},'Wells Fargo':{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},Other:{bg:tc('#334155','#E2E8F0'),fg:tc('#94A3B8','#64748B')}};
+const SA_M={Ally:'AL',Amex:'AX',Vanguard:'VG',Fidelity:'FD',Chase:'CH',Barclays:'BC','Old National':'ON',Zillow:'ZL',Redfin:'RF','Bank of America':'BA','Capital One':'CO',Discover:'DV','E*TRADE':'ET',Marcus:'MC','Navy Federal':'NV',Schwab:'SC',SoFi:'SF','TD Bank':'TD',Truist:'TR',USAA:'UA','Wells Fargo':'WF',Other:'OT'};
 function renderAccountLists(){
   const row=a=>{const sc=SC_M[a.source]||SC_M.Other,tc=TC_M[a.type]||'var(--text-muted)';
     return`<div class="account-row"><div style="display:flex;align-items:center;gap:10px"><div class="acct-icon" style="background:${sc.bg};color:${sc.fg}">${SA_M[a.source]||'??'}</div><div><div class="account-name">${a.name}</div><div class="account-sub">${a.source} · ${TL_M[a.type]||a.type}</div></div></div>
@@ -3961,7 +4008,7 @@ let _patternsEnabled = localStorage.getItem('trakyo_patterns') === 'true';
   const saved=localStorage.getItem('trakyo_theme')||'dark';
   document.documentElement.setAttribute('data-theme',saved);
   const btn=document.getElementById('theme-toggle-btn');
-  if(btn)btn.textContent=saved==='light'?'☀️':'🌙';
+  if(btn)btn.textContent=saved==='light'?'🌙':'☀️';
   // Restore pattern preference button state
   if(_patternsEnabled){
     const patBtn=document.getElementById('chart-texture-btn');
@@ -4625,8 +4672,8 @@ function renderExcludedAccounts(){
   if(nwEl){
     if(!excluded.length){ nwEl.innerHTML=''; return; }
     nwEl.innerHTML=excluded.map(a=>`
-      <div class="nw-group" style="border:1.5px dashed var(--amber-border-strong);border-radius:10px;overflow:hidden;margin-bottom:4px">
-        <div class="nw-group-header" style="background:var(--amber-bg);cursor:pointer;padding:.6rem .85rem" onclick="editAccount(${a.id})">
+      <div class="nw-group" style="border:1.5px dashed var(--amber-border);border-radius:10px;overflow:hidden;margin-bottom:4px">
+        <div class="nw-group-header" style="cursor:pointer;padding:.6rem .85rem" onclick="editAccount(${a.id})">
           <div style="display:flex;align-items:center;gap:8px">
             <div style="width:9px;height:9px;border-radius:50%;background:${colorHex};flex-shrink:0"></div>
             <div>
@@ -5092,9 +5139,127 @@ function showPage(id,eventOrBtn){
     if(spendChart)spendChart.resize();
   }));
 }
-document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',function(e){if(e.target===this)closeModals();}));
+// ── Demo profile picker ────────────────────────────────────────────
+
+const DEMO_PROFILE_1 = {
+  accounts:[
+    {id:1,name:'Checking',source:'Ally',type:'cash',balance:3100},
+    {id:2,name:'High-yield Savings',source:'Ally',type:'cash',balance:4800},
+    {id:3,name:'Visa Rewards',source:'Capital One',type:'credit',balance:420},
+  ],
+  vehicles:[],
+  snapshots:[
+    {date:'Dec 31, 2025',label:'Dec',monthKey:'2025-12',nw:6200,assets:7980,liab:1780},
+    {date:'Feb 28, 2026',label:'Feb',monthKey:'2026-02',nw:7100,assets:8800,liab:1700},
+    {date:'Apr 30, 2026',label:'Apr',monthKey:'2026-04',nw:7480,assets:9020,liab:1540},
+  ],
+  budgets:{'Groceries':300,'Food & Drink':150,'Gas':100,'Bills & Utilities':200,'Shopping':200,'Entertainment':60},
+  activeSources:new Set(['Checking','Visa Rewards']),
+  activeHorizon:6,
+  nwGoal:25000,
+  income:{method:null,monthlyAmount:0},
+  transactions:[
+    // Apr 2026
+    {date:'2026-04-28',desc:'KROGER',cat:'Groceries',card:'Checking',amount:67.43},{date:'2026-04-27',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:17.99},{date:'2026-04-26',desc:'SHELL',cat:'Gas',card:'Checking',amount:48.12},{date:'2026-04-25',desc:'CONSUMERS ENERGY',cat:'Bills & Utilities',card:'Checking',amount:94.50},{date:'2026-04-24',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:12.85},{date:'2026-04-22',desc:'ALDI',cat:'Groceries',card:'Checking',amount:54.29},{date:'2026-04-20',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:34.99},{date:'2026-04-18',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-04-17',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:72.00},{date:'2026-04-15',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:8.45},{date:'2026-04-14',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:43.17},{date:'2026-04-12',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:28.43},{date:'2026-04-10',desc:'MEIJER FUEL',cat:'Gas',card:'Checking',amount:44.60},{date:'2026-04-09',desc:'CHICK-FIL-A',cat:'Food & Drink',card:'Visa Rewards',amount:11.34},{date:'2026-04-07',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:89.99},{date:'2026-04-05',desc:'ALDI',cat:'Groceries',card:'Checking',amount:61.88},{date:'2026-04-03',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:14.22},{date:'2026-04-01',desc:'ZELLE TRANSFER',cat:'Transfers',card:'Checking',amount:50.00},
+    // Mar 2026
+    {date:'2026-03-29',desc:'KROGER',cat:'Groceries',card:'Checking',amount:72.15},{date:'2026-03-27',desc:'SHELL',cat:'Gas',card:'Checking',amount:51.80},{date:'2026-03-26',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:17.99},{date:'2026-03-25',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:14.22},{date:'2026-03-24',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:72.00},{date:'2026-03-22',desc:'ALDI',cat:'Groceries',card:'Checking',amount:48.55},{date:'2026-03-20',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:22.49},{date:'2026-03-18',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-03-17',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:7.80},{date:'2026-03-15',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:55.34},{date:'2026-03-13',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:89.99},{date:'2026-03-10',desc:'MEIJER FUEL',cat:'Gas',card:'Checking',amount:40.22},{date:'2026-03-08',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:31.77},{date:'2026-03-06',desc:'CHICK-FIL-A',cat:'Food & Drink',card:'Visa Rewards',amount:10.89},{date:'2026-03-03',desc:'CONSUMERS ENERGY',cat:'Bills & Utilities',card:'Checking',amount:98.75},{date:'2026-03-01',desc:'ALDI',cat:'Groceries',card:'Checking',amount:59.12},
+    // Feb 2026
+    {date:'2026-02-27',desc:'KROGER',cat:'Groceries',card:'Checking',amount:64.88},{date:'2026-02-25',desc:'SHELL',cat:'Gas',card:'Checking',amount:46.30},{date:'2026-02-24',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:17.99},{date:'2026-02-23',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:72.00},{date:'2026-02-21',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:13.10},{date:'2026-02-19',desc:'ALDI',cat:'Groceries',card:'Checking',amount:52.44},{date:'2026-02-17',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-02-15',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:19.99},{date:'2026-02-13',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:89.99},{date:'2026-02-11',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:9.15},{date:'2026-02-09',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:48.70},{date:'2026-02-07',desc:'MEIJER FUEL',cat:'Gas',card:'Checking',amount:38.90},{date:'2026-02-05',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:24.55},{date:'2026-02-03',desc:'CONSUMERS ENERGY',cat:'Bills & Utilities',card:'Checking',amount:91.20},{date:'2026-02-01',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:11.50},
+    // Jan 2026
+    {date:'2026-01-30',desc:'KROGER',cat:'Groceries',card:'Checking',amount:70.22},{date:'2026-01-28',desc:'SHELL',cat:'Gas',card:'Checking',amount:49.75},{date:'2026-01-26',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:17.99},{date:'2026-01-25',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:72.00},{date:'2026-01-23',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:11.75},{date:'2026-01-21',desc:'ALDI',cat:'Groceries',card:'Checking',amount:57.33},{date:'2026-01-19',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-01-17',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:42.00},{date:'2026-01-15',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:89.99},{date:'2026-01-12',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:8.90},{date:'2026-01-10',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:44.80},{date:'2026-01-08',desc:'MEIJER FUEL',cat:'Gas',card:'Checking',amount:42.15},{date:'2026-01-06',desc:'CONSUMERS ENERGY',cat:'Bills & Utilities',card:'Checking',amount:110.40},{date:'2026-01-04',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:18.33},
+    // Dec 2025
+    {date:'2025-12-28',desc:'KROGER',cat:'Groceries',card:'Checking',amount:68.10},{date:'2025-12-26',desc:'SHELL',cat:'Gas',card:'Checking',amount:44.88},{date:'2025-12-24',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:17.99},{date:'2025-12-22',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:72.00},{date:'2025-12-20',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:13.45},{date:'2025-12-18',desc:'ALDI',cat:'Groceries',card:'Checking',amount:60.22},{date:'2025-12-16',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2025-12-14',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:55.48},{date:'2025-12-12',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:89.99},{date:'2025-12-10',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:7.60},{date:'2025-12-08',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:51.15},{date:'2025-12-06',desc:'MEIJER FUEL',cat:'Gas',card:'Checking',amount:47.22},{date:'2025-12-04',desc:'CONSUMERS ENERGY',cat:'Bills & Utilities',card:'Checking',amount:105.80},{date:'2025-12-02',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:29.99},
+    // Nov 2025
+    {date:'2025-11-28',desc:'KROGER',cat:'Groceries',card:'Checking',amount:65.44},{date:'2025-11-26',desc:'SHELL',cat:'Gas',card:'Checking',amount:43.10},{date:'2025-11-24',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:17.99},{date:'2025-11-22',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:72.00},{date:'2025-11-20',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:12.50},{date:'2025-11-18',desc:'ALDI',cat:'Groceries',card:'Checking',amount:53.77},{date:'2025-11-16',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2025-11-14',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:26.99},{date:'2025-11-12',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:89.99},{date:'2025-11-10',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:8.20},{date:'2025-11-08',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:47.60},{date:'2025-11-06',desc:'MEIJER FUEL',cat:'Gas',card:'Checking',amount:39.50},{date:'2025-11-04',desc:'CONSUMERS ENERGY',cat:'Bills & Utilities',card:'Checking',amount:88.40},{date:'2025-11-02',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:12.80},
+  ].map((t,i)=>({...t,id:i,excluded:false,is_offset:false})),
+};
+
+const DEMO_PROFILE_2 = {
+  accounts:[
+    {id:1,name:'Checking',source:'Ally',type:'cash',balance:4200},
+    {id:2,name:'High-yield Savings',source:'Ally',type:'cash',balance:18500},
+    {id:3,name:'401(k)',source:'Fidelity',type:'investment',balance:142000},
+    {id:4,name:'HSA',source:'Fidelity',type:'investment',balance:6400},
+    {id:5,name:'Roth IRA',source:'Vanguard',type:'investment',balance:38000},
+    {id:6,name:'Traditional IRA',source:'Vanguard',type:'investment',balance:24000},
+    {id:7,name:'Home',source:'Zillow',type:'home',balance:385000},
+    {id:8,name:'2021 Honda CR-V',source:'Other',type:'vehicle',balance:22000},
+    {id:9,name:'Mortgage',source:'Local Bank',type:'mortgage',balance:245000},
+    {id:10,name:'Visa Rewards',source:'Chase',type:'credit',balance:1840},
+    {id:11,name:'Amazon Card',source:'Chase',type:'credit',balance:310},
+    {id:12,name:'College Fund(s)',source:'Education savings',type:'investment',balance:34000,excludeFromNW:true},
+  ],
+  vehicles:[{id:1,year:2021,make:'Honda',model:'CR-V EX',condition:'very good',miles:34000,value:22000,purchase:31500,purchaseYear:2021,vin:'',assetType:'vehicle'}],
+  snapshots:[{date:'Nov 30, 2024',label:'Nov',monthKey:'2024-11',nw:362000,assets:408000,liab:46000},{date:'Feb 28, 2025',label:'Feb',monthKey:'2025-02',nw:371500,assets:419000,liab:47500},{date:'May 31, 2025',label:'May',monthKey:'2025-05',nw:381000,assets:430000,liab:49000},{date:'Aug 31, 2025',label:'Aug',monthKey:'2025-08',nw:388000,assets:438000,liab:50000}],
+  budgets:{'Groceries':700,'Home':1200,'Food & Drink':300,'Health & Wellness':200,'Gas':150,'Bills & Utilities':500,'Shopping':400,'Entertainment':150,'Education':100,'Transfers':200},
+  activeSources:new Set(['Checking','Visa Rewards','Amazon Card']),
+  activeHorizon:18,
+  nwGoal:null,
+  income:{method:null,monthlyAmount:0},
+  transactions:ALL_TX_RAW.map((t,i)=>({...t,id:i,amount:parseFloat(t.amount),excluded:!!t.excluded,is_offset:!!t.is_offset})),
+};
+
+function openDemoPicker(firstVisit=true){
+  document.getElementById('demo-picker-overlay').style.display='flex';
+  if(!firstVisit){
+    // Add a subtle "cancel" option when re-opening from badge
+    let cancelBtn=document.getElementById('demo-picker-cancel');
+    if(!cancelBtn){
+      cancelBtn=document.createElement('button');
+      cancelBtn.id='demo-picker-cancel';
+      cancelBtn.style.cssText='width:100%;margin-top:.75rem;background:none;border:none;font-size:12px;color:var(--text-muted);cursor:pointer;padding:.4rem;font-family:inherit';
+      cancelBtn.textContent='Keep current demo';
+      cancelBtn.onclick=()=>{document.getElementById('demo-picker-overlay').style.display='none';};
+      document.querySelector('.demo-picker').appendChild(cancelBtn);
+    }
+  }
+}
+
+function loadDemoProfile(n){
+  document.getElementById('demo-picker-overlay').style.display='none';
+  const p = n===1 ? DEMO_PROFILE_1 : DEMO_PROFILE_2;
+  state.accounts=[...p.accounts];
+  state.vehicles=[...(p.vehicles||[])];
+  state.snapshots=[...p.snapshots];
+  state.transactions=[...p.transactions];
+  state.budgets={...p.budgets};
+  state.activeSources=new Set(p.activeSources);
+  state.activeHorizon=p.activeHorizon;
+  state.nwGoal=p.nwGoal;
+  state.income={...p.income};
+  state.hasRealData=false;
+  state.catRules=[];
+  state.customCategories=[];
+  state.hiddenPills=new Set();
+  state.vendorAliases={};
+  state.nextId=5000;
+  state.activeCats=new Set();
+  state.dashFilter=null;
+  state.searchQuery='';
+  state.showExcluded=false;
+  rebuildMonthly();
+  rebuildCatSelects();
+  renderAll();
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    renderNwChart();
+    renderTxList();
+    renderSourceChips();
+    renderHorizonTabs();
+    renderVehicles();
+    renderHistory();
+  }));
+  // Show demo badge
+  const badge=document.getElementById('demo-nav-badge');
+  if(badge)badge.style.display='';
+  showToast(n===1?'🌱 Switched to starter demo':'🌳 Switched to full demo');
+  showPage('spending',document.querySelectorAll('.nav-btn')[1]);
+}
 window.addEventListener('error',function(e){console.error('GLOBAL ERROR:',e.message,'at',e.filename,'line',e.lineno,e.error);});
 document.addEventListener('DOMContentLoaded', function(){
+  // Check for demo param immediately before anything else strips it
+  const _params = new URLSearchParams(window.location.search);
+  const _isDemo = _params.get('demo') === '1';
+
   renderAll();
   requestAnimationFrame(function(){
     requestAnimationFrame(function(){
@@ -5110,9 +5275,6 @@ document.addEventListener('DOMContentLoaded', function(){
       if(params.get('import') === '1'){
         // "Open app" — go straight to import modal
         openTxImportModal();
-      } else if(params.get('demo') === '1'){
-        // "Try demo" — go to spending tab so they see data immediately
-        showPage('spending', document.querySelectorAll('.nav-btn')[1]);
       }
       // Clean URL without reloading
       if(params.has('import') || params.has('demo')){
@@ -5120,6 +5282,12 @@ document.addEventListener('DOMContentLoaded', function(){
       }
     });
   });
+
+  // Show demo picker outside rAF — just needs DOM to exist
+  if(_isDemo){
+    setTimeout(()=>openDemoPicker(true), 80);
+  }
+
   window.addEventListener('resize', ()=>{updateBannerOffset();renderInsights();});
 });
 </script>
