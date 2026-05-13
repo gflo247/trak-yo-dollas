@@ -130,8 +130,8 @@ nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-con
 .pi{display:flex;align-items:flex-start;gap:10px;padding:.7rem .85rem;background:var(--bg-deep);border-radius:10px}
 .pi-yes{width:20px;height:20px;border-radius:50%;background:#065F4622;border:1px solid #34D39944;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:#34D399;margin-top:1px}
 .pi-no{width:20px;height:20px;border-radius:50%;background:#7F1D1D22;border:1px solid #F8717144;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:#F87171;margin-top:1px}
-.pi strong{display:block;font-size:var(--text-sm);font-weight:var(--fw-semi);color:var(--text-primary);margin-bottom:1px}
-.pi span{font-size:14px;color:var(--text-muted);font-weight:var(--fw-light);line-height:1.25}
+.pi strong{display:block;font-size:14px;font-weight:var(--fw-bold);color:var(--text-bright);margin-bottom:2px}
+.pi span{font-size:var(--text-sm);color:var(--text-secondary);font-weight:var(--fw-light);line-height:var(--lh-body)}
 
 /* Features */
 .feature-list{display:flex;flex-direction:column;gap:2px}
@@ -193,6 +193,11 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
   .pm:first-child{grid-column:1/-1}
   .preview-pills{grid-template-columns:1fr}
   .diff-grid,.privacy-grid,.steps{grid-template-columns:1fr}
+  .section{margin-bottom:3.5rem}
+  .privacy-box{padding:1.25rem}
+  .privacy-box>p{margin-bottom:1rem}
+  .privacy-grid{gap:8px}
+  .pi{padding:.5rem .75rem;gap:8px}
   footer{padding:1.5rem 1.25rem;flex-direction:column;align-items:flex-start}
 }
 </style>
