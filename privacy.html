@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Privacy · trak-yo-dolla$</title>
+<meta name="description" content="How trak-yo-dolla$ handles your data. No bank connections. No selling your data. Your CSV files never leave your browser.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;600;700;800&display=swap');
+
+:root{
+  --bg-page:#0F172A;--bg-card:#1E293B;--bg-deep:#0D1525;
+  --border:#1E293B;--border-mid:#334155;
+  --text-bright:#F1F5F9;--text-primary:#E2E8F0;--text-secondary:#94A3B8;--text-muted:#64748B;
+  --accent-blue:#2563EB;--accent-blue-light:#60A5FA;--accent-green:#34D399;
+}
+[data-theme="light"]{
+  --bg-page:#F8FAFC;--bg-card:#FFFFFF;--bg-deep:#F1F5F9;
+  --border:#E2E8F0;--border-mid:#CBD5E1;
+  --text-bright:#0F172A;--text-primary:#1E293B;--text-secondary:#374151;--text-muted:#4B5563;
+  --accent-blue-light:#1D4ED8;--accent-green:#059669;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg-page);color:var(--text-primary);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+
+nav{display:flex;align-items:center;justify-content:space-between;padding:.75rem 2rem;background:var(--bg-page);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+.nav-logo{font-family:'DM Mono',monospace;font-size:14px;color:var(--text-bright);text-decoration:none;letter-spacing:.02em}
+.nav-logo span{color:var(--accent-blue-light)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.btn-ghost{background:none;border:1px solid var(--border-mid);border-radius:7px;padding:6px 14px;font-size:14px;color:var(--text-secondary);cursor:pointer;text-decoration:none;font-family:inherit;transition:border-color .15s,color .15s}
+.btn-ghost:hover{border-color:var(--accent-blue-light);color:var(--text-bright)}
+.theme-btn{background:none;border:1px solid var(--border-mid);border-radius:6px;padding:5px 8px;font-size:14px;cursor:pointer;color:var(--text-muted)}
+
+.page{max-width:720px;margin:0 auto;padding:4rem 2rem 6rem}
+
+.eyebrow{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.85rem}
+h1{font-size:2rem;font-weight:800;color:var(--text-bright);letter-spacing:-.02em;line-height:1.15;margin-bottom:.6rem}
+.intro{font-size:1rem;color:var(--text-secondary);font-weight:300;margin-bottom:2.5rem;line-height:1.7}
+
+.section{display:flex;flex-direction:column;gap:12px;margin-bottom:2rem}
+.card{border-radius:12px;padding:1.25rem 1.4rem}
+.card-green{background:#065F4618;border:1px solid #05996933}
+.card-blue{background:#1E3A5F22;border:1px solid #2563EB33}
+.card-amber{background:#78350F18;border:1px solid #D9770633}
+.card-neutral{background:var(--bg-card);border:1px solid var(--border-mid)}
+.card-label{font-size:14px;font-weight:700;margin-bottom:6px}
+.card-green .card-label{color:#34D399}
+.card-blue .card-label{color:#60A5FA}
+.card-amber .card-label{color:#FCD34D}
+.card-neutral .card-label{color:var(--text-primary)}
+.card p{font-size:14px;color:var(--text-muted);line-height:1.65;font-weight:300}
+.card p strong{color:var(--text-secondary);font-weight:600}
+.card p a{color:var(--accent-blue-light)}
+
+.back{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--text-muted);text-decoration:none;margin-bottom:2rem;transition:color .15s}
+.back:hover{color:var(--text-secondary)}
+
+footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.footer-logo{font-family:'DM Mono',monospace;font-size:14px;color:var(--text-muted);text-decoration:none}
+.footer-logo span{color:var(--accent-blue-light)}
+.footer-links{display:flex;gap:20px}
+.footer-links a{font-size:13px;color:var(--text-muted);text-decoration:none}
+.footer-links a:hover{color:var(--text-secondary)}
+
+[data-theme="light"] .card-green{background:#ECFDF5;border-color:#6EE7B7}
+[data-theme="light"] .card-blue{background:#EFF6FF;border-color:#BFDBFE}
+[data-theme="light"] .card-amber{background:#FFFBEB;border-color:#FCD34D}
+[data-theme="light"] .card-green .card-label{color:#059669}
+[data-theme="light"] .card-blue .card-label{color:#1D4ED8}
+[data-theme="light"] .card-amber .card-label{color:#B45309}
+
+@media(max-width:640px){.page{padding:2.5rem 1.25rem 4rem}nav{padding:.65rem 1rem}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">trak-yo-dolla<span>$</span></a>
+  <div class="nav-right">
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">☀️</button>
+    <a href="trakyodollas.html" class="btn-ghost">Open app</a>
+  </div>
+</nav>
+
+<div class="page">
+  <a href="index.html" class="back">← Back</a>
+  <div class="eyebrow">Your data & privacy</div>
+  <h1>Simple, honest,<br>local-first.</h1>
+  <p class="intro">No bank connections. No selling your data. Your CSV files are parsed in your browser and never leave your device. Here's exactly what we do — and don't — with your information.</p>
+
+  <div class="section">
+    <div class="card card-green">
+      <div class="card-label">💾 Your data saves automatically</div>
+      <p>Everything — accounts, balances, imported transactions, budgets, and snapshots — is saved to <strong>your browser's local storage</strong> automatically. It persists across refreshes and restarts on this device, even without signing in. CSV files are parsed locally and never sent to any server. You can export your transactions as a CSV anytime from the Spending tab.</p>
+    </div>
+
+    <div class="card card-blue">
+      <div class="card-label">☁️ Sign in to sync across devices</div>
+      <p>Signing in backs up your full data — accounts, transactions, budgets, categories, and snapshots — to your private <a href="https://firebase.google.com/" target="_blank">Firebase</a> account (Google). Readable only by you, enforced at the database level. Sign in on any device to restore everything instantly.</p>
+    </div>
+
+    <div class="card card-amber">
+      <div class="card-label">📊 Analytics — what's collected</div>
+      <p>Firebase Analytics automatically collects three event types: <strong>first_visit</strong> (first time you open the app), <strong>session_start</strong> (each visit), and <strong>page_view</strong> (each navigation). Each includes: browser language, page URL, screen resolution, and a randomly generated anonymous client ID. No names, emails, financial figures, or account data are ever included. All of this is blockable with any ad blocker.</p>
+    </div>
+
+    <div class="card card-neutral">
+      <div class="card-label">🚫 What we never do</div>
+      <p>No bank connections. No screen scraping. No selling your data. No sharing your data with advertisers. No third-party trackers beyond Firebase Analytics.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <a href="index.html" class="footer-logo">trak-yo-dolla<span>$</span></a>
+  <div class="footer-links">
+    <a href="trakyodollas.html?demo=1">Try demo</a>
+    <a href="trakyodollas.html">Open app</a>
+    <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank">GitHub</a>
+    <a href="https://github.com/gflo247/trak-yo-dollas/issues" target="_blank">Feedback</a>
+  </div>
+</footer>
+
+<script>
+const saved = localStorage.getItem('trakyo_theme') || 'dark';
+document.documentElement.setAttribute('data-theme', saved);
+document.getElementById('theme-btn').textContent = saved === 'light' ? '🌙' : '☀️';
+function toggleTheme(){
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const next = isLight ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('trakyo_theme', next);
+  document.getElementById('theme-btn').textContent = next === 'light' ? '🌙' : '☀️';
+}
+</script>
+</body>
+</html>

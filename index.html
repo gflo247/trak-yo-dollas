@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>trak-yo-dolla$ · Private, local-first money tracking</title>
+<meta name="description" content="Track your spending and net worth. Your data never leaves your browser. No bank connections. No subscriptions.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,800;1,9..40,300&display=swap');
+
+:root {
+  --bg-page:#0F172A;
+  --bg-card:#1E293B;
+  --bg-deep:#0D1525;
+  --border:#1E293B;
+  --border-mid:#334155;
+  --text-bright:#F1F5F9;
+  --text-primary:#E2E8F0;
+  --text-secondary:#94A3B8;
+  --text-muted:#64748B;
+  --accent-blue:#2563EB;
+  --accent-blue-light:#60A5FA;
+  --accent-green:#34D399;
+  --accent-red:#F87171;
+  --accent-amber:#FBBF24;
+}
+[data-theme="light"] {
+  --bg-page:#F8FAFC;
+  --bg-card:#FFFFFF;
+  --bg-deep:#F1F5F9;
+  --border:#E2E8F0;
+  --border-mid:#CBD5E1;
+  --text-bright:#0F172A;
+  --text-primary:#1E293B;
+  --text-secondary:#374151;
+  --text-muted:#4B5563;
+  --accent-blue-light:#1D4ED8;
+  --accent-green:#059669;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg-page);color:var(--text-primary);font-size:16px;line-height:var(--lh-body);-webkit-font-smoothing:antialiased}
+
+/* ── Type scale ──────────────────────────────────────────────────────── */
+:root{
+  --text-xl:2rem;       /* section h2 */
+  --text-lg:1.5rem;     /* privacy h2 */
+  --text-md:1rem;       /* section intro */
+  --text-sm:14px;       /* card body */
+  --text-xs:13px;       /* small labels */
+  --text-2xs:12px;      /* eyebrows, meta */
+
+  --lh-tight:1.15;      /* display headings */
+  --lh-body:1.65;       /* all body text — ONE value everywhere */
+  --lh-relaxed:1.7;     /* hero sub */
+
+  --fw-black:800;
+  --fw-bold:700;
+  --fw-semi:600;
+  --fw-normal:400;
+  --fw-light:300;
+}
+
+/* Nav */
+nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:.75rem 2rem;background:var(--bg-page);border-bottom:1px solid var(--border);backdrop-filter:blur(12px)}
+.nav-logo{font-family:'DM Mono',monospace;font-size:14px;font-weight:var(--fw-normal);color:var(--text-bright);text-decoration:none;letter-spacing:.02em}
+.nav-logo span{color:var(--accent-blue-light)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.btn-ghost{background:none;border:1px solid var(--border-mid);border-radius:7px;padding:6px 14px;font-size:var(--text-xs);font-weight:var(--fw-normal);color:var(--text-secondary);cursor:pointer;text-decoration:none;font-family:inherit;transition:border-color .15s,color .15s}
+.btn-ghost:hover{border-color:var(--accent-blue-light);color:var(--text-bright)}
+.btn-primary-sm{background:var(--accent-blue);border:none;border-radius:7px;padding:7px 16px;font-size:var(--text-xs);font-weight:var(--fw-semi);color:#fff;cursor:pointer;text-decoration:none;font-family:inherit;transition:opacity .15s}
+.btn-primary-sm:hover{opacity:.9}
+.theme-btn{background:none;border:1px solid var(--border-mid);border-radius:6px;padding:5px 8px;font-size:var(--text-xs);cursor:pointer;color:var(--text-muted)}
+
+/* Hero */
+.hero{max-width:820px;margin:0 auto;padding:7rem 2rem 5rem;text-align:center}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:var(--text-2xs);font-weight:var(--fw-normal);color:var(--accent-blue-light);letter-spacing:.1em;text-transform:uppercase;margin-bottom:1.5rem;background:#2563EB14;border:1px solid #2563EB33;border-radius:20px;padding:4px 14px}
+.hero h1{font-size:3.25rem;font-weight:var(--fw-black);color:var(--text-bright);line-height:var(--lh-tight);letter-spacing:-.02em;margin-bottom:1.25rem}
+.hero h1 em{font-style:normal;color:var(--accent-blue-light)}
+.hero-sub{font-size:1.05rem;color:var(--text-secondary);line-height:var(--lh-relaxed);max-width:520px;margin:0 auto 2.5rem;font-weight:var(--fw-light)}
+.hero-ctas{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:2rem}
+.btn-hero{background:var(--accent-blue);border:none;border-radius:10px;padding:14px 28px;font-size:15px;font-weight:var(--fw-bold);color:#fff;cursor:pointer;text-decoration:none;font-family:inherit;transition:opacity .15s,transform .1s;display:inline-flex;align-items:center;gap:8px}
+.btn-hero:hover{opacity:.92;transform:translateY(-1px)}
+.btn-hero-ghost{background:none;border:1.5px solid var(--border-mid);border-radius:10px;padding:13px 24px;font-size:15px;font-weight:var(--fw-semi);color:var(--text-secondary);cursor:pointer;text-decoration:none;font-family:inherit;transition:border-color .15s,color .15s,transform .1s}
+.btn-hero-ghost:hover{border-color:var(--accent-blue-light);color:var(--text-bright);transform:translateY(-1px)}
+.hero-trust{display:flex;align-items:center;justify-content:center;gap:8px;font-size:var(--text-xs);color:var(--text-muted);flex-wrap:wrap}
+.trust-dot{width:3px;height:3px;border-radius:50%;background:var(--border-mid)}
+
+/* Preview */
+.preview-wrap{max-width:1040px;margin:0 auto 6rem;padding:0 2rem}
+.preview-card{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:16px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.4)}
+.preview-bar{background:var(--bg-deep);border-bottom:1px solid var(--border);padding:.5rem 1rem;display:flex;align-items:center;gap:6px}
+.preview-dot{width:10px;height:10px;border-radius:50%}
+.preview-inner{padding:1.5rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.pm{border-radius:10px;padding:.75rem 1rem;border:1px solid}
+.pm.blue{background:#1E3A5F;border-color:#2563EB44;color:#60A5FA}
+.pm.green{background:#064E3B22;border-color:#05996944;color:#34D399}
+.pm.red{background:#7F1D1D22;border-color:#DC262644;color:#F87171}
+.pm-label{font-size:9px;font-weight:var(--fw-bold);text-transform:uppercase;letter-spacing:.06em;opacity:.7;margin-bottom:2px}
+.pm-value{font-size:18px;font-weight:var(--fw-black)}
+.preview-chart{grid-column:1/-1;background:var(--bg-deep);border:1px solid var(--border);border-radius:10px;padding:1rem;height:110px;overflow:hidden}
+.preview-chart svg{width:100%;height:100%}
+.preview-pills{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pp{background:var(--bg-deep);border:1px solid var(--border);border-radius:10px;padding:.65rem .85rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px}
+.pp-label{font-size:var(--text-2xs);color:var(--text-muted)}
+.pp-value{font-size:var(--text-xs);font-weight:var(--fw-bold)}
+
+/* Sections — unified width, no max-width on paragraphs */
+.section{max-width:960px;margin:0 auto 7rem;padding:0 2rem}
+.section-eyebrow{font-family:'DM Mono',monospace;font-size:var(--text-2xs);font-weight:var(--fw-normal);color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.85rem}
+.section h2{font-size:var(--text-xl);font-weight:var(--fw-black);color:var(--text-bright);letter-spacing:-.02em;margin-bottom:.75rem;line-height:var(--lh-tight)}
+.section>p{font-size:var(--text-md);color:var(--text-secondary);margin-bottom:2.5rem;font-weight:var(--fw-light);line-height:var(--lh-body)}
+
+/* Diff grid */
+.diff-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.diff-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;transition:border-color .2s}
+.diff-card:hover{border-color:var(--border-mid)}
+.diff-icon{font-size:22px;margin-bottom:.85rem;display:block}
+.diff-card h3{font-size:15px;font-weight:var(--fw-bold);color:var(--text-bright);margin-bottom:.35rem}
+.diff-card p{font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-light)}
+.diff-card.ab{border-color:#2563EB33;background:#1E3A5F18}
+.diff-card.ag{border-color:#05996933;background:#064E3B18}
+
+/* Privacy */
+.privacy-box{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:16px;padding:2.5rem}
+.privacy-box h2{font-size:var(--text-lg);font-weight:var(--fw-black);color:var(--text-bright);margin-bottom:.5rem;letter-spacing:-.01em}
+.privacy-box>p{font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:2rem;font-weight:var(--fw-light);line-height:var(--lh-body)}
+.privacy-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pi{display:flex;align-items:flex-start;gap:10px;padding:.7rem .85rem;background:var(--bg-deep);border-radius:10px}
+.pi-yes{width:20px;height:20px;border-radius:50%;background:#065F4622;border:1px solid #34D39944;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:#34D399;margin-top:1px}
+.pi-no{width:20px;height:20px;border-radius:50%;background:#7F1D1D22;border:1px solid #F8717144;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:#F87171;margin-top:1px}
+.pi strong{display:block;font-size:var(--text-sm);font-weight:var(--fw-semi);color:var(--text-primary);margin-bottom:1px}
+.pi span{font-size:14px;color:var(--text-muted);font-weight:var(--fw-light);line-height:1.25}
+
+/* Features */
+.feature-list{display:flex;flex-direction:column;gap:2px}
+.fi{display:flex;align-items:flex-start;gap:16px;padding:1.1rem 1.25rem;border-radius:10px;transition:background .15s}
+.fi:hover{background:var(--bg-card)}
+.fi-icon{font-size:20px;flex-shrink:0;margin-top:1px;width:36px;text-align:center}
+.fi h3{font-size:14px;font-weight:var(--fw-bold);color:var(--text-bright);margin-bottom:2px}
+.fi p{font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-light)}
+
+/* Steps */
+.steps{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.step{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.5rem}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--accent-blue);color:#fff;font-size:var(--text-2xs);font-weight:var(--fw-black);display:flex;align-items:center;justify-content:center;margin-bottom:1rem}
+.step h3{font-size:14px;font-weight:var(--fw-bold);color:var(--text-bright);margin-bottom:.35rem}
+.step p{font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-light)}
+.step.opt .step-num{background:var(--bg-deep);border:1px solid var(--border-mid);color:var(--text-muted)}
+.step.opt h3{color:var(--text-muted)}
+.step.opt p{color:var(--text-muted);line-height:1.65}
+
+/* CTA */
+.cta-wrap{max-width:700px;margin:0 auto 8rem;padding:0 2rem;text-align:center}
+.cta-box{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:20px;padding:3.5rem 2.5rem}
+.cta-box h2{font-size:clamp(1.5rem,3.5vw,2rem);font-weight:800;color:var(--text-bright);letter-spacing:-.02em;margin-bottom:.75rem;line-height:1.2}
+.cta-box p{font-size:14px;color:var(--text-secondary);margin-bottom:2rem;font-weight:300}
+.cta-note{margin-top:1.25rem;font-size:13px;color:var(--text-muted)}
+.cta-note a{color:var(--accent-blue-light);text-decoration:none}
+
+/* Footer */
+footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.footer-logo{font-family:'DM Mono',monospace;font-size:14px;color:var(--text-muted);text-decoration:none}
+.footer-logo span{color:var(--accent-blue-light)}
+.footer-links{display:flex;gap:20px}
+.footer-links a{font-size:13px;color:var(--text-muted);text-decoration:none;transition:color .15s}
+.footer-links a:hover{color:var(--text-secondary)}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fadeUp .55s ease both}
+.fu1{animation-delay:.05s}.fu2{animation-delay:.12s}.fu3{animation-delay:.2s}.fu4{animation-delay:.28s}.fu5{animation-delay:.36s}
+
+/* Light theme overrides */
+[data-theme="light"] .preview-card{box-shadow:0 8px 40px rgba(0,0,0,.08)}
+[data-theme="light"] .diff-card.ab{background:#EFF6FF;border-color:#BFDBFE}
+[data-theme="light"] .diff-card.ag{background:#ECFDF5;border-color:#6EE7B7}
+[data-theme="light"] .pm.blue{background:#DBEAFE;border-color:#93C5FD;color:#1D4ED8}
+[data-theme="light"] .pm.green{background:#D1FAE5;border-color:#6EE7B7;color:#065F46}
+[data-theme="light"] .pm.red{background:#FEE2E2;border-color:#FCA5A5;color:#991B1B}
+[data-theme="light"] .pi-yes{background:#ECFDF5;border-color:#6EE7B7}
+[data-theme="light"] .pi-no{background:#FEF2F2;border-color:#FCA5A5}
+
+/* Responsive */
+@media(max-width:640px){
+  nav{padding:.65rem 1rem}
+  .nav-right .btn-ghost{display:none}
+  .hero{padding:4rem 1.25rem 3rem}
+  .preview-wrap,.section,.cta-wrap{padding:0 1.25rem}
+  .preview-wrap{margin-bottom:4rem}
+  .preview-inner{grid-template-columns:1fr 1fr}
+  .pm:first-child{grid-column:1/-1}
+  .preview-pills{grid-template-columns:1fr}
+  .diff-grid,.privacy-grid,.steps{grid-template-columns:1fr}
+  footer{padding:1.5rem 1.25rem;flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="nav-logo">trak-yo-dolla<span>$</span></a>
+  <div class="nav-right">
+    <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" class="btn-ghost" style="font-size:13px">GitHub</a>
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">☀️</button>
+    <a href="trakyodollas.html?import=1" class="btn-ghost">Import CSV</a>
+    <a href="trakyodollas.html?demo=1" class="btn-primary-sm">Try with demo data</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-eyebrow fu fu1">💸 trak-yo-dolla$</div>
+  <h1 class="fu fu2">Your money.<br><em>Your device.</em><br>Your business.</h1>
+  <p class="hero-sub fu fu3">Track spending, net worth, and budgets — without handing your bank login to anyone. No Plaid. No subscriptions. Your data never leaves your browser.</p>
+  <div class="hero-ctas fu fu4">
+    <a href="trakyodollas.html?import=1" class="btn-hero">⬆ Import CSV</a>
+    <a href="trakyodollas.html?demo=1" class="btn-hero-ghost">Try with demo data</a>
+  </div>
+  <div class="hero-trust fu fu5">
+    <span>🔒 Private by default</span>
+    <span class="trust-dot"></span>
+    <span>No account required</span>
+    <span class="trust-dot"></span>
+    <span>Your data stays local</span>
+  </div>
+</section>
+
+<!-- App preview -->
+<div class="preview-wrap fu fu5">
+  <div class="preview-card">
+    <div class="preview-bar">
+      <div class="preview-dot" style="background:#F87171"></div>
+      <div class="preview-dot" style="background:#FBBF24"></div>
+      <div class="preview-dot" style="background:#34D399"></div>
+    </div>
+    <div class="preview-inner">
+      <div class="pm blue"><div class="pm-label">Net worth</div><div class="pm-value">$393k</div></div>
+      <div class="pm green"><div class="pm-label">Total assets</div><div class="pm-value">$640k</div></div>
+      <div class="pm red"><div class="pm-label">Liabilities</div><div class="pm-value">-$247k</div></div>
+      <div class="preview-chart">
+        <svg viewBox="0 0 500 90" preserveAspectRatio="none" fill="none">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#34D399" stop-opacity=".15"/>
+              <stop offset="100%" stop-color="#34D399" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="M0,75 C60,68 120,60 190,50 C255,41 300,35 360,25 C410,17 455,12 500,6 L500,90 L0,90 Z" fill="url(#g)"/>
+          <path d="M0,75 C60,68 120,60 190,50 C255,41 300,35 360,25 C410,17 455,12 500,6" stroke="#34D399" stroke-width="2"/>
+          <circle cx="0" cy="75" r="4" fill="#34D399"/>
+          <circle cx="190" cy="50" r="5" fill="#34D399" stroke="#0D1525" stroke-width="2" class="snap-dot"/>
+          <circle cx="500" cy="6" r="5" fill="#34D399" stroke="#0D1525" stroke-width="2" class="snap-dot"/>
+          <circle cx="100" cy="64" r="3" fill="#334155" class="est-dot"/>
+          <circle cx="320" cy="30" r="3" fill="#334155" class="est-dot"/>
+        </svg>
+      </div>
+      <div class="preview-pills">
+        <div class="pp"><span class="pp-label">Spending vs last month</span><span class="pp-value" style="color:#F87171">$5,400 · +51%</span></div>
+        <div class="pp"><span class="pp-label">Top mover category</span><span class="pp-value" style="color:#FBBF24">Groceries · +59%</span></div>
+        <div class="pp"><span class="pp-label">Net worth since Aug</span><span class="pp-value" style="color:#34D399">+$5k · 2%/yr</span></div>
+        <div class="pp"><span class="pp-label">Recurring charges found</span><span class="pp-value" style="color:#A78BFA">$71/mo · 1 detected</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Why different -->
+<section class="section">
+  <div class="section-eyebrow">Why it's different</div>
+  <h2>Built for people who care<br>where their data goes.</h2>
+  <p>Most finance apps require handing over your bank credentials. We don't. You import a CSV — the same file your bank already gives you — and everything stays on your device.</p>
+  <div class="diff-grid">
+    <div class="diff-card ab">
+      <span class="diff-icon">🔒</span>
+      <h3>No bank connections</h3>
+      <p>No Plaid, no OAuth, no screen scraping. You're always in control of what enters the app.</p>
+    </div>
+    <div class="diff-card">
+      <span class="diff-icon">💻</span>
+      <h3>Runs entirely in your browser</h3>
+      <p>Parsed and stored locally. Refresh the page — everything's still there. Close the tab — nobody else has it.</p>
+    </div>
+    <div class="diff-card ag">
+      <span class="diff-icon">📂</span>
+      <h3>Your CSVs, your format</h3>
+      <p>Works with exports from Chase, Ally, Fidelity, Vanguard, and most banks. Drop the file in — the format is auto-detected.</p>
+    </div>
+    <div class="diff-card">
+      <span class="diff-icon">☁️</span>
+      <h3>Optional sync — never required</h3>
+      <p>Sign in with Google to back up across devices. Your data saves locally without it — sync is a convenience, not a gate.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Privacy -->
+<section class="section">
+  <div class="privacy-box">
+    <div class="section-eyebrow" style="margin-bottom:.75rem">Our commitments</div>
+    <h2>What we do — and don't.</h2>
+    <p>The constraints we've actually built the app around.</p>
+    <div class="privacy-grid">
+      <div class="pi">
+        <div class="pi-yes">✓</div>
+        <div><strong>CSV files stay on your device</strong><span>Parsed locally. Never uploaded to any server.</span></div>
+      </div>
+      <div class="pi">
+        <div class="pi-no">✕</div>
+        <div><strong>No bank connections</strong><span>No credentials, tokens, or read access.</span></div>
+      </div>
+      <div class="pi">
+        <div class="pi-yes">✓</div>
+        <div><strong>Export your data anytime</strong><span>One click to export everything as CSV.</span></div>
+      </div>
+      <div class="pi">
+        <div class="pi-no">✕</div>
+        <div><strong>No selling your data</strong><span>We don't share it with advertisers.</span></div>
+      </div>
+      <div class="pi">
+        <div class="pi-yes">✓</div>
+        <div><strong>Works without an account</strong><span>Sign in only to sync across devices.</span></div>
+      </div>
+      <div class="pi">
+        <div class="pi-no">✕</div>
+        <div><strong>No screen scraping</strong><span>We never log into your bank on your behalf.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="section">
+  <div class="section-eyebrow">What's inside</div>
+  <h2>Everything you need.<br>Nothing you don't.</h2>
+  <p>Built around how people actually think about money — not how banks want you to think about it.</p>
+  <div class="feature-list">
+    <div class="fi"><div class="fi-icon">📊</div><div><h3>Net worth tracking</h3><p>Add accounts, investments, loans, and real estate. Save snapshots over time to track your trajectory. See where your wealth actually lives.</p></div></div>
+    <div class="fi"><div class="fi-icon">🧾</div><div><h3>Spending breakdown</h3><p>Auto-categorized by vendor and category. Month-over-month comparisons so you can spot patterns you didn't know were there.</p></div></div>
+    <div class="fi"><div class="fi-icon">🎯</div><div><h3>Budgets that actually track</h3><p>Set monthly limits per category. See what's left at a glance — updated with every import.</p></div></div>
+    <div class="fi"><div class="fi-icon">📈</div><div><h3>Net worth goal projection</h3><p>Set a target — $500k, $1M, whatever — and see a realistic timeline based on your actual savings rate.</p></div></div>
+    <div class="fi"><div class="fi-icon">🔄</div><div><h3>Recurring charge detection</h3><p>Surfaces subscriptions and regular charges from your transaction history automatically.</p></div></div>
+    <div class="fi"><div class="fi-icon">📅</div><div><h3>Year in review</h3><p>Annual and trailing 12-month summaries — top categories, biggest months, net worth change.</p></div></div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="section">
+  <div class="section-eyebrow">Getting started</div>
+  <h2>Three steps.<br>No friction.</h2>
+  <div class="steps" style="margin-top:2.5rem">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h3>Download your CSV</h3>
+      <p>Download a transaction export from your bank — usually under Statements or Download Activity.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h3>Drop it in</h3>
+      <p>The app auto-detects your format and categorizes transactions. Review, adjust, done.</p>
+    </div>
+    <div class="step opt">
+      <div class="step-num">3</div>
+      <h3>Sync across devices <span style="font-size:11px;font-weight:400">(optional)</span></h3>
+      <p>Sign in with Google to back up and access from any device. Not required — your data saves locally either way.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-wrap">
+  <div class="cta-box">
+    <h2>Ready to actually know where your money goes?</h2>
+    <p>No account required. No bank connections. Everything stays in your browser.</p>
+    <a href="trakyodollas.html?import=1" class="btn-hero" style="font-size:16px;padding:15px 32px">⬆ Import CSV</a>
+    <div class="cta-note">Or <a href="trakyodollas.html?demo=1">try with demo data</a> first.</div>
+  </div>
+</div>
+
+<footer>
+  <a href="#" class="footer-logo">trak-yo-dolla<span>$</span></a>
+  <div class="footer-links">
+    <a href="trakyodollas.html?demo=1">Try with demo data</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank">GitHub</a>
+    <a href="https://github.com/gflo247/trak-yo-dollas/issues" target="_blank">Feedback</a>
+    <a href="trakyodollas.html?import=1">Import CSV</a>
+  </div>
+</footer>
+
+<script>
+// Sync theme with app
+const saved = localStorage.getItem('trakyo_theme') || 'dark';
+document.documentElement.setAttribute('data-theme', saved);
+document.getElementById('theme-btn').textContent = saved === 'light' ? '🌙' : '☀️';
+
+function toggleTheme() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const next = isLight ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('trakyo_theme', next);
+  document.getElementById('theme-btn').textContent = next === 'light' ? '🌙' : '☀️';
+  updateChartDots();
+}
+
+function updateChartDots() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  document.querySelectorAll('.snap-dot').forEach(c => c.setAttribute('stroke', isLight ? '#F8FAFC' : '#0D1525'));
+  document.querySelectorAll('.est-dot').forEach(c => c.setAttribute('fill', isLight ? '#94A3B8' : '#334155'));
+}
+updateChartDots();
+
+// Scroll-triggered fade-in
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08 });
+
+document.querySelectorAll('.diff-card,.pi,.fi,.step,.cta-box,.preview-card').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(16px)';
+  el.style.transition = 'opacity .45s ease, transform .45s ease';
+  observer.observe(el);
+});
+</script>
+</body>
+</html>
