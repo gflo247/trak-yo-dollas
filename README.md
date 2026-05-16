@@ -27,7 +27,7 @@ Optionally, sign in with Google to back up your data and sync across devices. Yo
 
 ## Privacy
 
-Everything runs in your browser. CSV files are parsed locally and never uploaded to any server. Accounts, transactions, budgets, and snapshots are stored in your browser's local storage.
+Everything runs in your browser. CSV files are parsed locally. Accounts, transactions, budgets, and snapshots are stored in your browser's local storage.
 
 When you sign in, your data is backed up to a private Firebase (Google) account readable only by you, enforced at the database level.
 
@@ -39,7 +39,7 @@ Full details: [trak-yo-dollas.web.app/privacy.html](https://trak-yo-dollas.web.a
 
 ## Self-hosting
 
-The entire app is a single HTML file with no build step, no dependencies to install, and no server required.
+The entire app is a few HTML files with no build step, no dependencies to install, and no server required.
 
 ```bash
 git clone https://github.com/gflo247/trak-yo-dollas.git
