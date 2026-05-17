@@ -2,7 +2,7 @@
 
 **Private, local-first personal finance tracking.**
 
-Track your spending, net worth, and budgets — without handing your bank login to anyone. No Plaid. No subscriptions. No account required. Your data never leaves your browser.
+Track your spending, net worth, and budgets — without handing your bank login to anyone. No Plaid. No subscriptions. No account required. Your data stays local by default. Optional Google sync available.
 
 🌐 **[trak-yo-dollas.web.app](https://trak-yo-dollas.web.app)**
 
