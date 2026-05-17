@@ -36,7 +36,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:.75rem
 
 .eyebrow{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.85rem}
 h1{font-size:2rem;font-weight:800;color:var(--text-bright);letter-spacing:-.02em;line-height:1.15;margin-bottom:.6rem}
-.intro{font-size:1rem;color:var(--text-secondary);font-weight:300;margin-bottom:2.5rem;line-height:1.7}
+.intro{font-size:1rem;color:var(--text-secondary);font-weight:300;margin-bottom:2rem;line-height:1.7}
 
 .section{display:flex;flex-direction:column;gap:12px;margin-bottom:2rem}
 .card{border-radius:12px;padding:1.25rem 1.4rem}
@@ -78,7 +78,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 <nav>
   <a href="index.html" class="nav-logo">trak-yo-dolla<span>$</span></a>
   <div class="nav-right">
-    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">☀️</button>
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
     <a href="trakyodollas.html" class="btn-ghost">Open app</a>
   </div>
 </nav>
@@ -87,17 +87,18 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
   <a href="index.html" class="back">← Back</a>
   <div class="eyebrow">Your data & privacy</div>
   <h1>Simple, honest,<br>local-first.</h1>
-  <p class="intro">No bank connections. No selling your data. Your CSV files are parsed in your browser and never leave your device. Here's exactly what we do — and don't — with your information.</p>
+  <p class="intro">No bank connections. No selling your data. Your CSV file(s) process in your browser. You control where they go from there - keep them local, or sync to Firebase via your Google account. Here's exactly what we do — and don't — with your information.</p>
+  <p style="font-style: italic; color: #888; margin-top: 0rem; margin-bottom: 2rem;">Last updated May 16, 2026</p>
 
   <div class="section">
     <div class="card card-green">
       <div class="card-label">💾 Your data saves automatically</div>
-      <p>Everything — accounts, balances, imported transactions, budgets, and snapshots — is saved to <strong>your browser's local storage</strong> automatically. It persists across refreshes and restarts on this device, even without signing in. CSV files are parsed locally and never sent to any server. You can export your transactions as a CSV anytime from the Spending tab.</p>
+      <p>Everything — accounts, balances, imported transactions, budgets, and snapshots — saves automatically to <strong>your browser's local storage</strong>. It persists across refreshes and restarts on your device, even without signing in. Your browser processes CSV file(s) locally and nothing leaves your device unless you choose to sync. You can export your transactions as a CSV anytime from the Spending tab.</p>
     </div>
 
     <div class="card card-blue">
-      <div class="card-label">☁️ Sign in to sync across devices</div>
-      <p>Signing in backs up your full data — accounts, transactions, budgets, categories, and snapshots — to your private <a href="https://firebase.google.com/" target="_blank">Firebase</a> account (Google). Readable only by you, enforced at the database level. Sign in on any device to restore everything instantly.</p>
+      <div class="card-label">🔁 Sign in to sync across devices</div>
+      <p>Signing in backs up your full data — accounts, transactions, budgets, categories, and snapshots — directly to your Google account via <a href="https://firebase.google.com/" target="_blank">Firebase</a>. Readable only by you, enforced at the database level. Sign in on any device to restore everything instantly.</p>
     </div>
 
     <div class="card card-amber">
@@ -107,7 +108,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 
     <div class="card card-neutral">
       <div class="card-label">🚫 What we never do</div>
-      <p>No bank connections. No screen scraping. No selling your data. No sharing your data with advertisers. No third-party trackers beyond Firebase Analytics.</p>
+      <p>No bank connections. No screen scraping. No selling your data. No sharing your data with advertisers. No third-party trackers.</p>
     </div>
   </div>
 </div>
@@ -125,13 +126,13 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 <script>
 const saved = localStorage.getItem('trakyo_theme') || 'dark';
 document.documentElement.setAttribute('data-theme', saved);
-document.getElementById('theme-btn').textContent = saved === 'light' ? '🌙' : '☀️';
+document.getElementById('theme-btn').textContent = saved === 'light' ? '☀️' : '🌙';
 function toggleTheme(){
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
   const next = isLight ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('trakyo_theme', next);
-  document.getElementById('theme-btn').textContent = next === 'light' ? '🌙' : '☀️';
+  document.getElementById('theme-btn').textContent = next === 'light' ? '☀️' : '🌙';
 }
 </script>
 </body>

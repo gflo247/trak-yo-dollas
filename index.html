@@ -208,8 +208,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
   <a href="#" class="nav-logo">trak-yo-dolla<span>$</span></a>
   <div class="nav-right">
     <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" class="btn-ghost" style="font-size:13px">GitHub</a>
-    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">☀️</button>
-    <a href="trakyodollas.html?import=1" class="btn-ghost">Import CSV</a>
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
     <a href="trakyodollas.html?demo=1" class="btn-primary-sm">Try with demo data</a>
   </div>
 </nav>
@@ -217,17 +216,17 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 <section class="hero">
   <div class="hero-eyebrow fu fu1">💸 trak-yo-dolla$</div>
   <h1 class="fu fu2">Your money.<br><em>Your device.</em><br>Your business.</h1>
-  <p class="hero-sub fu fu3">Track spending, net worth, and budgets — without handing your bank login to anyone. No Plaid. No subscriptions. Your data never leaves your browser.</p>
+  <p class="hero-sub fu fu3">Track spending, net worth, and budgets — without handing your bank login to anyone. No Plaid. No subscriptions. Your data stays local by default. Optional Google sync available.</p>
   <div class="hero-ctas fu fu4">
-    <a href="trakyodollas.html?import=1" class="btn-hero">⬆ Import CSV</a>
-    <a href="trakyodollas.html?demo=1" class="btn-hero-ghost">Try with demo data</a>
+    <a href="trakyodollas.html?demo=1" class="btn-hero">Try with demo data</a>
+    <a href="trakyodollas.html?import=1" class="btn-hero-ghost">⬆ Import CSV</a>
   </div>
   <div class="hero-trust fu fu5">
     <span>🔒 Private by default</span>
     <span class="trust-dot"></span>
     <span>No account required</span>
     <span class="trust-dot"></span>
-    <span>Your data stays local</span>
+    <span>Local by default</span>
   </div>
 </section>
 
@@ -274,7 +273,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 <section class="section">
   <div class="section-eyebrow">Why it's different</div>
   <h2>Built for people who care<br>where their data goes.</h2>
-  <p>Most finance apps require handing over your bank credentials. We don't. You import a CSV — the same file your bank already gives you — and everything stays on your device.</p>
+  <p>Most finance apps require handing over your bank credentials. We don't. You import a CSV — the same file your bank already gives you — and your device does all the work. Nothing leaves unless you choose to sync.</p>
   <div class="diff-grid">
     <div class="diff-card ab">
       <span class="diff-icon">🔒</span>
@@ -284,17 +283,18 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
     <div class="diff-card">
       <span class="diff-icon">💻</span>
       <h3>Runs entirely in your browser</h3>
-      <p>Parsed and stored locally. Refresh the page — everything's still there. Close the tab — nobody else has it.</p>
+      <p>Your browser reads and stores everything locally. Refresh the page — everything's still there. Close the tab — nobody else has it.</p>
     </div>
     <div class="diff-card ag">
       <span class="diff-icon">📂</span>
       <h3>Your CSVs, your format</h3>
-      <p>Works with exports from Chase, Ally, Fidelity, Vanguard, and most banks. Drop the file in — the format is auto-detected.</p>
+      <p>Works with exports from Chase, Ally, Fidelity, Vanguard, and most banks. Drop the file in — the app detects the format automatically.</p>
     </div>
     <div class="diff-card">
-      <span class="diff-icon">☁️</span>
+      <span class="diff-icon">🔁</span>
       <h3>Optional sync — never required</h3>
-      <p>Sign in with Google to back up across devices. Your data saves locally without it — sync is a convenience, not a gate.</p>
+      <p>Sign in with Google to access your data across devices. Your data goes to Firebase (Google's cloud), secured by your Google account — not ours. Prefer to keep it local? Everything works without signing in.</p>
+      <!-- <p>Sign in with Google to back up across devices. Your data saves locally without it — sync is a convenience, not a gate.</p> -->
     </div>
   </div>
 </section>
@@ -308,7 +308,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
     <div class="privacy-grid">
       <div class="pi">
         <div class="pi-yes">✓</div>
-        <div><strong>CSV files stay on your device</strong><span>Parsed locally. Never uploaded to any server.</span></div>
+        <div><strong>CSV files stay on your device</strong><span>Processed locally. Never uploaded to any server.</span></div>
       </div>
       <div class="pi">
         <div class="pi-no">✕</div>
@@ -362,12 +362,12 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
     <div class="step">
       <div class="step-num">2</div>
       <h3>Drop it in</h3>
-      <p>The app auto-detects your format and categorizes transactions. Review, adjust, done.</p>
+      <p>Transactions from your CSV categorize instantly. Review, adjust, done.</p>
     </div>
     <div class="step opt">
       <div class="step-num">3</div>
       <h3>Sync across devices <span style="font-size:11px;font-weight:400">(optional)</span></h3>
-      <p>Sign in with Google to back up and access from any device. Not required — your data saves locally either way.</p>
+      <p>Sign in with Google to back up and access from any device. You don't need an account — your data saves locally either way.</p>
     </div>
   </div>
 </section>
@@ -376,16 +376,14 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 <div class="cta-wrap">
   <div class="cta-box">
     <h2>Ready to actually know where your money goes?</h2>
-    <p>No account required. No bank connections. Everything stays in your browser.</p>
+    <p>No account required. No bank connections. Everything stays local - unless you choose to sync.</p>
     <a href="trakyodollas.html?import=1" class="btn-hero" style="font-size:16px;padding:15px 32px">⬆ Import CSV</a>
-    <div class="cta-note">Or <a href="trakyodollas.html?demo=1">try with demo data</a> first.</div>
   </div>
 </div>
 
 <footer>
   <a href="#" class="footer-logo">trak-yo-dolla<span>$</span></a>
   <div class="footer-links">
-    <a href="trakyodollas.html?demo=1">Try with demo data</a>
     <a href="privacy.html">Privacy</a>
     <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank">GitHub</a>
     <a href="https://github.com/gflo247/trak-yo-dollas/issues" target="_blank">Feedback</a>
@@ -397,14 +395,14 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 // Sync theme with app
 const saved = localStorage.getItem('trakyo_theme') || 'dark';
 document.documentElement.setAttribute('data-theme', saved);
-document.getElementById('theme-btn').textContent = saved === 'light' ? '🌙' : '☀️';
+document.getElementById('theme-btn').textContent = saved === 'light' ? '☀️' : '🌙';
 
 function toggleTheme() {
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
   const next = isLight ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('trakyo_theme', next);
-  document.getElementById('theme-btn').textContent = next === 'light' ? '🌙' : '☀️';
+  document.getElementById('theme-btn').textContent = next === 'light' ? '☀️' : '🌙';
   updateChartDots();
 }
 
