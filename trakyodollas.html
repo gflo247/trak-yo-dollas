@@ -8,11 +8,11 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://www.gstatic.com;
+  script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://www.gstatic.com https://www.googletagmanager.com;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src https://fonts.gstatic.com;
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
-  connect-src 'self' https://firestore.googleapis.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://vpic.nhtsa.dot.gov https://firebaseinstallations.googleapis.com https://firebase.googleapis.com;
+  connect-src *;
   frame-src 'none';
   object-src 'none';
 ">
@@ -445,6 +445,8 @@ select option{background:var(--bg-card)}
 .cal-dow-label{height:12px;font-size:8px;color:var(--text-muted);display:flex;align-items:center}
 .cal-stats{display:flex;gap:8px;margin-bottom:.75rem;flex-wrap:wrap}
 .cal-stat{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:8px;padding:.5rem .75rem;flex:1;min-width:100px}
+.cal-stat-clickable{cursor:pointer;transition:border-color .15s}
+.cal-stat-clickable:hover{border-color:var(--accent-blue-light)}
 .cal-stat-label{font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
 .cal-stat-val{font-size:16px;font-weight:800;color:var(--text-bright);letter-spacing:-.02em}
 .cal-stat-sub{font-size:9px;color:var(--text-muted);margin-top:1px}
@@ -930,7 +932,7 @@ select option{background:var(--bg-card)}
   <div class="modal" style="max-width:380px">
     <h3 id="auth-modal-title">Save your progress</h3>
     <p class="modal-sub" id="auth-modal-desc" style="margin-bottom:.75rem">Sign in to sync snapshots, custom categories, and transaction edits across devices.</p>
-    <button onclick="window._fb.signInGoogle().catch(e= type="button">{
+    <button type="button" onclick="window._fb.signInGoogle().catch(e=>{
       if(e.code==='auth/popup-blocked'||e.code==='auth/cancelled-popup-request'){
         showToast('Pop-up blocked — please allow pop-ups for this site and try again','#FCD34D');
       } else {
@@ -1435,7 +1437,7 @@ const SRC_CHART_COLORS={'Checking':'#60A5FA','Visa Rewards':'#A78BFA','Gold Card
 const HORIZONS=[{label:'1 mo',months:1},{label:'3 mo',months:3},{label:'6 mo',months:6},{label:'12 mo',months:12},{label:'Total',months:18}];
 let ALL_MONTHS=Object.keys(MONTHLY).sort();
 const MON3=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const fmtMonthShort=ym=>{const[y,m]=ym.split('-');return`'${y.slice(2)} ${MON3[parseInt(m)-1]}`;};
+const fmtMonthShort=ym=>{const[y,m]=ym.split('-');return`${MON3[parseInt(m)-1]} '${y.slice(2)}`;};
 const fmtDate=d=>{const[y,m,day]=d.split('-');return`${y} ${MON3[parseInt(m)-1]} ${day}`;};
 
 const isLiab=t=>['mortgage','credit','other-liability'].includes(t);
@@ -1474,7 +1476,7 @@ function getVendorMonthSpend(vendor,m){
 }
 
 // NW goal milestones — single source of truth
-const NW_MILESTONES=[100000,250000,500000,750000,1000000,2000000,5000000,10000000];
+const NW_MILESTONES=[100000,250000,500000,750000,1000000,2000000,5000000];
 // ── End shared utilities ─────────────────────────────────────────
 
 // Structural-only default state — demo data loaded at runtime via loadDemoProfile(2)
@@ -1506,6 +1508,7 @@ let state={
   bucketShowAll:false,
   bucketMode:'category',
   activeVendors:new Set(),
+  activeDate:null,
 };
 
 let spendChart=null,editAcctId=null,editVehicleId=null,editTxId=null,showTxN=50;
@@ -1893,6 +1896,7 @@ function renderInsights(){
 }
 function renderAll(){
   if(state.hasRealData)hideDemoBadge();
+  else showDemoNudge();
   const toolbarImport=document.getElementById('toolbar-import-btn');
   if(toolbarImport)toolbarImport.style.display='';
   try{renderNwGoalWidget();}catch(e){console.error('renderNwGoalWidget failed:',e);}
@@ -2044,21 +2048,13 @@ function renderYearInReview(){
   const annualIncome=income*12;
   const savingsRate=annualIncome>0?Math.round((annualIncome-totalSpent)/annualIncome*100):null;
 
-  // Compare to prior period
-  const priorMonths=_yirPeriod==='trailing'?
-    allMonths.slice(-24,-12):
-    allMonths.filter(m=>m.startsWith(String(parseInt(_yirPeriod)-1)));
-  const priorSpent=state.transactions.filter(t=>priorMonths.includes(t.date.slice(0,7))&&!t.excluded).reduce((s,t)=>s+t.amount,0);
-  const vsPrior=priorSpent>0?Math.round((totalSpent-priorSpent)/priorSpent*100):null;
-
   const periodLabel=_yirPeriod==='trailing'?'last 12 months':_yirPeriod;
 
   content.innerHTML=`
     <!-- Hero stat -->
     <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;text-align:center">
-      <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">Total spent · ${periodLabel}</div>
+      <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">Total spent · ${periodLabel}${_yirPeriod!=='trailing'?' · '+months.length+' months':''}</div>
       <div style="font-size:36px;font-weight:900;color:var(--text-primary);letter-spacing:-.02em">${fmt(totalSpent)}</div>
-      ${vsPrior!==null?`<div style="font-size:12px;color:${vsPrior>0?'#F87171':'#34D399'};margin-top:.25rem">${vsPrior>=0?'↑':'↓'}${Math.abs(vsPrior)}% vs prior period · ${fmt(priorSpent)}</div>`:''}
     </div>
 
     <!-- Key stats grid -->
@@ -2069,9 +2065,9 @@ function renderYearInReview(){
         <div class="text-muted-sm">${topCat?fmt(topCat[1]):''}</div>
       </div>
       <div class="deep-box">
-        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Avg / month</div>
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Average / month</div>
         <div style="font-size:15px;font-weight:800;color:var(--text-primary)">${fmt(Math.round(avgMonth))}</div>
-        <div class="text-muted-sm">across ${months.length} months</div>
+        <div class="text-muted-sm">${months.length>1?fmtMonthShort(months[0])+' – '+fmtMonthShort(months[months.length-1]):months.length?fmtMonthShort(months[0]):''}</div>
       </div>
       <div class="deep-box">
         <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Biggest month</div>
@@ -2251,13 +2247,22 @@ function renderNwGoalWidget(){
   const snaps=getSortedSnaps();
   let monthlyGrowth=0;
   let growthSource='';
-  if(snaps.length>=2){
-    const oldest=snaps[0],newest=snaps[snaps.length-1];
-    const oldDate=parseYM(oldest.monthKey),newDate=parseYM(newest.monthKey);
-    const monthsDiff=(newDate.getFullYear()-oldDate.getFullYear())*12+(newDate.getMonth()-oldDate.getMonth());
-    if(monthsDiff>0){
-      monthlyGrowth=(newest.nw-oldest.nw)/monthsDiff;
-      growthSource=`last ${snaps.length} snapshots`;
+
+  // Build the best possible growth rate using oldest snapshot → current balance.
+  // Current accounts are always the most recent data point even without a saved snapshot.
+  const today=new Date();
+  const currentMonthKey=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+
+  if(snaps.length>=1){
+    const oldest=snaps[0];
+    const oldDate=parseYM(oldest.monthKey);
+    const monthsDiff=(today.getFullYear()-oldDate.getFullYear())*12+(today.getMonth()-oldDate.getMonth());
+    if(monthsDiff>0&&nw>oldest.nw){
+      monthlyGrowth=(nw-oldest.nw)/monthsDiff;
+      const newestSnap=snaps[snaps.length-1];
+      const isCurrentAhead=currentMonthKey>newestSnap.monthKey;
+      const totalDots=snaps.length+(isCurrentAhead?1:0);
+      growthSource=`your ${totalDots} green dots`;
     }
   }
   if(!monthlyGrowth){
@@ -2266,7 +2271,7 @@ function renderNwGoalWidget(){
       const recentMonths=Object.keys(MONTHLY).sort().slice(-3);
       const avgSpend=recentMonths.length?recentMonths.map(m=>Object.values(MONTHLY[m]||{}).reduce((a,b)=>a+b,0)).reduce((a,b)=>a+b,0)/recentMonths.length:0;
       monthlyGrowth=Math.max(0,income-avgSpend);
-      growthSource='income minus spending estimate';
+      growthSource='income − spending';
     }
   }
 
@@ -2303,20 +2308,20 @@ function renderNwGoalWidget(){
   // ── Stat cards + D3 bar ────────────────────────────────────────
   projEl.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:.75rem;flex-wrap:wrap">
-      <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:9px;padding:.5rem .85rem;display:flex;align-items:center;gap:.75rem">
+      <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:9px;padding:.5rem .85rem;display:flex;align-items:center;gap:.75rem;min-width:0;flex-shrink:1">
         <div class="label-upper nowrap">Need</div>
         <div style="font-size:17px;font-weight:800;color:var(--text-bright);line-height:1;white-space:nowrap">${fmtC(needed)}</div>
         <div class="text-muted-sm nowrap">to reach ${fmtC(goal)}</div>
       </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:9px;padding:.5rem .85rem;display:flex;align-items:center;gap:.75rem">
-        <div class="label-upper nowrap">Avg. monthly growth</div>
-        <div style="font-size:17px;font-weight:800;color:#34D399;line-height:1;white-space:nowrap">+${fmtC(Math.round(monthlyGrowth))}</div>
-        <div class="text-muted-sm nowrap">based on ${growthSource}</div>
-      </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:9px;padding:.5rem .85rem;display:flex;align-items:center;gap:.75rem">
+      <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:9px;padding:.5rem .85rem;display:flex;align-items:center;gap:.75rem;min-width:0;flex-shrink:1">
         <div class="label-upper nowrap">On track for</div>
         <div style="font-size:17px;font-weight:800;color:${isClose?'#34D399':'var(--text-bright)'};line-height:1;white-space:nowrap">${etaStr}</div>
-        <div class="text-muted-sm nowrap">~${timeLabel} away${isClose?' — almost there!':''}</div>
+        <div class="text-muted-sm nowrap">in ~${timeLabel}${isClose?' — almost there!':''}</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:9px;padding:.5rem .85rem;display:flex;align-items:center;gap:.75rem;min-width:0;flex-shrink:1" title="Net worth change from oldest to newest data point, divided by months between them.">
+        <div class="label-upper nowrap">Average monthly growth</div>
+        <div style="font-size:17px;font-weight:800;color:#34D399;line-height:1;white-space:nowrap">+${fmtC(Math.round(monthlyGrowth))}</div>
+        <div class="text-muted-sm">from ${growthSource}</div>
       </div>
     </div>
     <svg id="${barUid}" width="100%" height="22" style="display:block;overflow:visible"></svg>`;
@@ -2450,7 +2455,31 @@ function renderNwChart(){
   const svgEl=document.getElementById('nwChart');
   if(!svgEl||!window.d3)return;
 
-  const nw=netWorth(),allMonths=Object.keys(MONTHLY).sort(),mKeys=allMonths;
+  const nw=netWorth();
+  const snapsorted=getSortedSnaps();
+
+  // Build month range from the full snapshot span, not transaction data.
+  // Snapshots and transactions don't have to cover the same period.
+  const txMonths=Object.keys(MONTHLY).sort();
+  let mKeys;
+  if(snapsorted.length>=2){
+    // Span from oldest snapshot to current month, filling every month in between
+    const startKey=snapsorted[0].monthKey;
+    const today=new Date();
+    const endKey=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+    const span=[];
+    let [cy,cm]=[parseInt(startKey.slice(0,4)),parseInt(startKey.slice(5,7))];
+    const [ey,em]=[parseInt(endKey.slice(0,4)),parseInt(endKey.slice(5,7))];
+    while(cy<ey||(cy===ey&&cm<=em)){
+      span.push(`${cy}-${String(cm).padStart(2,'0')}`);
+      cm++;if(cm>12){cm=1;cy++;}
+    }
+    // Merge with txMonths so extrapolated section still uses real data months
+    const merged=new Set([...span,...txMonths]);
+    mKeys=[...merged].sort();
+  } else {
+    mKeys=txMonths;
+  }
   if(!mKeys.length)return;
 
   const knownPoints={};
@@ -2482,7 +2511,17 @@ function renderNwChart(){
     gainNote.style.display=parts.length?'block':'none';
   }
   const nwNoteEl=document.getElementById('nw-chart-note');
-  if(nwNoteEl)nwNoteEl.style.display='block';
+  if(nwNoteEl){
+    const snaps=getSortedSnaps();
+    const latestSnapKey=snaps.length?snaps[snaps.length-1].monthKey:'';
+    const currentMonthKey=`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+    const finalIsLive=currentMonthKey>latestSnapKey;
+    const basNote='📌 The line <em>interpolates</em> between saved snapshots (straight line between known points), then <em>extrapolates</em> forward using current account balances. <span style="color:#34D399">●</span> Green dots mark saved snapshots';
+    nwNoteEl.innerHTML=finalIsLive
+      ?basNote+' — the final point is your live account total, not a snapshot.'
+      :basNote+'.';
+    nwNoteEl.style.display='block';
+  }
   renderNwGoalWidget();
 
   const W=svgEl.parentElement.getBoundingClientRect().width||600;
@@ -2519,8 +2558,20 @@ function renderNwChart(){
     .attr('x',-6).attr('y',d=>yScale(d)).attr('text-anchor','end').attr('dominant-baseline','middle')
     .attr('font-size',9).attr('fill',textColor).text(d=>fmtC(d));
 
-  const step=Math.max(1,Math.floor(mKeys.length/7));
-  g.selectAll('.nw-xtick').data(mKeys.filter((_,i)=>i%step===0||(i===mKeys.length-1))).join('text').attr('class','nw-xtick')
+  const today=new Date();
+  const currentMonthKey=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+  const step=Math.max(1,Math.ceil(mKeys.length/(iW/55)));
+  const tickKeys=mKeys.filter((_,i)=>{
+    if(i%step!==0)return false;
+    return true;
+  }).filter(k=>k!==currentMonthKey);
+  // Remove last tick if it would crowd the second-to-last
+  if(tickKeys.length>=2){
+    const last=mKeys.indexOf(tickKeys[tickKeys.length-1]);
+    const prev=mKeys.indexOf(tickKeys[tickKeys.length-2]);
+    if((last-prev)*iW/(mKeys.length-1)<45)tickKeys.pop();
+  }
+  g.selectAll('.nw-xtick').data(tickKeys).join('text').attr('class','nw-xtick')
     .attr('x',d=>xScale(mKeys.indexOf(d))).attr('y',iH+24)
     .attr('text-anchor','middle').attr('font-size',9).attr('fill',textColor)
     .text(d=>fmtMonthShort(d));
@@ -2611,6 +2662,7 @@ function getFilteredTxs(){
   return getBaseTxs().filter(t=>{
     if(state.bucketMode==='vendor'&&state.activeVendors&&state.activeVendors.size>0&&!state.activeVendors.has(resolveVendor(t.desc)))return false;
     if(state.bucketMode!=='vendor'&&state.activeCats.size>0&&!state.activeCats.has(t.cat))return false;
+    if(state.activeDate&&t.date!==state.activeDate)return false;
     if(state.searchQuery){
       const q=state.searchQuery.toLowerCase();
       const resolvedDesc=resolveVendor(t.desc).toLowerCase();
@@ -3053,6 +3105,26 @@ function toggleChartShowAll(){
 function setChartMode(mode){
   state.chartMode=mode;
   state.chartShowAll=false;
+  const hadDateFilter=!!state.activeDate&&mode!=='daily';
+  const hadVendorFilter=!!(state.activeVendors&&state.activeVendors.size>0)&&mode!=='map';
+  const hadCatFilter=state.activeCats.size>0&&mode!=='sankey';
+  state.activeDate=null;
+  document.querySelectorAll('.cal-day-active').forEach(el=>{el.classList.remove('cal-day-active');el.style.outline='';});
+  if(mode!=='map'){
+    state.activeVendors=new Set();
+    state.bucketMode='category';
+  }
+  // Clear cat filter when navigating away from sankey
+  if(mode!=='sankey'&&hadCatFilter){
+    state.activeCats=new Set();
+  }
+  // Re-render tx list if any filter was active
+  if(hadDateFilter){
+    document.querySelectorAll('.cal-day-active').forEach(el=>{el.classList.remove('cal-day-active');el.style.outline='';});
+  }
+  if(hadDateFilter||hadVendorFilter||hadCatFilter){
+    showTxN=50;renderSpendSummary();renderTxList();
+  }
   ['category','source','vendor','trend','daily','map','sankey'].forEach(m=>{
     const btn=document.getElementById('cv-'+m);
     if(btn)btn.classList.toggle('active',m===mode);
@@ -3152,6 +3224,15 @@ function renderTreemap(drillCat){
   const svgEl=document.getElementById('tm-svg');
   if(!svgEl||!window.d3)return;
 
+  // After render, restore active vendor visual state if a filter is set
+  const restoreActiveVendor=()=>{
+    if(drillCat&&state.activeVendors&&state.activeVendors.size>0){
+      const activeVendor=[...state.activeVendors][0];
+      d3.selectAll('.tm-tile-rect')
+        .attr('opacity',d=>resolveVendor(d.data.name)===activeVendor?1:.45);
+    }
+  };
+
   const allCatEntries=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
   const topEntries=allCatEntries.slice(0,8);
   const otherCatTotal=allCatEntries.slice(8).reduce((s,[,v])=>s+v,0);
@@ -3189,15 +3270,26 @@ function renderTreemap(drillCat){
     .style('cursor',drillCat?'pointer':'pointer')
     .on('click',(_,d)=>{
       if(drillCat){
-        // Vendor tile clicked — filter tx list to this vendor
-        state.activeVendors=new Set([d.data.name]);
-        state.bucketMode='vendor';
+        // Vendor tile — toggle filter
+        const vendorName=d.data.name;
+        const isActive=state.activeVendors&&state.activeVendors.has(vendorName);
+        if(isActive){
+          state.activeVendors=new Set();
+          state.bucketMode='category';
+        } else {
+          state.activeVendors=new Set([vendorName]);
+          state.bucketMode='vendor';
+        }
         showTxN=50;
         renderTxList();
         renderSpendSummary();
-        // Scroll tx list into view
-        const txEl=document.getElementById('tx-list-section')||document.getElementById('tx-count-label');
-        if(txEl)txEl.scrollIntoView({behavior:'smooth',block:'start'});
+        // Update tile visual — highlight selected, dim others
+        d3.selectAll('.tm-tile-rect')
+          .attr('opacity',tile=>state.activeVendors.size===0?1:resolveVendor(tile.data.name)===vendorName&&!isActive?1:.45);
+        if(!isActive){
+          const txEl=document.getElementById('tx-count-label');
+          if(txEl)requestAnimationFrame(()=>txEl.scrollIntoView({behavior:'smooth',block:'start'}));
+        }
       } else {
         // Category tile clicked — drill into vendors
         renderTreemap(d.data.name);
@@ -3215,6 +3307,7 @@ function renderTreemap(drillCat){
     .on('mouseleave',()=>{tip.style.display='none';});
 
   cell.append('rect')
+    .attr('class','tm-tile-rect')
     .attr('width',d=>Math.max(0,d.x1-d.x0))
     .attr('height',d=>Math.max(0,d.y1-d.y0))
     .attr('rx',4)
@@ -3238,6 +3331,7 @@ function renderTreemap(drillCat){
       g.append('text').attr('x',5).attr('y',26).attr('font-size',9).attr('fill',tc).attr('opacity',.85).text(fmtC(d.data.value));
     }
   });
+  restoreActiveVendor();
 }
 
 function renderSankey(){
@@ -3307,20 +3401,51 @@ function renderSankey(){
   const tip=makeTip(wrapEl);
   const svg=d3.select('#sk-svg');
 
-  svg.selectAll('.sk-link').data(graph.links).join('path').attr('class','sk-link')
+  const linkSel=svg.selectAll('.sk-link').data(graph.links).join('path').attr('class','sk-link')
     .attr('d',window.d3Sankey.sankeyLinkHorizontal())
     .attr('fill','none')
     .attr('stroke',d=>d.target.color)
     .attr('stroke-width',d=>Math.max(1,d.width))
     .attr('stroke-opacity',.4)
-    .on('mousemove',(e,d)=>tip.show(e,`<strong>${d.target.name}</strong>${fmtC(d.value)} · ${Math.round(d.value/totalIncome*100)}% of income`))
-    .on('mouseleave',()=>tip.hide());
+    .style('cursor','pointer')
+    .on('mousemove',(e,d)=>{
+      tip.show(e,`<strong>${d.target.name}</strong>${fmtC(d.value)} · ${Math.round(d.value/totalIncome*100)}% of income`);
+      linkSel.attr('stroke-opacity',l=>l===d?.75:.15);
+    })
+    .on('mouseleave',()=>{
+      tip.hide();
+      linkSel.attr('stroke-opacity',.4);
+    })
+    .on('click',(_,d)=>{
+      if(d.target.id==='__income__')return;
+      const wasActive=state.activeCats.has(d.target.name);
+      toggleCatFilter(d.target.name);
+      if(!wasActive)requestAnimationFrame(()=>{
+        const txEl=document.getElementById('tx-count-label');
+        if(txEl)txEl.scrollIntoView({behavior:'smooth',block:'start'});
+      });
+    });
 
   const nodeG=svg.selectAll('.sk-node').data(graph.nodes).join('g').attr('class','sk-node');
   nodeG.append('rect')
     .attr('x',d=>d.x0).attr('y',d=>d.y0)
     .attr('width',d=>d.x1-d.x0).attr('height',d=>Math.max(1,d.y1-d.y0))
-    .attr('rx',3).attr('fill',d=>d.color).attr('opacity',.9);
+    .attr('rx',3).attr('fill',d=>d.color).attr('opacity',.9)
+    .style('cursor',d=>d.id==='__income__'?'default':'pointer')
+    .on('mouseover',(_,d)=>{
+      if(d.id==='__income__')return;
+      linkSel.attr('stroke-opacity',l=>l.target===d?.75:.15);
+    })
+    .on('mouseout',()=>linkSel.attr('stroke-opacity',.4))
+    .on('click',(_,d)=>{
+      if(d.id==='__income__')return;
+      const wasActive=state.activeCats.has(d.name);
+      toggleCatFilter(d.name);
+      if(!wasActive)requestAnimationFrame(()=>{
+        const txEl=document.getElementById('tx-count-label');
+        if(txEl)txEl.scrollIntoView({behavior:'smooth',block:'start'});
+      });
+    });
 
   nodeG.append('text')
     .attr('x',d=>d.x0<W/2?d.x1+5:d.x0-5)
@@ -3428,8 +3553,8 @@ function renderDailyCal(){
   wrap.innerHTML=`
     <div class="cal-stats">
       <div class="cal-stat"><div class="cal-stat-label">Total</div><div class="cal-stat-val">${fmtC(total)}</div><div class="cal-stat-sub">${activeDays} days with spend${state.activeCats.size===0&&!state.showTransfersInCal?' · <span style="color:#60A5FA;cursor:pointer;text-decoration:underline" onclick="toggleCalTransfers()">excluding transfers</span>':''}</div></div>
-      <div class="cal-stat"><div class="cal-stat-label">Avg/day</div><div class="cal-stat-val">${fmtC(avgActive)}</div><div class="cal-stat-sub">active days only</div></div>
-      <div class="cal-stat"><div class="cal-stat-label">Peak day</div><div class="cal-stat-val">${peakEntry?fmtC(peakEntry[1]):'—'}</div><div class="cal-stat-sub">${peakEntry?new Date(peakEntry[0]+'T12:00:00').toLocaleDateString('default',{month:'short',day:'numeric'}):'—'}</div></div>
+      <div class="cal-stat"><div class="cal-stat-label">Average/day</div><div class="cal-stat-val">${fmtC(avgActive)}</div><div class="cal-stat-sub">active days only</div></div>
+      <div class="cal-stat${peakEntry?' cal-stat-clickable':''}" onclick="${peakEntry?'filterToDate(\''+peakEntry[0]+'\')':''}" title="${peakEntry?'Click to filter transactions to this day':''}"><div class="cal-stat-label">Peak day</div><div class="cal-stat-val">${peakEntry?fmt(peakEntry[1]):'—'}</div><div class="cal-stat-sub">${peakEntry?new Date(peakEntry[0]+'T12:00:00').toLocaleDateString('default',{month:'short',day:'numeric',year:'numeric'}):'—'}</div></div>
       <div class="cal-stat"><div class="cal-stat-label">Weekends</div><div class="cal-stat-val">${wkndPct===0?'Even':(wkndPct>0?'+':'')+wkndPct+'%'}</div><div class="cal-stat-sub">vs weekday avg/day</div></div>
     </div>
     <div style="display:flex;align-items:center;margin-bottom:.5rem">
@@ -3504,7 +3629,7 @@ function renderDailyCal(){
         const dayLabel=dt.toLocaleDateString('default',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
         const count=byDayCount[ds]||0;
         const cats=byDayCats[ds]?Object.entries(byDayCats[ds]).sort((a,b)=>b[1]-a[1]).slice(0,3):[];
-        const catLines=cats.map(([c,v])=>`<div style="display:flex;justify-content:space-between;gap:12px;margin-top:2px"><span style="color:var(--text-muted)">${esc(c)}</span><span style="color:var(--text-secondary);font-weight:600">${fmtC(v)}</span></div>`).join('');
+        const catLines=cats.map(([c,v])=>`<div style="display:flex;justify-content:space-between;gap:12px;margin-top:2px"><span style="color:var(--text-muted)">${esc(c)}</span><span style="color:var(--text-secondary);font-weight:600">${fmt(v)}</span></div>`).join('');
         tip.style.display='block';
         const calWrap=document.getElementById('daily-cal-wrap');
         const wRect=calWrap?calWrap.getBoundingClientRect():{left:0,width:window.innerWidth};
@@ -3512,9 +3637,26 @@ function renderDailyCal(){
         tip.style.position='fixed';
         tip.style.left=pastMid?(e.clientX-200)+'px':(e.clientX+14)+'px';
         tip.style.top=(e.clientY-60)+'px';
-        tip.innerHTML=`<div style="font-weight:700;color:var(--text-bright);margin-bottom:3px">${dayLabel}</div><div style="font-size:14px;font-weight:800;color:var(--text-bright);margin-bottom:4px">${spend>0?fmtC(spend):'No spend'}</div>${spend>0?`<div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">${count} transaction${count!==1?'s':''}</div>${catLines}`:''}`;
+        tip.innerHTML=`<div style="font-weight:700;color:var(--text-bright);margin-bottom:3px">${dayLabel}</div><div style="font-size:14px;font-weight:800;color:var(--text-bright);margin-bottom:4px">${spend>0?fmt(spend):'No spend'}</div>${spend>0?`<div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">${count} transaction${count!==1?'s':''}</div>${catLines}`:''}`;
       });
       cell.addEventListener('mouseleave',()=>{tip.style.display='none';});
+      if(spend>0){
+        cell.style.cursor='pointer';
+        cell.addEventListener('click',()=>{
+          tip.style.display='none';
+          filterToDate(ds);
+          // Highlight selected cell — clear previous
+          document.querySelectorAll('.cal-day-active').forEach(el=>{
+            el.classList.remove('cal-day-active');
+            el.style.outline='';
+          });
+          if(state.activeDate===ds){
+            cell.classList.add('cal-day-active');
+            cell.style.outline='2px solid #60A5FA';
+            cell.style.outlineOffset='1px';
+          }
+        });
+      }
       week.appendChild(cell);
       if(dow===6||d===daysInMonth){weeksWrap.appendChild(week);week=document.createElement('div');week.className='cal-week';}
     }
@@ -3965,6 +4107,21 @@ document.addEventListener('click',function(e){
   }
 });
 
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){
+    // Close any open modal first
+    const openModal=document.querySelector('.modal-overlay:not(.hidden)');
+    if(openModal){closeModals();return;}
+    // Clear active filters
+    let cleared=false;
+    if(state.activeDate){state.activeDate=null;document.querySelectorAll('.cal-day-active').forEach(el=>{el.classList.remove('cal-day-active');el.style.outline='';});cleared=true;}
+    if(state.activeVendors&&state.activeVendors.size>0){state.activeVendors=new Set();state.bucketMode='category';cleared=true;}
+    if(state.activeCats.size>0){state.activeCats=new Set();cleared=true;}
+    if(state.searchQuery){state.searchQuery='';const s=document.getElementById('tx-search');if(s)s.value='';document.getElementById('search-clear-btn')?.classList.add('hidden');cleared=true;}
+    if(cleared){showTxN=50;renderSpendSummary();renderBucketGrid();renderActiveChart();renderTxList();}
+  }
+});
+
 function toggleSource(s){if(state.activeSources.has(s)){if(state.activeSources.size>1)state.activeSources.delete(s);}else state.activeSources.add(s);state.activeCats=new Set();state.searchQuery='';document.getElementById('tx-search').value='';document.getElementById('search-clear-btn').classList.add('hidden');showTxN=50;renderSpending();}
 function toggleExcluded(){
   state.showExcluded=!state.showExcluded;
@@ -3979,17 +4136,23 @@ function toggleAllSources(){
   state.activeSources=allOn?new Set([sources[0]]):new Set(sources);
   state.activeCats=new Set();showTxN=50;renderSpending();
 }
-function setHorizon(m){state.activeHorizon=m;state.activeCats=new Set();showTxN=50;renderSpending();}
+function setHorizon(m){state.activeHorizon=m;state.activeCats=new Set();state.activeDate=null;showTxN=50;renderSpending();}
 function toggleCatFilter(cat){
+  const applying=!state.activeCats.has(cat);
   if(state.activeCats.has(cat)){
     state.activeCats.delete(cat);
   } else {
     state.activeCats.add(cat);
-    if(state.chartMode!=='category'&&state.chartMode!=='daily'&&state.chartMode!=='map')setChartMode('category');
+    if(state.chartMode!=='category'&&state.chartMode!=='daily'&&state.chartMode!=='map'&&state.chartMode!=='sankey')setChartMode('category');
   }
   showTxN=50;renderSpendSummary();renderBucketGrid();
   renderActiveChart();
   renderTxList();
+  // Scroll to tx list when applying a filter, not removing one
+  if(applying){
+    const txEl=document.getElementById('tx-count-label');
+    if(txEl)requestAnimationFrame(()=>txEl.scrollIntoView({behavior:'smooth',block:'start'}));
+  }
 }
 function clearCatFilter(){
   state.activeCats=new Set();showTxN=50;renderSpendSummary();renderBucketGrid();
@@ -4123,10 +4286,12 @@ function renderHistory(){
     const first=state.snapshots[0],last=state.snapshots[state.snapshots.length-1];
     const totalGrowth=last.nw-first.nw;
     const growthPct=first.nw>0?Math.round(totalGrowth/first.nw*100):0;
-    const firstDate=new Date(first.date),lastDate=new Date(last.date);
-    const months=Math.max(1,Math.round((lastDate-firstDate)/(1000*60*60*24*30.5)));
+    const [fy,fm]=first.monthKey.split('-').map(Number);
+    const [ly,lm]=last.monthKey.split('-').map(Number);
+    const months=(ly-fy)*12+(lm-fm)+1;
     const growthUp=totalGrowth>=0;
-    // Annualized rate
+    // Annualized rate — use actual dates for precision
+    const firstDate=new Date(first.date),lastDate=new Date(last.date);
     const days=Math.max(1,Math.round((lastDate-firstDate)/(1000*60*60*24)));
     const annRate=first.nw>0?Math.round((Math.pow(last.nw/first.nw,365/days)-1)*100):0;
     summaryHTML=`<div style="background:${growthUp?'#065F4618':'#7F1D1D18'};border:1px solid ${growthUp?'#059669':'#DC2626'}33;border-radius:10px;padding:.75rem 1rem;margin-bottom:.65rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
@@ -4810,8 +4975,13 @@ function hideDemoBadge(){
   if(chip){chip.style.display='none';updateBannerOffset();}
   const badge=document.getElementById('demo-nav-badge');
   if(badge)badge.style.display='none';
+  // Also hide nudge when real data is loaded
   const nudge=document.getElementById('demo-nudge');
   if(nudge)nudge.style.display='none';
+}
+function showDemoNudge(){
+  const nudge=document.getElementById('demo-nudge');
+  if(nudge&&!state.hasRealData)nudge.style.display='block';
 }
 
 function exportTransactionsCSV(){
@@ -4966,6 +5136,30 @@ let _patternsEnabled = (()=>{try{return localStorage.getItem('trakyo_patterns')=
     }
   }
 })();
+
+function filterToDate(date){
+  const applying=state.activeDate!==date;
+  if(state.activeDate===date){
+    state.activeDate=null;
+  } else {
+    state.activeDate=date;
+  }
+  // Clear any cell highlight when filter is removed
+  if(!state.activeDate){
+    document.querySelectorAll('.cal-day-active').forEach(el=>{
+      el.classList.remove('cal-day-active');
+      el.style.outline='';
+    });
+  }
+  showTxN=50;
+  renderTxList();
+  renderSpendSummary();
+  // Only scroll when applying a filter, not removing one
+  if(applying){
+    const txEl=document.getElementById('tx-count-label');
+    if(txEl)requestAnimationFrame(()=>txEl.scrollIntoView({behavior:'smooth',block:'start'}));
+  }
+}
 
 function toggleCalTransfers(){
   state.showTransfersInCal=!state.showTransfersInCal;
@@ -5718,6 +5912,10 @@ function updateAuthUI(user) {
     if (avatar) { avatar.textContent=''; avatar.style.backgroundImage=''; }
   }
 }
+// Expose for Firebase module script (type="module" runs in its own scope)
+window.updateAuthUI = updateAuthUI;
+window.loadUserData = loadUserData;
+window.showPage = showPage;
 
 function openAuthModal(reason) {
   const title = document.getElementById('auth-modal-title');
@@ -6148,6 +6346,19 @@ function showPage(id,eventOrBtn){
   if(id==='history')id='dashboard';
   if(id==='vehicles')id='accounts';
 
+  // Clear spending-specific filters when navigating away from spending tab
+  const wasSpending=document.querySelector('.page.active')?.id==='page-spending';
+  if(wasSpending&&id!=='spending'){
+    if(state.activeDate){
+      state.activeDate=null;
+      document.querySelectorAll('.cal-day-active').forEach(el=>{el.classList.remove('cal-day-active');el.style.outline='';});
+    }
+    if(state.activeVendors?.size>0){
+      state.activeVendors=new Set();
+      state.bucketMode='category';
+    }
+  }
+
   // Save current tab's scroll position before switching
   const curPage=document.querySelector('.page.active');
   if(curPage)_tabScroll[curPage.id]=window.scrollY;
@@ -6292,6 +6503,7 @@ function loadDemoProfile(n, silent=false, skipRender=false){
 
     const badge=document.getElementById('demo-nav-badge');
     if(badge)badge.style.display='';
+    showDemoNudge();
 
     if(window._fromLanding&&!silent){
       // Coming from landing page — land on NW tab as intended
@@ -6341,22 +6553,22 @@ const firebaseConfig = {
 };
 
 const app       = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+// Analytics only works on HTTP/HTTPS — skip when running as a local file
+const analytics = window.location.protocol !== 'file:' ? getAnalytics(app) : null;
 const auth      = getAuth(app);
 const db        = getFirestore(app);
 
 // ── Auth state ────────────────────────────────────────────────
 onAuthStateChanged(auth, user => {
   window._fbUser = user;
-  updateAuthUI(user);
+  if(window.updateAuthUI) window.updateAuthUI(user);
   if (user) {
-    loadUserData(user.uid);
+    if(window.loadUserData) window.loadUserData(user.uid);
   } else {
-    // If a demo profile was picked, re-apply tab + nudge after auth settles
     if(window._demoPicked){
       const nudge=document.getElementById('demo-nudge');
       if(nudge)nudge.style.display='block';
-      showPage('dashboard',document.querySelectorAll('.nav-btn')[0]);
+      if(window.showPage) window.showPage('dashboard',document.querySelectorAll('.nav-btn')[0]);
     }
   }
 });
