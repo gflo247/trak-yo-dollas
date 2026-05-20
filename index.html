@@ -2,8 +2,9 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>trak-yo-dolla$ · Private, local-first money tracking</title>
+<title>trak-yo-dolla$ · Track spending and net worth privately</title>
 <meta name="description" content="Track your spending and net worth. Your data never leaves your browser. No bank connections. No subscriptions.">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,800;1,9..40,300&display=swap');
@@ -207,7 +208,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 <nav>
   <a href="#" class="nav-logo">trak-yo-dolla<span>$</span></a>
   <div class="nav-right">
-    <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:13px">GitHub</a>
+    <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" class="btn-ghost" style="font-size:13px">GitHub</a>
     <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
     <a href="trakyodollas.html?demo=1" class="btn-primary-sm">Try with demo data</a>
   </div>
@@ -216,17 +217,10 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 <section class="hero">
   <div class="hero-eyebrow fu fu1">💸 trak-yo-dolla$</div>
   <h1 class="fu fu2">Your money.<br><em>Your device.</em><br>Your business.</h1>
-  <p class="hero-sub fu fu3">Track spending, net worth, and budgets — without handing your bank login to anyone. No Plaid. No subscriptions. Your data stays local by default. Optional Google sync available.</p>
+  <p class="hero-sub fu fu3">Track spending, net worth, and budgets — without handing your bank login to anyone. No subscriptions. Your data stays local by default. Optional Google sync available.</p>
   <div class="hero-ctas fu fu4">
     <a href="trakyodollas.html?demo=1" class="btn-hero">Try with demo data</a>
     <a href="trakyodollas.html?import=1" class="btn-hero-ghost">⬆ Import CSV</a>
-  </div>
-  <div class="hero-trust fu fu5">
-    <span>🔒 Private by default</span>
-    <span class="trust-dot"></span>
-    <span>No account required</span>
-    <span class="trust-dot"></span>
-    <span>Local by default</span>
   </div>
 </section>
 
@@ -269,16 +263,29 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
   </div>
 </div>
 
-<!-- Why different -->
+<!-- Features -->
 <section class="section">
-  <div class="section-eyebrow">Why it's different</div>
+  <div class="section-eyebrow">What's inside</div>
+  <h2>Everything you need.<br>Nothing you don't.</h2>
+  <div class="feature-list">
+    <div class="fi"><div class="fi-icon">📊</div><div><h3>Five ways to see your spending</h3><p>Switch between a category treemap, income flow chart, daily heatmap, vendor breakdown, and month-over-month trend — all from the same data. Click any tile to filter instantly and find out that "miscellaneous" is mostly coffee shops.</p></div></div>
+    <div class="fi"><div class="fi-icon">💡</div><div><h3>Try it before touching your data</h3><p>Two fully-populated demo profiles let you explore every feature with realistic data. No CSV required to see what the app can do.</p></div></div>
+    <div class="fi"><div class="fi-icon">🏦</div><div><h3>Full picture net worth</h3><p>Checking, savings, investments, loans, real estate, and vehicles in one place. Save monthly snapshots and find out your net worth grew $18k last year — even when it didn't feel like it.</p></div></div>
+    <div class="fi"><div class="fi-icon">🧹</div><div><h3>Your messy bank data, cleaned up</h3><p>Transactions auto-categorize on import. Set keyword rules so "AMZN MKTP" always becomes Shopping. Merge duplicate vendor names. Your rules run automatically on every future import.</p></div></div>
+    <div class="fi"><div class="fi-icon">🎯</div><div><h3>Budgets and year in review</h3><p>Set monthly limits per category and track pace in real time. Pull up an annual summary and find out you spent $4,200 on restaurants last year — then decide if that's fine or not.</p></div></div>
+    <div class="fi"><div class="fi-icon">🔄</div><div><h3>Recurring charge detection</h3><p>Surfaces subscriptions and regular charges from your transaction history automatically — including that $12.99 trial you forgot to cancel.</p></div></div>
+  </div>
+</section>
+
+<!-- Privacy story - merged -->
+<section class="section">
+  <div class="section-eyebrow">Privacy first</div>
   <h2>Built for people who care<br>where their data goes.</h2>
-  <p>Most finance apps require handing over your bank credentials. We don't. You import a CSV — the same file your bank already gives you — and your device does all the work. Nothing leaves unless you choose to sync.</p>
   <div class="diff-grid">
     <div class="diff-card ab">
       <span class="diff-icon">🔒</span>
       <h3>No bank connections</h3>
-      <p>No Plaid, no OAuth, no screen scraping. You're always in control of what enters the app.</p>
+      <p>No bank logins, no screen scraping, no third-party data brokers. You import a CSV — the same file your bank or credit card already gives you — and nothing else enters the app.</p>
     </div>
     <div class="diff-card">
       <span class="diff-icon">💻</span>
@@ -294,70 +301,41 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
       <span class="diff-icon">🔁</span>
       <h3>Optional sync — never required</h3>
       <p>Sign in with Google to access your data across devices. Your data goes to Firebase (Google's cloud), secured by your Google account — not ours. Prefer to keep it local? Everything works without signing in.</p>
-      <!-- <p>Sign in with Google to back up across devices. Your data saves locally without it — sync is a convenience, not a gate.</p> -->
     </div>
   </div>
-</section>
-
-<!-- Privacy -->
-<section class="section">
-  <div class="privacy-box">
-    <div class="section-eyebrow" style="margin-bottom:.75rem">Our commitments</div>
-    <h2>What we do — and don't.</h2>
-    <p>The constraints we've actually built the app around.</p>
-    <div class="privacy-grid">
-      <div class="pi">
-        <div class="pi-yes">✓</div>
-        <div><strong>CSV files stay on your device</strong><span>Processed locally. Never uploaded to any server.</span></div>
-      </div>
-      <div class="pi">
-        <div class="pi-no">✕</div>
-        <div><strong>No bank connections</strong><span>No credentials, tokens, or read access.</span></div>
-      </div>
-      <div class="pi">
-        <div class="pi-yes">✓</div>
-        <div><strong>Export your data anytime</strong><span>One click to export everything as CSV.</span></div>
-      </div>
-      <div class="pi">
-        <div class="pi-no">✕</div>
-        <div><strong>No selling your data</strong><span>We don't share it with advertisers.</span></div>
-      </div>
-      <div class="pi">
-        <div class="pi-yes">✓</div>
-        <div><strong>Works without an account</strong><span>Sign in only to sync across devices.</span></div>
-      </div>
-      <div class="pi">
-        <div class="pi-no">✕</div>
-        <div><strong>No screen scraping</strong><span>We never log into your bank on your behalf.</span></div>
-      </div>
+  <div class="privacy-grid" style="margin-top:1.25rem">
+    <div class="pi">
+      <div class="pi-yes">✓</div>
+      <div><strong>No subscription, no paywall</strong><span>Free to use. No features locked behind a paywall.</span></div>
     </div>
-  </div>
-</section>
-
-<!-- Features -->
-<section class="section">
-  <div class="section-eyebrow">What's inside</div>
-  <h2>Everything you need.<br>Nothing you don't.</h2>
-  <p>Built around how people actually think about money — not how banks want you to think about it.</p>
-  <div class="feature-list">
-    <div class="fi"><div class="fi-icon">📊</div><div><h3>Net worth tracking</h3><p>Add accounts, investments, loans, and real estate. Save snapshots over time to track your trajectory. See where your wealth actually lives.</p></div></div>
-    <div class="fi"><div class="fi-icon">🧾</div><div><h3>Spending breakdown</h3><p>Auto-categorized by vendor and category. Month-over-month comparisons so you can spot patterns you didn't know were there.</p></div></div>
-    <div class="fi"><div class="fi-icon">🎯</div><div><h3>Budgets that actually track</h3><p>Set monthly limits per category. See what's left at a glance — updated with every import.</p></div></div>
-    <div class="fi"><div class="fi-icon">📈</div><div><h3>Net worth goal projection</h3><p>Set a target — $500k, $1M, whatever — and see a realistic timeline based on your actual savings rate.</p></div></div>
-    <div class="fi"><div class="fi-icon">🔄</div><div><h3>Recurring charge detection</h3><p>Surfaces subscriptions and regular charges from your transaction history automatically.</p></div></div>
-    <div class="fi"><div class="fi-icon">📅</div><div><h3>Year in review</h3><p>Annual and trailing 12-month summaries — top categories, biggest months, net worth change.</p></div></div>
+    <div class="pi">
+      <div class="pi-yes">✓</div>
+      <div><strong>Export your data anytime</strong><span>One click to export everything as a CSV.</span></div>
+    </div>
+    <div class="pi">
+      <div class="pi-yes">✓</div>
+      <div><strong>Works without an account</strong><span>Sign in only to sync across devices.</span></div>
+    </div>
+    <div class="pi">
+      <div class="pi-no">✕</div>
+      <div><strong>No screen scraping</strong><span>We never log into your bank on your behalf.</span></div>
+    </div>
+    <div class="pi">
+      <div style="width:20px;flex-shrink:0"></div>
+      <div><a href="privacy.html" style="color:var(--accent-blue-light);text-decoration:none;font-size:13px">Full privacy policy →</a></div>
+    </div>
   </div>
 </section>
 
 <!-- How it works -->
 <section class="section">
   <div class="section-eyebrow">Getting started</div>
-  <h2>Three steps.<br>No friction.</h2>
+  <h2>Three steps.</h2>
   <div class="steps" style="margin-top:2.5rem">
     <div class="step">
       <div class="step-num">1</div>
       <h3>Download your CSV</h3>
-      <p>Download a transaction export from your bank — usually under Statements or Download Activity.</p>
+      <p>Usually under Statements or Download Activity in your bank or credit card portal.</p>
     </div>
     <div class="step">
       <div class="step-num">2</div>
@@ -376,7 +354,6 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 <div class="cta-wrap">
   <div class="cta-box">
     <h2>Ready to actually know where your money goes?</h2>
-    <p>No account required. No bank connections. Everything stays local - unless you choose to sync.</p>
     <a href="trakyodollas.html?import=1" class="btn-hero" style="font-size:16px;padding:15px 32px">⬆ Import CSV</a>
   </div>
 </div>
@@ -385,8 +362,8 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
   <a href="#" class="footer-logo">trak-yo-dolla<span>$</span></a>
   <div class="footer-links">
     <a href="privacy.html">Privacy</a>
-    <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer">GitHub</a>
-    <a href="https://github.com/gflo247/trak-yo-dollas/issues" target="_blank" rel="noopener noreferrer">Feedback</a>
+    <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank">GitHub</a>
+    <a href="https://github.com/gflo247/trak-yo-dollas/issues" target="_blank">Feedback</a>
     <a href="trakyodollas.html?import=1">Import CSV</a>
   </div>
 </footer>

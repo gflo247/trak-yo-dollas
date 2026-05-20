@@ -1,75 +1,108 @@
 # trak-yo-dolla$
 
-**Private, local-first personal finance tracking.**
+**Private, local-first spending and net worth tracker.**
 
-Track your spending, net worth, and budgets — without handing your bank login to anyone. No Plaid. No subscriptions. No account required. Your data stays local by default. Sign in with Google to sync across devices.
+Import a CSV from your bank or credit card. Your browser does everything. Nothing leaves your device unless you choose to sync.
 
-🌐 **[trak-yo-dollas.web.app](https://trak-yo-dollas.web.app)**
+→ **[Try the live app](https://trak-yo-dollas.web.app/traky)**
 
 ---
 
 ## What it does
 
-- **Spending breakdown** — import a bank or credit card CSV and get categorized transactions, month-over-month comparisons, and vendor-level breakdowns
-- **Net worth tracking** — add accounts, investments, loans, and real estate. Save snapshots over time to track your trajectory
-- **Budgets** — set monthly limits per category and see what's left in real time
-- **Net worth goal projection** — set a target and see a realistic timeline based on your actual savings rate
-- **Recurring charge detection** — surfaces subscriptions and regular charges from your transaction history
-- **Year in review** — annual and trailing 12-month spending summaries
+- **Five ways to see your spending** — category treemap, income flow chart, daily heatmap, vendor breakdown, and month-over-month trend. Click any tile to filter transactions instantly and find out that "miscellaneous" is mostly coffee shops.
+- **Full picture net worth** — checking, savings, investments, loans, real estate, and vehicles in one place. Save monthly snapshots and track your trajectory. Project when you'll hit your goal.
+- **Budgets and year in review** — set monthly limits per category. Pull up an annual summary and find out you spent $4,200 on restaurants last year — then decide if that's fine or not.
+- **Messy bank data, cleaned up** — transactions auto-categorize on import. Set keyword rules so "AMZN MKTP" always becomes Shopping. Merge duplicate vendor names. Rules run automatically on every future import.
+- **Recurring charge detection** — surfaces subscriptions and regular charges automatically, including that $12.99 trial you forgot to cancel.
+- **Two demo profiles** — explore every feature with realistic data before touching your own.
 
-## How it works
-
-1. Download a transaction CSV from your bank (Chase, Ally, Fidelity, Vanguard, and most major banks supported)
-2. Drop it into the app — the app detects the format and categorizes transactions instantly
-3. That's it. Your browser handles everything locally
-
-Sign in with Google to back up your data and sync across devices. Your data saves locally either way.
+---
 
 ## Privacy
 
-Everything runs in your browser. Your browser reads CSV files locally and stores accounts, transactions, budgets, and snapshots in local storage — nothing leaves your device unless you choose to sync.
+- **No bank connections** — no logins, no screen scraping, no third-party data brokers. You import a CSV — the same file your bank already gives you.
+- **Runs entirely in your browser** — data saves to localStorage. Refresh the page, everything's still there. Close the tab, nobody else has it.
+- **Optional sync, never required** — sign in with Google to access your data across devices via Firebase. Your data is secured by your Google account, not ours. Everything works without signing in.
+- **No screen scraping** — we never log into your bank on your behalf.
+- **No paywall** — free to use, all features included.
 
-When you sign in, your data backs up to a private Firebase (Google) database readable only by you, enforced at the database level.
+Full details: [privacy policy](https://trak-yo-dollas.web.app/privacy.html)
 
-Firebase Analytics collects three standard events — `first_visit`, `session_start`, and `page_view` — along with browser language, page URL, screen resolution, and an anonymous client ID. No financial data is ever included. Any ad blocker can block this.
+---
 
-We don't sell your data or share it with advertisers.
+## How to use
 
-Full details: [trak-yo-dollas.web.app/privacy.html](https://trak-yo-dollas.web.app/privacy.html)
+**1. Download your CSV**
+Usually under Statements or Download Activity in your bank or credit card portal.
 
-## Self-hosting
+**2. Import it**
+Open the app, go to Spending, click ⬆ Import CSV. Works with exports from Chase, Ally, Fidelity, Vanguard, and most major banks and credit cards.
 
-The entire app is a few HTML files — no build step, no dependencies, no server required.
+**3. Explore**
+Your transactions are auto-categorized and ready to explore. Switch between chart views, set budgets, add your accounts for net worth tracking.
 
-```bash
-git clone https://github.com/gflo247/trak-yo-dollas.git
-cd trak-yo-dollas
-open trakyodollas.html   # or open the file in any browser
+---
+
+## Tech stack
+
+Single HTML file — no build step, no dependencies to install, no server required.
+
+| Library | Used for |
+|---|---|
+| [D3.js](https://d3js.org/) v7 | NW trend chart, treemap, daily heatmap |
+| [d3-sankey](https://github.com/d3/d3-sankey) | Flow (income/spending) chart |
+| [Chart.js](https://www.chartjs.org/) v4 | Spending bar charts |
+| [Firebase](https://firebase.google.com/) | Optional Google sign-in and cross-device sync |
+| Vanilla JS / CSS | Everything else |
+
+---
+
+## Running locally
+
+Download [`trakyodollas.html`](trakyodollas.html) and open it in a browser. That's it.
+
+For the full site (landing page + app + privacy policy):
+
+```
+trak-yo-dollas/
+  index.html          ← landing page
+  trakyodollas.html   ← the app
+  privacy.html        ← privacy policy
 ```
 
-Drop the three files onto any static host (GitHub Pages, Netlify, Vercel, Firebase Hosting, etc.) to deploy your own instance.
+---
 
-To enable Firebase sync in your own instance, create a Firebase project and replace the config in `trakyodollas.html` with your own credentials.
+## Deployment
 
-## Files
+The app is deployed via [Firebase Hosting](https://firebase.google.com/docs/hosting). To deploy your own instance:
 
-| File | Purpose |
-|------|---------|
-| `index.html` | Landing page |
-| `trakyodollas.html` | The app |
-| `privacy.html` | Privacy details |
+```bash
+npm install -g firebase-tools
+firebase login
+firebase init hosting
+firebase deploy
+```
 
-## Tech
+---
 
-- Vanilla HTML, CSS, JavaScript — no framework, no build step
-- [Chart.js](https://www.chartjs.org/) for charts
-- [Firebase](https://firebase.google.com/) for optional auth and sync (Firestore + Analytics)
-- Hosted on Firebase Hosting
+## Feedback and contributions
 
-## Contributing
+Found a bug or have a feature request? [Open an issue](https://github.com/gflo247/trak-yo-dollas/issues).
 
-Issues and pull requests welcome. If something doesn't work with your bank's CSV format, open an issue with an anonymized sample and I'll add support for it.
+Pull requests welcome. The entire app is one HTML file (~6,700 lines) with clearly marked sections — search for `// ──` to navigate between them.
 
-## License
+---
 
-MIT — see [LICENSE](LICENSE)
+## Recent updates
+
+- Interactive chart filtering — click tiles in the treemap, flow chart, and daily heatmap to filter transactions
+- D3 net worth trend chart with animated draw, goal line, and snapshot dots  
+- Net worth goal widget with progress bar and ETA projection
+- Custom goal and delete snapshot modals (replaced native browser dialogs)
+- Spending toolbar overflow menu — primary actions promoted, config in `···`
+- App footer with Privacy, GitHub, and Feedback links
+- Full security pass — CSP meta tag, `rel="noopener noreferrer"`, `type="button"` on all buttons, `lang="en"`, `<main>` landmark
+- `activeSources` and `activeHorizon` persisted to localStorage (fixes blank Spending tab on return visit)
+- Search debounced, `Escape` clears all active filters
+- NW trend chart range based on full snapshot history regardless of transaction data range
