@@ -258,7 +258,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .bucket-card{border:1px solid var(--border);border-radius:9px;padding:.55rem .75rem;cursor:pointer;transition:all .12s;background:var(--bg-page)}
 .bucket-card:hover{background:var(--bg-card)}
 .bucket-card.active-bucket{outline:1.5px solid currentColor}
-.bucket-name{font-size:11px;font-weight:700;margin-bottom:.3rem;word-break:break-word;line-height:1.3}
+.bucket-name{font-size:11px;font-weight:700;margin-bottom:.3rem;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .bucket-total{font-size:15px;font-weight:800;line-height:1}
 .bucket-meta{font-size:10px;color:var(--text-muted);margin-top:3px;line-height:1.4}
 /* tx */
@@ -373,6 +373,8 @@ select option{background:var(--bg-card)}
 @media(max-width:600px){
   .hide-mobile{display:none!important}
   .show-mobile{display:inline!important}
+  #spending-start-here{display:none!important}
+  #demo-nudge{font-size:11px;padding:6px .75rem;line-height:1.5}
   #demo-nav-badge{font-size:8px;padding:4px 8px;letter-spacing:.03em;white-space:nowrap;text-align:center;line-height:1.3;max-width:none}
   .nav-btn{font-size:10px;padding:10px 2px 8px;letter-spacing:.03em}
   .page{padding:.65rem}
@@ -553,27 +555,32 @@ select option{background:var(--bg-card)}
     <button class="demo-profile-btn" onclick="loadDemoProfile(1)" type="button">
       <div class="demo-profile-icon">🌱</div>
       <div>
-        <div class="demo-profile-label">Just getting started</div>
-        <div class="demo-profile-desc">One bank, one card, keeping it simple. Building the habit.</div>
+        <div class="demo-profile-label">Early career, building up</div>
+        <div class="demo-profile-desc">Renting, student loan, Roth IRA started. Net worth growing from ~$10k toward $50k.</div>
       </div>
     </button>
     <button class="demo-profile-btn" onclick="loadDemoProfile(2)" type="button">
       <div class="demo-profile-icon">🌳</div>
       <div>
-        <div class="demo-profile-label">More going on</div>
-        <div class="demo-profile-desc">Multiple accounts, investments, home, tracking it all.</div>
+        <div class="demo-profile-label">Established, tracking it all</div>
+        <div class="demo-profile-desc">Home, investments, multiple accounts. Net worth in the $300–400k range.</div>
       </div>
     </button>
   </div>
 </div>
-<nav class="nav" aria-label="Main navigation">
+<div id="demo-nudge" style="display:none;background:rgba(217,119,6,.1);border-bottom:1px solid rgba(217,119,6,.2);padding:8px 1rem;font-size:12px;color:var(--text-secondary);text-align:center;letter-spacing:.01em">
+  👇 This is demo data.
+  <button onclick="openTxImportModal()" style="background:#D97706;color:#000;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 3px" type="button">Import a CSV</button>
+  to see where your money actually goes. Nothing leaves your device. &nbsp;·&nbsp;
+  <button onclick="openDemoPicker(false)" style="background:none;border:none;color:#D97706;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Switch profile</button>
+</div>
+<nav class="nav" aria-label="Main navigation" style="position:sticky;top:0;z-index:25">
   <a href="index.html" class="nav-logo hide-mobile">trak-yo-dolla<span>$</span></a>
-  <button class="nav-btn active" onclick="showPage('dashboard',event)" type="button">Net Worth</button>
-  <button class="nav-btn" onclick="showPage('spending',event)" type="button">Spending</button>
+  <button class="nav-btn active" onclick="showPage('spending',event)" type="button">Spending <span id="spending-start-here" style="display:none;font-size:9px;font-weight:800;color:#34D399;background:#34D39922;border:1px solid #34D39944;border-radius:3px;padding:1px 5px;vertical-align:middle;letter-spacing:.03em">start here</span></button>
   <button class="nav-btn" onclick="showPage('budget',event)" type="button">Budget</button>
+  <button class="nav-btn" onclick="showPage('dashboard',event)" type="button">Net Worth</button>
   <button class="nav-btn" onclick="showPage('accounts',event)" type="button">Accounts</button>
 <div id="auth-bar" style="display:flex;align-items:center;gap:6px;padding:0 10px;margin-left:auto;flex-shrink:0">
-  <div id="demo-nav-badge" style="font-size:9px;font-weight:800;letter-spacing:.06em;background:#78350F22;color:#D97706;border:1px solid #D9770644;border-radius:5px;padding:2px 7px;cursor:pointer" title="Switch demo profile" onclick="openDemoPicker(false)">DEMO DATA</div>
   <button onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle light/dark theme" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer;color:var(--text-muted)" type="button">🌙</button>
   <div id="auth-user-info" class="hidden" style="display:flex;align-items:center;gap:6px">
     <div id="auth-avatar" style="width:24px;height:24px;border-radius:50%;background:#2563EB;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
@@ -584,56 +591,55 @@ select option{background:var(--bg-card)}
   <button id="auth-sign-out-btn" class="btn btn-sm hidden" onclick="window._fb.signOut()" style="font-size:10px;padding:3px 10px;color:var(--text-muted)" type="button">Sign out</button>
 </div>
 </nav>
-
-<main id="app-main">
-<div id="demo-nudge" style="display:none">👇 This is demo data — <strong>poke around, nothing breaks.</strong> Ready to use your own? <button onclick="openTxImportModal()" style="background:#D97706;color:#000;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;margin-left:4px;font-family:inherit" type="button">Import a CSV</button></div>
-<div class="page active" id="page-dashboard">
-  <div id="insights-card" style="border:1.5px solid #2563EB55;background:linear-gradient(135deg,#0D1F3C 0%,#111827 100%);border-radius:16px;padding:1.1rem 1.25rem;margin-bottom:1rem;display:none;box-shadow:0 4px 24px rgba(37,99,235,.12)">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem">
-      <div id="insights-card-header" style="font-size:12px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#60A5FA">📊 Latest full month at a glance</div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <button onclick="openYearInReview()" title="See your spending, savings and net worth summary by year or trailing 12 months" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:var(--text-muted);cursor:pointer" type="button">📅 Year in review</button>
-        <button onclick="openPillCustomizer()" title="Show or hide insight pills" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:var(--text-muted);cursor:pointer" type="button">⚙ Customize</button>
-      </div>
-    </div>
-    <div id="insights-pills" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px"></div>
-  </div>
-  <div id="demo-notice-dash" style="background:transparent;border:1px solid var(--border-dim);border-radius:8px;padding:.3rem .75rem;margin-bottom:.5rem;opacity:.6">
+<div class="page" id="page-dashboard">
+  <div id="demo-notice-dash" style="background:transparent;border:1px solid var(--border-dim);border-radius:8px;padding:.3rem .75rem;margin-bottom:.75rem;opacity:.6">
     <div style="font-size:10px;color:var(--text-muted);line-height:1.5">Demo data — go to <button onclick="showPage('accounts',document.querySelectorAll('.nav-btn')[3])" style="background:none;border:none;color:var(--text-muted);font-size:10px;cursor:pointer;text-decoration:underline;padding:0" type="button">Accounts</button> to enter your real balances, then <strong style="color:var(--text-secondary)">+ Save snapshot</strong> at the bottom of this tab to start tracking your net worth over time.</div>
   </div>
-  <div class="metric-grid" id="summary-metrics"></div>
-  <div class="sh">Net worth trend</div>
-  <div class="chart-wrap chart-dark" style="height:200px;position:relative"><svg id="nwChart" width="100%" height="200"></svg><div id="nw-tip" style="display:none;position:absolute;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:6px;padding:5px 9px;font-size:11px;color:var(--text-primary);pointer-events:none;white-space:nowrap;z-index:10"></div></div>
-  <div id="nw-gain-note" style="font-size:11px;margin-top:5px;padding:0 2px;display:none"></div>
-  <div id="nw-chart-note" style="font-size:11px;color:var(--text-muted);margin-top:4px;padding:0 2px;line-height:1.5">📌 The line <em>interpolates</em> between saved snapshots (straight line between known points), then <em>extrapolates</em> forward using current account balances. <span style="color:#34D399">●</span> Green dots mark saved snapshots.</div>
-  <div id="nw-projection" style="display:none"></div>
 
-  <!-- NW Goal Widget -->
-  <div id="nw-goal-widget" style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:.85rem 1rem;margin-top:.75rem">
+  <!-- Hero: NW total + assets/liabilities -->
+  <div class="metric-grid" id="summary-metrics"></div>
+
+  <!-- Primary: Trend chart — the most important visual -->
+  <div style="margin-top:1.25rem">
+    <div class="sh" style="margin-bottom:.5rem">Net worth trend</div>
+    <div class="chart-wrap chart-dark" style="height:200px;position:relative"><svg id="nwChart" width="100%" height="200"></svg><div id="nw-tip" style="display:none;position:absolute;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:6px;padding:5px 9px;font-size:11px;color:var(--text-primary);pointer-events:none;white-space:nowrap;z-index:10"></div></div>
+    <div id="nw-gain-note" style="font-size:11px;margin-top:5px;padding:0 2px;display:none"></div>
+    <div id="nw-chart-note" style="font-size:11px;color:var(--text-muted);margin-top:4px;padding:0 2px;line-height:1.5">📌 The line <em>interpolates</em> between saved snapshots (straight line between known points), then <em>extrapolates</em> forward using current account balances. <span style="color:#34D399">●</span> Green dots mark saved snapshots.</div>
+    <div id="nw-projection" style="display:none"></div>
+  </div>
+
+  <!-- Secondary: Goal widget — actionable, follows naturally from trend -->
+  <div id="nw-goal-widget" style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:.85rem 1rem;margin-top:1rem">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
       <div class="label-upper">Net worth goal</div>
       <button onclick="openCustomNwGoal()" style="background:none;border:1px solid var(--border-mid);border-radius:5px;padding:2px 10px;font-size:12px;font-weight:600;color:var(--accent-blue-light);cursor:pointer" type="button">✏ Set custom goal</button>
     </div>
-    <!-- Milestone buttons -->
     <div id="nw-goal-milestones" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.65rem"></div>
-    <!-- Projection line -->
     <div id="nw-goal-projection" style="font-size:11px;color:var(--text-muted);line-height:1.5"></div>
   </div>
 
-  <div class="sh">Where your wealth lives</div>
-  <div class="nw-section" id="nw-breakdown"></div>
-  <div id="nw-excluded-header" class="sh" style="margin-top:1.1rem;color:var(--amber-text-strong);border-bottom-color:var(--amber-border);display:none">Outside net worth</div>
-  <div id="nw-excluded-row"></div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.25rem;margin-bottom:.45rem">
-    <div class="sh" style="margin:0">Net worth snapshots</div>
-    <div style="display:flex;gap:6px">
-      <button class="btn btn-sm" onclick="openHistoricalSnapshotModal()" title="Backfill a past net worth data point — useful if you know what your net worth was at a specific date in the past" style="font-size:10px;color:#60A5FA;border-color:#2563EB44" type="button">+ Add historical</button>
-      <button class="btn btn-sm btn-primary" onclick="saveSnapshot()" type="button">+ Save snapshot</button>
-    </div>
+  <!-- Tertiary: Breakdown + Snapshots — reference, visually quieter -->
+  <div style="margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--border)">
+    <div class="sh" style="margin-bottom:.5rem">Where your wealth lives</div>
+    <div class="nw-section" id="nw-breakdown"></div>
+    <div id="nw-excluded-header" class="sh" style="margin-top:1.1rem;color:var(--amber-text-strong);border-bottom-color:var(--amber-border);display:none">Outside net worth</div>
+    <div id="nw-excluded-row"></div>
   </div>
-  <div id="snap-demo-notice" style="background:transparent;border:1px solid var(--border-dim);border-radius:8px;padding:.3rem .75rem;margin-bottom:.5rem;opacity:.6"><div style="font-size:10px;color:var(--text-muted);line-height:1.5">Demo snapshots — save real ones via <strong style="color:var(--text-secondary)">+ Save snapshot</strong> above.</div></div>
 
-  <div id="snapshot-list"></div>
+  <div style="margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--border)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.45rem">
+      <div class="sh" style="margin:0">Net worth snapshots</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="openHistoricalSnapshotModal()" title="Backfill a past net worth data point — useful if you know what your net worth was at a specific date in the past" style="font-size:10px;color:#60A5FA;border-color:#2563EB44" type="button">+ Add historical</button>
+        <button class="btn btn-sm btn-primary" onclick="saveSnapshot()" type="button">+ Save snapshot</button>
+      </div>
+    </div>
+    <div id="snap-demo-notice" style="background:transparent;border:1px solid var(--border-dim);border-radius:8px;padding:.3rem .75rem;margin-bottom:.5rem;opacity:.6"><div style="font-size:10px;color:var(--text-muted);line-height:1.5">Demo snapshots — save real ones via <strong style="color:var(--text-secondary)">+ Save snapshot</strong> above.</div></div>
+    <div id="snap-monthly-nudge" style="display:none;background:transparent;border:1px solid #2563EB33;border-radius:8px;padding:.3rem .75rem;margin-bottom:.5rem">
+      <div style="font-size:10px;color:var(--text-muted);line-height:1.5">💡 No snapshot yet this month — hit <button onclick="saveSnapshot()" style="background:none;border:none;color:var(--accent-blue-light);font-size:10px;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">+ Save snapshot</button> to keep your trend line current.</div>
+    </div>
+    <div id="snapshot-list"></div>
+  </div>
 
 </div>
 
@@ -683,7 +689,17 @@ select option{background:var(--bg-card)}
   <div id="budget-unbudgeted" style="margin-top:.5rem"></div>
 </div>
 
-<div class="page" id="page-spending">
+<div class="page active" id="page-spending">
+  <div id="insights-card" style="border:1.5px solid #2563EB55;background:linear-gradient(135deg,#0D1F3C 0%,#111827 100%);border-radius:16px;padding:1.1rem 1.25rem;margin-bottom:1rem;display:none;box-shadow:0 4px 24px rgba(37,99,235,.12)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem">
+      <div id="insights-card-header" style="font-size:12px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#60A5FA">📊 Latest full month at a glance</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button onclick="openYearInReview()" title="See your spending, savings and net worth summary by year or trailing 12 months" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:var(--text-muted);cursor:pointer" type="button">📅 Year in review</button>
+        <button onclick="openPillCustomizer()" title="Show or hide insight pills" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:var(--text-muted);cursor:pointer" type="button">⚙ Customize</button>
+      </div>
+    </div>
+    <div id="insights-pills" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px"></div>
+  </div>
   <!-- Empty state nudge — shown only before first import, sits above controls -->
   <div class="flex-between" style="margin-bottom:.5rem">
     <span class="page-title">Spending</span>
@@ -740,7 +756,7 @@ select option{background:var(--bg-card)}
 
 
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:.4rem">
-    <div class="sh" style="margin:0" id="bucket-section-label">By category — click to filter</div>
+    <div class="sh" style="margin:0" id="bucket-section-label">By category — click a tile to filter</div>
     <div class="tab-strip">
       <button id="bucket-mode-cat" class="h-btn active" onclick="setBucketMode('category')" style="padding:2px 8px;font-size:11px" type="button">Category</button>
       <button id="bucket-mode-vendor" class="h-btn" onclick="setBucketMode('vendor')" style="padding:2px 8px;font-size:11px" type="button">Vendor</button>
@@ -761,7 +777,7 @@ select option{background:var(--bg-card)}
     <button id="bucket-show-more-btn" onclick="toggleBucketShowAll()" style="display:none;background:none;border:none;color:#60A5FA;font-size:11px;font-weight:600;cursor:pointer;padding:0" type="button"></button>
   </div>
 
-  <div class="sh">Charts</div>
+  <div class="sh">Spending breakdown</div>
   <!-- Chart view toggle + pattern button on same row -->
   <div style="display:flex;align-items:center;gap:6px;margin-bottom:.75rem;flex-wrap:wrap">
     <div class="tab-strip-lg" style="margin-bottom:0;overflow-x:auto;max-width:100%">
@@ -776,14 +792,16 @@ select option{background:var(--bg-card)}
     <button id="chart-texture-btn" onclick="toggleChartTexture()" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">⠿ Patterns: off</button>
     <button id="cal-transfers-btn" onclick="toggleCalTransfers()" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">Transfers: off</button>
   </div>
-  <div class="chart-wrap chart-dark" id="spend-chart-wrap" style="height:210px"><canvas id="spendChart"></canvas></div>
+  <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
+    <div class="chart-wrap chart-dark" id="spend-chart-wrap" style="height:210px;position:relative;border:none;border-radius:0"><canvas id="spendChart"></canvas></div>
+    <div id="chart-footnote" style="font-size:9px;color:var(--text-muted);text-align:left;padding:4px 8px 5px;border-top:1px solid var(--border);display:none;line-height:1.4;background:var(--bg-card)"></div>
+  </div>
   <div id="daily-cal-wrap" style="display:none"></div>
   <div id="treemap-wrap" style="display:none"></div>
   <div id="sankey-wrap" style="display:none"></div>
   <div id="chart-show-more-row" style="display:none;text-align:right;margin-top:4px">
     <button onclick="toggleChartShowAll()" id="chart-show-more-btn" style="background:none;border:none;color:#60A5FA;font-size:11px;font-weight:600;cursor:pointer;padding:0" type="button"></button>
   </div>
-  <div id="chart-footnote" style="font-size:10px;color:var(--text-muted);text-align:left;margin-top:3px;padding-left:2px;min-height:14px"></div>
 
   <div class="flex-between" style="margin-top:.9rem;margin-bottom:.3rem">
     <div class="flex-center gap-8">
@@ -812,11 +830,10 @@ select option{background:var(--bg-card)}
 <div class="modal-overlay hidden" id="cat-modal">
   <div class="modal">
     <h3>Manage categories</h3>
-    <p class="modal-sub">Add custom categories with a color. Built-in categories can't be deleted.</p>
+    <p class="modal-sub">Add custom categories. The app picks colors automatically to keep your categories visually distinct from each other.</p>
     <div id="cat-manager-list" style="max-height:200px;overflow-y:auto;border:1px solid var(--border-mid);border-radius:8px;margin-bottom:.7rem"></div>
     <div style="display:flex;gap:6px;align-items:center">
       <input type="text" id="new-cat-name" placeholder="Category name…" style="flex:1"/>
-      <input type="color" id="new-cat-color" value="#60A5FA" title="Pick a color" style="width:36px;height:36px;padding:2px;border-radius:6px;border:1px solid var(--border-mid);background:var(--bg-deep);cursor:pointer;flex-shrink:0"/>
       <button class="btn btn-primary btn-sm" onclick="addCustomCat()" style="white-space:nowrap;flex-shrink:0" type="button">+ Add Category</button>
     </div>
     <div class="row" style="justify-content:flex-end;margin-top:.85rem">
@@ -1099,22 +1116,26 @@ select option{background:var(--bg-card)}
       <div style="display:flex;flex-direction:column;gap:.6rem">
         <div style="display:flex;align-items:flex-start;gap:10px">
           <div style="width:22px;height:22px;border-radius:50%;background:#2563EB;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
-          <div><div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:1px">Update your account balances</div><div style="font-size:11px;color:#475569">Add checking, savings, investments & mortgage on the Accounts tab so your net worth is accurate.</div></div>
+          <div><div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:1px">Set up your income</div><div style="font-size:11px;color:#475569">Hit <strong style="color:#94A3B8">··· → Income & savings rate</strong> on the Spending tab to unlock your savings rate and the Flow chart.</div></div>
         </div>
         <div style="display:flex;align-items:flex-start;gap:10px">
           <div style="width:22px;height:22px;border-radius:50%;background:#2563EB;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
-          <div><div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:1px">Save your first real snapshot</div><div style="font-size:11px;color:#475569">Hit + Save snapshot on the Net Worth tab to anchor today's numbers to your trend line.</div></div>
+          <div><div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:1px">Update your account balances</div><div style="font-size:11px;color:#475569">Add checking, savings, investments & loans on the Accounts tab so your net worth is accurate.</div></div>
         </div>
         <div style="display:flex;align-items:flex-start;gap:10px">
           <div style="width:22px;height:22px;border-radius:50%;background:#2563EB;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
-          <div><div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:1px">Build your auto-categorization rules</div><div style="font-size:11px;color:#475569">Click any transaction to fix its category — you'll be offered to save it as a rule so future imports categorize it automatically. Hit <strong style="color:#94A3B8">⚡ Rules</strong> on the Spending tab to manage them.</div></div>
+          <div><div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:1px">Save your first real snapshot</div><div style="font-size:11px;color:#475569">Hit <strong style="color:#94A3B8">+ Save snapshot</strong> on the Net Worth tab to anchor today's numbers to your trend line.</div></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div style="width:22px;height:22px;border-radius:50%;background:#2563EB;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div>
+          <div><div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:1px">Build your auto-categorization rules</div><div style="font-size:11px;color:#475569">Click any transaction to fix its category — you'll be offered to save it as a rule so future imports categorize automatically.</div></div>
         </div>
       </div>
     </div>
     <div id="import-success-uncategorized" class="hidden" style="background:#78350F18;border:1px solid #D9770633;border-radius:8px;padding:.6rem .85rem;margin-bottom:1rem;font-size:11px;color:#D97706"></div>
     <div style="font-size:11px;color:var(--text-muted);margin-bottom:1rem">💡 The Budget tab lets you set monthly targets by category — whenever you're ready.</div>
     <div class="row" style="justify-content:flex-end;gap:8px">
-      <button class="btn" onclick="closeModals();showPage('accounts',document.querySelectorAll('.nav-btn')[2])" type="button">Go to Accounts</button>
+      <button class="btn" onclick="closeModals();showPage('accounts',document.querySelectorAll('.nav-btn')[3])" type="button">Go to Accounts</button>
       <button class="btn btn-primary" onclick="closeModals()" type="button">View my spending</button>
     </div>
   </div>
@@ -1376,7 +1397,85 @@ select option{background:var(--bg-card)}
   </div>
 </div>
 
-<!-- Custom NW goal modal -->
+<!-- Keyboard shortcuts / tips modal -->
+<div class="modal-overlay hidden" id="shortcuts-modal">
+  <div class="modal" style="width:min(480px,95vw)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <h3 style="margin:0">Tips & shortcuts</h3>
+      <button onclick="closeModals()" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0;line-height:1" type="button">×</button>
+    </div>
+
+    <div style="margin-bottom:1.25rem">
+      <div class="label-upper" style="margin-bottom:.5rem">Keyboard</div>
+      <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
+        <div style="display:grid;grid-template-columns:1fr auto;font-size:12px;border-bottom:1px solid var(--border)">
+          <div style="padding:.5rem .75rem;color:var(--text-secondary)">Open tips & shortcuts</div>
+          <div style="padding:.5rem .75rem;border-left:1px solid var(--border);display:flex;align-items:center"><kbd style="font-family:monospace;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:4px;padding:1px 7px;font-size:11px;color:var(--text-primary)">?</kbd></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;font-size:12px">
+          <div style="padding:.5rem .75rem;color:var(--text-secondary)">Clear filters · close modals</div>
+          <div style="padding:.5rem .75rem;border-left:1px solid var(--border);display:flex;align-items:center"><kbd style="font-family:monospace;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:4px;padding:1px 7px;font-size:11px;color:var(--text-primary)">Esc</kbd></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:1.25rem">
+      <div class="label-upper" style="margin-bottom:.5rem">Click interactions</div>
+      <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
+        <div style="display:grid;grid-template-columns:1fr 1.4fr;font-size:12px;border-bottom:1px solid var(--border)">
+          <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Category tile</div>
+          <div style="padding:.5rem .75rem;color:var(--text-secondary)">Filter transactions to that category</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1.4fr;font-size:12px;border-bottom:1px solid var(--border)">
+          <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Vendor tile (Map)</div>
+          <div style="padding:.5rem .75rem;color:var(--text-secondary)">Filter transactions to that vendor</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1.4fr;font-size:12px;border-bottom:1px solid var(--border)">
+          <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Flow / node (Flow chart)</div>
+          <div style="padding:.5rem .75rem;color:var(--text-secondary)">Filter transactions to that category</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1.4fr;font-size:12px;border-bottom:1px solid var(--border)">
+          <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Day cell (Daily)</div>
+          <div style="padding:.5rem .75rem;color:var(--text-secondary)">Filter transactions to that day</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1.4fr;font-size:12px;border-bottom:1px solid var(--border)">
+          <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Peak day card</div>
+          <div style="padding:.5rem .75rem;color:var(--text-secondary)">Filter transactions to that day</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1.4fr;font-size:12px">
+          <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Active filter</div>
+          <div style="padding:.5rem .75rem;color:var(--text-secondary)">Click again to remove</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:1rem">
+      <div class="label-upper" style="margin-bottom:.5rem">Tips</div>
+      <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
+        <div style="display:grid;grid-template-columns:1fr 1.6fr;font-size:12px;border-bottom:1px solid var(--border)">
+          <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">··· → Rules</div>
+          <div style="padding:.5rem .75rem;color:var(--text-secondary)">Auto-categorize future imports by keyword</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1.6fr;font-size:12px;border-bottom:1px solid var(--border)">
+          <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Edit a transaction</div>
+          <div style="padding:.5rem .75rem;color:var(--text-secondary)">Save category changes as a permanent rule</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1.6fr;font-size:12px;border-bottom:1px solid var(--border)">
+          <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">⚙ Customize (At a Glance)</div>
+          <div style="padding:.5rem .75rem;color:var(--text-secondary)">Show or hide individual insight cards</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1.6fr;font-size:12px">
+          <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Net Worth → Save snapshot</div>
+          <div style="padding:.5rem .75rem;color:var(--text-secondary)">Do this monthly to keep your trend current</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeModals()" type="button">Got it</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay hidden" id="custom-goal-modal">
   <div class="modal" style="width:min(360px,94vw)">
     <h3>Set a custom goal</h3>
@@ -1416,21 +1515,50 @@ let MONTHLY={"2026-04":{"Checking":3702.76,"Gold Card":537.9,"Visa Rewards":1172
 
 const ALL_TX_RAW=[{"date":"2026-04-28","desc":"MEIJER","cat":"Groceries","card":"Checking","amount":150.31,"excluded":false},{"date":"2026-04-28","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Gold Card","amount":26.74,"excluded":false},{"date":"2026-04-28","desc":"ALDI","cat":"Groceries","card":"Gold Card","amount":64.97,"excluded":false},{"date":"2026-04-27","desc":"AT&T","cat":"Bills & Utilities","card":"Checking","amount":236.1,"excluded":false},{"date":"2026-04-27","desc":"CVS PHARMACY","cat":"Health & Wellness","card":"Visa Rewards","amount":238.33,"excluded":false},{"date":"2026-04-26","desc":"WALMART","cat":"Shopping","card":"Gold Card","amount":31.19,"excluded":false},{"date":"2026-04-25","desc":"AT&T","cat":"Bills & Utilities","card":"Checking","amount":211.15,"excluded":false},{"date":"2026-04-24","desc":"COSTCO","cat":"Groceries","card":"Visa Rewards","amount":78.29,"excluded":false},{"date":"2026-04-24","desc":"LOCAL SHOP","cat":"Other","card":"Checking","amount":28.2,"excluded":false},{"date":"2026-04-23","desc":"WALMART","cat":"Shopping","card":"Checking","amount":130.67,"excluded":false},{"date":"2026-04-21","desc":"PANERA BREAD","cat":"Food & Drink","card":"Visa Rewards","amount":18.65,"excluded":false},{"date":"2026-04-21","desc":"WHOLE FOODS","cat":"Groceries","card":"Visa Rewards","amount":82.26,"excluded":false},{"date":"2026-04-20","desc":"WALGREENS","cat":"Health & Wellness","card":"Checking","amount":42.31,"excluded":false},{"date":"2026-04-20","desc":"SHELL","cat":"Gas","card":"Checking","amount":58.94,"excluded":false},{"date":"2026-04-19","desc":"KROGER","cat":"Groceries","card":"Checking","amount":91.28,"excluded":false},{"date":"2026-04-18","desc":"TICKETMASTER","cat":"Entertainment","card":"Checking","amount":39.18,"excluded":false},{"date":"2026-04-18","desc":"AMAZON.COM","cat":"Shopping","card":"Visa Rewards","amount":95.54,"excluded":false},{"date":"2026-04-15","desc":"ONLINE STORE","cat":"Other","card":"Visa Rewards","amount":57.52,"excluded":false},{"date":"2026-04-15","desc":"CHIPOTLE","cat":"Food & Drink","card":"Visa Rewards","amount":43.49,"excluded":false},{"date":"2026-04-15","desc":"DENTAL OFFICE","cat":"Health & Wellness","card":"Checking","amount":56.13,"excluded":false},{"date":"2026-04-14","desc":"WALMART","cat":"Shopping","card":"Checking","amount":68.53,"excluded":false},{"date":"2026-04-14","desc":"BEST BUY","cat":"Shopping","card":"Checking","amount":47.99,"excluded":false},{"date":"2026-04-13","desc":"SPOTIFY","cat":"Entertainment","card":"Checking","amount":27.89,"excluded":false},{"date":"2026-04-12","desc":"COMCAST XFINITY","cat":"Bills & Utilities","card":"Checking","amount":242.34,"excluded":false},{"date":"2026-04-11","desc":"STARBUCKS","cat":"Food & Drink","card":"Visa Rewards","amount":76.57,"excluded":false},{"date":"2026-04-09","desc":"COSTCO","cat":"Groceries","card":"Visa Rewards","amount":128.85,"excluded":false},{"date":"2026-04-09","desc":"AMAZON.COM","cat":"Shopping","card":"Checking","amount":69.37,"excluded":false},{"date":"2026-04-09","desc":"TRADER JOE'S","cat":"Groceries","card":"Visa Rewards","amount":146.99,"excluded":false},{"date":"2026-04-07","desc":"AMAZON.COM","cat":"Shopping","card":"Gold Card","amount":63.79,"excluded":false},{"date":"2026-04-06","desc":"CHECK PAID #1002","cat":"Checks","card":"Checking","amount":695.53,"excluded":false},{"date":"2026-04-06","desc":"UTILITY CO","cat":"Bills & Utilities","card":"Checking","amount":192.53,"excluded":false},{"date":"2026-04-06","desc":"CHECK PAID #1001","cat":"Checks","card":"Checking","amount":547.75,"excluded":false},{"date":"2026-04-05","desc":"KOHLS","cat":"Shopping","card":"Visa Rewards","amount":181.96,"excluded":false},{"date":"2026-04-05","desc":"APPLE TV","cat":"Entertainment","card":"Visa Rewards","amount":24.01,"excluded":false},{"date":"2026-04-04","desc":"ALDI","cat":"Groceries","card":"Gold Card","amount":132.5,"excluded":false},{"date":"2026-04-03","desc":"CHECK PAID #1002","cat":"Checks","card":"Checking","amount":593.18,"excluded":false},{"date":"2026-04-03","desc":"MEDICAL GROUP","cat":"Health & Wellness","card":"Checking","amount":89.41,"excluded":false},{"date":"2026-04-03","desc":"WHOLE FOODS","cat":"Groceries","card":"Gold Card","amount":147.74,"excluded":false},{"date":"2026-04-02","desc":"ZELLE TRANSFER","cat":"Transfers","card":"Checking","amount":27.74,"excluded":false},{"date":"2026-04-02","desc":"BP","cat":"Gas","card":"Gold Card","amount":70.97,"excluded":false},{"date":"2026-04-01","desc":"ALDI","cat":"Groceries","card":"Checking","amount":56.23,"excluded":false},{"date":"2026-03-31","desc":"AT&T","cat":"Bills & Utilities","card":"Checking","amount":268.64,"excluded":false},{"date":"2026-03-31","desc":"TUITION PAYMENT","cat":"Education","card":"Checking","amount":185.53,"excluded":false},{"date":"2026-03-31","desc":"KROGER","cat":"Groceries","card":"Checking","amount":61.06,"excluded":false},{"date":"2026-03-30","desc":"ALDI","cat":"Groceries","card":"Visa Rewards","amount":74.29,"excluded":false},{"date":"2026-03-30","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Visa Rewards","amount":14.06,"excluded":false},{"date":"2026-03-29","desc":"AMAZON.COM","cat":"Shopping","card":"Gold Card","amount":171.63,"excluded":false},{"date":"2026-03-29","desc":"DENTAL OFFICE","cat":"Health & Wellness","card":"Gold Card","amount":101.61,"excluded":false},{"date":"2026-03-28","desc":"MARRIOTT","cat":"Travel","card":"Checking","amount":586.47,"excluded":false},{"date":"2026-03-27","desc":"WALMART","cat":"Shopping","card":"Gold Card","amount":27.01,"excluded":false},{"date":"2026-03-26","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Checking","amount":69.04,"excluded":false},{"date":"2026-03-26","desc":"CITY ELECTRIC","cat":"Bills & Utilities","card":"Checking","amount":145.44,"excluded":false},{"date":"2026-03-25","desc":"PLANET FITNESS","cat":"Health & Wellness","card":"Gold Card","amount":202.81,"excluded":false},{"date":"2026-03-24","desc":"ALDI","cat":"Groceries","card":"Visa Rewards","amount":120.63,"excluded":false},{"date":"2026-03-24","desc":"AT&T","cat":"Bills & Utilities","card":"Checking","amount":165.39,"excluded":false},{"date":"2026-03-24","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Gold Card","amount":26.56,"excluded":false},{"date":"2026-03-19","desc":"AMC THEATER","cat":"Entertainment","card":"Visa Rewards","amount":13.24,"excluded":false},{"date":"2026-03-18","desc":"WHOLE FOODS","cat":"Groceries","card":"Gold Card","amount":32.85,"excluded":false},{"date":"2026-03-17","desc":"KROGER","cat":"Groceries","card":"Visa Rewards","amount":55.65,"excluded":false},{"date":"2026-03-17","desc":"UDEMY","cat":"Education","card":"Gold Card","amount":276.27,"excluded":false},{"date":"2026-03-16","desc":"MISC PURCHASE","cat":"Other","card":"Visa Rewards","amount":25.85,"excluded":false},{"date":"2026-03-16","desc":"SHELL","cat":"Gas","card":"Checking","amount":63.29,"excluded":false},{"date":"2026-03-15","desc":"VANGUARD BUY INVESTMENT","cat":"Investment Contribution","card":"Checking","amount":1500.0,"excluded":true},{"date":"2026-03-13","desc":"WHOLE FOODS","cat":"Groceries","card":"Visa Rewards","amount":157.46,"excluded":false},{"date":"2026-03-13","desc":"COMCAST XFINITY","cat":"Bills & Utilities","card":"Checking","amount":161.65,"excluded":false},{"date":"2026-03-10","desc":"MEIJER","cat":"Groceries","card":"Visa Rewards","amount":175.1,"excluded":false},{"date":"2026-03-09","desc":"MEIJER FUEL","cat":"Gas","card":"Gold Card","amount":41.61,"excluded":false},{"date":"2026-03-08","desc":"AMAZON.COM","cat":"Shopping","card":"Gold Card","amount":33.54,"excluded":false},{"date":"2026-03-06","desc":"WALGREENS","cat":"Health & Wellness","card":"Visa Rewards","amount":44.3,"excluded":false},{"date":"2026-03-06","desc":"AMAZON.COM","cat":"Shopping","card":"Gold Card","amount":124.86,"excluded":false},{"date":"2026-03-03","desc":"SCHOOL FEES","cat":"Education","card":"Checking","amount":129.51,"excluded":false},{"date":"2026-03-02","desc":"STARBUCKS","cat":"Food & Drink","card":"Checking","amount":29.28,"excluded":false},{"date":"2026-02-28","desc":"PANERA BREAD","cat":"Food & Drink","card":"Visa Rewards","amount":45.47,"excluded":false},{"date":"2026-02-28","desc":"PLANET FITNESS","cat":"Health & Wellness","card":"Gold Card","amount":50.71,"excluded":false},{"date":"2026-02-23","desc":"LOWES","cat":"Home","card":"Checking","amount":272.76,"excluded":false},{"date":"2026-02-23","desc":"BEST BUY","cat":"Shopping","card":"Gold Card","amount":212.04,"excluded":false},{"date":"2026-02-22","desc":"WHOLE FOODS","cat":"Groceries","card":"Visa Rewards","amount":28.71,"excluded":false},{"date":"2026-02-22","desc":"SHELL","cat":"Gas","card":"Checking","amount":78.04,"excluded":false},{"date":"2026-02-21","desc":"MARRIOTT","cat":"Travel","card":"Visa Rewards","amount":460.88,"excluded":false},{"date":"2026-02-20","desc":"CHECK PAID #1001","cat":"Checks","card":"Checking","amount":713.89,"excluded":false},{"date":"2026-02-20","desc":"AIRBNB","cat":"Travel","card":"Visa Rewards","amount":250.2,"excluded":false},{"date":"2026-02-20","desc":"MEIJER","cat":"Groceries","card":"Visa Rewards","amount":70.2,"excluded":false},{"date":"2026-02-20","desc":"SPOTIFY","cat":"Entertainment","card":"Visa Rewards","amount":61.03,"excluded":false},{"date":"2026-02-19","desc":"COMCAST XFINITY","cat":"Bills & Utilities","card":"Checking","amount":99.46,"excluded":false},{"date":"2026-02-18","desc":"MARATHON","cat":"Gas","card":"Checking","amount":48.98,"excluded":false},{"date":"2026-02-18","desc":"ZELLE TRANSFER","cat":"Transfers","card":"Checking","amount":55.26,"excluded":false},{"date":"2026-02-16","desc":"SHELL","cat":"Gas","card":"Visa Rewards","amount":49.14,"excluded":false},{"date":"2026-02-16","desc":"KROGER","cat":"Groceries","card":"Visa Rewards","amount":62.91,"excluded":false},{"date":"2026-02-16","desc":"STARBUCKS","cat":"Food & Drink","card":"Gold Card","amount":25.06,"excluded":false},{"date":"2026-02-15","desc":"CITY ELECTRIC","cat":"Bills & Utilities","card":"Checking","amount":94.61,"excluded":false},{"date":"2026-02-14","desc":"AMAZON.COM","cat":"Shopping","card":"Gold Card","amount":68.9,"excluded":false},{"date":"2026-02-14","desc":"DENTAL OFFICE","cat":"Health & Wellness","card":"Visa Rewards","amount":124.7,"excluded":false},{"date":"2026-02-13","desc":"MEIJER","cat":"Groceries","card":"Gold Card","amount":141.22,"excluded":false},{"date":"2026-02-13","desc":"NETFLIX","cat":"Entertainment","card":"Checking","amount":94.86,"excluded":false},{"date":"2026-02-12","desc":"KROGER","cat":"Groceries","card":"Visa Rewards","amount":134.72,"excluded":false},{"date":"2026-02-12","desc":"TRADER JOE'S","cat":"Groceries","card":"Visa Rewards","amount":106.07,"excluded":false},{"date":"2026-02-11","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Visa Rewards","amount":16.02,"excluded":false},{"date":"2026-02-10","desc":"MISC PURCHASE","cat":"Other","card":"Visa Rewards","amount":52.91,"excluded":false},{"date":"2026-02-10","desc":"CVS PHARMACY","cat":"Health & Wellness","card":"Visa Rewards","amount":91.34,"excluded":false},{"date":"2026-02-10","desc":"CHECK PAID #1001","cat":"Checks","card":"Checking","amount":140.53,"excluded":false},{"date":"2026-02-07","desc":"AT&T","cat":"Bills & Utilities","card":"Checking","amount":228.76,"excluded":false},{"date":"2026-02-07","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Checking","amount":51.25,"excluded":false},{"date":"2026-02-01","desc":"MARATHON","cat":"Gas","card":"Visa Rewards","amount":78.18,"excluded":false},{"date":"2026-01-31","desc":"BEST BUY","cat":"Shopping","card":"Visa Rewards","amount":191.47,"excluded":false},{"date":"2026-01-30","desc":"PLANET FITNESS","cat":"Health & Wellness","card":"Checking","amount":224.41,"excluded":false},{"date":"2026-01-29","desc":"MARRIOTT","cat":"Travel","card":"Checking","amount":337.34,"excluded":false},{"date":"2026-01-28","desc":"AT&T","cat":"Bills & Utilities","card":"Checking","amount":101.5,"excluded":false},{"date":"2026-01-27","desc":"DELTA AIRLINES","cat":"Travel","card":"Visa Rewards","amount":520.9,"excluded":false},{"date":"2026-01-26","desc":"KROGER","cat":"Groceries","card":"Visa Rewards","amount":116.38,"excluded":false},{"date":"2026-01-26","desc":"CHECK PAID #1002","cat":"Checks","card":"Checking","amount":653.75,"excluded":false},{"date":"2026-01-26","desc":"BP","cat":"Gas","card":"Visa Rewards","amount":62.14,"excluded":false},{"date":"2026-01-24","desc":"WHOLE FOODS","cat":"Groceries","card":"Visa Rewards","amount":120.49,"excluded":false},{"date":"2026-01-23","desc":"WALGREENS","cat":"Health & Wellness","card":"Visa Rewards","amount":121.22,"excluded":false},{"date":"2026-01-21","desc":"TRADER JOE'S","cat":"Groceries","card":"Checking","amount":161.55,"excluded":false},{"date":"2026-01-21","desc":"MARRIOTT","cat":"Travel","card":"Visa Rewards","amount":413.62,"excluded":false},{"date":"2026-01-19","desc":"COSTCO","cat":"Groceries","card":"Checking","amount":78.25,"excluded":false},{"date":"2026-01-19","desc":"HOME DEPOT","cat":"Home","card":"Checking","amount":534.39,"excluded":false},{"date":"2026-01-16","desc":"KROGER","cat":"Groceries","card":"Visa Rewards","amount":25.17,"excluded":false},{"date":"2026-01-15","desc":"TARGET","cat":"Shopping","card":"Checking","amount":195.84,"excluded":false},{"date":"2026-01-15","desc":"LOWES","cat":"Home","card":"Checking","amount":265.34,"excluded":false},{"date":"2026-01-15","desc":"COSTCO","cat":"Groceries","card":"Checking","amount":165.09,"excluded":false},{"date":"2026-01-15","desc":"PANERA BREAD","cat":"Food & Drink","card":"Visa Rewards","amount":65.0,"excluded":false},{"date":"2026-01-14","desc":"COSTCO","cat":"Groceries","card":"Visa Rewards","amount":146.5,"excluded":false},{"date":"2026-01-14","desc":"MEIJER","cat":"Groceries","card":"Checking","amount":93.4,"excluded":false},{"date":"2026-01-13","desc":"WHOLE FOODS","cat":"Groceries","card":"Gold Card","amount":147.19,"excluded":false},{"date":"2026-01-11","desc":"CHIPOTLE","cat":"Food & Drink","card":"Visa Rewards","amount":70.08,"excluded":false},{"date":"2026-01-11","desc":"CHECK PAID #1001","cat":"Checks","card":"Checking","amount":446.3,"excluded":false},{"date":"2026-01-10","desc":"MORTGAGE PAYMENT","cat":"Home","card":"Checking","amount":711.65,"excluded":false},{"date":"2026-01-09","desc":"UNITED AIRLINES","cat":"Travel","card":"Checking","amount":348.12,"excluded":false},{"date":"2026-01-09","desc":"ZELLE TRANSFER","cat":"Transfers","card":"Checking","amount":79.11,"excluded":false},{"date":"2026-01-08","desc":"DELTA AIRLINES","cat":"Travel","card":"Gold Card","amount":596.09,"excluded":false},{"date":"2026-01-08","desc":"MEIJER","cat":"Groceries","card":"Visa Rewards","amount":63.7,"excluded":false},{"date":"2026-01-08","desc":"HOME SERVICES","cat":"Home","card":"Checking","amount":542.62,"excluded":false},{"date":"2026-01-08","desc":"BEST BUY","cat":"Shopping","card":"Checking","amount":91.91,"excluded":false},{"date":"2026-01-06","desc":"CHECK PAID #1003","cat":"Checks","card":"Checking","amount":789.84,"excluded":false},{"date":"2026-01-04","desc":"KOHLS","cat":"Shopping","card":"Gold Card","amount":49.52,"excluded":false},{"date":"2025-12-31","desc":"KOHLS","cat":"Shopping","card":"Gold Card","amount":156.27,"excluded":false},{"date":"2025-12-31","desc":"DENTAL OFFICE","cat":"Health & Wellness","card":"Checking","amount":58.18,"excluded":false},{"date":"2025-12-30","desc":"AMAZON.COM","cat":"Shopping","card":"Checking","amount":107.2,"excluded":false},{"date":"2025-12-30","desc":"TUITION PAYMENT","cat":"Education","card":"Checking","amount":266.32,"excluded":false},{"date":"2025-12-29","desc":"CHIPOTLE","cat":"Food & Drink","card":"Visa Rewards","amount":67.48,"excluded":false},{"date":"2025-12-29","desc":"BEST BUY","cat":"Shopping","card":"Gold Card","amount":36.0,"excluded":false},{"date":"2025-12-28","desc":"AT&T","cat":"Bills & Utilities","card":"Checking","amount":85.13,"excluded":false},{"date":"2025-12-27","desc":"WHOLE FOODS","cat":"Groceries","card":"Visa Rewards","amount":112.68,"excluded":false},{"date":"2025-12-26","desc":"COURSERA","cat":"Education","card":"Checking","amount":123.02,"excluded":false},{"date":"2025-12-24","desc":"MARATHON","cat":"Gas","card":"Visa Rewards","amount":68.41,"excluded":false},{"date":"2025-12-23","desc":"MEDICAL GROUP","cat":"Health & Wellness","card":"Visa Rewards","amount":238.92,"excluded":false},{"date":"2025-12-23","desc":"BEST BUY","cat":"Shopping","card":"Visa Rewards","amount":212.58,"excluded":false},{"date":"2025-12-21","desc":"LOCAL SHOP","cat":"Other","card":"Checking","amount":23.35,"excluded":false},{"date":"2025-12-20","desc":"WASTE MGMT","cat":"Bills & Utilities","card":"Checking","amount":191.21,"excluded":false},{"date":"2025-12-20","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Visa Rewards","amount":58.39,"excluded":false},{"date":"2025-12-18","desc":"BEST BUY","cat":"Shopping","card":"Visa Rewards","amount":140.32,"excluded":false},{"date":"2025-12-18","desc":"BEST BUY","cat":"Shopping","card":"Gold Card","amount":141.56,"excluded":false},{"date":"2025-12-18","desc":"EXXON","cat":"Gas","card":"Visa Rewards","amount":76.75,"excluded":false},{"date":"2025-12-18","desc":"EXXON","cat":"Gas","card":"Checking","amount":44.71,"excluded":false},{"date":"2025-12-17","desc":"PLANET FITNESS","cat":"Health & Wellness","card":"Checking","amount":63.0,"excluded":false},{"date":"2025-12-17","desc":"PANERA BREAD","cat":"Food & Drink","card":"Visa Rewards","amount":60.96,"excluded":false},{"date":"2025-12-16","desc":"HOME SERVICES","cat":"Home","card":"Checking","amount":614.54,"excluded":false},{"date":"2025-12-16","desc":"BP","cat":"Gas","card":"Visa Rewards","amount":51.13,"excluded":false},{"date":"2025-12-15","desc":"COSTCO","cat":"Groceries","card":"Visa Rewards","amount":126.88,"excluded":false},{"date":"2025-12-15","desc":"VANGUARD BUY INVESTMENT","cat":"Investment Contribution","card":"Checking","amount":1500.0,"excluded":true},{"date":"2025-12-14","desc":"VENMO PAYMENT","cat":"Transfers","card":"Checking","amount":87.08,"excluded":false},{"date":"2025-12-14","desc":"BEST BUY","cat":"Shopping","card":"Checking","amount":211.48,"excluded":false},{"date":"2025-12-12","desc":"UDEMY","cat":"Education","card":"Checking","amount":55.65,"excluded":false},{"date":"2025-12-11","desc":"PANERA BREAD","cat":"Food & Drink","card":"Gold Card","amount":42.37,"excluded":false},{"date":"2025-12-11","desc":"COSTCO","cat":"Groceries","card":"Checking","amount":46.96,"excluded":false},{"date":"2025-12-11","desc":"STARBUCKS","cat":"Food & Drink","card":"Checking","amount":50.04,"excluded":false},{"date":"2025-12-11","desc":"COSTCO","cat":"Groceries","card":"Checking","amount":133.0,"excluded":false},{"date":"2025-12-10","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Checking","amount":62.4,"excluded":false},{"date":"2025-12-09","desc":"KROGER","cat":"Groceries","card":"Visa Rewards","amount":65.1,"excluded":false},{"date":"2025-12-09","desc":"AT&T","cat":"Bills & Utilities","card":"Checking","amount":211.29,"excluded":false},{"date":"2025-12-08","desc":"ALDI","cat":"Groceries","card":"Gold Card","amount":31.87,"excluded":false},{"date":"2025-12-08","desc":"MARATHON","cat":"Gas","card":"Checking","amount":78.67,"excluded":false},{"date":"2025-12-07","desc":"VENMO PAYMENT","cat":"Transfers","card":"Checking","amount":34.22,"excluded":false},{"date":"2025-12-06","desc":"ALDI","cat":"Groceries","card":"Visa Rewards","amount":99.28,"excluded":false},{"date":"2025-12-06","desc":"WASTE MGMT","cat":"Bills & Utilities","card":"Checking","amount":179.6,"excluded":false},{"date":"2025-12-05","desc":"ALDI","cat":"Groceries","card":"Visa Rewards","amount":29.17,"excluded":false},{"date":"2025-12-05","desc":"CHECK PAID #1001","cat":"Checks","card":"Checking","amount":406.92,"excluded":false},{"date":"2025-12-05","desc":"MARATHON","cat":"Gas","card":"Checking","amount":66.92,"excluded":false},{"date":"2025-12-05","desc":"WALMART","cat":"Shopping","card":"Visa Rewards","amount":150.03,"excluded":false},{"date":"2025-12-03","desc":"BEST BUY","cat":"Shopping","card":"Gold Card","amount":89.83,"excluded":false},{"date":"2025-12-02","desc":"STARBUCKS","cat":"Food & Drink","card":"Gold Card","amount":82.41,"excluded":false},{"date":"2025-12-02","desc":"BEST BUY","cat":"Shopping","card":"Visa Rewards","amount":213.39,"excluded":false},{"date":"2025-12-01","desc":"KOHLS","cat":"Shopping","card":"Gold Card","amount":92.88,"excluded":false},{"date":"2025-12-01","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Gold Card","amount":71.53,"excluded":false},{"date":"2025-12-01","desc":"MISC PURCHASE","cat":"Other","card":"Visa Rewards","amount":34.03,"excluded":false},{"date":"2025-11-30","desc":"STARBUCKS","cat":"Food & Drink","card":"Visa Rewards","amount":64.63,"excluded":false},{"date":"2025-11-30","desc":"DENTAL OFFICE","cat":"Health & Wellness","card":"Checking","amount":44.6,"excluded":false},{"date":"2025-11-23","desc":"TICKETMASTER","cat":"Entertainment","card":"Gold Card","amount":109.57,"excluded":false},{"date":"2025-11-23","desc":"WALGREENS","cat":"Health & Wellness","card":"Checking","amount":177.62,"excluded":false},{"date":"2025-11-22","desc":"BEST BUY","cat":"Shopping","card":"Visa Rewards","amount":17.53,"excluded":false},{"date":"2025-11-20","desc":"COMCAST XFINITY","cat":"Bills & Utilities","card":"Checking","amount":65.78,"excluded":false},{"date":"2025-11-19","desc":"TARGET","cat":"Shopping","card":"Visa Rewards","amount":32.9,"excluded":false},{"date":"2025-11-18","desc":"CHIPOTLE","cat":"Food & Drink","card":"Checking","amount":12.38,"excluded":false},{"date":"2025-11-17","desc":"PANERA BREAD","cat":"Food & Drink","card":"Visa Rewards","amount":52.37,"excluded":false},{"date":"2025-11-17","desc":"ALDI","cat":"Groceries","card":"Checking","amount":127.4,"excluded":false},{"date":"2025-11-17","desc":"WALGREENS","cat":"Health & Wellness","card":"Checking","amount":184.01,"excluded":false},{"date":"2025-11-17","desc":"COSTCO","cat":"Groceries","card":"Checking","amount":146.5,"excluded":false},{"date":"2025-11-16","desc":"ONLINE STORE","cat":"Other","card":"Checking","amount":12.37,"excluded":false},{"date":"2025-11-15","desc":"LOWES","cat":"Home","card":"Checking","amount":623.62,"excluded":false},{"date":"2025-11-13","desc":"NETFLIX","cat":"Entertainment","card":"Gold Card","amount":65.09,"excluded":false},{"date":"2025-11-12","desc":"UDEMY","cat":"Education","card":"Visa Rewards","amount":124.82,"excluded":false},{"date":"2025-11-12","desc":"WASTE MGMT","cat":"Bills & Utilities","card":"Checking","amount":208.95,"excluded":false},{"date":"2025-11-10","desc":"MEIJER FUEL","cat":"Gas","card":"Checking","amount":59.02,"excluded":false},{"date":"2025-11-10","desc":"TRADER JOE'S","cat":"Groceries","card":"Visa Rewards","amount":164.39,"excluded":false},{"date":"2025-11-10","desc":"TRADER JOE'S","cat":"Groceries","card":"Checking","amount":27.43,"excluded":false},{"date":"2025-11-08","desc":"SHELL","cat":"Gas","card":"Visa Rewards","amount":43.74,"excluded":false},{"date":"2025-11-08","desc":"COMCAST XFINITY","cat":"Bills & Utilities","card":"Checking","amount":200.08,"excluded":false},{"date":"2025-11-08","desc":"WHOLE FOODS","cat":"Groceries","card":"Checking","amount":124.96,"excluded":false},{"date":"2025-11-08","desc":"MISC PURCHASE","cat":"Other","card":"Gold Card","amount":81.58,"excluded":false},{"date":"2025-11-06","desc":"TARGET","cat":"Shopping","card":"Gold Card","amount":76.49,"excluded":false},{"date":"2025-11-05","desc":"COSTCO","cat":"Groceries","card":"Gold Card","amount":129.48,"excluded":false},{"date":"2025-11-05","desc":"VENMO PAYMENT","cat":"Transfers","card":"Checking","amount":139.35,"excluded":false},{"date":"2025-11-05","desc":"KOHLS","cat":"Shopping","card":"Gold Card","amount":122.92,"excluded":false},{"date":"2025-11-05","desc":"BEST BUY","cat":"Shopping","card":"Gold Card","amount":31.2,"excluded":false},{"date":"2025-11-04","desc":"CHIPOTLE","cat":"Food & Drink","card":"Checking","amount":50.65,"excluded":false},{"date":"2025-11-02","desc":"PLANET FITNESS","cat":"Health & Wellness","card":"Visa Rewards","amount":229.93,"excluded":false},{"date":"2025-11-01","desc":"KROGER","cat":"Groceries","card":"Gold Card","amount":88.92,"excluded":false},{"date":"2025-11-01","desc":"TARGET","cat":"Shopping","card":"Visa Rewards","amount":16.87,"excluded":false},{"date":"2025-10-30","desc":"VENMO PAYMENT","cat":"Transfers","card":"Checking","amount":88.11,"excluded":false},{"date":"2025-10-29","desc":"CHECK PAID #1003","cat":"Checks","card":"Checking","amount":617.72,"excluded":false},{"date":"2025-10-29","desc":"APPLE TV","cat":"Entertainment","card":"Visa Rewards","amount":28.62,"excluded":false},{"date":"2025-10-27","desc":"KOHLS","cat":"Shopping","card":"Visa Rewards","amount":149.19,"excluded":false},{"date":"2025-10-25","desc":"DENTAL OFFICE","cat":"Health & Wellness","card":"Checking","amount":87.89,"excluded":false},{"date":"2025-10-23","desc":"APPLE TV","cat":"Entertainment","card":"Visa Rewards","amount":110.58,"excluded":false},{"date":"2025-10-23","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Visa Rewards","amount":75.08,"excluded":false},{"date":"2025-10-22","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Checking","amount":59.36,"excluded":false},{"date":"2025-10-22","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Gold Card","amount":46.02,"excluded":false},{"date":"2025-10-21","desc":"AMAZON.COM","cat":"Shopping","card":"Checking","amount":58.42,"excluded":false},{"date":"2025-10-21","desc":"AMC THEATER","cat":"Entertainment","card":"Visa Rewards","amount":110.59,"excluded":false},{"date":"2025-10-21","desc":"MARATHON","cat":"Gas","card":"Visa Rewards","amount":76.61,"excluded":false},{"date":"2025-10-20","desc":"CVS PHARMACY","cat":"Health & Wellness","card":"Visa Rewards","amount":63.28,"excluded":false},{"date":"2025-10-20","desc":"TICKETMASTER","cat":"Entertainment","card":"Checking","amount":33.87,"excluded":false},{"date":"2025-10-18","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Checking","amount":64.89,"excluded":false},{"date":"2025-10-16","desc":"ZELLE TRANSFER","cat":"Transfers","card":"Checking","amount":145.81,"excluded":false},{"date":"2025-10-16","desc":"MEIJER","cat":"Groceries","card":"Checking","amount":64.52,"excluded":false},{"date":"2025-10-15","desc":"TARGET","cat":"Shopping","card":"Visa Rewards","amount":76.65,"excluded":false},{"date":"2025-10-12","desc":"HOME DEPOT","cat":"Home","card":"Checking","amount":638.2,"excluded":false},{"date":"2025-10-12","desc":"CITY ELECTRIC","cat":"Bills & Utilities","card":"Checking","amount":267.15,"excluded":false},{"date":"2025-10-12","desc":"AIRBNB","cat":"Travel","card":"Visa Rewards","amount":442.08,"excluded":false},{"date":"2025-10-11","desc":"PLANET FITNESS","cat":"Health & Wellness","card":"Visa Rewards","amount":157.52,"excluded":false},{"date":"2025-10-11","desc":"WALMART","cat":"Shopping","card":"Gold Card","amount":194.63,"excluded":false},{"date":"2025-10-11","desc":"WASTE MGMT","cat":"Bills & Utilities","card":"Checking","amount":126.11,"excluded":false},{"date":"2025-10-09","desc":"COMCAST XFINITY","cat":"Bills & Utilities","card":"Checking","amount":90.83,"excluded":false},{"date":"2025-10-08","desc":"CHIPOTLE","cat":"Food & Drink","card":"Checking","amount":29.87,"excluded":false},{"date":"2025-10-07","desc":"COSTCO","cat":"Groceries","card":"Visa Rewards","amount":89.98,"excluded":false},{"date":"2025-10-07","desc":"MORTGAGE PAYMENT","cat":"Home","card":"Checking","amount":368.47,"excluded":false},{"date":"2025-10-06","desc":"AT&T","cat":"Bills & Utilities","card":"Checking","amount":143.44,"excluded":false},{"date":"2025-10-06","desc":"STARBUCKS","cat":"Food & Drink","card":"Gold Card","amount":32.12,"excluded":false},{"date":"2025-10-02","desc":"CITY ELECTRIC","cat":"Bills & Utilities","card":"Checking","amount":86.1,"excluded":false},{"date":"2025-10-02","desc":"STARBUCKS","cat":"Food & Drink","card":"Checking","amount":65.13,"excluded":false},{"date":"2025-10-01","desc":"WHOLE FOODS","cat":"Groceries","card":"Checking","amount":52.9,"excluded":false},{"date":"2025-10-01","desc":"MARATHON","cat":"Gas","card":"Gold Card","amount":54.98,"excluded":false},{"date":"2025-10-01","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Visa Rewards","amount":39.42,"excluded":false},{"date":"2025-09-30","desc":"CVS PHARMACY","cat":"Health & Wellness","card":"Visa Rewards","amount":117.45,"excluded":false},{"date":"2025-09-30","desc":"COMCAST XFINITY","cat":"Bills & Utilities","card":"Checking","amount":265.61,"excluded":false},{"date":"2025-09-29","desc":"UDEMY","cat":"Education","card":"Gold Card","amount":148.99,"excluded":false},{"date":"2025-09-28","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Checking","amount":44.52,"excluded":false},{"date":"2025-09-28","desc":"WHOLE FOODS","cat":"Groceries","card":"Checking","amount":95.8,"excluded":false},{"date":"2025-09-27","desc":"ALDI","cat":"Groceries","card":"Visa Rewards","amount":93.49,"excluded":false},{"date":"2025-09-26","desc":"ALDI","cat":"Groceries","card":"Checking","amount":164.95,"excluded":false},{"date":"2025-09-24","desc":"HERTZ","cat":"Travel","card":"Visa Rewards","amount":312.31,"excluded":false},{"date":"2025-09-23","desc":"DENTAL OFFICE","cat":"Health & Wellness","card":"Gold Card","amount":181.45,"excluded":false},{"date":"2025-09-23","desc":"SPOTIFY","cat":"Entertainment","card":"Visa Rewards","amount":93.8,"excluded":false},{"date":"2025-09-20","desc":"ZELLE TRANSFER","cat":"Transfers","card":"Checking","amount":109.74,"excluded":false},{"date":"2025-09-20","desc":"CHECK PAID #1002","cat":"Checks","card":"Checking","amount":530.24,"excluded":false},{"date":"2025-09-19","desc":"STARBUCKS","cat":"Food & Drink","card":"Visa Rewards","amount":12.5,"excluded":false},{"date":"2025-09-19","desc":"PANERA BREAD","cat":"Food & Drink","card":"Checking","amount":81.64,"excluded":false},{"date":"2025-09-19","desc":"NETFLIX","cat":"Entertainment","card":"Visa Rewards","amount":38.77,"excluded":false},{"date":"2025-09-19","desc":"AMAZON.COM","cat":"Shopping","card":"Checking","amount":110.41,"excluded":false},{"date":"2025-09-17","desc":"KOHLS","cat":"Shopping","card":"Gold Card","amount":190.51,"excluded":false},{"date":"2025-09-17","desc":"ELECTRIC CO","cat":"Home","card":"Checking","amount":429.55,"excluded":false},{"date":"2025-09-15","desc":"TARGET","cat":"Shopping","card":"Checking","amount":17.89,"excluded":false},{"date":"2025-09-15","desc":"VANGUARD BUY INVESTMENT","cat":"Investment Contribution","card":"Checking","amount":1500.0,"excluded":true},{"date":"2025-09-11","desc":"UTILITY CO","cat":"Bills & Utilities","card":"Checking","amount":247.23,"excluded":false},{"date":"2025-09-10","desc":"TRADER JOE'S","cat":"Groceries","card":"Gold Card","amount":69.11,"excluded":false},{"date":"2025-09-09","desc":"STARBUCKS","cat":"Food & Drink","card":"Checking","amount":80.18,"excluded":false},{"date":"2025-09-09","desc":"HOME SERVICES","cat":"Home","card":"Checking","amount":330.42,"excluded":false},{"date":"2025-09-09","desc":"LOWES","cat":"Home","card":"Checking","amount":813.72,"excluded":false},{"date":"2025-09-07","desc":"STARBUCKS","cat":"Food & Drink","card":"Checking","amount":67.18,"excluded":false},{"date":"2025-09-07","desc":"AMAZON.COM","cat":"Shopping","card":"Checking","amount":201.13,"excluded":false},{"date":"2025-09-07","desc":"PLANET FITNESS","cat":"Health & Wellness","card":"Gold Card","amount":189.9,"excluded":false},{"date":"2025-09-06","desc":"TARGET","cat":"Shopping","card":"Visa Rewards","amount":25.76,"excluded":false},{"date":"2025-09-06","desc":"NETFLIX","cat":"Entertainment","card":"Checking","amount":84.93,"excluded":false},{"date":"2025-09-06","desc":"CHECK PAID #1001","cat":"Checks","card":"Checking","amount":384.84,"excluded":false},{"date":"2025-09-05","desc":"KOHLS","cat":"Shopping","card":"Checking","amount":157.72,"excluded":false},{"date":"2025-09-05","desc":"PLANET FITNESS","cat":"Health & Wellness","card":"Checking","amount":75.03,"excluded":false},{"date":"2025-09-04","desc":"WALMART","cat":"Shopping","card":"Checking","amount":210.84,"excluded":false},{"date":"2025-09-04","desc":"ZELLE TRANSFER","cat":"Transfers","card":"Checking","amount":117.15,"excluded":false},{"date":"2025-09-03","desc":"MARRIOTT","cat":"Travel","card":"Visa Rewards","amount":438.92,"excluded":false},{"date":"2025-09-03","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Visa Rewards","amount":80.16,"excluded":false},{"date":"2025-09-03","desc":"AMAZON.COM","cat":"Shopping","card":"Visa Rewards","amount":132.56,"excluded":false},{"date":"2025-09-03","desc":"ZELLE TRANSFER","cat":"Transfers","card":"Checking","amount":126.39,"excluded":false},{"date":"2025-09-02","desc":"WALMART","cat":"Shopping","card":"Gold Card","amount":153.55,"excluded":false},{"date":"2025-09-02","desc":"EXXON","cat":"Gas","card":"Checking","amount":64.4,"excluded":false},{"date":"2025-09-02","desc":"KOHLS","cat":"Shopping","card":"Gold Card","amount":76.19,"excluded":false},{"date":"2025-08-31","desc":"ONLINE STORE","cat":"Other","card":"Checking","amount":52.04,"excluded":false},{"date":"2025-08-30","desc":"CHIPOTLE","cat":"Food & Drink","card":"Visa Rewards","amount":63.52,"excluded":false},{"date":"2025-08-29","desc":"COSTCO","cat":"Groceries","card":"Visa Rewards","amount":56.6,"excluded":false},{"date":"2025-08-26","desc":"COURSERA","cat":"Education","card":"Gold Card","amount":57.89,"excluded":false},{"date":"2025-08-25","desc":"COSTCO","cat":"Groceries","card":"Visa Rewards","amount":136.78,"excluded":false},{"date":"2025-08-24","desc":"SHELL","cat":"Gas","card":"Checking","amount":63.88,"excluded":false},{"date":"2025-08-24","desc":"MEIJER FUEL","cat":"Gas","card":"Visa Rewards","amount":63.11,"excluded":false},{"date":"2025-08-23","desc":"WHOLE FOODS","cat":"Groceries","card":"Visa Rewards","amount":115.47,"excluded":false},{"date":"2025-08-22","desc":"EXXON","cat":"Gas","card":"Checking","amount":59.0,"excluded":false},{"date":"2025-08-21","desc":"ELECTRIC CO","cat":"Home","card":"Checking","amount":435.46,"excluded":false},{"date":"2025-08-20","desc":"UTILITY CO","cat":"Bills & Utilities","card":"Checking","amount":193.38,"excluded":false},{"date":"2025-08-20","desc":"KOHLS","cat":"Shopping","card":"Visa Rewards","amount":80.3,"excluded":false},{"date":"2025-08-19","desc":"COMCAST XFINITY","cat":"Bills & Utilities","card":"Checking","amount":68.56,"excluded":false},{"date":"2025-08-18","desc":"KROGER","cat":"Groceries","card":"Visa Rewards","amount":86.06,"excluded":false},{"date":"2025-08-18","desc":"WALMART","cat":"Shopping","card":"Checking","amount":169.77,"excluded":false},{"date":"2025-08-17","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Gold Card","amount":32.42,"excluded":false},{"date":"2025-08-16","desc":"UTILITY CO","cat":"Bills & Utilities","card":"Checking","amount":139.76,"excluded":false},{"date":"2025-08-15","desc":"LOWES","cat":"Home","card":"Checking","amount":734.7,"excluded":false},{"date":"2025-08-14","desc":"UTILITY CO","cat":"Bills & Utilities","card":"Checking","amount":107.33,"excluded":false},{"date":"2025-08-14","desc":"WHOLE FOODS","cat":"Groceries","card":"Gold Card","amount":117.62,"excluded":false},{"date":"2025-08-14","desc":"EXXON","cat":"Gas","card":"Gold Card","amount":61.47,"excluded":false},{"date":"2025-08-12","desc":"ZELLE TRANSFER","cat":"Transfers","card":"Checking","amount":44.68,"excluded":false},{"date":"2025-08-12","desc":"ONLINE STORE","cat":"Other","card":"Checking","amount":49.9,"excluded":false},{"date":"2025-08-11","desc":"WALGREENS","cat":"Health & Wellness","card":"Gold Card","amount":241.42,"excluded":false},{"date":"2025-08-09","desc":"WALMART","cat":"Shopping","card":"Checking","amount":214.95,"excluded":false},{"date":"2025-08-09","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Checking","amount":19.75,"excluded":false},{"date":"2025-08-09","desc":"WHOLE FOODS","cat":"Groceries","card":"Checking","amount":63.43,"excluded":false},{"date":"2025-08-08","desc":"STARBUCKS","cat":"Food & Drink","card":"Checking","amount":36.83,"excluded":false},{"date":"2025-08-04","desc":"TARGET","cat":"Shopping","card":"Visa Rewards","amount":179.96,"excluded":false},{"date":"2025-08-03","desc":"TARGET","cat":"Shopping","card":"Visa Rewards","amount":172.23,"excluded":false},{"date":"2025-08-03","desc":"MARATHON","cat":"Gas","card":"Visa Rewards","amount":75.56,"excluded":false},{"date":"2025-08-02","desc":"WALMART","cat":"Shopping","card":"Checking","amount":140.96,"excluded":false},{"date":"2025-08-02","desc":"MEIJER FUEL","cat":"Gas","card":"Checking","amount":77.66,"excluded":false},{"date":"2025-08-02","desc":"MEIJER FUEL","cat":"Gas","card":"Gold Card","amount":53.5,"excluded":false},{"date":"2025-08-02","desc":"KROGER","cat":"Groceries","card":"Gold Card","amount":37.59,"excluded":false},{"date":"2025-07-29","desc":"CITY ELECTRIC","cat":"Bills & Utilities","card":"Checking","amount":96.22,"excluded":false},{"date":"2025-07-29","desc":"EXXON","cat":"Gas","card":"Visa Rewards","amount":77.9,"excluded":false},{"date":"2025-07-28","desc":"KOHLS","cat":"Shopping","card":"Checking","amount":146.16,"excluded":false},{"date":"2025-07-28","desc":"CHECK PAID #1002","cat":"Checks","card":"Checking","amount":452.0,"excluded":false},{"date":"2025-07-27","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Gold Card","amount":68.15,"excluded":false},{"date":"2025-07-27","desc":"TRADER JOE'S","cat":"Groceries","card":"Visa Rewards","amount":124.56,"excluded":false},{"date":"2025-07-26","desc":"CVS PHARMACY","cat":"Health & Wellness","card":"Visa Rewards","amount":35.12,"excluded":false},{"date":"2025-07-25","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Gold Card","amount":38.93,"excluded":false},{"date":"2025-07-24","desc":"BP","cat":"Gas","card":"Visa Rewards","amount":71.75,"excluded":false},{"date":"2025-07-24","desc":"MEIJER","cat":"Groceries","card":"Checking","amount":147.77,"excluded":false},{"date":"2025-07-21","desc":"LOCAL SHOP","cat":"Other","card":"Gold Card","amount":87.4,"excluded":false},{"date":"2025-07-21","desc":"SHELL","cat":"Gas","card":"Checking","amount":62.0,"excluded":false},{"date":"2025-07-16","desc":"ONLINE STORE","cat":"Other","card":"Gold Card","amount":65.52,"excluded":false},{"date":"2025-07-15","desc":"VENMO PAYMENT","cat":"Transfers","card":"Checking","amount":54.03,"excluded":false},{"date":"2025-07-14","desc":"PLANET FITNESS","cat":"Health & Wellness","card":"Checking","amount":104.4,"excluded":false},{"date":"2025-07-14","desc":"AMAZON.COM","cat":"Shopping","card":"Checking","amount":20.31,"excluded":false},{"date":"2025-07-13","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Checking","amount":81.31,"excluded":false},{"date":"2025-07-13","desc":"WHOLE FOODS","cat":"Groceries","card":"Visa Rewards","amount":172.07,"excluded":false},{"date":"2025-07-12","desc":"COSTCO","cat":"Groceries","card":"Visa Rewards","amount":87.96,"excluded":false},{"date":"2025-07-12","desc":"SPOTIFY","cat":"Entertainment","card":"Checking","amount":114.81,"excluded":false},{"date":"2025-07-12","desc":"DENTAL OFFICE","cat":"Health & Wellness","card":"Checking","amount":28.0,"excluded":false},{"date":"2025-07-11","desc":"CHIPOTLE","cat":"Food & Drink","card":"Gold Card","amount":65.06,"excluded":false},{"date":"2025-07-11","desc":"DENTAL OFFICE","cat":"Health & Wellness","card":"Gold Card","amount":83.15,"excluded":false},{"date":"2025-07-10","desc":"CITY ELECTRIC","cat":"Bills & Utilities","card":"Checking","amount":82.57,"excluded":false},{"date":"2025-07-10","desc":"BEST BUY","cat":"Shopping","card":"Visa Rewards","amount":138.54,"excluded":false},{"date":"2025-07-09","desc":"AMC THEATER","cat":"Entertainment","card":"Checking","amount":47.29,"excluded":false},{"date":"2025-07-09","desc":"EXXON","cat":"Gas","card":"Visa Rewards","amount":76.97,"excluded":false},{"date":"2025-07-09","desc":"TUITION PAYMENT","cat":"Education","card":"Visa Rewards","amount":69.73,"excluded":false},{"date":"2025-07-08","desc":"WALMART","cat":"Shopping","card":"Checking","amount":191.74,"excluded":false},{"date":"2025-07-08","desc":"EXXON","cat":"Gas","card":"Visa Rewards","amount":44.98,"excluded":false},{"date":"2025-07-06","desc":"BEST BUY","cat":"Shopping","card":"Visa Rewards","amount":217.77,"excluded":false},{"date":"2025-07-05","desc":"AMAZON.COM","cat":"Shopping","card":"Gold Card","amount":177.18,"excluded":false},{"date":"2025-07-04","desc":"COSTCO","cat":"Groceries","card":"Visa Rewards","amount":97.02,"excluded":false},{"date":"2025-07-04","desc":"WALGREENS","cat":"Health & Wellness","card":"Visa Rewards","amount":34.51,"excluded":false},{"date":"2025-07-03","desc":"SPOTIFY","cat":"Entertainment","card":"Visa Rewards","amount":14.88,"excluded":false},{"date":"2025-07-01","desc":"ALDI","cat":"Groceries","card":"Visa Rewards","amount":109.33,"excluded":false},{"date":"2025-07-01","desc":"COMCAST XFINITY","cat":"Bills & Utilities","card":"Checking","amount":145.9,"excluded":false},{"date":"2025-07-01","desc":"EXXON","cat":"Gas","card":"Checking","amount":50.15,"excluded":false},{"date":"2025-07-01","desc":"AIRBNB","cat":"Travel","card":"Visa Rewards","amount":205.39,"excluded":false},{"date":"2025-06-30","desc":"UTILITY CO","cat":"Bills & Utilities","card":"Checking","amount":206.16,"excluded":false},{"date":"2025-06-27","desc":"ALDI","cat":"Groceries","card":"Visa Rewards","amount":114.13,"excluded":false},{"date":"2025-06-26","desc":"DENTAL OFFICE","cat":"Health & Wellness","card":"Checking","amount":45.57,"excluded":false},{"date":"2025-06-26","desc":"AMAZON.COM","cat":"Shopping","card":"Visa Rewards","amount":63.88,"excluded":false},{"date":"2025-06-26","desc":"CVS PHARMACY","cat":"Health & Wellness","card":"Gold Card","amount":45.5,"excluded":false},{"date":"2025-06-24","desc":"BP","cat":"Gas","card":"Visa Rewards","amount":70.35,"excluded":false},{"date":"2025-06-24","desc":"CVS PHARMACY","cat":"Health & Wellness","card":"Checking","amount":24.37,"excluded":false},{"date":"2025-06-21","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Checking","amount":48.65,"excluded":false},{"date":"2025-06-21","desc":"ONLINE STORE","cat":"Other","card":"Checking","amount":27.96,"excluded":false},{"date":"2025-06-21","desc":"COSTCO","cat":"Groceries","card":"Visa Rewards","amount":125.74,"excluded":false},{"date":"2025-06-20","desc":"KOHLS","cat":"Shopping","card":"Visa Rewards","amount":45.21,"excluded":false},{"date":"2025-06-20","desc":"CHECK PAID #1001","cat":"Checks","card":"Checking","amount":671.69,"excluded":false},{"date":"2025-06-19","desc":"ALDI","cat":"Groceries","card":"Checking","amount":156.93,"excluded":false},{"date":"2025-06-18","desc":"MORTGAGE PAYMENT","cat":"Home","card":"Checking","amount":648.83,"excluded":false},{"date":"2025-06-16","desc":"WASTE MGMT","cat":"Bills & Utilities","card":"Checking","amount":161.57,"excluded":false},{"date":"2025-06-16","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Checking","amount":42.56,"excluded":false},{"date":"2025-06-15","desc":"MARRIOTT","cat":"Travel","card":"Checking","amount":357.69,"excluded":false},{"date":"2025-06-15","desc":"TUITION PAYMENT","cat":"Education","card":"Checking","amount":275.99,"excluded":false},{"date":"2025-06-15","desc":"VANGUARD BUY INVESTMENT","cat":"Investment Contribution","card":"Checking","amount":1500.0,"excluded":true},{"date":"2025-06-14","desc":"STARBUCKS","cat":"Food & Drink","card":"Visa Rewards","amount":82.78,"excluded":false},{"date":"2025-06-13","desc":"WHOLE FOODS","cat":"Groceries","card":"Checking","amount":48.91,"excluded":false},{"date":"2025-06-13","desc":"MEIJER FUEL","cat":"Gas","card":"Checking","amount":72.36,"excluded":false},{"date":"2025-06-12","desc":"STARBUCKS","cat":"Food & Drink","card":"Checking","amount":85.0,"excluded":false},{"date":"2025-06-12","desc":"AMAZON.COM","cat":"Shopping","card":"Visa Rewards","amount":119.08,"excluded":false},{"date":"2025-06-12","desc":"TICKETMASTER","cat":"Entertainment","card":"Checking","amount":14.15,"excluded":false},{"date":"2025-06-10","desc":"TICKETMASTER","cat":"Entertainment","card":"Visa Rewards","amount":20.28,"excluded":false},{"date":"2025-06-10","desc":"COMCAST XFINITY","cat":"Bills & Utilities","card":"Checking","amount":139.77,"excluded":false},{"date":"2025-06-09","desc":"EXXON","cat":"Gas","card":"Visa Rewards","amount":72.53,"excluded":false},{"date":"2025-06-07","desc":"CHECK PAID #1003","cat":"Checks","card":"Checking","amount":711.3,"excluded":false},{"date":"2025-06-07","desc":"WALGREENS","cat":"Health & Wellness","card":"Checking","amount":230.85,"excluded":false},{"date":"2025-06-07","desc":"MARATHON","cat":"Gas","card":"Visa Rewards","amount":45.16,"excluded":false},{"date":"2025-06-05","desc":"SHELL","cat":"Gas","card":"Visa Rewards","amount":71.57,"excluded":false},{"date":"2025-06-05","desc":"KROGER","cat":"Groceries","card":"Visa Rewards","amount":111.48,"excluded":false},{"date":"2025-06-04","desc":"TRADER JOE'S","cat":"Groceries","card":"Visa Rewards","amount":167.28,"excluded":false},{"date":"2025-06-03","desc":"COSTCO","cat":"Groceries","card":"Visa Rewards","amount":92.85,"excluded":false},{"date":"2025-06-02","desc":"BEST BUY","cat":"Shopping","card":"Gold Card","amount":117.78,"excluded":false},{"date":"2025-06-02","desc":"PANERA BREAD","cat":"Food & Drink","card":"Checking","amount":83.71,"excluded":false},{"date":"2025-06-01","desc":"COMCAST XFINITY","cat":"Bills & Utilities","card":"Checking","amount":158.94,"excluded":false},{"date":"2025-05-31","desc":"MISC PURCHASE","cat":"Other","card":"Visa Rewards","amount":59.2,"excluded":false},{"date":"2025-05-29","desc":"BEST BUY","cat":"Shopping","card":"Visa Rewards","amount":22.71,"excluded":false},{"date":"2025-05-26","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Checking","amount":44.28,"excluded":false},{"date":"2025-05-25","desc":"MEIJER FUEL","cat":"Gas","card":"Gold Card","amount":52.93,"excluded":false},{"date":"2025-05-24","desc":"TICKETMASTER","cat":"Entertainment","card":"Gold Card","amount":59.38,"excluded":false},{"date":"2025-05-23","desc":"NETFLIX","cat":"Entertainment","card":"Visa Rewards","amount":29.49,"excluded":false},{"date":"2025-05-22","desc":"KROGER","cat":"Groceries","card":"Checking","amount":47.7,"excluded":false},{"date":"2025-05-21","desc":"COSTCO","cat":"Groceries","card":"Visa Rewards","amount":42.67,"excluded":false},{"date":"2025-05-21","desc":"ZELLE TRANSFER","cat":"Transfers","card":"Checking","amount":65.64,"excluded":false},{"date":"2025-05-20","desc":"PANERA BREAD","cat":"Food & Drink","card":"Checking","amount":66.44,"excluded":false},{"date":"2025-05-19","desc":"CHIPOTLE","cat":"Food & Drink","card":"Visa Rewards","amount":29.76,"excluded":false},{"date":"2025-05-18","desc":"ELECTRIC CO","cat":"Home","card":"Checking","amount":500.5,"excluded":false},{"date":"2025-05-18","desc":"EXXON","cat":"Gas","card":"Checking","amount":44.61,"excluded":false},{"date":"2025-05-18","desc":"KOHLS","cat":"Shopping","card":"Visa Rewards","amount":109.32,"excluded":false},{"date":"2025-05-15","desc":"EXXON","cat":"Gas","card":"Gold Card","amount":42.88,"excluded":false},{"date":"2025-05-13","desc":"AIRBNB","cat":"Travel","card":"Checking","amount":250.62,"excluded":false},{"date":"2025-05-13","desc":"SPOTIFY","cat":"Entertainment","card":"Visa Rewards","amount":24.21,"excluded":false},{"date":"2025-05-12","desc":"CVS PHARMACY","cat":"Health & Wellness","card":"Gold Card","amount":67.02,"excluded":false},{"date":"2025-05-11","desc":"WHOLE FOODS","cat":"Groceries","card":"Visa Rewards","amount":42.19,"excluded":false},{"date":"2025-05-11","desc":"PLANET FITNESS","cat":"Health & Wellness","card":"Checking","amount":173.44,"excluded":false},{"date":"2025-05-10","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Checking","amount":44.27,"excluded":false},{"date":"2025-05-07","desc":"KROGER","cat":"Groceries","card":"Visa Rewards","amount":49.11,"excluded":false},{"date":"2025-05-06","desc":"TRADER JOE'S","cat":"Groceries","card":"Visa Rewards","amount":136.85,"excluded":false},{"date":"2025-05-05","desc":"COSTCO","cat":"Groceries","card":"Visa Rewards","amount":107.22,"excluded":false},{"date":"2025-05-04","desc":"LOWES","cat":"Home","card":"Checking","amount":220.27,"excluded":false},{"date":"2025-05-04","desc":"AIRBNB","cat":"Travel","card":"Checking","amount":262.53,"excluded":false},{"date":"2025-05-04","desc":"COSTCO","cat":"Groceries","card":"Checking","amount":87.12,"excluded":false},{"date":"2025-05-02","desc":"PANERA BREAD","cat":"Food & Drink","card":"Gold Card","amount":53.91,"excluded":false},{"date":"2025-05-02","desc":"ELECTRIC CO","cat":"Home","card":"Checking","amount":629.5,"excluded":false},{"date":"2025-04-30","desc":"CHECK PAID #1002","cat":"Checks","card":"Checking","amount":707.66,"excluded":false},{"date":"2025-04-30","desc":"LOCAL SHOP","cat":"Other","card":"Checking","amount":35.0,"excluded":false},{"date":"2025-04-30","desc":"UTILITY CO","cat":"Bills & Utilities","card":"Checking","amount":204.48,"excluded":false},{"date":"2025-04-29","desc":"KROGER","cat":"Groceries","card":"Checking","amount":39.45,"excluded":false},{"date":"2025-04-29","desc":"SPOTIFY","cat":"Entertainment","card":"Visa Rewards","amount":71.2,"excluded":false},{"date":"2025-04-29","desc":"CITY ELECTRIC","cat":"Bills & Utilities","card":"Checking","amount":207.4,"excluded":false},{"date":"2025-04-28","desc":"WALMART","cat":"Shopping","card":"Checking","amount":91.73,"excluded":false},{"date":"2025-04-27","desc":"SPOTIFY","cat":"Entertainment","card":"Gold Card","amount":57.31,"excluded":false},{"date":"2025-04-27","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Visa Rewards","amount":41.11,"excluded":false},{"date":"2025-04-26","desc":"CHIPOTLE","cat":"Food & Drink","card":"Visa Rewards","amount":74.25,"excluded":false},{"date":"2025-04-24","desc":"HOME SERVICES","cat":"Home","card":"Checking","amount":680.27,"excluded":false},{"date":"2025-04-24","desc":"VENMO PAYMENT","cat":"Transfers","card":"Checking","amount":136.9,"excluded":false},{"date":"2025-04-24","desc":"MEIJER","cat":"Groceries","card":"Visa Rewards","amount":67.63,"excluded":false},{"date":"2025-04-24","desc":"CITY ELECTRIC","cat":"Bills & Utilities","card":"Checking","amount":143.8,"excluded":false},{"date":"2025-04-22","desc":"TICKETMASTER","cat":"Entertainment","card":"Visa Rewards","amount":43.18,"excluded":false},{"date":"2025-04-21","desc":"COMCAST XFINITY","cat":"Bills & Utilities","card":"Checking","amount":164.77,"excluded":false},{"date":"2025-04-21","desc":"COMCAST XFINITY","cat":"Bills & Utilities","card":"Checking","amount":159.44,"excluded":false},{"date":"2025-04-20","desc":"KROGER","cat":"Groceries","card":"Visa Rewards","amount":80.53,"excluded":false},{"date":"2025-04-20","desc":"CVS PHARMACY","cat":"Health & Wellness","card":"Checking","amount":60.08,"excluded":false},{"date":"2025-04-15","desc":"ALDI","cat":"Groceries","card":"Gold Card","amount":25.44,"excluded":false},{"date":"2025-04-14","desc":"CHECK PAID #1002","cat":"Checks","card":"Checking","amount":164.17,"excluded":false},{"date":"2025-04-14","desc":"SHELL","cat":"Gas","card":"Checking","amount":42.02,"excluded":false},{"date":"2025-04-14","desc":"LOCAL SHOP","cat":"Other","card":"Gold Card","amount":26.42,"excluded":false},{"date":"2025-04-14","desc":"AT&T","cat":"Bills & Utilities","card":"Checking","amount":107.51,"excluded":false},{"date":"2025-04-13","desc":"ONLINE STORE","cat":"Other","card":"Checking","amount":14.84,"excluded":false},{"date":"2025-04-12","desc":"CHECK PAID #1002","cat":"Checks","card":"Checking","amount":169.55,"excluded":false},{"date":"2025-04-11","desc":"CHECK PAID #1002","cat":"Checks","card":"Checking","amount":122.9,"excluded":false},{"date":"2025-04-10","desc":"WHOLE FOODS","cat":"Groceries","card":"Gold Card","amount":82.51,"excluded":false},{"date":"2025-04-10","desc":"MEIJER FUEL","cat":"Gas","card":"Visa Rewards","amount":56.77,"excluded":false},{"date":"2025-04-10","desc":"WHOLE FOODS","cat":"Groceries","card":"Gold Card","amount":126.51,"excluded":false},{"date":"2025-04-08","desc":"KOHLS","cat":"Shopping","card":"Checking","amount":60.38,"excluded":false},{"date":"2025-04-08","desc":"SCHOOL FEES","cat":"Education","card":"Checking","amount":212.31,"excluded":false},{"date":"2025-04-08","desc":"KROGER","cat":"Groceries","card":"Visa Rewards","amount":72.18,"excluded":false},{"date":"2025-04-07","desc":"BEST BUY","cat":"Shopping","card":"Gold Card","amount":183.6,"excluded":false},{"date":"2025-04-07","desc":"MEIJER","cat":"Groceries","card":"Visa Rewards","amount":98.08,"excluded":false},{"date":"2025-04-06","desc":"WALMART","cat":"Shopping","card":"Visa Rewards","amount":179.87,"excluded":false},{"date":"2025-04-06","desc":"MEIJER","cat":"Groceries","card":"Visa Rewards","amount":158.32,"excluded":false},{"date":"2025-04-06","desc":"LOCAL SHOP","cat":"Other","card":"Visa Rewards","amount":39.26,"excluded":false},{"date":"2025-04-06","desc":"ALDI","cat":"Groceries","card":"Visa Rewards","amount":44.16,"excluded":false},{"date":"2025-04-05","desc":"LOWES","cat":"Home","card":"Checking","amount":571.6,"excluded":false},{"date":"2025-04-05","desc":"LOWES","cat":"Home","card":"Checking","amount":839.83,"excluded":false},{"date":"2025-04-03","desc":"TRADER JOE'S","cat":"Groceries","card":"Visa Rewards","amount":75.64,"excluded":false},{"date":"2025-04-02","desc":"BP","cat":"Gas","card":"Gold Card","amount":65.13,"excluded":false},{"date":"2025-04-02","desc":"EXXON","cat":"Gas","card":"Checking","amount":71.54,"excluded":false},{"date":"2025-04-01","desc":"VENMO PAYMENT","cat":"Transfers","card":"Checking","amount":98.92,"excluded":false},{"date":"2025-04-01","desc":"MEIJER FUEL","cat":"Gas","card":"Visa Rewards","amount":50.03,"excluded":false},{"date":"2025-03-31","desc":"COSTCO","cat":"Groceries","card":"Checking","amount":86.35,"excluded":false},{"date":"2025-03-31","desc":"MORTGAGE PAYMENT","cat":"Home","card":"Checking","amount":837.43,"excluded":false},{"date":"2025-03-29","desc":"PANERA BREAD","cat":"Food & Drink","card":"Visa Rewards","amount":26.54,"excluded":false},{"date":"2025-03-29","desc":"STARBUCKS","cat":"Food & Drink","card":"Visa Rewards","amount":39.84,"excluded":false},{"date":"2025-03-28","desc":"KOHLS","cat":"Shopping","card":"Gold Card","amount":76.33,"excluded":false},{"date":"2025-03-26","desc":"WALGREENS","cat":"Health & Wellness","card":"Visa Rewards","amount":134.46,"excluded":false},{"date":"2025-03-26","desc":"WALMART","cat":"Shopping","card":"Visa Rewards","amount":109.21,"excluded":false},{"date":"2025-03-26","desc":"ZELLE TRANSFER","cat":"Transfers","card":"Checking","amount":137.16,"excluded":false},{"date":"2025-03-25","desc":"UTILITY CO","cat":"Bills & Utilities","card":"Checking","amount":97.4,"excluded":false},{"date":"2025-03-24","desc":"TRADER JOE'S","cat":"Groceries","card":"Checking","amount":83.1,"excluded":false},{"date":"2025-03-20","desc":"COSTCO","cat":"Groceries","card":"Checking","amount":134.1,"excluded":false},{"date":"2025-03-19","desc":"TICKETMASTER","cat":"Entertainment","card":"Checking","amount":13.95,"excluded":false},{"date":"2025-03-19","desc":"MEDICAL GROUP","cat":"Health & Wellness","card":"Visa Rewards","amount":249.41,"excluded":false},{"date":"2025-03-18","desc":"MEIJER FUEL","cat":"Gas","card":"Checking","amount":55.2,"excluded":false},{"date":"2025-03-16","desc":"ONLINE STORE","cat":"Other","card":"Visa Rewards","amount":59.86,"excluded":false},{"date":"2025-03-15","desc":"VANGUARD BUY INVESTMENT","cat":"Investment Contribution","card":"Checking","amount":1500.0,"excluded":true},{"date":"2025-03-14","desc":"STARBUCKS","cat":"Food & Drink","card":"Visa Rewards","amount":41.93,"excluded":false},{"date":"2025-03-13","desc":"CVS PHARMACY","cat":"Health & Wellness","card":"Visa Rewards","amount":221.06,"excluded":false},{"date":"2025-03-12","desc":"COSTCO","cat":"Groceries","card":"Gold Card","amount":98.31,"excluded":false},{"date":"2025-03-12","desc":"STARBUCKS","cat":"Food & Drink","card":"Checking","amount":48.16,"excluded":false},{"date":"2025-03-11","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Visa Rewards","amount":37.19,"excluded":false},{"date":"2025-03-11","desc":"WASTE MGMT","cat":"Bills & Utilities","card":"Checking","amount":265.23,"excluded":false},{"date":"2025-03-11","desc":"MISC PURCHASE","cat":"Other","card":"Checking","amount":55.74,"excluded":false},{"date":"2025-03-10","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Checking","amount":31.5,"excluded":false},{"date":"2025-03-10","desc":"TICKETMASTER","cat":"Entertainment","card":"Visa Rewards","amount":73.79,"excluded":false},{"date":"2025-03-09","desc":"VENMO PAYMENT","cat":"Transfers","card":"Checking","amount":132.32,"excluded":false},{"date":"2025-03-08","desc":"CHIPOTLE","cat":"Food & Drink","card":"Checking","amount":59.28,"excluded":false},{"date":"2025-03-08","desc":"ZELLE TRANSFER","cat":"Transfers","card":"Checking","amount":86.15,"excluded":false},{"date":"2025-03-08","desc":"HOME SERVICES","cat":"Home","card":"Checking","amount":370.61,"excluded":false},{"date":"2025-03-07","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Gold Card","amount":20.86,"excluded":false},{"date":"2025-03-07","desc":"WALGREENS","cat":"Health & Wellness","card":"Checking","amount":183.25,"excluded":false},{"date":"2025-03-07","desc":"WHOLE FOODS","cat":"Groceries","card":"Gold Card","amount":39.45,"excluded":false},{"date":"2025-03-06","desc":"CHIPOTLE","cat":"Food & Drink","card":"Visa Rewards","amount":26.86,"excluded":false},{"date":"2025-03-05","desc":"MORTGAGE PAYMENT","cat":"Home","card":"Checking","amount":660.36,"excluded":false},{"date":"2025-03-05","desc":"STARBUCKS","cat":"Food & Drink","card":"Visa Rewards","amount":49.85,"excluded":false},{"date":"2025-03-04","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Visa Rewards","amount":36.33,"excluded":false},{"date":"2025-03-04","desc":"LOWES","cat":"Home","card":"Checking","amount":488.15,"excluded":false},{"date":"2025-03-04","desc":"MARATHON","cat":"Gas","card":"Visa Rewards","amount":72.54,"excluded":false},{"date":"2025-03-04","desc":"PANERA BREAD","cat":"Food & Drink","card":"Checking","amount":30.43,"excluded":false},{"date":"2025-03-03","desc":"ALDI","cat":"Groceries","card":"Gold Card","amount":125.98,"excluded":false},{"date":"2025-03-03","desc":"ALDI","cat":"Groceries","card":"Gold Card","amount":92.56,"excluded":false},{"date":"2025-03-02","desc":"CHECK PAID #1003","cat":"Checks","card":"Checking","amount":674.99,"excluded":false},{"date":"2025-03-01","desc":"MEIJER","cat":"Groceries","card":"Gold Card","amount":174.1,"excluded":false},{"date":"2025-02-28","desc":"KROGER","cat":"Groceries","card":"Visa Rewards","amount":162.86,"excluded":false},{"date":"2025-02-27","desc":"BEST BUY","cat":"Shopping","card":"Visa Rewards","amount":208.25,"excluded":false},{"date":"2025-02-26","desc":"TICKETMASTER","cat":"Entertainment","card":"Visa Rewards","amount":111.33,"excluded":false},{"date":"2025-02-24","desc":"MEIJER","cat":"Groceries","card":"Visa Rewards","amount":168.21,"excluded":false},{"date":"2025-02-24","desc":"WALGREENS","cat":"Health & Wellness","card":"Visa Rewards","amount":117.78,"excluded":false},{"date":"2025-02-24","desc":"EXXON","cat":"Gas","card":"Checking","amount":73.07,"excluded":false},{"date":"2025-02-21","desc":"TARGET","cat":"Shopping","card":"Checking","amount":69.25,"excluded":false},{"date":"2025-02-21","desc":"KOHLS","cat":"Shopping","card":"Checking","amount":30.39,"excluded":false},{"date":"2025-02-21","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Checking","amount":46.3,"excluded":false},{"date":"2025-02-20","desc":"COMCAST XFINITY","cat":"Bills & Utilities","card":"Checking","amount":194.12,"excluded":false},{"date":"2025-02-19","desc":"MEIJER","cat":"Groceries","card":"Visa Rewards","amount":43.36,"excluded":false},{"date":"2025-02-19","desc":"PLANET FITNESS","cat":"Health & Wellness","card":"Visa Rewards","amount":71.91,"excluded":false},{"date":"2025-02-19","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Visa Rewards","amount":33.71,"excluded":false},{"date":"2025-02-18","desc":"CVS PHARMACY","cat":"Health & Wellness","card":"Gold Card","amount":54.9,"excluded":false},{"date":"2025-02-17","desc":"MARATHON","cat":"Gas","card":"Checking","amount":44.1,"excluded":false},{"date":"2025-02-17","desc":"BEST BUY","cat":"Shopping","card":"Checking","amount":105.3,"excluded":false},{"date":"2025-02-17","desc":"WHOLE FOODS","cat":"Groceries","card":"Checking","amount":42.68,"excluded":false},{"date":"2025-02-14","desc":"BP","cat":"Gas","card":"Visa Rewards","amount":48.66,"excluded":false},{"date":"2025-02-14","desc":"TICKETMASTER","cat":"Entertainment","card":"Gold Card","amount":75.65,"excluded":false},{"date":"2025-02-14","desc":"LOWES","cat":"Home","card":"Checking","amount":359.24,"excluded":false},{"date":"2025-02-14","desc":"ALDI","cat":"Groceries","card":"Checking","amount":44.62,"excluded":false},{"date":"2025-02-13","desc":"TARGET","cat":"Shopping","card":"Visa Rewards","amount":79.69,"excluded":false},{"date":"2025-02-12","desc":"APPLE TV","cat":"Entertainment","card":"Visa Rewards","amount":48.7,"excluded":false},{"date":"2025-02-11","desc":"MEIJER","cat":"Groceries","card":"Checking","amount":87.68,"excluded":false},{"date":"2025-02-11","desc":"EXXON","cat":"Gas","card":"Visa Rewards","amount":58.93,"excluded":false},{"date":"2025-02-10","desc":"AMC THEATER","cat":"Entertainment","card":"Visa Rewards","amount":81.05,"excluded":false},{"date":"2025-02-09","desc":"KOHLS","cat":"Shopping","card":"Checking","amount":158.74,"excluded":false},{"date":"2025-02-09","desc":"MEIJER","cat":"Groceries","card":"Visa Rewards","amount":38.27,"excluded":false},{"date":"2025-02-08","desc":"MORTGAGE PAYMENT","cat":"Home","card":"Checking","amount":395.25,"excluded":false},{"date":"2025-02-08","desc":"TICKETMASTER","cat":"Entertainment","card":"Visa Rewards","amount":77.14,"excluded":false},{"date":"2025-02-08","desc":"TRADER JOE'S","cat":"Groceries","card":"Checking","amount":53.19,"excluded":false},{"date":"2025-02-06","desc":"CHECK PAID #1002","cat":"Checks","card":"Checking","amount":531.14,"excluded":false},{"date":"2025-02-06","desc":"UNITED AIRLINES","cat":"Travel","card":"Visa Rewards","amount":306.5,"excluded":false},{"date":"2025-02-05","desc":"AIRBNB","cat":"Travel","card":"Visa Rewards","amount":357.03,"excluded":false},{"date":"2025-02-05","desc":"COSTCO","cat":"Groceries","card":"Gold Card","amount":77.89,"excluded":false},{"date":"2025-02-05","desc":"UDEMY","cat":"Education","card":"Visa Rewards","amount":158.38,"excluded":false},{"date":"2025-02-05","desc":"ZELLE TRANSFER","cat":"Transfers","card":"Checking","amount":111.95,"excluded":false},{"date":"2025-02-03","desc":"TRADER JOE'S","cat":"Groceries","card":"Visa Rewards","amount":156.8,"excluded":false},{"date":"2025-02-02","desc":"CHECK PAID #1001","cat":"Checks","card":"Checking","amount":153.2,"excluded":false},{"date":"2025-02-01","desc":"MEDICAL GROUP","cat":"Health & Wellness","card":"Gold Card","amount":152.43,"excluded":false},{"date":"2025-01-31","desc":"NETFLIX","cat":"Entertainment","card":"Checking","amount":95.56,"excluded":false},{"date":"2025-01-29","desc":"AMAZON.COM","cat":"Shopping","card":"Visa Rewards","amount":175.15,"excluded":false},{"date":"2025-01-29","desc":"SPOTIFY","cat":"Entertainment","card":"Checking","amount":31.93,"excluded":false},{"date":"2025-01-29","desc":"MEIJER","cat":"Groceries","card":"Checking","amount":98.4,"excluded":false},{"date":"2025-01-29","desc":"CHECK PAID #1002","cat":"Checks","card":"Checking","amount":589.63,"excluded":false},{"date":"2025-01-27","desc":"TRADER JOE'S","cat":"Groceries","card":"Checking","amount":83.76,"excluded":false},{"date":"2025-01-27","desc":"BEST BUY","cat":"Shopping","card":"Gold Card","amount":72.04,"excluded":false},{"date":"2025-01-27","desc":"CHIPOTLE","cat":"Food & Drink","card":"Visa Rewards","amount":46.33,"excluded":false},{"date":"2025-01-26","desc":"HOME DEPOT","cat":"Home","card":"Checking","amount":886.51,"excluded":false},{"date":"2025-01-26","desc":"VENMO PAYMENT","cat":"Transfers","card":"Checking","amount":30.91,"excluded":false},{"date":"2025-01-25","desc":"ZELLE TRANSFER","cat":"Transfers","card":"Checking","amount":48.52,"excluded":false},{"date":"2025-01-25","desc":"TRADER JOE'S","cat":"Groceries","card":"Visa Rewards","amount":128.68,"excluded":false},{"date":"2025-01-24","desc":"CVS PHARMACY","cat":"Health & Wellness","card":"Visa Rewards","amount":217.05,"excluded":false},{"date":"2025-01-24","desc":"CHIPOTLE","cat":"Food & Drink","card":"Checking","amount":80.82,"excluded":false},{"date":"2025-01-24","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Visa Rewards","amount":51.29,"excluded":false},{"date":"2025-01-23","desc":"MEIJER","cat":"Groceries","card":"Visa Rewards","amount":60.85,"excluded":false},{"date":"2025-01-23","desc":"SHELL","cat":"Gas","card":"Checking","amount":56.59,"excluded":false},{"date":"2025-01-23","desc":"CHIPOTLE","cat":"Food & Drink","card":"Visa Rewards","amount":27.1,"excluded":false},{"date":"2025-01-22","desc":"STARBUCKS","cat":"Food & Drink","card":"Checking","amount":73.31,"excluded":false},{"date":"2025-01-22","desc":"UNITED AIRLINES","cat":"Travel","card":"Checking","amount":405.91,"excluded":false},{"date":"2025-01-22","desc":"TRADER JOE'S","cat":"Groceries","card":"Checking","amount":61.35,"excluded":false},{"date":"2025-01-21","desc":"ELECTRIC CO","cat":"Home","card":"Checking","amount":512.14,"excluded":false},{"date":"2025-01-20","desc":"CHECK PAID #1002","cat":"Checks","card":"Checking","amount":528.86,"excluded":false},{"date":"2025-01-19","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Gold Card","amount":30.19,"excluded":false},{"date":"2025-01-19","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Gold Card","amount":60.73,"excluded":false},{"date":"2025-01-18","desc":"CVS PHARMACY","cat":"Health & Wellness","card":"Gold Card","amount":124.75,"excluded":false},{"date":"2025-01-18","desc":"DENTAL OFFICE","cat":"Health & Wellness","card":"Checking","amount":133.71,"excluded":false},{"date":"2025-01-18","desc":"SHELL","cat":"Gas","card":"Gold Card","amount":75.71,"excluded":false},{"date":"2025-01-18","desc":"HOME SERVICES","cat":"Home","card":"Checking","amount":353.19,"excluded":false},{"date":"2025-01-16","desc":"CVS PHARMACY","cat":"Health & Wellness","card":"Visa Rewards","amount":208.24,"excluded":false},{"date":"2025-01-16","desc":"BP","cat":"Gas","card":"Checking","amount":72.26,"excluded":false},{"date":"2025-01-15","desc":"VENMO PAYMENT","cat":"Transfers","card":"Checking","amount":105.65,"excluded":false},{"date":"2025-01-14","desc":"BEST BUY","cat":"Shopping","card":"Checking","amount":105.64,"excluded":false},{"date":"2025-01-13","desc":"TRADER JOE'S","cat":"Groceries","card":"Visa Rewards","amount":57.58,"excluded":false},{"date":"2025-01-12","desc":"WASTE MGMT","cat":"Bills & Utilities","card":"Checking","amount":131.76,"excluded":false},{"date":"2025-01-12","desc":"UTILITY CO","cat":"Bills & Utilities","card":"Checking","amount":152.5,"excluded":false},{"date":"2025-01-12","desc":"BP","cat":"Gas","card":"Checking","amount":64.62,"excluded":false},{"date":"2025-01-11","desc":"BEST BUY","cat":"Shopping","card":"Visa Rewards","amount":29.34,"excluded":false},{"date":"2025-01-11","desc":"WALMART","cat":"Shopping","card":"Checking","amount":150.99,"excluded":false},{"date":"2025-01-10","desc":"AT&T","cat":"Bills & Utilities","card":"Checking","amount":211.11,"excluded":false},{"date":"2025-01-07","desc":"KOHLS","cat":"Shopping","card":"Checking","amount":212.32,"excluded":false},{"date":"2025-01-07","desc":"WHOLE FOODS","cat":"Groceries","card":"Visa Rewards","amount":78.58,"excluded":false},{"date":"2025-01-07","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Gold Card","amount":20.44,"excluded":false},{"date":"2025-01-06","desc":"LOCAL KITCHEN","cat":"Food & Drink","card":"Checking","amount":36.17,"excluded":false},{"date":"2025-01-05","desc":"AMAZON.COM","cat":"Shopping","card":"Checking","amount":213.21,"excluded":false},{"date":"2025-01-04","desc":"COURSERA","cat":"Education","card":"Visa Rewards","amount":105.73,"excluded":false},{"date":"2025-01-03","desc":"AMAZON.COM","cat":"Shopping","card":"Checking","amount":93.42,"excluded":false},{"date":"2025-01-03","desc":"STARBUCKS","cat":"Food & Drink","card":"Visa Rewards","amount":71.61,"excluded":false},{"date":"2025-01-02","desc":"MORTGAGE PAYMENT","cat":"Home","card":"Checking","amount":325.55,"excluded":false},{"date":"2025-01-02","desc":"UNITED AIRLINES","cat":"Travel","card":"Gold Card","amount":497.16,"excluded":false},{"date":"2025-01-01","desc":"HOME SERVICES","cat":"Home","card":"Checking","amount":881.69,"excluded":false},{"date":"2025-01-01","desc":"VENMO PAYMENT","cat":"Transfers","card":"Checking","amount":132.4,"excluded":false},{"date":"2024-12-29","desc":"VENMO PAYMENT","cat":"Transfers","card":"Checking","amount":128.5,"excluded":false},{"date":"2024-12-29","desc":"MEIJER","cat":"Groceries","card":"Visa Rewards","amount":31.48,"excluded":false},{"date":"2024-12-29","desc":"VENMO PAYMENT","cat":"Transfers","card":"Checking","amount":136.86,"excluded":false},{"date":"2024-12-28","desc":"EXXON","cat":"Gas","card":"Visa Rewards","amount":46.46,"excluded":false},{"date":"2024-12-28","desc":"MEIJER FUEL","cat":"Gas","card":"Checking","amount":40.39,"excluded":false},{"date":"2024-12-25","desc":"AMAZON.COM","cat":"Shopping","card":"Visa Rewards","amount":33.92,"excluded":false},{"date":"2024-12-24","desc":"MEIJER","cat":"Groceries","card":"Gold Card","amount":65.99,"excluded":false},{"date":"2024-12-24","desc":"SPOTIFY","cat":"Entertainment","card":"Visa Rewards","amount":39.96,"excluded":false},{"date":"2024-12-24","desc":"SPOTIFY","cat":"Entertainment","card":"Gold Card","amount":85.62,"excluded":false},{"date":"2024-12-23","desc":"HOME DEPOT","cat":"Home","card":"Checking","amount":458.67,"excluded":false},{"date":"2024-12-23","desc":"LOWES","cat":"Home","card":"Checking","amount":628.17,"excluded":false},{"date":"2024-12-23","desc":"SHELL","cat":"Gas","card":"Visa Rewards","amount":66.71,"excluded":false},{"date":"2024-12-22","desc":"ALDI","cat":"Groceries","card":"Checking","amount":58.04,"excluded":false},{"date":"2024-12-21","desc":"BEST BUY","cat":"Shopping","card":"Visa Rewards","amount":41.83,"excluded":false},{"date":"2024-12-21","desc":"CHIPOTLE","cat":"Food & Drink","card":"Visa Rewards","amount":12.68,"excluded":false},{"date":"2024-12-19","desc":"MEIJER","cat":"Groceries","card":"Checking","amount":35.62,"excluded":false},{"date":"2024-12-19","desc":"HOME SERVICES","cat":"Home","card":"Checking","amount":283.92,"excluded":false},{"date":"2024-12-19","desc":"KOHLS","cat":"Shopping","card":"Checking","amount":23.15,"excluded":false},{"date":"2024-12-19","desc":"MEIJER FUEL","cat":"Gas","card":"Gold Card","amount":60.91,"excluded":false},{"date":"2024-12-17","desc":"WHOLE FOODS","cat":"Groceries","card":"Gold Card","amount":102.94,"excluded":false},{"date":"2024-12-16","desc":"UNITED AIRLINES","cat":"Travel","card":"Checking","amount":160.49,"excluded":false},{"date":"2024-12-16","desc":"LOCAL SHOP","cat":"Other","card":"Checking","amount":68.86,"excluded":false},{"date":"2024-12-15","desc":"HOME DEPOT","cat":"Home","card":"Checking","amount":484.49,"excluded":false},{"date":"2024-12-15","desc":"MORTGAGE PAYMENT","cat":"Home","card":"Checking","amount":315.25,"excluded":false},{"date":"2024-12-15","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Visa Rewards","amount":32.82,"excluded":false},{"date":"2024-12-14","desc":"ALDI","cat":"Groceries","card":"Gold Card","amount":154.58,"excluded":false},{"date":"2024-12-13","desc":"MORTGAGE PAYMENT","cat":"Home","card":"Checking","amount":510.19,"excluded":false},{"date":"2024-12-10","desc":"SHELL","cat":"Gas","card":"Checking","amount":56.1,"excluded":false},{"date":"2024-12-10","desc":"HOME DEPOT","cat":"Home","card":"Checking","amount":334.11,"excluded":false},{"date":"2024-12-09","desc":"CHICK-FIL-A","cat":"Food & Drink","card":"Checking","amount":75.06,"excluded":false},{"date":"2024-12-06","desc":"TARGET","cat":"Shopping","card":"Gold Card","amount":163.29,"excluded":false},{"date":"2024-12-06","desc":"WALGREENS","cat":"Health & Wellness","card":"Gold Card","amount":200.46,"excluded":false},{"date":"2024-12-04","desc":"AMAZON.COM","cat":"Shopping","card":"Checking","amount":191.23,"excluded":false},{"date":"2024-12-03","desc":"VENMO PAYMENT","cat":"Transfers","card":"Checking","amount":112.68,"excluded":false},{"date":"2024-12-03","desc":"EXXON","cat":"Gas","card":"Visa Rewards","amount":57.52,"excluded":false},{"date":"2024-12-03","desc":"MEIJER","cat":"Groceries","card":"Checking","amount":34.92,"excluded":false},{"date":"2024-12-03","desc":"AT&T","cat":"Bills & Utilities","card":"Checking","amount":108.45,"excluded":false},{"date":"2024-12-02","desc":"CITY ELECTRIC","cat":"Bills & Utilities","card":"Checking","amount":176.09,"excluded":false},{"date":"2024-12-01","desc":"ALDI","cat":"Groceries","card":"Checking","amount":143.7,"excluded":false},{"date":"2024-11-30","desc":"ALDI","cat":"Groceries","card":"Checking","amount":171.78,"excluded":false},{"date":"2024-11-29","desc":"TRADER JOE'S","cat":"Groceries","card":"Gold Card","amount":161.2,"excluded":false},{"date":"2024-11-28","desc":"LOWES","cat":"Home","card":"Checking","amount":880.32,"excluded":false},{"date":"2024-11-28","desc":"COMCAST XFINITY","cat":"Bills & Utilities","card":"Checking","amount":251.51,"excluded":false},{"date":"2024-11-28","desc":"MEIJER FUEL","cat":"Gas","card":"Visa Rewards","amount":47.96,"excluded":false},{"date":"2024-11-28","desc":"ALDI","cat":"Groceries","card":"Visa Rewards","amount":167.37,"excluded":false},{"date":"2024-11-27","desc":"MEIJER FUEL","cat":"Gas","card":"Visa Rewards","amount":70.04,"excluded":false},{"date":"2024-11-27","desc":"WALMART","cat":"Shopping","card":"Visa Rewards","amount":104.13,"excluded":false},{"date":"2024-11-25","desc":"PANERA BREAD","cat":"Food & Drink","card":"Gold Card","amount":82.89,"excluded":false},{"date":"2024-11-24","desc":"UNITED AIRLINES","cat":"Travel","card":"Visa Rewards","amount":390.13,"excluded":false},{"date":"2024-11-21","desc":"MISC PURCHASE","cat":"Other","card":"Checking","amount":50.76,"excluded":false},{"date":"2024-11-20","desc":"BEST BUY","cat":"Shopping","card":"Gold Card","amount":96.1,"excluded":false},{"date":"2024-11-20","desc":"PANERA BREAD","cat":"Food & Drink","card":"Visa Rewards","amount":22.19,"excluded":false},{"date":"2024-11-20","desc":"AT&T","cat":"Bills & Utilities","card":"Checking","amount":154.26,"excluded":false},{"date":"2024-11-19","desc":"BP","cat":"Gas","card":"Gold Card","amount":67.38,"excluded":false},{"date":"2024-11-19","desc":"MARRIOTT","cat":"Travel","card":"Gold Card","amount":507.34,"excluded":false},{"date":"2024-11-19","desc":"CHIPOTLE","cat":"Food & Drink","card":"Gold Card","amount":27.4,"excluded":false},{"date":"2024-11-18","desc":"SHELL","cat":"Gas","card":"Checking","amount":64.37,"excluded":false},{"date":"2024-11-18","desc":"SPOTIFY","cat":"Entertainment","card":"Checking","amount":60.85,"excluded":false},{"date":"2024-11-17","desc":"PANERA BREAD","cat":"Food & Drink","card":"Visa Rewards","amount":37.93,"excluded":false},{"date":"2024-11-09","desc":"LOWES","cat":"Home","card":"Checking","amount":604.15,"excluded":false},{"date":"2024-11-08","desc":"CVS PHARMACY","cat":"Health & Wellness","card":"Visa Rewards","amount":187.84,"excluded":false},{"date":"2024-11-08","desc":"ONLINE STORE","cat":"Other","card":"Checking","amount":16.3,"excluded":false},{"date":"2024-11-05","desc":"TARGET","cat":"Shopping","card":"Checking","amount":211.23,"excluded":false},{"date":"2024-11-04","desc":"MARATHON","cat":"Gas","card":"Visa Rewards","amount":48.82,"excluded":false},{"date":"2024-11-04","desc":"UDEMY","cat":"Education","card":"Checking","amount":239.7,"excluded":false},{"date":"2024-11-03","desc":"AT&T","cat":"Bills & Utilities","card":"Checking","amount":152.82,"excluded":false},{"date":"2024-11-03","desc":"KOHLS","cat":"Shopping","card":"Visa Rewards","amount":138.41,"excluded":false},{"date":"2024-11-01","desc":"TRADER JOE'S","cat":"Groceries","card":"Checking","amount":62.96,"excluded":false}];
 
-const VENDOR_PALETTE=['#F87171','#FBBF24','#A3E635','#34D399','#22D3EE','#60A5FA','#A78BFA','#F472B6','#FB923C','#FDE047','#86EFAC','#6EE7B7','#7DD3FC','#93C5FD','#818CF8','#C084FC','#E879F9','#FB7185','#FCA5A5','#FED7AA'];
-function getVendorColor(vendor,idx){
-  // Positional: idx drives color, second cycle at 65% opacity via CSS filter
-  if(idx===undefined)return VENDOR_PALETTE[0];
-  return VENDOR_PALETTE[idx%VENDOR_PALETTE.length];
+// COLOR_PALETTE and color functions defined below near getCatColor
+// All colors are assigned dynamically based on what's in the user's data.
+// No fixed palette — assignColors() maximizes perceptual distance across
+// whatever categories/vendors are actually visible.
+// Only custom user-set colors (state.customCategories) are preserved.
+
+const COLOR_PALETTE=['#F43F5E','#FB923C','#FBBF24','#A3E635','#34D399','#22D3EE','#60A5FA','#818CF8','#C084FC','#F472B6','#2DD4BF','#38BDF8','#FB7185','#FCD34D','#86EFAC','#67E8F9','#A78BFA','#E879F9','#F97316','#4ADE80'];
+
+function stringToColor(str){
+  let hash=0;
+  for(let i=0;i<str.length;i++)hash=((hash<<5)-hash+str.charCodeAt(i))|0;
+  return COLOR_PALETTE[Math.abs(hash)%COLOR_PALETTE.length];
 }
-const CAT_COLORS={"Health & Wellness":"#F43F5E","Food & Drink":"#FB6514","Home":"#F59E0B","Gas":"#A3E635","Groceries":"#10B981","Travel":"#06B6D4","Bills & Utilities":"#3B82F6","Shopping":"#8B5CF6","Child Care":"#EC4899","Personal":"#F472B6","Entertainment":"#14B8A6","Education":"#38BDF8","Tax & Gov":"#6366F1","Automotive":"#A78BFA","College Fund(s)":"#FCD34D","Gifts & Donations":"#4ADE80","Checks":"#92400E","Transfers":"#475569","Other":"#9CA3AF"};
+
+// Assign colors to a list of names using stride-7 stepping for max perceptual spread.
+// Custom category colors take priority. No fixed lookup — fully data-driven.
+function assignColors(names,offset=0){
+  const stride=7;
+  const map=new Map();
+  let dynamicIdx=0;
+  names.forEach(name=>{
+    const custom=state?.customCategories?.find(c=>c.name===name);
+    if(custom){map.set(name,custom.color);return;}
+    map.set(name,COLOR_PALETTE[(dynamicIdx*stride+offset)%COLOR_PALETTE.length]);
+    dynamicIdx++;
+  });
+  return map;
+}
+
+// Single color lookup — uses assignColors([name]) for consistency.
+// Kept for backwards compat with scattered getCatColor calls.
+function getCatColor(cat){
+  const custom=state?.customCategories?.find(c=>c.name===cat);
+  if(custom?.color)return custom.color;
+  return stringToColor(cat);
+}
+
+function getVendorColor(vendor){
+  return stringToColor(vendor+'__vendor');
+}
 function esc(s){
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-function getCatColor(cat){
-  const custom=state.customCategories.find(c=>c.name===cat);
-  return CAT_COLORS[cat]||(custom?custom.color:'#94A3B8');
-}
 const SOURCES=['Checking','Visa Rewards','Gold Card'];
 const SRC_CHIP_CLASS={'Checking':'chip-ally','Visa Rewards':'chip-cfu','Gold Card':'chip-cpv'};
 const SRC_CHART_COLORS={'Checking':'#60A5FA','Visa Rewards':'#A78BFA','Gold Card':'#FCD34D'};
@@ -1509,6 +1637,7 @@ let state={
   bucketMode:'category',
   activeVendors:new Set(),
   activeDate:null,
+  insightsPillsExpanded:false,
 };
 
 let spendChart=null,editAcctId=null,editVehicleId=null,editTxId=null,showTxN=50;
@@ -1694,7 +1823,7 @@ function renderInsights(){
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
         <div style="display:flex;align-items:center;gap:7px;flex-shrink:1;min-width:0">
           <span style="font-size:16px;flex-shrink:0">${icon}</span>
-          <span style="font-size:10px;font-weight:700;color:var(--text-secondary);white-space:nowrap">${label} <button onclick="event.stopPropagation();showPillTip(this)" data-tip="${tip.replace(/"/g,'&quot;')}" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--pill-info-bg);color:var(--pill-info-color);font-size:10px;cursor:pointer;vertical-align:middle;border:1px solid var(--pill-info-border);padding:0;flex-shrink:0" type="button">ⓘ</button></span>
+          <span style="font-size:11px;font-weight:700;color:var(--text-secondary);white-space:nowrap">${label} <button onclick="event.stopPropagation();showPillTip(this)" data-tip="${tip.replace(/"/g,'&quot;')}" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--pill-info-bg);color:var(--pill-info-color);font-size:10px;cursor:pointer;vertical-align:middle;border:1px solid var(--pill-info-border);padding:0;flex-shrink:0" type="button">ⓘ</button></span>
         </div>
         <div style="font-size:18px;font-weight:900;color:${color};line-height:1;letter-spacing:-.02em;white-space:nowrap;flex-shrink:0">${value}</div>
       </div>
@@ -1734,7 +1863,7 @@ function renderInsights(){
 
   // ── Build pills — filtered by user's hiddenPills set ─────────
   const pillsArr=[];
-  const addPill=(key,html)=>{if(!state.hiddenPills.has(key))pillsArr.push({key,html});};
+  const addPill=(key,label,html,score=0)=>{if(!state.hiddenPills.has(key))pillsArr.push({key,label,html,score});};
 
   // Pill 1 — Savings rate (or nudge if not configured)
   const effectiveIncome=getEffectiveIncome(latestFullM);
@@ -1745,9 +1874,9 @@ function renderInsights(){
     const rateColor=savingsRate>=20?'#34D399':savingsRate>=10?'#FBBF24':'#F87171';
     const savingsTooltip=`Income (${state.income.method==='manual'?'manual':'estimated from deposits'}): ${fmt(effectiveIncome)}&#10;Spent in ${latestLabel}: ${fmt(spent)}&#10;Kept: ${fmt(saved)}&#10;Savings rate: ${savingsRate}%&#10;&#10;Rule of thumb: 20%+ is healthy, 10-20% is ok, under 10% is tight.`;
     const savingsSub=`${fmt(saved)} saved · <span style="font-size:9px;color:var(--text-muted)">${state.income.method==='manual'?'manual':'estimated'}</span>`;
-    addPill('savings',pillWithTip(savingsRate>=20?'🟢':savingsRate>=10?'🟡':'🔴',`Savings rate`,`${savingsRate}%`,rateColor,savingsSub,savingsTooltip));
+    addPill('savings','Savings rate',pillWithTip(savingsRate>=20?'🟢':savingsRate>=10?'🟡':'🔴',`Savings rate`,`${savingsRate}%`,rateColor,savingsSub,savingsTooltip),savingsRate<10?100:savingsRate<20?50:10);
   } else if(!state.hiddenPills.has('savings')){
-    pillsArr.push({key:'savings-nudge',html:`<div style="display:flex;flex-direction:column;justify-content:center;background:var(--card-nudge-bg);border:1.5px dashed var(--border-mid);border-radius:12px;padding:.75rem .9rem;gap:.4rem;cursor:pointer;position:relative" onclick="openIncomeModal()">
+    pillsArr.push({key:'savings-nudge',label:'Savings rate',html:`<div style="display:flex;flex-direction:column;justify-content:center;background:var(--card-nudge-bg);border:1.5px dashed var(--border-mid);border-radius:12px;padding:.75rem .9rem;gap:.4rem;cursor:pointer;position:relative" onclick="openIncomeModal()">
       <button onclick="event.stopPropagation();event.preventDefault();dismissSavingsNudge();return false;" style="position:absolute;top:6px;right:8px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:4px 6px;z-index:10;pointer-events:all" title="" type="button">✕</button>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-right:20px">
         <div style="display:flex;align-items:center;gap:7px">
@@ -1765,9 +1894,12 @@ function renderInsights(){
     const nwUp=nwDiff>0;
     const snapDate=new Date(lastSnap.date);
     const daysSince=Math.max(1,Math.round((Date.now()-snapDate.getTime())/(1000*60*60*24)));
-    const annualPct=lastSnap.nw>0?Math.round((Math.pow(nw/lastSnap.nw,365/daysSince)-1)*100):0;
+    const annualPct=lastSnap.nw>0&&daysSince>=60?Math.min(999,Math.round((Math.pow(nw/lastSnap.nw,365/daysSince)-1)*100)):null;
     const snapShort=fmtMonthShort(lastSnap.monthKey);
-    const tooltip=`${nwUp?'+':''}${fmt(nwDiff)} over ${daysSince} days · ${Math.abs(annualPct)}%/yr annualized&#10;Now: ${fmt(nw)} · Snapshot (${snapShort}): ${fmt(lastSnap.nw)}`;
+    const tooltip=`${nwUp?'+':''}${fmt(nwDiff)} over ${daysSince} days${annualPct!==null?' · '+Math.abs(annualPct)+'%/yr annualized':''}&#10;Now: ${fmt(nw)} · Snapshot (${snapShort}): ${fmt(lastSnap.nw)}`;
+    const pillValue=annualPct!==null
+      ?`${nwUp?'+':''}${fmtC(nwDiff)} · ${Math.abs(annualPct)}%/yr`
+      :`${nwUp?'+':''}${fmtC(nwDiff)}`;
     const snapsForGoal=getSortedSnaps();
     let monthlyGrowthForGoal=0;
     if(snapsForGoal.length>=2){
@@ -1788,7 +1920,7 @@ function renderInsights(){
       goalHTML=`<br><span style="color:#34D399">🎯 Goal reached! ${fmtC(state.nwGoal)}</span>`;
     }
     const nwSub=`${nwUp?'Up':'Down'} ${fmt(Math.abs(nwDiff))} over ${daysSince} days${goalHTML}`;
-    addPill('networth',pillWithTip(nwUp?'📊':'📉',`Net worth since ${snapShort}`,`${nwUp?'+':''}${fmtC(nwDiff)} · ${Math.abs(annualPct)}%/yr`,nwUp?'#34D399':'#F87171',nwSub,tooltip));
+    addPill('networth','Net worth',pillWithTip(nwUp?'📊':'📉',`Net worth since ${snapShort}`,pillValue,nwUp?'#34D399':'#F87171',nwSub,tooltip),nwUp?10:55);
   }
 
   // Pill 3 — Subscriptions
@@ -1797,7 +1929,7 @@ function renderInsights(){
     const subList=subVendors.slice(0,8).map(s=>`${esc(s.vendor)}: ${fmtC(s.amt)}`).join('&#10;');
     const tooltip=`Vendors charged in 3+ of last 6 months with consistent amounts.&#10;&#10;Detected (${subCount}):&#10;${subList}${subCount>8?`&#10;...and ${subCount-8} more`:''}`;
     const topSub=subVendors[0];
-    addPill('subscriptions',`<div style="display:flex;flex-direction:column;justify-content:center;background:#A78BFA15;border:1.5px solid #A78BFA55;border-radius:12px;padding:.75rem .9rem;gap:.4rem;cursor:pointer" onclick="openSubscriptionsModal()">
+    addPill('subscriptions','Subscriptions',`<div style="display:flex;flex-direction:column;justify-content:center;background:#A78BFA15;border:1.5px solid #A78BFA55;border-radius:12px;padding:.75rem .9rem;gap:.4rem;cursor:pointer" onclick="openSubscriptionsModal()">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
         <div style="display:flex;align-items:center;gap:7px;flex-shrink:1;min-width:0">
           <span style="font-size:16px;flex-shrink:0">🔄</span>
@@ -1826,7 +1958,7 @@ function renderInsights(){
     const onTrackCount=total-over-under;
     const statusColor=over>0?'#F87171':under>0?'#FBBF24':'#34D399';
     const statusIcon=over>0?'🔴':under>0?'🟡':'🟢';
-    const statusLabel=over>0?`${over} over budget`:under>0?`${under} approaching limit`:`All ${total} on track`;
+    const statusLabel=over>0?`${over} ${over===1?'category':'categories'} over — check the Budget tab`:under>0?`${under} approaching limit — keep an eye on it`:`All ${total} on track — nice work`;
     const worstStr=worstCat?`<br><span style="color:#F87171">${esc(worstCat)}: ${fmt(worstSpend)} of ${fmt(worstBudget)} (${worstPct}%)</span>`:'';
     const tooltip=budgetCats.map(cat=>{
       const budget=state.budgets[cat];
@@ -1834,7 +1966,7 @@ function renderInsights(){
       const pct=budget>0?Math.round(spend/budget*100):0;
       return `${cat}: ${fmt(spend)} / ${fmt(budget)} (${pct}%)`;
     }).join('&#10;');
-    addPill('budget-health',pillWithTip(statusIcon,'Budget health',`${onTrackCount}/${total} on track`,statusColor,`${statusLabel}${worstStr}`,tooltip));
+    addPill('budget-health','Budget health',pillWithTip(statusIcon,'Budget health',`${onTrackCount}/${total} on track`,statusColor,`${statusLabel}${worstStr}`,tooltip),over>0?90:under>0?40:5);
   }
 
   // Pill 5 — Top mover
@@ -1857,7 +1989,9 @@ function renderInsights(){
     const vendorStr=topVendors.length?topVendors.map(([v,a])=>`${esc(v)} (${fmt(a)}, ${biggestCat.cur>0?Math.round(a/biggestCat.cur*100):0}%)`).join(', '):'';
     const shareStr=vendorStr?`<br><span style="color:var(--text-muted)">Led by: ${vendorStr}</span>`:'';
     const catSub=`${catUp?'+':'-'}${fmt(Math.abs(biggestCat.diff))} vs prior month${normStr}${shareStr}`;
-    addPill('topmover',pillWithTip(catUp?'⬆️':'⬇️',`Top mover`,`${biggestCat.cat} · ${catUp?'+':'−'}${biggestCat.pct}%`,catUp?'#FBBF24':'#34D399',catSub,tooltip));
+    const catValue=`${biggestCat.cat} · ${catUp?'+':'−'}${biggestCat.pct}%`;
+    const catAction=catUp&&vsNorm!==null&&vsNorm>=20?` — worth a look`:'';
+    addPill('topmover','Top mover',pillWithTip(catUp?'⬆️':'⬇️',`Top mover`,catValue,catUp?'#FBBF24':'#34D399',catSub+catAction,tooltip),catUp&&vsNorm!==null&&vsNorm>=20?70:20);
   }
 
   // Pill 6 — Largest single transaction
@@ -1873,7 +2007,10 @@ function renderInsights(){
       const isHighVsNorm=avgBiggest>0&&biggest.amount>avgBiggest*1.3;
       const normStr=isHighVsNorm?` — ${Math.round((biggest.amount/avgBiggest-1)*100)}% above typical`:'';
       const tooltip=`Largest non-transfer charge in ${latestLabel}&#10;${esc(biggest.desc)}: ${fmt(biggest.amount)}&#10;Category: ${esc(biggest.cat)}&#10;Date: ${biggest.date}${avgBiggest>0?`&#10;&#10;Avg largest charge: ${fmt(avgBiggest)}/mo`:''}`;
-      addPill('largest-tx',pillWithTip('💥','Largest charge',`${fmtC(biggest.amount)}`,isHighVsNorm?'#F87171':'#60A5FA',`${esc(biggest.desc)}${normStr}`,tooltip));
+      const chargeSub=isHighVsNorm
+        ?`${esc(biggest.desc)} — unusually high this month`
+        :`${esc(biggest.desc)}${normStr}`;
+      addPill('largest-tx','Largest charge',pillWithTip('💥','Largest charge',`${fmtC(biggest.amount)}`,isHighVsNorm?'#F87171':'#60A5FA',chargeSub,tooltip),isHighVsNorm?60:15);
     }
   }
 
@@ -1881,14 +2018,65 @@ function renderInsights(){
   if(weekendVsWeekday){
     const {pct,higher}=weekendVsWeekday;
     const wkColor=higher?'#F87171':'#34D399';
-    addPill('weekend',pillWithTip('🗓','Weekend spending',`${Math.abs(pct)}% ${higher?'higher':'lower'}/day`,wkColor,
-      `Weekend days average ${Math.abs(pct)}% ${higher?'more':'less'} in spend than weekdays`,
-      `Based on last 6 months · avg spend per weekend day vs weekday&#10;Only shows when difference is 15%+`));
+    addPill('weekend','Weekend spending',pillWithTip('🗓','Weekend spending',`${Math.abs(pct)}% ${higher?'higher':'lower'}/day`,wkColor,
+      `Weekend days average ${Math.abs(pct)}% ${higher?'more — consider where that goes':'less — weekdays drive your spend'}`,
+      `Based on last 6 months · avg spend per weekend day vs weekday&#10;Only shows when difference is 15%+`),higher?20:5);
   }
 
   if(pillsArr.length>0){
-    const isMobile=window.innerWidth<=600;
-    pillsEl.innerHTML=pillsArr.map(p=>p.html).join('');
+    const SHOW=3;
+
+    // ── Score pills by urgency to find the lead insight ──────────
+    const scoredPills=[...pillsArr].map(p=>({...p}));
+    const leadPill=scoredPills.reduce((a,b)=>b.score>a.score?b:a,scoredPills[0]);
+    const regularPills=pillsArr.filter(p=>p.key!==leadPill.key);
+    const visibleRegular=state.insightsPillsExpanded?regularPills:regularPills.slice(0,SHOW-1);
+    const hiddenPills=regularPills.slice(SHOW-1);
+
+    // Featured lead pill — full width, visually elevated
+    const leadHtml=leadPill.score>30
+      ?leadPill.html
+        .replace(
+          'border-radius:12px;padding:.75rem .9rem;',
+          'border-radius:12px;padding:.85rem 1rem;grid-column:1/-1;'
+        )
+        .replace(
+          /background:([^;]+)15;border:1\.5px solid ([^;]+)55;/,
+          (m,color,borderColor)=>`background:${color}22;border:2px solid ${borderColor};box-shadow:0 0 12px ${borderColor}44;`
+        )
+        .replace(
+          'font-size:18px;font-weight:900;',
+          'font-size:22px;font-weight:900;'
+        )
+      :null;
+
+    // Extract the pill's color from its HTML for the attention label
+    const leadColorMatch=leadPill.html.match(/border:1\.5px solid ([^;]+)55/);
+    const leadColor=leadColorMatch?leadColorMatch[1]:'var(--accent-blue-light)';
+
+    let html='';
+    if(leadHtml){
+      html+=`<div style="grid-column:1/-1;display:flex;flex-direction:column;gap:4px">
+        <div style="font-size:9px;font-weight:800;color:${leadColor};letter-spacing:.08em;text-transform:uppercase;padding:0 2px">⚑ Worth your attention</div>
+        ${leadHtml}
+      </div>`;
+      html+=visibleRegular.map(p=>p.html).join('');
+    } else {
+      html=[leadPill,...visibleRegular].map(p=>p.html).join('');
+    }
+
+    if(!state.insightsPillsExpanded&&hiddenPills.length>0){
+      const hiddenLabels=hiddenPills.map(p=>p.label).filter(Boolean).join(', ');
+      html+=`<div style="display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--bg-card);border:1px dashed var(--border-mid);border-radius:12px;padding:.75rem .9rem;cursor:pointer;min-height:80px;gap:4px" onclick="state.insightsPillsExpanded=true;renderInsights()">
+        <div style="font-size:12px;font-weight:700;color:var(--accent-blue-light)">+${hiddenPills.length} more insight${hiddenPills.length>1?'s':''}</div>
+        <div style="font-size:10px;color:var(--text-muted);text-align:center">${hiddenLabels}</div>
+      </div>`;
+    } else if(state.insightsPillsExpanded&&regularPills.length>SHOW-1){
+      html+=`<div style="display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--bg-card);border:1px dashed var(--border-mid);border-radius:12px;padding:.75rem .9rem;cursor:pointer;min-height:80px" onclick="state.insightsPillsExpanded=false;renderInsights()">
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted)">Show less ↑</div>
+      </div>`;
+    }
+    pillsEl.innerHTML=html;
     card.style.display='block';
   } else {
     card.style.display='none';
@@ -2865,7 +3053,7 @@ function setBucketMode(mode){
   const lbl=document.getElementById('bucket-section-label');
   if(catBtn)catBtn.classList.toggle('active',mode==='category');
   if(venBtn)venBtn.classList.toggle('active',mode==='vendor');
-  if(lbl)lbl.textContent=mode==='vendor'?'By vendor — click to filter':'By category — click to filter';
+  if(lbl)lbl.textContent=mode==='vendor'?'By vendor — click a tile to filter':'By category — click a tile to filter';
   showTxN=50;renderBucketGrid();renderSpendSummary();renderTxList();
 }
 function renderBucketGrid(){
@@ -2913,8 +3101,7 @@ function renderBucketGrid(){
       <animate href="#scr-${uid}" attributeName="width" from="0" to="${W}" dur="600ms" begin="0ms" fill="freeze"/>
     </svg>`;
   }
-  function vendorSparkline(vendor,vi){
-      const color=getVendorColor(vendor,vi??0);
+  function vendorSparkline(vendor,color){
       const pts=filteredMonthsForSpark.map(m=>
         state.transactions.filter(t=>t.date.slice(0,7)===m&&t.desc===vendor&&!t.excluded)
           .reduce((s,t)=>s+t.amount,0)
@@ -2971,14 +3158,16 @@ function renderBucketGrid(){
     const otherCount=otherVendors.reduce((s,[,d])=>s+d.count,0);
 
     window._vendorTiles=[];
+    const vendorNames=topVendors.map(([v])=>v);
+    const vendorColorMap=assignColors(vendorNames,3);
     const topTiles=topVendors.map(([vendor,data],vi)=>{
-      const isSecondCycle=vi>=VENDOR_PALETTE.length;
-      const color=getVendorColor(vendor,vi);
+      const isSecondCycle=vi>=COLOR_PALETTE.length;
+      const color=vendorColorMap.get(vendor)||getVendorColor(vendor);
       const isActive=state.activeVendors&&state.activeVendors.has(vendor);
       const avg=Math.round(data.total/allMonths);
       window._vendorTiles[vi]=vendor;
-      const sparkline=vendorSparkline(vendor,vi);
-      return`<div class="bucket-card ${isActive?'active-bucket':''}" style="border-color:${isActive?color:tc('#1E293B','#E2E8F0')};background:${isActive?color+'18':tc('#0F172A','#F8FAFC')};color:${color};${isSecondCycle?'opacity:.72;border-style:dashed':''}" onclick="toggleVendorFilter(window._vendorTiles[${vi}])">
+      const sparkline=vendorSparkline(vendor,color);
+      return`<div class="bucket-card ${isActive?'active-bucket':''}" style="border-color:${isActive?color:tc('#1E293B','#E2E8F0')};background:${isActive?color+'18':tc('#0F172A','#F8FAFC')};color:${color}" onclick="toggleVendorFilter(window._vendorTiles[${vi}])">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
           <div class="bucket-name" title="${vendor}" style="color:${color};margin:0">${esc(vendor)}${data.isCollapsed?` <span data-tip="Individual check numbers collapsed — categorize a check to split it out" style="font-size:9px;opacity:.5;cursor:pointer" onclick="event.stopPropagation();showPillTip(this)">ⓘ</span>`:''}</div>
           ${sparkline}
@@ -3063,8 +3252,10 @@ function renderBucketGrid(){
     <div class="bucket-total" style="color:var(--text-muted)">${fmt(hiddenTotal)}</div>
     <div class="bucket-meta">${grandCatTotal>0?Math.round(hiddenTotal/grandCatTotal*100):0}% of spend · hover for list</div>
   </div>`:'';
+  const bucketCatNames=visibleCats.map(([cat])=>cat);
+  const bucketColorMap=assignColors(bucketCatNames);
   document.getElementById('bucket-grid').innerHTML=visibleCats.map(([cat,s],idx)=>{
-    const color=getCatColor(cat),isActive=state.activeCats.has(cat);
+    const color=bucketColorMap.get(cat)||getCatColor(cat),isActive=state.activeCats.has(cat);
     const dashed=idx>=BUCKET_CAT_CAP; // overflow cats get dashed sparkline
     const hint=HINTS[cat]||'';
     const sc=cat.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
@@ -3668,9 +3859,9 @@ function renderDailyCal(){
 function renderSpendChart(){
   const ctx=document.getElementById('spendChart').getContext('2d');
   if(spendChart)spendChart.destroy();
-  // Clear footnote at start — each mode will write its own
+  // Clear footnote at start — trend mode will show it
   const fn=document.getElementById('chart-footnote');
-  if(fn)fn.textContent='';
+  if(fn){fn.textContent='';fn.style.display='none';}
   const monthly=getMonthlyFiltered();
   const labels=monthly.map(m=>fmtMonthShort(m.month));
   const allFilteredMonths=getFilteredMonths();
@@ -3767,12 +3958,6 @@ function renderSpendChart(){
               c.setLineDash([3,3]);
               c.beginPath();c.moveTo(xPos,y.top);c.lineTo(xPos,y.bottom);c.stroke();
               c.setLineDash([]);
-              if(window.innerWidth>600){
-                c.fillStyle=above?'#F87171':'#34D399';
-                c.font='bold 8px system-ui';
-                c.textAlign='center';
-                c.fillText(above?'↑ ABOVE':'↓ BELOW',xPos,y.top+10);
-              }
               c.restore();
             }
           }
@@ -3793,7 +3978,7 @@ function renderSpendChart(){
       {type:'bar',label:catLabel,data:totals,backgroundColor:_patternsEnabled?makePattern('#3B82F6','diagonal',10):'#3B82F644',borderColor:'#3B82F6',borderWidth:1,borderRadius:3},
       {type:'line',label:'3-mo avg',data:rolling,borderColor:'#34D399',backgroundColor:'transparent',tension:.4,pointRadius:3,pointBackgroundColor:'#34D399',pointBorderColor:tc('#0F172A','#FFFFFF'),pointBorderWidth:2,borderWidth:2}
     ]},options:trendTooltipOpts,plugins:[crossingPlugin]});
-    if(fn)fn.innerHTML='Dashed lines = where spending crossed the 3-mo avg · <span style="color:#F87171">↑ red = accelerating</span> · <span style="color:#34D399">↓ green = slowing</span>';
+    if(fn){fn.innerHTML='<span style="color:#F87171">↑ red dashed lines</span> = spending accelerating past 3-mo avg · <span style="color:#34D399">↓ green dashed lines</span> = slowing';fn.style.display='block';}
 
   } else if(state.chartMode==='vendor'){
     // Vendor stacked — top 5 vendors per month get color, rest = Other
@@ -3823,12 +4008,13 @@ function renderSpendChart(){
     const smRow=document.getElementById('chart-show-more-row');
     if(smRow)smRow.style.display='none';
 
+    const vendorColorMap=assignColors(top5Vendors,3); // offset 3 to differ from category colors
     const top5VData=top5Vendors.map((v,vi)=>({
       label:v,
       data:months.map(m=>(vendorMonthMap[v]||{})[m]||0),
       backgroundColor:_patternsEnabled
-        ? makePattern(vendorColors[vi], VENDOR_PATTERNS[vi%VENDOR_PATTERNS.length])
-        : vendorColors[vi]+'CC',
+        ? makePattern(vendorColorMap.get(v)||getVendorColor(v), VENDOR_PATTERNS[vi%VENDOR_PATTERNS.length])
+        : (vendorColorMap.get(v)||getVendorColor(v))+'CC',
       borderRadius:2,stack:'s'
     }));
 
@@ -3920,10 +4106,11 @@ function renderSpendChart(){
       smRow.style.display='none'; // chart always shows top 8; tile grid has its own toggle
     }
 
+    const catColorMap=assignColors(top5);
     const top5Data=top5.map(cat=>({
       label:cat,
       data:months.map(m=>(catMonthMap[cat]||{})[m]||0),
-      backgroundColor:getCatFill(cat,getCatColor(cat)),
+      backgroundColor:getCatFill(cat,catColorMap.get(cat)||getCatColor(cat)),
       borderRadius:2,stack:'s'
     }));
 
@@ -4038,7 +4225,7 @@ function renderTxList(){
 
   document.getElementById('tx-count-label').textContent=`Transactions (${txs.length}${state.activeCats.size>0?' · filtered':''}${state.showExcluded?' +contributions':''})`;
   document.getElementById('tx-list').innerHTML=shown.map(t=>{
-    const cc=CARD_S[t.card]||{bg:tc('#1E293B','#F1F5F9'),fg:tc('#475569','#64748B')},color=CAT_COLORS[t.cat]||'#94A3B8';
+    const cc=CARD_S[t.card]||{bg:tc('#1E293B','#F1F5F9'),fg:tc('#475569','#64748B')},color=getCatColor(t.cat);
     const monthKey=t.date.slice(0,7);
     const monthTotal=monthTotals[monthKey]||0;
     const monthCatTotal=state.activeCats.size>0
@@ -4108,6 +4295,12 @@ document.addEventListener('click',function(e){
 });
 
 document.addEventListener('keydown',function(e){
+  // Don't fire shortcuts when typing in an input
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+  if(e.key==='?'){
+    document.getElementById('shortcuts-modal').classList.remove('hidden');
+    return;
+  }
   if(e.key==='Escape'){
     // Close any open modal first
     const openModal=document.querySelector('.modal-overlay:not(.hidden)');
@@ -4275,6 +4468,15 @@ function renderVehicles(){
 
 function renderHistory(){
   const el=document.getElementById('snapshot-list');
+
+  // Show monthly nudge for real users who haven't saved a snapshot this month
+  const nudge=document.getElementById('snap-monthly-nudge');
+  if(nudge){
+    const today=new Date();
+    const currentMonthKey=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+    const hasThisMonth=state.snapshots.some(s=>s.monthKey===currentMonthKey);
+    nudge.style.display=(!state.hasRealData||hasThisMonth||!state.snapshots.length)?'none':'block';
+  }
   if(!state.snapshots.length){el.innerHTML=`<div style="padding:.75rem;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px">
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:.3rem;font-weight:600">No snapshots yet</div>
     <div style="font-size:11px;color:var(--text-muted);line-height:1.5">Update your balances on the <strong style="color:#475569">Accounts</strong> tab, then hit <strong style="color:#475569">Save snapshot</strong> to begin. Each snapshot anchors a real data point on your Dashboard trend line.</div>
@@ -4293,12 +4495,12 @@ function renderHistory(){
     // Annualized rate — use actual dates for precision
     const firstDate=new Date(first.date),lastDate=new Date(last.date);
     const days=Math.max(1,Math.round((lastDate-firstDate)/(1000*60*60*24)));
-    const annRate=first.nw>0?Math.round((Math.pow(last.nw/first.nw,365/days)-1)*100):0;
+    const annRate=first.nw>0&&days>=60?Math.min(999,Math.round((Math.pow(last.nw/first.nw,365/days)-1)*100)):null;
     summaryHTML=`<div style="background:${growthUp?'#065F4618':'#7F1D1D18'};border:1px solid ${growthUp?'#059669':'#DC2626'}33;border-radius:10px;padding:.75rem 1rem;margin-bottom:.65rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
       <div>
         <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Net worth over ${months} months</div>
         <div style="font-size:20px;font-weight:900;color:${growthUp?'#34D399':'#F87171'};letter-spacing:-.02em">${growthUp?'+':''}${fmtC(totalGrowth)} <span style="font-size:12px;font-weight:600;opacity:.7">(${growthUp?'+':''}${growthPct}%)</span></div>
-        <div class="text-muted-sm">${fmtC(first.nw)} → ${fmtC(last.nw)} · ${Math.abs(annRate)}%/yr annualized</div>
+        <div class="text-muted-sm">${fmtC(first.nw)} → ${fmtC(last.nw)}${annRate!==null?' · '+Math.abs(annRate)+'%/yr annualized':''}</div>
       </div>
       <div style="text-align:right">
         <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:4px">${state.snapshots.length} snapshots</div>
@@ -4472,7 +4674,7 @@ function openOtherVendorsModal(){
 
 function setVendorSearch(vendor){
   closeModals();
-  showPage('spending',document.querySelectorAll('.nav-btn')[1]);
+  showPage('spending',document.querySelectorAll('.nav-btn')[0]);
   setTimeout(()=>{
     const searchEl=document.getElementById('tx-search');
     if(searchEl){
@@ -4708,9 +4910,9 @@ function renderBudgetTab(){
     rows.innerHTML=`
       <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:1.25rem 1.5rem">
         <div style="font-size:13px;font-weight:700;color:var(--text-bright);margin-bottom:.35rem">No budgets set yet</div>
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:1rem">Set a monthly target for any spending category and the Budget tab will track your pace, project end-of-month spend, and show 12-month history.</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:1rem">Go to Spending, scroll to the category tiles, and click <strong style="color:var(--text-secondary)">+ Set budget</strong> on any category. The Budget tab will then track your pace, project end-of-month spend, and show 12-month history.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button onclick="showPage('spending',document.querySelectorAll('.nav-btn')[1])" style="background:#2563EB;color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer" type="button">Go to Spending →</button>
+          <button onclick="showPage('spending',document.querySelectorAll('.nav-btn')[0])" style="background:#2563EB;color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer" type="button">Go to Spending →</button>
           <button onclick="openBudgetModal()" style="background:none;border:1px solid var(--border-mid);border-radius:7px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--text-secondary);cursor:pointer" type="button">+ Add budget directly</button>
         </div>
       </div>`;
@@ -4975,13 +5177,16 @@ function hideDemoBadge(){
   if(chip){chip.style.display='none';updateBannerOffset();}
   const badge=document.getElementById('demo-nav-badge');
   if(badge)badge.style.display='none';
-  // Also hide nudge when real data is loaded
   const nudge=document.getElementById('demo-nudge');
   if(nudge)nudge.style.display='none';
+  const startHere=document.getElementById('spending-start-here');
+  if(startHere)startHere.style.display='none';
 }
 function showDemoNudge(){
   const nudge=document.getElementById('demo-nudge');
   if(nudge&&!state.hasRealData)nudge.style.display='block';
+  const startHere=document.getElementById('spending-start-here');
+  if(startHere&&!state.hasRealData)startHere.style.display='';
 }
 
 function exportTransactionsCSV(){
@@ -5478,7 +5683,7 @@ function renderCatManagerList(){
   const el=document.getElementById('cat-manager-list');
   if(!el)return;
   const rows=[
-    ...BASE.map(c=>({name:c,color:CAT_COLORS[c]||'#94A3B8',custom:false})),
+    ...BASE.map(c=>({name:c,color:getCatColor(c),custom:false})),
     ...state.customCategories.map(c=>({...c,custom:true}))
   ];
   el.innerHTML=rows.map(c=>`<div style="display:flex;align-items:center;gap:8px;padding:.35rem .65rem;border-bottom:1px solid var(--border-mid)">
@@ -5489,8 +5694,7 @@ function renderCatManagerList(){
 }
 function addCustomCat(){
   const nameEl=document.getElementById('new-cat-name');
-  const colorEl=document.getElementById('new-cat-color');
-  if(!nameEl||!colorEl)return;
+  if(!nameEl)return;
   const name=nameEl.value.trim();
   if(!name)return;
   if(getAllCats().includes(name)){
@@ -5498,7 +5702,8 @@ function addCustomCat(){
     setTimeout(()=>{nameEl.style.borderColor='';},1500);
     return;
   }
-  state.customCategories.push({name,color:colorEl.value||'#94A3B8'});
+  // Color is assigned dynamically by assignColors() — no user-set color needed
+  state.customCategories.push({name,color:null});
   nameEl.value='';
   renderCatManagerList();
   rebuildCatSelects();
@@ -6323,6 +6528,17 @@ document.addEventListener('DOMContentLoaded',function(){
     renderHorizonTabs();
     renderVehicles();
     renderHistory();
+
+    // One-time hint for keyboard shortcuts — shows after 4s on first ever visit
+    try{
+      if(!localStorage.getItem('trakyo_tips_seen')){
+        setTimeout(()=>{
+          showToast('💡 Press <strong style="color:#fff">?</strong> anytime for tips & shortcuts','#334155',5000);
+          localStorage.setItem('trakyo_tips_seen','1');
+        },4000);
+      }
+    }catch(e){}
+
     const params=new URLSearchParams(window.location.search);
     if(params.get('import')==='1')openTxImportModal();
     if(params.has('import')||params.has('demo'))window.history.replaceState({},'',window.location.pathname);
@@ -6386,38 +6602,56 @@ function showPage(id,eventOrBtn){
 
 const DEMO_PROFILE_1 = {
   accounts:[
-    {id:1,name:'Checking',source:'Ally',type:'cash',balance:3100},
-    {id:2,name:'High-yield Savings',source:'Ally',type:'cash',balance:4800},
-    {id:3,name:'Visa Rewards',source:'Capital One',type:'credit',balance:420},
+    {id:1,name:'Checking',source:'Ally',type:'cash',balance:2800},
+    {id:2,name:'High-yield Savings',source:'Ally',type:'cash',balance:8400},
+    {id:3,name:'Roth IRA',source:'Fidelity',type:'investment',balance:11200},
+    {id:4,name:'401(k)',source:'Fidelity',type:'investment',balance:9800},
+    {id:5,name:'Student Loan',source:'Navient',type:'loan',balance:18400},
+    {id:6,name:'Visa Rewards',source:'Chase',type:'credit',balance:640},
   ],
   vehicles:[],
   snapshots:[
-    {date:'Oct 31, 2025',label:'Oct',monthKey:'2025-10',nw:5800,assets:7200,liab:1400},
-    {date:'Dec 31, 2025',label:'Dec',monthKey:'2025-12',nw:6200,assets:7980,liab:1780},
-    {date:'Feb 28, 2026',label:'Feb',monthKey:'2026-02',nw:7100,assets:8800,liab:1700},
-    {date:'Apr 30, 2026',label:'Apr',monthKey:'2026-04',nw:7480,assets:9020,liab:1540},
+    {date:'May 31, 2025',label:'May',monthKey:'2025-05',nw:10200,assets:28600,liab:18400},
+    {date:'Aug 31, 2025',label:'Aug',monthKey:'2025-08',nw:12800,assets:31200,liab:18400},
+    {date:'Nov 30, 2025',label:'Nov',monthKey:'2025-11',nw:15400,assets:33800,liab:18400},
+    {date:'Feb 28, 2026',label:'Feb',monthKey:'2026-02',nw:18200,assets:36600,liab:18400},
+    {date:'Apr 30, 2026',label:'Apr',monthKey:'2026-04',nw:20360,assets:38760,liab:18400},
   ],
-  budgets:{'Groceries':300,'Food & Drink':150,'Gas':100,'Bills & Utilities':200,'Shopping':200,'Entertainment':60},
+  budgets:{'Groceries':280,'Food & Drink':180,'Rent':1350,'Transportation':120,'Bills & Utilities':150,'Shopping':150,'Entertainment':80,'Health & Wellness':60},
   activeSources:new Set(['Checking','Visa Rewards']),
-  activeHorizon:6,
-  nwGoal:25000,
-  income:{method:'manual',monthlyAmount:3800},
-  catRules:[{keyword:'ALDI',cat:'Groceries'},{keyword:'TRADER JOE',cat:'Groceries'},{keyword:'SHELL',cat:'Gas'},{keyword:'MEIJER FUEL',cat:'Gas'}],
-  vendorAliases:{'COMCAST XFINITY':'Internet & Cable','AT&T':'Phone Bill'},
+  activeHorizon:12,
+  nwGoal:50000,
+  income:{method:'manual',monthlyAmount:4800},
+  catRules:[{keyword:'ALDI',cat:'Groceries'},{keyword:'TRADER JOE',cat:'Groceries'},{keyword:'SHELL',cat:'Transportation'},{keyword:'STUDENT LOAN',cat:'Transfers'},{keyword:'RENT',cat:'Rent'}],
+  vendorAliases:{'COMCAST XFINITY':'Internet','AT&T':'Phone','VENMO':'Transfers'},
   transactions:[
+    // May 2026
+    {date:'2026-05-15',desc:'RENT PAYMENT',cat:'Rent',card:'Checking',amount:1350.00},{date:'2026-05-14',desc:'ALDI',cat:'Groceries',card:'Checking',amount:63.44},{date:'2026-05-13',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:14.87},{date:'2026-05-12',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:7.45},{date:'2026-05-11',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-05-10',desc:'SHELL',cat:'Transportation',card:'Checking',amount:41.22},{date:'2026-05-09',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:55.33},{date:'2026-05-08',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:28.49},{date:'2026-05-07',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2026-05-06',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:8.90},{date:'2026-05-05',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2026-05-04',desc:'CHICK-FIL-A',cat:'Food & Drink',card:'Visa Rewards',amount:12.44},{date:'2026-05-03',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:18.33},{date:'2026-05-02',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:41.22},{date:'2026-05-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
     // Apr 2026
-    {date:'2026-04-28',desc:'KROGER',cat:'Groceries',card:'Checking',amount:67.43},{date:'2026-04-27',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:17.99},{date:'2026-04-26',desc:'SHELL',cat:'Gas',card:'Checking',amount:48.12},{date:'2026-04-26',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:34.55},{date:'2026-04-26',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:67.23},{date:'2026-04-25',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:93.17},{date:'2026-04-24',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:12.85},{date:'2026-04-23',desc:'PANERA BREAD',cat:'Food & Drink',card:'Visa Rewards',amount:21.37},{date:'2026-04-22',desc:'ALDI',cat:'Groceries',card:'Checking',amount:54.29},{date:'2026-04-21',desc:'CHICK-FIL-A',cat:'Food & Drink',card:'Visa Rewards',amount:16.22},{date:'2026-04-20',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:34.99},{date:'2026-04-19',desc:'ALDI',cat:'Groceries',card:'Checking',amount:38.44},{date:'2026-04-19',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:14.75},{date:'2026-04-19',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:44.88},{date:'2026-04-18',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-04-17',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:72.00},{date:'2026-04-16',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:11.25},{date:'2026-04-15',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:8.45},{date:'2026-04-14',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:43.17},{date:'2026-04-13',desc:'KROGER',cat:'Groceries',card:'Checking',amount:52.88},{date:'2026-04-13',desc:'PANERA BREAD',cat:'Food & Drink',card:'Visa Rewards',amount:28.33},{date:'2026-04-13',desc:'AMC THEATER',cat:'Entertainment',card:'Visa Rewards',amount:32.50},{date:'2026-04-12',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:28.43},{date:'2026-04-10',desc:'MEIJER FUEL',cat:'Gas',card:'Checking',amount:44.63},{date:'2026-04-09',desc:'CHICK-FIL-A',cat:'Food & Drink',card:'Visa Rewards',amount:11.34},{date:'2026-04-07',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:89.99},{date:'2026-04-06',desc:'ALDI',cat:'Groceries',card:'Checking',amount:61.88},{date:'2026-04-06',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:16.45},{date:'2026-04-06',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:51.22},{date:'2026-04-05',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:22.87},{date:'2026-04-05',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:14.22},{date:'2026-04-03',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:14.22},{date:'2026-04-01',desc:'ZELLE TRANSFER',cat:'Transfers',card:'Checking',amount:47.50},
+    {date:'2026-04-30',desc:'RENT PAYMENT',cat:'Rent',card:'Checking',amount:1350.00},{date:'2026-04-28',desc:'ALDI',cat:'Groceries',card:'Checking',amount:58.77},{date:'2026-04-27',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:15.49},{date:'2026-04-26',desc:'SHELL',cat:'Transportation',card:'Checking',amount:44.88},{date:'2026-04-25',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:16.22},{date:'2026-04-24',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:67.23},{date:'2026-04-23',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:88.17},{date:'2026-04-22',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:9.75},{date:'2026-04-21',desc:'PANERA BREAD',cat:'Food & Drink',card:'Visa Rewards',amount:21.37},{date:'2026-04-20',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:61.44},{date:'2026-04-19',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:34.99},{date:'2026-04-18',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-04-17',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2026-04-16',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:11.25},{date:'2026-04-15',desc:'CHICK-FIL-A',cat:'Food & Drink',card:'Visa Rewards',amount:13.44},{date:'2026-04-14',desc:'ALDI',cat:'Groceries',card:'Checking',amount:52.88},{date:'2026-04-13',desc:'AMC THEATER',cat:'Entertainment',card:'Visa Rewards',amount:28.50},{date:'2026-04-12',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2026-04-10',desc:'SHELL',cat:'Transportation',card:'Checking',amount:38.44},{date:'2026-04-09',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:14.22},{date:'2026-04-07',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:44.88},{date:'2026-04-05',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:18.33},{date:'2026-04-03',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:48.55},{date:'2026-04-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
     // Mar 2026
-    {date:'2026-03-29',desc:'KROGER',cat:'Groceries',card:'Checking',amount:72.15},{date:'2026-03-28',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:31.44},{date:'2026-03-28',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:58.77},{date:'2026-03-27',desc:'SHELL',cat:'Gas',card:'Checking',amount:53.41},{date:'2026-03-26',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:17.99},{date:'2026-03-25',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:14.22},{date:'2026-03-24',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:72.00},{date:'2026-03-22',desc:'ALDI',cat:'Groceries',card:'Checking',amount:48.55},{date:'2026-03-22',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:17.35},{date:'2026-03-22',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:43.22},{date:'2026-03-21',desc:'PANERA BREAD',cat:'Food & Drink',card:'Visa Rewards',amount:24.88},{date:'2026-03-20',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:22.49},{date:'2026-03-18',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-03-17',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:7.80},{date:'2026-03-15',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:55.34},{date:'2026-03-15',desc:'AMC THEATER',cat:'Entertainment',card:'Visa Rewards',amount:28.50},{date:'2026-03-14',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:19.44},{date:'2026-03-13',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:89.99},{date:'2026-03-10',desc:'MEIJER FUEL',cat:'Gas',card:'Checking',amount:40.22},{date:'2026-03-08',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:31.77},{date:'2026-03-08',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:13.55},{date:'2026-03-07',desc:'ALDI',cat:'Groceries',card:'Checking',amount:44.88},{date:'2026-03-07',desc:'PANERA BREAD',cat:'Food & Drink',card:'Visa Rewards',amount:22.15},{date:'2026-03-06',desc:'CHICK-FIL-A',cat:'Food & Drink',card:'Visa Rewards',amount:10.89},{date:'2026-03-03',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:96.34},{date:'2026-03-01',desc:'ALDI',cat:'Groceries',card:'Checking',amount:59.12},{date:'2026-03-01',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:38.44},
+    {date:'2026-03-31',desc:'RENT PAYMENT',cat:'Rent',card:'Checking',amount:1350.00},{date:'2026-03-29',desc:'ALDI',cat:'Groceries',card:'Checking',amount:72.15},{date:'2026-03-28',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:14.22},{date:'2026-03-27',desc:'SHELL',cat:'Transportation',card:'Checking',amount:49.17},{date:'2026-03-26',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:15.49},{date:'2026-03-25',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:58.77},{date:'2026-03-24',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2026-03-22',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:55.34},{date:'2026-03-21',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:8.90},{date:'2026-03-20',desc:'PANERA BREAD',cat:'Food & Drink',card:'Visa Rewards',amount:24.88},{date:'2026-03-18',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-03-17',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:22.49},{date:'2026-03-15',desc:'AMC THEATER',cat:'Entertainment',card:'Visa Rewards',amount:24.50},{date:'2026-03-13',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2026-03-12',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:94.33},{date:'2026-03-10',desc:'SHELL',cat:'Transportation',card:'Checking',amount:42.88},{date:'2026-03-08',desc:'ALDI',cat:'Groceries',card:'Checking',amount:61.22},{date:'2026-03-07',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:11.25},{date:'2026-03-05',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:22.44},{date:'2026-03-03',desc:'CHICK-FIL-A',cat:'Food & Drink',card:'Visa Rewards',amount:12.88},{date:'2026-03-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
     // Feb 2026
-    {date:'2026-02-27',desc:'KROGER',cat:'Groceries',card:'Checking',amount:64.88},{date:'2026-02-25',desc:'SHELL',cat:'Gas',card:'Checking',amount:49.17},{date:'2026-02-24',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:17.99},{date:'2026-02-23',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:72.00},{date:'2026-02-21',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:13.10},{date:'2026-02-19',desc:'ALDI',cat:'Groceries',card:'Checking',amount:52.44},{date:'2026-02-17',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-02-15',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:19.99},{date:'2026-02-13',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:89.99},{date:'2026-02-11',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:9.15},{date:'2026-02-09',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:51.83},{date:'2026-02-07',desc:'MEIJER FUEL',cat:'Gas',card:'Checking',amount:38.91},{date:'2026-02-05',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:24.55},{date:'2026-02-03',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:89.47},{date:'2026-02-01',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:11.50},
+    {date:'2026-02-28',desc:'RENT PAYMENT',cat:'Rent',card:'Checking',amount:1350.00},{date:'2026-02-27',desc:'ALDI',cat:'Groceries',card:'Checking',amount:64.88},{date:'2026-02-25',desc:'SHELL',cat:'Transportation',card:'Checking',amount:46.33},{date:'2026-02-24',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:15.49},{date:'2026-02-23',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2026-02-21',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:13.10},{date:'2026-02-19',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:52.44},{date:'2026-02-17',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-02-15',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:44.99},{date:'2026-02-13',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2026-02-12',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:112.44},{date:'2026-02-11',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:9.15},{date:'2026-02-09',desc:'ALDI',cat:'Groceries',card:'Checking',amount:58.33},{date:'2026-02-07',desc:'SHELL',cat:'Transportation',card:'Checking',amount:38.91},{date:'2026-02-05',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:38.44},{date:'2026-02-03',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:14.22},{date:'2026-02-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
     // Jan 2026
-    {date:'2026-01-30',desc:'KROGER',cat:'Groceries',card:'Checking',amount:70.22},{date:'2026-01-28',desc:'SHELL',cat:'Gas',card:'Checking',amount:49.75},{date:'2026-01-26',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:17.99},{date:'2026-01-25',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:72.00},{date:'2026-01-23',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:11.75},{date:'2026-01-21',desc:'ALDI',cat:'Groceries',card:'Checking',amount:57.33},{date:'2026-01-19',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-01-17',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:38.47},{date:'2026-01-15',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:89.99},{date:'2026-01-12',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:8.90},{date:'2026-01-10',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:46.37},{date:'2026-01-08',desc:'MEIJER FUEL',cat:'Gas',card:'Checking',amount:42.15},{date:'2026-01-06',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:107.83},{date:'2026-01-04',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:18.33},
+    {date:'2026-01-31',desc:'RENT PAYMENT',cat:'Rent',card:'Checking',amount:1350.00},{date:'2026-01-30',desc:'ALDI',cat:'Groceries',card:'Checking',amount:70.22},{date:'2026-01-28',desc:'SHELL',cat:'Transportation',card:'Checking',amount:49.75},{date:'2026-01-26',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:15.49},{date:'2026-01-25',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2026-01-23',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:11.75},{date:'2026-01-21',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:57.33},{date:'2026-01-19',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-01-17',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:38.47},{date:'2026-01-15',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2026-01-14',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:8.90},{date:'2026-01-12',desc:'ALDI',cat:'Groceries',card:'Checking',amount:46.37},{date:'2026-01-10',desc:'SHELL',cat:'Transportation',card:'Checking',amount:42.15},{date:'2026-01-08',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:107.83},{date:'2026-01-06',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:29.44},{date:'2026-01-05',desc:'PANERA BREAD',cat:'Food & Drink',card:'Visa Rewards',amount:18.33},{date:'2026-01-04',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:11.50},{date:'2026-01-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
     // Dec 2025
-    {date:'2025-12-28',desc:'KROGER',cat:'Groceries',card:'Checking',amount:68.10},{date:'2025-12-26',desc:'SHELL',cat:'Gas',card:'Checking',amount:44.88},{date:'2025-12-24',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:17.99},{date:'2025-12-22',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:72.00},{date:'2025-12-20',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:13.45},{date:'2025-12-18',desc:'ALDI',cat:'Groceries',card:'Checking',amount:60.22},{date:'2025-12-16',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2025-12-14',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:55.48},{date:'2025-12-12',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:89.99},{date:'2025-12-10',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:7.60},{date:'2025-12-08',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:51.15},{date:'2025-12-06',desc:'MEIJER FUEL',cat:'Gas',card:'Checking',amount:47.22},{date:'2025-12-04',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:103.29},{date:'2025-12-02',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:29.99},
+    {date:'2025-12-31',desc:'RENT PAYMENT',cat:'Rent',card:'Checking',amount:1350.00},{date:'2025-12-28',desc:'ALDI',cat:'Groceries',card:'Checking',amount:68.10},{date:'2025-12-26',desc:'SHELL',cat:'Transportation',card:'Checking',amount:44.88},{date:'2025-12-24',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:15.49},{date:'2025-12-22',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2025-12-21',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:88.44},{date:'2025-12-20',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:13.45},{date:'2025-12-18',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:60.22},{date:'2025-12-16',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2025-12-14',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:72.33},{date:'2025-12-12',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2025-12-10',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:7.60},{date:'2025-12-08',desc:'ALDI',cat:'Groceries',card:'Checking',amount:51.15},{date:'2025-12-06',desc:'SHELL',cat:'Transportation',card:'Checking',amount:47.22},{date:'2025-12-04',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:103.29},{date:'2025-12-03',desc:'AMC THEATER',cat:'Entertainment',card:'Visa Rewards',amount:32.50},{date:'2025-12-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
     // Nov 2025
-    {date:'2025-11-28',desc:'KROGER',cat:'Groceries',card:'Checking',amount:65.44},{date:'2025-11-26',desc:'SHELL',cat:'Gas',card:'Checking',amount:45.83},{date:'2025-11-24',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:17.99},{date:'2025-11-22',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:72.00},{date:'2025-11-20',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:12.50},{date:'2025-11-18',desc:'ALDI',cat:'Groceries',card:'Checking',amount:53.77},{date:'2025-11-16',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2025-11-14',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:26.99},{date:'2025-11-12',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:89.99},{date:'2025-11-10',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:8.20},{date:'2025-11-08',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:47.60},{date:'2025-11-06',desc:'MEIJER FUEL',cat:'Gas',card:'Checking',amount:41.73},{date:'2025-11-04',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:86.19},{date:'2025-11-02',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:12.80},
-  ].map((t,i)=>({...t,id:i,excluded:false,is_offset:false})),
+    {date:'2025-11-30',desc:'RENT PAYMENT',cat:'Rent',card:'Checking',amount:1350.00},{date:'2025-11-28',desc:'ALDI',cat:'Groceries',card:'Checking',amount:65.44},{date:'2025-11-27',desc:'SHELL',cat:'Transportation',card:'Checking',amount:45.83},{date:'2025-11-25',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:15.49},{date:'2025-11-24',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:44.99},{date:'2025-11-22',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2025-11-20',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:12.50},{date:'2025-11-18',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:53.77},{date:'2025-11-16',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2025-11-14',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:38.22},{date:'2025-11-12',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2025-11-10',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:8.20},{date:'2025-11-08',desc:'ALDI',cat:'Groceries',card:'Checking',amount:47.60},{date:'2025-11-06',desc:'SHELL',cat:'Transportation',card:'Checking',amount:41.73},{date:'2025-11-04',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:86.19},{date:'2025-11-02',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:12.80},{date:'2025-11-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
+    // Oct 2025
+    {date:'2025-10-31',desc:'RENT PAYMENT',cat:'Rent',card:'Checking',amount:1350.00},{date:'2025-10-29',desc:'ALDI',cat:'Groceries',card:'Checking',amount:61.33},{date:'2025-10-28',desc:'SHELL',cat:'Transportation',card:'Checking',amount:43.22},{date:'2025-10-26',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:15.49},{date:'2025-10-25',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2025-10-23',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:14.88},{date:'2025-10-21',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:49.44},{date:'2025-10-19',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2025-10-17',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:31.99},{date:'2025-10-15',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2025-10-13',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:9.45},{date:'2025-10-11',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:44.22},{date:'2025-10-09',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:78.44},{date:'2025-10-07',desc:'SHELL',cat:'Transportation',card:'Checking',amount:39.88},{date:'2025-10-05',desc:'PANERA BREAD',cat:'Food & Drink',card:'Visa Rewards',amount:19.44},{date:'2025-10-03',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:16.33},{date:'2025-10-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
+    // Sep 2025
+    {date:'2025-09-30',desc:'RENT PAYMENT',cat:'Rent',card:'Checking',amount:1350.00},{date:'2025-09-28',desc:'ALDI',cat:'Groceries',card:'Checking',amount:59.88},{date:'2025-09-26',desc:'SHELL',cat:'Transportation',card:'Checking',amount:47.11},{date:'2025-09-24',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:15.49},{date:'2025-09-23',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2025-09-21',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:13.22},{date:'2025-09-19',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:54.77},{date:'2025-09-17',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2025-09-15',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:27.49},{date:'2025-09-13',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2025-09-11',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:8.75},{date:'2025-09-09',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:33.44},{date:'2025-09-07',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:71.22},{date:'2025-09-05',desc:'SHELL',cat:'Transportation',card:'Checking',amount:41.33},{date:'2025-09-03',desc:'CHICK-FIL-A',cat:'Food & Drink',card:'Visa Rewards',amount:11.88},{date:'2025-09-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
+    // Aug 2025
+    {date:'2025-08-31',desc:'RENT PAYMENT',cat:'Rent',card:'Checking',amount:1350.00},{date:'2025-08-29',desc:'ALDI',cat:'Groceries',card:'Checking',amount:55.22},{date:'2025-08-27',desc:'SHELL',cat:'Transportation',card:'Checking',amount:45.66},{date:'2025-08-25',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:15.49},{date:'2025-08-24',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2025-08-22',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:15.44},{date:'2025-08-20',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:51.88},{date:'2025-08-18',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2025-08-16',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:19.99},{date:'2025-08-14',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2025-08-12',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:7.80},{date:'2025-08-10',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:29.88},{date:'2025-08-08',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:94.11},{date:'2025-08-06',desc:'SHELL',cat:'Transportation',card:'Checking',amount:38.44},{date:'2025-08-04',desc:'PANERA BREAD',cat:'Food & Drink',card:'Visa Rewards',amount:17.55},{date:'2025-08-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
+    // Jul 2025
+    {date:'2025-07-31',desc:'RENT PAYMENT',cat:'Rent',card:'Checking',amount:1350.00},{date:'2025-07-29',desc:'ALDI',cat:'Groceries',card:'Checking',amount:57.44},{date:'2025-07-27',desc:'SHELL',cat:'Transportation',card:'Checking',amount:44.22},{date:'2025-07-25',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:15.49},{date:'2025-07-24',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2025-07-22',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:12.88},{date:'2025-07-20',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:53.11},{date:'2025-07-18',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2025-07-16',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:34.99},{date:'2025-07-14',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2025-07-12',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:9.25},{date:'2025-07-10',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:47.33},{date:'2025-07-08',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:88.77},{date:'2025-07-06',desc:'SHELL',cat:'Transportation',card:'Checking',amount:40.11},{date:'2025-07-04',desc:'AMC THEATER',cat:'Entertainment',card:'Visa Rewards',amount:22.50},{date:'2025-07-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
+    // Jun 2025
+    {date:'2025-06-30',desc:'RENT PAYMENT',cat:'Rent',card:'Checking',amount:1350.00},{date:'2025-06-28',desc:'ALDI',cat:'Groceries',card:'Checking',amount:62.88},{date:'2025-06-26',desc:'SHELL',cat:'Transportation',card:'Checking',amount:43.55},{date:'2025-06-24',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:15.49},{date:'2025-06-23',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2025-06-21',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:14.11},{date:'2025-06-19',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:49.66},{date:'2025-06-17',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2025-06-15',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:22.49},{date:'2025-06-13',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2025-06-11',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:8.45},{date:'2025-06-09',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:36.77},{date:'2025-06-07',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:69.44},{date:'2025-06-05',desc:'SHELL',cat:'Transportation',card:'Checking',amount:38.88},{date:'2025-06-03',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:13.22},{date:'2025-06-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
+    // May 2025
+    {date:'2025-05-31',desc:'RENT PAYMENT',cat:'Rent',card:'Checking',amount:1350.00},{date:'2025-05-29',desc:'ALDI',cat:'Groceries',card:'Checking',amount:58.33},{date:'2025-05-27',desc:'SHELL',cat:'Transportation',card:'Checking',amount:42.11},{date:'2025-05-25',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:15.49},{date:'2025-05-24',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2025-05-22',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:13.55},{date:'2025-05-20',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:51.22},{date:'2025-05-18',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2025-05-16',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:18.99},{date:'2025-05-14',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2025-05-12',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:7.35},{date:'2025-05-10',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:28.44},{date:'2025-05-08',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:72.33},{date:'2025-05-06',desc:'SHELL',cat:'Transportation',card:'Checking',amount:39.77},{date:'2025-05-04',desc:'CHICK-FIL-A',cat:'Food & Drink',card:'Visa Rewards',amount:10.88},{date:'2025-05-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
+  ].map((t,i)=>({...t,id:i,excluded:false})),
 };
 
 const DEMO_PROFILE_2 = {
@@ -6506,13 +6740,11 @@ function loadDemoProfile(n, silent=false, skipRender=false){
     showDemoNudge();
 
     if(window._fromLanding&&!silent){
-      // Coming from landing page — land on NW tab as intended
+      // Coming from landing page — open on Spending
       window._fromLanding=false;
-      const nudge=document.getElementById('demo-nudge');
-      if(nudge)nudge.style.display='block';
-      showPage('dashboard',document.querySelectorAll('.nav-btn')[0]);
+      showPage('spending',document.querySelectorAll('.nav-btn')[0]);
       window._demoPicked=true;
-      setTimeout(()=>{ if(nudge)nudge.style.display='block'; showPage('dashboard',document.querySelectorAll('.nav-btn')[0]); },150);
+      setTimeout(()=>{ showPage('spending',document.querySelectorAll('.nav-btn')[0]); },150);
     } else {
       // Already in app — stay on current tab, re-render it
       window._demoPicked=true;
@@ -6568,7 +6800,7 @@ onAuthStateChanged(auth, user => {
     if(window._demoPicked){
       const nudge=document.getElementById('demo-nudge');
       if(nudge)nudge.style.display='block';
-      if(window.showPage) window.showPage('dashboard',document.querySelectorAll('.nav-btn')[0]);
+      if(window.showPage) window.showPage('spending',document.querySelectorAll('.nav-btn')[0]);
     }
   }
 });
@@ -6663,6 +6895,7 @@ window.d3Sankey = (typeof d3 !== 'undefined' && typeof d3.sankey === 'function')
 <footer class="app-footer">
   <a href="index.html" class="footer-logo">trak-yo-dolla<span>$</span></a>
   <nav class="footer-nav" aria-label="Footer navigation">
+    <button onclick="document.getElementById('shortcuts-modal').classList.remove('hidden')" type="button">Tips & shortcuts</button>
     <button onclick="openPrivacyPanel()" type="button">Privacy</button>
     <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer">GitHub</a>
     <a href="https://github.com/gflo247/trak-yo-dollas/issues" target="_blank" rel="noopener noreferrer">Feedback</a>
