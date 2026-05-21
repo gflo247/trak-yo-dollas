@@ -10,22 +10,21 @@ Import a CSV from your bank or credit card. Your browser does everything. Nothin
 
 ## What it does
 
-- **Five ways to see your spending** — category treemap, income flow chart, daily heatmap, vendor breakdown, and month-over-month trend. Click any tile to filter transactions instantly and find out that "miscellaneous" is mostly coffee shops.
-- **"At a Glance" insights** — a curated card of monthly insights with a lead "Worth your attention" insight surfaced by urgency. Savings rate, budget health, top mover, largest charge, subscriptions, and weekend spending patterns.
+- **Five ways to see your spending** — category treemap, income flow chart, daily heatmap, vendor breakdown, and month-over-month trend. Click any tile to filter transactions instantly.
+- **"At a Glance" insights** — a curated card of monthly insights with a lead "Worth your attention" insight surfaced by urgency. Savings rate, budget health, top mover, largest charge, subscriptions, and weekend spending patterns. Each insight links to the relevant tab or action.
+- **Budget tab** — set monthly limits, track pace in real time, see AT RISK warnings before you go over. Every category row shows 12-month history dots (tap to expand to percentages). Sort by % used, amount, or A–Z.
 - **Full picture net worth** — checking, savings, investments, loans, real estate, and vehicles in one place. Save monthly snapshots and track your trajectory. Project when you'll hit your goal.
-- **Budgets and year in review** — set monthly limits per category and track pace in real time. Pull up an annual summary and find out you spent $4,200 on restaurants last year.
-- **Messy bank data, cleaned up** — transactions auto-categorize on import. Set keyword rules so "AMZN MKTP" always becomes Shopping. Merge duplicate vendor names. Rules run automatically on every future import.
-- **Recurring charge detection** — surfaces subscriptions and regular charges automatically, including that $12.99 trial you forgot to cancel.
-- **Two demo profiles** — "Early career, building up" and "Established, tracking it all." Explore every feature with realistic data before touching your own.
+- **Messy bank data, cleaned up** — transactions auto-categorize on import. Set keyword rules so "AMZN MKTP" always becomes Shopping. Rules run automatically on every future import.
+- **Two demo profiles** — "Early career, building up" (renting, student loan, Roth IRA started, $50k goal) and "Established, tracking it all" (home, investments, multiple accounts). Explore every feature before touching your own data.
 
 ---
 
 ## Privacy
 
-- **No bank connections** — no logins, no screen scraping, no third-party data brokers. You import a CSV — the same file your bank or credit card already gives you.
-- **Runs entirely in your browser** — data saves to localStorage. Refresh the page, everything's still there. Close the tab, nobody else has it.
+- **No bank connections** — no logins, no screen scraping, no third-party data brokers. You import a CSV — the same file your bank already gives you.
+- **Runs entirely in your browser** — data saves to localStorage. Refresh the page, everything's still there.
 - **Nothing leaves your device. Ever — unless you want it to.**
-- **Optional sync, never required** — sign in with Google to access your data across devices via Firebase. Your data is secured by your Google account, not ours.
+- **Optional sync, never required** — sign in with Google to access your data across devices via Firebase.
 - **No paywall** — free to use, all features included.
 
 Full details: [privacy policy](https://trak-yo-dollas.web.app/privacy.html)
@@ -41,7 +40,7 @@ Usually under Statements or Download Activity in your bank or credit card portal
 Open the app, click ⬆ Import CSV. Works with exports from Chase, Ally, Fidelity, Vanguard, and most major banks and credit cards.
 
 **3. Explore**
-Transactions are auto-categorized and ready to explore. Switch between chart views, set budgets, add your accounts for net worth tracking.
+Transactions are auto-categorized. Switch between chart views, set budgets, add your accounts for net worth tracking.
 
 ---
 
@@ -79,32 +78,19 @@ trak-yo-dollas/
 Deployed via [Firebase Hosting](https://firebase.google.com/docs/hosting):
 
 ```bash
-npm install -g firebase-tools
-firebase login
-firebase init hosting
-firebase deploy
+echo '{"hosting":{"public":".","ignore":["firebase.json","deploy.sh","README.md","*.sh"],"releaseLimit":5}}' > firebase.json
+npx firebase-tools deploy --only hosting --project trak-yo-dollas
 ```
-
----
-
-## Feedback and contributions
-
-Found a bug or have a feature request? [Open an issue](https://github.com/gflo247/trak-yo-dollas/issues).
-
-The entire app is one HTML file (~6,900 lines) with clearly marked sections — search for `// ──` to navigate between them.
 
 ---
 
 ## Recent updates
 
-- **Lead insight system** — "Worth your attention" card promotes the most urgent insight (low savings rate, over-budget category, unusual spending spike) with stronger visual treatment
-- **Progressive disclosure** — At a Glance shows 3 pills by default with expand/collapse
-- **Dynamic color system** — all category and vendor colors assigned by stride-based algorithm for maximum perceptual distance across whatever's in your data. No fixed color palette.
-- **Tab reorder** — Spending is now the first and default tab (most immediately useful)
-- **"At a Glance" moved to Spending tab** — where it belongs, above the category tiles
-- **Interactive chart filtering** — click tiles in treemap, flow chart, and daily heatmap to filter transactions. Filters clear when switching chart modes or tabs.
-- **Net Worth visual hierarchy** — three clear tiers: trend (primary), goal (secondary), breakdown + snapshots (tertiary)
-- **Demo Profile 1 rebuilt** — realistic early-career profile: Ally checking/HYSA, Fidelity Roth IRA + 401k, student loan, 12 months of transaction history, $50k NW goal
-- **Tips & shortcuts modal** — press `?` anywhere. One-time hint toast on first visit.
-- **D3 net worth trend chart** — animated draw, goal line, snapshot dots, dynamic date range from snapshot history
-- **Full security pass** — CSP, `rel="noopener noreferrer"`, `type="button"` on all buttons, `localStorage` try/catch, no native `prompt()`/`confirm()`
+- **Budget tab overhaul** — status grouping (Needs attention / On track), 12-month history dots with tap-to-expand, AT RISK badge, inline projection, sort toggle, dot legend with thresholds, entire card clickable
+- **Lead insight system** — "Worth your attention" card promotes the most urgent At a Glance insight with stronger visual treatment and direct action links
+- **Dynamic color system** — all category and vendor colors assigned from one canonical map built from lifetime spend data; no fixed palette
+- **Daily chart zoom** — +/− controls scale day cells from 12px to 22px for easier mobile tapping
+- **Clear all data** — in ··· menu with type-to-confirm safety step; documented in Tips & shortcuts (press ?)
+- **Demo Profile 1 rebuilt** — realistic early-career profile with 12 months of history and consistent net worth trajectory
+- **localStorage split** — transactions saved separately from settings, only re-serialized when dirty
+- **Profile switch** — now fully refreshes Budget tab, source chips, and all rendered state
