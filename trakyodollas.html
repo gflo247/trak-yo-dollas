@@ -225,12 +225,18 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .chip-cfu.on{background:#2E1065;color:#A78BFA;border-color:#7C3AED}
 .chip-cpv.on{background:#78350F;color:#FCD34D;border-color:#D97706}
 /* excluded toggle */
-.excl-toggle{display:flex;align-items:center;gap:7px;margin-bottom:.7rem;padding:.35rem .7rem;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-mid);cursor:pointer;user-select:none;width:fit-content}
-.excl-toggle-dot{width:28px;height:16px;border-radius:8px;background:var(--border-mid);position:relative;transition:background .15s;flex-shrink:0}
-.excl-toggle-dot::after{content:'';position:absolute;width:12px;height:12px;border-radius:50%;background:#fff;top:2px;left:2px;transition:transform .15s}
-.excl-toggle.on .excl-toggle-dot{background:#7C3AED}
-.excl-toggle.on .excl-toggle-dot::after{transform:translateX(12px)}
-.excl-badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;background:#7C3AED22;color:#A78BFA;border:1px solid #7C3AED44}
+
+.chip-excl{border-color:#92400E55;color:#D97706;background:#78350F0A;margin-left:16px;position:relative}
+.chip-excl::before{content:'';position:absolute;left:-12px;top:20%;height:60%;width:1px;background:var(--border-mid)}
+.chip-excl:hover{border-color:#D97706;background:#78350F18}
+.hidden-popover{position:absolute;top:calc(100% + 8px);left:0;z-index:200;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:.75rem;min-width:260px;box-shadow:0 8px 24px #00000044}
+.hidden-popover-section{font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.4rem;margin-top:.6rem}
+.hidden-popover-section:first-child{margin-top:0}
+.hidden-popover-row{display:flex;align-items:center;justify-content:space-between;padding:.3rem .4rem;border-radius:6px;font-size:12px;color:var(--text-secondary)}
+.hidden-popover-row:hover{background:var(--bg-deep)}
+.hidden-popover-show{background:none;border:1px solid var(--border-mid);border-radius:4px;padding:1px 8px;font-size:10px;font-weight:600;color:var(--accent-blue-light);cursor:pointer;font-family:inherit}
+.hidden-popover-show:hover{border-color:var(--accent-blue-light);background:#2563EB18}
+.hidden-popover-empty{font-size:12px;color:var(--text-muted);text-align:center;padding:.5rem 0}
 .tx-row.tx-excluded{opacity:.45;border-color:var(--border)}
 .tx-row.tx-excluded:hover{opacity:.7}
 .excl-pill{font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px;background:#7C3AED22;color:#A78BFA;border:1px solid #7C3AED33;flex-shrink:0}
@@ -645,6 +651,9 @@ select option{background:var(--bg-card)}
 
 <!-- ACCOUNTS -->
 <div class="page" id="page-accounts">
+  <div id="demo-notice-accounts" style="background:transparent;border:1px solid var(--border-dim);border-radius:8px;padding:.3rem .75rem;margin-bottom:.75rem;opacity:.6">
+    <div style="font-size:10px;color:var(--text-muted);line-height:1.5">Demo accounts — add or edit your real balances to replace these.</div>
+  </div>
   <div class="flex-between">
     <span class="page-title">Accounts</span>
     <button class="btn btn-sm btn-primary" onclick="openAddModal()" type="button">+ Add Account</button>
@@ -690,8 +699,9 @@ select option{background:var(--bg-card)}
     <div style="display:flex;align-items:center;gap:4px"><div style="width:8px;height:8px;border-radius:50%;background:#34D399;flex-shrink:0"></div><span style="font-size:10px;color:var(--text-muted)">On track <span style="color:var(--text-muted);opacity:.7">&lt;80%</span></span></div>
   </div>
 
-  <!-- Sort toggle — between hero and category rows -->
-  <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:.6rem">
+  <!-- Sort toggle + export — between hero and category rows -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
+    <button onclick="exportBudgetCSV()" style="background:none;border:1px solid #2563EB44;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:600;color:#60A5FA;cursor:pointer" type="button">⬇ Export CSV</button>
     <div style="display:flex;border:1px solid var(--border-mid);border-radius:6px;overflow:hidden">
       <button id="bsort-pct" onclick="setBudgetSort('pct')" style="padding:3px 10px;border:none;cursor:pointer;font-family:inherit;font-size:10px;font-weight:700;background:#2563EB;color:#fff" type="button">% Used</button>
       <button id="bsort-amount" onclick="setBudgetSort('amount')" style="padding:3px 10px;border:none;cursor:pointer;font-family:inherit;font-size:10px;font-weight:700;background:var(--bg-card);color:var(--text-muted)" type="button">Amount</button>
@@ -740,12 +750,6 @@ select option{background:var(--bg-card)}
   <div class="chip-row" id="source-chips"></div>
   <div class="horizon-row" id="horizon-row"></div>
 
-  <!-- Excluded toggle -->
-  <div class="excl-toggle" id="excl-toggle" onclick="toggleExcluded()">
-    <div class="excl-toggle-dot"></div>
-    <span style="font-size:10px;font-weight:700;color:var(--text-muted)">Show investment &amp; savings contributions</span>
-    <span class="excl-badge" id="excl-count-badge">7</span>
-  </div>
   <!-- Search -->
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
@@ -892,14 +896,18 @@ select option{background:var(--bg-card)}
     </div>
 
     <!-- Drop zone -->
-    <div class="csv-zone" id="tx-drop-zone"
-         onclick="document.getElementById('tx-csv-file').click()"
+    <div class="csv-zone" id="tx-drop-zone" style="position:relative"
          ondragover="event.preventDefault();this.style.borderColor='#2563EB'"
          ondragleave="this.style.borderColor=''"
          ondrop="handleTxDrop(event)">
       <div style="font-size:22px;margin-bottom:4px">📂</div>
       <div>Click to select or drag &amp; drop your CSV file</div>
-      <input type="file" id="tx-csv-file" accept=".csv,.CSV" style="display:none" onchange="handleTxFileSelect(this)"/>
+      <input type="file" id="tx-csv-file" accept=".csv,.CSV"
+             style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer"
+             ondragover="event.preventDefault();document.getElementById('tx-drop-zone').style.borderColor='#2563EB'"
+             ondragleave="document.getElementById('tx-drop-zone').style.borderColor=''"
+             ondrop="handleTxDrop(event)"
+             onchange="handleTxFileSelect(this)"/>
     </div>
 
     <!-- Preview -->
@@ -1070,12 +1078,13 @@ select option{background:var(--bg-card)}
         <span id="rc-selected-count" class="text-muted-xs"></span>
       </div>
     </div>
-    <div class="form-group">
-      <label class="form-label">Mark as contribution (exclude from spend totals)</label>
+    <div class="form-group" style="border-top:1px solid var(--border);padding-top:.75rem;margin-top:.25rem">
+      <label class="form-label">Spending exclusion</label>
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text-secondary)">
-        <input type="checkbox" id="et-excluded" style="accent-color:#7C3AED;width:14px;height:14px">
-        Exclude from spending totals &amp; charts
+        <input type="checkbox" id="et-excluded" style="accent-color:#7C3AED;width:14px;height:14px" onchange="updateExclNote()">
+        Hide this transaction from spending totals &amp; charts
       </label>
+      <div id="et-excl-note" style="font-size:10px;color:var(--text-muted);margin-top:4px;line-height:1.5">Use for investment contributions, credit card payments, reimbursements, or anything that shouldn't count as spending.</div>
     </div>
     <div class="row" style="justify-content:flex-end;gap:8px;margin-top:1rem">
       <button class="btn" onclick="closeModals()" type="button">Cancel</button>
@@ -1124,39 +1133,21 @@ select option{background:var(--bg-card)}
 
 <!-- Post-import success modal -->
 <div class="modal-overlay hidden" id="import-success-modal">
-  <div class="modal" style="width:min(480px,95vw)">
-    <div style="text-align:center;margin-bottom:1rem">
-      <div style="font-size:32px;margin-bottom:.5rem">🎉</div>
-      <h3 style="font-size:17px;margin-bottom:.25rem">Import successful!</h3>
-      <div id="import-success-summary" class="text-muted-md"></div>
+  <div class="modal" style="width:min(420px,95vw)">
+    <div style="text-align:center;margin-bottom:1.25rem">
+      <div style="font-size:36px;margin-bottom:.6rem">✓</div>
+      <h3 style="font-size:19px;margin-bottom:.35rem">Import successful!</h3>
+      <div id="import-success-summary" style="font-size:13px;color:var(--text-muted)"></div>
     </div>
-    <div class="section-box">
-      <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem">Suggested next steps</div>
-      <div style="display:flex;flex-direction:column;gap:.6rem">
-        <div style="display:flex;align-items:flex-start;gap:10px">
-          <div style="width:22px;height:22px;border-radius:50%;background:#2563EB;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
-          <div><div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:1px">Set up your income</div><div style="font-size:11px;color:#475569">Hit <strong style="color:#94A3B8">··· → Income & savings rate</strong> on the Spending tab to unlock your savings rate and the Flow chart.</div></div>
-        </div>
-        <div style="display:flex;align-items:flex-start;gap:10px">
-          <div style="width:22px;height:22px;border-radius:50%;background:#2563EB;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
-          <div><div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:1px">Update your account balances</div><div style="font-size:11px;color:#475569">Add checking, savings, investments & loans on the Accounts tab so your net worth is accurate.</div></div>
-        </div>
-        <div style="display:flex;align-items:flex-start;gap:10px">
-          <div style="width:22px;height:22px;border-radius:50%;background:#2563EB;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
-          <div><div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:1px">Save your first real snapshot</div><div style="font-size:11px;color:#475569">Hit <strong style="color:#94A3B8">+ Save snapshot</strong> on the Net Worth tab to anchor today's numbers to your trend line.</div></div>
-        </div>
-        <div style="display:flex;align-items:flex-start;gap:10px">
-          <div style="width:22px;height:22px;border-radius:50%;background:#2563EB;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div>
-          <div><div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:1px">Build your auto-categorization rules</div><div style="font-size:11px;color:#475569">Click any transaction to fix its category — you'll be offered to save it as a rule so future imports categorize automatically.</div></div>
-        </div>
-      </div>
+
+    <div id="import-success-uncategorized" class="hidden" style="background:#78350F18;border:1px solid #D9770633;border-radius:8px;padding:.55rem .85rem;margin-bottom:1rem;font-size:12px;color:#D97706;line-height:1.5"></div>
+
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1.1rem">
+      <button class="btn btn-primary" style="width:100%;justify-content:center;font-size:14px;padding:.65rem" onclick="closeModals()" type="button">View my spending</button>
+      <button class="btn" style="width:100%;justify-content:center;font-size:14px;padding:.65rem" onclick="closeModals();setTimeout(()=>openTxImportModal(),80)" type="button">Import another account</button>
     </div>
-    <div id="import-success-uncategorized" class="hidden" style="background:#78350F18;border:1px solid #D9770633;border-radius:8px;padding:.6rem .85rem;margin-bottom:1rem;font-size:11px;color:#D97706"></div>
-    <div style="font-size:11px;color:var(--text-muted);margin-bottom:1rem">💡 The Budget tab lets you set monthly targets by category — whenever you're ready.</div>
-    <div class="row" style="justify-content:flex-end;gap:8px">
-      <button class="btn" onclick="closeModals();showPage('accounts',document.querySelectorAll('.nav-btn')[3])" type="button">Go to Accounts</button>
-      <button class="btn btn-primary" onclick="closeModals()" type="button">View my spending</button>
-    </div>
+
+    <div style="font-size:11px;color:var(--text-muted);text-align:center;line-height:1.6">You can set up income, balances, and budgets anytime from the tabs.</div>
   </div>
 </div>
 
@@ -1686,6 +1677,9 @@ let state={
   hiddenPills:new Set(),
   vendorAliases:{},
   hasRealData:false,
+  hasRealAccounts:false,
+  hasRealSnapshot:false,
+  excludedCats:new Set(['Investment Contribution','Transfers','CC Payment']),
   nwGoal:null,
   chartMode:'category',
   chartShowAll:false,
@@ -2052,11 +2046,11 @@ function renderInsights(){
 
   // Pill 6 — Largest single transaction
   if(latestFullM){
-    const monthTxs=getTxForMonth(latestFullM).filter(t=>!t.excluded&&t.cat!=='Investment Contribution'&&t.cat!=='Transfers');
+    const monthTxs=getTxForMonth(latestFullM).filter(t=>!t.excluded);
     if(monthTxs.length>0){
       const biggest=monthTxs.reduce((a,b)=>a.amount>b.amount?a:b);
       const allMonthAmts=allMonths.filter(m=>m!==currentM).map(m=>{
-        const txs=getTxForMonth(m).filter(t=>!t.excluded&&t.cat!=='Investment Contribution'&&t.cat!=='Transfers');
+        const txs=getTxForMonth(m).filter(t=>!t.excluded&&!state.excludedCats.has(t.cat));
         return txs.length?txs.reduce((a,b)=>a.amount>b.amount?a:b).amount:0;
       }).filter(v=>v>0);
       const avgBiggest=allMonthAmts.length?allMonthAmts.reduce((a,b)=>a+b,0)/allMonthAmts.length:0;
@@ -2141,6 +2135,13 @@ function renderInsights(){
 }
 function renderAll(){
   if(state.hasRealData)hideDemoBadge();
+  // Per-tab demo notices
+  const da=document.getElementById('demo-notice-accounts');
+  if(da)da.style.display=state.hasRealAccounts?'none':'';
+  const sdn=document.getElementById('snap-demo-notice');
+  if(sdn)sdn.style.display=state.hasRealSnapshot?'none':'';
+  const dn=document.getElementById('demo-notice-dash');
+  if(dn)dn.style.display=(state.hasRealAccounts&&state.hasRealSnapshot)?'none':'';
   else showDemoNudge();
   const toolbarImport=document.getElementById('toolbar-import-btn');
   if(toolbarImport)toolbarImport.style.display='';
@@ -2901,7 +2902,7 @@ function getBaseTxs(){
   return state.transactions.filter(t=>{
     if(!ms.has(t.date.slice(0,7)))return false;
     if(!state.activeSources.has(t.card))return false;
-    if(t.excluded&&!state.showExcluded)return false;
+    if((t.excluded||state.excludedCats.has(t.cat))&&!state.showExcluded)return false;
     return true;
   });
 }
@@ -3008,12 +3009,20 @@ function renderSpending(){
 function renderSourceChips(){
   const sources=[...new Set(state.transactions.map(t=>t.card))].filter(Boolean).sort();
   const allOn=sources.every(s=>state.activeSources.has(s));
+  const hiddenCatCount=state.excludedCats.size;
+  const hiddenTxCount=state.transactions.filter(t=>t.excluded).length;
+  const totalHidden=hiddenCatCount+(hiddenTxCount>0?1:0); // cats + "transactions" bucket
+  const chipLabel=hiddenCatCount>0?`${hiddenCatCount} spending exclusion${hiddenCatCount===1?'':'s'}`:'Spending exclusions';
+  const hiddenChip=`<div style="position:relative;display:inline-block">
+    <button class="chip chip-excl" id="excl-toggle" onclick="toggleHiddenPopover(event)" type="button">${chipLabel}</button>
+    <div class="hidden-popover" id="hidden-popover" style="display:none"></div>
+  </div>`;
   document.getElementById('source-chips').innerHTML=
     `<button class="chip chip-all ${allOn?'on':''}" onclick="toggleAllSources()" type="button">All sources</button>`+
     sources.map(s=>{
       const cls=SRC_CHIP_CLASS[s]||'chip-ally';
       return `<button class="chip ${cls} ${state.activeSources.has(s)?'on':''}" onclick="toggleSource('${s}')" type="button">${s}</button>`;
-    }).join('');
+    }).join('')+hiddenChip;
 }
 function renderHorizonTabs(){
   const allN=ALL_MONTHS.length;
@@ -3341,7 +3350,10 @@ function renderBucketGrid(){
     return`<div class="bucket-card ${isActive?'active-bucket':''}" style="${dashed?'opacity:.75':''};border-color:${isActive?color:tc('#1E293B','#E2E8F0')};background:${isActive?color+'18':tc('#0F172A','#F8FAFC')};color:${color}" onclick="toggleCatFilter('${sc}')">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
         <div class="bucket-name" title="${cat}" style="color:${color};margin:0">${cat}${hint?` <span data-tip="${hint}" style="font-size:10px;opacity:.4;cursor:pointer" onclick="event.stopPropagation();showPillTip(this)">ⓘ</span>`:''}</div>
-        ${catSparkline(cat,color,dashed)}
+        <div style="display:flex;align-items:center;gap:4px">
+          ${catSparkline(cat,color,dashed)}
+          <button onclick="event.stopPropagation();toggleCatExclusion('${sc}')" data-hide-cat="${sc}" style="background:none;border:none;cursor:pointer;font-size:11px;opacity:.35;padding:0 2px;color:currentColor;line-height:1;transition:opacity .1s" type="button">${state.excludedCats.has(sc)?'👁':'···'}</button>
+        </div>
       </div>
       <div class="bucket-total" style="color:${color}">${fmt(s.total)}</div>
       <div class="bucket-meta">${signal?`${signal} · `:''}Avg: ${fmt(s.avg)}/mo · Peak: ${s.peakLabel}</div>
@@ -3448,7 +3460,7 @@ function renderTreemap(drillCat){
   const activeTx=state.transactions.filter(t=>
     (state.showExcluded||!t.excluded)&&state.activeSources.has(t.card)&&
     filteredMonths.includes(t.date.slice(0,7))&&
-    (state.showExcluded||t.cat!=='Investment Contribution')
+    (state.showExcluded||!state.excludedCats.has(t.cat))
   );
 
   // Build cat totals and vendor breakdown
@@ -3613,7 +3625,7 @@ function renderSankey(){
   state.transactions.filter(t=>
     (state.showExcluded||!t.excluded)&&state.activeSources.has(t.card)&&
     filteredMonths.includes(t.date.slice(0,7))&&
-    (state.showExcluded||t.cat!=='Investment Contribution')&&t.cat!=='Transfers'&&
+    (state.showExcluded||!state.excludedCats.has(t.cat))&&
     (state.activeCats.size===0||state.activeCats.has(t.cat))
   ).forEach(t=>{ catTotals[t.cat]=(catTotals[t.cat]||0)+t.amount; });
 
@@ -3787,7 +3799,7 @@ function renderDailyCal(){
   const activeTx=state.transactions.filter(t=>
     (state.showExcluded||!t.excluded)&&state.activeSources.has(t.card)&&
     (state.showTransfersInCal||t.cat!=='Transfers')&&
-    (state.showExcluded||t.cat!=='Investment Contribution')&&
+    (state.showExcluded||!state.excludedCats.has(t.cat))&&
     (state.activeCats.size===0||state.activeCats.has(t.cat))
   );
 
@@ -4369,6 +4381,20 @@ function updateSortButtons(){
 
 function renderTxList(){
   const txs=getSortedTxs(),shown=txs.slice(0,showTxN);
+  // Always show individually-excluded transactions dimmed at bottom, independent of global toggle
+  const ms=new Set(getFilteredMonths());
+  const shownIds=new Set(txs.map(t=>t.id));
+  const alwaysShowExcl=state.transactions.filter(t=>{
+    if(!t.excluded)return false;
+    if(!ms.has(t.date.slice(0,7)))return false;
+    if(!state.activeSources.has(t.card))return false;
+    if(state.activeCats.size>0&&!state.activeCats.has(t.cat))return false;
+    if(state.searchQuery){
+      const q=state.searchQuery.toLowerCase();
+      if(!t.desc.toLowerCase().includes(q)&&!t.cat.toLowerCase().includes(q)&&!t.card.toLowerCase().includes(q))return false;
+    }
+    return!shownIds.has(t.id);
+  });
   const monthTotals=getMonthTotalsMap();
   const CARD_S={'Visa Rewards':{bg:'#2E106522',fg:'#A78BFA'},'Gold Card':{bg:'#78350F22',fg:'#FCD34D'},'Checking':{bg:'#1E3A5F22',fg:'#60A5FA'},'High-yield Savings':{bg:tc('#1E293B','#EFF6FF'),fg:'#60A5FA'}};
   const q=state.searchQuery.toLowerCase();
@@ -4382,7 +4408,7 @@ function renderTxList(){
   }
 
   document.getElementById('tx-count-label').textContent=`Transactions (${txs.length}${state.activeCats.size>0?' · filtered':''}${state.showExcluded?' +contributions':''})`;
-  document.getElementById('tx-list').innerHTML=shown.map(t=>{
+  function buildTxRow(t){
     const cc=CARD_S[t.card]||{bg:tc('#1E293B','#F1F5F9'),fg:tc('#475569','#64748B')},color=getCatColor(t.cat);
     const monthKey=t.date.slice(0,7);
     const monthTotal=monthTotals[monthKey]||0;
@@ -4393,12 +4419,17 @@ function renderTxList(){
     return`<div class="tx-row ${t.excluded?'tx-excluded':''}" onclick="openEditTxModal(${t.id})">
       <div class="tx-date">${fmtDate(t.date)}</div>
       <div class="tx-desc" title="${esc(t.desc)}">${highlight(t.desc)}</div>
-      ${t.excluded?'<span class="excl-pill">contrib</span>':''}
+      ${t.excluded?'<span class="excl-pill" title="Hidden from spending — click to edit">hidden</span>':''}
       <span class="pill" style="background:${color}22;color:${color}">${highlight(t.cat)}</span>
       <span class="pill" style="background:${cc.bg};color:${cc.fg}">${highlight(t.card.replace('Chase ','').replace(' Unlimited','Unlim').replace('Ally ',''))}</span>
       <div class="tx-pct">${pctOfMonth!==null&&!t.is_offset?pctOfMonth+'%':''}</div>
       <div class="tx-amount" style="color:${t.is_offset?'#34D399':'#F87171'}">${t.is_offset?'+':'-'}${fmtD(Math.abs(t.amount))}</div>
-    </div>`;}).join('');
+    </div>`;
+  }
+  const exclDivider=alwaysShowExcl.length>0
+    ?`<div style="font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase;padding:.5rem .25rem .25rem;opacity:.6">Hidden from spending (${alwaysShowExcl.length}) — click to edit &amp; restore</div>`
+    :'';
+  document.getElementById('tx-list').innerHTML=shown.map(buildTxRow).join('')+exclDivider+alwaysShowExcl.map(buildTxRow).join('');
   document.getElementById('tx-more').innerHTML=txs.length>showTxN?`<button class="btn" onclick="showMoreTx()" type="button">${txs.length-showTxN} more ↓</button>`:'';
   if(!txs.length){
     document.getElementById('tx-list').innerHTML=`<div style="text-align:center;padding:2rem 1rem;color:var(--text-muted)">
@@ -4460,6 +4491,11 @@ document.addEventListener('keydown',function(e){
     return;
   }
   if(e.key==='Escape'){
+    // Close cat hide confirm popover first
+    if(document.getElementById('cat-hide-confirm-pop')){closeCatHideConfirm();return;}
+    // Close hidden popover next
+    const pop=document.getElementById('hidden-popover');
+    if(pop&&pop.style.display!=='none'){pop.style.display='none';return;}
     // Close any open modal first
     const openModal=document.querySelector('.modal-overlay:not(.hidden)');
     if(openModal){closeModals();return;}
@@ -4474,12 +4510,159 @@ document.addEventListener('keydown',function(e){
 });
 
 function toggleSource(s){if(state.activeSources.has(s)){if(state.activeSources.size>1)state.activeSources.delete(s);}else state.activeSources.add(s);state.activeCats=new Set();state.searchQuery='';document.getElementById('tx-search').value='';document.getElementById('search-clear-btn').classList.add('hidden');showTxN=50;renderSpending();}
+function updateExclNote(){
+  const cb=document.getElementById('et-excluded');
+  const note=document.getElementById('et-excl-note');
+  if(!cb||!note)return;
+  note.textContent=cb.checked
+    ?'This transaction will appear dimmed at the bottom of the transaction list — click it anytime to edit and restore.'
+    :'Use for investment contributions, credit card payments, reimbursements, or anything that shouldn\'t count as spending.';
+  note.style.color=cb.checked?'#A78BFA':'var(--text-muted)';
+}
+function toggleCatExclusion(cat){
+  if(state.excludedCats.has(cat)){
+    // Already hidden — restore immediately
+    restoreCat(cat);
+    return;
+  }
+  // Show confirm inline on the tile button itself
+  showCatHideConfirm(cat);
+}
+function showCatHideConfirm(cat){
+  // Remove any existing confirm popover
+  closeCatHideConfirm();
+  const sc=cat.replace(/[^a-zA-Z0-9]/g,'');
+  const btn=document.querySelector(`[data-hide-cat="${sc}"]`);
+  if(!btn)return;
+
+  const pop=document.createElement('div');
+  pop.id='cat-hide-confirm-pop';
+  pop.style.cssText='position:absolute;z-index:300;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.65rem .85rem;min-width:220px;box-shadow:0 6px 20px #00000055;font-size:12px';
+  pop.innerHTML=`
+    <div style="font-weight:700;color:var(--text-primary);margin-bottom:3px">Hide <em style="font-style:normal;color:#F87171">${cat}</em> from spending?</div>
+    <div style="color:var(--text-muted);font-size:11px;line-height:1.5;margin-bottom:.6rem">Reversible via the spending exclusion(s) button.</div>
+    <div style="display:flex;gap:6px;justify-content:flex-end">
+      <button onclick="event.stopPropagation();closeCatHideConfirm()" style="background:none;border:1px solid var(--border-mid);border-radius:5px;padding:3px 12px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;font-family:inherit" type="button">Cancel</button>
+      <button onclick="event.stopPropagation();confirmCatExclusion('${cat.replace(/'/g,"\\'")}');closeCatHideConfirm()" style="background:#F8717122;border:1px solid #F8717155;border-radius:5px;padding:3px 12px;font-size:11px;font-weight:700;color:#F87171;cursor:pointer;font-family:inherit" type="button">Hide</button>
+    </div>`;
+
+  // Position relative to the tile's parent card
+  const card=btn.closest('.bucket-card');
+  const anchor=card||btn;
+  anchor.style.position='relative';
+  anchor.appendChild(pop);
+
+  // Position popover — check viewport bounds and flip if needed
+  const btnRect=btn.getBoundingClientRect();
+  const cardRect=anchor.getBoundingClientRect();
+  pop.style.top=(btnRect.bottom-cardRect.top+4)+'px';
+  pop.style.right='0';
+
+  // After appending, check if it overflows left edge and flip to left-anchored
+  requestAnimationFrame(()=>{
+    const popRect=pop.getBoundingClientRect();
+    if(popRect.left<8){
+      pop.style.right='auto';
+      pop.style.left='0';
+    }
+    if(popRect.right>window.innerWidth-8){
+      pop.style.left='auto';
+      pop.style.right='0';
+    }
+  });
+
+  setTimeout(()=>document.addEventListener('click',closeCatHideConfirmOutside,{once:true}),0);
+}
+function closeCatHideConfirmOutside(e){
+  const pop=document.getElementById('cat-hide-confirm-pop');
+  if(pop&&!pop.contains(e.target))closeCatHideConfirm();
+}
+function closeCatHideConfirm(){
+  const pop=document.getElementById('cat-hide-confirm-pop');
+  if(pop)pop.remove();
+  document.removeEventListener('click',closeCatHideConfirmOutside);
+}
+function confirmCatExclusion(cat){
+  state.excludedCats.add(cat);
+  // Clear any accidental filter the card click may have set
+  state.activeCats.delete(cat);
+  scheduleSave();
+  renderSourceChips();renderSpendSummary();renderBucketGrid();renderTxList();renderActiveChart();
+  showToast(`${cat} hidden from spending`,'#94A3B8',2800);
+}
+function undoCatExclusion(cat){
+  state.excludedCats.delete(cat);
+  scheduleSave();
+  renderSourceChips();renderSpendSummary();renderBucketGrid();renderTxList();renderActiveChart();
+  showToast(`${cat} restored`,'#34D399');
+}
+function buildHiddenPopover(){
+  const DEFAULT_EXCL=new Set(['Investment Contribution','Transfers','CC Payment']);
+  const cats=[...state.excludedCats].sort();
+  const txExclCount=state.transactions.filter(t=>t.excluded).length;
+  const catsHtml=cats.length===0
+    ?'<div class="hidden-popover-empty">No categories hidden</div>'
+    :cats.map(cat=>{
+      const isDefault=DEFAULT_EXCL.has(cat);
+      const warn=!isDefault?'<span title="You added this — not a default exclusion" style="opacity:.5;margin-left:4px">⚠</span>':'';
+      return `<div class="hidden-popover-row">
+        <span>${cat}${warn}</span>
+        <button class="hidden-popover-show" onclick="restoreCat('${cat.replace(/'/g,"\\'")}')" type="button">Show</button>
+      </div>`;
+    }).join('');
+
+  const txExclHtml=txExclCount>0
+    ?`<div class="hidden-popover-row" style="justify-content:space-between"><span style="color:var(--text-muted)">${txExclCount} individual transaction${txExclCount===1?'':'s'} hidden</span><span style="font-size:10px;color:var(--text-muted);font-style:italic">shown dimmed at bottom of transactions list</span></div>`
+    :'';
+
+  const toggleLabel=state.showExcluded?'Included in totals':'Hidden from totals';
+  const toggleColor=state.showExcluded?'#34D399':'var(--text-muted)';
+
+  return `<div class="hidden-popover-section">Categories hidden from spending</div>
+    ${catsHtml}
+    ${txExclHtml?'<div class="hidden-popover-section" style="margin-top:.75rem">Individual transactions</div>'+txExclHtml:''}
+    <div class="hidden-popover-section" style="margin-top:.75rem">Savings &amp; transfer transactions</div>
+    <div class="hidden-popover-row" style="flex-direction:column;align-items:flex-start;gap:3px">
+      <span style="color:var(--text-muted);font-size:11px;line-height:1.5">Venmo, Zelle, investment contributions,<br>credit card payments, &amp; college savings</span>
+    </div>
+    <div class="hidden-popover-row">
+      <span style="color:${toggleColor};font-weight:600">${toggleLabel}</span>
+      <button class="hidden-popover-show" onclick="toggleExcluded()" type="button">${state.showExcluded?'Hide again':'Show in totals'}</button>
+    </div>`;
+}
+
+function toggleHiddenPopover(e){
+  e.stopPropagation();
+  const pop=document.getElementById('hidden-popover');
+  if(!pop)return;
+  if(pop.style.display==='none'||!pop.style.display){
+    pop.innerHTML=buildHiddenPopover();
+    pop.style.display='block';
+    setTimeout(()=>document.addEventListener('click',closeHiddenPopover,{once:true}),0);
+  } else {
+    pop.style.display='none';
+  }
+}
+function closeHiddenPopover(){
+  const pop=document.getElementById('hidden-popover');
+  if(pop)pop.style.display='none';
+}
+function restoreCat(cat){
+  state.excludedCats.delete(cat);
+  scheduleSave();
+  renderSourceChips();renderSpendSummary();renderBucketGrid();renderTxList();renderActiveChart();
+  // Refresh popover if still open
+  const pop=document.getElementById('hidden-popover');
+  if(pop&&pop.style.display!=='none'){pop.innerHTML=buildHiddenPopover();}
+}
 function toggleExcluded(){
   state.showExcluded=!state.showExcluded;
-  const tog=document.getElementById('excl-toggle');
-  if(tog)tog.classList.toggle('on',state.showExcluded);
-  showTxN=50;renderSpendSummary();renderBucketGrid();renderTxList();
+  try{localStorage.setItem('trakyo_show_excl',state.showExcluded?'1':'0');}catch(e){}
+  showTxN=50;renderSourceChips();renderSpendSummary();renderBucketGrid();renderTxList();
   renderActiveChart();
+  // Refresh popover if still open
+  const pop=document.getElementById('hidden-popover');
+  if(pop&&pop.style.display!=='none'){pop.innerHTML=buildHiddenPopover();}
 }
 function toggleAllSources(){
   const sources=[...new Set(state.transactions.map(t=>t.card))].filter(Boolean);
@@ -4524,7 +4707,8 @@ function openEditTxModal(id){
   rebuildCatSelects(t.cat);
   const hint=document.getElementById('check-label-hint');
   if(hint)hint.style.display=t.cat==='Checks'?'block':'none';document.getElementById('et-desc').value=t.desc;document.getElementById('et-date').value=t.date;document.getElementById('et-amount').value=t.amount;document.getElementById('et-cat').value=t.cat;
-  if(document.getElementById('et-excluded'))document.getElementById('et-excluded').checked=!!t.excluded;buildRcList(t,t.cat,t.cat);document.getElementById('edit-tx-modal').classList.remove('hidden');
+  if(document.getElementById('et-excluded'))document.getElementById('et-excluded').checked=!!t.excluded;
+  updateExclNote();buildRcList(t,t.cat,t.cat);document.getElementById('edit-tx-modal').classList.remove('hidden');
 }
 function onEditCatChange(){const t=state.transactions.find(x=>x.id===editTxId);if(!t)return;buildRcList(t,t.cat,document.getElementById('et-cat').value);}
 function buildRcList(tx,origCat,newCat){
@@ -5568,6 +5752,51 @@ function exportTransactionsCSV(){
   showToast(`⬇ Exported ${txs.length} transactions`,'#34D399');
 }
 
+function exportBudgetCSV(){
+  const budgeted=Object.entries(state.budgets).filter(([,v])=>v>0);
+  if(!budgeted.length){showToast('No budgets set to export','#FCD34D');return;}
+  const months=Object.keys(MONTHLY).sort();
+  if(!months.length){showToast('No spending data to export','#FCD34D');return;}
+
+  // Header row: Category, Budget, then one col per month
+  const headers=['Category','Budget',...months.map(m=>{
+    const d=new Date(m+'-02');
+    return d.toLocaleString('default',{month:'short',year:'numeric'});
+  }),'Total Spent','Avg/Month','Status'];
+
+  const rows=budgeted.map(([cat,budget])=>{
+    const monthSpends=months.map(m=>getCatMonthSpend(cat,m));
+    const totalSpent=monthSpends.reduce((s,v)=>s+v,0);
+    const activeMonths=monthSpends.filter(v=>v>0).length||1;
+    const avg=totalSpent/activeMonths;
+    // Status based on most recent month with data
+    const latestM=months.filter(m=>getCatMonthSpend(cat,m)>0).slice(-1)[0];
+    const latestSpent=latestM?getCatMonthSpend(cat,latestM):0;
+    const pct=Math.round(latestSpent/budget*100);
+    const status=latestSpent>budget?'OVER':pct>=80?'AT RISK':'On track';
+    return [
+      `"${cat.replace(/"/g,'""')}"`,
+      budget.toFixed(2),
+      ...monthSpends.map(v=>v>0?v.toFixed(2):''),
+      totalSpent.toFixed(2),
+      avg.toFixed(2),
+      status
+    ].join(',');
+  });
+
+  const csv=[headers.join(','),...rows].join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const today=new Date();
+  const dateStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  a.href=url;
+  a.download=`trak-yo-dollas-budgets-${dateStr}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`⬇ Exported ${budgeted.length} budget categories`,'#34D399');
+}
+
 function detectSubscriptions(allMonths,latestFullM){
   const recentMonths=(allMonths||Object.keys(MONTHLY).sort()).slice(-6);
   const vendorMonths={};
@@ -5672,6 +5901,8 @@ function toggleTheme(){
 // ── Pattern fills for colorblind accessibility ─────────────────────────
 // Off by default — user can enable via "Patterns" toggle above chart.
 let _patternsEnabled = (()=>{try{return localStorage.getItem('trakyo_patterns')==='true';}catch(e){return false;}})();
+// Load persisted showExcluded preference
+(()=>{try{const v=localStorage.getItem('trakyo_show_excl');if(v!==null)state.showExcluded=v==='1';}catch(e){}})();
 
 // Apply saved theme and preferences on load
 (function(){
@@ -6005,7 +6236,9 @@ function saveSnapshot(){
   const snap={date:d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),label:MON3[d.getMonth()],monthKey:ym,nw:netWorth(),assets:totalAssets(),liab:totalLiab()};
   state.snapshots.push(snap);
   state.hasRealData=true;
+  state.hasRealSnapshot=true;
   hideDemoBadge();
+  const sdn=document.getElementById('snap-demo-notice');if(sdn)sdn.style.display='none';
   renderHistory();renderNwChart();
   const hn=document.getElementById('demo-notice-history');if(hn)hn.style.display='none';
   // Sync to Firebase if signed in
@@ -6210,7 +6443,7 @@ function normalizeTxRow(row, source){
 
 function guessCatAlly(d, t){
   d=d.toUpperCase();
-  if('VANGUARD'in d||d.includes('VANGUARD'))return 'Investment Contribution';
+  if(d.includes('VANGUARD'))return 'Investment Contribution';
   if(d.includes('INTERNET TRANSFER')||d.includes('REQUESTED TRANSFER'))return 'Internal Transfer';
   if(d.includes('CHASE CREDIT')||d.includes('CREDIT CRD'))return 'CC Payment';
   if(['KROGER','MEIJER','WHOLEFDS','COSTCO','WALMART','ALDI','TRADER JOE'].some(x=>d.includes(x)))return 'Groceries';
@@ -6293,6 +6526,7 @@ function confirmTxImport(){
   closeModals();
   renderSpending();
   showToast(`✓ Imported ${newTxs.length} transactions from ${source}`);
+  try{localStorage.setItem('trakyo_last_import',new Date().toISOString());}catch(e){}
   // Hide demo notices — real data is now loaded
   state.hasRealData=true;
   hideDemoBadge();
@@ -6686,6 +6920,8 @@ function saveAccount(){
   if(!name)return;
   // Dismiss dashboard notice on first real edit
   const dn=document.getElementById('demo-notice-dash');if(dn)dn.style.display='none';
+  const da=document.getElementById('demo-notice-accounts');if(da)da.style.display='none';
+  state.hasRealAccounts=true;
   state.hasRealData=true;
   hideDemoBadge();
   if(editAcctId){const a=state.accounts.find(x=>x.id===editAcctId);if(a){a.name=name;a.source=source;a.type=type;a.balance=balance;a.excludeFromNW=excludeFromNW;}}else state.accounts.push({id:state.nextId++,name,source,type,balance,excludeFromNW:excludeFromNW||undefined});closeModals();renderAll();}
@@ -6755,6 +6991,9 @@ function serializeState(){
       hiddenPills: [...state.hiddenPills],
       vendorAliases: state.vendorAliases,
       hasRealData: state.hasRealData,
+      hasRealAccounts: state.hasRealAccounts,
+      hasRealSnapshot: state.hasRealSnapshot,
+      excludedCats: [...state.excludedCats],
       nwGoal: state.nwGoal,
       nextId: state.nextId,
       activeSources: [...state.activeSources],
@@ -6809,6 +7048,10 @@ function loadFromLocalStorage(){
     state.hiddenPills.delete('spending-pill');
     if(saved.nwGoal)state.nwGoal=saved.nwGoal;
     state.nextId=saved.nextId||state.nextId;
+    if(saved.hasRealData)state.hasRealData=true;
+    if(saved.hasRealAccounts)state.hasRealAccounts=true;
+    if(saved.hasRealSnapshot)state.hasRealSnapshot=true;
+    if(Array.isArray(saved.excludedCats))state.excludedCats=new Set(saved.excludedCats);
 
     // Load transactions from separate key (or fall back to inline for v1 migration)
     const txRaw=localStorage.getItem(LS_TXS_KEY)||null;
@@ -7098,6 +7341,9 @@ function loadDemoProfile(n, silent=false, skipRender=false){
   state.nwGoal=p.nwGoal;
   state.income={...p.income};
   state.hasRealData=false;
+  state.hasRealAccounts=false;
+  state.hasRealSnapshot=false;
+  state.excludedCats=new Set(['Investment Contribution','Transfers','CC Payment']);
   state.catRules=[...(p.catRules||[])];
   state.customCategories=[];
   state.hiddenPills=new Set();
