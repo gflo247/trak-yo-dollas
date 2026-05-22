@@ -168,6 +168,20 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 .footer-links a{font-size:13px;color:var(--text-muted);text-decoration:none;transition:color .15s}
 .footer-links a:hover{color:var(--text-secondary)}
 
+/* Preview tabs */
+.ptab{background:none;border:none;border-bottom:2px solid transparent;padding:5px 12px;font-size:12px;color:var(--text-muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:color .15s,border-color .15s;white-space:nowrap}
+.ptab:hover{color:var(--text-secondary)}
+.ptab-active{color:var(--text-bright)!important;border-bottom-color:var(--accent-blue-light)!important}
+.ptab-panel{animation:fadeUp .25s ease both}
+.pcat{background:var(--bg-deep);border:1px solid;border-radius:8px;padding:.5rem .6rem}
+.pcat-name{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:1px}
+.pcat-val{font-size:15px;font-weight:900;color:var(--text-bright)}
+.pcat-sub{font-size:8px;color:var(--text-muted);margin-top:1px}
+.pbrow{background:var(--bg-deep);border:1px solid transparent;border-left-width:3px;border-radius:6px;padding:.4rem .65rem;display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center}
+.pbrow-over{border-color:#F8717133;border-left-color:#F87171}
+.pbrow-risk{border-color:#FBBF2433;border-left-color:#FBBF24}
+.pbadge{font-size:8px;font-weight:700;border:1px solid;border-radius:3px;padding:1px 4px;margin-left:4px}
+
 /* Animations */
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 .fu{animation:fadeUp .55s ease both}
@@ -208,8 +222,8 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 <nav>
   <a href="#" class="nav-logo">trak-yo-dolla<span>$</span></a>
   <div class="nav-right">
-    <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" class="btn-ghost" style="font-size:13px">GitHub</a>
-    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+    <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:13px">GitHub</a>
+    <button type="button" class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
     <a href="trakyodollas.html?demo=1" class="btn-primary-sm">Try with demo data</a>
   </div>
 </nav>
@@ -217,47 +231,169 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 <section class="hero">
   <div class="hero-eyebrow fu fu1">💸 trak-yo-dolla$</div>
   <h1 class="fu fu2">Your money.<br><em>Your device.</em><br>Your business.</h1>
-  <p class="hero-sub fu fu3">Track spending, net worth, and budgets — without handing your bank login to anyone. No subscriptions. Your data stays local by default. Optional Google sync available.</p>
+  <p class="hero-sub fu fu3">Track spending, budgets, and net worth — without handing your bank login to anyone. No subscriptions. Your data stays local by default. Optional Google sync available.</p>
   <div class="hero-ctas fu fu4">
     <a href="trakyodollas.html?demo=1" class="btn-hero">Try with demo data</a>
     <a href="trakyodollas.html?import=1" class="btn-hero-ghost">⬆ Import CSV</a>
   </div>
 </section>
 
-<!-- App preview -->
+<!-- Feature showcase tabs -->
 <div class="preview-wrap fu fu5">
   <div class="preview-card">
     <div class="preview-bar">
       <div class="preview-dot" style="background:#F87171"></div>
       <div class="preview-dot" style="background:#FBBF24"></div>
       <div class="preview-dot" style="background:#34D399"></div>
-    </div>
-    <div class="preview-inner">
-      <div class="pm blue"><div class="pm-label">Net worth</div><div class="pm-value">$393k</div></div>
-      <div class="pm green"><div class="pm-label">Total assets</div><div class="pm-value">$640k</div></div>
-      <div class="pm red"><div class="pm-label">Liabilities</div><div class="pm-value">-$247k</div></div>
-      <div class="preview-chart">
-        <svg viewBox="0 0 500 90" preserveAspectRatio="none" fill="none">
-          <defs>
-            <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#34D399" stop-opacity=".15"/>
-              <stop offset="100%" stop-color="#34D399" stop-opacity="0"/>
-            </linearGradient>
-          </defs>
-          <path d="M0,75 C60,68 120,60 190,50 C255,41 300,35 360,25 C410,17 455,12 500,6 L500,90 L0,90 Z" fill="url(#g)"/>
-          <path d="M0,75 C60,68 120,60 190,50 C255,41 300,35 360,25 C410,17 455,12 500,6" stroke="#34D399" stroke-width="2"/>
-          <circle cx="0" cy="75" r="4" fill="#34D399"/>
-          <circle cx="190" cy="50" r="5" fill="#34D399" stroke="#0D1525" stroke-width="2" class="snap-dot"/>
-          <circle cx="500" cy="6" r="5" fill="#34D399" stroke="#0D1525" stroke-width="2" class="snap-dot"/>
-          <circle cx="100" cy="64" r="3" fill="#334155" class="est-dot"/>
-          <circle cx="320" cy="30" r="3" fill="#334155" class="est-dot"/>
-        </svg>
+      <div style="margin-left:8px;display:flex;gap:0" id="preview-tabs">
+        <button class="ptab ptab-active" onclick="showTab(0)">Spending</button>
+        <button class="ptab" onclick="showTab(1)">Budget</button>
+        <button class="ptab" onclick="showTab(2)">Net Worth</button>
+        <button class="ptab" onclick="showTab(3)">Daily Chart</button>
       </div>
-      <div class="preview-pills">
-        <div class="pp"><span class="pp-label">Spending vs last month</span><span class="pp-value" style="color:#F87171">$5,400 · +51%</span></div>
-        <div class="pp"><span class="pp-label">Top mover category</span><span class="pp-value" style="color:#FBBF24">Groceries · +59%</span></div>
-        <div class="pp"><span class="pp-label">Net worth since Aug</span><span class="pp-value" style="color:#34D399">+$5k · 2%/yr</span></div>
-        <div class="pp"><span class="pp-label">Recurring charges found</span><span class="pp-value" style="color:#A78BFA">$71/mo · 1 detected</span></div>
+    </div>
+
+    <!-- TAB 0: Spending overview -->
+    <div class="ptab-panel" id="pt0">
+      <div style="padding:1rem 1.25rem">
+        <!-- Category tiles -->
+        <div style="font-size:9px;color:#64748B;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.6rem">BY CATEGORY — click a tile to filter</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:1rem">
+          <div class="pcat" style="border-color:#F8717133"><div class="pcat-name" style="color:#F87171">Home</div><div class="pcat-val">$21,976</div><div class="pcat-sub">↑82% · avg $1,221/mo</div><div style="margin-top:4px"><svg viewBox="0 0 60 18" width="60" height="18"><polyline points="0,14 10,10 20,12 30,6 40,9 50,4 60,7" fill="none" stroke="#F87171" stroke-width="1.5" stroke-linejoin="round"/></svg></div></div>
+          <div class="pcat" style="border-color:#34D39933"><div class="pcat-name" style="color:#34D399">Groceries</div><div class="pcat-val">$12,525</div><div class="pcat-sub">↑60% · avg $696/mo</div><div style="margin-top:4px"><svg viewBox="0 0 60 18" width="60" height="18"><polyline points="0,12 10,8 20,14 30,5 40,8 50,11 60,4" fill="none" stroke="#34D399" stroke-width="1.5" stroke-linejoin="round"/></svg></div></div>
+          <div class="pcat" style="border-color:#60A5FA33"><div class="pcat-name" style="color:#60A5FA">Checks</div><div class="pcat-val">$11,998</div><div class="pcat-sub">↑99% · avg $667/mo</div><div style="margin-top:4px"><svg viewBox="0 0 60 18" width="60" height="18"><polyline points="0,10 10,13 20,7 30,11 40,5 50,9 60,6" fill="none" stroke="#60A5FA" stroke-width="1.5" stroke-linejoin="round"/></svg></div></div>
+          <div class="pcat" style="border-color:#FBBF2433"><div class="pcat-name" style="color:#FBBF24">Shopping</div><div class="pcat-val">$11,197</div><div class="pcat-sub">↑11% · avg $622/mo</div><div style="margin-top:4px"><svg viewBox="0 0 60 18" width="60" height="18"><polyline points="0,8 10,12 20,9 30,13 40,6 50,10 60,5" fill="none" stroke="#FBBF24" stroke-width="1.5" stroke-linejoin="round"/></svg></div></div>
+        </div>
+        <!-- Treemap preview -->
+        <div style="font-size:9px;color:#64748B;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5rem">SPENDING BREAKDOWN</div>
+        <div style="display:flex;gap:4px;height:72px;border-radius:8px;overflow:hidden">
+          <div style="flex:2.2;background:#F8717122;border:1px solid #F8717133;border-radius:6px;display:flex;align-items:flex-end;padding:5px 7px"><span style="font-size:9px;color:#F87171;font-weight:700">Home<br>22%</span></div>
+          <div style="flex:1.3;background:#34D39918;border:1px solid #34D39933;border-radius:6px;display:flex;align-items:flex-end;padding:5px 6px"><span style="font-size:9px;color:#34D399;font-weight:700">Gro<br>13%</span></div>
+          <div style="flex:1.2;background:#60A5FA18;border:1px solid #60A5FA33;border-radius:6px;display:flex;align-items:flex-end;padding:5px 6px"><span style="font-size:9px;color:#60A5FA;font-weight:700">Chk<br>12%</span></div>
+          <div style="flex:1.1;background:#FBBF2418;border:1px solid #FBBF2433;border-radius:6px;display:flex;align-items:flex-end;padding:5px 6px"><span style="font-size:9px;color:#FBBF24;font-weight:700">Shop<br>11%</span></div>
+          <div style="flex:.9;background:#A78BFA18;border:1px solid #A78BFA33;border-radius:6px;display:flex;align-items:flex-end;padding:5px 5px"><span style="font-size:9px;color:#A78BFA;font-weight:700">B&U<br>9%</span></div>
+          <div style="flex:.8;background:#FB923C18;border:1px solid #FB923C33;border-radius:6px;display:flex;align-items:flex-end;padding:5px 5px"><span style="font-size:9px;color:#FB923C;font-weight:700">Trav<br>8%</span></div>
+          <div style="flex:1.5;background:#1E293B;border:1px solid #334155;border-radius:6px;display:flex;align-items:center;justify-content:center;padding:4px"><span style="font-size:8px;color:#64748B;text-align:center">+7 more<br>categories</span></div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <div style="flex:1;background:#1E293B;border:1px solid #334155;border-radius:6px;padding:.4rem .6rem;font-size:10px;color:#94A3B8">📊 Treemap</div>
+          <div style="flex:1;background:#1E293B;border:1px solid #334155;border-radius:6px;padding:.4rem .6rem;font-size:10px;color:#94A3B8">📈 Trend</div>
+          <div style="flex:1;background:#1E293B;border:1px solid #334155;border-radius:6px;padding:.4rem .6rem;font-size:10px;color:#94A3B8">🏦 Flow</div>
+          <div style="flex:1;background:#2563EB22;border:1px solid #2563EB44;border-radius:6px;padding:.4rem .6rem;font-size:10px;color:#60A5FA">📅 Daily</div>
+          <div style="flex:1;background:#1E293B;border:1px solid #334155;border-radius:6px;padding:.4rem .6rem;font-size:10px;color:#94A3B8">🗺 Map</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 1: Budget -->
+    <div class="ptab-panel" id="pt1" style="display:none">
+      <div style="padding:1rem 1.25rem">
+        <!-- Urgency insight -->
+        <div style="background:#F8717112;border:1.5px solid #F8717155;border-radius:10px;padding:.6rem .85rem;margin-bottom:.75rem;display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:9px;font-weight:700;color:#F87171;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px">⚑ Worth your attention</div>
+            <div style="font-size:11px;font-weight:700;color:#E2E8F0">🔴 Budget health</div>
+            <div style="font-size:9px;color:#94A3B8;margin-top:2px">4 categories over — <span style="color:#F87171;font-weight:700">Go to Budget tab →</span></div>
+          </div>
+          <div style="font-size:20px;font-weight:900;color:#F87171;white-space:nowrap;margin-left:1rem">5/10<br><span style="font-size:10px;font-weight:400;color:#64748B">on track</span></div>
+        </div>
+        <!-- Budget rows -->
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="font-size:8px;font-weight:700;color:#F87171;letter-spacing:.06em;text-transform:uppercase;padding:2px 4px">⚠ Needs attention</div>
+          <div class="pbrow pbrow-over">
+            <div><span style="font-size:11px;font-weight:700;color:#E2E8F0">Health &amp; Wellness</span> <span class="pbadge" style="background:#F8717118;color:#F87171;border-color:#F8717133">OVER</span></div>
+            <div style="font-size:10px;color:#64748B">→ $511 by end</div>
+            <div style="text-align:right;font-size:12px;font-weight:800;color:#F87171">$426 <span style="font-size:9px;color:#64748B">/ $200</span></div>
+          </div>
+          <div class="pbrow pbrow-risk">
+            <div><span style="font-size:11px;font-weight:700;color:#E2E8F0">Shopping</span> <span class="pbadge" style="background:#FBBF2418;color:#FBBF24;border-color:#FBBF2433">AT RISK</span></div>
+            <div style="font-size:10px;color:#64748B">→ $480 by end</div>
+            <div style="text-align:right;font-size:12px;font-weight:800;color:#FBBF24">$344 <span style="font-size:9px;color:#64748B">/ $400</span></div>
+          </div>
+          <div style="font-size:8px;font-weight:700;color:#34D399;letter-spacing:.06em;text-transform:uppercase;padding:2px 4px;margin-top:2px">✓ On track</div>
+          <div class="pbrow" style="border-color:#33415566;border-left-color:#33415566">
+            <div><span style="font-size:11px;font-weight:700;color:#E2E8F0">Groceries</span></div>
+            <div style="font-size:10px;color:#64748B">→ $750 by end</div>
+            <div style="text-align:right;font-size:12px;font-weight:800;color:#34D399">$522 <span style="font-size:9px;color:#64748B">/ $700</span></div>
+          </div>
+        </div>
+        <!-- History dots -->
+        <div style="margin-top:.75rem;background:#0F172A66;border:1px solid #334155;border-radius:8px;padding:.5rem .75rem">
+          <div style="font-size:8px;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">12-month budget history</div>
+          <div style="display:flex;gap:3px;align-items:center">
+            <div style="flex:1;height:9px;border-radius:4px;background:#F87171"></div>
+            <div style="flex:1;height:9px;border-radius:4px;background:#34D399"></div>
+            <div style="flex:1;height:9px;border-radius:4px;background:#FBBF24"></div>
+            <div style="flex:1;height:9px;border-radius:4px;background:#34D399"></div>
+            <div style="flex:1;height:9px;border-radius:4px;background:#F87171"></div>
+            <div style="flex:1;height:9px;border-radius:4px;background:#FBBF24"></div>
+            <div style="flex:1;height:9px;border-radius:4px;background:#34D399"></div>
+            <div style="flex:1;height:9px;border-radius:4px;background:#34D399"></div>
+            <div style="flex:1;height:9px;border-radius:4px;background:#F87171"></div>
+            <div style="flex:1;height:9px;border-radius:4px;background:#34D399"></div>
+            <div style="flex:1;height:9px;border-radius:4px;background:#FBBF24"></div>
+            <div style="flex:1;height:9px;border-radius:4px;background:#34D399"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: Net Worth -->
+    <div class="ptab-panel" id="pt2" style="display:none">
+      <div style="padding:1rem 1.25rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:.85rem">
+          <div style="background:#34D39912;border:1px solid #34D39933;border-radius:8px;padding:.5rem .7rem"><div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#34D399;margin-bottom:2px">Net Worth</div><div style="font-size:18px;font-weight:900;color:#34D399">$87.4k</div><div style="font-size:9px;color:#64748B">↑$18k this year</div></div>
+          <div style="background:#60A5FA12;border:1px solid #60A5FA33;border-radius:8px;padding:.5rem .7rem"><div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#60A5FA;margin-bottom:2px">Assets</div><div style="font-size:18px;font-weight:900;color:#60A5FA">$112k</div><div style="font-size:9px;color:#64748B">checking · savings · IRA</div></div>
+          <div style="background:#F8717112;border:1px solid #F8717133;border-radius:8px;padding:.5rem .7rem"><div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#F87171;margin-bottom:2px">Liabilities</div><div style="font-size:18px;font-weight:900;color:#F87171">$24.6k</div><div style="font-size:9px;color:#64748B">loan · credit card</div></div>
+        </div>
+        <!-- NW trend chart mockup -->
+        <div style="background:#0F172A88;border:1px solid #334155;border-radius:8px;padding:.6rem .75rem;margin-bottom:.75rem">
+          <div style="font-size:8px;color:#64748B;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Trajectory to $150k goal</div>
+          <svg viewBox="0 0 320 70" width="100%" height="70" style="overflow:visible">
+            <!-- Grid lines -->
+            <line x1="0" y1="55" x2="320" y2="55" stroke="#334155" stroke-width="0.5"/>
+            <line x1="0" y1="35" x2="320" y2="35" stroke="#334155" stroke-width="0.5" stroke-dasharray="3,3"/>
+            <line x1="0" y1="15" x2="320" y2="15" stroke="#334155" stroke-width="0.5" stroke-dasharray="3,3"/>
+            <!-- Actual NW line -->
+            <polyline points="0,58 30,54 60,50 90,52 120,45 150,42 180,38 210,36 240,32 270,28 300,24" fill="none" stroke="#34D399" stroke-width="2" stroke-linejoin="round"/>
+            <!-- Projected line (dashed) -->
+            <polyline points="300,24 320,20" fill="none" stroke="#34D399" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.6"/>
+            <!-- Goal line -->
+            <line x1="0" y1="8" x2="320" y2="8" stroke="#60A5FA" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+            <text x="314" y="6" font-size="7" fill="#60A5FA" text-anchor="end" opacity="0.7">$150k goal</text>
+            <!-- Data dots -->
+            <circle cx="300" cy="24" r="3" fill="#34D399"/>
+            <text x="296" y="20" font-size="7" fill="#34D399" text-anchor="middle">$87.4k</text>
+          </svg>
+        </div>
+        <!-- Accounts list -->
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.35rem .6rem;background:#1E293B;border-radius:6px;font-size:11px"><span style="color:#94A3B8">🏦 Ally Checking</span><span style="font-weight:700;color:#E2E8F0">$3,200</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.35rem .6rem;background:#1E293B;border-radius:6px;font-size:11px"><span style="color:#94A3B8">📈 Fidelity Roth IRA</span><span style="font-weight:700;color:#34D399">$41,200</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.35rem .6rem;background:#1E293B;border-radius:6px;font-size:11px"><span style="color:#94A3B8">🎓 Navient Student Loan</span><span style="font-weight:700;color:#F87171">−$17,800</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: Daily heatmap -->
+    <div class="ptab-panel" id="pt3" style="display:none">
+      <div style="padding:1rem 1.25rem">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:.85rem">
+          <div style="background:#1E293B;border:1px solid #334155;border-radius:8px;padding:.45rem .6rem"><div style="font-size:8px;color:#64748B;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Total</div><div style="font-size:16px;font-weight:900;color:#E2E8F0">$96k</div><div style="font-size:8px;color:#64748B">372 days</div></div>
+          <div style="background:#1E293B;border:1px solid #334155;border-radius:8px;padding:.45rem .6rem"><div style="font-size:8px;color:#64748B;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Avg/day</div><div style="font-size:16px;font-weight:900;color:#E2E8F0">$258</div><div style="font-size:8px;color:#64748B">active days</div></div>
+          <div style="background:#2563EB18;border:1px solid #2563EB33;border-radius:8px;padding:.45rem .6rem;cursor:pointer"><div style="font-size:8px;color:#60A5FA;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Peak day</div><div style="font-size:16px;font-weight:900;color:#60A5FA">$1,436</div><div style="font-size:8px;color:#60A5FA;opacity:.7">click to filter</div></div>
+          <div style="background:#1E293B;border:1px solid #334155;border-radius:8px;padding:.45rem .6rem"><div style="font-size:8px;color:#64748B;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Weekends</div><div style="font-size:16px;font-weight:900;color:#E2E8F0">−1%</div><div style="font-size:8px;color:#64748B">vs weekday</div></div>
+        </div>
+        <!-- Heatmap grid mockup -->
+        <div style="font-size:8px;color:#64748B;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.4rem;display:flex;align-items:center;justify-content:space-between"><span>less <span style="display:inline-flex;gap:2px;align-items:center;margin:0 3px">
+          <span style="width:8px;height:8px;border-radius:2px;background:#412402;display:inline-block"></span>
+          <span style="width:8px;height:8px;border-radius:2px;background:#633806;display:inline-block"></span>
+          <span style="width:8px;height:8px;border-radius:2px;background:#854f0b;display:inline-block"></span>
+          <span style="width:8px;height:8px;border-radius:2px;background:#ef9f27;display:inline-block"></span>
+          <span style="width:8px;height:8px;border-radius:2px;background:#fac775;display:inline-block"></span>
+        </span> more</span><span style="color:#60A5FA">Zoom −  +</span></div>
+        <div id="pheatmap" style="display:flex;gap:3px;overflow:hidden;height:64px"></div>
+        <div style="margin-top:.5rem;font-size:9px;color:#64748B">← scroll to see full history · click any day to filter transactions</div>
       </div>
     </div>
   </div>
@@ -362,13 +498,40 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
   <a href="#" class="footer-logo">trak-yo-dolla<span>$</span></a>
   <div class="footer-links">
     <a href="privacy.html">Privacy</a>
-    <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank">GitHub</a>
-    <a href="https://github.com/gflo247/trak-yo-dollas/issues" target="_blank">Feedback</a>
+    <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <a href="https://github.com/gflo247/trak-yo-dollas/issues" target="_blank" rel="noopener noreferrer">Feedback</a>
     <a href="trakyodollas.html?import=1">Import CSV</a>
   </div>
 </footer>
 
 <script>
+function showTab(i) {
+  document.querySelectorAll('.ptab').forEach((t,j)=>t.classList.toggle('ptab-active',i===j));
+  document.querySelectorAll('.ptab-panel').forEach((p,j)=>p.style.display=i===j?'block':'none');
+  if(i===3) buildHeatmap();
+}
+
+function buildHeatmap() {
+  const el = document.getElementById('pheatmap');
+  if (!el || el.children.length) return;
+  const AMBER = ['#412402','#633806','#854f0b','#ba7517','#ef9f27','#fac775'];
+  const EMPTY = '#1e293b';
+  // Generate ~14 months of week columns
+  const seed = [0,2,3,1,4,0,2,1,3,5,2,0,4,1,3,0,2,4,1,3,2,0,5,3,1,4,2,0,3,1,2,0,4,5,2,1,3,0,4,2,1,5,3,0,2,4,1,3,0,2,4,1,5,3,0,2,4];
+  seed.forEach((v,ci) => {
+    const col = document.createElement('div');
+    col.style.cssText = 'display:flex;flex-direction:column;gap:2px;flex-shrink:0';
+    for(let r=0;r<7;r++){
+      const day = document.createElement('div');
+      const val = (r===0||r===6) ? 0 : seed[(ci*7+r)%seed.length];
+      day.style.cssText = `width:9px;height:9px;border-radius:2px;background:${val===0?EMPTY:AMBER[Math.min(val,5)]}`;
+      col.appendChild(day);
+    }
+    el.appendChild(col);
+  });
+}
+buildHeatmap();
+
 // Sync theme with app
 const saved = localStorage.getItem('trakyo_theme') || 'dark';
 document.documentElement.setAttribute('data-theme', saved);
