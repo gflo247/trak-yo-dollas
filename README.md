@@ -12,9 +12,10 @@ Import a CSV from your bank or credit card. Your browser does everything. Nothin
 
 - **Five ways to see your spending** — category treemap, income flow chart, daily heatmap, vendor breakdown, and month-over-month trend. Click any tile to filter transactions instantly.
 - **"At a Glance" insights** — a curated card of monthly insights with a lead "Worth your attention" insight surfaced by urgency. Savings rate, budget health, top mover, largest charge, subscriptions, and weekend spending patterns. Each insight links to the relevant tab or action.
-- **Budget tab** — set monthly limits, track pace in real time, see AT RISK warnings before you go over. Every category row shows 12-month history dots (tap to expand to percentages). Sort by % used, amount, or A–Z.
+- **Budget tab** — set monthly limits, track pace in real time, see AT RISK warnings before you go over. Every category row shows 12-month history dots (tap to expand to percentages). Sort by % used, amount, or A–Z. Export budget history as CSV.
 - **Full picture net worth** — checking, savings, investments, loans, real estate, and vehicles in one place. Save monthly snapshots and track your trajectory. Project when you'll hit your goal.
-- **Messy bank data, cleaned up** — transactions auto-categorize on import. Set keyword rules so "AMZN MKTP" always becomes Shopping. Rules run automatically on every future import.
+- **Smart auto-categorization** — four-tier system: your keyword rules → community rules → MCC codes from your bank → 300+ built-in merchant keywords. Transactions land in the right category on first import, not after manual cleanup.
+- **Spending exclusions** — hide categories or individual transactions from spending totals. Investment contributions, transfers, and credit card payments are excluded by default. Everything is reversible via the spending exclusions button.
 - **Two demo profiles** — "Early career, building up" (renting, student loan, Roth IRA started, $50k goal) and "Established, tracking it all" (home, investments, multiple accounts). Explore every feature before touching your own data.
 
 ---
@@ -44,6 +45,33 @@ Transactions are auto-categorized. Switch between chart views, set budgets, add 
 
 ---
 
+## Auto-categorization
+
+Transactions are categorized using a four-tier priority system on every import:
+
+| Priority | Source | Notes |
+|---|---|---|
+| 1 | **Your rules** | Keyword rules you've saved — always win |
+| 2 | **Community rules** | [`community-rules.json`](community-rules.json) — fetched once per session |
+| 3 | **MCC codes** | Merchant category codes from your bank CSV, if present |
+| 4 | **Built-in keywords** | ~300 common merchant names as a fallback |
+
+### Categories
+
+Groceries, Food & Drink, Shopping, Home, Gas, Bills & Utilities, Insurance, Health & Wellness, Entertainment, Travel, Automotive, Education, Child Care, Pet, Checks, Tax & Gov, Investment Contribution, Transfers, CC Payment, Other.
+
+### Community rules
+
+[`community-rules.json`](community-rules.json) is a curated list of 280+ keyword→category mappings maintained in this repo. It covers major merchants across all categories including airlines, hotel chains, streaming services, restaurant chains, gas stations, grocery chains, and more.
+
+**To contribute:** open a PR adding entries to `community-rules.json`. Format:
+```json
+{"keyword": "MERCHANT NAME", "cat": "Category"}
+```
+Keywords are matched case-insensitively against transaction descriptions. More specific keywords (e.g. `DELTA AIR`) take priority over shorter ones. All submissions are reviewed before merging.
+
+---
+
 ## Tech stack
 
 Single HTML file — no build step, no dependencies to install, no server required.
@@ -66,9 +94,10 @@ For the full site (landing page + app + privacy policy):
 
 ```
 trak-yo-dollas/
-  index.html          ← landing page
-  trakyodollas.html   ← the app
-  privacy.html        ← privacy policy
+  index.html              ← landing page
+  trakyodollas.html       ← the app
+  privacy.html            ← privacy policy
+  community-rules.json    ← crowdsourced categorization rules
 ```
 
 ---
@@ -82,15 +111,19 @@ echo '{"hosting":{"public":".","ignore":["firebase.json","deploy.sh","README.md"
 npx firebase-tools deploy --only hosting --project trak-yo-dollas
 ```
 
+Note: `community-rules.json` must be included in the deploy. The ignore list above does not block `.json` files so it deploys automatically.
+
 ---
 
 ## Recent updates
 
-- **Budget tab overhaul** — status grouping (Needs attention / On track), 12-month history dots with tap-to-expand, AT RISK badge, inline projection, sort toggle, dot legend with thresholds, entire card clickable
-- **Lead insight system** — "Worth your attention" card promotes the most urgent At a Glance insight with stronger visual treatment and direct action links
-- **Dynamic color system** — all category and vendor colors assigned from one canonical map built from lifetime spend data; no fixed palette
-- **Daily chart zoom** — +/− controls scale day cells from 12px to 22px for easier mobile tapping
-- **Clear all data** — in ··· menu with type-to-confirm safety step; documented in Tips & shortcuts (press ?)
-- **Demo Profile 1 rebuilt** — realistic early-career profile with 12 months of history and consistent net worth trajectory
-- **localStorage split** — transactions saved separately from settings, only re-serialized when dirty
-- **Profile switch** — now fully refreshes Budget tab, source chips, and all rendered state
+- **Auto-categorization overhaul** — four-tier priority system (user rules → community rules → MCC codes → built-in keywords); 300+ merchant keywords across all categories; MCC lookup covers ~200 ISO 18245 codes
+- **Community rules** — `community-rules.json` with 280+ seed rules, fetched once per session; fully auditable and open for contributions via PR
+- **New categories** — Pet (Chewy, Petco, vets) and Insurance (GEICO, State Farm, Aetna, Blue Cross, etc.) broken out as first-class categories
+- **Spending exclusions** — per-category hide with confirm popover; per-transaction hide from edit modal; unified "X spending exclusions" chip with full popover showing everything hidden and why; hidden transactions always visible dimmed at bottom of list
+- **Import flow** — fixed drop zone, simplified success screen, "Import another CSV" CTA
+- **Daily chart** — zoom bar height fix, grey border fix on mode switch, `MMM 'YY` mobile month labels
+- **Budget CSV export** — download budget history with monthly spend, budget, %, and status per category
+- **Demo notices** — per-tab badges on Accounts and Net Worth that clear independently when real data is added
+- **Time-to-import nudge** — landing page shows "Last import X days ago" when it's been 25+ days
+- **Landing page** — 4-tab interactive preview (Spending, Budget, Net Worth, Daily Chart)

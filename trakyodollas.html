@@ -909,6 +909,11 @@ select option{background:var(--bg-card)}
              ondrop="handleTxDrop(event)"
              onchange="handleTxFileSelect(this)"/>
     </div>
+    <div style="font-size:10px;color:var(--text-muted);margin-top:.5rem;line-height:1.5;text-align:center">
+      Categorization uses your rules, community patterns, and MCC codes — in that order. &nbsp;
+      <a href="https://github.com/gflo247/trak-yo-dollas/blob/main/community-rules.json" target="_blank" style="color:var(--accent-blue-light);font-size:10px;text-decoration:underline">View community rules ↗</a> &nbsp;
+      <button onclick="document.getElementById('shortcuts-modal').classList.remove('hidden')" style="background:none;border:none;color:var(--accent-blue-light);font-size:10px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">How it works ↗</button>
+    </div>
 
     <!-- Preview -->
     <div id="import-preview" class="hidden" style="margin-top:.65rem">
@@ -1144,7 +1149,7 @@ select option{background:var(--bg-card)}
 
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1.1rem">
       <button class="btn btn-primary" style="width:100%;justify-content:center;font-size:14px;padding:.65rem" onclick="closeModals()" type="button">View my spending</button>
-      <button class="btn" style="width:100%;justify-content:center;font-size:14px;padding:.65rem" onclick="closeModals();setTimeout(()=>openTxImportModal(),80)" type="button">Import another account</button>
+      <button class="btn" style="width:100%;justify-content:center;font-size:14px;padding:.65rem" onclick="closeModals();setTimeout(()=>openTxImportModal(),80)" type="button">Import another CSV</button>
     </div>
 
     <div style="font-size:11px;color:var(--text-muted);text-align:center;line-height:1.6">You can set up income, balances, and budgets anytime from the tabs.</div>
@@ -1481,6 +1486,15 @@ select option{background:var(--bg-card)}
         <div style="display:grid;grid-template-columns:1fr 1.6fr;font-size:12px;border-bottom:1px solid var(--border)">
           <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">··· → Clear all data</div>
           <div style="padding:.5rem .75rem;color:var(--text-secondary)">Deletes all your data permanently. Type "clear" in the confirmation box to unlock the button</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1.6fr;font-size:12px;border-bottom:1px solid var(--border)">
+          <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Categorization priority</div>
+          <div style="padding:.5rem .75rem;color:var(--text-secondary)">
+            <span style="color:#60A5FA;font-weight:600">1. Your rules</span> — keyword rules you've saved always win<br>
+            <span style="color:#34D399;font-weight:600">2. Community rules</span> — crowdsourced keyword patterns from GitHub, fetched once per session<br>
+            <span style="color:#94A3B8;font-weight:600">3. MCC codes</span> — merchant category codes from your bank CSV, if present<br>
+            <span style="color:#64748B;font-weight:600">4. Built-in keywords</span> — ~300 common merchant names as a fallback
+          </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1.6fr;font-size:12px;border-bottom:1px solid var(--border)">
           <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">··· → Rules</div>
@@ -6308,6 +6322,7 @@ let importParsed=[];  // [{date,desc,cat,card,amount,excluded,is_offset}]
 
 function openTxImportModal(){
   importParsed=[];
+  fetchCommunityRules(); // kick off once per session, non-blocking
   document.getElementById('import-preview').classList.add('hidden');
   document.getElementById('import-confirm-btn').classList.add('hidden');
   document.getElementById('tx-csv-file').value='';
@@ -6384,13 +6399,14 @@ function splitCSVLine(line){
 }
 
 function normalizeTxRow(row, source){
-  let date, desc, amount, cat='Other', excluded=false;
+  let date, desc, amount, cat='Other', excluded=false, mcc='';
 
   if(importFmt==='ally'){
     date=row['date']||row['date ']||'';
     desc=(row['description']||row['description ']||'').trim();
     const rawAmt=parseFloat(row['amount']||row['amount ']||'0');
     amount=rawAmt<0?Math.abs(rawAmt):0;
+    mcc=row['mcc']||row['MCC']||row['mcc ']||'';
     const type=(row['type']||row['type ']||'').trim();
     if(!amount&&rawAmt>=0&&type==='Deposit')return null; // skip income
     if(!amount)return null;
@@ -6408,6 +6424,7 @@ function normalizeTxRow(row, source){
     const type=(row['type']||'').trim();
     if(type==='Payment')return null;
     if(!amount)return null;
+    mcc=row['mcc']||row['MCC']||'';
     cat=row['category']||guessCatChase(desc);
 
   } else {
@@ -6417,7 +6434,8 @@ function normalizeTxRow(row, source){
     const rawAmt=parseFloat(row['amount']||'0');
     amount=rawAmt<0?Math.abs(rawAmt):rawAmt;
     if(!amount)return null;
-    cat=row['category']||row['cat']||'Other';
+    mcc=row['mcc']||row['MCC']||'';
+    cat=row['category']||row['cat']||guessCatFromDesc(desc);
   }
 
   // Normalize date to YYYY-MM-DD
@@ -6427,46 +6445,172 @@ function normalizeTxRow(row, source){
   }
   if(!date||!desc||!amount)return null;
 
-  // Apply user-defined categorization rules (override built-in guesses)
+  // Apply user-defined categorization rules (highest priority)
   const descUpper=desc.toUpperCase();
   if(state.catRules&&state.catRules.length){
     for(const rule of state.catRules){
       if(rule.keyword&&descUpper.includes(rule.keyword.toUpperCase())){
-        cat=rule.cat;
-        break;
+        cat=rule.cat;break;
       }
     }
+  }
+  // Community rules (second priority — crowdsourced, fetched from GitHub)
+  if((!cat||cat==='Other')&&_communityRules){
+    for(const rule of _communityRules){
+      if(rule.keyword&&descUpper.includes(rule.keyword.toUpperCase())){
+        cat=rule.cat;break;
+      }
+    }
+  }
+  // MCC lookup (third priority — deterministic from bank data)
+  if(!cat||cat==='Other'){
+    const mccCat=guessCatFromMCC(mcc);
+    if(mccCat)cat=mccCat;
   }
 
   return {date,desc:desc.slice(0,50),cat,card:source,amount:Math.round(amount*100)/100,excluded,is_offset:false};
 }
 
-function guessCatAlly(d, t){
-  d=d.toUpperCase();
-  if(d.includes('VANGUARD'))return 'Investment Contribution';
-  if(d.includes('INTERNET TRANSFER')||d.includes('REQUESTED TRANSFER'))return 'Internal Transfer';
-  if(d.includes('CHASE CREDIT')||d.includes('CREDIT CRD'))return 'CC Payment';
-  if(['KROGER','MEIJER','WHOLEFDS','COSTCO','WALMART','ALDI','TRADER JOE'].some(x=>d.includes(x)))return 'Groceries';
-  if(['COMCAST','XFINITY','UTILITY CO','DTE ','PNP BILL','WASTE MGMT','AT&T'].some(x=>d.includes(x)))return 'Bills & Utilities';
-  if(d.includes('OLD NATIONAL')||d.includes('MORTGAGE'))return 'Home';
-  if(d.includes('VENMO PAYMENT')||d.includes('ZELLE'))return 'Transfers';
-  if(d.includes('VENMO CASHOUT'))return 'Shopping';
-  if(d.includes('CHECK PAID'))return 'Checks';
-  if(['IRS','STATE OF MI','SOMIIT'].some(x=>d.includes(x)))return 'Tax & Gov';
-  if(d.includes('MI DIR ACH'))return "College Fund(s)";
+// Shared keyword → category map, used by all import formats
+const CAT_KEYWORDS=[
+  // Investment & transfers (check first — high confidence)
+  ['Investment Contribution',['VANGUARD','FIDELITY BUY','SCHWAB BUY','ETRADE','ROBINHOOD','TDAMERITRADE','BETTERMENT','WEALTHFRONT','SOFI INVEST','401K','ROTH IRA','BROKERAGE']],
+  ['CC Payment',['CHASE CREDIT','CREDIT CRD','AUTOPAY','AMEX PAYMENT','CITI PAYMENT','DISCOVER PAYMENT','CAPITAL ONE PAYMENT','CARD PAYMENT','CREDITCARD']],
+  ['Transfers',['VENMO PAYMENT','ZELLE','PAYPAL TRANSFER','CASH APP','APPLE CASH','GOOGLE PAY TRANSFER','ACH TRANSFER','WIRE TRANSFER','INTERNET TRANSFER','REQUESTED TRANSFER']],
+  ['Internal Transfer',['TRANSFER TO SAVINGS','TRANSFER FROM CHECKING','ONLINE TRANSFER','INTERNAL TRANSFER']],
+  // Housing
+  ['Home',['MORTGAGE','HOME DEPOT','LOWES','LOWE\'S','ACE HARDWARE','TRUE VALUE','MENARDS','HOME SERVICES','ELECTRIC CO','ELECTRICCO','PEST CONTROL','LANDSCAP','PLUMB','HVAC','ROOF','HANDYMAN','ANGI ','ANGIE','HOMEADVISOR','THUMBTACK','TASKRABBIT','MR HANDYMAN','MERRY MAIDS','MOLLY MAID','TERMINIX','ORKIN','TRUGREEN','SCOTTS LAWN']],
+  // Groceries
+  ['Groceries',['KROGER','MEIJER','WHOLEFDS','WHOLE FOODS','WHOLE FOODS MKT','AMAZON FRESH',"SAM'S CLUB",'SAMS CLUB','BJS WHOLESALE','COSTCO','WALMART GROCERY','ALDI','TRADER JOE','PUBLIX','SAFEWAY','ALBERTSONS','HEB ','H-E-B','WEGMANS','SPROUTS','FRESH MARKET','MARKET BASKET','STOP & SHOP','GIANT FOOD','FOOD LION','WINN DIXIE','PIGGLY','RALPH\'S','VONS','HARRIS TEETER','STATER BROS','HANNAFORD','PRICE CHOPPER','SHOPRITE','KEY FOOD','INGLES','BROOKSHIRE','WINCO','SMART & FINAL','GROCERY OUTLET','LIDL','NATURAL GROCERS','EARTH FARE','LUCKY\'S MARKET','SAVE A LOT']],
+  // Food & Drink
+  ['Food & Drink',['RESTAURANT','DOORDASH','GRUBHUB','UBER EATS','SEAMLESS','INSTACART','CHIPOTLE','STARBUCKS','PANERA','CHICK-FIL','MCDONALD','WENDY\'S','TACO BELL','SUBWAY','DUNKIN','DOMINO\'S','PIZZA HUT','PAPA JOHN','CHEESECAKE FACTORY','APPLEBEE','OLIVE GARDEN','BUFFALO WILD','CHILI\'S','DARDEN','LONGHORN STEAKHOUSE','TEXAS ROADHOUSE','OUTBACK STEAKHOUSE','RED LOBSTER','RED ROBIN','YARD HOUSE','SEASONS 52','BOB EVANS','WAFFLE HOUSE','FIRST WATCH','IHOP','DENNY\'S','CRACKER BARREL','GOLDEN CORRAL','LOCAL KITCHEN','LOCAL EATS','FOOD & DRINK','COFFEE','BAKERY','DINER','GRILL','BISTRO','TAVERN','EATERY','SUSHI','RAMEN','NOODLE','BURGER','SHAKE SHACK','IN-N-OUT','FIVE GUYS','JIMMY JOHN','JERSEY MIKE','POTBELLY','CULVER','WHATABURGER','SONIC DRIVE','POPEYE','RAISING CANE','WINGSTOP','PANDA EXPRESS']],
+  // Shopping
+  ['Shopping',['AMAZON','AMZN','TARGET','WALMART','BEST BUY','COSTCO','KOHLS','KOHL\'S','MACY\'S','NORDSTROM','TJ MAXX','MARSHALLS','ROSS STORE','OLD NAVY','GAP ','BANANA REPUBLIC','H&M','ZARA','FOREVER 21','AMERICAN EAGLE','HOLLISTER','ABERCROMBIE','VICTORIA\'S SECRET','BATH & BODY','ULTA','SEPHORA','EBAY','ETSY','WAYFAIR','OVERSTOCK','CHEWY','PETCO','PETSMART','DOLLAR TREE','DOLLAR GENERAL','FIVE BELOW','IKEA','CRATE & BARREL','WEST ELM','POTTERY BARN','WILLIAMS SONOMA']],
+  // Gas
+  ['Gas',['SHELL','BP ','EXXON','MARATHON','CHEVRON','SUNOCO','MOBIL','SPEEDWAY','CIRCLE K','WAWA ','KWIK TRIP','CASEY\'S','PILOT TRAVEL','LOVES TRAVEL','FUEL','GAS STATION','MURPHYUSA','MURPHY USA','HOLIDAY STATION','RACETRAC','SHEETZ','AMPM ','7-ELEVEN','CUMBERLAND FARM','THORNTONS','GETGO','MAVERIK','KUM & GO','ROAD RANGER','QUIKTRIP','QUIK TRIP','BUCEES','BUC-EE\'S','SINCLAIR','CENEX','KWIKSTAR']],
+  // Bills & Utilities
+  ['Bills & Utilities',['COMCAST','XFINITY','VERIZON','AT&T','T-MOBILE','SPECTRUM','COX COMM','CENTURY LINK','DIRECTV','DISH NETWORK','WASTE MGMT','REPUBLIC SERVICES','UTILITY','ELECTRIC','GAS BILL','WATER BILL','ATMOS','NATIONAL FUEL','COLUMBIA GAS','NICOR','PECO ','PSE&G','DTE ','CONSUMERS ENERGY','AEP ','DUKE ENERGY']],
+  ['Insurance',['GEICO','STATE FARM','PROGRESSIVE','ALLSTATE','USAA ','AMICA','NATIONWIDE','LIBERTY MUTUAL','FARMERS INS','TRAVELERS INS','HARTFORD','METLIFE','PRUDENTIAL','CIGNA','AETNA','HUMANA','ANTHEM','BCBS','BLUE CROSS','UNITED HEALTH','OSCAR HEALTH','KAISER','WELLCARE','MOLINA','CENTENE','GUARDIAN LIFE','PRINCIPAL LIFE','AFLAC','ERIE INSURANCE','AUTO OWNERS']],
+  // Health & Wellness
+  ['Health & Wellness',['CVS','WALGREEN','RITE AID','PHARMACY','MEDICAL','DOCTOR','DENTAL','DENTIST','VISION','OPTOMETRIST','HOSPITAL','CLINIC','URGENT CARE','HEALTH','WELLNESS','GYM','PLANET FITNESS','ANYTIME FITNESS','LA FITNESS','EQUINOX','ORANGE THEORY','CROSSFIT','YOGA','FITNESS','PHYSICAL THERAPY','CHIROPRACTOR','DERMATOLOGY','PSYCHIATRY','COUNSELING','CRUNCH FITNESS','24 HOUR FITNESS','GOLD\'S GYM','YMCA','SNAP FITNESS','F45','BARRY\'S','SOLIDCORE','COREPOWER','SOULCYCLE','LIFETIME FITNESS','LIFE TIME','COSTCO PHARMACY','SAM\'S PHARMACY','WALMART PHARMACY','BROOKSHIRES PHARMACY','KAISER PHARMACY']],
+  // Entertainment
+  ['Entertainment',['NETFLIX','SPOTIFY','APPLE TV','PRIME VIDEO','KINDLE','AUDIBLE','AMAZON MUSIC','HULU','DISNEY+','HBO MAX','PEACOCK','PARAMOUNT+','PARAMOUNT PLUS','AMC THEATER','REGAL','CINEMARK','TICKETMASTER','STUBHUB','LIVE NATION','EVENTBRITE','BOWLING','MINI GOLF','ESCAPE ROOM','LASER TAG','ARCADE','MUSEUM','ZOO ','AQUARIUM','AMUSEMENT','SIX FLAGS','CEDAR POINT','AMC ','YOUTUBE PREMIUM','TWITCH','STEAM ','PLAYSTATION','XBOX GAME','NINTENDO','HBO ','MAX.COM','APPLE TV+','DISCOVERY+','ESPN+','SLING TV','FUBO TV','PHILO ','CRUNCHYROLL','SHUDDER','CURIOSITY STREAM','BRITBOX','ACORN TV','DAZN','MUBI']],
+  // Travel
+  ['Travel',['DELTA','UNITED AIRLINES','AMERICAN AIRLINES','AMERICANAIR','SOUTHWEST','JETBLUE','SPIRIT AIRLINES','FRONTIER AIRLINE','ALASKA AIRLINE','ALLEGIANT','SUN COUNTRY','HAWAIIAN AIR','BREEZE AIRWAYS','MARRIOTT','COURTYARD BY','RESIDENCE INN','SHERATON','WESTIN','W HOTEL','RITZ CARLTON','ST REGIS','HILTON','HILTON GARDEN','HAMPTON INN','DOUBLETREE','EMBASSY SUITES','HOMEWOOD SUITES','HYATT','PARK HYATT','GRAND HYATT','ANDAZ','IHG ','HOLIDAY INN','INTERCONTINENTAL','CROWNE PLAZA','WYNDHAM','DAYS INN','LA QUINTA','BEST WESTERN','MOTEL 6','COMFORT INN','QUALITY INN','FOUR SEASONS','KIMPTON','ALOFT HOTEL','AIRBNB','VRBO','EXPEDIA','HOTELS.COM','BOOKING.COM','PRICELINE','HOTWIRE','TRAVELOCITY','KAYAK','HERTZ','ENTERPRISE RENT','AVIS ','BUDGET RENT','NATIONAL CAR','ALAMO','THRIFTY CAR','DOLLAR RENT','SIXT','TURO','GETAROUND','LYFT','UBER ','AMTRAK','GREYHOUND','FLIXBUS','MEGABUS','TSA PRECHECK','GLOBAL ENTRY','AIRPORT PARKING','CARNIVAL CRUISE','ROYAL CARIBBEAN','NORWEGIAN CRUISE','DISNEY CRUISE','CELEBRITY CRUISE']],
+  // Education
+  ['Education',['TUITION','STUDENT LOAN','NAVIENT','SALLIE MAE','MOHELA','NELNET','UDEMY','COURSERA','SKILLSHARE','MASTERCLASS','LINKEDIN LEARNING','SCHOOL','UNIVERSITY','COLLEGE','TEXTBOOK','CHEGG','KHAN ACADEMY']],
+  // Automotive
+  ['Automotive',['JIFFY LUBE','VALVOLINE','FIRESTONE','GOODYEAR','MIDAS ','PEP BOYS','AUTOZONE','O\'REILLY AUTO','ADVANCE AUTO','NAPA AUTO','CARMAX','CARVANA','DMV ','VEHICLE REG','AUTO INSURANCE','AAA ','DEALER','MECHANIC']],
+  // Checks
+  ['Checks',['CHECK PAID','CHECK #','CHECKPAID']],
+  // Tax
+  ['Tax & Gov',['IRS ','STATE TAX','FEDERAL TAX','PROPERTY TAX','TREASURER','COUNTY TAX']],
+  // Childcare
+  ['Child Care',['DAYCARE','DAY CARE','CHILDCARE','CHILD CARE','PRESCHOOL','NANNY','BABYSIT','MONTESSORI','KINDERCARE','BRIGHT HORIZONS','LEARNING CARE']],
+  ['Pet',['CHEWY','PETCO','PETSMART','PET SUPPLIES','VET ','VETERINARY','ANIMAL HOSPITAL','ANIMAL CLINIC','BANFIELD','BLUEPEARL','VCA ANIMAL','PET SMART','PETLAND','BARKBOX','PET FOOD']],
+];
+
+// MCC → app category map (ISO 18245 codes, sourced from public standard)
+const MCC_CAT={
+  // Airlines
+  ...Object.fromEntries([3000,3001,3004,3005,3006,3007,3008,3009,3010,3026,3034,3042,3043,3047,3052,3058,3060,3066,3069,3075,3076,3082,3099,3102,3132,3136,3144,3174,3177,3178,3180,3211,3213,3245,3246,3256,3260,3296,3300,3301,3302,3303,4511].map(c=>[c,'Travel'])),
+  // Car rentals
+  ...Object.fromEntries([3351,3355,3357,3359,3366,3370,3381,3387,3389,3390,3393,3395,3405,3441,7512].map(c=>[c,'Travel'])),
+  // Hotels
+  ...Object.fromEntries([3501,3502,3503,3504,3509,3510,3562,3604,3615,3618,3637,3638,3640,3644,3649,3650,3665,3690,3692,3693,3695,3700,3703,3709,3710,3715,3722,3731,3740,3741,3750,3770,3779,3780,3812,3816,7011].map(c=>[c,'Travel'])),
+  // Transportation
+  4111:'Travel',4112:'Travel',4121:'Travel',4131:'Travel',4411:'Travel',4722:'Travel',4789:'Travel',
+  // Utilities & telecoms
+  4812:'Bills & Utilities',4814:'Bills & Utilities',4816:'Bills & Utilities',4899:'Bills & Utilities',4900:'Bills & Utilities',
+  // Financial / transfers
+  4829:'Transfers',6010:'Transfers',6011:'Transfers',6051:'Transfers',6211:'Investment Contribution',6300:'Insurance',
+  // Groceries
+  5411:'Groceries',5422:'Groceries',5441:'Groceries',5451:'Groceries',5462:'Groceries',5499:'Groceries',
+  // Fuel / gas
+  5172:'Gas',5541:'Gas',5542:'Gas',5983:'Gas',
+  // Home improvement
+  5200:'Home',5211:'Home',5231:'Home',5251:'Home',5261:'Home',5712:'Home',5713:'Home',5714:'Home',5718:'Home',5719:'Home',5722:'Home',
+  // Automotive
+  5511:'Automotive',5521:'Automotive',5532:'Automotive',5533:'Automotive',5551:'Automotive',5571:'Automotive',5599:'Automotive',
+  7531:'Automotive',7534:'Automotive',7535:'Automotive',7538:'Automotive',7542:'Automotive',7549:'Automotive',
+  // Clothing / retail
+  5300:'Shopping',5309:'Shopping',5310:'Shopping',5311:'Shopping',5331:'Shopping',5399:'Shopping',
+  5611:'Shopping',5621:'Shopping',5631:'Shopping',5641:'Shopping',5651:'Shopping',5655:'Shopping',5661:'Shopping',5691:'Shopping',5699:'Shopping',
+  5094:'Shopping',5944:'Shopping',5945:'Shopping',5947:'Shopping',5948:'Shopping',5949:'Shopping',
+  5940:'Shopping',5941:'Shopping',5942:'Shopping',5943:'Shopping',5946:'Shopping',
+  5931:'Shopping',5932:'Shopping',5977:'Shopping',5992:'Shopping',5999:'Shopping',
+  // Electronics
+  5045:'Shopping',5065:'Shopping',5732:'Shopping',5734:'Shopping',5735:'Shopping',
+  // Food & drink
+  5811:'Food & Drink',5812:'Food & Drink',5813:'Food & Drink',5814:'Food & Drink',5921:'Food & Drink',
+  // Digital goods / subscriptions
+  5815:'Entertainment',5816:'Entertainment',5817:'Entertainment',5818:'Entertainment',
+  5962:'Travel',5964:'Shopping',5965:'Shopping',5968:'Entertainment',
+  // Pet
+  742:'Pet',5995:'Pet',
+  // Health
+  5122:'Health & Wellness',5912:'Health & Wellness',5976:'Health & Wellness',
+  8011:'Health & Wellness',8021:'Health & Wellness',8031:'Health & Wellness',8041:'Health & Wellness',
+  8042:'Health & Wellness',8043:'Health & Wellness',8049:'Health & Wellness',8050:'Health & Wellness',
+  8062:'Health & Wellness',8071:'Health & Wellness',8099:'Health & Wellness',
+  7230:'Health & Wellness',7297:'Health & Wellness',7298:'Health & Wellness',
+  // Entertainment
+  7832:'Entertainment',7922:'Entertainment',7929:'Entertainment',7932:'Entertainment',
+  7933:'Entertainment',7941:'Entertainment',7991:'Entertainment',7992:'Entertainment',
+  7993:'Entertainment',7994:'Entertainment',7995:'Entertainment',7996:'Entertainment',
+  7997:'Entertainment',7998:'Entertainment',7999:'Entertainment',7841:'Entertainment',7829:'Entertainment',
+  // Education
+  8211:'Education',8220:'Education',8241:'Education',8244:'Education',8249:'Education',8299:'Education',
+  // Child care
+  8351:'Child Care',
+  // Tax / gov
+  9311:'Tax & Gov',9399:'Tax & Gov',9402:'Tax & Gov',9405:'Tax & Gov',
+  // Checks / misc
+  4784:'Bills & Utilities', // tolls
+  7210:'Home',7211:'Home',7216:'Home',7342:'Home',7349:'Home', // cleaning/laundry
+  7523:'Automotive', // parking
+  8111:'Other', // legal
+  8931:'Other', // accounting
+};
+
+function guessCatFromMCC(mcc){
+  if(!mcc)return null;
+  const n=parseInt(mcc,10);
+  if(isNaN(n))return null;
+  return MCC_CAT[n]||null;
+}
+
+// Community rules — fetched once per session from GitHub
+let _communityRules=null;
+let _communityRulesFetched=false;
+async function fetchCommunityRules(){
+  if(_communityRulesFetched)return;
+  _communityRulesFetched=true;
+  try{
+    const res=await fetch('https://trak-yo-dollas.web.app/community-rules.json',{cache:'no-store'});
+    if(res.ok){const data=await res.json();if(Array.isArray(data))_communityRules=data;}
+  }catch(e){/* silently fail — community rules are optional */}
+}
+
+function guessCatFromDesc(d){
+  const u=d.toUpperCase();
+  for(const [cat,keywords] of CAT_KEYWORDS){
+    if(keywords.some(k=>u.includes(k)))return cat;
+  }
   return 'Other';
 }
 
+function guessCatAlly(d, t){
+  // Type-based overrides first
+  if(t){
+    const tu=t.toUpperCase();
+    if(tu.includes('CREDIT') && (d.toUpperCase().includes('CHASE')||d.toUpperCase().includes('CITI')||d.toUpperCase().includes('AMEX')||d.toUpperCase().includes('CAPITAL ONE')||d.toUpperCase().includes('DISCOVER')))return 'CC Payment';
+  }
+  return guessCatFromDesc(d);
+}
+
 function guessCatChase(d){
-  d=d.toUpperCase();
-  if(['KROGER','MEIJER','WHOLEFDS','COSTCO','WALMART','ALDI','TRADER JOE'].some(x=>d.includes(x)))return 'Groceries';
-  if(['AMAZON','TARGET','WALMART','BEST BUY'].some(x=>d.includes(x)))return 'Shopping';
-  if(['CHIPOTLE','STARBUCKS','PANERA','CHICK-FIL','DOORDASH','GRUBHUB'].some(x=>d.includes(x)))return 'Food & Drink';
-  if(['SHELL','BP','EXXON','MARATHON','FUEL'].some(x=>d.includes(x)))return 'Gas';
-  if(['CVS','WALGREEN','PHARMACY'].some(x=>d.includes(x)))return 'Health & Wellness';
-  if(['NETFLIX','SPOTIFY','APPLE','HULU','DISNEY'].some(x=>d.includes(x)))return 'Entertainment';
-  if(['DELTA','UNITED','MARRIOTT','AIRBNB','HILTON'].some(x=>d.includes(x)))return 'Travel';
-  return 'Other';
+  return guessCatFromDesc(d);
 }
 
 function showImportPreview(){

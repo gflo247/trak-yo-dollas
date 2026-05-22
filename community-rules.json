@@ -1,0 +1,1122 @@
+[
+  {
+    "keyword": "AMZN MKTP",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "AMAZON MKTP",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "AMAZON PRIME",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "WHOLEFDS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "WHOLE FOODS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "TRADER JOE",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "KROGER",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "MEIJER",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "ALDI",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "COSTCO WHSE",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "CHIPOTLE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "STARBUCKS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DOORDASH",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GRUBHUB",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "UBER EATS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "INSTACART",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "NETFLIX.COM",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "SPOTIFY",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "APPLE.COM/BILL",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "HULU",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "DISNEY PLUS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "YOUTUBE PREMIUM",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "SHELL OIL",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "BP#",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "EXXONMOBIL",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "MARATHON PETRO",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "SPEEDWAY",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "CIRCLE K",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "CVS PHARMACY",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "WALGREENS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "PLANET FITNESS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "ANYTIME FITNESS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "HOME DEPOT",
+    "cat": "Home"
+  },
+  {
+    "keyword": "LOWES #",
+    "cat": "Home"
+  },
+  {
+    "keyword": "MENARDS",
+    "cat": "Home"
+  },
+  {
+    "keyword": "ACE HARDWARE",
+    "cat": "Home"
+  },
+  {
+    "keyword": "VENMO",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "ZELLE",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "PAYPAL",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "CASH APP",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "VANGUARD",
+    "cat": "Investment Contribution"
+  },
+  {
+    "keyword": "FIDELITY",
+    "cat": "Investment Contribution"
+  },
+  {
+    "keyword": "SCHWAB",
+    "cat": "Investment Contribution"
+  },
+  {
+    "keyword": "BETTERMENT",
+    "cat": "Investment Contribution"
+  },
+  {
+    "keyword": "NAVIENT",
+    "cat": "Education"
+  },
+  {
+    "keyword": "SALLIE MAE",
+    "cat": "Education"
+  },
+  {
+    "keyword": "MOHELA",
+    "cat": "Education"
+  },
+  {
+    "keyword": "COMCAST",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "XFINITY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "VERIZON",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "AT&T",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "T-MOBILE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SPECTRUM",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "GEICO",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "STATE FARM",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "PROGRESSIVE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "LYFT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "UBER TRIP",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AIRBNB",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SOUTHWEST",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "DELTA AIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "UNITED AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "MARRIOTT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HILTON",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TRAVELERS INS",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "METLIFE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "CIGNA",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "AETNA",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "HUMANA",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "BLUE CROSS",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "UNITED HEALTH",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "AFLAC",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "ERIE INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "CHEVRON",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "SUNOCO",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "MOBIL",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "WAWA",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "KWIK TRIP",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "CASEYS",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "PILOT TRAVEL",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "LOVES TRAVEL",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "MURPHY USA",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "SHEETZ",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "QUIKTRIP",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "RACETRAC",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "THORNTONS",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "MAVERIK",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "7-ELEVEN GAS",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "PUBLIX",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "SAFEWAY",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "ALBERTSONS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "H-E-B",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "WEGMANS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "SPROUTS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "FOOD LION",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "HANNAFORD",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "SHOPRITE",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "WINCO FOODS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "LIDL",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "MARKET BASKET",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "HARRIS TEETER",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "PRICE CHOPPER",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "PEACOCK TV",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "HBO MAX",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "MAX.COM",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "PARAMOUNT PLUS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "DISCOVERY PLUS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "ESPN PLUS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "SLING TV",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "FUBO TV",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "CRUNCHYROLL",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "APPLE TV PLUS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "RITE AID",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "EQUINOX",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "ORANGE THEORY",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "LA FITNESS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "CRUNCH FITNESS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "YMCA",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "COREPOWER",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "SOULCYCLE",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "LIFETIME FITNESS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "LIFE TIME",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "CHEWY.COM",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "PETCO",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "PETSMART",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "BARKBOX",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "BANFIELD PET",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "VCA ANIMAL",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "ANTHEM",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "KAISER",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "TRAVELERS",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "DELTA.COM",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "DL ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AMERICAN AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AMERICANAIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AA ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "UNITED.COM",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "UA ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "WN ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "JETBLUE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "B6 ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ALASKA AIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AS ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SPIRIT AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "NK ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "FRONTIER AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "F9 ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ALLEGIANT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SUN COUNTRY",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HAWAIIAN AIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "BREEZE AIRWAYS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "COURTYARD BY",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "RESIDENCE INN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SPRINGHILL SUITES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "FAIRFIELD INN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TOWNEPLACE SUITES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "WESTIN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SHERATON",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "W HOTEL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ST REGIS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "RITZ CARLTON",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HYATT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "PARK HYATT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ANDAZ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "GRAND HYATT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HILTON GARDEN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HAMPTON INN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "DOUBLETREE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "EMBASSY SUITES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HOMEWOOD SUITES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HOME2 SUITES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CURIO COLLECTION",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "IHG",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HOLIDAY INN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "INTERCONTINENTAL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CROWNE PLAZA",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "STAYBRIDGE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CANDLEWOOD",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "EVEN HOTELS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "WYNDHAM",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "DAYS INN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SUPER 8",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "RAMADA",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "LA QUINTA",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "MICROTEL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "BEST WESTERN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "MOTEL 6",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "RED ROOF",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "COMFORT INN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "QUALITY INN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "FOUR SEASONS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "KIMPTON",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AUTOGRAPH COLLECTION",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ALOFT HOTEL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ELEMENT HOTEL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AC HOTEL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "EXPEDIA",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HOTELS.COM",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "BOOKING.COM",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "PRICELINE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HOTWIRE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TRAVELOCITY",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TRIP.COM",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "GOOGLE TRAVEL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "VRBO",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HERTZ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ENTERPRISE RENT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AVIS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "BUDGET RENT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "NATIONAL CAR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ALAMO RENT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "THRIFTY CAR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "DOLLAR RENT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SIXT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TURO",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "GETAROUND",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AMTRAK",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "GREYHOUND",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "FLIXBUS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "MEGABUS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TSA PRECHECK",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "GLOBAL ENTRY",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CLEAR ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AIRPORT PARKING",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "PARKWHIZ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SPOTHERO",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CARNIVAL CRUISE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ROYAL CARIBBEAN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "NORWEGIAN CRUISE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "DISNEY CRUISE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CELEBRITY CRUISE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "OLIVE GARDEN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "TEXAS ROADHOUSE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BUFFALO WILD WINGS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "OUTBACK STEAKHOUSE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "RED LOBSTER",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CHEESECAKE FACTORY",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DARDEN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "LONGHORN STEAKHOUSE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "APPLEBEES",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CHILIS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "IHOP",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DENNYS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CRACKER BARREL",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GOLDEN CORRAL",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "RED ROBIN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "OUTBACK",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "TEXAS DE BRAZIL",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BAHAMA BREEZE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "YARD HOUSE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SEASONS 52",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CHEDDAR",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BOB EVANS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "WAFFLE HOUSE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "PERKINS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "FIRST WATCH",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "EGGS UP GRILL",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "AMAZON WEB SERVICE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "PRIME VIDEO",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "KINDLE",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "AUDIBLE",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "AMAZON MUSIC",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "AMAZON FRESH",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "WHOLE FOODS MKT",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "SAM'S CLUB",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "SAMS CLUB",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "BJS WHOLESALE",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "COSTCO.COM",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "ANGI ",
+    "cat": "Home"
+  },
+  {
+    "keyword": "ANGIE",
+    "cat": "Home"
+  },
+  {
+    "keyword": "HOMEADVISOR",
+    "cat": "Home"
+  },
+  {
+    "keyword": "THUMBTACK",
+    "cat": "Home"
+  },
+  {
+    "keyword": "TASKRABBIT",
+    "cat": "Home"
+  },
+  {
+    "keyword": "MR HANDYMAN",
+    "cat": "Home"
+  },
+  {
+    "keyword": "MERRY MAIDS",
+    "cat": "Home"
+  },
+  {
+    "keyword": "MOLLY MAID",
+    "cat": "Home"
+  },
+  {
+    "keyword": "TERMINIX",
+    "cat": "Home"
+  },
+  {
+    "keyword": "ORKIN",
+    "cat": "Home"
+  },
+  {
+    "keyword": "TRUGREEN",
+    "cat": "Home"
+  },
+  {
+    "keyword": "SCOTTS LAWN",
+    "cat": "Home"
+  }
+]
