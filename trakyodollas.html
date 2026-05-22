@@ -443,7 +443,7 @@ select option{background:var(--bg-card)}
 .cal-day{width:12px;height:12px;border-radius:2px;cursor:pointer;flex-shrink:0;transition:opacity .1s}
 .cal-day:hover{opacity:.7;outline:1px solid var(--border-mid)}
 .cal-day.cal-empty{background:transparent!important;cursor:default;pointer-events:none}
-.cal-dow-labels{display:flex;flex-direction:column;gap:2px;padding-top:16px;margin-right:3px;flex-shrink:0}
+.cal-dow-labels{display:flex;flex-direction:column;gap:2px;padding-top:16px;margin-right:3px;flex-shrink:0;position:sticky;left:0;z-index:2;background:var(--bg-page)}
 .cal-dow-label{height:12px;font-size:8px;color:var(--text-muted);display:flex;align-items:center}
 .cal-stats{display:flex;gap:8px;margin-bottom:.75rem;flex-wrap:wrap}
 .cal-stat{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:8px;padding:.5rem .75rem;flex:1;min-width:100px}
@@ -452,7 +452,7 @@ select option{background:var(--bg-card)}
 .cal-stat-label{font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
 .cal-stat-val{font-size:16px;font-weight:800;color:var(--text-bright);letter-spacing:-.02em}
 .cal-stat-sub{font-size:9px;color:var(--text-muted);margin-top:1px}
-.cal-legend-wrap{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-muted)}
+.cal-legend-wrap{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-muted);height:18px;overflow:hidden}
 .cal-tip{position:fixed;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:8px;padding:6px 10px;font-size:11px;pointer-events:none;z-index:9999;display:none;min-width:120px}
 .demo-picker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.25rem;-webkit-overflow-scrolling:touch}
 .demo-picker{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:16px;padding:1.75rem;width:min(420px,100%);box-shadow:0 20px 60px rgba(0,0,0,.5)}
@@ -811,7 +811,7 @@ select option{background:var(--bg-card)}
     <button id="chart-texture-btn" onclick="toggleChartTexture()" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">⠿ Patterns: off</button>
     <button id="cal-transfers-btn" onclick="toggleCalTransfers()" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">Transfers: off</button>
   </div>
-  <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
+  <div id="spend-chart-border" style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
     <div class="chart-wrap chart-dark" id="spend-chart-wrap" style="height:210px;position:relative;border:none;border-radius:0"><canvas id="spendChart"></canvas></div>
     <div id="chart-footnote" style="font-size:9px;color:var(--text-muted);text-align:left;padding:4px 8px 5px;border-top:1px solid var(--border);display:none;line-height:1.4;background:var(--bg-card)"></div>
   </div>
@@ -3382,6 +3382,7 @@ function setChartMode(mode){
     if(btn)btn.classList.toggle('active',m===mode);
   });
   const chartWrap=document.getElementById('spend-chart-wrap');
+  const chartBorder=document.getElementById('spend-chart-border');
   const calWrap=document.getElementById('daily-cal-wrap');
   const tmWrap=document.getElementById('treemap-wrap');
   const skWrap=document.getElementById('sankey-wrap');
@@ -3390,6 +3391,7 @@ function setChartMode(mode){
   const footnote=document.getElementById('chart-footnote');
   const transfersBtn=document.getElementById('cal-transfers-btn');
   if(mode==='daily'){
+    if(chartBorder)chartBorder.style.display='none';
     if(chartWrap)chartWrap.style.display='none';
     if(calWrap)calWrap.style.display='block';
     if(tmWrap)tmWrap.style.display='none';
@@ -3402,6 +3404,7 @@ function setChartMode(mode){
     return;
   }
   if(mode==='map'){
+    if(chartBorder)chartBorder.style.display='none';
     if(chartWrap)chartWrap.style.display='none';
     if(calWrap)calWrap.style.display='none';
     if(tmWrap)tmWrap.style.display='block';
@@ -3414,6 +3417,7 @@ function setChartMode(mode){
     return;
   }
   if(mode==='sankey'){
+    if(chartBorder)chartBorder.style.display='none';
     if(chartWrap)chartWrap.style.display='none';
     if(calWrap)calWrap.style.display='none';
     if(tmWrap)tmWrap.style.display='none';
@@ -3425,6 +3429,7 @@ function setChartMode(mode){
     renderSankey();
     return;
   }
+  if(chartBorder)chartBorder.style.display='';
   if(chartWrap)chartWrap.style.display='';
   if(calWrap)calWrap.style.display='none';
   if(tmWrap)tmWrap.style.display='none';
@@ -3760,10 +3765,12 @@ function applyCalZoom(){
     el.style.width=sz+'px';
     el.style.height=sz+'px';
   });
-  // Also resize legend cells
-  document.querySelectorAll('#cal-legend-cells>div').forEach(el=>{
-    el.style.width=sz+'px';
+  document.querySelectorAll('.cal-dow-label').forEach(el=>{
     el.style.height=sz+'px';
+  });
+  document.querySelectorAll('#cal-legend-cells>div').forEach(el=>{
+    el.style.width=Math.min(sz,14)+'px';
+    el.style.height=Math.min(sz,14)+'px';
   });
 }
 function renderDailyCal(){
@@ -3841,14 +3848,19 @@ function renderDailyCal(){
       <div class="cal-stat"><div class="cal-stat-label">Weekends</div><div class="cal-stat-val">${wkndPct===0?'Even':(wkndPct>0?'+':'')+wkndPct+'%'}</div><div class="cal-stat-sub">vs weekday avg/day</div></div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
-      <div class="cal-legend-wrap"><span style="margin-right:2px">less</span><span id="cal-legend-cells" style="display:flex;gap:2px"></span><span style="margin-left:2px">more</span></div>
+      <div class="cal-legend-wrap">
+        <span style="margin-right:2px">less</span>
+        <span id="cal-legend-cells" style="display:flex;gap:2px"></span>
+        <span style="margin-left:2px">more</span>
+        <span id="cal-legend-hint" style="font-size:9px;color:var(--text-muted);margin-left:6px;display:none">· click a shade to filter</span>
+      </div>
       <div style="display:flex;align-items:center;gap:6px">
         <span style="font-size:10px;color:var(--text-muted)">Zoom</span>
         <button onclick="setCalZoom(-1)" style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:4px;color:var(--text-muted);cursor:pointer;font-size:13px;padding:1px 7px;line-height:1.4;font-family:inherit" type="button">−</button>
         <button onclick="setCalZoom(1)" style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:4px;color:var(--text-muted);cursor:pointer;font-size:13px;padding:1px 7px;line-height:1.4;font-family:inherit" type="button">+</button>
       </div>
     </div>
-    <div style="display:flex;gap:0;overflow-x:auto;padding-bottom:4px">
+    <div style="display:flex;gap:0;overflow-x:auto;padding-bottom:4px" id="cal-scroll-wrap">
       <div class="cal-dow-labels">
         <div class="cal-dow-label"></div><div class="cal-dow-label">M</div><div class="cal-dow-label"></div>
         <div class="cal-dow-label">W</div><div class="cal-dow-label"></div><div class="cal-dow-label">F</div><div class="cal-dow-label"></div>
@@ -3856,13 +3868,52 @@ function renderDailyCal(){
       <div id="cal-months-grid" style="display:flex;gap:4px"></div>
     </div>`;
 
-  // Legend
+  // Legend — clickable to filter by intensity (multi-select)
   const legendEl=document.getElementById('cal-legend-cells');
+  const legendHint=document.getElementById('cal-legend-hint');
+  const _activeLegendIdxs=new Set();
+
+  function applyLegendFilter(){
+    const cells=document.querySelectorAll('.cal-day:not(.cal-empty)');
+    if(_activeLegendIdxs.size===0){
+      cells.forEach(d=>d.style.opacity=d.dataset.intensity==='0'?'0.35':'1');
+      if(legendHint)legendHint.style.display='none';
+      if(clearBtn)clearBtn.style.display='none';
+    } else {
+      cells.forEach(d=>{
+        const matches=_activeLegendIdxs.has(parseInt(d.dataset.intensity));
+        d.style.opacity=matches?'1':'0.1';
+      });
+      if(legendHint)legendHint.style.display='inline';
+      if(clearBtn)clearBtn.style.display='inline';
+    }
+    legendEl.querySelectorAll('[data-li]').forEach(s=>{
+      const active=_activeLegendIdxs.has(parseInt(s.dataset.li));
+      s.style.outline=active?'2px solid var(--text-primary)':'';
+      s.style.outlineOffset=active?'1px':'';
+    });
+  }
+
   [EMPTY,...AMBER].forEach((c,i)=>{
     const s=document.createElement('div');
-    s.style.cssText=`width:12px;height:12px;border-radius:2px;background:${c};opacity:${i===0?'0.4':'1'}`;
+    s.style.cssText=`width:12px;height:12px;border-radius:2px;background:${c};opacity:${i===0?'0.4':'1'};cursor:pointer;transition:outline .1s`;
+    s.title=i===0?'No spend days':'Intensity level '+i;
+    s.dataset.li=i;
+    s.onclick=()=>{
+      if(_activeLegendIdxs.has(i)) _activeLegendIdxs.delete(i);
+      else _activeLegendIdxs.add(i);
+      applyLegendFilter();
+    };
     legendEl.appendChild(s);
   });
+
+  const clearBtn=document.createElement('button');
+  clearBtn.textContent='✕ clear';
+  clearBtn.type='button';
+  clearBtn.style.cssText='background:none;border:none;font-size:9px;color:var(--accent-blue-light);cursor:pointer;padding:0 0 0 6px;font-family:inherit;display:none';
+  clearBtn.onclick=()=>{_activeLegendIdxs.clear();applyLegendFilter();};
+  if(legendHint&&legendHint.parentNode)legendHint.parentNode.appendChild(clearBtn);
+  if(legendHint)legendHint.style.display='none';
 
   const grid=document.getElementById('cal-months-grid');
   let lastYear=null;
@@ -3874,11 +3925,13 @@ function renderDailyCal(){
       if(lastYear!==null){
         const spacer=document.createElement('div');
         spacer.style.cssText='width:1px;background:var(--border-mid);margin:0 2px;flex-shrink:0';
-        grid.appendChild(spacer);
+        if(window.innerWidth>600)grid.appendChild(spacer);
       }
       const yearCol=document.createElement('div');
       yearCol.className='cal-month-col';
       yearCol.style.cssText='justify-content:flex-start;min-width:0';
+      yearCol.dataset.year=String(thisYear);
+      if(window.innerWidth<=600)yearCol.style.display='none';
       const yearLbl=document.createElement('div');
       yearLbl.style.cssText='font-size:9px;font-weight:700;color:var(--text-secondary);letter-spacing:.06em;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);margin-bottom:2px;margin-top:2px;white-space:nowrap;padding-left:1px';
       yearLbl.textContent=String(thisYear);
@@ -3891,7 +3944,10 @@ function renderDailyCal(){
     col.className='cal-month-col';
     const lbl=document.createElement('div');
     lbl.className='cal-month-label';
-    lbl.textContent=monthStart.toLocaleString('default',{month:'short'});
+    const isJan=monthStart.getMonth()===0;
+    const mon=monthStart.toLocaleString('default',{month:'short'}).toUpperCase().slice(0,3);
+    const yr="'"+String(monthStart.getFullYear()).slice(2);
+    lbl.textContent=window.innerWidth<=600?(mon+' '+yr):monthStart.toLocaleString('default',{month:'short'});
     col.appendChild(lbl);
 
     const weeksWrap=document.createElement('div');
@@ -3910,8 +3966,12 @@ function renderDailyCal(){
       const dow=(startOff+d-1)%7;
       const cell=document.createElement('div');
       cell.className='cal-day';
-      cell.style.background=getColor(spend);
+      const cellColor=getColor(spend);
+      cell.style.background=cellColor;
       cell.style.opacity=spend>0?'1':'0.35';
+      // Store intensity index for legend filtering
+      const intensityIdx=spend===0?0:AMBER.indexOf(cellColor)+1;
+      cell.dataset.intensity=intensityIdx;
       cell.addEventListener('mousemove',e=>{
         const dt=new Date(monthStart.getFullYear(),monthStart.getMonth(),d);
         const dayLabel=dt.toLocaleDateString('default',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
