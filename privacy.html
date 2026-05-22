@@ -89,7 +89,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
   <div class="eyebrow">Your data & privacy</div>
   <h1>Simple, honest,<br>local-first.</h1>
   <p class="intro">No bank connections. No selling your data. Your CSV file(s) process in your browser. You control where they go from there - keep them local, or sync to Firebase via your Google account. Here's exactly what we do — and don't — with your information.</p>
-  <p style="font-style: italic; color: #888; margin-top: 0rem; margin-bottom: 2rem;">Last updated May 16, 2026</p>
+  <p style="font-style: italic; color: #888; margin-top: 0rem; margin-bottom: 2rem;">Last updated May 22, 2026</p>
 
   <div class="section">
     <div class="card card-green">
@@ -100,6 +100,11 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
     <div class="card card-blue">
       <div class="card-label">🔁 Sign in to sync across devices</div>
       <p>Signing in backs up your full data — accounts, transactions, budgets, categories, and snapshots — directly to your Google account via <a href="https://firebase.google.com/" target="_blank">Firebase</a>. Readable only by you, enforced at the database level. Sign in on any device to restore everything instantly.</p>
+    </div>
+
+    <div class="card card-neutral">
+      <div class="card-label">🗂 Community categorization rules</div>
+      <p>When you open the import screen, the app fetches <a href="https://github.com/gflo247/trak-yo-dollas/blob/main/community-rules.json" target="_blank">community-rules.json</a> from our Firebase hosting once per session. This file contains keyword→category mappings used to auto-categorize your transactions. <strong>No transaction data, descriptions, or personal information is sent</strong> — the app only downloads the rules file. The file is public and fully auditable on GitHub. This fetch can be blocked by any ad blocker without affecting core functionality.</p>
     </div>
 
     <div class="card card-amber">
