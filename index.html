@@ -236,6 +236,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
     <a href="trakyodollas.html?demo=1" class="btn-hero">Try with demo data</a>
     <a href="trakyodollas.html?import=1" class="btn-hero-ghost">⬆ Import CSV</a>
   </div>
+  <div id="import-nudge" style="display:none;margin-top:.75rem;font-size:13px;color:var(--text-muted)"></div>
 </section>
 
 <!-- Feature showcase tabs -->
@@ -531,6 +532,20 @@ function buildHeatmap() {
   });
 }
 buildHeatmap();
+
+// Time-to-import nudge
+(function(){
+  try{
+    const last=localStorage.getItem('trakyo_last_import');
+    if(!last)return;
+    const days=Math.floor((Date.now()-new Date(last).getTime())/(1000*60*60*24));
+    if(days<25)return;
+    const el=document.getElementById('import-nudge');
+    if(!el)return;
+    el.innerHTML=`Last import: ${days} days ago &nbsp;·&nbsp; <a href="trakyodollas.html?import=1" style="color:var(--accent-blue-light);text-decoration:none;font-weight:600">Time for a refresh ↗</a>`;
+    el.style.display='block';
+  }catch(e){}
+})();
 
 // Sync theme with app
 const saved = localStorage.getItem('trakyo_theme') || 'dark';
