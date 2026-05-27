@@ -694,9 +694,9 @@ select option{background:var(--bg-card)}
 
   <!-- Dot legend -->
   <div style="display:flex;gap:12px;padding:0 2px;margin-bottom:.6rem;flex-wrap:wrap">
-    <div style="display:flex;align-items:center;gap:4px"><div style="width:8px;height:8px;border-radius:50%;background:#F87171;flex-shrink:0"></div><span style="font-size:10px;color:var(--text-muted)">Over budget <span style="color:var(--text-muted);opacity:.7">&gt;100%</span></span></div>
-    <div style="display:flex;align-items:center;gap:4px"><div style="width:8px;height:8px;border-radius:50%;background:#FBBF24;flex-shrink:0"></div><span style="font-size:10px;color:var(--text-muted)">Near limit <span style="color:var(--text-muted);opacity:.7">80–100%</span></span></div>
-    <div style="display:flex;align-items:center;gap:4px"><div style="width:8px;height:8px;border-radius:50%;background:#34D399;flex-shrink:0"></div><span style="font-size:10px;color:var(--text-muted)">On track <span style="color:var(--text-muted);opacity:.7">&lt;80%</span></span></div>
+    <div style="display:flex;align-items:center;gap:4px"><div style="width:20px;height:8px;border-radius:4px;background:#F87171;flex-shrink:0"></div><span style="font-size:10px;color:var(--text-muted)">Over budget <span style="color:var(--text-muted);opacity:.7">&gt;100%</span></span></div>
+    <div style="display:flex;align-items:center;gap:4px"><div style="width:20px;height:8px;border-radius:4px;background:#FBBF24;flex-shrink:0"></div><span style="font-size:10px;color:var(--text-muted)">Near limit <span style="color:var(--text-muted);opacity:.7">80–100%</span></span></div>
+    <div style="display:flex;align-items:center;gap:4px"><div style="width:20px;height:8px;border-radius:4px;background:#34D399;flex-shrink:0"></div><span style="font-size:10px;color:var(--text-muted)">On track <span style="color:var(--text-muted);opacity:.7">&lt;80%</span></span></div>
   </div>
 
   <!-- Sort toggle + export — between hero and category rows -->
@@ -869,7 +869,7 @@ select option{background:var(--bg-card)}
 <div class="modal-overlay hidden" id="tx-import-modal">
   <div class="modal" style="width:min(520px,96vw)">
     <h3>Import transactions</h3>
-    <p class="modal-sub" style="margin-bottom:.5rem">Auto-detects most bank and credit card formats. 🔒 Parsed locally — never uploaded.</p>
+    <p class="modal-sub" style="margin-bottom:.5rem">Auto-detects most bank and credit card formats. 🔒 Processed in your browser — never uploaded.</p>
 
     <!-- Format selector -->
     <div style="display:flex;gap:6px;margin-bottom:.75rem">
@@ -910,8 +910,8 @@ select option{background:var(--bg-card)}
              onchange="handleTxFileSelect(this)"/>
     </div>
     <div style="font-size:10px;color:var(--text-muted);margin-top:.5rem;line-height:1.5;text-align:center">
-      Categorization uses your rules, community patterns, and MCC codes — in that order. &nbsp;
-      <a href="https://github.com/gflo247/trak-yo-dollas/blob/main/community-rules.json" target="_blank" style="color:var(--accent-blue-light);font-size:10px;text-decoration:underline">View community rules ↗</a> &nbsp;
+      Categorization uses your rules, community patterns, and <a href="https://en.wikipedia.org/wiki/Merchant_category_code" target="_blank" style="color:var(--accent-blue-light);text-decoration:underline" title="Merchant Category Codes — 4-digit codes banks assign to merchants">MCC codes</a> — in that order. &nbsp;
+      <button onclick="openCommunityRulesModal()" style="background:none;border:none;color:var(--accent-blue-light);font-size:10px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">View patterns ↗</button> &nbsp;
       <button onclick="document.getElementById('shortcuts-modal').classList.remove('hidden')" style="background:none;border:none;color:var(--accent-blue-light);font-size:10px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">How it works ↗</button>
     </div>
 
@@ -1153,6 +1153,26 @@ select option{background:var(--bg-card)}
     </div>
 
     <div style="font-size:11px;color:var(--text-muted);text-align:center;line-height:1.6">You can set up income, balances, and budgets anytime from the tabs.</div>
+    <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:.5rem;font-style:italic;opacity:.7">Don't obsess over money. Understand it.</div>
+  </div>
+</div>
+
+<!-- Community rules modal -->
+<div class="modal-overlay hidden" id="community-rules-modal">
+  <div class="modal" style="width:min(560px,95vw);max-height:80vh;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-shrink:0">
+      <div>
+        <h3 style="font-size:16px;margin:0">Community patterns</h3>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Keyword→category mappings that run on every import</div>
+      </div>
+      <button onclick="document.getElementById('community-rules-modal').classList.add('hidden')" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-muted);padding:0" type="button">✕</button>
+    </div>
+    <input type="text" id="cr-search" placeholder="Search merchant or category…" oninput="filterCommunityRules()" style="width:100%;padding:.45rem .7rem;border:1px solid var(--border-mid);border-radius:7px;background:var(--bg-deep);color:var(--text-primary);font-size:12px;font-family:inherit;margin-bottom:.6rem;flex-shrink:0">
+    <div id="cr-table" style="overflow-y:auto;flex:1;border:1px solid var(--border);border-radius:8px;font-size:11px"></div>
+    <div style="margin-top:.75rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <div style="font-size:11px;color:var(--text-muted)">Missing a merchant? Help improve categorization for everyone.</div>
+      <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;white-space:nowrap">Suggest a pattern ↗</a>
+    </div>
   </div>
 </div>
 
@@ -1491,8 +1511,8 @@ select option{background:var(--bg-card)}
           <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Categorization priority</div>
           <div style="padding:.5rem .75rem;color:var(--text-secondary)">
             <span style="color:#60A5FA;font-weight:600">1. Your rules</span> — keyword rules you've saved always win<br>
-            <span style="color:#34D399;font-weight:600">2. Community rules</span> — crowdsourced keyword patterns from GitHub, fetched once per session<br>
-            <span style="color:#94A3B8;font-weight:600">3. MCC codes</span> — merchant category codes from your bank CSV, if present<br>
+            <span style="color:#34D399;font-weight:600">2. Community patterns</span> — 280+ crowdsourced keyword→category mappings, fetched once per session · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" style="color:#34D399">Suggest a pattern ↗</a><br>
+            <span style="color:#94A3B8;font-weight:600">3. Merchant Category Codes (MCC)</span> — 4-digit codes your bank assigns to merchants, if present in your CSV<br>
             <span style="color:#64748B;font-weight:600">4. Built-in keywords</span> — ~300 common merchant names as a fallback
           </div>
         </div>
@@ -2055,7 +2075,7 @@ function renderInsights(){
     const catSub=`${catUp?'+':'-'}${fmt(Math.abs(biggestCat.diff))} vs prior month${normStr}${shareStr}`;
     const catValue=`${biggestCat.cat} · ${catUp?'+':'−'}${biggestCat.pct}%`;
     const catAction=catUp&&vsNorm!==null&&vsNorm>=20?` — worth a look`:'';
-    addPill('topmover','Top mover',pillWithTip(catUp?'⬆️':'⬇️',`Top mover`,catValue,catUp?'#FBBF24':'#34D399',catSub+catAction,tooltip,{label:`See ${biggestCat.cat} transactions`,onclick:`toggleCatFilter('${biggestCat.cat.replace(/'/g,"\\'")}');setTimeout(()=>{const el=document.getElementById('tx-count-label');if(el){const y=el.getBoundingClientRect().top+window.scrollY-80;window.scrollTo({top:y,behavior:'smooth'})}},300)`}),catUp&&vsNorm!==null&&vsNorm>=20?70:20);
+    addPill('topmover','Top mover',pillWithTip(catUp?'⬆️':'⬇️',`Top mover`,catValue,catUp?'#FBBF24':'#34D399',catSub+catAction,tooltip,{label:`See ${biggestCat.cat} transactions`,onclick:`toggleCatFilter('${biggestCat.cat.replace(/'/g,"\\'")}');setTimeout(()=>{const el=document.getElementById('tx-count-label');if(el){const nav=document.querySelector('nav.nav');const offset=(nav?nav.offsetHeight:60)+16;const y=el.getBoundingClientRect().top+window.scrollY-offset;window.scrollTo({top:y,behavior:'smooth'})}},300)`}),catUp&&vsNorm!==null&&vsNorm>=20?70:20);
   }
 
   // Pill 6 — Largest single transaction
@@ -2174,11 +2194,30 @@ function renderAll(){
 
 function renderMetrics(){
   const nw=netWorth(),assets=totalAssets(),liab=totalLiab(),f=state.dashFilter;
-  const cards=[{v:fmtC(nw),l:'Net worth',c:'m-blue',key:null},{v:fmtC(assets),l:'Total assets',c:'m-green',key:'assets'},{v:fmtC(liab),l:'Liabilities',c:'m-red',key:'liabilities'}];
-  document.getElementById('summary-metrics').innerHTML=cards.map(({v,l,c,key},i)=>`
+
+  // Sub-labels
+  const assetTypes=[...new Set(state.accounts.filter(a=>!isLiab(a.type)&&!a.excludeFromNW).map(a=>TL_M[a.type]||a.type))].slice(0,3).join(' · ')||'';
+  const liabTypes=[...new Set(state.accounts.filter(a=>isLiab(a.type)&&!a.excludeFromNW).map(a=>TL_M[a.type]||a.type))].slice(0,3).join(' · ')||'';
+
+  // YTD change — use monthKey (YYYY-MM) for reliable sorting
+  const allSnaps=[...state.snapshots].filter(s=>s.monthKey).sort((a,b)=>a.monthKey.localeCompare(b.monthKey));
+  const thisYearKey=new Date().getFullYear()+'-01';
+  const yearStart=allSnaps.filter(s=>s.monthKey<thisYearKey).slice(-1)[0];
+  const nwChange=yearStart?nw-yearStart.nw:null;
+  const nwSub=nwChange!==null
+    ?`<span style="color:${nwChange>=0?'#34D399':'#F87171'}">${nwChange>=0?'↑':'↓'}${fmt(Math.abs(nwChange))} this year</span>`
+    :'';
+
+  const cards=[
+    {v:fmtC(nw),l:'Net worth',c:'m-blue',key:null,sub:nwSub},
+    {v:fmtC(assets),l:'Total assets',c:'m-green',key:'assets',sub:`<span style="color:var(--text-muted)">${assetTypes}</span>`},
+    {v:fmtC(liab),l:'Liabilities',c:'m-red',key:'liabilities',sub:`<span style="color:var(--text-muted)">${liabTypes}</span>`}
+  ];
+  document.getElementById('summary-metrics').innerHTML=cards.map(({v,l,c,key,sub},i)=>`
     <div class="metric ${c} ${key?'clickable':''} ${f===key&&key?'active-card':''}" onclick="${key?`toggleDashFilter('${key}')`:''}" style="cursor:${key?'pointer':'default'}${i===0?';padding:1rem 1rem':''}">
       <div class="metric-label" style="${i===0?'font-size:10px;opacity:.55':''}">${l}</div>
       <div class="metric-value" style="${i===0?'font-size:48px;font-weight:900;letter-spacing:-.03em;line-height:1':'font-size:15px;opacity:.75'}">${v}</div>
+      ${sub?`<div style="font-size:10px;margin-top:3px;line-height:1.4">${sub}</div>`:''}
     </div>`).join('');
 }
 function toggleDashFilter(k){state.dashFilter=state.dashFilter===k?null:k;renderMetrics();renderNwBreakdown();}
@@ -3356,7 +3395,7 @@ function renderBucketGrid(){
     const signal=curAmt>0?(vsAvg>=20?`<span class="text-danger">↑${vsAvg}%</span>`:vsAvg<=-20?`<span class="text-success">↓${Math.abs(vsAvg)}%</span>`:(Math.abs(vsAvg)>=5?`<span style="color:#64748B">${vsAvg>=0?'+':''}${vsAvg}%</span>`:'')):'';
     // Compact budget badge — replaces progress bar
     const budgetBadge=budget?`<div onclick="event.stopPropagation();openBudgetModal('${sc}')" title="Budget: ${fmt(budget)}/mo — click to edit · See Budget tab for full tracking" style="margin-top:5px;display:flex;align-items:center;gap:5px;cursor:pointer">
-      <div style="width:6px;height:6px;border-radius:50%;background:${curAmt>budget?'#F87171':curAmt/budget>0.8?'#FBBF24':'#34D399'};flex-shrink:0"></div>
+      <div style="width:10px;height:6px;border-radius:3px;background:${curAmt>budget?'#F87171':curAmt/budget>0.8?'#FBBF24':'#34D399'};flex-shrink:0"></div>
       <span style="font-size:9px;color:var(--text-muted)">${fmt(curAmt)} of ${fmt(budget)} budget</span>
       <span style="font-size:10px;font-weight:700;color:${curAmt>budget?'#F87171':curAmt/budget>0.8?'#FBBF24':'#34D399'}">${Math.round(curAmt/budget*100)}%</span>
     </div>`
@@ -3571,7 +3610,7 @@ function renderTreemap(drillCat){
           .attr('opacity',tile=>state.activeVendors.size===0?1:resolveVendor(tile.data.name)===vendorName&&!isActive?1:.45);
         if(!isActive){
           const txEl=document.getElementById('tx-count-label');
-          if(txEl)requestAnimationFrame(()=>txEl.scrollIntoView({behavior:'smooth',block:'start'}));
+          if(txEl)requestAnimationFrame(()=>{const nav=document.querySelector('nav.nav');const offset=(nav?nav.offsetHeight:60)+16;const y=txEl.getBoundingClientRect().top+window.scrollY-offset;window.scrollTo({top:y,behavior:'smooth'});});
         }
       } else {
         // Category tile clicked — drill into vendors
@@ -4507,6 +4546,9 @@ document.addEventListener('keydown',function(e){
   if(e.key==='Escape'){
     // Close cat hide confirm popover first
     if(document.getElementById('cat-hide-confirm-pop')){closeCatHideConfirm();return;}
+    // Close community rules modal
+    const crModal=document.getElementById('community-rules-modal');
+    if(crModal&&!crModal.classList.contains('hidden')){crModal.classList.add('hidden');return;}
     // Close hidden popover next
     const pop=document.getElementById('hidden-popover');
     if(pop&&pop.style.display!=='none'){pop.style.display='none';return;}
@@ -4533,6 +4575,38 @@ function updateExclNote(){
     :'Use for investment contributions, credit card payments, reimbursements, or anything that shouldn\'t count as spending.';
   note.style.color=cb.checked?'#A78BFA':'var(--text-muted)';
 }
+function openCommunityRulesModal(){
+  document.getElementById('community-rules-modal').classList.remove('hidden');
+  document.getElementById('cr-search').value='';
+  renderCommunityRulesTable('');
+}
+function filterCommunityRules(){
+  renderCommunityRulesTable(document.getElementById('cr-search').value);
+}
+function renderCommunityRulesTable(q){
+  const el=document.getElementById('cr-table');
+  if(!el)return;
+  const rules=_communityRules||[];
+  const filtered=q
+    ?rules.filter(r=>r.keyword.toLowerCase().includes(q.toLowerCase())||r.cat.toLowerCase().includes(q.toLowerCase()))
+    :rules;
+  if(!filtered.length){
+    el.innerHTML='<div style="padding:1.5rem;text-align:center;color:var(--text-muted)">No patterns match "'+q+'"</div>';
+    return;
+  }
+  el.innerHTML=`<table style="width:100%;border-collapse:collapse">
+    <thead><tr style="border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg-card)">
+      <th style="text-align:left;padding:.4rem .75rem;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;width:55%">Merchant keyword</th>
+      <th style="text-align:left;padding:.4rem .75rem;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">Category</th>
+    </tr></thead>
+    <tbody>${filtered.map((r,i)=>`<tr style="border-bottom:1px solid var(--border)${i%2===0?';background:var(--bg-deep)':''}">
+      <td style="padding:.35rem .75rem;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-secondary)">${r.keyword}</td>
+      <td style="padding:.35rem .75rem;color:var(--text-secondary)">${r.cat}</td>
+    </tr>`).join('')}</tbody>
+  </table>
+  <div style="padding:.4rem .75rem;font-size:10px;color:var(--text-muted);text-align:right">${filtered.length} of ${rules.length} patterns</div>`;
+}
+
 function toggleCatExclusion(cat){
   if(state.excludedCats.has(cat)){
     // Already hidden — restore immediately
@@ -4699,7 +4773,10 @@ function toggleCatFilter(cat){
   // Scroll to tx list when applying a filter, not removing one
   if(applying){
     const txEl=document.getElementById('tx-count-label');
-    if(txEl)requestAnimationFrame(()=>txEl.scrollIntoView({behavior:'smooth',block:'start'}));
+    if(txEl)requestAnimationFrame(()=>{
+      const y=txEl.getBoundingClientRect().top+window.scrollY-80;
+      window.scrollTo({top:y,behavior:'smooth'});
+    });
   }
 }
 function clearCatFilter(){
@@ -5222,7 +5299,7 @@ function buildCondensedDots(months,budgeted,totalBudget,mode,cat,budget){
     const mp=limit>0?Math.round(ms/limit*100):0;
     const mc=ms>limit?'#F87171':mp>80?'#FBBF24':'#34D399';
     const ml=fmtMonthShort(m);
-    return '<div style="width:11px;height:11px;border-radius:50%;background:'+(ms>0?mc:'#334155')+';flex-shrink:0" title="'+ml+': '+fmtC(ms)+' ('+mp+'%)"></div>';
+    return '<div style="flex:1;height:9px;border-radius:4px;background:'+(ms>0?mc:'#1E293B')+';min-width:0" title="'+ml+': '+fmtC(ms)+' ('+mp+'%)"></div>';
   }).join('');
 }
 function buildPctDots(months,getSpend,limit){
@@ -5231,15 +5308,17 @@ function buildPctDots(months,getSpend,limit){
     const mp=limit>0?Math.round(ms/limit*100):0;
     const mc=ms>limit?'#F87171':mp>80?'#FBBF24':'#34D399';
     const ml=fmtMonthShort(m);
-    const isFirst=i===0;
     const mo=parseInt(m.slice(5,7));
-    const isQuarter=mo===1||mo===4||mo===7||mo===10;
     const isJan=mo===1;
-    const labelText=isFirst?(ml.slice(0,3)+' \''+m.slice(2,4)):isJan?(ml.slice(0,3)+' \''+m.slice(2,4)):isQuarter?ml.slice(0,3):mp+'%';
-    const labelColor=isQuarter||isFirst?'var(--text-muted)':mc;
-    return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;min-width:0;padding:4px 0" title="'+ml+': '+fmtC(ms)+' ('+mp+'%)">'
-      +'<div style="width:11px;height:11px;border-radius:50%;background:'+(ms>0?mc:'#334155')+';flex-shrink:0"></div>'
-      +'<div style="font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;color:'+labelColor+'">'+labelText+'</div>'
+    const isFirst=i===0;
+    const showTopLabel=isFirst||isJan;
+    const topLabel=showTopLabel?(ml.slice(0,3)+' \''+m.slice(2,4)):'';
+    const bottomText=ms>0?mp+'%':'–';
+    const bottomColor=ms>0?mc:'#475569';
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;padding:0" title="'+ml+': '+fmtC(ms)+' ('+mp+'%)">'
+      +'<div style="font-size:10px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:13px;line-height:13px">'+(topLabel||'')+'</div>'
+      +'<div style="width:100%;height:11px;border-radius:5px;background:'+(ms>0?mc:'#1E293B')+';min-width:0"></div>'
+      +'<div style="font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;color:'+bottomColor+'">'+bottomText+'</div>'
       +'</div>';
   }).join('');
 }
@@ -5349,12 +5428,15 @@ function renderBudgetTab(){
       const mPct=totalBudget>0?Math.round(mSpent/totalBudget*100):0;
       const mColor=mSpent>totalBudget?'#F87171':mPct>80?'#FBBF24':'#34D399';
       const mLabel=fmtMonthShort(m);
-      const isFirst=i===0,isLast=i===histMonths.length-1;
-      const mo=parseInt(m.slice(5,7));const isQuarter=mo===1||mo===4||mo===7||mo===10;
-      const showLabel=isFirst||isLast||isQuarter;
-      return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;min-width:0;padding:4px 0" title="'+mLabel+': '+fmt(mSpent)+' ('+mPct+'%)">'
-        +'<div style="width:11px;height:11px;border-radius:50%;background:'+mColor+';flex-shrink:0"></div>'
-        +'<div style="font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;color:'+(showLabel?'var(--text-muted)':'transparent')+'">'+mLabel.slice(0,3)+'</div>'
+      const mo=parseInt(m.slice(5,7));const isJan=mo===1;
+      const showTopLabel=isJan||(i===0);
+      const topLabel=showTopLabel?(mLabel.slice(0,3)+' \''+m.slice(2,4)):'';
+      const mBottomText=mSpent>0?mPct+'%':'–';
+      const mBottomColor=mSpent>0?mColor:'#475569';
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;padding:0" title="'+mLabel+': '+fmt(mSpent)+' ('+mPct+'%)">'
+        +'<div style="font-size:10px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:13px;line-height:13px">'+(topLabel||'')+'</div>'
+        +'<div style="width:100%;height:11px;border-radius:5px;background:'+mColor+';min-width:0"></div>'
+        +'<div style="font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;color:'+mBottomColor+'">'+mBottomText+'</div>'
         +'</div>';
     }).join('');
 
@@ -5453,9 +5535,9 @@ function renderBudgetTab(){
 
       const allMonthsSorted=Object.keys(MONTHLY).sort();
       const histMonths=allMonthsSorted.filter(m=>m<ym).slice(-12);
-      const recentDotPreview=histMonths.map((m,i)=>{const ms=getCatMonthSpend(cat,m);const mp=Math.round(ms/budget*100);const mc=ms>budget?'#F87171':mp>80?'#FBBF24':'#34D399';const ml=fmtMonthShort(m);const isFirst=i===0,isLast=i===histMonths.length-1;const mo=parseInt(m.slice(5,7));const isQuarter=mo===1||mo===4||mo===7||mo===10;const showLabel=isFirst||isLast||isQuarter;return'<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;min-width:0;padding:4px 0" title="'+ml+': '+fmt(ms)+' ('+mp+'%)">'+'<div style="width:11px;height:11px;border-radius:50%;background:'+mc+';flex-shrink:0"></div>'+'<div style="font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;color:'+(showLabel?'var(--text-muted)':'transparent')+'">'+ml+'</div>'+'</div>';}).join('');
+      const recentDotPreview=histMonths.map((m,i)=>{const ms=getCatMonthSpend(cat,m);const mp=Math.round(ms/budget*100);const mc=ms>budget?'#F87171':mp>80?'#FBBF24':'#34D399';const ml=fmtMonthShort(m);const mo=parseInt(m.slice(5,7));const isJan=mo===1;const isFirst=i===0;const showTop=isFirst||isJan;const topLbl=showTop?(ml.slice(0,3)+' \''+m.slice(2,4)):'';const btmText=ms>0?mp+'%':'–';const btmColor=ms>0?mc:'#475569';return'<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;padding:0" title="'+ml+': '+fmt(ms)+' ('+mp+'%)">'+'<div style="font-size:10px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:13px;line-height:13px">'+(topLbl||'')+'</div>'+'<div style="width:100%;height:11px;border-radius:5px;background:'+mc+';min-width:0"></div>'+'<div style="font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;color:'+btmColor+'">'+btmText+'</div>'+'</div>';}).join('');
       const hasVariance=histMonths.some(m=>{const ms=getCatMonthSpend(cat,m);return ms>budget||Math.round(ms/budget*100)>80;});
-      const condensedDots=histMonths.map(m=>{const ms=getCatMonthSpend(cat,m);const mp=Math.round(ms/budget*100);const mc=ms>budget?'#F87171':mp>80?'#FBBF24':'#34D399';const ml=fmtMonthShort(m);return`<div style="width:11px;height:11px;border-radius:50%;background:${ms>0?mc:tc('#1E293B','#E2E8F0')};flex-shrink:0" title="${ml}: ${fmt(ms)} (${mp}%)"></div>`;}).join('');
+      const condensedDots=histMonths.map(m=>{const ms=getCatMonthSpend(cat,m);const mp=Math.round(ms/budget*100);const mc=ms>budget?'#F87171':mp>80?'#FBBF24':'#34D399';const ml=fmtMonthShort(m);return`<div style="flex:1;height:9px;border-radius:4px;background:${ms>0?mc:tc('#1E293B','#E2E8F0')};min-width:0" title="${ml}: ${fmt(ms)} (${mp}%)"></div>`;}).join('');
       const pctDots=buildRowPctDots(histMonths,cat,budget);
       const uid=`hist-${cat.replace(/\s+/g,'_')}`;
       const histHTML=histMonths.length
@@ -5956,7 +6038,7 @@ function filterToDate(date){
   // Only scroll when applying a filter, not removing one
   if(applying){
     const txEl=document.getElementById('tx-count-label');
-    if(txEl)requestAnimationFrame(()=>txEl.scrollIntoView({behavior:'smooth',block:'start'}));
+    if(txEl)requestAnimationFrame(()=>{const nav=document.querySelector('nav.nav');const offset=(nav?nav.offsetHeight:60)+16;const y=txEl.getBoundingClientRect().top+window.scrollY-offset;window.scrollTo({top:y,behavior:'smooth'});});
   }
 }
 
@@ -6365,7 +6447,7 @@ function parseTxFile(file){
     }
     const rows=parseCSV(text);
     if(!rows||!rows.length){
-      showToast('Could not parse CSV — check format','#F87171');return;
+      showToast('Could not read this CSV — check the format and try again','#F87171');return;
     }
     const source=document.getElementById('import-source-label').value.trim()||'Imported';
     importParsed=rows.map(r=>normalizeTxRow(r,source)).filter(Boolean);
@@ -6776,7 +6858,7 @@ function renderExcludedAccounts(){
       <div class="nw-group" style="border:1.5px solid var(--amber-border);border-radius:10px;overflow:hidden;margin-bottom:4px">
         <div class="nw-group-header" style="cursor:pointer;padding:.6rem .85rem" onclick="editAccount(${a.id})">
           <div class="flex-center gap-8">
-            <div style="width:11px;height:11px;border-radius:50%;background:${colorHex};flex-shrink:0"></div>
+            <div style="width:18px;height:9px;border-radius:4px;background:${colorHex};flex-shrink:0"></div>
             <div>
               <div style="font-size:12px;font-weight:700;color:var(--amber-text)">${esc(a.name)}</div>
               <div style="font-size:10px;color:var(--amber-text-strong);margin-top:1px">${esc(a.source)}</div>
