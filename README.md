@@ -1,6 +1,8 @@
 # trak-yo-dolla$
 
-**Private, local-first spending and net worth tracker.**
+**Private, local-first money tracking.**
+
+*Don't obsess over money. Understand it.*
 
 Import a CSV from your bank or credit card. Your browser translates it into spending data. Nothing leaves your device unless you choose to sync.
 
