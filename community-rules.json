@@ -1,5 +1,169 @@
 [
   {
+    "keyword": "PMUSA",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "2941 STREET FOOD",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GRANTS PIZZA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GRANT'S PIZZA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "MARIONS PIAZZA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "LITTLE GHOST",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SHAKE SHACK",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "RAYS ICE CREAM",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "MOTHERSHIP COFFEE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GINZA RAMEN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CONDADO TACOS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "TUDORS BISCUIT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "TUDOR'S BISCUIT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "OHIO TURNPIKE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "VICTORY LAWNSCAPE",
+    "cat": "Home"
+  },
+  {
+    "keyword": "BORDINE",
+    "cat": "Home"
+  },
+  {
+    "keyword": "TILE SHOP",
+    "cat": "Home"
+  },
+  {
+    "keyword": "IKEA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WILLIAMS SONOMA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WILLIAMS-SONOMA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "REI #",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "REI.COM",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "MICHAELS #",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "MICHAELS STORES",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "NIKE.COM",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "SWOOSH.COM",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "TD BANK PAYMENT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "PROGRESSIVE INS",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "PROTECTIVE COSTCO",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "GOOGLE *GOOGLE PHOTOS",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "GOOGLE *YOUTUBE",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "PRIME VIDEO CHANNELS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "SP COUNTER CULTURE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "OLD NATIONAL BAN MTGMANAGER",
+    "cat": "Home"
+  },
+  {
+    "keyword": "MTGMANAGER",
+    "cat": "Home"
+  },
+  {
+    "keyword": "NEIGHBORHOOD0467",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "PRIORITY WASTE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "PNP BILLPAYMENT",
+    "cat": "Tax & Gov"
+  },
+  {
+    "keyword": "STATE OF MICH SOS",
+    "cat": "Tax & Gov"
+  },
+  {
+    "keyword": "STATE OF MI SOMIIT",
+    "cat": "Tax & Gov"
+  },
+  {
+    "keyword": "MI DIR ACH CONTRIB",
+    "cat": "Investment Contributions"
+  },
+  {
     "keyword": "AMZN MKTP",
     "cat": "Shopping"
   },
