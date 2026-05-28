@@ -140,7 +140,7 @@ npx firebase-tools deploy --only hosting --project trak-yo-dollas
 
 - **Multi-source import** — import from multiple banks/cards, each with a distinct color pill; sources auto-activate on import; demo data clears on first real import
 - **Source alignment** — when sources cover different date ranges, a prompt offers non-destructive alignment to the overlapping period; persistent indicator shows active alignment with one-click reset
-- **Horizon & grain system** — 3mo/6mo/12mo/2yr/All horizons; quarterly and yearly chart grain available for multi-year data; All dynamically shows actual month count
+- **Date range selector** — From/To month dropdowns populated from actual data, plus quick chips (3mo, 6mo, 12mo, YTD, All); chart grain toggle (Mo/Qtr/Yr) always visible; source alignment sets the From dropdown automatically
 - **Insights overhaul** — all 7 insights rewritten for emotional resonance: contextual, behavior-aware, actionable; savings rate compares to your own average; NW shows goal timeline; subscriptions shows annualized cost; budget health names worst offender; top mover leads with dollars and vendor
 - **Budget health fix** — at-a-glance pill uses same AT RISK definition as budget tab; shows "X need attention" instead of "X on track"
 - **Categorization expansion** — Investment Contribution → Investment Contributions; 40+ new keywords added including mortgage manager, property taxes, 529 contributions, trash service, local merchants; community-rules.json now 321 rules
