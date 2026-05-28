@@ -67,11 +67,11 @@ Transactions categorize using a four-tier priority system on every import:
 
 ### Categories
 
-Groceries, Food & Drink, Shopping, Home, Gas, Bills & Utilities, Insurance, Health & Wellness, Entertainment, Travel, Automotive, Education, Child Care, Pet, Checks, Tax & Gov, Investment Contributions, Transfers, CC Payment, Other.
+Groceries, Food & Drink, Shopping, Home, Gas, Bills & Utilities, Insurance, Health & Wellness, Entertainment, Gifts & Donations, Travel, Automotive, Education, Child Care, Pet, Checks, Taxes & Fees, Investment Contributions, Transfers, CC Payment, Other.
 
 ### Community patterns
 
-[`community-rules.json`](community-rules.json) contains 321 keyword→category mappings covering major merchants across all categories: airlines, hotel chains, streaming services, restaurant chains, gas stations, grocery chains, and more. Also covers common bank-specific transaction strings like mortgage managers, property tax processors, state government payments, and investment contribution descriptions.
+[`community-rules.json`](community-rules.json) contains 334 keyword→category mappings covering major merchants across all categories: airlines, hotel chains, streaming services, restaurant chains, gas stations, grocery chains, and more. Also covers bank-specific strings like mortgage managers, property tax processors, state government payments, investment contributions, tax prep services, and charitable organizations.
 
 **To suggest a pattern:** fill out the [suggestion form](https://forms.gle/6oV9UPtv8RKKUHM96) — no account required.
 
@@ -138,13 +138,17 @@ npx firebase-tools deploy --only hosting --project trak-yo-dollas
 
 ## Recent updates
 
+- **Date range selector** — From/To month dropdowns (inline with source chips) + quick chips (3mo, 6mo, 12mo, YTD, All) + grain toggle (Monthly/Quarterly/Yearly) always visible; source alignment sets the From dropdown automatically
+- **Expanded import support** — explicit Bank of America format (negative amounts = spending, deposits skipped); Wells Fargo and USAA via Debit/Credit column detection; "What format does my bank use?" guide in the import modal; helpful error when no transactions parse (shows detected format, suggests switching)
+- **Gifts & Donations category** — new category after Entertainment; catches GoFundMe, Red Cross, United Way, Salvation Army, Goodwill, Habitat for Humanity, Planned Parenthood, church/tithe/offering, and more; DONATION/DONATE always route here regardless of other keywords; museum transactions default to Entertainment but flip to Gifts & Donations when the description contains gift/contribution/giving signals
+- **Taxes & Fees** — renamed from "Tax & Gov" everywhere; added TurboTax, H&R Block, FreeTaxUSA keywords
+- **Insights empty state** — when no insight is urgent enough to lead, shows a green "Everything looks on track this month" card instead of silently demoting the least-urgent insight
 - **Multi-source import** — import from multiple banks/cards, each with a distinct color pill; sources auto-activate on import; demo data clears on first real import
-- **Source alignment** — when sources cover different date ranges, a prompt offers non-destructive alignment to the overlapping period; persistent indicator shows active alignment with one-click reset
-- **Date range selector** — From/To month dropdowns populated from actual data, plus quick chips (3mo, 6mo, 12mo, YTD, All); chart grain toggle (Mo/Qtr/Yr) always visible; source alignment sets the From dropdown automatically
-- **Insights overhaul** — all 7 insights rewritten for emotional resonance: contextual, behavior-aware, actionable; savings rate compares to your own average; NW shows goal timeline; subscriptions shows annualized cost; budget health names worst offender; top mover leads with dollars and vendor
-- **Budget health fix** — at-a-glance pill uses same AT RISK definition as budget tab; shows "X need attention" instead of "X on track"
-- **Categorization expansion** — Investment Contribution → Investment Contributions; 40+ new keywords added including mortgage manager, property taxes, 529 contributions, trash service, local merchants; community-rules.json now 321 rules
-- **CSV import flexibility** — UTF-8 BOM stripping; new Debit/Credit column format for USAA/credit unions; better field name synonym detection; improved auto-detection
-- **Privacy page overhaul** — HTML/CSS data flow diagram with local-default and optional Google sync fork; 7-question FAQ with honest attack surface disclosure; active voice and plain English throughout
-- **Net worth label** — always shows "↑$X since Mon 'YR" — never "this year"; shows nothing if no prior snapshot
-- **Daily chart legend** — 14×14px tiles matching cal-day shape, wrapper tap target for mobile, scales with zoom
+- **Source alignment** — when sources cover different date ranges, a prompt offers non-destructive alignment to the overlapping period; persistent indicator with one-click reset
+- **Insights overhaul** — all 7 insights rewritten for emotional resonance: contextual, behavior-aware, actionable; savings rate compares to your own average; NW shows goal timeline; subscriptions shows annualized cost; budget health names worst offender
+- **Budget health fix** — at-a-glance pill uses same AT RISK definition as budget tab
+- **community-rules.json** — 334 rules; fixed 4 entries using singular "Investment Contribution" that were silently missing the category match
+- **CSV import flexibility** — UTF-8 BOM stripping; Debit/Credit column format for USAA/credit unions; better field name synonym detection
+- **Privacy page overhaul** — HTML/CSS data flow diagram, 7-question FAQ, honest attack surface disclosure
+- **Net worth label** — always shows "↑$X since Mon 'YR" — never "this year"
+- **Daily chart legend** — 14×14px tiles matching cal-day shape, scales with zoom

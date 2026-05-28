@@ -258,6 +258,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .range-sep{color:var(--text-muted);font-size:10px;font-weight:600}
 .quick-chips{display:flex;gap:2px;background:var(--bg-card);border-radius:8px;padding:3px;flex:1;min-width:120px}
 .grain-row{display:flex;gap:2px;background:var(--bg-card);border-radius:8px;padding:3px}
+.grain-row .h-btn{flex:none;padding:4px 10px;white-space:nowrap}
 /* search */
 .search-wrap{position:relative;margin-bottom:.7rem}
 .search-input{width:100%;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:8px;padding:8px 10px 8px 34px;font-size:12px;color:var(--text-primary);outline:none}
@@ -407,7 +408,8 @@ select option{background:var(--bg-card)}
   #insights-pills{grid-template-columns:1fr!important}
   .spend-total-card{flex-direction:column;gap:.5rem}
   .spend-total-card>div:last-child{display:none}
-  .quick-chips .h-btn,.grain-row .h-btn{font-size:10px;padding:4px 1px}
+  #range-dropdowns-inline{width:100%}
+  .quick-chips .h-btn,.grain-row .h-btn{font-size:11px;padding:8px 6px;min-height:36px}
   #auth-bar{padding:0 4px;gap:3px}
   #theme-toggle-btn{padding:2px 5px;font-size:11px}
   #auth-sign-in-btn{font-size:9px;padding:2px 7px}
@@ -759,7 +761,10 @@ select option{background:var(--bg-card)}
       </div>
     </div>
   </div>
-  <div class="chip-row" id="source-chips"></div>
+  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:.7rem">
+    <div class="chip-row" id="source-chips" style="flex:1;margin-bottom:0;min-width:0"></div>
+    <div id="range-dropdowns-inline"></div>
+  </div>
   <span id="source-align-link" style="display:none;font-size:11px;color:var(--accent-blue-light);cursor:pointer;margin-left:4px" onclick="state.sourceAlignSkipped=false;checkSourceAlignment()">↔ Align sources</span>
   <span id="source-align-active" style="display:none;font-size:11px;color:#34D399;margin-left:4px">✓ Aligned to <span id="source-align-date-label"></span> · <span style="cursor:pointer;color:var(--accent-blue-light)" onclick="state.sourceAlignDate=null;state.rangeFrom=null;renderSpending()">show all</span></span>
   <div class="date-range-wrap" id="date-range-wrap"></div>
@@ -894,17 +899,39 @@ select option{background:var(--bg-card)}
 
     <!-- Format help -->
     <div id="fmt-help-ally" class="fmt-help help-box">
-      Ally, Fidelity, Vanguard, Schwab, Bank of America, Wells Fargo, Marcus, SoFi, and most banks. Look for <strong style="color:var(--text-secondary)">Download transactions → CSV</strong> in your account activity.
+      Ally, Fidelity, Vanguard, Schwab, Marcus, SoFi, and most banks. Look for <strong style="color:var(--text-secondary)">Download transactions → CSV</strong> in your account activity.
     </div>
     <div id="fmt-help-chase" class="fmt-help hidden help-box">
-      Chase, Citi, Capital One, Amex, Discover, and most credit cards. Look for <strong style="color:var(--text-secondary)">Download activity → CSV</strong>.
+      Most major banks and credit cards (Chase, Bank of America, Wells Fargo, Citi, Capital One, Amex, Discover, and more). Look for <strong style="color:var(--text-secondary)">Download activity → CSV</strong>.
     </div>
     <div id="fmt-help-debitcredit" class="fmt-help hidden help-box">
-      Banks with separate <strong style="color:var(--text-secondary)">Debit</strong> and <strong style="color:var(--text-secondary)">Credit</strong> columns — common with USAA, some credit unions, and older bank exports.
+      Wells Fargo, USAA, and banks with separate <strong style="color:var(--text-secondary)">Deposits</strong> and <strong style="color:var(--text-secondary)">Withdrawals</strong> columns — common with credit unions and older bank exports.
+    </div>
+    <div id="fmt-help-bofa" class="fmt-help hidden help-box">
+      Bank of America checking and savings. Deposits are skipped automatically — only spending rows are imported. Look for <strong style="color:var(--text-secondary)">Download → CSV</strong> in your transaction history.
     </div>
     <div id="fmt-help-generic" class="fmt-help hidden help-box">
       Any CSV with <strong style="color:var(--text-secondary)">date, description, and amount</strong> columns. First row must be headers.
     </div>
+
+    <!-- Bank format guide -->
+    <details style="margin-bottom:.75rem">
+      <summary style="font-size:11px;font-weight:700;color:var(--text-secondary);cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:4px">
+        <span id="bank-guide-arrow" style="font-size:9px;color:var(--text-muted)">▶</span> What format does my bank use?
+      </summary>
+      <div style="margin-top:.5rem;border:1px solid var(--border-mid);border-radius:6px;overflow:hidden;font-size:11px">
+        <div style="display:grid;grid-template-columns:1fr auto;background:var(--bg-deep);padding:4px 10px;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">
+          <span>Bank / account type</span><span>Use this format</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Ally, Fidelity, Vanguard, Schwab, SoFi</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Checking / Savings</span></div>
+        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Bank of America checking</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Bank of America</span></div>
+        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Wells Fargo checking</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Debit/Credit cols</span></div>
+        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">USAA, credit unions with Debit+Credit cols</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Debit/Credit cols</span></div>
+        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Chase, BofA, Wells Fargo, Citi, Amex (credit cards)</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Credit card</span></div>
+        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Everything else</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Other</span></div>
+      </div>
+    </details>
+    <script>document.querySelector('#tx-import-modal details')?.addEventListener('toggle',e=>{document.getElementById('bank-guide-arrow').textContent=e.target.open?'▼':'▶';});</script>
 
     <!-- Source label -->
     <div class="form-group">
@@ -1063,7 +1090,7 @@ select option{background:var(--bg-card)}
     <div class="form-group"><label class="form-label">Source</label>
       <select id="t-card"><option>Chase Freedom Unlimited</option><option>Chase Prime Visa</option><option>Ally Checking</option><option>Ally Money Market Savings</option><option>Other</option></select></div>
     <div class="form-group"><label class="form-label">Category</label>
-      <select id="t-cat"><option>Groceries</option><option>Shopping</option><option>Bills & Utilities</option><option>Home</option><option>Child Care</option><option>Checks</option><option>Health & Wellness</option><option>Travel</option><option>Food & Drink</option><option>Gas</option><option>College Fund(s)</option><option>Tax & Gov</option><option>Education</option><option>Automotive</option><option>Entertainment</option><option>Transfers</option><option>Other</option></select></div>
+      <select id="t-cat"><option>Groceries</option><option>Shopping</option><option>Bills & Utilities</option><option>Home</option><option>Child Care</option><option>Checks</option><option>Health & Wellness</option><option>Travel</option><option>Food & Drink</option><option>Gas</option><option>College Fund(s)</option><option>Taxes & Fees</option><option>Education</option><option>Automotive</option><option>Entertainment</option><option>Gifts & Donations</option><option>Transfers</option><option>Other</option></select></div>
     <div class="form-group"><label class="form-label">Amount ($)</label><input type="number" id="t-amount"/></div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModals()" type="button">Cancel</button>
@@ -1084,8 +1111,8 @@ select option{background:var(--bg-card)}
       <select id="et-cat" onchange="onEditCatChange()">
         <option>Groceries</option><option>Shopping</option><option>Bills & Utilities</option><option>Home</option>
         <option>Child Care</option><option>Checks</option><option>Health & Wellness</option><option>Travel</option>
-        <option>Food & Drink</option><option>Gas</option><option>College Fund(s)</option><option>Tax & Gov</option>
-        <option>Education</option><option>Automotive</option><option>Entertainment</option><option>Transfers</option><option>Other</option>
+        <option>Food & Drink</option><option>Gas</option><option>College Fund(s)</option><option>Taxes & Fees</option>
+        <option>Education</option><option>Automotive</option><option>Entertainment</option><option>Gifts & Donations</option><option>Transfers</option><option>Other</option>
       </select>
     </div>
     <div id="recategorize-section" class="hidden">
@@ -1261,8 +1288,8 @@ select option{background:var(--bg-card)}
           <select id="new-rule-cat" class="input-full" style="font-size:12px">
             <option>Groceries</option><option>Shopping</option><option>Bills & Utilities</option><option>Home</option>
             <option>Child Care</option><option>Checks</option><option>Health & Wellness</option><option>Travel</option>
-            <option>Food & Drink</option><option>Gas</option><option>College Fund(s)</option><option>Tax & Gov</option>
-            <option>Education</option><option>Automotive</option><option>Entertainment</option><option>Transfers</option><option>Other</option>
+            <option>Food & Drink</option><option>Gas</option><option>College Fund(s)</option><option>Taxes & Fees</option>
+            <option>Education</option><option>Automotive</option><option>Entertainment</option><option>Gifts & Donations</option><option>Transfers</option><option>Other</option>
           </select>
         </div>
       </div>
@@ -1793,8 +1820,8 @@ const resolveVendor=desc=>{
 function getAllCats(){
   const base=["Groceries","Shopping","Bills & Utilities","Home","Child Care","Checks",
     "Health & Wellness","Travel","Food & Drink","Gas","College Fund(s)",
-    "Tax & Gov","Education","Automotive","Entertainment","Transfers",
-    "Professional Services","Gifts & Donations","Personal","Other"];
+    "Taxes & Fees","Education","Automotive","Entertainment","Gifts & Donations","Transfers",
+    "Professional Services","Personal","Other"];
   const custom=state.customCategories.map(c=>c.name);
   return [...base,...custom.filter(c=>!base.includes(c))];
 }
@@ -2221,7 +2248,18 @@ function renderInsights(){
       </div>`;
       html+=visibleRegular.map(p=>p.html).join('');
     } else {
-      html=[leadPill,...visibleRegular].map(p=>p.html).join('');
+      // No urgent insight — show a satisfying positive empty state in the lead slot
+      html+=`<div style="grid-column:1/-1;display:flex;flex-direction:column;gap:4px">
+        <div style="font-size:9px;font-weight:800;color:#34D399;letter-spacing:.08em;text-transform:uppercase;padding:0 2px">✓ Worth your attention</div>
+        <div style="background:#34D39915;border:2px solid #34D399;box-shadow:0 0 12px #34D39933;border-radius:12px;padding:.85rem 1rem;display:flex;align-items:center;gap:.85rem">
+          <div style="font-size:30px;line-height:1;flex-shrink:0">✓</div>
+          <div>
+            <div style="font-size:18px;font-weight:900;color:#34D399;line-height:1.15">Everything looks on track this month</div>
+            <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;line-height:1.45">Nothing needs attention right now. Nice work.</div>
+          </div>
+        </div>
+      </div>`;
+      html+=[leadPill,...visibleRegular].map(p=>p.html).join('');
     }
 
     if(!state.insightsPillsExpanded&&hiddenPills.length>0){
@@ -3225,14 +3263,18 @@ function renderSourceChips(){
 }
 function renderDateRange(){
   const wrap=document.getElementById('date-range-wrap');
+  const dropsWrap=document.getElementById('range-dropdowns-inline');
   if(!wrap)return;
   const allN=ALL_MONTHS.length;
-  if(!allN){wrap.innerHTML='';return;}
+  if(!allN){wrap.innerHTML='';if(dropsWrap)dropsWrap.innerHTML='';return;}
   const from=state.rangeFrom||ALL_MONTHS[0];
   const to=state.rangeTo||ALL_MONTHS[allN-1];
   const latestM=ALL_MONTHS[allN-1];
   const fromOpts=ALL_MONTHS.map(m=>`<option value="${m}"${m===from?' selected':''}>${fmtMonthShort(m)}</option>`).join('');
   const toOpts=ALL_MONTHS.filter(m=>m>=from).map(m=>`<option value="${m}"${m===to?' selected':''}>${fmtMonthShort(m)}</option>`).join('');
+  if(dropsWrap){
+    dropsWrap.innerHTML=`<div class="range-dropdowns"><select class="range-select" id="range-from" onchange="onRangeFromChange(this.value)">${fromOpts}</select><span class="range-sep">→</span><select class="range-select" id="range-to" onchange="onRangeToChange(this.value)">${toOpts}</select></div>`;
+  }
   const ytdStart=latestM.slice(0,4)+'-01';
   const ytdM=ALL_MONTHS.find(m=>m>=ytdStart)||ALL_MONTHS[0];
   const chips=[
@@ -3244,7 +3286,7 @@ function renderDateRange(){
   ];
   function chipActive(c){return !state.sourceAlignDate&&from===c.f&&to===latestM;}
   const grain=state.chartGrain||'month';
-  wrap.innerHTML=`<div class="date-range-row"><div class="range-dropdowns"><select class="range-select" id="range-from" onchange="onRangeFromChange(this.value)">${fromOpts}</select><span class="range-sep">→</span><select class="range-select" id="range-to" onchange="onRangeToChange(this.value)">${toOpts}</select></div><div class="quick-chips">${chips.map(c=>`<button class="h-btn${chipActive(c)?' active':''}" onclick="setQuickRange('${c.f}')" type="button">${c.label}</button>`).join('')}</div><div class="grain-row"><button class="h-btn${grain==='month'?' active':''}" data-grain="month" onclick="setGrain('month')" type="button">Mo</button><button class="h-btn${grain==='quarter'?' active':''}" data-grain="quarter" onclick="setGrain('quarter')" type="button">Qtr</button><button class="h-btn${grain==='year'?' active':''}" data-grain="year" onclick="setGrain('year')" type="button">Yr</button></div></div>`;
+  wrap.innerHTML=`<div class="date-range-row"><div class="quick-chips">${chips.map(c=>`<button class="h-btn${chipActive(c)?' active':''}" onclick="setQuickRange('${c.f}')" type="button">${c.label}</button>`).join('')}</div><div class="grain-row"><button class="h-btn${grain==='month'?' active':''}" data-grain="month" onclick="setGrain('month')" type="button">Monthly</button><button class="h-btn${grain==='quarter'?' active':''}" data-grain="quarter" onclick="setGrain('quarter')" type="button">Quarterly</button><button class="h-btn${grain==='year'?' active':''}" data-grain="year" onclick="setGrain('year')" type="button">Yearly</button></div></div>`;
 }
 function renderHorizonTabs(){renderDateRange();}
 
@@ -6579,8 +6621,8 @@ function openCatModal(){
 function renderCatManagerList(){
   const BASE=["Groceries","Shopping","Bills & Utilities","Home","Child Care","Checks",
     "Health & Wellness","Travel","Food & Drink","Gas","College Fund(s)",
-    "Tax & Gov","Education","Automotive","Entertainment","Transfers",
-    "Professional Services","Gifts & Donations","Personal","Other"];
+    "Taxes & Fees","Education","Automotive","Entertainment","Gifts & Donations","Transfers",
+    "Professional Services","Personal","Other"];
   const el=document.getElementById('cat-manager-list');
   if(!el)return;
   const rows=[
@@ -6638,7 +6680,7 @@ function openTxImportModal(){
 
 function setImportFmt(fmt){
   importFmt=fmt;
-  ['ally','chase','debitcredit','generic'].forEach(f=>{
+  ['ally','chase','debitcredit','bofa','generic'].forEach(f=>{
     const btn=document.getElementById('fmt-btn-'+f);
     const help=document.getElementById('fmt-help-'+f);
     if(btn)btn.classList.toggle('active-fmt',f===fmt);
@@ -6669,6 +6711,10 @@ function parseTxFile(file){
     } else if(firstLine.includes('time')&&firstLine.includes('type')&&!firstLine.includes('memo')){
       setImportFmt('ally');
     } else if(firstLine.includes('debit')&&firstLine.includes('credit')){
+      setImportFmt('debitcredit');
+    } else if(firstLine.includes('running bal')){
+      setImportFmt('bofa');
+    } else if(firstLine.includes('deposits')&&firstLine.includes('withdrawals')){
       setImportFmt('debitcredit');
     } else if(firstLine.includes('trans date')||firstLine.includes('posting date')){
       setImportFmt('generic');
@@ -6749,6 +6795,18 @@ function normalizeTxRow(row, source){
     mcc=row['mcc']||row['MCC']||'';
     cat=row['category']||guessCatFromDesc(desc);
 
+  } else if(importFmt==='bofa'){
+    // Bank of America checking/savings: Date, Description, Amount, Running Bal.
+    // Negative amount = spending, positive = deposit (skip)
+    date=row['date']||'';
+    desc=(row['description']||'').trim();
+    const rawAmt=parseFloat(row['amount']||'0');
+    if(rawAmt>=0)return null; // deposits and credits — skip
+    amount=Math.abs(rawAmt);
+    if(!amount)return null;
+    mcc=row['mcc']||row['MCC']||'';
+    cat=guessCatFromDesc(desc);
+
   } else {
     // Generic — try to figure out sign convention
     date=row['date']||row['transaction date']||row['trans date']||row['posting date']||'';
@@ -6817,7 +6875,7 @@ const CAT_KEYWORDS=[
   // Health & Wellness
   ['Health & Wellness',['CVS','WALGREEN','RITE AID','PHARMACY','MEDICAL','DOCTOR','DENTAL','DENTIST','VISION','OPTOMETRIST','HOSPITAL','CLINIC','URGENT CARE','HEALTH','WELLNESS','GYM','PLANET FITNESS','ANYTIME FITNESS','LA FITNESS','EQUINOX','ORANGE THEORY','CROSSFIT','YOGA','FITNESS','PHYSICAL THERAPY','CHIROPRACTOR','DERMATOLOGY','PSYCHIATRY','COUNSELING','CRUNCH FITNESS','24 HOUR FITNESS','GOLD\'S GYM','YMCA','SNAP FITNESS','F45','BARRY\'S','SOLIDCORE','COREPOWER','SOULCYCLE','LIFETIME FITNESS','LIFE TIME','COSTCO PHARMACY','SAM\'S PHARMACY','WALMART PHARMACY','BROOKSHIRES PHARMACY','KAISER PHARMACY']],
   // Entertainment
-  ['Entertainment',['NETFLIX','SPOTIFY','APPLE TV','PRIME VIDEO','KINDLE','AUDIBLE','AMAZON MUSIC','HULU','DISNEY+','HBO MAX','PEACOCK','PARAMOUNT+','PARAMOUNT PLUS','AMC THEATER','REGAL','CINEMARK','TICKETMASTER','STUBHUB','LIVE NATION','EVENTBRITE','BOWLING','MINI GOLF','ESCAPE ROOM','LASER TAG','ARCADE','MUSEUM','ZOO ','AQUARIUM','AMUSEMENT','SIX FLAGS','CEDAR POINT','AMC ','YOUTUBE PREMIUM','TWITCH','STEAM ','PLAYSTATION','XBOX GAME','NINTENDO','HBO ','MAX.COM','APPLE TV+','DISCOVERY+','ESPN+','SLING TV','FUBO TV','PHILO ','CRUNCHYROLL','SHUDDER','CURIOSITY STREAM','BRITBOX','ACORN TV','DAZN','MUBI']],
+  ['Entertainment',['NETFLIX','SPOTIFY','APPLE TV','PRIME VIDEO','KINDLE','AUDIBLE','AMAZON MUSIC','HULU','DISNEY+','HBO MAX','PEACOCK','PARAMOUNT+','PARAMOUNT PLUS','AMC THEATER','REGAL','CINEMARK','TICKETMASTER','STUBHUB','LIVE NATION','EVENTBRITE','BOWLING','MINI GOLF','ESCAPE ROOM','LASER TAG','ARCADE','ZOO ','AQUARIUM','AMUSEMENT','SIX FLAGS','CEDAR POINT','AMC ','YOUTUBE PREMIUM','TWITCH','STEAM ','PLAYSTATION','XBOX GAME','NINTENDO','HBO ','MAX.COM','APPLE TV+','DISCOVERY+','ESPN+','SLING TV','FUBO TV','PHILO ','CRUNCHYROLL','SHUDDER','CURIOSITY STREAM','BRITBOX','ACORN TV','DAZN','MUBI']],
   // Travel
   ['Travel',['DELTA','UNITED AIRLINES','AMERICAN AIRLINES','AMERICANAIR','SOUTHWEST','JETBLUE','SPIRIT AIRLINES','FRONTIER AIRLINE','ALASKA AIRLINE','ALLEGIANT','SUN COUNTRY','HAWAIIAN AIR','BREEZE AIRWAYS','MARRIOTT','COURTYARD BY','RESIDENCE INN','SHERATON','WESTIN','W HOTEL','RITZ CARLTON','ST REGIS','HILTON','HILTON GARDEN','HAMPTON INN','DOUBLETREE','EMBASSY SUITES','HOMEWOOD SUITES','HYATT','PARK HYATT','GRAND HYATT','ANDAZ','IHG ','HOLIDAY INN','INTERCONTINENTAL','CROWNE PLAZA','WYNDHAM','DAYS INN','LA QUINTA','BEST WESTERN','MOTEL 6','COMFORT INN','QUALITY INN','FOUR SEASONS','KIMPTON','ALOFT HOTEL','AIRBNB','VRBO','EXPEDIA','HOTELS.COM','BOOKING.COM','PRICELINE','HOTWIRE','TRAVELOCITY','KAYAK','HERTZ','ENTERPRISE RENT','AVIS ','BUDGET RENT','NATIONAL CAR','ALAMO','THRIFTY CAR','DOLLAR RENT','SIXT','TURO','GETAROUND','LYFT','UBER ','AMTRAK','GREYHOUND','FLIXBUS','MEGABUS','TSA PRECHECK','GLOBAL ENTRY','AIRPORT PARKING','CARNIVAL CRUISE','ROYAL CARIBBEAN','NORWEGIAN CRUISE','DISNEY CRUISE','CELEBRITY CRUISE']],
   // Education
@@ -6827,7 +6885,9 @@ const CAT_KEYWORDS=[
   // Checks
   ['Checks',['CHECK PAID','CHECK #','CHECKPAID']],
   // Tax
-  ['Tax & Gov',['IRS ','STATE TAX','FEDERAL TAX','PROPERTY TAX','TREASURER','COUNTY TAX','PNP BILLPAYMENT','STATE OF MICH SOS','STATE OF MI SOMIIT']],
+  ['Taxes & Fees',['IRS ','STATE TAX','FEDERAL TAX','PROPERTY TAX','TREASURER','COUNTY TAX','PNP BILLPAYMENT','STATE OF MICH SOS','STATE OF MI SOMIIT','TURBOTAX','H&R BLOCK','HRBLOCK','FREETAXUSA']],
+  // Gifts & Donations — org names + generic donation signals
+  ['Gifts & Donations',['GOFUNDME','NFGIVING','UNITED WAY','RED CROSS','SALVATION ARMY','GOODWILL','HABITAT FOR HUMANITY','PLANNED PARENTHOOD','NPR ','PBS ','CHURCH','TITHE','OFFERING','CHARITY','GIVING FUND']],
   // Childcare
   ['Child Care',['DAYCARE','DAY CARE','CHILDCARE','CHILD CARE','PRESCHOOL','NANNY','BABYSIT','MONTESSORI','KINDERCARE','BRIGHT HORIZONS','LEARNING CARE','NEIGHBORHOOD0467']],
   ['Pet',['CHEWY','PETCO','PETSMART','PET SUPPLIES','VET ','VETERINARY','ANIMAL HOSPITAL','ANIMAL CLINIC','BANFIELD','BLUEPEARL','VCA ANIMAL','PET SMART','PETLAND','BARKBOX','PET FOOD']],
@@ -6887,7 +6947,7 @@ const MCC_CAT={
   // Child care
   8351:'Child Care',
   // Tax / gov
-  9311:'Tax & Gov',9399:'Tax & Gov',9402:'Tax & Gov',9405:'Tax & Gov',
+  9311:'Taxes & Fees',9399:'Taxes & Fees',9402:'Taxes & Fees',9405:'Taxes & Fees',
   // Checks / misc
   4784:'Bills & Utilities', // tolls
   7210:'Home',7211:'Home',7216:'Home',7342:'Home',7349:'Home', // cleaning/laundry
@@ -6917,6 +6977,15 @@ async function fetchCommunityRules(){
 
 function guessCatFromDesc(d){
   const u=d.toUpperCase();
+  // Unambiguous donation signals override everything except investment/CC keywords (caught earlier in CAT_KEYWORDS)
+  if(u.includes('DONATION')||u.includes('DONATE')){
+    return 'Gifts & Donations';
+  }
+  // Museum: Entertainment by default; donation/gift/contribution/giving signals → Gifts & Donations
+  if(u.includes('MUSEUM')){
+    return (u.includes('GIVING')||u.includes('GIFT')||u.includes('CONTRIBUTION'))
+      ?'Gifts & Donations':'Entertainment';
+  }
   for(const [cat,keywords] of CAT_KEYWORDS){
     if(keywords.some(k=>u.includes(k)))return cat;
   }
@@ -6938,7 +7007,10 @@ function guessCatChase(d){
 
 function showImportPreview(){
   if(!importParsed.length){
-    showToast('No valid transactions found in file','#FCD34D');return;
+    const fmtNames={ally:'Checking/Savings',chase:'Credit card',debitcredit:'Debit/Credit columns',bofa:'Bank of America',generic:'Other'};
+    const detected=fmtNames[importFmt]||importFmt;
+    showToast(`No transactions found using "${detected}" format — try a different format button above`,'#FCD34D');
+    return;
   }
   const preview=document.getElementById('import-preview');
   const stats=document.getElementById('import-preview-stats');
