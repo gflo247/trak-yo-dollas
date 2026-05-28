@@ -248,10 +248,16 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .tx-row.tx-excluded{opacity:.45;border-color:var(--border)}
 .tx-row.tx-excluded:hover{opacity:.7}
 .excl-pill{font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px;background:#7C3AED22;color:#A78BFA;border:1px solid #7C3AED33;flex-shrink:0}
-/* horizon */
-.horizon-row{display:flex;gap:3px;margin-bottom:.85rem;background:var(--bg-card);border-radius:8px;padding:3px}
 .h-btn{flex:1;background:none;border:none;border-radius:6px;padding:4px 8px;font-size:10px;font-weight:700;color:var(--text-muted);cursor:pointer;white-space:nowrap}
 .h-btn.active{background:var(--bg-deep);color:#60A5FA;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+/* date range selector */
+.date-range-wrap{margin-bottom:.85rem}
+.date-range-row{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.range-dropdowns{display:flex;align-items:center;gap:3px;flex-shrink:0}
+.range-select{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:6px;padding:3px 4px;font-size:10px;font-weight:600;color:var(--text-primary);cursor:pointer;outline:none;font-family:inherit}
+.range-sep{color:var(--text-muted);font-size:10px;font-weight:600}
+.quick-chips{display:flex;gap:2px;background:var(--bg-card);border-radius:8px;padding:3px;flex:1;min-width:120px}
+.grain-row{display:flex;gap:2px;background:var(--bg-card);border-radius:8px;padding:3px}
 /* search */
 .search-wrap{position:relative;margin-bottom:.7rem}
 .search-input{width:100%;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:8px;padding:8px 10px 8px 34px;font-size:12px;color:var(--text-primary);outline:none}
@@ -401,7 +407,7 @@ select option{background:var(--bg-card)}
   #insights-pills{grid-template-columns:1fr!important}
   .spend-total-card{flex-direction:column;gap:.5rem}
   .spend-total-card>div:last-child{display:none}
-  .horizon-row .h-btn{font-size:10px;padding:4px 1px}
+  .quick-chips .h-btn,.grain-row .h-btn{font-size:10px;padding:4px 1px}
   #auth-bar{padding:0 4px;gap:3px}
   #theme-toggle-btn{padding:2px 5px;font-size:11px}
   #auth-sign-in-btn{font-size:9px;padding:2px 7px}
@@ -423,8 +429,6 @@ select option{background:var(--bg-card)}
 [data-theme="light"] .chip-btn.on{border-color:currentColor;background:color-mix(in srgb,currentColor 12%,transparent)}
 [data-theme="light"] #insights-card{background:linear-gradient(135deg,#EFF6FF,#F0F9FF)!important;border-color:#BFDBFE!important}
 [data-theme="light"] .chart-dark{background:var(--bg-card)!important;border-color:var(--border)!important}
-[data-theme="light"] .horizon-btn{background:var(--bg-deep);color:var(--text-muted);border-color:var(--border-mid)}
-[data-theme="light"] .horizon-btn.on{background:var(--accent-blue);color:#fff}
 [data-theme="light"] input,
 [data-theme="light"] select,
 [data-theme="light"] textarea{background:var(--bg-input)!important;border-color:var(--border-mid)!important;color:var(--text-primary)!important}
@@ -757,8 +761,8 @@ select option{background:var(--bg-card)}
   </div>
   <div class="chip-row" id="source-chips"></div>
   <span id="source-align-link" style="display:none;font-size:11px;color:var(--accent-blue-light);cursor:pointer;margin-left:4px" onclick="state.sourceAlignSkipped=false;checkSourceAlignment()">↔ Align sources</span>
-  <span id="source-align-active" style="display:none;font-size:11px;color:#34D399;margin-left:4px">✓ Aligned to <span id="source-align-date-label"></span> · <span style="cursor:pointer;color:var(--accent-blue-light)" onclick="state.sourceAlignDate=null;renderSpending()">show all</span></span>
-  <div class="horizon-row" id="horizon-row"></div>
+  <span id="source-align-active" style="display:none;font-size:11px;color:#34D399;margin-left:4px">✓ Aligned to <span id="source-align-date-label"></span> · <span style="cursor:pointer;color:var(--accent-blue-light)" onclick="state.sourceAlignDate=null;state.rangeFrom=null;renderSpending()">show all</span></span>
+  <div class="date-range-wrap" id="date-range-wrap"></div>
 
   <!-- Search -->
   <div class="search-wrap">
@@ -1667,7 +1671,6 @@ function getSrcChipClass(src){
 // Pre-assign demo source colors for consistency
 getSrcChipClass('Checking');getSrcChipClass('Visa Rewards');getSrcChipClass('Gold Card');
 const SRC_CHART_COLORS={'Checking':'#60A5FA','Visa Rewards':'#A78BFA','Gold Card':'#FCD34D'};
-const HORIZONS=[{label:'3 mo',months:3},{label:'6 mo',months:6},{label:'12 mo',months:12},{label:'2 yr',months:24},{label:'All',months:9999}];
 let ALL_MONTHS=Object.keys(MONTHLY).sort();
 const MON3=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const fmtMonthShort=ym=>{const[y,m]=ym.split('-');return`${MON3[parseInt(m)-1]} '${y.slice(2)}`;};
@@ -1720,7 +1723,8 @@ let state={
   snapshots:[],
   nextId:5000,
   activeSources:new Set(),
-  activeHorizon:18,
+  rangeFrom:null,
+  rangeTo:null,
   activeCats:new Set(),
   sortKey:'amount',
   sortDir:{date:'desc',amount:'asc',cat:'asc',pct:'asc',vendor:'asc'},
@@ -3023,7 +3027,12 @@ function renderNwChart(){
 
 
 
-function getFilteredMonths(){const h=state.activeHorizon;const months=h>=9999?ALL_MONTHS:ALL_MONTHS.slice(-h);return state.sourceAlignDate?months.filter(m=>m>=state.sourceAlignDate):months;}
+function getFilteredMonths(){
+  const from=state.rangeFrom||ALL_MONTHS[0]||'';
+  const to=state.rangeTo||ALL_MONTHS[ALL_MONTHS.length-1]||'';
+  const months=ALL_MONTHS.filter(m=>m>=from&&m<=to);
+  return state.sourceAlignDate?months.filter(m=>m>=state.sourceAlignDate):months;
+}
 
 function getAggregatedPeriods(){
   const months=getFilteredMonths();
@@ -3214,34 +3223,34 @@ function renderSourceChips(){
       return `<button class="chip ${cls} ${state.activeSources.has(s)?'on':''}" onclick="toggleSource('${s}')" type="button">${s}</button>`;
     }).join('')+hiddenChip;
 }
-function renderHorizonTabs(){
+function renderDateRange(){
+  const wrap=document.getElementById('date-range-wrap');
+  if(!wrap)return;
   const allN=ALL_MONTHS.length;
-  document.getElementById('horizon-row').innerHTML=HORIZONS.map(h=>{
-    const isAll=h.months>=9999;
-    const n=isAll?allN:Math.min(h.months,allN);
-    if(h.months===24&&allN<14)return '';
-    const label=isAll?`All (${n} mo)`:`${n} mo`;
-    const isActive=isAll?state.activeHorizon>=9999:state.activeHorizon===h.months;
-    return`<button class="h-btn ${isActive?'active':''}" onclick="setHorizon(${h.months})" type="button">${label}</button>`;
-  }).join('');
-
-  // Show grain toggle only when horizon is 2yr or more
-  const grainRow=document.getElementById('grain-row');
-  if(grainRow){
-    const showGrain=state.activeHorizon>=24;
-    grainRow.style.display=showGrain?'':'none';
-    if(showGrain){
-      ['month','quarter','year'].forEach(g=>{
-        const btn=document.getElementById('grain-'+g);
-        if(btn)btn.classList.toggle('active',g===(state.chartGrain||'month'));
-      });
-    }
-  }
+  if(!allN){wrap.innerHTML='';return;}
+  const from=state.rangeFrom||ALL_MONTHS[0];
+  const to=state.rangeTo||ALL_MONTHS[allN-1];
+  const latestM=ALL_MONTHS[allN-1];
+  const fromOpts=ALL_MONTHS.map(m=>`<option value="${m}"${m===from?' selected':''}>${fmtMonthShort(m)}</option>`).join('');
+  const toOpts=ALL_MONTHS.filter(m=>m>=from).map(m=>`<option value="${m}"${m===to?' selected':''}>${fmtMonthShort(m)}</option>`).join('');
+  const ytdStart=latestM.slice(0,4)+'-01';
+  const ytdM=ALL_MONTHS.find(m=>m>=ytdStart)||ALL_MONTHS[0];
+  const chips=[
+    {label:'3mo',f:allN>=3?ALL_MONTHS[allN-3]:ALL_MONTHS[0]},
+    {label:'6mo',f:allN>=6?ALL_MONTHS[allN-6]:ALL_MONTHS[0]},
+    {label:'12mo',f:allN>=12?ALL_MONTHS[allN-12]:ALL_MONTHS[0]},
+    {label:'YTD',f:ytdM},
+    {label:'All',f:ALL_MONTHS[0]},
+  ];
+  function chipActive(c){return !state.sourceAlignDate&&from===c.f&&to===latestM;}
+  const grain=state.chartGrain||'month';
+  wrap.innerHTML=`<div class="date-range-row"><div class="range-dropdowns"><select class="range-select" id="range-from" onchange="onRangeFromChange(this.value)">${fromOpts}</select><span class="range-sep">→</span><select class="range-select" id="range-to" onchange="onRangeToChange(this.value)">${toOpts}</select></div><div class="quick-chips">${chips.map(c=>`<button class="h-btn${chipActive(c)?' active':''}" onclick="setQuickRange('${c.f}')" type="button">${c.label}</button>`).join('')}</div><div class="grain-row"><button class="h-btn${grain==='month'?' active':''}" data-grain="month" onclick="setGrain('month')" type="button">Mo</button><button class="h-btn${grain==='quarter'?' active':''}" data-grain="quarter" onclick="setGrain('quarter')" type="button">Qtr</button><button class="h-btn${grain==='year'?' active':''}" data-grain="year" onclick="setGrain('year')" type="button">Yr</button></div></div>`;
 }
+function renderHorizonTabs(){renderDateRange();}
 
 function renderSpendSummary(){
   const baseTxs=getBaseTxs(),filtTxs=getFilteredTxs(),monthly=getMonthlyFiltered();
-  const total=monthly.reduce((s,m)=>s+m.total,0),months=monthly.filter(m=>m.total>0).length||1,h=state.activeHorizon;
+  const total=monthly.reduce((s,m)=>s+m.total,0),months=monthly.filter(m=>m.total>0).length||1;
   const isFiltered=state.activeCats.size>0||state.searchQuery;
   const filtIncluded=filtTxs.filter(t=>!t.excluded);
   const displayTotal=isFiltered?filtIncluded.reduce((s,t)=>s+t.amount,0):total;
@@ -3268,7 +3277,11 @@ function renderSpendSummary(){
   if(state.activeCats.size===1)label=`${[...state.activeCats][0]} spend`;
   else if(state.activeCats.size>1)label=`${state.activeCats.size} categories`;
   else if(state.searchQuery)label=`"${state.searchQuery}" results`;
-  else label=h>=18?'Total spend':`Last ${h} month${h>1?'s':''} spend`;
+  else {
+    const f=state.rangeFrom,t=state.rangeTo,a=ALL_MONTHS;
+    const isAll=(!f||f===a[0])&&(!t||t===a[a.length-1]);
+    label=isAll?'Total spend':f&&t&&f===t?`${fmtMonthShort(f)} spend`:`${fmtMonthShort(f||a[0])} – ${fmtMonthShort(t||a[a.length-1])}`;
+  }
 
   document.getElementById('spend-period-label').textContent=label;
   document.getElementById('spend-total-val').textContent=fmtC(displayTotal);
@@ -4928,23 +4941,45 @@ function toggleAllSources(){
   state.activeSources=allOn?new Set([sources[0]]):new Set(sources);
   state.activeCats=new Set();showTxN=50;renderSpending();
 }
-function setHorizon(m){
-  state.activeHorizon=m;
-  state.sourceAlignDate=null; // clear alignment when user picks manually
+function setQuickRange(from){
+  state.rangeFrom=from;
+  state.rangeTo=ALL_MONTHS[ALL_MONTHS.length-1]||null;
+  state.sourceAlignDate=null;
   state.activeCats=new Set();
   state.activeDate=null;
   showTxN=50;
-  if(m<=12) state.chartGrain='month';
-  else if(m<=24) state.chartGrain='month';
+  renderSpending();
+}
+function onRangeFromChange(m){
+  state.rangeFrom=m;
+  if(state.rangeTo&&state.rangeTo<m)state.rangeTo=m;
+  state.sourceAlignDate=null;
+  state.activeCats=new Set();
+  showTxN=50;
+  renderSpending();
+}
+function onRangeToChange(m){
+  state.rangeTo=m;
+  state.activeCats=new Set();
+  showTxN=50;
+  renderSpending();
+}
+function setHorizon(m){
+  // legacy shim — convert months count to rangeFrom
+  const allN=ALL_MONTHS.length;
+  state.rangeFrom=m>=9999?ALL_MONTHS[0]:(allN>=m?ALL_MONTHS[allN-m]:ALL_MONTHS[0]);
+  state.rangeTo=ALL_MONTHS[allN-1]||null;
+  state.sourceAlignDate=null;
+  state.activeCats=new Set();
+  state.activeDate=null;
+  showTxN=50;
   renderSpending();
 }
 function setGrain(g){
   state.chartGrain=g;
   renderActiveChart();
-  // Update grain buttons
-  ['month','quarter','year'].forEach(gr=>{
-    const btn=document.getElementById('grain-'+gr);
-    if(btn)btn.classList.toggle('active',gr===g);
+  document.querySelectorAll('[data-grain]').forEach(btn=>{
+    btn.classList.toggle('active',btn.dataset.grain===g);
   });
 }
 function toggleCatFilter(cat){
@@ -7073,8 +7108,8 @@ function applySourceAlign(fromDate){
   if(modal)modal.remove();
   // Store the alignment date — used to filter months in getFilteredMonths
   state.sourceAlignDate=fromDate.slice(0,7);
-  // Use All horizon so we don't lose data, but filter by alignDate
-  state.activeHorizon=9999;
+  state.rangeFrom=fromDate.slice(0,7);
+  state.rangeTo=null;
   _txsDirty=false;
   renderSpending();
   showToast(`✓ Showing from ${fmtMonthShort(fromDate.slice(0,7))} — click "All" to see everything`);
@@ -7515,7 +7550,8 @@ function serializeState(){
       sourceAlignSkipped: state.sourceAlignSkipped,
       sourceAlignDate: state.sourceAlignDate,
       chartGrain: state.chartGrain,
-      activeHorizon: state.activeHorizon,
+      rangeFrom: state.rangeFrom,
+      rangeTo: state.rangeTo,
     });
   }catch(e){console.error('serializeState error:',e);return null;}
 }
@@ -7563,7 +7599,8 @@ function loadFromLocalStorage(){
     if(saved.sourceAlignSkipped)state.sourceAlignSkipped=true;
     if(saved.sourceAlignDate)state.sourceAlignDate=saved.sourceAlignDate;
     if(saved.chartGrain)state.chartGrain=saved.chartGrain;
-    if(saved.activeHorizon)state.activeHorizon=saved.activeHorizon;
+    if(saved.rangeFrom)state.rangeFrom=saved.rangeFrom;
+    if(saved.rangeTo)state.rangeTo=saved.rangeTo;
     state.vendorAliases=saved.vendorAliases||{};
     state.hiddenPills.delete('spending');
     state.hiddenPills.delete('spending-pill');
@@ -7766,7 +7803,8 @@ const DEMO_PROFILE_1 = {
   ],
   budgets:{'Groceries':280,'Food & Drink':180,'Rent':1350,'Transportation':120,'Bills & Utilities':150,'Shopping':150,'Entertainment':80,'Health & Wellness':60},
   activeSources:new Set(['Checking','Visa Rewards']),
-  activeHorizon:12,
+  rangeFrom:'2025-06',
+  rangeTo:null,
   nwGoal:50000,
   income:{method:'manual',monthlyAmount:4800},
   catRules:[{keyword:'ALDI',cat:'Groceries'},{keyword:'TRADER JOE',cat:'Groceries'},{keyword:'SHELL',cat:'Transportation'},{keyword:'STUDENT LOAN',cat:'Transfers'},{keyword:'RENT',cat:'Rent'}],
@@ -7820,7 +7858,8 @@ const DEMO_PROFILE_2 = {
   snapshots:[{date:'Nov 30, 2024',label:'Nov',monthKey:'2024-11',nw:362000,assets:408000,liab:46000},{date:'Feb 28, 2025',label:'Feb',monthKey:'2025-02',nw:371500,assets:419000,liab:47500},{date:'May 31, 2025',label:'May',monthKey:'2025-05',nw:381000,assets:430000,liab:49000},{date:'Aug 31, 2025',label:'Aug',monthKey:'2025-08',nw:388000,assets:438000,liab:50000}],
   budgets:{'Groceries':700,'Home':1200,'Food & Drink':300,'Health & Wellness':200,'Gas':150,'Bills & Utilities':500,'Shopping':400,'Entertainment':150,'Education':100,'Transfers':200},
   activeSources:new Set(['Checking','Visa Rewards','Gold Card']),
-  activeHorizon:18,
+  rangeFrom:'2024-12',
+  rangeTo:null,
   nwGoal:750000,
   income:{method:'manual',monthlyAmount:8500},
   catRules:[{keyword:'WHOLE FOODS',cat:'Groceries'},{keyword:'UTILITY CO',cat:'Bills & Utilities'},{keyword:'CITY ELECTRIC',cat:'Bills & Utilities'},{keyword:'MEDICAL GROUP',cat:'Health & Wellness'},{keyword:'HOME SERVICES',cat:'Home'}],
@@ -7858,7 +7897,8 @@ function loadDemoProfile(n, silent=false, skipRender=false){
   state.transactions=[...p.transactions];
   state.budgets={...p.budgets};
   state.activeSources=new Set(p.activeSources);
-  state.activeHorizon=p.activeHorizon;
+  state.rangeFrom=p.rangeFrom||null;
+  state.rangeTo=p.rangeTo||null;
   state.nwGoal=p.nwGoal;
   state.income={...p.income};
   state.hasRealData=false;
