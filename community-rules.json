@@ -149,15 +149,15 @@
   },
   {
     "keyword": "PNP BILLPAYMENT",
-    "cat": "Tax & Gov"
+    "cat": "Taxes & Fees"
   },
   {
     "keyword": "STATE OF MICH SOS",
-    "cat": "Tax & Gov"
+    "cat": "Taxes & Fees"
   },
   {
     "keyword": "STATE OF MI SOMIIT",
-    "cat": "Tax & Gov"
+    "cat": "Taxes & Fees"
   },
   {
     "keyword": "MI DIR ACH CONTRIB",
@@ -325,19 +325,19 @@
   },
   {
     "keyword": "VANGUARD",
-    "cat": "Investment Contribution"
+    "cat": "Investment Contributions"
   },
   {
     "keyword": "FIDELITY",
-    "cat": "Investment Contribution"
+    "cat": "Investment Contributions"
   },
   {
     "keyword": "SCHWAB",
-    "cat": "Investment Contribution"
+    "cat": "Investment Contributions"
   },
   {
     "keyword": "BETTERMENT",
-    "cat": "Investment Contribution"
+    "cat": "Investment Contributions"
   },
   {
     "keyword": "NAVIENT",
@@ -1282,5 +1282,57 @@
   {
     "keyword": "SCOTTS LAWN",
     "cat": "Home"
+  },
+  {
+    "keyword": "TURBOTAX",
+    "cat": "Taxes & Fees"
+  },
+  {
+    "keyword": "H&R BLOCK",
+    "cat": "Taxes & Fees"
+  },
+  {
+    "keyword": "HRBLOCK",
+    "cat": "Taxes & Fees"
+  },
+  {
+    "keyword": "FREETAXUSA",
+    "cat": "Taxes & Fees"
+  },
+  {
+    "keyword": "FREETAXUSA.COM",
+    "cat": "Taxes & Fees"
+  },
+  {
+    "keyword": "GOFUNDME",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "NFGIVING",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "UNITED WAY",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "RED CROSS",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "SALVATION ARMY",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "GOODWILL",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "HABITAT FOR HUMANITY",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "PLANNED PARENTHOOD",
+    "cat": "Gifts & Donations"
   }
 ]
