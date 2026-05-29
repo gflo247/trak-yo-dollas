@@ -232,6 +232,10 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .chip-ora.on{background:#431403;color:#FB923C;border-color:#EA580C}
 .chip-sky{background:#0C252622;color:#38BDF8;border-color:#0284C744}
 .chip-sky.on{background:#0C2526;color:#38BDF8;border-color:#0284C7}
+.src-x-btn{margin-left:5px;font-size:10px;opacity:0;color:inherit;line-height:1;vertical-align:middle;transition:opacity .12s;background:none;border:none;cursor:pointer;padding:0;font-family:inherit}
+.chip:hover .src-x-btn,.src-x-btn:hover{opacity:.75}
+@media(max-width:600px){.src-x-btn{opacity:.55}}
+.src-remove-pop{position:absolute;top:calc(100% + 6px);left:0;z-index:300;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.6rem .75rem;min-width:210px;box-shadow:0 8px 24px #00000055;white-space:nowrap}
 /* excluded toggle */
 
 .chip-excl{border-color:#92400E55;color:#D97706;background:#78350F0A;margin-left:16px;position:relative}
@@ -891,10 +895,18 @@ select option{background:var(--bg-card)}
     <p class="modal-sub" style="margin-bottom:.5rem">Auto-detects most bank and credit card formats. 🔒 Processed in your browser — never uploaded.</p>
 
     <!-- Format selector -->
-    <div style="display:flex;gap:6px;margin-bottom:.75rem">
-      <button id="fmt-btn-ally"   class="btn btn-sm fmt-btn active-fmt" onclick="setImportFmt('ally')" type="button">Checking / Savings</button>
-      <button id="fmt-btn-chase"  class="btn btn-sm fmt-btn" onclick="setImportFmt('chase')" type="button">Credit card</button>
-      <button id="fmt-btn-generic" class="btn btn-sm fmt-btn" onclick="setImportFmt('generic')" type="button">Other</button>
+    <div style="margin-bottom:.75rem">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button id="fmt-btn-ally"   class="btn btn-sm fmt-btn active-fmt" onclick="setImportFmt('ally')" type="button">Checking / Savings</button>
+        <button id="fmt-btn-chase"  class="btn btn-sm fmt-btn" onclick="setImportFmt('chase')" type="button">Credit card</button>
+        <button id="fmt-btn-generic" class="btn btn-sm fmt-btn" onclick="setImportFmt('generic')" type="button">Other</button>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;padding-top:6px;border-top:1px solid var(--border-mid);align-items:center">
+        <span style="font-size:10px;color:var(--text-muted);white-space:nowrap">Migrating:</span>
+        <button id="fmt-btn-mint"    class="btn btn-sm fmt-btn" onclick="setImportFmt('mint')" type="button">Mint</button>
+        <button id="fmt-btn-ynab"    class="btn btn-sm fmt-btn" onclick="setImportFmt('ynab')" type="button">YNAB</button>
+        <button id="fmt-btn-monarch" class="btn btn-sm fmt-btn" onclick="setImportFmt('monarch')" type="button">Monarch Money</button>
+      </div>
     </div>
 
     <!-- Format help -->
@@ -913,11 +925,20 @@ select option{background:var(--bg-card)}
     <div id="fmt-help-generic" class="fmt-help hidden help-box">
       Any CSV with <strong style="color:var(--text-secondary)">date, description, and amount</strong> columns. First row must be headers.
     </div>
+    <div id="fmt-help-mint" class="fmt-help hidden help-box">
+      Mint exported CSV (<strong style="color:var(--text-secondary)">Date, Description, Amount, Transaction Type, Category</strong> columns). Mint shut down in March 2024 — your exported CSVs still work here. Credits are skipped automatically. Categories import as-is where they match.
+    </div>
+    <div id="fmt-help-ynab" class="fmt-help hidden help-box">
+      You Need A Budget export (<strong style="color:var(--text-secondary)">Payee, Outflow, Inflow, Category</strong> columns). Export from YNAB → All Accounts → Export. Inflows are skipped. Categories map automatically where possible.
+    </div>
+    <div id="fmt-help-monarch" class="fmt-help hidden help-box">
+      Monarch Money export (<strong style="color:var(--text-secondary)">Date, Merchant, Amount, Category</strong> columns). Export from Settings → Data → Export Transactions. Positive amounts (income) are skipped. Categories import as-is where they match.
+    </div>
 
-    <!-- Bank format guide -->
+    <!-- Bank / format guide -->
     <details style="margin-bottom:.75rem">
       <summary style="font-size:11px;font-weight:700;color:var(--text-secondary);cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:4px">
-        <span id="bank-guide-arrow" style="font-size:9px;color:var(--text-muted)">▶</span> What format does my bank use?
+        <span id="bank-guide-arrow" style="font-size:9px;color:var(--text-muted)">▶</span> What format should I use?
       </summary>
       <div style="margin-top:.5rem;border:1px solid var(--border-mid);border-radius:6px;overflow:hidden;font-size:11px">
         <div style="display:grid;grid-template-columns:1fr auto;background:var(--bg-deep);padding:4px 10px;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">
@@ -925,10 +946,16 @@ select option{background:var(--bg-card)}
         </div>
         <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Ally, Fidelity, Vanguard, Schwab, SoFi</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Checking / Savings</span></div>
         <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Bank of America checking</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Bank of America</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Wells Fargo checking</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Debit/Credit cols</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">USAA, credit unions with Debit+Credit cols</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Debit/Credit cols</span></div>
+        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Wells Fargo checking</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Debit/Credit columns</span></div>
+        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">USAA, credit unions with Debit+Credit columns</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Debit/Credit columns</span></div>
         <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Chase, BofA, Wells Fargo, Citi, Amex (credit cards)</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Credit card</span></div>
         <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Everything else</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Other</span></div>
+        <div style="display:grid;grid-template-columns:1fr auto;background:var(--bg-deep);padding:4px 10px;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;border-top:2px solid var(--border-mid)">
+          <span>Migrating from another app</span><span>Use this format</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Mint <span style="color:var(--text-muted);font-weight:400">(shut down Mar 2024 — your exports still work)</span></span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Mint</span></div>
+        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">YNAB (You Need A Budget)</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">YNAB</span></div>
+        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Monarch Money</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Monarch Money</span></div>
       </div>
     </details>
     <script>document.querySelector('#tx-import-modal details')?.addEventListener('toggle',e=>{document.getElementById('bank-guide-arrow').textContent=e.target.open?'▼':'▶';});</script>
@@ -953,6 +980,17 @@ select option{background:var(--bg-card)}
              ondrop="handleTxDrop(event)"
              onchange="handleTxFileSelect(this)"/>
     </div>
+    <!-- Start fresh link -->
+    <div id="import-fresh-row" style="display:none;justify-content:center;align-items:center;margin-top:.45rem">
+      <span style="font-size:11px;color:var(--text-muted)">Want to start fresh?&nbsp;</span>
+      <button onclick="showImportFreshConfirm()" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" onmouseover="this.style.color='#F87171'" onmouseout="this.style.color='var(--text-muted)'" type="button">Clear all data →</button>
+    </div>
+    <div id="import-fresh-confirm" style="display:none;align-items:center;gap:8px;justify-content:center;margin-top:.45rem;background:#1C0A0A;border:1px solid #7F1D1D55;border-radius:8px;padding:.4rem .75rem">
+      <span style="font-size:11px;color:#FCA5A5">Remove <span id="import-fresh-count">0</span> transactions and start over?</span>
+      <button onclick="confirmClearAllData()" style="background:none;border:none;color:#F87171;font-size:11px;font-weight:700;cursor:pointer;padding:0;font-family:inherit" type="button">Yes, clear all</button>
+      <button onclick="hideImportFreshConfirm()" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;padding:0;font-family:inherit" type="button">Cancel</button>
+    </div>
+
     <div style="font-size:10px;color:var(--text-muted);margin-top:.5rem;line-height:1.5;text-align:center">
       Categorization uses your rules, community patterns, and <a href="https://en.wikipedia.org/wiki/Merchant_category_code" target="_blank" style="color:var(--accent-blue-light);text-decoration:underline" title="Merchant Category Codes — 4-digit codes banks assign to merchants">MCC codes</a> — in that order. &nbsp;
       <button onclick="openCommunityRulesModal()" style="background:none;border:none;color:var(--accent-blue-light);font-size:10px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">View patterns ↗</button> &nbsp;
@@ -964,9 +1002,12 @@ select option{background:var(--bg-card)}
       <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem">Preview</div>
       <div id="import-preview-stats" style="font-size:11px;color:var(--text-secondary);margin-bottom:.4rem"></div>
       <div id="import-preview-rows" style="max-height:160px;overflow-y:auto;border:1px solid var(--border-mid);border-radius:8px;font-size:10px"></div>
-      <div style="margin-top:.5rem;display:flex;align-items:center;gap:8px">
-        <input type="checkbox" id="import-replace" style="accent-color:#2563EB;width:13px;height:13px">
-        <label for="import-replace" style="font-size:11px;color:var(--text-muted);cursor:pointer">Replace existing transactions from this source</label>
+      <div style="margin-top:.6rem;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:8px;padding:.5rem .65rem;display:flex;align-items:flex-start;gap:8px">
+        <input type="checkbox" id="import-replace" style="accent-color:#2563EB;width:14px;height:14px;margin-top:2px;flex-shrink:0">
+        <div>
+          <label for="import-replace" style="font-size:12px;font-weight:700;color:var(--text-primary);cursor:pointer;display:block">Replace existing transactions from this source</label>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:1px">Use this when re-importing after a categorization update</div>
+        </div>
       </div>
     </div>
 
@@ -1192,8 +1233,8 @@ select option{background:var(--bg-card)}
     <div id="import-success-uncategorized" class="hidden" style="background:#78350F18;border:1px solid #D9770633;border-radius:8px;padding:.55rem .85rem;margin-bottom:1rem;font-size:12px;color:#D97706;line-height:1.5"></div>
 
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1.1rem">
-      <button class="btn btn-primary" style="width:100%;justify-content:center;font-size:14px;padding:.65rem" onclick="closeModals();if(window._pendingAlignmentCheck){window._pendingAlignmentCheck=false;setTimeout(checkSourceAlignment,200);}" type="button">View my spending</button>
-      <button class="btn" style="width:100%;justify-content:center;font-size:14px;padding:.65rem" onclick="closeModals();window._pendingAlignmentCheck=false;setTimeout(()=>openTxImportModal(),80)" type="button">Import another CSV</button>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;font-size:14px;padding:.65rem" onclick="onImportSuccessClose();closeModals();if(window._pendingAlignmentCheck){window._pendingAlignmentCheck=false;setTimeout(checkSourceAlignment,200);}" type="button">View my spending</button>
+      <button class="btn" style="width:100%;justify-content:center;font-size:14px;padding:.65rem" onclick="onImportSuccessClose();closeModals();window._pendingAlignmentCheck=false;setTimeout(()=>openTxImportModal(),80)" type="button">Import another CSV</button>
     </div>
 
     <div style="font-size:11px;color:var(--text-muted);text-align:center;line-height:1.6">You can set up income, balances, and budgets anytime from the tabs.</div>
@@ -1356,6 +1397,23 @@ select option{background:var(--bg-card)}
 
     <div style="display:flex;justify-content:flex-end">
       <button class="btn btn-primary" onclick="closeModals()" type="button">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Flow chart declared income modal -->
+<div class="modal-overlay hidden" id="declared-income-modal">
+  <div class="modal" style="width:min(360px,95vw)">
+    <h3 style="font-size:16px;margin-bottom:.5rem">💰 Monthly take-home income</h3>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:1rem;line-height:1.6">Set your actual monthly after-tax pay. Overrides deposit detection and feeds the savings rate insight.</p>
+    <div style="margin-bottom:1.1rem">
+      <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.35rem">Monthly take-home (after tax)</label>
+      <input type="number" id="declared-income-input" min="0" step="100" placeholder="e.g. 5000" style="width:100%;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-size:13px">
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-primary" onclick="saveDeclaredIncome()" type="button">Save</button>
+      <button class="btn" onclick="closeModals()" type="button">Cancel</button>
+      <button onclick="clearDeclaredIncome()" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;margin-left:auto" type="button">Clear override</button>
     </div>
   </div>
 </div>
@@ -1763,6 +1821,7 @@ let state={
   budgets:{},
   catRules:[],
   income:{method:null,monthlyAmount:0},
+  declaredIncome:0,
   hiddenPills:new Set(),
   vendorAliases:{},
   hasRealData:false,
@@ -2008,13 +2067,26 @@ function renderInsights(){
   const addPill=(key,label,html,score=0)=>{if(!state.hiddenPills.has(key))pillsArr.push({key,label,html,score});};
 
   // Pill 1 — Savings rate (or nudge if not configured)
+  // Use period-level data (same source of truth as Flow chart) for overspend detection
+  const periodFlow=computePeriodSpendVsIncome();
   const effectiveIncome=getEffectiveIncome(latestFullM);
   if(effectiveIncome>0){
     const spent=latestSpend;
+    if(periodFlow.isOverspend){
+      const{over,totalSpend,totalIncome,monthCount,income,avgMonthlySpend}=periodFlow;
+      const periodLabel=monthCount===1?latestLabel:`${monthCount}mo period`;
+      const overspendTip=`Avg monthly income: ${fmt(income)}&#10;Avg monthly spend: ${fmt(avgMonthlySpend)}&#10;Total over ${monthCount} month${monthCount===1?'':'s'}: over by ${fmt(over)}&#10;&#10;Spending more than you earn draws down savings or adds to debt. Check your income setting or review your spending.`;
+      addPill('savings','Savings rate',pillWithTip('🔴','Savings rate',`Spent ${fmtC(over)} over income (${monthCount}mo)`,'#F87171',
+        `Spending exceeded income by ${fmtC(over)} this ${periodLabel} · ${fmt(avgMonthlySpend)}/mo avg spend vs ${fmt(income)}/mo income`,
+        overspendTip,
+        {label:'Review income',onclick:'openDeclaredIncomeModal()'}
+      ),100);
+    } else {
     const saved=Math.max(0,effectiveIncome-spent);
     const savingsRate=Math.round(saved/effectiveIncome*100);
     const rateColor=savingsRate>=20?'#34D399':savingsRate>=10?'#FBBF24':'#F87171';
-    const savingsTooltip=`Income (${state.income.method==='manual'?'manual':'estimated from deposits'}): ${fmt(effectiveIncome)}&#10;Spent in ${latestLabel}: ${fmt(spent)}&#10;Kept: ${fmt(saved)}&#10;Savings rate: ${savingsRate}%&#10;&#10;Rule of thumb: 20%+ is healthy, 10-20% is ok, under 10% is tight.`;
+    const incomeMethod=state.declaredIncome>0?'declared':state.income.method==='manual'?'manual':'estimated from deposits';
+    const savingsTooltip=`Income (${incomeMethod}): ${fmt(effectiveIncome)}&#10;Spent in ${latestLabel}: ${fmt(spent)}&#10;Kept: ${fmt(saved)}&#10;Savings rate: ${savingsRate}%&#10;&#10;Rule of thumb: 20%+ is healthy, 10-20% is ok, under 10% is tight.`;
     // Build emotionally resonant savings sub-label
     const allSavingsRates=allMonths.filter(m=>m!==currentM).map(m=>{
       const mInc=getEffectiveIncome(m);
@@ -2032,6 +2104,7 @@ function renderInsights(){
       savingsSub=`Only ${fmt(saved)} left after spending — tighter than usual`;
     }
     addPill('savings','Savings rate',pillWithTip(savingsRate>=20?'🟢':savingsRate>=10?'🟡':'🔴',`Savings rate`,`${savingsRate}%`,rateColor,savingsSub,savingsTooltip,savingsRate<10?{label:'Set income',onclick:'openIncomeModal()'}:''),savingsRate<10?100:savingsRate<20?50:10);
+    } // end else (not overspend)
   } else if(!state.hiddenPills.has('savings')){
     pillsArr.push({key:'savings-nudge',label:'Savings rate',score:0,html:`<div style="display:flex;flex-direction:column;justify-content:center;background:var(--card-nudge-bg);border:1.5px dashed var(--border-mid);border-radius:12px;padding:.75rem .9rem;gap:.4rem;cursor:pointer;position:relative" onclick="openIncomeModal()">
       <button onclick="event.stopPropagation();event.preventDefault();dismissSavingsNudge();return false;" style="position:absolute;top:6px;right:8px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:4px 6px;z-index:10;pointer-events:all" title="" type="button">✕</button>
@@ -2113,7 +2186,12 @@ function renderInsights(){
   }
 
   // Pill 4 — Budget health
-  if(Object.keys(state.budgets).length>0&&latestFullM){
+  const hasBudgets=Object.keys(state.budgets).length>0;
+  let _budgetHealthDismissed=false;
+  if(hasBudgets){
+    try{_budgetHealthDismissed=localStorage.getItem('budgetHealthDismissed')===JSON.stringify(state.budgets);}catch(e){}
+  }
+  if(hasBudgets&&!_budgetHealthDismissed&&latestFullM){
     const budgetCats=Object.keys(state.budgets);
     const today=new Date();
     const daysInMonth=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
@@ -2131,7 +2209,6 @@ function renderInsights(){
       else{onTrack++;}
     });
     const total=budgetCats.length;
-    const onTrackCount=onTrack;
     const statusColor=over>0?'#F87171':under>0?'#FBBF24':'#34D399';
     const statusIcon=over>0?'🔴':under>0?'🟡':'🟢';
     const needsAttentionCount=over+under;
@@ -2144,7 +2221,12 @@ function renderInsights(){
       const pct=budget>0?Math.round(spend/budget*100):0;
       return `${cat}: ${fmt(spend)} / ${fmt(budget)} (${pct}%)`;
     }).join('&#10;');
-    addPill('budget-health','Budget health',pillWithTip(statusIcon,'Budget health',pillValue,statusColor,`${statusLabel}${worstStr}`,tooltip,over>0?{label:'Go to Budget tab',onclick:"showPage('budget',document.querySelectorAll('.nav-btn')[1])"}:''),over>0?90:under>0?40:5);
+    const dismissBtn=`<button onclick="event.stopPropagation();dismissBudgetHealthPill()" style="position:absolute;top:6px;right:8px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:4px 6px;z-index:10" title="Dismiss" type="button">✕</button>`;
+    const basePill=pillWithTip(statusIcon,'Budget health',pillValue,statusColor,`${statusLabel}${worstStr}`,tooltip,over>0?{label:'Go to Budget tab',onclick:"showPage('budget',document.querySelectorAll('.nav-btn')[1])"}:'');
+    const pillHtml=basePill
+      .replace('display:flex;flex-direction:column;','position:relative;display:flex;flex-direction:column;')
+      .replace(/<\/div>\s*$/,dismissBtn+'</div>');
+    addPill('budget-health','Budget health',pillHtml,over>0?90:under>0?40:5);
   }
 
   // Pill 5 — Top mover
@@ -2192,7 +2274,7 @@ function renderInsights(){
       const chargeSub=isHighVsNorm
         ?`${esc(biggest.desc)} · ${Math.round((biggest.amount/avgBiggest-1)*100)}% higher than your typical largest charge`
         :`${esc(biggest.desc)} · ${biggest.cat}`;
-      addPill('largest-tx','Largest charge',pillWithTip('💥','Largest charge',`${fmtC(biggest.amount)}`,isHighVsNorm?'#F87171':'#64748B',chargeSub,tooltip),isHighVsNorm?65:8);
+      addPill('largest-tx','Largest charge',pillWithTip('💥','Largest charge',`${fmt(biggest.amount)}`,isHighVsNorm?'#F87171':'#64748B',chargeSub,tooltip),isHighVsNorm?65:8);
     }
   }
 
@@ -2384,6 +2466,8 @@ function renderNwBreakdown(){
 }
 
 let _yirPeriod='trailing'; // 'trailing' or a year like '2025'
+let _yirExcludeTransfers=false;
+const YIR_EXCLUDE_CATS=new Set(['Checks','CC Payment','Transfers','Investment Contributions']);
 
 function renderYirPeriodSelector(){
   const allMonths=Object.keys(MONTHLY).sort();
@@ -2404,9 +2488,15 @@ function renderYirPeriodSelector(){
 
 function openYearInReview(){
   _yirPeriod='trailing';
+  try{_yirExcludeTransfers=localStorage.getItem('yirExcludeTransfers')==='1';}catch(e){}
   renderYirPeriodSelector();
   renderYearInReview();
   document.getElementById('year-review-modal').classList.remove('hidden');
+}
+function toggleYirExclusions(){
+  _yirExcludeTransfers=!_yirExcludeTransfers;
+  try{localStorage.setItem('yirExcludeTransfers',_yirExcludeTransfers?'1':'0');}catch(e){}
+  renderYearInReview();
 }
 
 function setYirPeriod(p){
@@ -2432,7 +2522,7 @@ function renderYearInReview(){
     return;
   }
 
-  // Aggregate transactions
+  // Aggregate transactions — totalSpent always uses all txs, filter only affects cats/vendors
   const txs=state.transactions.filter(t=>months.includes(t.date.slice(0,7))&&!t.excluded);
   const totalSpent=txs.reduce((s,t)=>s+t.amount,0);
   const byMonth=months.map(m=>({
@@ -2443,15 +2533,16 @@ function renderYearInReview(){
   const quietestMonth=byMonth.filter(m=>m.spent>0).reduce((a,b)=>b.spent<a.spent?b:a,byMonth[0]);
   const avgMonth=totalSpent/months.length;
 
-  // By category
+  // By category — filtered when toggle is on
+  const txsFiltered=_yirExcludeTransfers?txs.filter(t=>!YIR_EXCLUDE_CATS.has(t.cat)):txs;
   const byCat={};
-  txs.forEach(t=>{byCat[t.cat]=(byCat[t.cat]||0)+t.amount;});
+  txsFiltered.forEach(t=>{byCat[t.cat]=(byCat[t.cat]||0)+t.amount;});
   const catSorted=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
   const topCat=catSorted[0];
 
-  // By vendor
+  // By vendor — filtered when toggle is on
   const byVendor={};
-  txs.forEach(t=>{const v=resolveVendor(t.desc);byVendor[v]=(byVendor[v]||0)+t.amount;});
+  txsFiltered.forEach(t=>{const v=resolveVendor(t.desc);byVendor[v]=(byVendor[v]||0)+t.amount;});
   const vendorSorted=Object.entries(byVendor).sort((a,b)=>b[1]-a[1]).slice(0,5);
 
   // NW change
@@ -2468,6 +2559,11 @@ function renderYearInReview(){
   const periodLabel=_yirPeriod==='trailing'?'last 12 months':_yirPeriod;
 
   content.innerHTML=`
+    <!-- Exclusions toggle -->
+    <div style="display:flex;justify-content:flex-end;margin-bottom:.6rem">
+      <button onclick="toggleYirExclusions()" style="background:${_yirExcludeTransfers?'#2563EB18':'transparent'};border:1px solid ${_yirExcludeTransfers?'#2563EB':'var(--border-mid)'};border-radius:20px;padding:3px 12px;font-size:10px;font-weight:700;color:${_yirExcludeTransfers?'var(--accent-blue-light)':'var(--text-muted)'};cursor:pointer;font-family:inherit" type="button">${_yirExcludeTransfers?'✓ ':''} Exclude transfers &amp; investments</button>
+    </div>
+
     <!-- Hero stat -->
     <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;text-align:center">
       <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">Total spent · ${periodLabel}${_yirPeriod!=='trailing'?' · '+months.length+' months':''}</div>
@@ -2541,7 +2637,7 @@ function renderYearInReview(){
     </div>
 
     <!-- Copy summary -->
-    <button onclick="copyYirSummary(${JSON.stringify({totalSpent,topCat,avgMonth,nwChange,savingsRate,periodLabel}).replace(/"/g,'&quot;')})" style="width:100%;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:8px;padding:.6rem;font-size:11px;font-weight:600;color:var(--accent-blue-light);cursor:pointer" type="button">📋 Copy summary to clipboard</button>
+    <button onclick="copyYirSummary()" style="width:100%;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:8px;padding:.6rem;font-size:11px;font-weight:600;color:var(--accent-blue-light);cursor:pointer" type="button">📋 Copy summary to clipboard</button>
   `;
 }
 
@@ -2601,16 +2697,44 @@ function renderYearInReview(){
 
 
 
-function copyYirSummary(data){
+function copyYirSummary(){
   try{
-    const d=typeof data==='string'?JSON.parse(data.replace(/&quot;/g,'"')):data;
+    const allMonths=Object.keys(MONTHLY).sort();
+    const months=_yirPeriod==='trailing'?allMonths.slice(-12):allMonths.filter(m=>m.startsWith(_yirPeriod));
+    if(!months.length){showToast('No data to copy','#FCD34D');return;}
+    const txs=state.transactions.filter(t=>months.includes(t.date.slice(0,7))&&!t.excluded);
+    const totalSpent=txs.reduce((s,t)=>s+t.amount,0);
+    const txsFiltered=_yirExcludeTransfers?txs.filter(t=>!YIR_EXCLUDE_CATS.has(t.cat)):txs;
+    const byCat={};txsFiltered.forEach(t=>{byCat[t.cat]=(byCat[t.cat]||0)+t.amount;});
+    const catSorted=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+    const topCat=catSorted[0];
+    const byVendor={};txsFiltered.forEach(t=>{const v=resolveVendor(t.desc);byVendor[v]=(byVendor[v]||0)+t.amount;});
+    const vendorSorted=Object.entries(byVendor).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const byMonth=months.map(m=>({m,spent:txs.filter(t=>t.date.slice(0,7)===m).reduce((s,t)=>s+t.amount,0)}));
+    const biggestMonth=byMonth.reduce((a,b)=>b.spent>a.spent?b:a,byMonth[0]);
+    const quietestMonth=byMonth.filter(m=>m.spent>0).reduce((a,b)=>b.spent<a.spent?b:a,byMonth[0]);
+    const avgMonth=totalSpent/months.length;
+    const income=getEffectiveIncome(months[months.length-1]);
+    const annualIncome=income*12;
+    const savingsRate=annualIncome>0?Math.round((annualIncome-totalSpent)/annualIncome*100):null;
+    const snapsSorted=getSortedSnaps();
+    const firstSnap=snapsSorted.find(s=>s.monthKey>=months[0]);
+    const lastSnap=snapsSorted.filter(s=>s.monthKey<=months[months.length-1]).slice(-1)[0];
+    const nwChange=firstSnap&&lastSnap&&firstSnap!==lastSnap?lastSnap.nw-firstSnap.nw:null;
+    const periodLabel=_yirPeriod==='trailing'?'last 12 months':_yirPeriod;
+    const dateRange=months.length>1?`${fmtMonthShort(months[0])} – ${fmtMonthShort(months[months.length-1])}`:fmtMonthShort(months[0]);
     const lines=[
-      `📅 ${d.periodLabel} spending summary`,
-      `Total spent: ${fmt(d.totalSpent)}`,
-      d.topCat?`Top category: ${d.topCat[0]} (${fmt(d.topCat[1])})`:null,
-      `Avg/month: ${fmt(Math.round(d.avgMonth))}`,
-      d.nwChange!=null?`Net worth change: ${d.nwChange>=0?'+':''}${fmt(d.nwChange)}`:null,
-      d.savingsRate!=null?`Savings rate: ${d.savingsRate}%`:null,
+      `📅 ${periodLabel} spending summary (${dateRange})`,
+      `Total spent: ${fmt(totalSpent)}`,
+      `Avg/month: ${fmt(Math.round(avgMonth))}`,
+      topCat?`Top category: ${topCat[0]} (${fmt(topCat[1])})`:null,
+      catSorted.length>1?`Top categories: ${catSorted.slice(0,5).map(([c,a])=>`${c} ${fmt(a)}`).join(', ')}`:null,
+      vendorSorted.length?`Top vendors: ${vendorSorted.map(([v,a])=>`${v} ${fmt(a)}`).join(', ')}`:null,
+      biggestMonth?`Biggest month: ${fmtMonthShort(biggestMonth.m)} (${fmt(biggestMonth.spent)})`:null,
+      quietestMonth&&quietestMonth.m!==biggestMonth?.m?`Quietest month: ${fmtMonthShort(quietestMonth.m)} (${fmt(quietestMonth.spent)})`:null,
+      savingsRate!=null?`Savings rate: ${savingsRate}%`:null,
+      nwChange!=null?`Net worth change: ${nwChange>=0?'+':''}${fmt(nwChange)}`:null,
+      _yirExcludeTransfers?'(Transfers, CC payments & investments excluded from categories/vendors)':null,
     ].filter(Boolean).join('\n');
     navigator.clipboard.writeText(lines).then(()=>showToast('📋 Copied to clipboard','#34D399'));
   }catch(e){showToast('Could not copy','#FCD34D');}
@@ -3217,6 +3341,7 @@ function renderActiveChart(){
 }
 
 function renderSpending(){
+  renderInsights();
   renderSourceChips();renderHorizonTabs();
   if(typeof updateExcludedToggle==='function')updateExcludedToggle();
   renderSpendSummary();renderBucketGrid();renderTxList();
@@ -3258,7 +3383,8 @@ function renderSourceChips(){
     `<button class="chip chip-all ${allOn?'on':''}" onclick="toggleAllSources()" type="button">All sources</button>`+
     sources.map(s=>{
       const cls=getSrcChipClass(s);
-      return `<button class="chip ${cls} ${state.activeSources.has(s)?'on':''}" onclick="toggleSource('${s}')" type="button">${s}</button>`;
+      const safe=s.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+      return `<div class="src-chip-wrap" style="position:relative;display:inline-block"><button class="chip ${cls} ${state.activeSources.has(s)?'on':''}" onclick="toggleSource('${safe}')" type="button">${s}<span class="src-x-btn" onclick="event.stopPropagation();openSrcRemovePop(this)" data-src="${safe}" title="Remove this source">×</span></button><div class="src-remove-pop" style="display:none"></div></div>`;
     }).join('')+hiddenChip;
 }
 function renderDateRange(){
@@ -3387,6 +3513,15 @@ function setBucketMode(mode){
 }
 function renderBucketGrid(){
   const el=document.getElementById('bucket-grid');if(!el)return;
+  if(state.transactions.length===0){
+    el.innerHTML=`<div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;text-align:center;gap:1rem">
+      <div style="font-size:40px;line-height:1">📂</div>
+      <div style="font-size:18px;font-weight:800;color:var(--text-primary)">No spending data yet</div>
+      <div style="font-size:13px;color:var(--text-muted);max-width:280px;line-height:1.5">Import a CSV from your bank or credit card to get started.</div>
+      <button class="btn btn-primary" onclick="openTxImportModal()" type="button" style="margin-top:.25rem;padding:.65rem 1.5rem;font-size:14px">⬆ Import CSV</button>
+    </div>`;
+    return;
+  }
   const isVendor=state.bucketMode==='vendor';
 
   const filteredMonthsForSpark=getFilteredMonths();
@@ -3891,6 +4026,7 @@ function renderSankey(){
   ).forEach(t=>{ catTotals[t.cat]=(catTotals[t.cat]||0)+t.amount; });
 
   const totalSpend=Object.values(catTotals).reduce((a,b)=>a+b,0);
+  const isOverspend=computePeriodSpendVsIncome().isOverspend;
   const saved=Math.max(0,totalIncome-totalSpend);
   const allCats=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
   const topCats=allCats.slice(0,8);
@@ -3899,7 +4035,7 @@ function renderSankey(){
   if(saved>0)cats.push(['Remaining',saved]);
 
   const isDark=getIsDark();
-  const incomeColor=isDark?'#60A5FA':'#2563EB';
+  const incomeColor=isOverspend?(isDark?'#F87171':'#EF4444'):(isDark?'#60A5FA':'#2563EB');
 
   if(!window.d3||!window.d3Sankey){
     // Library still loading — retry after a tick
@@ -3967,7 +4103,7 @@ function renderSankey(){
     .attr('x',d=>d.x0).attr('y',d=>d.y0)
     .attr('width',d=>d.x1-d.x0).attr('height',d=>Math.max(1,d.y1-d.y0))
     .attr('rx',3).attr('fill',d=>d.color).attr('opacity',.9)
-    .style('cursor',d=>d.id==='__income__'?'default':'pointer')
+    .style('cursor','pointer')
     .on('mouseover',(_,d)=>{
       if(d.id==='__income__')return;
       linkSel.attr('stroke-opacity',l=>l.target===d?.75:.15);
@@ -3975,11 +4111,7 @@ function renderSankey(){
     .on('mouseout',()=>linkSel.attr('stroke-opacity',.4))
     .on('click',(_,d)=>{
       if(d.id==='__income__'){
-        // Income node = home — clear any active filter
-        if(state.activeCats.size>0){
-          state.activeCats=new Set();
-          showTxN=50;renderSpendSummary();renderBucketGrid();renderActiveChart();renderTxList();
-        }
+        openDeclaredIncomeModal();
         return;
       }
       const wasActive=state.activeCats.has(d.name);
@@ -4009,18 +4141,27 @@ function renderSankey(){
   if(sfn){
     const numCats=Object.keys(catTotals).length;
     const spendPct=totalIncome>0?Math.round(totalSpend/totalIncome*100):0;
-    sfn.textContent=numCats>8
-      ?`Top 8 of ${numCats} categories · ${spendPct}% of income · transfers excluded · remaining = income minus tracked spend`
-      :`${numCats} categories · ${spendPct}% of income · transfers excluded · remaining = income minus tracked spend`;
+    if(isOverspend){
+      sfn.innerHTML=`<span style="color:#F87171;font-weight:700">⚠️ Spending (${fmtC(totalSpend)}) exceeds income (${fmtC(totalIncome)}) by ${fmtC(totalSpend-totalIncome)} — click the income bar to update your income</span>`;
+    } else {
+      sfn.textContent=numCats>8
+        ?`Top 8 of ${numCats} categories · ${spendPct}% of income · transfers excluded · remaining = income minus tracked spend`
+        :`${numCats} categories · ${spendPct}% of income · click income bar to edit · remaining = income minus tracked spend`;
+    }
   }
   const incomeNode=graph.nodes.find(n=>n.id==='__income__');
   if(incomeNode){
+    const editMark=state.declaredIncome>0?' ✏':'';
     svg.append('text')
       .attr('x',incomeNode.x0)
       .attr('y',incomeNode.y0-6)
       .attr('font-size',10).attr('font-weight','700')
       .attr('fill',incomeColor)
-      .text(`Income · ${fmtC(totalIncome)} · ${monthCount}mo`);
+      .style('cursor','pointer')
+      .on('click',()=>openDeclaredIncomeModal())
+      .text(isOverspend
+        ?`⚠ Spending exceeds income · ${fmtC(totalIncome)} · ${monthCount}mo${editMark}`
+        :`Income · ${fmtC(totalIncome)} · ${monthCount}mo${editMark}`);
   }
 }
 
@@ -4353,7 +4494,7 @@ function renderSpendChart(){
     if(smRow)smRow.style.display='none';
     if(fn)fn.textContent='';
     const datasets=[...state.activeSources].map(s=>({
-      label:s.replace('Chase ','').replace('Ally ',''),
+      label:s,
       data:monthly.map(m=>m.bySource[s]||0),
       backgroundColor:_patternsEnabled
         ? makePattern(SRC_CHART_COLORS[s], SRC_PATTERNS[s]||'diagonal')
@@ -4790,6 +4931,52 @@ document.addEventListener('keydown',function(e){
   }
 });
 
+function openSrcRemovePop(el){
+  closeSrcRemovePop();
+  const src=el.getAttribute('data-src');
+  const wrap=el.closest('.src-chip-wrap');
+  const pop=wrap&&wrap.querySelector('.src-remove-pop');
+  if(!pop)return;
+  const count=state.transactions.filter(t=>t.card===src).length;
+  const safe=src.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  pop.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:.35rem">Remove ${count} transaction${count===1?'':'s'}?</div><div style="font-size:11px;color:var(--text-muted);margin-bottom:.55rem">${src}</div><div style="display:flex;gap:6px"><button onclick="confirmSrcRemove(this)" data-src="${safe}" style="background:#450A0A;border:1px solid #7F1D1D;border-radius:6px;color:#FCA5A5;font-size:11px;font-weight:700;cursor:pointer;padding:4px 10px;font-family:inherit" type="button">Remove</button><button onclick="closeSrcRemovePop()" class="btn" style="font-size:11px;padding:4px 10px" type="button">Cancel</button></div>`;
+  pop.style.display='block';
+  setTimeout(()=>document.addEventListener('click',_srcPopOutside,{once:true}),0);
+}
+function _srcPopOutside(e){
+  if(!e.target.closest('.src-chip-wrap'))closeSrcRemovePop();
+  else setTimeout(()=>document.addEventListener('click',_srcPopOutside,{once:true}),0);
+}
+function closeSrcRemovePop(){
+  document.querySelectorAll('.src-remove-pop').forEach(p=>p.style.display='none');
+  document.removeEventListener('click',_srcPopOutside);
+}
+function confirmSrcRemove(btn){
+  const src=btn.getAttribute('data-src');
+  const count=state.transactions.filter(t=>t.card===src).length;
+  state.transactions=state.transactions.filter(t=>t.card!==src);
+  state.activeSources.delete(src);
+  rebuildMonthly();
+  scheduleSave();
+  closeSrcRemovePop();
+  renderSpending();
+  showToast(`Removed ${count} transaction${count===1?'':'s'} from "${src}"`);
+}
+function showImportFreshConfirm(){
+  const row=document.getElementById('import-fresh-row');
+  const conf=document.getElementById('import-fresh-confirm');
+  const counter=document.getElementById('import-fresh-count');
+  if(!row||!conf)return;
+  if(counter)counter.textContent=state.transactions.length;
+  row.style.display='none';
+  conf.style.display='flex';
+}
+function hideImportFreshConfirm(){
+  const row=document.getElementById('import-fresh-row');
+  const conf=document.getElementById('import-fresh-confirm');
+  if(row)row.style.display='flex';
+  if(conf)conf.style.display='none';
+}
 function toggleSource(s){if(state.activeSources.has(s)){if(state.activeSources.size>1)state.activeSources.delete(s);}else state.activeSources.add(s);state.activeCats=new Set();state.searchQuery='';document.getElementById('tx-search').value='';document.getElementById('search-clear-btn').classList.add('hidden');showTxN=50;renderSpending();}
 function updateExclNote(){
   const cb=document.getElementById('et-excluded');
@@ -5952,6 +6139,31 @@ function togglePill(key,visible){
 }
 let _latestSpendForPreview=0;
 
+function openDeclaredIncomeModal(){
+  const input=document.getElementById('declared-income-input');
+  if(input&&state.declaredIncome>0)input.value=state.declaredIncome;
+  else if(input)input.value='';
+  document.getElementById('declared-income-modal').classList.remove('hidden');
+  setTimeout(()=>input&&input.focus(),80);
+}
+function saveDeclaredIncome(){
+  const val=parseFloat(document.getElementById('declared-income-input').value);
+  if(!isNaN(val)&&val>0){
+    state.declaredIncome=Math.round(val);
+    scheduleSave();
+    closeModals();
+    renderSankey();
+    renderInsights();
+  }
+}
+function clearDeclaredIncome(){
+  state.declaredIncome=0;
+  scheduleSave();
+  closeModals();
+  renderSankey();
+  renderInsights();
+}
+
 function openIncomeModal(){
   const m=state.income.method;
   selectIncomeMethodUI(m||null);
@@ -6434,6 +6646,10 @@ function dismissSavingsNudge(){
   scheduleSave();
   renderInsights();
 }
+function dismissBudgetHealthPill(){
+  try{localStorage.setItem('budgetHealthDismissed',JSON.stringify(state.budgets));}catch(e){}
+  renderInsights();
+}
 
 function disableIncome(){
   state.income={method:null,monthlyAmount:0};
@@ -6466,6 +6682,7 @@ function detectDepositIncome(){
 
 // Get effective monthly income for savings rate calculation
 function getEffectiveIncome(monthKey){
+  if(state.declaredIncome>0)return state.declaredIncome;
   if(state.income.method==='manual') return state.income.monthlyAmount;
   if(state.income.method==='auto'){
     const detected=detectDepositIncome();
@@ -6473,6 +6690,26 @@ function getEffectiveIncome(monthKey){
   }
   return 0;
 }
+
+// Single source of truth for period-level spend vs income — used by Flow chart AND savings insight
+function computePeriodSpendVsIncome(){
+  const months=getFilteredMonths();
+  const monthCount=Math.max(1,months.length);
+  const income=getEffectiveIncome(months[months.length-1]||null);
+  const totalIncome=income*monthCount;
+  let totalSpend=0;
+  state.transactions.forEach(t=>{
+    if(t.excluded||!state.activeSources.has(t.card))return;
+    if(!months.includes(t.date.slice(0,7)))return;
+    if(state.excludedCats.has(t.cat))return;
+    totalSpend+=t.amount;
+  });
+  const isOverspend=totalIncome>0&&totalSpend>totalIncome;
+  const over=totalSpend-totalIncome;
+  const avgMonthlySpend=Math.round(totalSpend/monthCount);
+  return{months,monthCount,income,totalIncome,totalSpend,isOverspend,over,avgMonthlySpend};
+}
+
 function openRulesModal(){
   renderRulesList();
   document.getElementById('add-rule-form').classList.add('hidden');
@@ -6666,6 +6903,13 @@ function deleteCustomCat(name){
 /* ── TX CSV IMPORT ─────────────────────────────────────────── */
 let importFmt='ally';
 let importParsed=[];  // [{date,desc,cat,card,amount,excluded,is_offset}]
+let _budgetNudgeShown=false;
+function onImportSuccessClose(){
+  if(!_budgetNudgeShown&&Object.keys(state.budgets||{}).length>0){
+    _budgetNudgeShown=true;
+    setTimeout(()=>showToast('Your budgets from your last session are still active — review them in the Budget tab.','#FBBF24',5000),400);
+  }
+}
 
 function openTxImportModal(){
   importParsed=[];
@@ -6675,12 +6919,16 @@ function openTxImportModal(){
   document.getElementById('tx-csv-file').value='';
   document.getElementById('tx-drop-zone').style.borderColor='';
   setImportFmt('ally');
+  const freshRow=document.getElementById('import-fresh-row');
+  const freshConf=document.getElementById('import-fresh-confirm');
+  if(freshRow)freshRow.style.display=state.transactions.length>0?'flex':'none';
+  if(freshConf)freshConf.style.display='none';
   document.getElementById('tx-import-modal').classList.remove('hidden');
 }
 
 function setImportFmt(fmt){
   importFmt=fmt;
-  ['ally','chase','debitcredit','bofa','generic'].forEach(f=>{
+  ['ally','chase','debitcredit','bofa','generic','mint','ynab','monarch'].forEach(f=>{
     const btn=document.getElementById('fmt-btn-'+f);
     const help=document.getElementById('fmt-help-'+f);
     if(btn)btn.classList.toggle('active-fmt',f===fmt);
@@ -6706,7 +6954,13 @@ function parseTxFile(file){
     const text=e.target.result.replace(/^\uFEFF/,'');
     // Auto-detect format from headers
     const firstLine=text.split('\n')[0].toLowerCase();
-    if(firstLine.includes('transaction date')&&firstLine.includes('memo')){
+    if(firstLine.includes('transaction type')&&firstLine.includes('original description')){
+      setImportFmt('mint');
+    } else if(firstLine.includes('outflow')&&firstLine.includes('inflow')&&firstLine.includes('payee')){
+      setImportFmt('ynab');
+    } else if(firstLine.includes('merchant')&&firstLine.includes('original statement')){
+      setImportFmt('monarch');
+    } else if(firstLine.includes('transaction date')&&firstLine.includes('memo')){
       setImportFmt('chase');
     } else if(firstLine.includes('time')&&firstLine.includes('type')&&!firstLine.includes('memo')){
       setImportFmt('ally');
@@ -6754,6 +7008,76 @@ function splitCSVLine(line){
   return result;
 }
 
+// ATM withdrawals appear as "BANK NAME 12345" (bank name + branch street number).
+// Catches cases where no amount sign or type field distinguishes them from spending.
+const ATM_BRANCH_RE=/(CHASE|WELLS FARGO|BANK OF AMERICA|FLAGSTAR|PNC|FIFTH THIRD|HUNTINGTON|CITIBANK|US BANK|TD BANK|REGIONS|SUNTRUST|TRUIST|KEYBANK|CITIZENS BANK|COMERICA|BBANDT|BB&T|ASSOCIATED BANK)\s+\d/i;
+
+// Maps category strings exported from Mint, YNAB, and Monarch Money to our category names.
+// Keys are lowercased; values must exactly match getAllCats() output.
+const _IMPORT_CAT_MAP={
+  // Food
+  'food & dining':'Food & Drink','food & drink':'Food & Drink','restaurants':'Food & Drink',
+  'coffee shops':'Food & Drink','fast food':'Food & Drink','alcohol & bars':'Food & Drink','dining':'Food & Drink',
+  // Groceries
+  'groceries':'Groceries','supermarkets':'Groceries',
+  // Shopping
+  'shopping':'Shopping','clothing':'Shopping','electronics & software':'Shopping',
+  'sporting goods':'Shopping','hobbies':'Shopping','books':'Shopping','gifts':'Shopping',
+  // Home
+  'home improvement':'Home','home services':'Home','home':'Home','furnishings':'Home',
+  'mortgage & rent':'Home','rent':'Home','mortgage':'Home',
+  // Utilities / bills
+  'utilities':'Bills & Utilities','bills & utilities':'Bills & Utilities','internet':'Bills & Utilities',
+  'phone':'Bills & Utilities','mobile phone':'Bills & Utilities','television':'Bills & Utilities','cable':'Bills & Utilities',
+  // Gas
+  'gas & fuel':'Gas','gas':'Gas','fuel':'Gas',
+  // Automotive
+  'auto & transport':'Automotive','automotive':'Automotive','auto':'Automotive',
+  // Insurance
+  'auto insurance':'Insurance','car insurance':'Insurance','insurance':'Insurance',
+  'life insurance':'Insurance','health insurance':'Insurance',
+  // Health & Wellness
+  'health & fitness':'Health & Wellness','health & wellness':'Health & Wellness','health':'Health & Wellness',
+  'medical':'Health & Wellness','doctor':'Health & Wellness','dentist':'Health & Wellness',
+  'pharmacy':'Health & Wellness','gym':'Health & Wellness','fitness':'Health & Wellness',
+  'personal care':'Health & Wellness','spa & massage':'Health & Wellness','hair':'Health & Wellness',
+  // Entertainment
+  'entertainment':'Entertainment','movies & dvds':'Entertainment','music':'Entertainment',
+  'games':'Entertainment','arts':'Entertainment','arts & entertainment':'Entertainment',
+  // Travel
+  'travel':'Travel','hotel':'Travel','hotels & motels':'Travel','flights':'Travel',
+  'airlines':'Travel','car rental':'Travel','taxi & ride shares':'Travel','vacation':'Travel','transit':'Travel',
+  // Education
+  'education':'Education','tuition':'Education','student loan':'Education','books & supplies':'Education',
+  // Child Care
+  'kids':'Child Care','child care':'Child Care','childcare':'Child Care',
+  'kids activities':'Child Care','babysitter & daycare':'Child Care',
+  // Pet
+  'pets':'Pet','pet food & supplies':'Pet','veterinary':'Pet','pet':'Pet',
+  // Gifts & Donations
+  'gifts & donations':'Gifts & Donations','gifts & charity':'Gifts & Donations',
+  'charity':'Gifts & Donations','donations':'Gifts & Donations','charitable giving':'Gifts & Donations',
+  // Taxes & Fees
+  'taxes':'Taxes & Fees','tax':'Taxes & Fees','taxes & fees':'Taxes & Fees',
+  'fees & charges':'Taxes & Fees','government':'Taxes & Fees','service fee':'Taxes & Fees',
+  // Transfers
+  'transfers':'Transfers','transfer':'Transfers',
+  // CC Payment
+  'credit card payment':'CC Payment','credit card payments':'CC Payment','credit card':'CC Payment',
+  // Investment Contributions
+  'investment':'Investment Contributions','investments':'Investment Contributions',
+  'retirement':'Investment Contributions','savings':'Investment Contributions',
+  'brokerage':'Investment Contributions','401k':'Investment Contributions',
+  // Other / catch-all
+  'business services':'Other','financial':'Other','misc expenses':'Other',
+  'miscellaneous':'Other','uncategorized':'Other','other':'Other',
+};
+function mapImportedCategory(cat){
+  if(!cat)return null;
+  const mapped=_IMPORT_CAT_MAP[cat.toLowerCase().trim()];
+  return mapped||null;
+}
+
 function normalizeTxRow(row, source){
   let date, desc, amount, cat='Other', excluded=false, mcc='';
 
@@ -6781,7 +7105,8 @@ function normalizeTxRow(row, source){
     if(type==='Payment')return null;
     if(!amount)return null;
     mcc=row['mcc']||row['MCC']||'';
-    cat=row['category']||guessCatChase(desc);
+    cat=guessCatChase(desc);
+    if(cat==='Other')cat=row['category']||'Other';
 
   } else if(importFmt==='debitcredit'){
     // Banks with separate Debit and Credit columns (e.g. some credit unions, USAA)
@@ -6793,7 +7118,8 @@ function normalizeTxRow(row, source){
     if(!amount&&credit>0)return null; // skip deposits/income
     if(!amount)return null;
     mcc=row['mcc']||row['MCC']||'';
-    cat=row['category']||guessCatFromDesc(desc);
+    cat=guessCatFromDesc(desc);
+    if(cat==='Other')cat=row['category']||'Other';
 
   } else if(importFmt==='bofa'){
     // Bank of America checking/savings: Date, Description, Amount, Running Bal.
@@ -6807,6 +7133,40 @@ function normalizeTxRow(row, source){
     mcc=row['mcc']||row['MCC']||'';
     cat=guessCatFromDesc(desc);
 
+  } else if(importFmt==='mint'){
+    // Mint: Date,Description,Original Description,Amount,Transaction Type,Category,Account Name,Labels,Notes
+    // Amount is always positive; Transaction Type = 'debit' (spending) or 'credit' (income — skip)
+    date=row['date']||'';
+    desc=(row['description']||row['original description']||'').trim();
+    const txType=(row['transaction type']||'').trim().toLowerCase();
+    if(txType==='credit')return null;
+    const rawAmt=parseFloat(row['amount']||'0');
+    amount=rawAmt>0?rawAmt:0;
+    if(!amount)return null;
+    cat=mapImportedCategory(row['category'])||guessCatFromDesc(desc);
+
+  } else if(importFmt==='ynab'){
+    // YNAB: Account,Flag,Date,Payee,Category Group/Category,Category Group,Category,Memo,Outflow,Inflow,Cleared
+    // Amounts may be formatted as "$123.45" — strip currency characters
+    date=row['date']||'';
+    desc=(row['payee']||row['memo']||'').trim();
+    const outflow=parseFloat((row['outflow']||'0').replace(/[$,]/g,''))||0;
+    const inflow=parseFloat((row['inflow']||'0').replace(/[$,]/g,''))||0;
+    if(outflow<=0)return null; // inflows and $0 rows — skip
+    amount=outflow;
+    cat=mapImportedCategory(row['category']||row['category group/category'])||guessCatFromDesc(desc);
+
+  } else if(importFmt==='monarch'){
+    // Monarch Money: Date,Merchant,Category,Account,Original Statement,Notes,Amount,Tags
+    // Negative amount = spending, positive = income (skip)
+    date=row['date']||'';
+    desc=(row['merchant']||row['original statement']||'').trim();
+    const rawAmt=parseFloat(row['amount']||'0');
+    if(rawAmt>=0)return null;
+    amount=Math.abs(rawAmt);
+    if(!amount)return null;
+    cat=mapImportedCategory(row['category'])||guessCatFromDesc(desc);
+
   } else {
     // Generic — try to figure out sign convention
     date=row['date']||row['transaction date']||row['trans date']||row['posting date']||'';
@@ -6816,7 +7176,8 @@ function normalizeTxRow(row, source){
     amount=rawAmt<0?Math.abs(rawAmt):rawAmt;
     if(!amount)return null;
     mcc=row['mcc']||row['MCC']||'';
-    cat=row['category']||row['cat']||row['type']||guessCatFromDesc(desc);
+    cat=guessCatFromDesc(desc);
+    if(cat==='Other')cat=row['category']||row['cat']||row['type']||'Other';
   }
 
   // Normalize date to YYYY-MM-DD
@@ -6826,7 +7187,12 @@ function normalizeTxRow(row, source){
   }
   if(!date||!desc||!amount)return null;
 
-  // Apply user-defined categorization rules (highest priority)
+  // ATM detection: bank name followed by street address digits → Other.
+  // Must run before community rules so keyword matches on the bank name don't override it.
+  const isATM=ATM_BRANCH_RE.test(desc);
+  if(isATM)cat='Other';
+
+  // Apply user-defined categorization rules (highest priority — always win, even over ATM)
   const descUpper=desc.toUpperCase();
   if(state.catRules&&state.catRules.length){
     for(const rule of state.catRules){
@@ -6835,16 +7201,16 @@ function normalizeTxRow(row, source){
       }
     }
   }
-  // Community rules (second priority — crowdsourced, fetched from GitHub)
-  if((!cat||cat==='Other')&&_communityRules){
+  // Community rules (second priority — skip for ATM matches to prevent re-categorization)
+  if(!isATM&&(!cat||cat==='Other')&&_communityRules){
     for(const rule of _communityRules){
       if(rule.keyword&&descUpper.includes(rule.keyword.toUpperCase())){
         cat=rule.cat;break;
       }
     }
   }
-  // MCC lookup (third priority — deterministic from bank data)
-  if(!cat||cat==='Other'){
+  // MCC lookup (third priority — skip for ATM matches)
+  if(!isATM&&(!cat||cat==='Other')){
     const mccCat=guessCatFromMCC(mcc);
     if(mccCat)cat=mccCat;
   }
@@ -6857,7 +7223,7 @@ const CAT_KEYWORDS=[
   // Investment & transfers (check first — high confidence)
   ['Investment Contributions',['VANGUARD','FIDELITY BUY','SCHWAB BUY','ETRADE','ROBINHOOD','TDAMERITRADE','BETTERMENT','WEALTHFRONT','SOFI INVEST','MI DIR ACH CONTRIB','401K','ROTH IRA','BROKERAGE']],
   ['CC Payment',['CHASE CREDIT','CREDIT CRD','AUTOPAY','AMEX PAYMENT','CITI PAYMENT','DISCOVER PAYMENT','CAPITAL ONE PAYMENT','CARD PAYMENT','CREDITCARD']],
-  ['Transfers',['VENMO PAYMENT','ZELLE','PAYPAL TRANSFER','CASH APP','APPLE CASH','GOOGLE PAY TRANSFER','ACH TRANSFER','WIRE TRANSFER','INTERNET TRANSFER','REQUESTED TRANSFER']],
+  ['Transfers',['VENMO PAYMENT','ZELLE','PAYPAL TRANSFER','CASH APP','APPLE CASH','GOOGLE PAY TRANSFER','ACH TRANSFER','WIRE TRANSFER','INTERNET TRANSFER','REQUESTED TRANSFER','FLAGSTAR']],
   ['Internal Transfer',['TRANSFER TO SAVINGS','TRANSFER FROM CHECKING','ONLINE TRANSFER','INTERNAL TRANSFER']],
   // Housing
   ['Home',['MORTGAGE','MTGMANAGER','OLD NATIONAL BAN MTG','HOME DEPOT','LOWES','LOWE\'S','ACE HARDWARE','TRUE VALUE','MENARDS','HOME SERVICES','ELECTRIC CO','ELECTRICCO','PEST CONTROL','LANDSCAP','PLUMB','HVAC','ROOF','HANDYMAN','ANGI ','ANGIE','HOMEADVISOR','THUMBTACK','TASKRABBIT','MR HANDYMAN','MERRY MAIDS','MOLLY MAID','TERMINIX','ORKIN','TRUGREEN','SCOTTS LAWN']],
@@ -6871,7 +7237,7 @@ const CAT_KEYWORDS=[
   ['Gas',['SHELL','BP ','EXXON','MARATHON','CHEVRON','SUNOCO','MOBIL','SPEEDWAY','CIRCLE K','WAWA ','KWIK TRIP','CASEY\'S','PILOT TRAVEL','LOVES TRAVEL','FUEL','GAS STATION','MURPHYUSA','MURPHY USA','HOLIDAY STATION','RACETRAC','SHEETZ','AMPM ','7-ELEVEN','CUMBERLAND FARM','THORNTONS','GETGO','MAVERIK','KUM & GO','ROAD RANGER','QUIKTRIP','QUIK TRIP','BUCEES','BUC-EE\'S','SINCLAIR','CENEX','KWIKSTAR']],
   // Bills & Utilities
   ['Bills & Utilities',['PRIORITY WASTE','COMCAST','XFINITY','VERIZON','AT&T','T-MOBILE','SPECTRUM','COX COMM','CENTURY LINK','DIRECTV','DISH NETWORK','WASTE MGMT','REPUBLIC SERVICES','UTILITY','ELECTRIC','GAS BILL','WATER BILL','ATMOS','NATIONAL FUEL','COLUMBIA GAS','NICOR','PECO ','PSE&G','DTE ','CONSUMERS ENERGY','AEP ','DUKE ENERGY']],
-  ['Insurance',['GEICO','STATE FARM','PROGRESSIVE','ALLSTATE','USAA ','AMICA','NATIONWIDE','LIBERTY MUTUAL','FARMERS INS','TRAVELERS INS','HARTFORD','METLIFE','PRUDENTIAL','CIGNA','AETNA','HUMANA','ANTHEM','BCBS','BLUE CROSS','UNITED HEALTH','OSCAR HEALTH','KAISER','WELLCARE','MOLINA','CENTENE','GUARDIAN LIFE','PRINCIPAL LIFE','AFLAC','ERIE INSURANCE','AUTO OWNERS']],
+  ['Insurance',['GEICO','STATE FARM','PROGRESSIVE','ALLSTATE','USAA ','AMICA','NATIONWIDE','LIBERTY MUTUAL','FARMERS INS','TRAVELERS INS','HARTFORD','METLIFE','PRUDENTIAL','CIGNA','AETNA','HUMANA','ANTHEM','BCBS','BLUE CROSS','UNITED HEALTH','OSCAR HEALTH','KAISER','WELLCARE','MOLINA','CENTENE','GUARDIAN LIFE','PRINCIPAL LIFE','AFLAC','ERIE INSURANCE','AUTO OWNERS','PROTECTIVE COSTCO','HOMEOWNERS INSURANCE']],
   // Health & Wellness
   ['Health & Wellness',['CVS','WALGREEN','RITE AID','PHARMACY','MEDICAL','DOCTOR','DENTAL','DENTIST','VISION','OPTOMETRIST','HOSPITAL','CLINIC','URGENT CARE','HEALTH','WELLNESS','GYM','PLANET FITNESS','ANYTIME FITNESS','LA FITNESS','EQUINOX','ORANGE THEORY','CROSSFIT','YOGA','FITNESS','PHYSICAL THERAPY','CHIROPRACTOR','DERMATOLOGY','PSYCHIATRY','COUNSELING','CRUNCH FITNESS','24 HOUR FITNESS','GOLD\'S GYM','YMCA','SNAP FITNESS','F45','BARRY\'S','SOLIDCORE','COREPOWER','SOULCYCLE','LIFETIME FITNESS','LIFE TIME','COSTCO PHARMACY','SAM\'S PHARMACY','WALMART PHARMACY','BROOKSHIRES PHARMACY','KAISER PHARMACY']],
   // Entertainment
@@ -6887,7 +7253,7 @@ const CAT_KEYWORDS=[
   // Tax
   ['Taxes & Fees',['IRS ','STATE TAX','FEDERAL TAX','PROPERTY TAX','TREASURER','COUNTY TAX','PNP BILLPAYMENT','STATE OF MICH SOS','STATE OF MI SOMIIT','TURBOTAX','H&R BLOCK','HRBLOCK','FREETAXUSA']],
   // Gifts & Donations — org names + generic donation signals
-  ['Gifts & Donations',['GOFUNDME','NFGIVING','UNITED WAY','RED CROSS','SALVATION ARMY','GOODWILL','HABITAT FOR HUMANITY','PLANNED PARENTHOOD','NPR ','PBS ','CHURCH','TITHE','OFFERING','CHARITY','GIVING FUND']],
+  ['Gifts & Donations',['GOFUNDME','NFGIVING','UNITED WAY','RED CROSS','GOODWILL','HABITAT FOR HUMANITY','PLANNED PARENTHOOD','NPR ','PBS ','CHURCH','TITHE','OFFERING','CHARITY','GIVING FUND']],
   // Childcare
   ['Child Care',['DAYCARE','DAY CARE','CHILDCARE','CHILD CARE','PRESCHOOL','NANNY','BABYSIT','MONTESSORI','KINDERCARE','BRIGHT HORIZONS','LEARNING CARE','NEIGHBORHOOD0467']],
   ['Pet',['CHEWY','PETCO','PETSMART','PET SUPPLIES','VET ','VETERINARY','ANIMAL HOSPITAL','ANIMAL CLINIC','BANFIELD','BLUEPEARL','VCA ANIMAL','PET SMART','PETLAND','BARKBOX','PET FOOD']],
@@ -6977,6 +7343,9 @@ async function fetchCommunityRules(){
 
 function guessCatFromDesc(d){
   const u=d.toUpperCase();
+  // Specific Insurance strings that would otherwise match a broader keyword first
+  if(u.includes('PROTECTIVE COSTCO'))return 'Insurance';
+  if(u.includes('HOMEOWNERS INSURANCE'))return 'Insurance';
   // Unambiguous donation signals override everything except investment/CC keywords (caught earlier in CAT_KEYWORDS)
   if(u.includes('DONATION')||u.includes('DONATE')){
     return 'Gifts & Donations';
@@ -7051,6 +7420,7 @@ function confirmTxImport(){
   if(!state.hasRealData){
     state.transactions=[];
     state.activeSources=new Set();
+    state.budgets={};
     _txsDirty=true;
   }
 
@@ -7063,8 +7433,8 @@ function confirmTxImport(){
   // Auto-activate new source
   state.activeSources.add(source);
 
-  // Assign IDs and add
-  const newTxs=importParsed.map(t=>({...t,id:state.nextId++}));
+  // Assign IDs and stamp current source label onto card (user may have edited it after parsing)
+  const newTxs=importParsed.map(t=>({...t,card:source,id:state.nextId++}));
   _txsDirty=true;
   state.transactions=[...state.transactions,...newTxs];
   state.transactions.sort((a,b)=>b.date.localeCompare(a.date));
@@ -7610,6 +7980,7 @@ function serializeState(){
       budgets: state.budgets,
       catRules: state.catRules,
       income: state.income,
+      declaredIncome: state.declaredIncome||0,
       hiddenPills: [...state.hiddenPills],
       vendorAliases: state.vendorAliases,
       hasRealData: state.hasRealData,
@@ -7663,6 +8034,7 @@ function loadFromLocalStorage(){
     if(saved.budgets&&Object.keys(saved.budgets).length>0)state.budgets=saved.budgets;
     state.catRules=saved.catRules||[];
     state.income=saved.income||{method:null,monthlyAmount:0};
+    if(saved.declaredIncome>0)state.declaredIncome=saved.declaredIncome;
     state.hiddenPills=new Set(saved.hiddenPills||[]);
     state.vendorAliases=saved.vendorAliases||{};
     if(saved.activeSources&&saved.activeSources.length>0){
@@ -7930,7 +8302,7 @@ const DEMO_PROFILE_2 = {
   snapshots:[{date:'Nov 30, 2024',label:'Nov',monthKey:'2024-11',nw:362000,assets:408000,liab:46000},{date:'Feb 28, 2025',label:'Feb',monthKey:'2025-02',nw:371500,assets:419000,liab:47500},{date:'May 31, 2025',label:'May',monthKey:'2025-05',nw:381000,assets:430000,liab:49000},{date:'Aug 31, 2025',label:'Aug',monthKey:'2025-08',nw:388000,assets:438000,liab:50000}],
   budgets:{'Groceries':700,'Home':1200,'Food & Drink':300,'Health & Wellness':200,'Gas':150,'Bills & Utilities':500,'Shopping':400,'Entertainment':150,'Education':100,'Transfers':200},
   activeSources:new Set(['Checking','Visa Rewards','Gold Card']),
-  rangeFrom:'2024-12',
+  rangeFrom:null,
   rangeTo:null,
   nwGoal:750000,
   income:{method:'manual',monthlyAmount:8500},

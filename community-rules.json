@@ -116,6 +116,10 @@
     "cat": "Insurance"
   },
   {
+    "keyword": "HOMEOWNERS INSURANCE",
+    "cat": "Insurance"
+  },
+  {
     "keyword": "GOOGLE *GOOGLE PHOTOS",
     "cat": "Bills & Utilities"
   },
@@ -313,6 +317,10 @@
   },
   {
     "keyword": "ZELLE",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "FLAGSTAR",
     "cat": "Transfers"
   },
   {
@@ -1321,7 +1329,7 @@
   },
   {
     "keyword": "SALVATION ARMY",
-    "cat": "Gifts & Donations"
+    "cat": "Shopping"
   },
   {
     "keyword": "GOODWILL",
