@@ -44,7 +44,9 @@ Full details, data flow diagram, and FAQ: [privacy policy](https://trak-yo-dolla
 Under Statements or Download Activity in your bank or credit card portal.
 
 **2. Import it**
-Open the app, click ⬆ Import CSV. Works with Chase, Ally, Fidelity, Vanguard, Capital One, Discover, Amex, USAA, most credit unions, and most major banks and credit cards. Supports checking/savings, credit card, and debit/credit column formats.
+Open the app, click ⬆ Import CSV. Works with Chase, Ally, Fidelity, Vanguard, Capital One, Discover, Amex, USAA, Bank of America, Wells Fargo, most credit unions, and most major banks and credit cards. Supports checking/savings, credit card, and debit/credit column formats.
+
+**Migrating from another app?** The import modal has a dedicated section for Mint, YNAB, and Monarch Money. Select the matching format button and your category names will be mapped to ours automatically.
 
 **3. Import additional sources**
 Import CSVs from other accounts — each gets its own color pill. If sources cover different date ranges, the app offers to align them to the overlapping period for fair comparisons (non-destructive, reversible anytime).
@@ -71,7 +73,7 @@ Groceries, Food & Drink, Shopping, Home, Gas, Bills & Utilities, Insurance, Heal
 
 ### Community patterns
 
-[`community-rules.json`](community-rules.json) contains 334 keyword→category mappings covering major merchants across all categories: airlines, hotel chains, streaming services, restaurant chains, gas stations, grocery chains, and more. Also covers bank-specific strings like mortgage managers, property tax processors, state government payments, investment contributions, tax prep services, and charitable organizations.
+[`community-rules.json`](community-rules.json) contains 336 keyword→category mappings covering major merchants across all categories: airlines, hotel chains, streaming services, restaurant chains, gas stations, grocery chains, and more. Also covers bank-specific strings like mortgage managers, property tax processors, state government payments, investment contributions, tax prep services, and charitable organizations.
 
 **To suggest a pattern:** fill out the [suggestion form](https://forms.gle/6oV9UPtv8RKKUHM96) — no account required.
 
@@ -110,7 +112,6 @@ trak-yo-dollas/
   privacy.html            ← privacy policy
   community-rules.json    ← crowdsourced categorization rules
   README.md               ← this file
-  HANDOFF.md              ← Claude Code session handoff (dev reference)
 ```
 
 ---
@@ -138,17 +139,24 @@ npx firebase-tools deploy --only hosting --project trak-yo-dollas
 
 ## Recent updates
 
-- **Date range selector** — From/To month dropdowns (inline with source chips) + quick chips (3mo, 6mo, 12mo, YTD, All) + grain toggle (Monthly/Quarterly/Yearly) always visible; source alignment sets the From dropdown automatically
-- **Expanded import support** — explicit Bank of America format (negative amounts = spending, deposits skipped); Wells Fargo and USAA via Debit/Credit column detection; "What format does my bank use?" guide in the import modal; helpful error when no transactions parse (shows detected format, suggests switching)
-- **Gifts & Donations category** — new category after Entertainment; catches GoFundMe, Red Cross, United Way, Salvation Army, Goodwill, Habitat for Humanity, Planned Parenthood, church/tithe/offering, and more; DONATION/DONATE always route here regardless of other keywords; museum transactions default to Entertainment but flip to Gifts & Donations when the description contains gift/contribution/giving signals
-- **Taxes & Fees** — renamed from "Tax & Gov" everywhere; added TurboTax, H&R Block, FreeTaxUSA keywords
-- **Insights empty state** — when no insight is urgent enough to lead, shows a green "Everything looks on track this month" card instead of silently demoting the least-urgent insight
-- **Multi-source import** — import from multiple banks/cards, each with a distinct color pill; sources auto-activate on import; demo data clears on first real import
-- **Source alignment** — when sources cover different date ranges, a prompt offers non-destructive alignment to the overlapping period; persistent indicator with one-click reset
-- **Insights overhaul** — all 7 insights rewritten for emotional resonance: contextual, behavior-aware, actionable; savings rate compares to your own average; NW shows goal timeline; subscriptions shows annualized cost; budget health names worst offender
-- **Budget health fix** — at-a-glance pill uses same AT RISK definition as budget tab
-- **community-rules.json** — 334 rules; fixed 4 entries using singular "Investment Contribution" that were silently missing the category match
-- **CSV import flexibility** — UTF-8 BOM stripping; Debit/Credit column format for USAA/credit unions; better field name synonym detection
-- **Privacy page overhaul** — HTML/CSS data flow diagram, 7-question FAQ, honest attack surface disclosure
-- **Net worth label** — always shows "↑$X since Mon 'YR" — never "this year"
-- **Daily chart legend** — 14×14px tiles matching cal-day shape, scales with zoom
+- **Migration imports** — dedicated "Migrating from another app?" section in the import modal with format buttons for Mint, YNAB, and Monarch Money; ~60 category mappings translate foreign category names to ours on import
+- **Flow chart: declared income** — click the income bar to set your monthly take-home pay; overrides deposit detection; ✏ indicator shows when a declared value is active; clears back to auto-detect on demand
+- **Flow chart: overspend warning** — when total spend exceeds income over the selected period, the income bar turns red and the footnote shows the overage; the savings rate insight scores 100, leads the At a Glance card, and reads "Spent $Xk over income (Nmo)"
+- **Overspend detection shared** — `computePeriodSpendVsIncome()` is the single source of truth for both the Flow chart warning and the savings rate insight; they always stay in sync
+- **Year in Review: exclude transfers toggle** — "Exclude transfers & investments" chip filters Checks, CC Payment, Transfers, and Investment Contributions out of top categories and top vendors (hero total unaffected); state persists to localStorage
+- **Year in Review: copy to clipboard** — rebuilt as a zero-arg function; now includes date range, avg/month, top 5 categories, top 5 vendors, biggest/quietest month, savings rate, and NW change; respects the toggle state
+- **Budget Health insight: dismissible** — × button on the Budget Health pill when budgets are set; dismissal fingerprinted against current budgets so it auto-reappears when any budget changes; persisted to localStorage
+- **Budget tab empty state** — "No budgets set yet" card with navigation CTA when `state.budgets` is empty
+- **Demo budget bleed fix** — demo budgets (`state.budgets`) are cleared alongside demo transactions on first real import; budget nudge toast suppressed for the same transition
+- **Source pill × removal** — each source chip has a × that opens a confirmation popover showing transaction count; confirmed removal deletes all transactions from that source and updates the chart immediately
+- **Zero state on last source removal** — removing the final source shows $0 spend, empty category grid, and an import prompt instead of stale data
+- **Empty state when no data** — if `state.transactions` is empty, the bucket grid shows a welcoming "No spending data yet — Import CSV" card
+- **By source chart labels fixed** — legend labels now use the exact source name from `tx.card`, matching the source pills; the old `.replace('Chase ','')` stripping is removed
+- **PROTECTIVE COSTCO pre-check** — added before the CAT_KEYWORDS loop so it routes to Insurance before COSTCO can match Groceries/Shopping; same pre-check added for HOMEOWNERS INSURANCE
+- **community-rules.json** — 336 rules; PROTECTIVE COSTCO and HOMEOWNERS INSURANCE added to Insurance
+- **Gifts & Donations category** — new category after Entertainment; catches GoFundMe, Red Cross, United Way, Goodwill, Habitat for Humanity, Planned Parenthood, church/tithe/offering, and more; DONATION/DONATE always route here; museum transactions flip to Gifts & Donations on gift/contribution/giving signals
+- **Taxes & Fees** — renamed from "Tax & Gov"; TurboTax, H&R Block, FreeTaxUSA keywords added
+- **Expanded bank import support** — Bank of America (negative = spending, deposits skipped); Wells Fargo auto-detected via Debit/Credit columns; "What format does my bank use?" guide in the import modal
+- **Date range selector** — From/To month dropdowns + quick chips (3mo, 6mo, 12mo, YTD, All) + grain toggle (Monthly/Quarterly/Yearly); source alignment sets the From dropdown automatically
+- **Insights overhaul** — all 7 insights rewritten for emotional resonance; savings rate compares to your own average; NW shows goal timeline; subscriptions shows annualized cost; budget health names worst offender; insights empty state shows green "Everything looks on track" card
+- **Multi-source import** — multiple banks/cards each get a distinct color pill; sources auto-activate on import; demo data and budgets clear on first real import; source alignment prompt for overlapping date ranges
