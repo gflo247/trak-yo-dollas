@@ -5,12 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>trak-yo-dolla$ · Private, local-first money tracking</title>
 <meta name="description" content="Track your net worth and spending. No bank connections. Your data stays in your browser.">
+<meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://www.gstatic.com https://www.googletagmanager.com;
-  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-  font-src https://fonts.gstatic.com;
+  script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://www.gstatic.com https://cloud.umami.is;
+  style-src 'self' 'unsafe-inline';
+  font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
   connect-src *;
   frame-src 'none';
@@ -319,7 +320,7 @@ select option{background:var(--bg-card)}
 .rc-count{font-size:10px;color:var(--text-muted)}
 .hidden{display:none!important}
 
-.fmt-btn{color:var(--text-dim);border-color:var(--border-mid)}
+.fmt-btn{color:var(--text-dim);border-color:var(--border-mid);min-height:44px;display:inline-flex;align-items:center;justify-content:center}
 
 /* Semantic utility classes for theme-aware components */
 .info-box{font-size:10px;color:var(--text-muted);background:var(--bg-card);border:1px solid var(--border-mid);border-radius:6px;padding:.4rem .65rem;margin-bottom:.5rem}
@@ -328,7 +329,7 @@ select option{background:var(--bg-card)}
 .section-box{background:var(--bg-card);border-radius:10px;padding:.85rem 1rem;margin-bottom:1rem}
 .section-box-sm{background:var(--bg-card);border-radius:10px;padding:.75rem 1rem;margin-bottom:.85rem}
 .venmo-label{display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:.6rem .75rem;border:1px solid var(--border-mid);border-radius:8px;background:var(--bg-deep)}
-.help-box{font-size:11px;color:var(--text-secondary);background:var(--bg-card);border-radius:6px;padding:.5rem .75rem;margin-bottom:.75rem;line-height:1.55}
+.help-box{font-size:12px;color:var(--text-secondary);background:var(--bg-card);border-radius:6px;padding:.55rem .85rem;margin-bottom:.75rem;line-height:1.6;border-left:3px solid #2563EB40}
 
 /* ── Utility classes ─────────────────────────────────────────────────── */
 /* Modal structure */
@@ -563,7 +564,16 @@ select option{background:var(--bg-card)}
 /* nw-goal-widget child text */
 
 /* ── End light theme overrides ──────────────────────────────────── */
+
+/* Taller chart on desktop */
+@media(min-width:640px){#spend-chart-wrap{height:320px!important}}
+
+/* Chart scroll fade hint */
+#spend-chart-fade{display:none;position:absolute;right:0;top:0;bottom:0;width:40px;pointer-events:none;border-radius:0 8px 8px 0;background:linear-gradient(to right,transparent,var(--bg-page));transition:opacity .2s}
+@media(max-width:639px){#spend-chart-fade{display:block}}
 </style>
+<link rel="stylesheet" href="/fonts/fonts.css">
+<script defer src="https://cloud.umami.is/script.js" data-website-id="e7ab8f18-2279-4b07-a0b4-cd497a4766ff"></script>
 </head><body>
 
 <div id="toast" style="position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--toast-bg);border:1px solid var(--toast-border);color:#34D399;font-size:12px;font-weight:600;padding:.5rem 1.2rem;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.5);transition:transform .3s,opacity .3s;opacity:0;pointer-events:none;z-index:300;white-space:nowrap"></div>
@@ -832,15 +842,20 @@ select option{background:var(--bg-card)}
       <button class="h-btn" id="cv-source" onclick="setChartMode('source')" type="button">By source</button>
       <button class="h-btn" id="cv-trend" onclick="setChartMode('trend')" type="button">Trend</button>
       <button class="h-btn" id="cv-daily" onclick="setChartMode('daily')" type="button">Daily</button>
-      <button class="h-btn" id="cv-map" onclick="setChartMode('map')" type="button">Map</button>
+      <button class="h-btn" id="cv-split" onclick="setChartMode('split')" type="button">Split</button>
       <button class="h-btn" id="cv-sankey" onclick="setChartMode('sankey')" type="button">Flow</button>
     </div>
     <button id="chart-texture-btn" onclick="toggleChartTexture()" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">⠿ Patterns: off</button>
     <button id="cal-transfers-btn" onclick="toggleCalTransfers()" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">Transfers: off</button>
   </div>
-  <div id="spend-chart-border" style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
-    <div class="chart-wrap chart-dark" id="spend-chart-wrap" style="height:210px;position:relative;border:none;border-radius:0"><canvas id="spendChart"></canvas></div>
-    <div id="chart-footnote" style="font-size:9px;color:var(--text-muted);text-align:left;padding:4px 8px 5px;border-top:1px solid var(--border);display:none;line-height:1.4;background:var(--bg-card)"></div>
+  <div style="position:relative">
+    <div id="spend-chart-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <div id="spend-chart-border" style="border:1px solid var(--border);border-radius:8px;overflow:hidden;min-width:600px">
+        <div class="chart-wrap chart-dark" id="spend-chart-wrap" style="height:210px;position:relative;border:none;border-radius:0"><canvas id="spendChart"></canvas></div>
+        <div id="chart-footnote" style="font-size:9px;color:var(--text-muted);text-align:left;padding:4px 8px 5px;border-top:1px solid var(--border);display:none;line-height:1.4;background:var(--bg-card)"></div>
+      </div>
+    </div>
+    <div id="spend-chart-fade"></div>
   </div>
   <div id="daily-cal-wrap" style="display:none"></div>
   <div id="treemap-wrap" style="display:none"></div>
@@ -892,73 +907,8 @@ select option{background:var(--bg-card)}
 <div class="modal-overlay hidden" id="tx-import-modal">
   <div class="modal" style="width:min(520px,96vw)">
     <h3>Import transactions</h3>
-    <p class="modal-sub" style="margin-bottom:.5rem">Auto-detects most bank and credit card formats. 🔒 Processed in your browser — never uploaded.</p>
-
-    <!-- Format selector -->
-    <div style="margin-bottom:.75rem">
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button id="fmt-btn-ally"   class="btn btn-sm fmt-btn active-fmt" onclick="setImportFmt('ally')" type="button">Checking / Savings</button>
-        <button id="fmt-btn-chase"  class="btn btn-sm fmt-btn" onclick="setImportFmt('chase')" type="button">Credit card</button>
-        <button id="fmt-btn-generic" class="btn btn-sm fmt-btn" onclick="setImportFmt('generic')" type="button">Other</button>
-      </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;padding-top:6px;border-top:1px solid var(--border-mid);align-items:center">
-        <span style="font-size:10px;color:var(--text-muted);white-space:nowrap">Migrating:</span>
-        <button id="fmt-btn-mint"    class="btn btn-sm fmt-btn" onclick="setImportFmt('mint')" type="button">Mint</button>
-        <button id="fmt-btn-ynab"    class="btn btn-sm fmt-btn" onclick="setImportFmt('ynab')" type="button">YNAB</button>
-        <button id="fmt-btn-monarch" class="btn btn-sm fmt-btn" onclick="setImportFmt('monarch')" type="button">Monarch Money</button>
-      </div>
-    </div>
-
-    <!-- Format help -->
-    <div id="fmt-help-ally" class="fmt-help help-box">
-      Ally, Fidelity, Vanguard, Schwab, Marcus, SoFi, and most banks. Look for <strong style="color:var(--text-secondary)">Download transactions → CSV</strong> in your account activity.
-    </div>
-    <div id="fmt-help-chase" class="fmt-help hidden help-box">
-      Most major banks and credit cards (Chase, Bank of America, Wells Fargo, Citi, Capital One, Amex, Discover, and more). Look for <strong style="color:var(--text-secondary)">Download activity → CSV</strong>.
-    </div>
-    <div id="fmt-help-debitcredit" class="fmt-help hidden help-box">
-      Wells Fargo, USAA, and banks with separate <strong style="color:var(--text-secondary)">Deposits</strong> and <strong style="color:var(--text-secondary)">Withdrawals</strong> columns — common with credit unions and older bank exports.
-    </div>
-    <div id="fmt-help-bofa" class="fmt-help hidden help-box">
-      Bank of America checking and savings. Deposits are skipped automatically — only spending rows are imported. Look for <strong style="color:var(--text-secondary)">Download → CSV</strong> in your transaction history.
-    </div>
-    <div id="fmt-help-generic" class="fmt-help hidden help-box">
-      Any CSV with <strong style="color:var(--text-secondary)">date, description, and amount</strong> columns. First row must be headers.
-    </div>
-    <div id="fmt-help-mint" class="fmt-help hidden help-box">
-      Mint exported CSV (<strong style="color:var(--text-secondary)">Date, Description, Amount, Transaction Type, Category</strong> columns). Mint shut down in March 2024 — your exported CSVs still work here. Credits are skipped automatically. Categories import as-is where they match.
-    </div>
-    <div id="fmt-help-ynab" class="fmt-help hidden help-box">
-      You Need A Budget export (<strong style="color:var(--text-secondary)">Payee, Outflow, Inflow, Category</strong> columns). Export from YNAB → All Accounts → Export. Inflows are skipped. Categories map automatically where possible.
-    </div>
-    <div id="fmt-help-monarch" class="fmt-help hidden help-box">
-      Monarch Money export (<strong style="color:var(--text-secondary)">Date, Merchant, Amount, Category</strong> columns). Export from Settings → Data → Export Transactions. Positive amounts (income) are skipped. Categories import as-is where they match.
-    </div>
-
-    <!-- Bank / format guide -->
-    <details style="margin-bottom:.75rem">
-      <summary style="font-size:11px;font-weight:700;color:var(--text-secondary);cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:4px">
-        <span id="bank-guide-arrow" style="font-size:9px;color:var(--text-muted)">▶</span> What format should I use?
-      </summary>
-      <div style="margin-top:.5rem;border:1px solid var(--border-mid);border-radius:6px;overflow:hidden;font-size:11px">
-        <div style="display:grid;grid-template-columns:1fr auto;background:var(--bg-deep);padding:4px 10px;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">
-          <span>Bank / account type</span><span>Use this format</span>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Ally, Fidelity, Vanguard, Schwab, SoFi</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Checking / Savings</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Bank of America checking</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Bank of America</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Wells Fargo checking</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Debit/Credit columns</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">USAA, credit unions with Debit+Credit columns</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Debit/Credit columns</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Chase, BofA, Wells Fargo, Citi, Amex (credit cards)</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Credit card</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Everything else</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Other</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;background:var(--bg-deep);padding:4px 10px;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;border-top:2px solid var(--border-mid)">
-          <span>Migrating from another app</span><span>Use this format</span>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Mint <span style="color:var(--text-muted);font-weight:400">(shut down Mar 2024 — your exports still work)</span></span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Mint</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">YNAB (You Need A Budget)</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">YNAB</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;padding:5px 10px;border-top:1px solid var(--border-mid);align-items:center"><span style="color:var(--text-primary)">Monarch Money</span><span style="color:#60A5FA;font-weight:700;white-space:nowrap">Monarch Money</span></div>
-      </div>
-    </details>
-    <script>document.querySelector('#tx-import-modal details')?.addEventListener('toggle',e=>{document.getElementById('bank-guide-arrow').textContent=e.target.open?'▼':'▶';});</script>
+    <p class="modal-sub" style="margin-bottom:.35rem">Drop your CSV and we'll figure out the format automatically. Nothing leaves your device.</p>
+    <p style="font-size:11px;color:var(--text-muted);margin-bottom:.85rem">Also accepts Mint, YNAB, and Monarch Money exports.</p>
 
     <!-- Source label -->
     <div class="form-group">
@@ -966,19 +916,63 @@ select option{background:var(--bg-card)}
       <input type="text" id="import-source-label" placeholder="e.g. Checking, Visa Rewards…" value="Checking"/>
     </div>
 
-    <!-- Drop zone -->
-    <div class="csv-zone" id="tx-drop-zone" style="position:relative"
+    <!-- Drop zone — hero -->
+    <div class="csv-zone" id="tx-drop-zone" style="position:relative;padding:2rem 1rem"
          ondragover="event.preventDefault();this.style.borderColor='#2563EB'"
          ondragleave="this.style.borderColor=''"
          ondrop="handleTxDrop(event)">
-      <div style="font-size:22px;margin-bottom:4px">📂</div>
-      <div>Click to select or drag &amp; drop your CSV file</div>
+      <div style="font-size:28px;margin-bottom:8px">📂</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text-primary)">
+        <span class="hide-mobile">Drop your CSV here</span>
+        <span class="show-mobile" style="display:none">Tap to select a CSV file</span>
+      </div>
+      <div class="hide-mobile" style="font-size:11px;color:var(--text-muted);margin-top:3px">or click to browse</div>
       <input type="file" id="tx-csv-file" accept=".csv,.CSV"
              style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer"
              ondragover="event.preventDefault();document.getElementById('tx-drop-zone').style.borderColor='#2563EB'"
              ondragleave="document.getElementById('tx-drop-zone').style.borderColor=''"
              ondrop="handleTxDrop(event)"
              onchange="handleTxFileSelect(this)"/>
+    </div>
+
+    <!-- Detected format badge — shown after successful auto-detect -->
+    <div id="import-detected-fmt" class="hidden" style="margin-top:.55rem;display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary)">
+      <span style="color:#34D399;font-weight:700">✓</span>
+      <span id="import-detected-fmt-text"></span>
+    </div>
+
+    <!-- Manual format fallback toggle -->
+    <div style="margin-top:.65rem;text-align:center">
+      <button id="fmt-manual-toggle" onclick="toggleFormatPicker()" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">Having trouble? Pick your format manually →</button>
+    </div>
+
+    <!-- Format picker panel — collapsed by default -->
+    <div id="fmt-picker-panel" class="hidden" style="margin-top:.65rem;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem .85rem">
+      <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.4rem">Bank or credit card export</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button id="fmt-btn-ally"    class="btn fmt-btn" onclick="setImportFmt('ally')"    type="button">Checking / Savings</button>
+        <button id="fmt-btn-chase"   class="btn fmt-btn" onclick="setImportFmt('chase')"   type="button">Credit card</button>
+        <button id="fmt-btn-generic" class="btn fmt-btn" onclick="setImportFmt('generic')" type="button">Other</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem;margin:.7rem 0 .45rem">
+        <div style="flex:1;height:1px;background:var(--border-mid)"></div>
+        <span style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap">Migrating from another app</span>
+        <div style="flex:1;height:1px;background:var(--border-mid)"></div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button id="fmt-btn-mint"    class="btn fmt-btn" onclick="setImportFmt('mint')"    type="button">Mint</button>
+        <button id="fmt-btn-ynab"    class="btn fmt-btn" onclick="setImportFmt('ynab')"    type="button">YNAB</button>
+        <button id="fmt-btn-monarch" class="btn fmt-btn" onclick="setImportFmt('monarch')" type="button">Monarch Money</button>
+      </div>
+      <!-- Format help boxes — shown for the selected format -->
+      <div id="fmt-help-ally"        class="fmt-help hidden help-box" style="margin-top:.65rem;margin-bottom:0">Ally, Fidelity, Vanguard, Schwab, Marcus, SoFi, and most banks. Look for <strong style="color:var(--text-secondary)">Download transactions → CSV</strong> in your account activity.</div>
+      <div id="fmt-help-chase"       class="fmt-help hidden help-box" style="margin-top:.65rem;margin-bottom:0">Most major banks and credit cards (Chase, Bank of America, Wells Fargo, Citi, Capital One, Amex, Discover, and more). Look for <strong style="color:var(--text-secondary)">Download activity → CSV</strong>.</div>
+      <div id="fmt-help-debitcredit" class="fmt-help hidden help-box" style="margin-top:.65rem;margin-bottom:0">Wells Fargo, USAA, and banks with separate <strong style="color:var(--text-secondary)">Deposits</strong> and <strong style="color:var(--text-secondary)">Withdrawals</strong> columns — common with credit unions and older bank exports.</div>
+      <div id="fmt-help-bofa"        class="fmt-help hidden help-box" style="margin-top:.65rem;margin-bottom:0">Bank of America checking and savings. Deposits are skipped automatically — only spending rows are imported. Look for <strong style="color:var(--text-secondary)">Download → CSV</strong> in your transaction history.</div>
+      <div id="fmt-help-generic"     class="fmt-help hidden help-box" style="margin-top:.65rem;margin-bottom:0">Any CSV with <strong style="color:var(--text-secondary)">date, description, and amount</strong> columns. First row must be headers.</div>
+      <div id="fmt-help-mint"        class="fmt-help hidden help-box" style="margin-top:.65rem;margin-bottom:0">Mint exported CSV (<strong style="color:var(--text-secondary)">Date, Description, Amount, Transaction Type, Category</strong> columns). Mint shut down in March 2024 — your exported CSVs still work here. Credits are skipped automatically. Categories import as-is where they match.</div>
+      <div id="fmt-help-ynab"        class="fmt-help hidden help-box" style="margin-top:.65rem;margin-bottom:0">You Need A Budget export (<strong style="color:var(--text-secondary)">Payee, Outflow, Inflow, Category</strong> columns). Export from YNAB → All Accounts → Export. Inflows are skipped. Categories map automatically where possible.</div>
+      <div id="fmt-help-monarch"     class="fmt-help hidden help-box" style="margin-top:.65rem;margin-bottom:0">Monarch Money export (<strong style="color:var(--text-secondary)">Date, Merchant, Amount, Category</strong> columns). Export from Settings → Data → Export Transactions. Positive amounts (income) are skipped. Categories import as-is where they match.</div>
     </div>
     <!-- Start fresh link -->
     <div id="import-fresh-row" style="display:none;justify-content:center;align-items:center;margin-top:.45rem">
@@ -992,7 +986,7 @@ select option{background:var(--bg-card)}
     </div>
 
     <div style="font-size:10px;color:var(--text-muted);margin-top:.5rem;line-height:1.5;text-align:center">
-      Categorization uses your rules, community patterns, and <a href="https://en.wikipedia.org/wiki/Merchant_category_code" target="_blank" style="color:var(--accent-blue-light);text-decoration:underline" title="Merchant Category Codes — 4-digit codes banks assign to merchants">MCC codes</a> — in that order. &nbsp;
+      Categorization uses your rules, community patterns, and <a href="https://en.wikipedia.org/wiki/Merchant_category_code" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light);text-decoration:underline" title="Merchant Category Codes — 4-digit codes banks assign to merchants">MCC codes</a> — in that order. &nbsp;
       <button onclick="openCommunityRulesModal()" style="background:none;border:none;color:var(--accent-blue-light);font-size:10px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">View patterns ↗</button> &nbsp;
       <button onclick="document.getElementById('shortcuts-modal').classList.remove('hidden')" style="background:none;border:none;color:var(--accent-blue-light);font-size:10px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">How it works ↗</button>
     </div>
@@ -1256,7 +1250,7 @@ select option{background:var(--bg-card)}
     <div id="cr-table" style="overflow-y:auto;flex:1;border:1px solid var(--border);border-radius:8px;font-size:11px"></div>
     <div style="margin-top:.75rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
       <div style="font-size:11px;color:var(--text-muted)">Missing a merchant? Help improve categorization for everyone.</div>
-      <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;white-space:nowrap">Suggest a pattern ↗</a>
+      <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="text-decoration:none;white-space:nowrap">Suggest a pattern ↗</a>
     </div>
   </div>
 </div>
@@ -1580,7 +1574,7 @@ select option{background:var(--bg-card)}
           <div style="padding:.5rem .75rem;color:var(--text-secondary)">Filter transactions to that category</div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1.4fr;font-size:12px;border-bottom:1px solid var(--border)">
-          <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Vendor tile (Map)</div>
+          <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Vendor tile (Split)</div>
           <div style="padding:.5rem .75rem;color:var(--text-secondary)">Filter transactions to that vendor</div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1.4fr;font-size:12px;border-bottom:1px solid var(--border)">
@@ -1613,7 +1607,7 @@ select option{background:var(--bg-card)}
           <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Categorization priority</div>
           <div style="padding:.5rem .75rem;color:var(--text-secondary)">
             <span style="color:#60A5FA;font-weight:600">1. Your rules</span> — keyword rules you've saved always win<br>
-            <span style="color:#34D399;font-weight:600">2. Community patterns</span> — 280+ crowdsourced keyword→category mappings, fetched once per session · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" style="color:#34D399">Suggest a pattern ↗</a><br>
+            <span style="color:#34D399;font-weight:600">2. Community patterns</span> — <span class="community-rules-count">336</span> community-contributed keyword→category mappings, fetched once per session · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" style="color:#34D399">Suggest a pattern ↗</a><br>
             <span style="color:#94A3B8;font-weight:600">3. Merchant Category Codes (MCC)</span> — 4-digit codes your bank assigns to merchants, if present in your CSV<br>
             <span style="color:#64748B;font-weight:600">4. Built-in keywords</span> — ~300 common merchant names as a fallback
           </div>
@@ -2291,6 +2285,81 @@ function renderInsights(){
       {label:'See Daily chart',onclick:"state.activeCats=new Set();state.activeVendors=new Set();renderSpendSummary();renderBucketGrid();setChartMode('daily');renderActiveChart();setTimeout(()=>{const el=document.getElementById('spending-breakdown-header');if(el){const y=el.getBoundingClientRect().top+window.scrollY-60;window.scrollTo({top:y,behavior:'smooth'})}},120)"}),higher?20:5);
   }
 
+  // ── Monthly narrative card ──────────────────────────────────────
+  let _narHtml='';
+  if(!state.hiddenPills.has('narrative')&&fullMonths.length>=2){
+    const MON_FULL=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const nTx=m=>state.transactions.filter(t=>t.date.slice(0,7)===m&&!t.excluded&&!state.excludedCats.has(t.cat)&&!YIR_EXCLUDE_CATS.has(t.cat));
+    const nSpend=m=>nTx(m).reduce((s,t)=>s+t.amount,0);
+    const nCats=m=>{const r={};nTx(m).forEach(t=>{r[t.cat]=(r[t.cat]||0)+t.amount;});return r;};
+    const narSpend=nSpend(latestFullM);
+    const narPrevSpend=prevFullM?nSpend(prevFullM):null;
+    const avgMs=fullMonths.slice(0,-1).slice(-18);
+    const avgSpend=avgMs.length?avgMs.reduce((s,m)=>s+nSpend(m),0)/avgMs.length:null;
+    // Category movers
+    const latC=nCats(latestFullM),prvC=prevFullM?nCats(prevFullM):{};
+    const movers=[];
+    new Set([...Object.keys(latC),...Object.keys(prvC)]).forEach(cat=>{
+      const cur=latC[cat]||0,prev=prvC[cat]||0,delta=cur-prev;
+      if(Math.abs(delta)>=Math.max(200,(prev||cur)*0.15))movers.push({cat,cur,prev,delta});
+    });
+    movers.sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
+    // Savings rate
+    const narInc=getEffectiveIncome(latestFullM);
+    let narRate=null,narAvgRate=null;
+    if(narInc>0){
+      narRate=Math.round(Math.max(0,narInc-narSpend)/narInc*100);
+      const rates=avgMs.map(m=>{const i=getEffectiveIncome(m),s=nSpend(m);return i>0?Math.round(Math.max(0,i-s)/i*100):null;}).filter(v=>v!==null);
+      if(rates.length)narAvgRate=Math.round(rates.reduce((a,b)=>a+b,0)/rates.length);
+    }
+    // Build sentences
+    const narMo=MON_FULL[parseInt(latestFullM.slice(5))-1];
+    const prevLbl=prevFullM?fmtMonthShort(prevFullM):'last month';
+    const sentences=[];
+    // S1 — overall characterisation vs 18-month avg (or prior month if no avg)
+    if(avgSpend&&avgMs.length>=2){
+      const d=narSpend-avgSpend,p=Math.abs(d)/avgSpend*100;
+      if(p>20)sentences.push(`${narMo} was a ${d<0?'lighter':'heavier'} month — you spent ${fmt(narSpend)}, ${fmtC(Math.abs(d))} ${d<0?'less':'more'} than your ${avgMs.length}-month average.`);
+      else if(p>5)sentences.push(`${narMo} ran ${d<0?'a bit lighter':'a bit heavier'} than usual — ${fmt(narSpend)}, about ${fmtC(Math.abs(d))} ${d<0?'under':'over'} your average.`);
+      else sentences.push(`${narMo} came in right around your usual pace — ${fmt(narSpend)} in real spending.`);
+    } else if(narPrevSpend&&prevFullM){
+      const d=narSpend-narPrevSpend;
+      sentences.push(`${narMo} came in at ${fmt(narSpend)}, ${fmtC(Math.abs(d))} ${d<0?'down':'up'} from ${prevLbl}.`);
+    } else {
+      sentences.push(`${narMo} came in at ${fmt(narSpend)} in real spending.`);
+    }
+    // S2 — biggest category mover
+    if(movers.length>0&&prevFullM){
+      const t=movers[0];
+      if(t.delta>0)sentences.push(`The biggest shift was ${esc(t.cat)}, up ${fmtC(t.delta)} from ${prevLbl}'s ${fmtC(t.prev||0)}${t.prev===0?' — first appearance this period':''}.`);
+      else sentences.push(`${esc(t.cat)} dropped ${fmtC(Math.abs(t.delta))} from ${prevLbl} — a solid save.`);
+    }
+    // S3 — other notable movers (max 2, one sentence)
+    if(movers.length>1&&prevFullM){
+      const others=movers.slice(1,3).map(o=>`${esc(o.cat)} ${o.delta>0?'up':'down'} ${fmtC(Math.abs(o.delta))}`);
+      sentences.push(others.join(' and ')+' as well.');
+    }
+    // S4 — savings rate only if meaningfully off from avg
+    if(narRate!==null&&narAvgRate!==null&&Math.abs(narRate-narAvgRate)>=5){
+      const d=narRate-narAvgRate;
+      sentences.push(`Savings rate was ${narRate}%, ${Math.abs(d)} point${Math.abs(d)===1?'':'s'} ${d>0?'above':'below'} your usual ${narAvgRate}%.`);
+    }
+    if(sentences.length>0){
+      const preview=sentences[0].length>95?sentences[0].slice(0,92)+'…':sentences[0];
+      const full=sentences.join(' ');
+      _narHtml=`<div style="grid-column:1/-1;background:#60A5FA0D;border:1.5px solid #60A5FA33;border-radius:12px;padding:.75rem .9rem;cursor:pointer" onclick="toggleNarrative()">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${_narrativeExpanded?'.45rem':'.25rem'}">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:15px;line-height:1">📋</span>
+            <span style="font-size:10px;font-weight:700;color:var(--text-secondary)">This month · ${narMo}</span>
+          </div>
+          <span style="font-size:10px;color:var(--text-muted);flex-shrink:0;margin-left:8px">${_narrativeExpanded?'↑ less':'↓ more'}</span>
+        </div>
+        <div style="font-size:${_narrativeExpanded?'11':'10'}px;color:${_narrativeExpanded?'var(--text-secondary)':'var(--text-muted)'};line-height:${_narrativeExpanded?'1.7':'1.5'}">${_narrativeExpanded?full:preview}</div>
+      </div>`;
+    }
+  }
+
   if(pillsArr.length>0){
     const SHOW=3;
 
@@ -2355,7 +2424,10 @@ function renderInsights(){
         <div style="font-size:12px;font-weight:700;color:var(--text-muted)">Show less ↑</div>
       </div>`;
     }
-    pillsEl.innerHTML=html;
+    pillsEl.innerHTML=_narHtml+html;
+    card.style.display='block';
+  } else if(_narHtml){
+    pillsEl.innerHTML=_narHtml;
     card.style.display='block';
   } else {
     card.style.display='none';
@@ -2467,7 +2539,9 @@ function renderNwBreakdown(){
 
 let _yirPeriod='trailing'; // 'trailing' or a year like '2025'
 let _yirExcludeTransfers=false;
+let _narrativeExpanded=true;
 const YIR_EXCLUDE_CATS=new Set(['Checks','CC Payment','Transfers','Investment Contributions']);
+function toggleNarrative(){_narrativeExpanded=!_narrativeExpanded;renderInsights();}
 
 function renderYirPeriodSelector(){
   const allMonths=Object.keys(MONTHLY).sort();
@@ -3334,7 +3408,7 @@ function getCatStats(){
 function renderActiveChart(){
   try{
     if(state.chartMode==='daily')renderDailyCal();
-    else if(state.chartMode==='map')renderTreemap();
+    else if(state.chartMode==='split')renderTreemap();
     else if(state.chartMode==='sankey')renderSankey();
     else renderSpendChart();
   }catch(e){console.error('renderActiveChart failed (mode='+state.chartMode+'):',e);}
@@ -3349,7 +3423,7 @@ function renderSpending(){
   if(spendPage&&spendPage.classList.contains('active')){
     renderActiveChart();
   }
-  ['category','source','vendor','trend','daily','map','sankey'].forEach(m=>{
+  ['category','source','vendor','trend','daily','split','sankey'].forEach(m=>{
     const btn=document.getElementById('cv-'+m);
     if(btn)btn.classList.toggle('active',m===state.chartMode);
   });
@@ -3374,9 +3448,11 @@ function renderSourceChips(){
   const hiddenCatCount=state.excludedCats.size;
   const hiddenTxCount=state.transactions.filter(t=>t.excluded).length;
   const totalHidden=hiddenCatCount+(hiddenTxCount>0?1:0); // cats + "transactions" bucket
-  const chipLabel=hiddenCatCount>0?`${hiddenCatCount} spending exclusion${hiddenCatCount===1?'':'s'}`:'Spending exclusions';
+  const DEFAULT_EXCL=new Set(['Investment Contributions','Transfers','CC Payment']);
+  const onlyDefaults=hiddenCatCount===DEFAULT_EXCL.size&&[...DEFAULT_EXCL].every(c=>state.excludedCats.has(c));
+  const chipLabel=hiddenCatCount===0?'Spending exclusions':onlyDefaults?'Transfers & investments hidden':`${hiddenCatCount} spending exclusion${hiddenCatCount===1?'':'s'}`;
   const hiddenChip=`<div style="position:relative;display:inline-block">
-    <button class="chip chip-excl" id="excl-toggle" onclick="toggleHiddenPopover(event)" type="button">${chipLabel}</button>
+    <button class="chip chip-excl" id="excl-toggle" onclick="toggleHiddenPopover(event)" title="Categories hidden from charts and tiles" type="button">${chipLabel}</button>
     <div class="hidden-popover" id="hidden-popover" style="display:none"></div>
   </div>`;
   document.getElementById('source-chips').innerHTML=
@@ -3679,6 +3755,16 @@ function renderBucketGrid(){
   // Category mode
   const catStats=getCatStats();
   const catSorted=Object.entries(catStats).sort((a,b)=>b[1].total-a[1].total);
+  if(catSorted.length===0&&state.transactions.length>0){
+    el.innerHTML=`<div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem;text-align:center;gap:.65rem">
+      <div style="font-size:28px;line-height:1">🔍</div>
+      <div style="font-size:15px;font-weight:800;color:var(--text-primary)">No categories to show</div>
+      <div style="font-size:13px;color:var(--text-muted);max-width:280px;line-height:1.5">All transactions in this period may be in excluded categories. Check your spending exclusions.</div>
+    </div>`;
+    const bfn=document.getElementById('bucket-footnote');if(bfn)bfn.textContent='';
+    const bsmBtn=document.getElementById('bucket-show-more-btn');if(bsmBtn)bsmBtn.style.display='none';
+    return;
+  }
   const BUCKET_CAT_CAP=8;
   const showAllBucketCats=state.bucketShowAll||catSorted.length<=BUCKET_CAT_CAP;
   const visibleCats=showAllBucketCats?catSorted:catSorted.slice(0,BUCKET_CAT_CAP);
@@ -3762,15 +3848,25 @@ function toggleChartShowAll(){
   renderSpendChart();
 }
 
+function updateChartFade(){
+  const s=document.getElementById('spend-chart-scroll');
+  const f=document.getElementById('spend-chart-fade');
+  const b=document.getElementById('spend-chart-border');
+  if(!s||!f)return;
+  if(!b||b.style.display==='none'){f.style.opacity='0';return;}
+  f.style.opacity=s.scrollLeft+s.clientWidth>=s.scrollWidth-4?'0':'1';
+}
+
 function setChartMode(mode){
   state.chartMode=mode;
+  setTimeout(updateChartFade,50);
   state.chartShowAll=false;
   const hadDateFilter=!!state.activeDate&&mode!=='daily';
-  const hadVendorFilter=!!(state.activeVendors&&state.activeVendors.size>0)&&mode!=='map';
+  const hadVendorFilter=!!(state.activeVendors&&state.activeVendors.size>0)&&mode!=='split';
   const hadCatFilter=state.activeCats.size>0&&mode!=='sankey';
   state.activeDate=null;
   document.querySelectorAll('.cal-day-active').forEach(el=>{el.classList.remove('cal-day-active');el.style.outline='';});
-  if(mode!=='map'){
+  if(mode!=='split'){
     state.activeVendors=new Set();
     state.bucketMode='category';
   }
@@ -3785,7 +3881,7 @@ function setChartMode(mode){
   if(hadDateFilter||hadVendorFilter||hadCatFilter){
     showTxN=50;renderSpendSummary();renderTxList();
   }
-  ['category','source','vendor','trend','daily','map','sankey'].forEach(m=>{
+  ['category','source','vendor','trend','daily','split','sankey'].forEach(m=>{
     const btn=document.getElementById('cv-'+m);
     if(btn)btn.classList.toggle('active',m===mode);
   });
@@ -3811,7 +3907,7 @@ function setChartMode(mode){
     renderDailyCal();
     return;
   }
-  if(mode==='map'){
+  if(mode==='split'){
     if(chartBorder)chartBorder.style.display='none';
     if(chartWrap)chartWrap.style.display='none';
     if(calWrap)calWrap.style.display='none';
@@ -4062,7 +4158,10 @@ function renderSankey(){
     links:links.map(d=>Object.assign({},d))
   });
 
-  wrap.innerHTML=`<div style="position:relative"><svg id="sk-svg" width="${W}" height="${H}" style="display:block"></svg></div>`;
+  const periodStr=filteredMonths.length===1
+    ?fmtMonthShort(filteredMonths[0]).toUpperCase()
+    :`${fmtMonthShort(filteredMonths[0]).toUpperCase()} – ${fmtMonthShort(filteredMonths[filteredMonths.length-1]).toUpperCase()}`;
+  wrap.innerHTML=`<div style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5rem;padding:0 2px">${periodStr} · INCOME → SPENDING FLOW</div><div style="position:relative"><svg id="sk-svg" width="${W}" height="${H}" style="display:block"></svg></div>`;
   const wrapEl=wrap.querySelector('div');
   const tip=makeTip(wrapEl);
   const svg=d3.select('#sk-svg');
@@ -5217,7 +5316,7 @@ function toggleCatFilter(cat){
     state.activeCats.delete(cat);
   } else {
     state.activeCats.add(cat);
-    if(state.chartMode!=='category'&&state.chartMode!=='daily'&&state.chartMode!=='map'&&state.chartMode!=='sankey')setChartMode('category');
+    if(state.chartMode!=='category'&&state.chartMode!=='daily'&&state.chartMode!=='split'&&state.chartMode!=='sankey')setChartMode('category');
   }
   showTxN=50;renderSpendSummary();renderBucketGrid();
   renderActiveChart();
@@ -5707,6 +5806,7 @@ function deleteVendorAlias(from){
   scheduleSave();
 }
 const PILL_DEFS=[
+  {key:'narrative',icon:'📋', label:'This month',             note:'Plain-English summary of your most recent month vs your average'},
   {key:'savings',  icon:'🟢', label:'Savings rate',          note:'Requires income to be configured'},
   {key:'networth', icon:'📊', label:'Net worth',              note:'Change since last snapshot, with goal progress if set'},
   {key:'subscriptions',icon:'🔄',label:'Subscriptions',       note:'Recurring charges detected in your data'},
@@ -6902,6 +7002,8 @@ function deleteCustomCat(name){
 
 /* ── TX CSV IMPORT ─────────────────────────────────────────── */
 let importFmt='ally';
+let importFmtAutoDetected=false;
+let fmtPickerOpen=false;
 let importParsed=[];  // [{date,desc,cat,card,amount,excluded,is_offset}]
 let _budgetNudgeShown=false;
 function onImportSuccessClose(){
@@ -6913,12 +7015,20 @@ function onImportSuccessClose(){
 
 function openTxImportModal(){
   importParsed=[];
+  importFmtAutoDetected=false;
+  fmtPickerOpen=false;
+  importFmt='ally';
   fetchCommunityRules(); // kick off once per session, non-blocking
   document.getElementById('import-preview').classList.add('hidden');
   document.getElementById('import-confirm-btn').classList.add('hidden');
   document.getElementById('tx-csv-file').value='';
   document.getElementById('tx-drop-zone').style.borderColor='';
-  setImportFmt('ally');
+  const detFmt=document.getElementById('import-detected-fmt');
+  if(detFmt)detFmt.classList.add('hidden');
+  const pickerPanel=document.getElementById('fmt-picker-panel');
+  if(pickerPanel)pickerPanel.classList.add('hidden');
+  const toggle=document.getElementById('fmt-manual-toggle');
+  if(toggle)toggle.textContent='Having trouble? Pick your format manually →';
   const freshRow=document.getElementById('import-fresh-row');
   const freshConf=document.getElementById('import-fresh-confirm');
   if(freshRow)freshRow.style.display=state.transactions.length>0?'flex':'none';
@@ -6952,26 +7062,29 @@ function parseTxFile(file){
   reader.onload=e=>{
     // Strip UTF-8 BOM if present
     const text=e.target.result.replace(/^\uFEFF/,'');
-    // Auto-detect format from headers
-    const firstLine=text.split('\n')[0].toLowerCase();
-    if(firstLine.includes('transaction type')&&firstLine.includes('original description')){
-      setImportFmt('mint');
-    } else if(firstLine.includes('outflow')&&firstLine.includes('inflow')&&firstLine.includes('payee')){
-      setImportFmt('ynab');
-    } else if(firstLine.includes('merchant')&&firstLine.includes('original statement')){
-      setImportFmt('monarch');
-    } else if(firstLine.includes('transaction date')&&firstLine.includes('memo')){
-      setImportFmt('chase');
-    } else if(firstLine.includes('time')&&firstLine.includes('type')&&!firstLine.includes('memo')){
-      setImportFmt('ally');
-    } else if(firstLine.includes('debit')&&firstLine.includes('credit')){
-      setImportFmt('debitcredit');
-    } else if(firstLine.includes('running bal')){
-      setImportFmt('bofa');
-    } else if(firstLine.includes('deposits')&&firstLine.includes('withdrawals')){
-      setImportFmt('debitcredit');
-    } else if(firstLine.includes('trans date')||firstLine.includes('posting date')){
-      setImportFmt('generic');
+    // Auto-detect format from headers — skipped when user has the manual picker open
+    importFmtAutoDetected=false;
+    if(!fmtPickerOpen){
+      const firstLine=text.split('\n')[0].toLowerCase();
+      if(firstLine.includes('transaction type')&&firstLine.includes('original description')){
+        importFmt='mint'; importFmtAutoDetected=true;
+      } else if(firstLine.includes('outflow')&&firstLine.includes('inflow')&&firstLine.includes('payee')){
+        importFmt='ynab'; importFmtAutoDetected=true;
+      } else if(firstLine.includes('merchant')&&firstLine.includes('original statement')){
+        importFmt='monarch'; importFmtAutoDetected=true;
+      } else if(firstLine.includes('transaction date')&&firstLine.includes('memo')){
+        importFmt='chase'; importFmtAutoDetected=true;
+      } else if(firstLine.includes('time')&&firstLine.includes('type')&&!firstLine.includes('memo')){
+        importFmt='ally'; importFmtAutoDetected=true;
+      } else if(firstLine.includes('debit')&&firstLine.includes('credit')){
+        importFmt='debitcredit'; importFmtAutoDetected=true;
+      } else if(firstLine.includes('running bal')){
+        importFmt='bofa'; importFmtAutoDetected=true;
+      } else if(firstLine.includes('deposits')&&firstLine.includes('withdrawals')){
+        importFmt='debitcredit'; importFmtAutoDetected=true;
+      } else if(firstLine.includes('trans date')||firstLine.includes('posting date')){
+        importFmt='generic'; importFmtAutoDetected=true;
+      }
     }
     const rows=parseCSV(text);
     if(!rows||!rows.length){
@@ -7337,7 +7450,7 @@ async function fetchCommunityRules(){
   _communityRulesFetched=true;
   try{
     const res=await fetch('https://trak-yo-dollas.web.app/community-rules.json',{cache:'no-store'});
-    if(res.ok){const data=await res.json();if(Array.isArray(data))_communityRules=data;}
+    if(res.ok){const data=await res.json();if(Array.isArray(data)){_communityRules=data;document.querySelectorAll('.community-rules-count').forEach(el=>el.textContent=data.length);}}
   }catch(e){/* silently fail — community rules are optional */}
 }
 
@@ -7375,11 +7488,29 @@ function guessCatChase(d){
 }
 
 function showImportPreview(){
+  const detFmtEl=document.getElementById('import-detected-fmt');
+  const detFmtTxt=document.getElementById('import-detected-fmt-text');
   if(!importParsed.length){
-    const fmtNames={ally:'Checking/Savings',chase:'Credit card',debitcredit:'Debit/Credit columns',bofa:'Bank of America',generic:'Other'};
-    const detected=fmtNames[importFmt]||importFmt;
-    showToast(`No transactions found using "${detected}" format — try a different format button above`,'#FCD34D');
+    if(detFmtEl)detFmtEl.classList.add('hidden');
+    const fmtNames={ally:'Checking/Savings',chase:'Credit card',debitcredit:'Debit/Credit columns',bofa:'Bank of America',generic:'Other',mint:'Mint',ynab:'YNAB',monarch:'Monarch Money'};
+    if(!fmtPickerOpen){
+      showToast('We couldn\'t read this file automatically — try selecting your format below','#F87171');
+      expandFormatPicker();
+    } else {
+      const detected=fmtNames[importFmt]||importFmt;
+      showToast(`No transactions found with "${detected}" format — try a different option`,'#FCD34D');
+    }
     return;
+  }
+  // Show detected format badge
+  const fmtLabels={ally:'Checking/Savings',chase:'Credit card',debitcredit:'Debit/Credit columns',bofa:'Bank of America',generic:'Other',mint:'Mint',ynab:'YNAB',monarch:'Monarch Money'};
+  if(detFmtEl&&detFmtTxt){
+    if(importFmtAutoDetected){
+      detFmtTxt.textContent=`Detected: ${fmtLabels[importFmt]||importFmt} — ${importParsed.length} transactions ready`;
+      detFmtEl.classList.remove('hidden');
+    } else {
+      detFmtEl.classList.add('hidden');
+    }
   }
   const preview=document.getElementById('import-preview');
   const stats=document.getElementById('import-preview-stats');
@@ -7404,6 +7535,30 @@ function showImportPreview(){
   preview.classList.remove('hidden');
   btn.classList.remove('hidden');
   document.getElementById('tx-drop-zone').style.borderColor='#2563EB44';
+}
+
+function expandFormatPicker(){
+  if(fmtPickerOpen)return;
+  fmtPickerOpen=true;
+  const panel=document.getElementById('fmt-picker-panel');
+  const toggle=document.getElementById('fmt-manual-toggle');
+  if(panel)panel.classList.remove('hidden');
+  if(toggle)toggle.textContent='Hide format options ▲';
+  setImportFmt(importFmt);
+}
+
+function toggleFormatPicker(){
+  const panel=document.getElementById('fmt-picker-panel');
+  const toggle=document.getElementById('fmt-manual-toggle');
+  fmtPickerOpen=!fmtPickerOpen;
+  if(fmtPickerOpen){
+    if(panel)panel.classList.remove('hidden');
+    if(toggle)toggle.textContent='Hide format options ▲';
+    setImportFmt(importFmt);
+  } else {
+    if(panel)panel.classList.add('hidden');
+    if(toggle)toggle.textContent='Having trouble? Pick your format manually →';
+  }
 }
 
 function confirmTxImport(){
@@ -7968,7 +8123,57 @@ function parseCsvAccounts(text){const lines=text.split('\n').map(l=>l.trim()).fi
 // ── Local persistence ─────────────────────────────────────────
 const LS_KEY='trakyo_state_v2';
 const LS_TXS_KEY='trakyo_txs_v1';
+const LS_VERSION_KEY='trakyo_app_version';
+const APP_VERSION='1.1';
 let _txsDirty=true; // start true so first save always writes transactions
+
+function runMigrations(fromVersion){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(!raw)return;
+    const saved=JSON.parse(raw);
+    if(!saved)return;
+    let dirty=false;
+    const OLD_CAT='Tax & Gov', NEW_CAT='Taxes & Fees';
+
+    // activeHorizon (old numeric field) → rangeFrom/rangeTo
+    if(saved.activeHorizon!=null){
+      try{
+        const txRaw=localStorage.getItem(LS_TXS_KEY);
+        const txs=txRaw?JSON.parse(txRaw):(saved.transactions||[]);
+        const months=[...new Set(txs.map(t=>t.date&&t.date.slice(0,7)).filter(Boolean))].sort();
+        const allN=months.length;
+        if(allN>0){
+          const h=Number(saved.activeHorizon)||12;
+          saved.rangeFrom=h>=9999?months[0]:(allN>=h?months[allN-h]:months[0]);
+          saved.rangeTo=months[allN-1]||null;
+        }
+        delete saved.activeHorizon;
+        dirty=true;
+      }catch(e){}
+    }
+
+    // Rename Tax & Gov → Taxes & Fees in budgets, catRules, excludedCats
+    if(saved.budgets&&OLD_CAT in saved.budgets){
+      if(!(NEW_CAT in saved.budgets))saved.budgets[NEW_CAT]=saved.budgets[OLD_CAT];
+      delete saved.budgets[OLD_CAT];
+      dirty=true;
+    }
+    if(Array.isArray(saved.catRules)){
+      const orig=JSON.stringify(saved.catRules);
+      saved.catRules=saved.catRules.map(r=>r&&r.cat===OLD_CAT?{...r,cat:NEW_CAT}:r);
+      if(JSON.stringify(saved.catRules)!==orig)dirty=true;
+    }
+    if(Array.isArray(saved.excludedCats)&&saved.excludedCats.includes(OLD_CAT)){
+      saved.excludedCats=saved.excludedCats.map(c=>c===OLD_CAT?NEW_CAT:c);
+      dirty=true;
+    }
+
+    if(dirty)localStorage.setItem(LS_KEY,JSON.stringify(saved));
+    console.log(`[trak] migrated from v${fromVersion||'1.0'} to v${APP_VERSION}`);
+  }catch(e){console.error('[trak] migration error:',e);}
+  try{localStorage.setItem(LS_VERSION_KEY,APP_VERSION);}catch(e){}
+}
 
 function serializeState(){
   try{
@@ -7980,7 +8185,7 @@ function serializeState(){
       budgets: state.budgets,
       catRules: state.catRules,
       income: state.income,
-      declaredIncome: state.declaredIncome||0,
+      declaredIncome: state.declaredIncome??0,
       hiddenPills: [...state.hiddenPills],
       vendorAliases: state.vendorAliases,
       hasRealData: state.hasRealData,
@@ -8034,21 +8239,20 @@ function loadFromLocalStorage(){
     if(saved.budgets&&Object.keys(saved.budgets).length>0)state.budgets=saved.budgets;
     state.catRules=saved.catRules||[];
     state.income=saved.income||{method:null,monthlyAmount:0};
-    if(saved.declaredIncome>0)state.declaredIncome=saved.declaredIncome;
+    state.declaredIncome=saved.declaredIncome??0;
     state.hiddenPills=new Set(saved.hiddenPills||[]);
-    state.vendorAliases=saved.vendorAliases||{};
+    state.vendorAliases=saved.vendorAliases??{};
     if(saved.activeSources&&saved.activeSources.length>0){
       state.activeSources=new Set(saved.activeSources);
     }
-    if(saved.sourceAlignSkipped)state.sourceAlignSkipped=true;
-    if(saved.sourceAlignDate)state.sourceAlignDate=saved.sourceAlignDate;
-    if(saved.chartGrain)state.chartGrain=saved.chartGrain;
-    if(saved.rangeFrom)state.rangeFrom=saved.rangeFrom;
-    if(saved.rangeTo)state.rangeTo=saved.rangeTo;
-    state.vendorAliases=saved.vendorAliases||{};
+    state.sourceAlignSkipped=saved.sourceAlignSkipped??false;
+    state.sourceAlignDate=saved.sourceAlignDate??null;
+    state.chartGrain=saved.chartGrain??'month';
+    state.rangeFrom=saved.rangeFrom??null;
+    state.rangeTo=saved.rangeTo??null;
     state.hiddenPills.delete('spending');
     state.hiddenPills.delete('spending-pill');
-    if(saved.nwGoal)state.nwGoal=saved.nwGoal;
+    state.nwGoal=saved.nwGoal??null;
     state.nextId=saved.nextId||state.nextId;
     if(saved.hasRealData)state.hasRealData=true;
     if(saved.hasRealAccounts)state.hasRealAccounts=true;
@@ -8063,7 +8267,14 @@ function loadFromLocalStorage(){
     rebuildMonthly();
     rebuildCatSelects();
     return true;
-  }catch(e){console.error('loadFromLocalStorage error:',e);return false;}
+  }catch(e){
+    console.error('[trak] loadFromLocalStorage error:',e);
+    // Clear only the state blob — preserve transactions separately stored in LS_TXS_KEY
+    try{localStorage.removeItem(LS_KEY);}catch(e2){}
+    // Show non-alarming notice after DOM is ready
+    setTimeout(()=>showToast('We updated the app — some settings were reset. Your transaction data is safe.',5000),600);
+    return false;
+  }
 }
 
 function saveToLocalStorage(){
@@ -8092,6 +8303,16 @@ function scheduleSave(){
 
 // Wire up after DOM ready
 document.addEventListener('DOMContentLoaded',function(){
+  // Wire chart scroll fade
+  const _cs=document.getElementById('spend-chart-scroll');
+  if(_cs)_cs.addEventListener('scroll',updateChartFade,{passive:true});
+
+  // Version check — run migrations before loading state
+  try{
+    const storedVersion=localStorage.getItem(LS_VERSION_KEY);
+    if(storedVersion!==APP_VERSION)runMigrations(storedVersion);
+  }catch(e){}
+
   // Load saved state and set flag
   const hadSavedData=loadFromLocalStorage();
   window._hadSavedData=hadSavedData;
@@ -8176,7 +8397,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
   window.addEventListener('resize',()=>{
     updateBannerOffset();renderInsights();
-    if(state.chartMode==='map'||state.chartMode==='sankey'||state.chartMode==='daily'){
+    if(state.chartMode==='split'||state.chartMode==='sankey'||state.chartMode==='daily'){
       renderActiveChart();
     }
   });
@@ -8397,7 +8618,6 @@ window.addEventListener('error',function(e){console.error('GLOBAL ERROR:',e.mess
 
 <script type="module">
 import { initializeApp }       from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-import { getAnalytics }        from "https://www.gstatic.com/firebasejs/12.12.1/firebase-analytics.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup,
          sendSignInLinkToEmail, isSignInWithEmailLink,
          signInWithEmailLink, onAuthStateChanged, signOut }
@@ -8415,14 +8635,11 @@ const firebaseConfig = {
   projectId:         "trak-yo-dollas",
   storageBucket:     "trak-yo-dollas.firebasestorage.app",
   messagingSenderId: "828341374229",
-  appId:             "1:828341374229:web:2fc44d7580e89430ca2d1c",
-  measurementId:     "G-C1N91MLXRX"
+  appId:             "1:828341374229:web:2fc44d7580e89430ca2d1c"
 };
 
-const app       = initializeApp(firebaseConfig);
-// Analytics only works on HTTP/HTTPS — skip when running as a local file
-const analytics = window.location.protocol !== 'file:' ? getAnalytics(app) : null;
-const auth      = getAuth(app);
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db        = getFirestore(app);
 
 // ── Auth state ────────────────────────────────────────────────
@@ -8533,7 +8750,8 @@ window.d3Sankey = (typeof d3 !== 'undefined' && typeof d3.sankey === 'function')
     <button onclick="document.getElementById('shortcuts-modal').classList.remove('hidden')" type="button">Tips & shortcuts</button>
     <button onclick="openPrivacyPanel()" type="button">Privacy</button>
     <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer">GitHub</a>
-    <a href="https://github.com/gflo247/trak-yo-dollas/issues" target="_blank" rel="noopener noreferrer">Feedback</a>
+    <a href="https://github.com/gflo247/trak-yo-dollas/issues" target="_blank" rel="noopener noreferrer">Report a bug</a>
+    <a href="mailto:trakyodollas@gmail.com">Email me</a>
   </nav>
 </footer>
 </body></html>

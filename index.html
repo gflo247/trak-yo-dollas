@@ -4,10 +4,14 @@
 <meta charset="UTF-8">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>trak-yo-dolla$ · Know where your money goes</title>
-<meta name="description" content="Track your spending and net worth. Your data never leaves your browser. No bank connections. No subscriptions.">
+<title>trak-yo-dolla$ · Free Mint Alternative · No Bank Connections Required</title>
+<meta name="description" content="The privacy-first Mint alternative. Track spending, budgets, and net worth from a CSV — no bank logins, no subscriptions, no data leaving your browser. Free forever.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="trak-yo-dolla$ — Free Mint Alternative · No Bank Connections">
+<meta property="og:description" content="Track spending, budgets, and net worth from a CSV. No bank logins, no subscriptions, no data leaving your browser. Free forever.">
+<meta property="og:url" content="https://trak-yo-dollas.web.app/index.html">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,800;1,9..40,300&display=swap');
+/* fonts self-hosted — see /fonts/fonts.css */
 
 :root {
   --bg-page:#0F172A;
@@ -217,6 +221,8 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
   footer{padding:1.5rem 1.25rem;flex-direction:column;align-items:flex-start}
 }
 </style>
+<link rel="stylesheet" href="/fonts/fonts.css">
+<script defer src="https://cloud.umami.is/script.js" data-website-id="e7ab8f18-2279-4b07-a0b4-cd497a4766ff"></script>
 </head>
 <body>
 
@@ -244,6 +250,13 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 
 
 
+<!-- Mint alternative callout -->
+<div style="max-width:680px;margin:-1rem auto 4rem;padding:0 2rem">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.5rem 2rem">
+    <p style="font-size:14px;color:var(--text-secondary);line-height:1.8;font-weight:300;margin:0">Looking for a Mint replacement? Mint shut down in early 2024 — most apps that filled the gap require a bank login. trak-yo-dolla$ doesn't. Import a CSV and you're done. Free forever. No account required.</p>
+  </div>
+</div>
+
 <!-- Interactive preview -->
 <div class="preview-wrap">
   <div class="preview-card">
@@ -253,85 +266,119 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
       <div class="preview-dot" style="background:#34D399"></div>
       <div style="margin-left:8px;display:flex;gap:0" id="preview-tabs">
         <button class="ptab ptab-active" onclick="showTab(0)">Spending</button>
-        <button class="ptab" onclick="showTab(1)">Daily</button>
-        <button class="ptab" onclick="showTab(2)">Flow</button>
-        <button class="ptab" onclick="showTab(3)">Budget</button>
-        <button class="ptab" onclick="showTab(4)">Net Worth</button>
+        <button class="ptab" onclick="showTab(1)">Budget</button>
+        <button class="ptab" onclick="showTab(2)">Net Worth</button>
       </div>
     </div>
         <!-- TAB 0: Bar charts -->
     <div class="ptab-panel" id="pt0" style="display:block">
       <div style="padding:1rem 1.25rem">
-        <div style="font-size:9px;color:#64748B;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.65rem">BY CATEGORY — CLICK A TILE TO FILTER</div>
+        <!-- At a Glance insights strip -->
+        <div style="margin-bottom:.85rem">
+          <div style="font-size:9px;color:#64748B;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.45rem">AT A GLANCE · April</div>
+          <div style="background:#60A5FA0D;border:1.5px solid #60A5FA33;border-radius:10px;padding:.55rem .8rem;margin-bottom:.45rem">
+            <div style="display:flex;align-items:center;gap:5px;margin-bottom:.2rem">
+              <span style="font-size:13px;line-height:1">📋</span>
+              <span style="font-size:8px;font-weight:700;color:#94A3B8;letter-spacing:.05em;text-transform:uppercase">This month · April</span>
+            </div>
+            <div style="font-size:10px;color:#64748B;line-height:1.55">April was a lighter month — you spent $6,200, about $980 less than your 6-month average. Groceries dropped $280 from March — a solid save.</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <div style="background:#34D39912;border:1.5px solid #34D39940;border-radius:10px;padding:.45rem .7rem;display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-size:8px;font-weight:700;color:#34D399;text-transform:uppercase;letter-spacing:.05em">🟢 Savings rate</div>
+                <div style="font-size:9px;color:#64748B;margin-top:2px">$2,532 kept · healthy</div>
+              </div>
+              <div style="font-size:20px;font-weight:900;color:#34D399;line-height:1">36%</div>
+            </div>
+            <div style="background:#F8717112;border:1.5px solid #F8717140;border-radius:10px;padding:.45rem .7rem;display:flex;justify-content:space-between;align-items:center;gap:4px">
+              <div style="min-width:0;flex:1">
+                <div style="font-size:8px;font-weight:700;color:#F87171;text-transform:uppercase;letter-spacing:.05em">🔴 Budget health</div>
+                <div style="font-size:9px;color:#64748B;margin-top:2px">4 over · 6 on track</div>
+              </div>
+              <div style="font-size:12px;font-weight:900;color:#F87171;line-height:1;text-align:right;white-space:nowrap;flex-shrink:0">4/10 <span style="font-size:9px">need attention</span></div>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:9px;color:#64748B;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.65rem">BY CATEGORY</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:6px;margin-bottom:1rem">
-          <div style="background:#0F172A;border:1px solid #F8717133;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px">
+          <div class="ptile" onclick="filterPreviewTile(this,'Home','#F87171')" style="background:#0F172A;border:1px solid #F8717133;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
             <div style="font-size:9px;font-weight:700;color:#F87171;text-transform:uppercase;letter-spacing:.05em">Home</div>
             <div style="font-size:18px;font-weight:900;color:#E2E8F0;line-height:1">$21,976</div>
             <div style="font-size:9px;color:#64748B">↑82% · avg $1,221/mo · Peak: Jan</div>
             <svg viewBox="0 0 80 24" width="80" height="24" style="margin-top:4px"><polyline points="0,19 13,14 27,20 40,8 53,15 67,5 80,9" fill="none" stroke="#F87171" stroke-width="1.5" stroke-linejoin="round"/></svg>
           </div>
-          <div style="background:#0F172A;border:1px solid #34D39933;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px">
+          <div class="ptile" onclick="filterPreviewTile(this,'Groceries','#34D399')" style="background:#0F172A;border:1px solid #34D39933;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
             <div style="font-size:9px;font-weight:700;color:#34D399;text-transform:uppercase;letter-spacing:.05em">Groceries</div>
             <div style="font-size:18px;font-weight:900;color:#E2E8F0;line-height:1">$12,525</div>
             <div style="font-size:9px;color:#64748B">↑60% · avg $696/mo · Peak: Dec</div>
             <svg viewBox="0 0 80 24" width="80" height="24" style="margin-top:4px"><polyline points="0,20 13,14 27,18 40,7 53,13 67,9 80,4" fill="none" stroke="#34D399" stroke-width="1.5" stroke-linejoin="round"/></svg>
           </div>
-          <div style="background:#0F172A;border:1px solid #FBBF2433;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px">
+          <div class="ptile" onclick="filterPreviewTile(this,'Shopping','#FBBF24')" style="background:#0F172A;border:1px solid #FBBF2433;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
             <div style="font-size:9px;font-weight:700;color:#FBBF24;text-transform:uppercase;letter-spacing:.05em">Shopping</div>
             <div style="font-size:18px;font-weight:900;color:#E2E8F0;line-height:1">$11,197</div>
             <div style="font-size:9px;color:#FBBF24">↑11% · avg $622/mo · Peak: Dec</div>
             <svg viewBox="0 0 80 24" width="80" height="24" style="margin-top:4px"><polyline points="0,8 13,18 27,5 40,15 53,10 67,19 80,6" fill="none" stroke="#FBBF24" stroke-width="1.5" stroke-linejoin="round"/></svg>
           </div>
-          <div class="pcat-4th" style="background:#0F172A;border:1px solid #60A5FA33;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px">
+          <div class="ptile pcat-4th" onclick="filterPreviewTile(this,'Bills &amp; Utilities','#60A5FA')" style="background:#0F172A;border:1px solid #60A5FA33;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
             <div style="font-size:9px;font-weight:700;color:#60A5FA;text-transform:uppercase;letter-spacing:.05em">Bills &amp; Utilities</div>
             <div style="font-size:18px;font-weight:900;color:#E2E8F0;line-height:1">$8,899</div>
             <div style="font-size:9px;color:#64748B">↑76% · avg $494/mo · Peak: Mar</div>
             <svg viewBox="0 0 80 24" width="80" height="24" style="margin-top:4px"><polyline points="0,10 13,16 27,8 40,18 53,6 67,14 80,11" fill="none" stroke="#60A5FA" stroke-width="1.5" stroke-linejoin="round"/></svg>
           </div>
         </div>
-        <div style="font-size:9px;color:#64748B;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5rem">SPENDING BREAKDOWN</div>
-        <div style="display:flex;gap:3px;height:80px;border-radius:8px;overflow:hidden;margin-bottom:8px">
-          <div style="flex:2.2;background:#F8717120;border:1px solid #F8717140;border-radius:6px;display:flex;flex-direction:column;justify-content:flex-end;padding:6px 8px"><span style="font-size:10px;color:#F87171;font-weight:700;line-height:1.3">Home<br>22%</span></div>
-          <div style="flex:1.3;background:#34D39914;border:1px solid #34D39930;border-radius:6px;display:flex;flex-direction:column;justify-content:flex-end;padding:6px 6px"><span style="font-size:10px;color:#34D399;font-weight:700;line-height:1.3">Gro<br>13%</span></div>
-          <div style="flex:1.1;background:#FBBF2414;border:1px solid #FBBF2430;border-radius:6px;display:flex;flex-direction:column;justify-content:flex-end;padding:6px 6px"><span style="font-size:10px;color:#FBBF24;font-weight:700;line-height:1.3">Shop<br>11%</span></div>
-          <div style="flex:.9;background:#60A5FA14;border:1px solid #60A5FA30;border-radius:6px;display:flex;flex-direction:column;justify-content:flex-end;padding:6px 5px"><span style="font-size:10px;color:#60A5FA;font-weight:700;line-height:1.3">B&U<br>9%</span></div>
-          <div style="flex:.8;background:#FB923C14;border:1px solid #FB923C30;border-radius:6px;display:flex;flex-direction:column;justify-content:flex-end;padding:6px 5px"><span style="font-size:10px;color:#FB923C;font-weight:700;line-height:1.3">Trav<br>8%</span></div>
-          <div style="flex:1.4;background:#1E293B;border:1px solid #334155;border-radius:6px;display:flex;align-items:center;justify-content:center;padding:4px"><span style="font-size:8px;color:#64748B;text-align:center;line-height:1.4">+8 more<br>categories</span></div>
-        </div>
         <div style="display:flex;gap:5px;margin-bottom:.75rem">
-          <div style="flex:1;background:#1E3A5F;border:1px solid #2563EB55;border-radius:7px;padding:.35rem .5rem;font-size:10px;color:#60A5FA;display:flex;align-items:center;gap:4px;font-weight:600">📊 <span>Bar charts</span></div>
-          <div style="flex:1;background:#1E293B;border:1px solid #334155;border-radius:7px;padding:.35rem .5rem;font-size:10px;color:#64748B;display:flex;align-items:center;gap:4px">📈 <span>Trend</span></div>
-          <div style="flex:1;background:#1E293B;border:1px solid #334155;border-radius:7px;padding:.35rem .5rem;font-size:10px;color:#64748B;display:flex;align-items:center;gap:4px">📅 <span>Daily</span></div>
-          <div style="flex:1;background:#1E293B;border:1px solid #334155;border-radius:7px;padding:.35rem .5rem;font-size:10px;color:#64748B;display:flex;align-items:center;gap:4px">🏦 <span>Flow</span></div>
-          <div style="flex:1;background:#1E293B;border:1px solid #334155;border-radius:7px;padding:.35rem .5rem;font-size:10px;color:#64748B;display:flex;align-items:center;gap:4px">🗺 <span>Map</span></div>
+          <div id="pcm-0" onclick="setPreviewChart(0)" style="flex:1;background:#1E3A5F;border:1px solid #2563EB55;border-radius:7px;padding:.35rem .5rem;font-size:10px;color:#60A5FA;display:flex;align-items:center;gap:4px;font-weight:600;cursor:pointer">📊 <span>Bar charts</span></div>
+          <div id="pcm-1" onclick="setPreviewChart(1)" style="flex:1;background:#1E293B;border:1px solid #334155;border-radius:7px;padding:.35rem .5rem;font-size:10px;color:#64748B;display:flex;align-items:center;gap:4px;cursor:pointer">📈 <span>Trend</span></div>
+          <div id="pcm-2" onclick="setPreviewChart(2)" style="flex:1;background:#1E293B;border:1px solid #334155;border-radius:7px;padding:.35rem .5rem;font-size:10px;color:#64748B;display:flex;align-items:center;gap:4px;cursor:pointer">📅 <span>Daily</span></div>
+          <div id="pcm-3" onclick="setPreviewChart(3)" style="flex:1;background:#1E293B;border:1px solid #334155;border-radius:7px;padding:.35rem .5rem;font-size:10px;color:#64748B;display:flex;align-items:center;gap:4px;cursor:pointer">🏦 <span>Flow</span></div>
+          <div id="pcm-4" onclick="setPreviewChart(4)" style="flex:1;background:#1E293B;border:1px solid #334155;border-radius:7px;padding:.35rem .5rem;font-size:10px;color:#64748B;display:flex;align-items:center;gap:4px;cursor:pointer">⊞ <span>Split</span></div>
         </div>
-        <!-- Stacked bar chart -->
-        <div style="background:#0F172A;border:1px solid #334155;border-radius:10px;padding:.75rem .85rem">
-          <div style="font-size:9px;color:#64748B;font-weight:600;letter-spacing:.07em;text-transform:uppercase;margin-bottom:.6rem">BY CATEGORY · Last 3 months</div>
-          <div style="display:flex;gap:8px;align-items:flex-end;height:80px;margin-bottom:.5rem">
-            <!-- Feb -->
+        <!-- Chart panels -->
+        <div id="pc-0" style="background:#0F172A;border:1px solid #334155;border-radius:10px;padding:.75rem .85rem">
+          <div id="pchart-lbl" style="font-size:9px;color:#64748B;font-weight:600;letter-spacing:.07em;text-transform:uppercase;margin-bottom:.6rem">BY CATEGORY · Last 6 months</div>
+          <div style="display:flex;gap:4px;align-items:flex-end;height:80px;margin-bottom:.5rem">
             <div style="display:flex;flex-direction:column;gap:1px;flex:1;height:100%;justify-content:flex-end">
-              <div style="background:#F8717166;border-radius:3px 3px 0 0;height:32%"></div>
-              <div style="background:#34D39966;height:18%"></div>
-              <div style="background:#FBBF2466;height:20%"></div>
-              <div style="background:#60A5FA66;border-radius:0 0 3px 3px;height:15%"></div>
-              <div style="font-size:9px;color:#475569;text-align:center;margin-top:4px">Feb</div>
+              <div style="background:#F8717144;border-radius:2px 2px 0 0;height:28%"></div>
+              <div style="background:#34D39944;height:15%"></div>
+              <div style="background:#FBBF2444;height:18%"></div>
+              <div style="background:#60A5FA44;border-radius:0 0 2px 2px;height:12%"></div>
+              <div style="font-size:8px;color:#334155;text-align:center;margin-top:3px">Nov</div>
             </div>
-            <!-- Mar -->
             <div style="display:flex;flex-direction:column;gap:1px;flex:1;height:100%;justify-content:flex-end">
-              <div style="background:#F8717188;border-radius:3px 3px 0 0;height:41%"></div>
+              <div style="background:#F8717155;border-radius:2px 2px 0 0;height:35%"></div>
+              <div style="background:#34D39955;height:19%"></div>
+              <div style="background:#FBBF2455;height:22%"></div>
+              <div style="background:#60A5FA55;border-radius:0 0 2px 2px;height:14%"></div>
+              <div style="font-size:8px;color:#334155;text-align:center;margin-top:3px">Dec</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:1px;flex:1;height:100%;justify-content:flex-end">
+              <div style="background:#F8717166;border-radius:2px 2px 0 0;height:30%"></div>
+              <div style="background:#34D39966;height:17%"></div>
+              <div style="background:#FBBF2466;height:16%"></div>
+              <div style="background:#60A5FA66;border-radius:0 0 2px 2px;height:13%"></div>
+              <div style="font-size:8px;color:#475569;text-align:center;margin-top:3px">Jan</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:1px;flex:1;height:100%;justify-content:flex-end">
+              <div style="background:#F8717177;border-radius:2px 2px 0 0;height:32%"></div>
+              <div style="background:#34D39977;height:18%"></div>
+              <div style="background:#FBBF2477;height:20%"></div>
+              <div style="background:#60A5FA77;border-radius:0 0 2px 2px;height:15%"></div>
+              <div style="font-size:8px;color:#475569;text-align:center;margin-top:3px">Feb</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:1px;flex:1;height:100%;justify-content:flex-end">
+              <div style="background:#F8717188;border-radius:2px 2px 0 0;height:41%"></div>
               <div style="background:#34D39988;height:22%"></div>
               <div style="background:#FBBF2488;height:9%"></div>
-              <div style="background:#60A5FA88;border-radius:0 0 3px 3px;height:17%"></div>
-              <div style="font-size:9px;color:#64748B;text-align:center;margin-top:4px">Mar</div>
+              <div style="background:#60A5FA88;border-radius:0 0 2px 2px;height:17%"></div>
+              <div style="font-size:8px;color:#64748B;text-align:center;margin-top:3px">Mar</div>
             </div>
-            <!-- Apr -->
             <div style="display:flex;flex-direction:column;gap:1px;flex:1;height:100%;justify-content:flex-end">
-              <div style="background:#F87171;border-radius:3px 3px 0 0;height:37%"></div>
+              <div style="background:#F87171;border-radius:2px 2px 0 0;height:37%"></div>
               <div style="background:#34D399;height:20%"></div>
               <div style="background:#FBBF24;height:14%"></div>
-              <div style="background:#60A5FA;border-radius:0 0 3px 3px;height:19%"></div>
-              <div style="font-size:9px;color:#E2E8F0;text-align:center;margin-top:4px;font-weight:700">Apr ▲</div>
+              <div style="background:#60A5FA;border-radius:0 0 2px 2px;height:19%"></div>
+              <div style="font-size:8px;color:#E2E8F0;text-align:center;margin-top:3px;font-weight:700">Apr ▲</div>
             </div>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -341,140 +388,238 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
             <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#94A3B8"><div style="width:8px;height:8px;border-radius:2px;background:#60A5FA;flex-shrink:0"></div>Bills &amp; Utilities</div>
           </div>
         </div>
+        <!-- Trend chart panel -->
+        <div id="pc-1" style="display:none;background:#0F172A;border:1px solid #334155;border-radius:10px;padding:.75rem .85rem">
+          <div style="font-size:9px;color:#64748B;font-weight:600;letter-spacing:.07em;text-transform:uppercase;margin-bottom:.5rem">Spending Trend · May '25 – Apr '26</div>
+          <svg viewBox="0 0 500 160" width="100%" style="display:block;margin-bottom:.3rem">
+            <line x1="0" y1="8"   x2="500" y2="8"   stroke="#1E293B" stroke-width="1"/>
+            <line x1="0" y1="78"  x2="500" y2="78"  stroke="#1E293B" stroke-width="1"/>
+            <line x1="0" y1="145" x2="500" y2="145" stroke="#1E293B" stroke-width="1"/>
+            <polyline points="0,82 45,58 90,78 135,92 180,68 225,62 270,38 315,20 360,44 405,70 450,65 500,50" fill="none" stroke="#F87171" stroke-width="2" stroke-linejoin="round"/>
+            <polyline points="0,118 45,112 90,120 135,114 180,108 225,102 270,96 315,88 360,100 405,110 450,105 500,102" fill="none" stroke="#34D399" stroke-width="2" stroke-linejoin="round"/>
+            <polyline points="0,128 45,114 90,132 135,122 180,130 225,118 270,92 315,64 360,124 405,114 450,130 500,98" fill="none" stroke="#FBBF24" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="500" cy="50"  r="3.5" fill="#F87171"/>
+            <circle cx="500" cy="102" r="3.5" fill="#34D399"/>
+            <circle cx="500" cy="98"  r="3.5" fill="#FBBF24"/>
+          </svg>
+          <div style="display:flex;justify-content:space-between;font-size:7px;color:#475569;padding:0 1px;margin-bottom:.4rem">
+            <span>May</span><span>Jul</span><span>Sep</span><span>Nov</span><span>Jan</span><span>Mar</span><span style="color:#64748B;font-weight:700">Apr</span>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#94A3B8"><div style="width:8px;height:2px;background:#F87171;flex-shrink:0"></div>Home</div>
+            <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#94A3B8"><div style="width:8px;height:2px;background:#34D399;flex-shrink:0"></div>Groceries</div>
+            <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#94A3B8"><div style="width:8px;height:2px;background:#FBBF24;flex-shrink:0"></div>Shopping</div>
+          </div>
+        </div>
+        <!-- Daily chart panel -->
+        <div id="pc-2" style="display:none;background:#0F172A;border:1px solid #334155;border-radius:10px;padding:.75rem .85rem">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px;margin-bottom:.75rem">
+            <div style="background:#1E293B;border:1px solid #334155;border-radius:8px;padding:.45rem .6rem"><div style="font-size:8px;color:#64748B;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Total</div><div style="font-size:16px;font-weight:900;color:#E2E8F0">$96k</div><div style="font-size:8px;color:#64748B">372 days</div></div>
+            <div style="background:#1E293B;border:1px solid #334155;border-radius:8px;padding:.45rem .6rem"><div style="font-size:8px;color:#64748B;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Avg/day</div><div style="font-size:16px;font-weight:900;color:#E2E8F0">$258</div><div style="font-size:8px;color:#64748B">active days</div></div>
+            <div style="background:#2563EB18;border:1px solid #2563EB33;border-radius:8px;padding:.45rem .6rem"><div style="font-size:8px;color:#60A5FA;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Peak day</div><div style="font-size:16px;font-weight:900;color:#60A5FA">$1,436</div><div style="font-size:8px;color:#60A5FA;opacity:.7">click to filter</div></div>
+            <div style="background:#1E293B;border:1px solid #334155;border-radius:8px;padding:.45rem .6rem"><div style="font-size:8px;color:#64748B;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Weekends</div><div style="font-size:16px;font-weight:900;color:#E2E8F0">−1%</div><div style="font-size:8px;color:#64748B">vs weekday</div></div>
+          </div>
+          <div style="font-size:8px;color:#64748B;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.5rem;display:flex;align-items:center;justify-content:space-between"><span>less <span style="display:inline-flex;gap:2px;align-items:center;margin:0 3px"><span style="width:8px;height:8px;border-radius:2px;background:#412402;display:inline-block"></span><span style="width:8px;height:8px;border-radius:2px;background:#633806;display:inline-block"></span><span style="width:8px;height:8px;border-radius:2px;background:#854f0b;display:inline-block"></span><span style="width:8px;height:8px;border-radius:2px;background:#ef9f27;display:inline-block"></span><span style="width:8px;height:8px;border-radius:2px;background:#fac775;display:inline-block"></span></span> more</span><span style="color:#60A5FA">Zoom − +</span></div>
+          <div id="pheatmap" style="display:flex;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px"></div>
+          <div style="margin-top:.5rem;font-size:9px;color:#64748B">← scroll to see full history · click any day to filter transactions</div>
+        </div>
+        <!-- Flow chart panel (inline) -->
+        <div id="pc-3" style="display:none;background:#0F172A;border:1px solid #334155;border-radius:10px;padding:.75rem .85rem">
+          <div style="font-size:9px;color:#64748B;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.65rem">May '25 – Apr '26 · Income → Spending Flow</div>
+          <svg viewBox="0 0 420 240" width="100%" height="240" style="overflow:visible;display:block">
+            <rect x="0" y="14" width="80" height="68" rx="6" fill="#34D39918" stroke="#34D39944"/>
+            <text x="40" y="44" font-size="9" fill="#34D399" text-anchor="middle" font-weight="700">Salary</text>
+            <text x="40" y="62" font-size="11" fill="#E2E8F0" text-anchor="middle" font-weight="900">$74.4k</text>
+            <rect x="0" y="102" width="80" height="36" rx="6" fill="#34D39910" stroke="#34D39933"/>
+            <text x="40" y="118" font-size="9" fill="#34D399" text-anchor="middle" font-weight="700">Freelance</text>
+            <text x="40" y="131" font-size="11" fill="#E2E8F0" text-anchor="middle" font-weight="900">$10.2k</text>
+            <path d="M80,48 C160,48 160,95 240,95" fill="none" stroke="#34D399" stroke-width="30" opacity="0.18"/>
+            <path d="M80,48 C160,48 160,95 240,95" fill="none" stroke="#34D399" stroke-width="1.5" opacity="0.6"/>
+            <path d="M80,120 C160,120 160,105 240,105" fill="none" stroke="#34D399" stroke-width="8" opacity="0.18"/>
+            <path d="M80,120 C160,120 160,105 240,105" fill="none" stroke="#34D399" stroke-width="1.5" opacity="0.4"/>
+            <rect x="220" y="70" width="60" height="60" rx="8" fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
+            <text x="250" y="96" font-size="8" fill="#94A3B8" text-anchor="middle" font-weight="700">INCOME</text>
+            <text x="250" y="112" font-size="11" fill="#E2E8F0" text-anchor="middle" font-weight="900">$84.6k</text>
+            <path d="M280,88 C340,88 340,28 420,28" fill="none" stroke="#F87171" stroke-width="20" opacity="0.18"/>
+            <path d="M280,88 C340,88 340,28 420,28" fill="none" stroke="#F87171" stroke-width="1.5" opacity="0.7"/>
+            <path d="M280,96 C340,96 340,78 420,78" fill="none" stroke="#34D399" stroke-width="11" opacity="0.18"/>
+            <path d="M280,96 C340,96 340,78 420,78" fill="none" stroke="#34D399" stroke-width="1.5" opacity="0.6"/>
+            <path d="M280,104 C340,104 340,120 420,120" fill="none" stroke="#60A5FA" stroke-width="9" opacity="0.18"/>
+            <path d="M280,104 C340,104 340,120 420,120" fill="none" stroke="#60A5FA" stroke-width="1.5" opacity="0.5"/>
+            <path d="M280,112 C340,112 340,160 420,160" fill="none" stroke="#FBBF24" stroke-width="7" opacity="0.18"/>
+            <path d="M280,112 C340,112 340,160 420,160" fill="none" stroke="#FBBF24" stroke-width="1.5" opacity="0.5"/>
+            <rect x="340" y="8" width="80" height="42" rx="6" fill="#F8717118" stroke="#F8717133"/>
+            <text x="380" y="24" font-size="8" fill="#F87171" text-anchor="middle" font-weight="700">Home</text>
+            <text x="380" y="38" font-size="10" fill="#E2E8F0" text-anchor="middle" font-weight="900">$21,976</text>
+            <rect x="340" y="58" width="80" height="40" rx="6" fill="#34D39912" stroke="#34D39930"/>
+            <text x="380" y="74" font-size="8" fill="#34D399" text-anchor="middle" font-weight="700">Groceries</text>
+            <text x="380" y="88" font-size="10" fill="#E2E8F0" text-anchor="middle" font-weight="900">$12,525</text>
+            <rect x="340" y="106" width="80" height="36" rx="6" fill="#60A5FA12" stroke="#60A5FA30"/>
+            <text x="380" y="120" font-size="8" fill="#60A5FA" text-anchor="middle" font-weight="700">Bills &amp; Util.</text>
+            <text x="380" y="134" font-size="10" fill="#E2E8F0" text-anchor="middle" font-weight="900">$8,899</text>
+            <rect x="340" y="148" width="80" height="38" rx="6" fill="#FBBF2412" stroke="#FBBF2430"/>
+            <text x="380" y="162" font-size="8" fill="#FBBF24" text-anchor="middle" font-weight="700">Shopping</text>
+            <text x="380" y="176" font-size="10" fill="#E2E8F0" text-anchor="middle" font-weight="900">$11,197</text>
+            <!-- Saved / Remaining flow -->
+            <path d="M280,118 C340,118 340,213 420,213" fill="none" stroke="#34D399" stroke-width="11" opacity="0.18"/>
+            <path d="M280,118 C340,118 340,213 420,213" fill="none" stroke="#34D399" stroke-width="1.5" opacity="0.55" stroke-dasharray="5,2"/>
+            <rect x="340" y="194" width="80" height="34" rx="6" fill="#34D39920" stroke="#34D39944"/>
+            <text x="380" y="206" font-size="7" fill="#34D399" text-anchor="middle" font-weight="700">Other spend</text>
+            <text x="380" y="217" font-size="7" fill="#34D399" text-anchor="middle" font-weight="700">+ savings</text>
+            <text x="380" y="228" font-size="9" fill="#E2E8F0" text-anchor="middle" font-weight="900">$30k</text>
+          </svg>
+          <div style="margin-top:.75rem;display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:11px;color:#64748B">Annual savings rate</div>
+            <div style="font-size:14px;font-weight:800;color:#34D399">36% <span style="font-size:10px;font-weight:400;color:#64748B">· $30.5k saved this year</span></div>
+          </div>
+          <div style="background:#34D39912;border:1px solid #34D39930;border-radius:6px;height:6px;margin-top:6px;overflow:hidden">
+            <div style="width:36%;height:100%;background:#34D399;border-radius:6px"></div>
+          </div>
+        </div>
+        <!-- Split / treemap panel -->
+        <div id="pc-4" style="display:none;background:#0F172A;border:1px solid #334155;border-radius:10px;padding:.75rem .85rem">
+          <div style="font-size:9px;color:#64748B;font-weight:600;letter-spacing:.07em;text-transform:uppercase;margin-bottom:.5rem">SPENDING SPLIT · This period</div>
+          <div style="display:flex;height:90px;gap:1px;border-radius:6px;overflow:hidden;margin-bottom:.4rem">
+            <div style="flex:22;background:#F8717122;border:1px solid #F8717144;display:flex;flex-direction:column;justify-content:flex-end;padding:5px 6px;min-width:0">
+              <div style="font-size:8px;font-weight:700;color:#F87171;white-space:nowrap;overflow:hidden">Home</div>
+              <div style="font-size:13px;font-weight:900;color:#E2E8F0">22%</div>
+            </div>
+            <div style="flex:13;background:#34D39918;border:1px solid #34D39935;display:flex;flex-direction:column;justify-content:flex-end;padding:5px 5px;min-width:0">
+              <div style="font-size:8px;font-weight:700;color:#34D399;white-space:nowrap;overflow:hidden">Gro.</div>
+              <div style="font-size:11px;font-weight:900;color:#E2E8F0">13%</div>
+            </div>
+            <div style="flex:11;background:#FBBF2415;border:1px solid #FBBF2432;display:flex;flex-direction:column;justify-content:flex-end;padding:5px 4px;min-width:0">
+              <div style="font-size:8px;font-weight:700;color:#FBBF24;white-space:nowrap;overflow:hidden">Shop</div>
+              <div style="font-size:11px;font-weight:900;color:#E2E8F0">11%</div>
+            </div>
+            <div style="flex:9;background:#60A5FA12;border:1px solid #60A5FA30;display:flex;flex-direction:column;justify-content:flex-end;padding:5px 4px;min-width:0">
+              <div style="font-size:7px;font-weight:700;color:#60A5FA;white-space:nowrap;overflow:hidden">Bills</div>
+              <div style="font-size:10px;font-weight:900;color:#E2E8F0">9%</div>
+            </div>
+            <div style="flex:8;background:#FB923C12;border:1px solid #FB923C30;display:flex;flex-direction:column;justify-content:flex-end;padding:5px 4px;min-width:0">
+              <div style="font-size:7px;font-weight:700;color:#FB923C;white-space:nowrap;overflow:hidden">Trav.</div>
+              <div style="font-size:10px;font-weight:900;color:#E2E8F0">8%</div>
+            </div>
+            <div style="flex:37;background:#1E293B;border:1px solid #334155;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0">
+              <div style="font-size:8px;color:#64748B;text-align:center;line-height:1.5">+8 more<br>37%</div>
+            </div>
+          </div>
+          <div style="font-size:9px;color:#64748B">Tile size ∝ spend · click any tile to drill into vendors</div>
+        </div>
       </div>
     </div>
-        <!-- TAB 1: Daily -->
+    <!-- TAB 1: Budget -->
     <div class="ptab-panel" id="pt1" style="display:none">
       <div style="padding:1rem 1.25rem">
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:6px;margin-bottom:.85rem">
-          <div style="background:#1E293B;border:1px solid #334155;border-radius:8px;padding:.45rem .6rem"><div style="font-size:8px;color:#64748B;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Total</div><div style="font-size:16px;font-weight:900;color:#E2E8F0">$96k</div><div style="font-size:8px;color:#64748B">372 days</div></div>
-          <div style="background:#1E293B;border:1px solid #334155;border-radius:8px;padding:.45rem .6rem"><div style="font-size:8px;color:#64748B;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Avg/day</div><div style="font-size:16px;font-weight:900;color:#E2E8F0">$258</div><div style="font-size:8px;color:#64748B">active days</div></div>
-          <div style="background:#2563EB18;border:1px solid #2563EB33;border-radius:8px;padding:.45rem .6rem;cursor:pointer"><div style="font-size:8px;color:#60A5FA;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Peak day</div><div style="font-size:16px;font-weight:900;color:#60A5FA">$1,436</div><div style="font-size:8px;color:#60A5FA;opacity:.7">click to filter</div></div>
-          <div style="background:#1E293B;border:1px solid #334155;border-radius:8px;padding:.45rem .6rem"><div style="font-size:8px;color:#64748B;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Weekends</div><div style="font-size:16px;font-weight:900;color:#E2E8F0">−1%</div><div style="font-size:8px;color:#64748B">vs weekday</div></div>
+        <!-- Summary bar -->
+        <div style="background:#1E293B;border:1px solid #334155;border-radius:10px;padding:.65rem .9rem;margin-bottom:.65rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+            <div style="font-size:11px;font-weight:700;color:#E2E8F0">April — 3 weeks in</div>
+            <div style="display:flex;gap:10px">
+              <span style="font-size:10px;font-weight:700;color:#F87171">4 over/at risk</span>
+              <span style="font-size:10px;font-weight:700;color:#34D399">6 on track</span>
+            </div>
+          </div>
+          <div style="height:7px;border-radius:4px;background:#0F172A;overflow:hidden">
+            <div style="width:60%;height:100%;background:linear-gradient(90deg,#34D399,#34D39988);border-radius:4px"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:.3rem">
+            <div style="font-size:8px;color:#64748B">$4,820 of $8,050 budget used</div>
+            <div style="font-size:8px;color:#64748B">60%</div>
+          </div>
+          <!-- 12-month history strip -->
+          <div style="margin-top:.55rem">
+            <div style="font-size:8px;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">12-month history</div>
+            <div style="display:flex;gap:3px;align-items:center">
+              <div style="flex:1;height:8px;border-radius:3px;background:#F87171"></div><div style="flex:1;height:8px;border-radius:3px;background:#34D399"></div><div style="flex:1;height:8px;border-radius:3px;background:#FBBF24"></div><div style="flex:1;height:8px;border-radius:3px;background:#34D399"></div><div style="flex:1;height:8px;border-radius:3px;background:#F87171"></div><div style="flex:1;height:8px;border-radius:3px;background:#FBBF24"></div><div style="flex:1;height:8px;border-radius:3px;background:#34D399"></div><div style="flex:1;height:8px;border-radius:3px;background:#34D399"></div><div style="flex:1;height:8px;border-radius:3px;background:#F87171"></div><div style="flex:1;height:8px;border-radius:3px;background:#34D399"></div><div style="flex:1;height:8px;border-radius:3px;background:#FBBF24"></div><div style="flex:1;height:8px;border-radius:3px;background:#34D399"></div>
+            </div>
+          </div>
         </div>
-        <div style="font-size:8px;color:#64748B;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.4rem;display:flex;align-items:center;justify-content:space-between"><span>less <span style="display:inline-flex;gap:2px;align-items:center;margin:0 3px"><span style="width:8px;height:8px;border-radius:2px;background:#412402;display:inline-block"></span><span style="width:8px;height:8px;border-radius:2px;background:#633806;display:inline-block"></span><span style="width:8px;height:8px;border-radius:2px;background:#854f0b;display:inline-block"></span><span style="width:8px;height:8px;border-radius:2px;background:#ef9f27;display:inline-block"></span><span style="width:8px;height:8px;border-radius:2px;background:#fac775;display:inline-block"></span></span> more</span><span style="color:#60A5FA">Zoom −  +</span></div>
-        <div id="pheatmap" style="display:flex;gap:3px;overflow:hidden;height:64px"></div>
-        <div style="margin-top:.5rem;font-size:9px;color:#64748B">← scroll to see full history · click any day to filter transactions</div>
+        <!-- Rows -->
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="font-size:8px;font-weight:700;color:#F87171;letter-spacing:.06em;text-transform:uppercase;padding:2px 0">⚠ Needs attention</div>
+          <!-- Health & Wellness OVER -->
+          <div class="pbrow pbrow-over">
+            <div><span style="font-size:11px;font-weight:700;color:#E2E8F0">Health &amp; Wellness</span> <span class="pbadge" style="background:#F8717118;color:#F87171;border-color:#F8717133">OVER</span></div>
+            <div style="font-size:10px;color:#64748B">→ $511 by end</div>
+            <div style="text-align:right;font-size:12px;font-weight:800;color:#F87171">$426 <span style="font-size:9px;color:#64748B">/ $200</span></div>
+          </div>
+          <div style="height:3px;border-radius:2px;background:#0F172A;margin:-3px 0 2px;overflow:hidden"><div style="width:100%;height:100%;background:#F87171"></div></div>
+          <!-- Shopping AT RISK -->
+          <div class="pbrow pbrow-risk">
+            <div><span style="font-size:11px;font-weight:700;color:#E2E8F0">Shopping</span> <span class="pbadge" style="background:#FBBF2418;color:#FBBF24;border-color:#FBBF2433">AT RISK</span></div>
+            <div style="font-size:10px;color:#64748B">→ $480 by end</div>
+            <div style="text-align:right;font-size:12px;font-weight:800;color:#FBBF24">$344 <span style="font-size:9px;color:#64748B">/ $400</span></div>
+          </div>
+          <div style="height:3px;border-radius:2px;background:#0F172A;margin:-3px 0 2px;overflow:hidden"><div style="width:86%;height:100%;background:#FBBF24"></div></div>
+          <!-- Dining AT RISK -->
+          <div class="pbrow pbrow-risk">
+            <div><span style="font-size:11px;font-weight:700;color:#E2E8F0">Dining</span> <span class="pbadge" style="background:#FBBF2418;color:#FBBF24;border-color:#FBBF2433">AT RISK</span></div>
+            <div style="font-size:10px;color:#64748B">→ $290 by end</div>
+            <div style="text-align:right;font-size:12px;font-weight:800;color:#FBBF24">$218 <span style="font-size:9px;color:#64748B">/ $250</span></div>
+          </div>
+          <div style="height:3px;border-radius:2px;background:#0F172A;margin:-3px 0 2px;overflow:hidden"><div style="width:87%;height:100%;background:#FBBF24"></div></div>
+          <div style="font-size:8px;font-weight:700;color:#34D399;letter-spacing:.06em;text-transform:uppercase;padding:2px 0;margin-top:2px">✓ On track</div>
+          <!-- Groceries -->
+          <div class="pbrow" style="border-color:#33415566;border-left-color:#33415566">
+            <div><span style="font-size:11px;font-weight:700;color:#E2E8F0">Groceries</span></div>
+            <div style="font-size:10px;color:#64748B">→ $750 by end</div>
+            <div style="text-align:right;font-size:12px;font-weight:800;color:#34D399">$522 <span style="font-size:9px;color:#64748B">/ $700</span></div>
+          </div>
+          <div style="height:3px;border-radius:2px;background:#0F172A;margin:-3px 0 2px;overflow:hidden"><div style="width:75%;height:100%;background:#34D399"></div></div>
+          <!-- Home -->
+          <div class="pbrow" style="border-color:#33415566;border-left-color:#33415566">
+            <div><span style="font-size:11px;font-weight:700;color:#E2E8F0">Home</span></div>
+            <div style="font-size:10px;color:#64748B">→ $1,480 by end</div>
+            <div style="text-align:right;font-size:12px;font-weight:800;color:#34D399">$1,110 <span style="font-size:9px;color:#64748B">/ $1,400</span></div>
+          </div>
+          <div style="height:3px;border-radius:2px;background:#0F172A;margin:-3px 0 2px;overflow:hidden"><div style="width:79%;height:100%;background:#34D399"></div></div>
+        </div>
       </div>
     </div>
-        <!-- TAB 2: Flow -->
+    <!-- TAB 2: Net Worth -->
     <div class="ptab-panel" id="pt2" style="display:none">
       <div style="padding:1rem 1.25rem">
-        <div style="font-size:9px;color:#64748B;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.75rem">INCOME → SPENDING FLOW</div>
-        <!-- Sankey-style flow mockup -->
-        <svg viewBox="0 0 420 200" width="100%" height="200" style="overflow:visible">
-          <!-- Income sources on left -->
-          <rect x="0" y="20" width="80" height="60" rx="6" fill="#34D39918" stroke="#34D39944"/>
-          <text x="40" y="44" font-size="9" fill="#34D399" text-anchor="middle" font-weight="700">Salary</text>
-          <text x="40" y="58" font-size="11" fill="#E2E8F0" text-anchor="middle" font-weight="900">$6,200</text>
-          <text x="40" y="72" font-size="8" fill="#64748B" text-anchor="middle">monthly</text>
-
-          <rect x="0" y="100" width="80" height="44" rx="6" fill="#34D39910" stroke="#34D39933"/>
-          <text x="40" y="118" font-size="9" fill="#34D399" text-anchor="middle" font-weight="700">Freelance</text>
-          <text x="40" y="134" font-size="11" fill="#E2E8F0" text-anchor="middle" font-weight="900">$850</text>
-
-          <!-- Flow paths left→center -->
-          <path d="M80,50 C160,50 160,95 240,95" fill="none" stroke="#34D399" stroke-width="28" opacity="0.18"/>
-          <path d="M80,50 C160,50 160,95 240,95" fill="none" stroke="#34D399" stroke-width="1.5" opacity="0.6"/>
-          <path d="M80,122 C160,122 160,105 240,105" fill="none" stroke="#34D399" stroke-width="10" opacity="0.18"/>
-          <path d="M80,122 C160,122 160,105 240,105" fill="none" stroke="#34D399" stroke-width="1.5" opacity="0.4"/>
-
-          <!-- Center node -->
-          <rect x="220" y="72" width="60" height="56" rx="8" fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
-          <text x="250" y="94" font-size="8" fill="#94A3B8" text-anchor="middle" font-weight="700">TOTAL</text>
-          <text x="250" y="108" font-size="12" fill="#E2E8F0" text-anchor="middle" font-weight="900">$7,050</text>
-          <text x="250" y="120" font-size="8" fill="#64748B" text-anchor="middle">income</text>
-
-          <!-- Flow paths center→right spending categories -->
-          <path d="M280,88 C340,88 340,30 420,30" fill="none" stroke="#F87171" stroke-width="18" opacity="0.18"/>
-          <path d="M280,88 C340,88 340,30 420,30" fill="none" stroke="#F87171" stroke-width="1.5" opacity="0.7"/>
-          <path d="M280,96 C340,96 340,80 420,80" fill="none" stroke="#34D399" stroke-width="10" opacity="0.18"/>
-          <path d="M280,96 C340,96 340,80 420,80" fill="none" stroke="#34D399" stroke-width="1.5" opacity="0.6"/>
-          <path d="M280,104 C340,104 340,120 420,120" fill="none" stroke="#60A5FA" stroke-width="8" opacity="0.18"/>
-          <path d="M280,104 C340,104 340,120 420,120" fill="none" stroke="#60A5FA" stroke-width="1.5" opacity="0.5"/>
-          <path d="M280,112 C340,112 340,158 420,158" fill="none" stroke="#FBBF24" stroke-width="6" opacity="0.18"/>
-          <path d="M280,112 C340,112 340,158 420,158" fill="none" stroke="#FBBF24" stroke-width="1.5" opacity="0.5"/>
-
-          <!-- Spending categories on right -->
-          <rect x="340" y="10" width="80" height="40" rx="6" fill="#F8717118" stroke="#F8717133"/>
-          <text x="380" y="26" font-size="8" fill="#F87171" text-anchor="middle" font-weight="700">Home</text>
-          <text x="380" y="40" font-size="10" fill="#E2E8F0" text-anchor="middle" font-weight="900">$1,840</text>
-
-          <rect x="340" y="60" width="80" height="40" rx="6" fill="#34D39912" stroke="#34D39930"/>
-          <text x="380" y="76" font-size="8" fill="#34D399" text-anchor="middle" font-weight="700">Groceries</text>
-          <text x="380" y="90" font-size="10" fill="#E2E8F0" text-anchor="middle" font-weight="900">$695</text>
-
-          <rect x="340" y="108" width="80" height="36" rx="6" fill="#60A5FA12" stroke="#60A5FA30"/>
-          <text x="380" y="122" font-size="8" fill="#60A5FA" text-anchor="middle" font-weight="700">Bills</text>
-          <text x="380" y="136" font-size="10" fill="#E2E8F0" text-anchor="middle" font-weight="900">$582</text>
-
-          <rect x="340" y="150" width="80" height="36" rx="6" fill="#FBBF2412" stroke="#FBBF2430"/>
-          <text x="380" y="164" font-size="8" fill="#FBBF24" text-anchor="middle" font-weight="700">Shopping</text>
-          <text x="380" y="178" font-size="10" fill="#E2E8F0" text-anchor="middle" font-weight="900">$431</text>
-        </svg>
-        <div style="margin-top:.75rem;display:flex;align-items:center;justify-content:space-between">
-          <div style="font-size:11px;color:#64748B">Savings rate</div>
-          <div style="font-size:14px;font-weight:800;color:#34D399">36% <span style="font-size:10px;font-weight:400;color:#64748B">· $2,532 saved this month</span></div>
-        </div>
-        <div style="background:#34D39912;border:1px solid #34D39930;border-radius:6px;height:6px;margin-top:6px;overflow:hidden">
-          <div style="width:36%;height:100%;background:#34D399;border-radius:6px"></div>
-        </div>
-      </div>
-
-
-  </div>
-    <!-- TAB 3: Budget -->
-    <div class="ptab-panel" id="pt3" style="display:none">
-      <div style="padding:1rem 1.25rem">
-        <div style="background:#F8717112;border:1.5px solid #F8717155;border-radius:10px;padding:.6rem .85rem;margin-bottom:.75rem;display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <div style="font-size:9px;font-weight:700;color:#F87171;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px">⚑ Worth your attention</div>
-            <div style="font-size:11px;font-weight:700;color:#E2E8F0">🔴 Budget health</div>
-            <div style="font-size:9px;color:#94A3B8;margin-top:2px">4 categories over — <span style="color:#F87171;font-weight:700">Go to Budget tab →</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:1rem">
+          <div style="background:#34D39914;border:1px solid #34D39933;border-radius:10px;padding:.7rem .9rem">
+            <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#34D399;margin-bottom:4px">Net Worth</div>
+            <div style="font-size:20px;font-weight:900;color:#34D399;line-height:1">$87.4k</div>
+            <div style="font-size:9px;color:#64748B;margin-top:3px">↑$18k this year</div>
           </div>
-          <div style="font-size:20px;font-weight:900;color:#F87171;white-space:nowrap;margin-left:1rem">5/10<br><span style="font-size:10px;font-weight:400;color:#64748B">on track</span></div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:5px">
-          <div style="font-size:8px;font-weight:700;color:#F87171;letter-spacing:.06em;text-transform:uppercase;padding:2px 4px">⚠ Needs attention</div>
-          <div class="pbrow pbrow-over"><div><span style="font-size:11px;font-weight:700;color:#E2E8F0">Health &amp; Wellness</span> <span class="pbadge" style="background:#F8717118;color:#F87171;border-color:#F8717133">OVER</span></div><div style="font-size:10px;color:#64748B">→ $511 by end</div><div style="text-align:right;font-size:12px;font-weight:800;color:#F87171">$426 <span style="font-size:9px;color:#64748B">/ $200</span></div></div>
-          <div class="pbrow pbrow-risk"><div><span style="font-size:11px;font-weight:700;color:#E2E8F0">Shopping</span> <span class="pbadge" style="background:#FBBF2418;color:#FBBF24;border-color:#FBBF2433">AT RISK</span></div><div style="font-size:10px;color:#64748B">→ $480 by end</div><div style="text-align:right;font-size:12px;font-weight:800;color:#FBBF24">$344 <span style="font-size:9px;color:#64748B">/ $400</span></div></div>
-          <div style="font-size:8px;font-weight:700;color:#34D399;letter-spacing:.06em;text-transform:uppercase;padding:2px 4px;margin-top:2px">✓ On track</div>
-          <div class="pbrow" style="border-color:#33415566;border-left-color:#33415566"><div><span style="font-size:11px;font-weight:700;color:#E2E8F0">Groceries</span></div><div style="font-size:10px;color:#64748B">→ $750 by end</div><div style="text-align:right;font-size:12px;font-weight:800;color:#34D399">$522 <span style="font-size:9px;color:#64748B">/ $700</span></div></div>
-        </div>
-        <div style="margin-top:.75rem;background:#0F172A66;border:1px solid #334155;border-radius:8px;padding:.5rem .75rem">
-          <div style="font-size:8px;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">12-month budget history</div>
-          <div style="display:flex;gap:3px;align-items:center">
-            <div style="flex:1;height:9px;border-radius:4px;background:#F87171"></div><div style="flex:1;height:9px;border-radius:4px;background:#34D399"></div><div style="flex:1;height:9px;border-radius:4px;background:#FBBF24"></div><div style="flex:1;height:9px;border-radius:4px;background:#34D399"></div><div style="flex:1;height:9px;border-radius:4px;background:#F87171"></div><div style="flex:1;height:9px;border-radius:4px;background:#FBBF24"></div><div style="flex:1;height:9px;border-radius:4px;background:#34D399"></div><div style="flex:1;height:9px;border-radius:4px;background:#34D399"></div><div style="flex:1;height:9px;border-radius:4px;background:#F87171"></div><div style="flex:1;height:9px;border-radius:4px;background:#34D399"></div><div style="flex:1;height:9px;border-radius:4px;background:#FBBF24"></div><div style="flex:1;height:9px;border-radius:4px;background:#34D399"></div>
+          <div style="background:#60A5FA12;border:1px solid #60A5FA33;border-radius:10px;padding:.7rem .9rem">
+            <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#60A5FA;margin-bottom:4px">Assets</div>
+            <div style="font-size:20px;font-weight:900;color:#60A5FA;line-height:1">$112k</div>
+            <div style="font-size:9px;color:#64748B;margin-top:3px">checking · IRA · savings</div>
+          </div>
+          <div style="background:#F8717112;border:1px solid #F8717133;border-radius:10px;padding:.7rem .9rem">
+            <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#F87171;margin-bottom:4px">Liabilities</div>
+            <div style="font-size:20px;font-weight:900;color:#F87171;line-height:1">$24.6k</div>
+            <div style="font-size:9px;color:#64748B;margin-top:3px">loan · credit card</div>
           </div>
         </div>
-      </div>
-    </div>
-    <!-- TAB 4: Net Worth -->
-    <div class="ptab-panel" id="pt4" style="display:none">
-      <div style="padding:1rem 1.25rem">
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:.85rem">
-          <div style="background:#34D39912;border:1px solid #34D39933;border-radius:8px;padding:.5rem .7rem"><div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#34D399;margin-bottom:2px">Net Worth</div><div style="font-size:18px;font-weight:900;color:#34D399">$87.4k</div><div style="font-size:9px;color:#64748B">↑$18k this year</div></div>
-          <div style="background:#60A5FA12;border:1px solid #60A5FA33;border-radius:8px;padding:.5rem .7rem"><div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#60A5FA;margin-bottom:2px">Assets</div><div style="font-size:18px;font-weight:900;color:#60A5FA">$112k</div><div style="font-size:9px;color:#64748B">checking · savings · IRA</div></div>
-          <div style="background:#F8717112;border:1px solid #F8717133;border-radius:8px;padding:.5rem .7rem"><div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#F87171;margin-bottom:2px">Liabilities</div><div style="font-size:18px;font-weight:900;color:#F87171">$24.6k</div><div style="font-size:9px;color:#64748B">loan · credit card</div></div>
-        </div>
-        <div style="background:#0F172A88;border:1px solid #334155;border-radius:8px;padding:.6rem .75rem;margin-bottom:.75rem">
-          <div style="font-size:8px;color:#64748B;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Trajectory to $150k goal</div>
-          <svg viewBox="0 0 320 70" width="100%" height="70" style="overflow:visible">
-            <line x1="0" y1="55" x2="320" y2="55" stroke="#334155" stroke-width="0.5"/>
-            <line x1="0" y1="35" x2="320" y2="35" stroke="#334155" stroke-width="0.5" stroke-dasharray="3,3"/>
-            <line x1="0" y1="15" x2="320" y2="15" stroke="#334155" stroke-width="0.5" stroke-dasharray="3,3"/>
-            <polyline points="0,58 30,54 60,50 90,52 120,45 150,42 180,38 210,36 240,32 270,28 300,24" fill="none" stroke="#34D399" stroke-width="2" stroke-linejoin="round"/>
-            <polyline points="300,24 320,20" fill="none" stroke="#34D399" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.6"/>
-            <line x1="0" y1="8" x2="320" y2="8" stroke="#60A5FA" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
-            <text x="314" y="6" font-size="7" fill="#60A5FA" text-anchor="end" opacity="0.7">$150k goal</text>
-            <circle cx="300" cy="24" r="3" fill="#34D399"/>
-            <text x="296" y="20" font-size="7" fill="#34D399" text-anchor="middle">$87.4k</text>
+        <div style="background:#0F172A;border:1px solid #334155;border-radius:10px;padding:.75rem .85rem;margin-bottom:.85rem">
+          <div style="font-size:8px;color:#64748B;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Trajectory to $150k goal</div>
+          <svg viewBox="0 0 500 110" width="100%" style="display:block">
+            <line x1="0" y1="88" x2="500" y2="88" stroke="#334155" stroke-width="0.5"/>
+            <line x1="0" y1="58" x2="500" y2="58" stroke="#334155" stroke-width="0.5" stroke-dasharray="3,3"/>
+            <line x1="0" y1="28" x2="500" y2="28" stroke="#334155" stroke-width="0.5" stroke-dasharray="3,3"/>
+            <polyline points="0,92 42,88 84,82 126,85 168,76 210,70 252,64 294,59 336,52 378,46 420,40 462,34 500,30" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linejoin="round"/>
+            <polyline points="500,30 500,26" fill="none" stroke="#34D399" stroke-width="2" stroke-dasharray="4,3" opacity="0.6"/>
+            <line x1="0" y1="14" x2="500" y2="14" stroke="#60A5FA" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+            <text x="496" y="12" font-size="5" fill="#60A5FA" text-anchor="end" opacity="0.8">$150k goal</text>
+            <circle cx="500" cy="30" r="4" fill="#34D399"/>
+            <text x="490" y="24" font-size="6" fill="#34D399" text-anchor="end" font-weight="700">$87.4k</text>
+            <text x="0"   y="104" font-size="5" fill="#475569">May '25</text>
+            <text x="500" y="104" font-size="5" fill="#64748B" text-anchor="end" font-weight="700">Apr '26</text>
           </svg>
         </div>
-        <div style="display:flex;flex-direction:column;gap:4px">
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:.35rem .6rem;background:#1E293B;border-radius:6px;font-size:11px"><span style="color:#94A3B8">🏦 Ally Checking</span><span style="font-weight:700;color:#E2E8F0">$3,200</span></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:.35rem .6rem;background:#1E293B;border-radius:6px;font-size:11px"><span style="color:#94A3B8">📈 Fidelity Roth IRA</span><span style="font-weight:700;color:#34D399">$41,200</span></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:.35rem .6rem;background:#1E293B;border-radius:6px;font-size:11px"><span style="color:#94A3B8">🎓 Navient Student Loan</span><span style="font-weight:700;color:#F87171">−$17,800</span></div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:#1E293B;border-radius:8px;font-size:11px"><span style="color:#94A3B8">🏦 Ally Checking</span><span style="font-weight:700;color:#E2E8F0">$3,200</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:#1E293B;border-radius:8px;font-size:11px"><span style="color:#94A3B8">💰 Ally HYSA</span><span style="font-weight:700;color:#E2E8F0">$22,400</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:#1E293B;border-radius:8px;font-size:11px"><span style="color:#94A3B8">📈 Fidelity Roth IRA</span><span style="font-weight:700;color:#34D399">$41,200</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:#1E293B;border-radius:8px;font-size:11px"><span style="color:#94A3B8">🏢 Vanguard 401(k)</span><span style="font-weight:700;color:#34D399">$45,200</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:#1E293B;border-radius:8px;font-size:11px"><span style="color:#94A3B8">🎓 Navient Student Loan</span><span style="font-weight:700;color:#F87171">−$17,800</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:#1E293B;border-radius:8px;font-size:11px"><span style="color:#94A3B8">💳 Chase Sapphire</span><span style="font-weight:700;color:#F87171">−$6,800</span></div>
         </div>
       </div>
     </div>
@@ -514,8 +659,13 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
         <span style="font-size:12px;color:var(--text-secondary);background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:6px;padding:3px 10px">📈 Trend</span>
         <span style="font-size:12px;color:var(--text-secondary);background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:6px;padding:3px 10px">📅 Daily heatmap</span>
         <span style="font-size:12px;color:var(--text-secondary);background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:6px;padding:3px 10px">🏦 Flow</span>
+        <span style="font-size:12px;color:var(--text-secondary);background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:6px;padding:3px 10px">⊞ Split</span>
       </div>
       <p style="margin-top:.5rem">Click any category tile to filter transactions instantly across all views.</p>
+    </div></div>
+    <div class="fi"><div class="fi-icon">📋</div><div>
+      <h3>Your month in plain English</h3>
+      <p>A short summary of what changed and why — lighter month, biggest mover, savings rate — written like a human, not a report.</p>
     </div></div>
     <div class="fi"><div class="fi-icon">⬇</div><div>
       <h3>Export your data anytime</h3>
@@ -529,14 +679,14 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
       <h3>Smart auto-categorization</h3>
       <div style="display:flex;flex-direction:column;gap:5px;margin:.6rem 0">
         <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:#2563EB;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">1</span><span style="color:var(--text-secondary)"><strong style="color:var(--text-primary)">Your rules</strong> — keyword rules you've saved always win</span></div>
-        <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:#2563EB;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">2</span><span style="color:var(--text-secondary)"><strong style="color:var(--text-primary)">Community patterns</strong> — 280+ crowdsourced merchant mappings · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" style="color:var(--accent-blue-light)">Suggest one ↗</a></span></div>
-        <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:#2563EB;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">3</span><span style="color:var(--text-secondary)"><strong style="color:var(--text-primary)"><a href="https://en.wikipedia.org/wiki/Merchant_category_code" target="_blank" style="color:var(--text-primary);text-decoration:underline">MCC codes</a></strong> — your bank's merchant codes, if present</span></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:#2563EB;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">2</span><span style="color:var(--text-secondary)"><strong style="color:var(--text-primary)">Community patterns</strong> — <span class="community-rules-count">336</span> community-contributed merchant mappings · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light)">Suggest one ↗</a></span></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:#2563EB;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">3</span><span style="color:var(--text-secondary)"><strong style="color:var(--text-primary)"><a href="https://en.wikipedia.org/wiki/Merchant_category_code" target="_blank" rel="noopener noreferrer" style="color:var(--text-primary);text-decoration:underline">MCC codes</a></strong> — your bank's merchant codes, if present</span></div>
         <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:#2563EB;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">4</span><span style="color:var(--text-secondary)"><strong style="color:var(--text-primary)">300+ built-in keywords</strong> — fallback for everything else</span></div>
       </div>
     </div></div>
     <div class="fi"><div class="fi-icon">🎯</div><div>
-      <h3>Budgets with real-time pace</h3>
-      <p>Set monthly limits per category. AT RISK warnings surface before you go over. 12-month history shows your patterns at a glance.</p>
+      <h3>Budgets that update with every import</h3>
+      <p>Set monthly limits per category. Every import updates your pace — AT RISK warnings surface before you go over. 12-month history shows your patterns at a glance.</p>
     </div></div>
     <div class="fi"><div class="fi-icon">🔄</div><div>
       <h3>Recurring charge detection</h3>
@@ -548,7 +698,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 <!-- Privacy -->
 <section class="section">
   <div class="section-eyebrow">Privacy first</div>
-  <h2>Built for people who care<br>where their data goes.</h2>
+  <h2>The free Mint alternative<br>without bank logins.</h2>
   <div class="diff-grid">
     <div class="diff-card ab">
       <span class="diff-icon">🔒</span>
@@ -564,6 +714,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
       <span class="diff-icon">📂</span>
       <h3>Works with your bank's CSV</h3>
       <p>Chase, Ally, Fidelity, Vanguard, and most banks. Drop the file in — format detected automatically.</p>
+      <p style="font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-light);margin-top:.5rem">Migrating from Mint, YNAB, or Monarch Money? Drop in your export and your categories map across automatically.</p>
     </div>
     <div class="diff-card">
       <span class="diff-icon">🔁</span>
@@ -589,15 +740,16 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
   <p style="font-size:12px;color:var(--text-muted);font-style:italic;margin:0">Don't obsess over money. Understand it.</p>
   <div class="footer-links">
     <a href="privacy.html">Privacy</a>
-    <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer">GitHub</a>
-    <a href="https://github.com/gflo247/trak-yo-dollas/issues" target="_blank" rel="noopener noreferrer">Feedback</a>
     <a href="trakyodollas.html?import=1">Import CSV</a>
+    <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <a href="https://github.com/gflo247/trak-yo-dollas/issues" target="_blank" rel="noopener noreferrer">Report a bug</a>
+    <a href="mailto:trakyodollas@gmail.com">Email me</a>
   </div>
 </footer>
 <script>
 function showTab(i) {
   document.querySelectorAll('#preview-tabs button').forEach((t,j)=>t.classList.toggle('ptab-active',i===j));
-  [0,1,2,3,4].forEach(j=>{
+  [0,1,2].forEach(j=>{
     const p=document.getElementById('pt'+j);
     if(!p)return;
     if(i===j){
@@ -609,29 +761,52 @@ function showTab(i) {
       p.style.display='none';
     }
   });
-  if(i===1) buildHeatmap();
 }
 
-function buildHeatmap() {
-  const el = document.getElementById('pheatmap');
-  if (!el || el.children.length) return;
-  const AMBER = ['#412402','#633806','#854f0b','#ba7517','#ef9f27','#fac775'];
-  const EMPTY = '#1e293b';
-  // Generate ~14 months of week columns
-  const seed = [0,2,3,1,4,0,2,1,3,5,2,0,4,1,3,0,2,4,1,3,2,0,5,3,1,4,2,0,3,1,2,0,4,5,2,1,3,0,4,2,1,5,3,0,2,4,1,3,0,2,4,1,5,3,0,2,4];
-  seed.forEach((v,ci) => {
-    const col = document.createElement('div');
-    col.style.cssText = 'display:flex;flex-direction:column;gap:2px;flex-shrink:0';
+function buildHeatmap(){
+  const el=document.getElementById('pheatmap');
+  if(!el||el.children.length)return;
+  const AMBER=['#412402','#633806','#854f0b','#ba7517','#ef9f27','#fac775'];
+  const EMPTY='#1e293b',WE='#243558';
+  // Rich seed: 120+ values for a full year of varied daily spend
+  const seed=[2,3,1,4,0,2,1,3,5,2,0,4,1,3,0,2,4,1,3,2,0,5,3,1,4,2,0,3,1,2,0,4,5,2,1,3,0,4,2,1,5,3,0,2,4,1,3,0,2,4,1,5,3,0,2,4,2,3,4,1,0,3,5,2,1,4,3,0,5,2,1,4,3,0,2,1,5,3,4,2,0,1,3,2,5,4,0,1,2,3,0,4,5,1,3,2,4,0,5,3,2,1,0,4,3,5,2,1,0,4,3,2,5,1,0,3,4,2,5,1,3];
+  // Month label at which week index
+  const moAt={0:'May',4:'Jun',9:'Jul',13:'Aug',18:'Sep',22:'Oct',27:'Nov',31:'Dec',36:'Jan',40:'Feb',44:'Mar',49:'Apr'};
+  // DOW labels column — sticky left, aligned below the month-label row
+  const dowCol=document.createElement('div');
+  dowCol.style.cssText='display:flex;flex-direction:column;gap:2px;padding-top:12px;margin-right:3px;flex-shrink:0;position:sticky;left:0;z-index:2;background:#0F172A';
+  ['','M','','W','','F',''].forEach(l=>{
+    const d=document.createElement('div');
+    d.style.cssText='height:9px;font-size:8px;color:#64748B;display:flex;align-items:center;flex-shrink:0;font-family:monospace;font-weight:600';
+    d.textContent=l;
+    dowCol.appendChild(d);
+  });
+  el.appendChild(dowCol);
+  for(let wi=0;wi<53;wi++){
+    const col=document.createElement('div');
+    col.style.cssText='display:flex;flex-direction:column;gap:2px;flex-shrink:0;align-items:center';
+    // Month label row (always present, empty unless month start)
+    const ml=document.createElement('div');
+    ml.style.cssText='height:10px;font-size:7px;color:#64748B;font-weight:600;font-family:monospace;line-height:10px;white-space:nowrap;align-self:flex-start;flex-shrink:0';
+    ml.textContent=moAt[wi]||'';
+    col.appendChild(ml);
+    // 7 day cells (r=0=Sun through r=6=Sat, weekends at r=0,r=6)
     for(let r=0;r<7;r++){
-      const day = document.createElement('div');
-      const val = (r===0||r===6) ? 0 : seed[(ci*7+r)%seed.length];
-      day.style.cssText = `width:9px;height:9px;border-radius:2px;background:${val===0?EMPTY:AMBER[Math.min(val,5)]}`;
+      const day=document.createElement('div');
+      const isWknd=r===0||r===6;
+      const rawVal=seed[(wi*7+r)%seed.length];
+      // Weekends get real data but slightly reduced
+      const val=isWknd?Math.max(0,rawVal-1):rawVal;
+      const bg=val===0?(isWknd?WE:EMPTY):AMBER[Math.min(val,5)];
+      const op=val===0?(isWknd?'0.55':'0.3'):'1';
+      day.style.cssText=`width:9px;height:9px;border-radius:2px;background:${bg};opacity:${op};flex-shrink:0`;
       col.appendChild(day);
     }
     el.appendChild(col);
-  });
+  }
 }
-buildHeatmap();
+// Pre-build heatmap so Daily panel is ready immediately
+setTimeout(buildHeatmap, 0);
 
 // Panels initialized via HTML inline styles
 
@@ -669,6 +844,57 @@ function updateChartDots() {
   document.querySelectorAll('.est-dot').forEach(c => c.setAttribute('fill', isLight ? '#94A3B8' : '#334155'));
 }
 updateChartDots();
+
+// Chart mode switcher
+let _pcActive=0,_ptileActive=null;
+function setPreviewChart(n){
+  _pcActive=n;
+  [0,1,2,3,4].forEach(i=>{
+    const p=document.getElementById('pc-'+i);
+    if(p)p.style.display=i===n?'block':'none';
+  });
+  for(let i=0;i<5;i++){
+    const b=document.getElementById('pcm-'+i);
+    if(!b)continue;
+    const on=i===n;
+    b.style.background=on?'#1E3A5F':'#1E293B';
+    b.style.borderColor=on?'#2563EB55':'#334155';
+    b.style.color=on?'#60A5FA':'#64748B';
+    b.style.fontWeight=on?'600':'400';
+  }
+  if(n===2)buildHeatmap();
+}
+function buildPreviewDailyBars(){
+  const el=document.getElementById('pdailybar');
+  if(!el||el.children.length)return;
+  const h=[10,5,38,8,25,70,62,15,42,88,38,20,6,28,52,45,12,35,22,78,40,10,65,26,16,50,72,18,34,8];
+  h.forEach(v=>{
+    const d=document.createElement('div');
+    d.style.cssText=`flex:1;background:#60A5FA;border-radius:2px 2px 0 0;height:${v}%;opacity:${0.35+v/130};min-height:3px`;
+    el.appendChild(d);
+  });
+}
+function filterPreviewTile(el,cat,color){
+  const tiles=document.querySelectorAll('.ptile');
+  const isActive=el===_ptileActive;
+  tiles.forEach(t=>{t.style.opacity='';t.style.transform='';t.style.boxShadow='';});
+  _ptileActive=isActive?null:el;
+  const lbl=document.getElementById('pchart-lbl');
+  if(isActive){
+    if(lbl)lbl.textContent='BY CATEGORY · Last 3 months';
+  } else {
+    el.style.boxShadow=`0 0 0 2px ${color}`;
+    el.style.transform='scale(1.03)';
+    tiles.forEach(t=>{if(t!==el)t.style.opacity='.35';});
+    if(lbl)lbl.textContent=`Filtered to: ${cat} · click tile to clear`;
+  }
+}
+
+// Live community rules count — uses force-cache so repeat visits cost nothing
+fetch('https://trak-yo-dollas.web.app/community-rules.json',{cache:'force-cache'})
+  .then(r=>r.ok?r.json():null).then(d=>{
+    if(Array.isArray(d))document.querySelectorAll('.community-rules-count').forEach(el=>el.textContent=d.length);
+  }).catch(()=>{});
 
 // Scroll-triggered fade-in
 const observer = new IntersectionObserver(entries => {
