@@ -10,17 +10,22 @@
 <meta property="og:title" content="trak-yo-dolla$ — Free Mint Alternative · No Bank Connections">
 <meta property="og:description" content="Track spending, budgets, and net worth from a CSV. No bank logins, no subscriptions, no data leaving your browser. Free forever.">
 <meta property="og:url" content="https://trak-yo-dollas.web.app/index.html">
+<meta property="og:image" content="https://trak-yo-dollas.web.app/og.png">
+<meta property="og:image:width" content="3212">
+<meta property="og:image:height" content="1804">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://trak-yo-dollas.web.app/og.png">
 <style>
 /* fonts self-hosted — see /fonts/fonts.css */
 
 :root {
-  --bg-page:#0F172A;
+  --bg-page:#111720;
   --bg-card:#1E293B;
-  --bg-deep:#0D1525;
+  --bg-deep:#0D1419;
   --border:#1E293B;
   --border-mid:#334155;
   --text-bright:#F1F5F9;
-  --text-primary:#E2E8F0;
+  --text-primary:#D1DCE8;
   --text-secondary:#94A3B8;
   --text-muted:#64748B;
   --accent-blue:#2563EB;
@@ -31,16 +36,18 @@
 }
 [data-theme="light"] {
   --bg-page:#F8FAFC;
-  --bg-card:#FFFFFF;
+  --bg-card:#FFFEFB;
   --bg-deep:#F1F5F9;
   --border:#E2E8F0;
   --border-mid:#CBD5E1;
   --text-bright:#0F172A;
   --text-primary:#1E293B;
-  --text-secondary:#374151;
+  --text-secondary:#4B5563;
   --text-muted:#4B5563;
   --accent-blue-light:#1D4ED8;
-  --accent-green:#059669;
+  --accent-green:#047857;
+  --accent-red:#DC2626;
+  --accent-amber:#B45309;
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -165,12 +172,13 @@ nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-con
 .cta-note a{color:var(--accent-blue-light);text-decoration:none}
 
 /* Footer */
-footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
-.footer-logo{font-family:'DM Mono',monospace;font-size:14px;color:var(--text-muted);text-decoration:none}
+footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:12px}
+.footer-logo{font-family:'DM Mono',monospace;font-size:13px;color:var(--text-muted);text-decoration:none;letter-spacing:.02em}
 .footer-logo span{color:var(--accent-blue-light)}
-.footer-links{display:flex;gap:20px}
-.footer-links a{font-size:13px;color:var(--text-muted);text-decoration:none;transition:color .15s}
-.footer-links a:hover{color:var(--text-secondary)}
+.footer-left{display:flex;align-items:center;gap:12px}
+.footer-links{display:flex;gap:16px;flex-wrap:wrap;margin-left:auto}
+.footer-links a,.footer-support{font-size:13px;color:var(--text-muted);text-decoration:none;transition:color .15s}
+.footer-links a:hover,.footer-support:hover{color:var(--text-secondary)}
 
 /* Preview tabs */
 .ptab{background:none;border:none;border-bottom:2px solid transparent;padding:5px 12px;font-size:12px;color:var(--text-muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:color .15s,border-color .15s;white-space:nowrap}
@@ -199,8 +207,11 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 [data-theme="light"] .pm.blue{background:#DBEAFE;border-color:#93C5FD;color:#1D4ED8}
 [data-theme="light"] .pm.green{background:#D1FAE5;border-color:#6EE7B7;color:#065F46}
 [data-theme="light"] .pm.red{background:#FEE2E2;border-color:#FCA5A5;color:#991B1B}
-[data-theme="light"] .pi-yes{background:#ECFDF5;border-color:#6EE7B7}
-[data-theme="light"] .pi-no{background:#FEF2F2;border-color:#FCA5A5}
+[data-theme="light"] .pi-yes{background:#ECFDF5;border-color:#6EE7B7;color:#047857}
+[data-theme="light"] .pi-no{background:#FEF2F2;border-color:#FCA5A5;color:#DC2626}
+/* Chart mode buttons — theme-aware via class */
+.pcm-btn{background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:7px;padding:.35rem .5rem;font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:4px;cursor:pointer;flex:1;font-family:inherit}
+.pcm-btn.pcm-active{background:var(--bg-card);border-color:var(--accent-blue-light);color:var(--accent-blue-light);font-weight:600}
 
 /* Responsive */
 @media(max-width:640px){
@@ -218,7 +229,10 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
   .privacy-box>p{margin-bottom:1rem}
   .privacy-grid{gap:8px}
   .pi{padding:.5rem .75rem;gap:8px}
-  footer{padding:1.5rem 1.25rem;flex-direction:column;align-items:flex-start}
+  footer{flex-direction:column;align-items:center;padding:.75rem 1.5rem}
+  .footer-left{justify-content:center}
+  .footer-links{margin-left:0;justify-content:center;gap:14px}
+  .footer-links a,.footer-support{font-size:11px;padding:5px 2px;color:var(--text-muted)}
 }
 </style>
 <link rel="stylesheet" href="/fonts/fonts.css">
@@ -246,6 +260,21 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
   </div>
   <div id="import-nudge" style="display:none;margin-top:.75rem;font-size:13px;color:var(--text-muted)"></div>
   <p class="fu fu4" style="margin-top:1.25rem;font-size:13px;color:var(--text-muted);font-style:italic;letter-spacing:.01em">Don't obsess over money. Understand it.</p>
+  <div class="hero-trust fu fu4" style="margin-top:1.1rem;gap:6px">
+    <span style="font-size:12px;color:var(--text-muted);margin-right:2px">Works in</span>
+    <span style="font-size:14px" title="United States">🇺🇸</span>
+    <span class="trust-dot"></span>
+    <span style="font-size:14px" title="Canada">🇨🇦</span>
+    <span class="trust-dot"></span>
+    <span style="font-size:14px" title="United Kingdom">🇬🇧</span>
+    <span class="trust-dot"></span>
+    <span style="font-size:14px" title="Australia">🇦🇺</span>
+    <span class="trust-dot"></span>
+    <span style="font-size:14px" title="New Zealand">🇳🇿</span>
+    <span class="trust-dot"></span>
+    <span style="font-size:14px" title="Singapore">🇸🇬</span>
+    <span style="font-size:12px;color:var(--text-muted);margin-left:2px">and more</span>
+  </div>
 </section>
 
 
@@ -275,126 +304,126 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
       <div style="padding:1rem 1.25rem">
         <!-- At a Glance insights strip -->
         <div style="margin-bottom:.85rem">
-          <div style="font-size:9px;color:#64748B;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.45rem">AT A GLANCE · April</div>
+          <div style="font-size:9px;color:var(--text-muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.45rem">AT A GLANCE · April</div>
           <div style="background:#60A5FA0D;border:1.5px solid #60A5FA33;border-radius:10px;padding:.55rem .8rem;margin-bottom:.45rem">
             <div style="display:flex;align-items:center;gap:5px;margin-bottom:.2rem">
               <span style="font-size:13px;line-height:1">📋</span>
-              <span style="font-size:8px;font-weight:700;color:#94A3B8;letter-spacing:.05em;text-transform:uppercase">This month · April</span>
+              <span style="font-size:8px;font-weight:700;color:var(--text-secondary);letter-spacing:.05em;text-transform:uppercase">This month · April</span>
             </div>
-            <div style="font-size:10px;color:#64748B;line-height:1.55">April was a lighter month — you spent $6,200, about $980 less than your 6-month average. Groceries dropped $280 from March — a solid save.</div>
+            <div style="font-size:10px;color:var(--text-muted);line-height:1.55">April was a lighter month — you spent $6,200, about $980 less than your 6-month average. Groceries dropped $280 from March — a solid save.</div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
             <div style="background:#34D39912;border:1.5px solid #34D39940;border-radius:10px;padding:.45rem .7rem;display:flex;justify-content:space-between;align-items:center">
               <div>
-                <div style="font-size:8px;font-weight:700;color:#34D399;text-transform:uppercase;letter-spacing:.05em">🟢 Savings rate</div>
-                <div style="font-size:9px;color:#64748B;margin-top:2px">$2,532 kept · healthy</div>
+                <div style="font-size:8px;font-weight:700;color:var(--accent-green);text-transform:uppercase;letter-spacing:.05em">🟢 Savings rate</div>
+                <div style="font-size:9px;color:var(--text-muted);margin-top:2px">$2,532 kept · healthy</div>
               </div>
-              <div style="font-size:20px;font-weight:900;color:#34D399;line-height:1">36%</div>
+              <div style="font-size:20px;font-weight:900;color:var(--accent-green);line-height:1">36%</div>
             </div>
             <div style="background:#F8717112;border:1.5px solid #F8717140;border-radius:10px;padding:.45rem .7rem;display:flex;justify-content:space-between;align-items:center;gap:4px">
               <div style="min-width:0;flex:1">
-                <div style="font-size:8px;font-weight:700;color:#F87171;text-transform:uppercase;letter-spacing:.05em">🔴 Budget health</div>
-                <div style="font-size:9px;color:#64748B;margin-top:2px">4 over · 6 on track</div>
+                <div style="font-size:8px;font-weight:700;color:var(--accent-red);text-transform:uppercase;letter-spacing:.05em">🔴 Budget health</div>
+                <div style="font-size:9px;color:var(--text-muted);margin-top:2px">4 over · 6 on track</div>
               </div>
-              <div style="font-size:12px;font-weight:900;color:#F87171;line-height:1;text-align:right;white-space:nowrap;flex-shrink:0">4/10 <span style="font-size:9px">need attention</span></div>
+              <div style="font-size:12px;font-weight:900;color:var(--accent-red);line-height:1;text-align:right;white-space:nowrap;flex-shrink:0">4/10 <span style="font-size:9px">need attention</span></div>
             </div>
           </div>
         </div>
-        <div style="font-size:9px;color:#64748B;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.65rem">BY CATEGORY</div>
+        <div style="font-size:9px;color:var(--text-muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.65rem">BY CATEGORY</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:6px;margin-bottom:1rem">
-          <div class="ptile" onclick="filterPreviewTile(this,'Home','#F87171')" style="background:#0F172A;border:1px solid #F8717133;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
-            <div style="font-size:9px;font-weight:700;color:#F87171;text-transform:uppercase;letter-spacing:.05em">Home</div>
-            <div style="font-size:18px;font-weight:900;color:#E2E8F0;line-height:1">$21,976</div>
-            <div style="font-size:9px;color:#64748B">↑82% · avg $1,221/mo · Peak: Jan</div>
+          <div class="ptile" onclick="filterPreviewTile(this,'Home','#F87171')" style="background:var(--bg-deep);border:1px solid #F8717133;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
+            <div style="font-size:9px;font-weight:700;color:var(--accent-red);text-transform:uppercase;letter-spacing:.05em">Home</div>
+            <div style="font-size:18px;font-weight:900;color:var(--text-primary);line-height:1">$21,976</div>
+            <div style="font-size:9px;color:var(--text-muted)">↑82% · avg $1,221/mo · Peak: Jan</div>
             <svg viewBox="0 0 80 24" width="80" height="24" style="margin-top:4px"><polyline points="0,19 13,14 27,20 40,8 53,15 67,5 80,9" fill="none" stroke="#F87171" stroke-width="1.5" stroke-linejoin="round"/></svg>
           </div>
-          <div class="ptile" onclick="filterPreviewTile(this,'Groceries','#34D399')" style="background:#0F172A;border:1px solid #34D39933;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
-            <div style="font-size:9px;font-weight:700;color:#34D399;text-transform:uppercase;letter-spacing:.05em">Groceries</div>
-            <div style="font-size:18px;font-weight:900;color:#E2E8F0;line-height:1">$12,525</div>
-            <div style="font-size:9px;color:#64748B">↑60% · avg $696/mo · Peak: Dec</div>
+          <div class="ptile" onclick="filterPreviewTile(this,'Groceries','#34D399')" style="background:var(--bg-deep);border:1px solid #34D39933;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
+            <div style="font-size:9px;font-weight:700;color:var(--accent-green);text-transform:uppercase;letter-spacing:.05em">Groceries</div>
+            <div style="font-size:18px;font-weight:900;color:var(--text-primary);line-height:1">$12,525</div>
+            <div style="font-size:9px;color:var(--text-muted)">↑60% · avg $696/mo · Peak: Dec</div>
             <svg viewBox="0 0 80 24" width="80" height="24" style="margin-top:4px"><polyline points="0,20 13,14 27,18 40,7 53,13 67,9 80,4" fill="none" stroke="#34D399" stroke-width="1.5" stroke-linejoin="round"/></svg>
           </div>
-          <div class="ptile" onclick="filterPreviewTile(this,'Shopping','#FBBF24')" style="background:#0F172A;border:1px solid #FBBF2433;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
-            <div style="font-size:9px;font-weight:700;color:#FBBF24;text-transform:uppercase;letter-spacing:.05em">Shopping</div>
-            <div style="font-size:18px;font-weight:900;color:#E2E8F0;line-height:1">$11,197</div>
-            <div style="font-size:9px;color:#FBBF24">↑11% · avg $622/mo · Peak: Dec</div>
+          <div class="ptile" onclick="filterPreviewTile(this,'Shopping','#FBBF24')" style="background:var(--bg-deep);border:1px solid #FBBF2433;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
+            <div style="font-size:9px;font-weight:700;color:var(--accent-amber);text-transform:uppercase;letter-spacing:.05em">Shopping</div>
+            <div style="font-size:18px;font-weight:900;color:var(--text-primary);line-height:1">$11,197</div>
+            <div style="font-size:9px;color:var(--accent-amber)">↑11% · avg $622/mo · Peak: Dec</div>
             <svg viewBox="0 0 80 24" width="80" height="24" style="margin-top:4px"><polyline points="0,8 13,18 27,5 40,15 53,10 67,19 80,6" fill="none" stroke="#FBBF24" stroke-width="1.5" stroke-linejoin="round"/></svg>
           </div>
-          <div class="ptile pcat-4th" onclick="filterPreviewTile(this,'Bills &amp; Utilities','#60A5FA')" style="background:#0F172A;border:1px solid #60A5FA33;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
-            <div style="font-size:9px;font-weight:700;color:#60A5FA;text-transform:uppercase;letter-spacing:.05em">Bills &amp; Utilities</div>
-            <div style="font-size:18px;font-weight:900;color:#E2E8F0;line-height:1">$8,899</div>
-            <div style="font-size:9px;color:#64748B">↑76% · avg $494/mo · Peak: Mar</div>
+          <div class="ptile pcat-4th" onclick="filterPreviewTile(this,'Bills &amp; Utilities','#60A5FA')" style="background:var(--bg-deep);border:1px solid #60A5FA33;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
+            <div style="font-size:9px;font-weight:700;color:var(--accent-blue-light);text-transform:uppercase;letter-spacing:.05em">Bills &amp; Utilities</div>
+            <div style="font-size:18px;font-weight:900;color:var(--text-primary);line-height:1">$8,899</div>
+            <div style="font-size:9px;color:var(--text-muted)">↑76% · avg $494/mo · Peak: Mar</div>
             <svg viewBox="0 0 80 24" width="80" height="24" style="margin-top:4px"><polyline points="0,10 13,16 27,8 40,18 53,6 67,14 80,11" fill="none" stroke="#60A5FA" stroke-width="1.5" stroke-linejoin="round"/></svg>
           </div>
         </div>
         <div style="display:flex;gap:5px;margin-bottom:.75rem">
-          <div id="pcm-0" onclick="setPreviewChart(0)" style="flex:1;background:#1E3A5F;border:1px solid #2563EB55;border-radius:7px;padding:.35rem .5rem;font-size:10px;color:#60A5FA;display:flex;align-items:center;gap:4px;font-weight:600;cursor:pointer">📊 <span>Bar charts</span></div>
-          <div id="pcm-1" onclick="setPreviewChart(1)" style="flex:1;background:#1E293B;border:1px solid #334155;border-radius:7px;padding:.35rem .5rem;font-size:10px;color:#64748B;display:flex;align-items:center;gap:4px;cursor:pointer">📈 <span>Trend</span></div>
-          <div id="pcm-2" onclick="setPreviewChart(2)" style="flex:1;background:#1E293B;border:1px solid #334155;border-radius:7px;padding:.35rem .5rem;font-size:10px;color:#64748B;display:flex;align-items:center;gap:4px;cursor:pointer">📅 <span>Daily</span></div>
-          <div id="pcm-3" onclick="setPreviewChart(3)" style="flex:1;background:#1E293B;border:1px solid #334155;border-radius:7px;padding:.35rem .5rem;font-size:10px;color:#64748B;display:flex;align-items:center;gap:4px;cursor:pointer">🏦 <span>Flow</span></div>
-          <div id="pcm-4" onclick="setPreviewChart(4)" style="flex:1;background:#1E293B;border:1px solid #334155;border-radius:7px;padding:.35rem .5rem;font-size:10px;color:#64748B;display:flex;align-items:center;gap:4px;cursor:pointer">⊞ <span>Split</span></div>
+          <div id="pcm-0" onclick="setPreviewChart(0)" class="pcm-btn pcm-active">📊 <span>Bar charts</span></div>
+          <div id="pcm-1" onclick="setPreviewChart(1)" class="pcm-btn">📈 <span>Trend</span></div>
+          <div id="pcm-2" onclick="setPreviewChart(2)" class="pcm-btn">📅 <span>Daily</span></div>
+          <div id="pcm-3" onclick="setPreviewChart(3)" class="pcm-btn">🏦 <span>Flow</span></div>
+          <div id="pcm-4" onclick="setPreviewChart(4)" class="pcm-btn">⊞ <span>Split</span></div>
         </div>
         <!-- Chart panels -->
-        <div id="pc-0" style="background:#0F172A;border:1px solid #334155;border-radius:10px;padding:.75rem .85rem">
-          <div id="pchart-lbl" style="font-size:9px;color:#64748B;font-weight:600;letter-spacing:.07em;text-transform:uppercase;margin-bottom:.6rem">BY CATEGORY · Last 6 months</div>
+        <div id="pc-0" style="background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem .85rem">
+          <div id="pchart-lbl" style="font-size:9px;color:var(--text-muted);font-weight:600;letter-spacing:.07em;text-transform:uppercase;margin-bottom:.6rem">BY CATEGORY · Last 6 months</div>
           <div style="display:flex;gap:4px;align-items:flex-end;height:80px;margin-bottom:.5rem">
             <div style="display:flex;flex-direction:column;gap:1px;flex:1;height:100%;justify-content:flex-end">
               <div style="background:#F8717144;border-radius:2px 2px 0 0;height:28%"></div>
               <div style="background:#34D39944;height:15%"></div>
               <div style="background:#FBBF2444;height:18%"></div>
               <div style="background:#60A5FA44;border-radius:0 0 2px 2px;height:12%"></div>
-              <div style="font-size:8px;color:#334155;text-align:center;margin-top:3px">Nov</div>
+              <div style="font-size:8px;color:var(--text-muted);text-align:center;margin-top:3px">Nov</div>
             </div>
             <div style="display:flex;flex-direction:column;gap:1px;flex:1;height:100%;justify-content:flex-end">
               <div style="background:#F8717155;border-radius:2px 2px 0 0;height:35%"></div>
               <div style="background:#34D39955;height:19%"></div>
               <div style="background:#FBBF2455;height:22%"></div>
               <div style="background:#60A5FA55;border-radius:0 0 2px 2px;height:14%"></div>
-              <div style="font-size:8px;color:#334155;text-align:center;margin-top:3px">Dec</div>
+              <div style="font-size:8px;color:var(--text-muted);text-align:center;margin-top:3px">Dec</div>
             </div>
             <div style="display:flex;flex-direction:column;gap:1px;flex:1;height:100%;justify-content:flex-end">
               <div style="background:#F8717166;border-radius:2px 2px 0 0;height:30%"></div>
               <div style="background:#34D39966;height:17%"></div>
               <div style="background:#FBBF2466;height:16%"></div>
               <div style="background:#60A5FA66;border-radius:0 0 2px 2px;height:13%"></div>
-              <div style="font-size:8px;color:#475569;text-align:center;margin-top:3px">Jan</div>
+              <div style="font-size:8px;color:var(--text-muted);text-align:center;margin-top:3px">Jan</div>
             </div>
             <div style="display:flex;flex-direction:column;gap:1px;flex:1;height:100%;justify-content:flex-end">
               <div style="background:#F8717177;border-radius:2px 2px 0 0;height:32%"></div>
               <div style="background:#34D39977;height:18%"></div>
               <div style="background:#FBBF2477;height:20%"></div>
               <div style="background:#60A5FA77;border-radius:0 0 2px 2px;height:15%"></div>
-              <div style="font-size:8px;color:#475569;text-align:center;margin-top:3px">Feb</div>
+              <div style="font-size:8px;color:var(--text-muted);text-align:center;margin-top:3px">Feb</div>
             </div>
             <div style="display:flex;flex-direction:column;gap:1px;flex:1;height:100%;justify-content:flex-end">
               <div style="background:#F8717188;border-radius:2px 2px 0 0;height:41%"></div>
               <div style="background:#34D39988;height:22%"></div>
               <div style="background:#FBBF2488;height:9%"></div>
               <div style="background:#60A5FA88;border-radius:0 0 2px 2px;height:17%"></div>
-              <div style="font-size:8px;color:#64748B;text-align:center;margin-top:3px">Mar</div>
+              <div style="font-size:8px;color:var(--text-muted);text-align:center;margin-top:3px">Mar</div>
             </div>
             <div style="display:flex;flex-direction:column;gap:1px;flex:1;height:100%;justify-content:flex-end">
               <div style="background:#F87171;border-radius:2px 2px 0 0;height:37%"></div>
               <div style="background:#34D399;height:20%"></div>
               <div style="background:#FBBF24;height:14%"></div>
               <div style="background:#60A5FA;border-radius:0 0 2px 2px;height:19%"></div>
-              <div style="font-size:8px;color:#E2E8F0;text-align:center;margin-top:3px;font-weight:700">Apr ▲</div>
+              <div style="font-size:8px;color:var(--text-bright);text-align:center;margin-top:3px;font-weight:700">Apr ▲</div>
             </div>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#94A3B8"><div style="width:8px;height:8px;border-radius:2px;background:#F87171;flex-shrink:0"></div>Home</div>
-            <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#94A3B8"><div style="width:8px;height:8px;border-radius:2px;background:#34D399;flex-shrink:0"></div>Groceries</div>
-            <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#94A3B8"><div style="width:8px;height:8px;border-radius:2px;background:#FBBF24;flex-shrink:0"></div>Shopping</div>
-            <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#94A3B8"><div style="width:8px;height:8px;border-radius:2px;background:#60A5FA;flex-shrink:0"></div>Bills &amp; Utilities</div>
+            <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-secondary)"><div style="width:8px;height:8px;border-radius:2px;background:#F87171;flex-shrink:0"></div>Home</div>
+            <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-secondary)"><div style="width:8px;height:8px;border-radius:2px;background:#34D399;flex-shrink:0"></div>Groceries</div>
+            <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-secondary)"><div style="width:8px;height:8px;border-radius:2px;background:#FBBF24;flex-shrink:0"></div>Shopping</div>
+            <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-secondary)"><div style="width:8px;height:8px;border-radius:2px;background:#60A5FA;flex-shrink:0"></div>Bills &amp; Utilities</div>
           </div>
         </div>
         <!-- Trend chart panel -->
-        <div id="pc-1" style="display:none;background:#0F172A;border:1px solid #334155;border-radius:10px;padding:.75rem .85rem">
-          <div style="font-size:9px;color:#64748B;font-weight:600;letter-spacing:.07em;text-transform:uppercase;margin-bottom:.5rem">Spending Trend · May '25 – Apr '26</div>
+        <div id="pc-1" style="display:none;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem .85rem">
+          <div style="font-size:9px;color:var(--text-muted);font-weight:600;letter-spacing:.07em;text-transform:uppercase;margin-bottom:.5rem">Spending Trend · May '25 – Apr '26</div>
           <svg viewBox="0 0 500 160" width="100%" style="display:block;margin-bottom:.3rem">
-            <line x1="0" y1="8"   x2="500" y2="8"   stroke="#1E293B" stroke-width="1"/>
-            <line x1="0" y1="78"  x2="500" y2="78"  stroke="#1E293B" stroke-width="1"/>
-            <line x1="0" y1="145" x2="500" y2="145" stroke="#1E293B" stroke-width="1"/>
+            <line x1="0" y1="8"   x2="500" y2="8"   style="stroke:var(--border)" stroke-width="1"/>
+            <line x1="0" y1="78"  x2="500" y2="78"  style="stroke:var(--border)" stroke-width="1"/>
+            <line x1="0" y1="145" x2="500" y2="145" style="stroke:var(--border)" stroke-width="1"/>
             <polyline points="0,82 45,58 90,78 135,92 180,68 225,62 270,38 315,20 360,44 405,70 450,65 500,50" fill="none" stroke="#F87171" stroke-width="2" stroke-linejoin="round"/>
             <polyline points="0,118 45,112 90,120 135,114 180,108 225,102 270,96 315,88 360,100 405,110 450,105 500,102" fill="none" stroke="#34D399" stroke-width="2" stroke-linejoin="round"/>
             <polyline points="0,128 45,114 90,132 135,122 180,130 225,118 270,92 315,64 360,124 405,114 450,130 500,98" fill="none" stroke="#FBBF24" stroke-width="2" stroke-linejoin="round"/>
@@ -402,44 +431,44 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
             <circle cx="500" cy="102" r="3.5" fill="#34D399"/>
             <circle cx="500" cy="98"  r="3.5" fill="#FBBF24"/>
           </svg>
-          <div style="display:flex;justify-content:space-between;font-size:7px;color:#475569;padding:0 1px;margin-bottom:.4rem">
-            <span>May</span><span>Jul</span><span>Sep</span><span>Nov</span><span>Jan</span><span>Mar</span><span style="color:#64748B;font-weight:700">Apr</span>
+          <div style="display:flex;justify-content:space-between;font-size:7px;color:var(--text-muted);padding:0 1px;margin-bottom:.4rem">
+            <span>May</span><span>Jul</span><span>Sep</span><span>Nov</span><span>Jan</span><span>Mar</span><span style="font-weight:700">Apr</span>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#94A3B8"><div style="width:8px;height:2px;background:#F87171;flex-shrink:0"></div>Home</div>
-            <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#94A3B8"><div style="width:8px;height:2px;background:#34D399;flex-shrink:0"></div>Groceries</div>
-            <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#94A3B8"><div style="width:8px;height:2px;background:#FBBF24;flex-shrink:0"></div>Shopping</div>
+            <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-secondary)"><div style="width:8px;height:2px;background:#F87171;flex-shrink:0"></div>Home</div>
+            <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-secondary)"><div style="width:8px;height:2px;background:#34D399;flex-shrink:0"></div>Groceries</div>
+            <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-secondary)"><div style="width:8px;height:2px;background:#FBBF24;flex-shrink:0"></div>Shopping</div>
           </div>
         </div>
         <!-- Daily chart panel -->
-        <div id="pc-2" style="display:none;background:#0F172A;border:1px solid #334155;border-radius:10px;padding:.75rem .85rem">
+        <div id="pc-2" style="display:none;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem .85rem">
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px;margin-bottom:.75rem">
-            <div style="background:#1E293B;border:1px solid #334155;border-radius:8px;padding:.45rem .6rem"><div style="font-size:8px;color:#64748B;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Total</div><div style="font-size:16px;font-weight:900;color:#E2E8F0">$96k</div><div style="font-size:8px;color:#64748B">372 days</div></div>
-            <div style="background:#1E293B;border:1px solid #334155;border-radius:8px;padding:.45rem .6rem"><div style="font-size:8px;color:#64748B;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Avg/day</div><div style="font-size:16px;font-weight:900;color:#E2E8F0">$258</div><div style="font-size:8px;color:#64748B">active days</div></div>
-            <div style="background:#2563EB18;border:1px solid #2563EB33;border-radius:8px;padding:.45rem .6rem"><div style="font-size:8px;color:#60A5FA;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Peak day</div><div style="font-size:16px;font-weight:900;color:#60A5FA">$1,436</div><div style="font-size:8px;color:#60A5FA;opacity:.7">click to filter</div></div>
-            <div style="background:#1E293B;border:1px solid #334155;border-radius:8px;padding:.45rem .6rem"><div style="font-size:8px;color:#64748B;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Weekends</div><div style="font-size:16px;font-weight:900;color:#E2E8F0">−1%</div><div style="font-size:8px;color:#64748B">vs weekday</div></div>
+            <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:8px;padding:.45rem .6rem"><div style="font-size:8px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em">Total</div><div style="font-size:16px;font-weight:900;color:var(--text-primary)">$96k</div><div style="font-size:8px;color:var(--text-muted)">372 days</div></div>
+            <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:8px;padding:.45rem .6rem"><div style="font-size:8px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em">Avg/day</div><div style="font-size:16px;font-weight:900;color:var(--text-primary)">$258</div><div style="font-size:8px;color:var(--text-muted)">active days</div></div>
+            <div style="background:#2563EB18;border:1px solid #2563EB33;border-radius:8px;padding:.45rem .6rem"><div style="font-size:8px;color:var(--accent-blue-light);font-weight:700;text-transform:uppercase;letter-spacing:.05em">Peak day</div><div style="font-size:16px;font-weight:900;color:var(--accent-blue-light)">$1,436</div><div style="font-size:8px;color:var(--accent-blue-light);opacity:.7">click to filter</div></div>
+            <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:8px;padding:.45rem .6rem"><div style="font-size:8px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em">Weekends</div><div style="font-size:16px;font-weight:900;color:var(--text-primary)">−1%</div><div style="font-size:8px;color:var(--text-muted)">vs weekday</div></div>
           </div>
-          <div style="font-size:8px;color:#64748B;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.5rem;display:flex;align-items:center;justify-content:space-between"><span>less <span style="display:inline-flex;gap:2px;align-items:center;margin:0 3px"><span style="width:8px;height:8px;border-radius:2px;background:#412402;display:inline-block"></span><span style="width:8px;height:8px;border-radius:2px;background:#633806;display:inline-block"></span><span style="width:8px;height:8px;border-radius:2px;background:#854f0b;display:inline-block"></span><span style="width:8px;height:8px;border-radius:2px;background:#ef9f27;display:inline-block"></span><span style="width:8px;height:8px;border-radius:2px;background:#fac775;display:inline-block"></span></span> more</span><span style="color:#60A5FA">Zoom − +</span></div>
+          <div style="font-size:8px;color:var(--text-muted);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.5rem;display:flex;align-items:center;justify-content:space-between"><span>less <span style="display:inline-flex;gap:2px;align-items:center;margin:0 3px"><span style="width:8px;height:8px;border-radius:2px;background:#412402;display:inline-block"></span><span style="width:8px;height:8px;border-radius:2px;background:#633806;display:inline-block"></span><span style="width:8px;height:8px;border-radius:2px;background:#854f0b;display:inline-block"></span><span style="width:8px;height:8px;border-radius:2px;background:#ef9f27;display:inline-block"></span><span style="width:8px;height:8px;border-radius:2px;background:#fac775;display:inline-block"></span></span> more</span><span style="color:var(--accent-blue-light)">Zoom − +</span></div>
           <div id="pheatmap" style="display:flex;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px"></div>
-          <div style="margin-top:.5rem;font-size:9px;color:#64748B">← scroll to see full history · click any day to filter transactions</div>
+          <div style="margin-top:.5rem;font-size:9px;color:var(--text-muted)">← scroll to see full history · click any day to filter transactions</div>
         </div>
         <!-- Flow chart panel (inline) -->
-        <div id="pc-3" style="display:none;background:#0F172A;border:1px solid #334155;border-radius:10px;padding:.75rem .85rem">
-          <div style="font-size:9px;color:#64748B;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.65rem">May '25 – Apr '26 · Income → Spending Flow</div>
+        <div id="pc-3" style="display:none;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem .85rem">
+          <div style="font-size:9px;color:var(--text-muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.65rem">May '25 – Apr '26 · Income → Spending Flow</div>
           <svg viewBox="0 0 420 240" width="100%" height="240" style="overflow:visible;display:block">
             <rect x="0" y="14" width="80" height="68" rx="6" fill="#34D39918" stroke="#34D39944"/>
-            <text x="40" y="44" font-size="9" fill="#34D399" text-anchor="middle" font-weight="700">Salary</text>
-            <text x="40" y="62" font-size="11" fill="#E2E8F0" text-anchor="middle" font-weight="900">$74.4k</text>
+            <text x="40" y="44" font-size="9" style="fill:var(--accent-green)" text-anchor="middle" font-weight="700">Salary</text>
+            <text x="40" y="62" font-size="11" style="fill:var(--text-primary)" text-anchor="middle" font-weight="900">$74.4k</text>
             <rect x="0" y="102" width="80" height="36" rx="6" fill="#34D39910" stroke="#34D39933"/>
-            <text x="40" y="118" font-size="9" fill="#34D399" text-anchor="middle" font-weight="700">Freelance</text>
-            <text x="40" y="131" font-size="11" fill="#E2E8F0" text-anchor="middle" font-weight="900">$10.2k</text>
+            <text x="40" y="118" font-size="9" style="fill:var(--accent-green)" text-anchor="middle" font-weight="700">Freelance</text>
+            <text x="40" y="131" font-size="11" style="fill:var(--text-primary)" text-anchor="middle" font-weight="900">$10.2k</text>
             <path d="M80,48 C160,48 160,95 240,95" fill="none" stroke="#34D399" stroke-width="30" opacity="0.18"/>
             <path d="M80,48 C160,48 160,95 240,95" fill="none" stroke="#34D399" stroke-width="1.5" opacity="0.6"/>
             <path d="M80,120 C160,120 160,105 240,105" fill="none" stroke="#34D399" stroke-width="8" opacity="0.18"/>
             <path d="M80,120 C160,120 160,105 240,105" fill="none" stroke="#34D399" stroke-width="1.5" opacity="0.4"/>
-            <rect x="220" y="70" width="60" height="60" rx="8" fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
-            <text x="250" y="96" font-size="8" fill="#94A3B8" text-anchor="middle" font-weight="700">INCOME</text>
-            <text x="250" y="112" font-size="11" fill="#E2E8F0" text-anchor="middle" font-weight="900">$84.6k</text>
+            <rect x="220" y="70" width="60" height="60" rx="8" style="fill:var(--bg-card);stroke:var(--border-mid)" stroke-width="1.5"/>
+            <text x="250" y="96" font-size="8" style="fill:var(--text-secondary)" text-anchor="middle" font-weight="700">INCOME</text>
+            <text x="250" y="112" font-size="11" style="fill:var(--text-primary)" text-anchor="middle" font-weight="900">$84.6k</text>
             <path d="M280,88 C340,88 340,28 420,28" fill="none" stroke="#F87171" stroke-width="20" opacity="0.18"/>
             <path d="M280,88 C340,88 340,28 420,28" fill="none" stroke="#F87171" stroke-width="1.5" opacity="0.7"/>
             <path d="M280,96 C340,96 340,78 420,78" fill="none" stroke="#34D399" stroke-width="11" opacity="0.18"/>
@@ -449,62 +478,61 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
             <path d="M280,112 C340,112 340,160 420,160" fill="none" stroke="#FBBF24" stroke-width="7" opacity="0.18"/>
             <path d="M280,112 C340,112 340,160 420,160" fill="none" stroke="#FBBF24" stroke-width="1.5" opacity="0.5"/>
             <rect x="340" y="8" width="80" height="42" rx="6" fill="#F8717118" stroke="#F8717133"/>
-            <text x="380" y="24" font-size="8" fill="#F87171" text-anchor="middle" font-weight="700">Home</text>
-            <text x="380" y="38" font-size="10" fill="#E2E8F0" text-anchor="middle" font-weight="900">$21,976</text>
+            <text x="380" y="24" font-size="8" style="fill:var(--accent-red)" text-anchor="middle" font-weight="700">Home</text>
+            <text x="380" y="38" font-size="10" style="fill:var(--text-primary)" text-anchor="middle" font-weight="900">$21,976</text>
             <rect x="340" y="58" width="80" height="40" rx="6" fill="#34D39912" stroke="#34D39930"/>
-            <text x="380" y="74" font-size="8" fill="#34D399" text-anchor="middle" font-weight="700">Groceries</text>
-            <text x="380" y="88" font-size="10" fill="#E2E8F0" text-anchor="middle" font-weight="900">$12,525</text>
+            <text x="380" y="74" font-size="8" style="fill:var(--accent-green)" text-anchor="middle" font-weight="700">Groceries</text>
+            <text x="380" y="88" font-size="10" style="fill:var(--text-primary)" text-anchor="middle" font-weight="900">$12,525</text>
             <rect x="340" y="106" width="80" height="36" rx="6" fill="#60A5FA12" stroke="#60A5FA30"/>
-            <text x="380" y="120" font-size="8" fill="#60A5FA" text-anchor="middle" font-weight="700">Bills &amp; Util.</text>
-            <text x="380" y="134" font-size="10" fill="#E2E8F0" text-anchor="middle" font-weight="900">$8,899</text>
+            <text x="380" y="120" font-size="8" style="fill:var(--accent-blue-light)" text-anchor="middle" font-weight="700">Bills &amp; Util.</text>
+            <text x="380" y="134" font-size="10" style="fill:var(--text-primary)" text-anchor="middle" font-weight="900">$8,899</text>
             <rect x="340" y="148" width="80" height="38" rx="6" fill="#FBBF2412" stroke="#FBBF2430"/>
-            <text x="380" y="162" font-size="8" fill="#FBBF24" text-anchor="middle" font-weight="700">Shopping</text>
-            <text x="380" y="176" font-size="10" fill="#E2E8F0" text-anchor="middle" font-weight="900">$11,197</text>
-            <!-- Saved / Remaining flow -->
+            <text x="380" y="162" font-size="8" style="fill:var(--accent-amber)" text-anchor="middle" font-weight="700">Shopping</text>
+            <text x="380" y="176" font-size="10" style="fill:var(--text-primary)" text-anchor="middle" font-weight="900">$11,197</text>
             <path d="M280,118 C340,118 340,213 420,213" fill="none" stroke="#34D399" stroke-width="11" opacity="0.18"/>
             <path d="M280,118 C340,118 340,213 420,213" fill="none" stroke="#34D399" stroke-width="1.5" opacity="0.55" stroke-dasharray="5,2"/>
             <rect x="340" y="194" width="80" height="34" rx="6" fill="#34D39920" stroke="#34D39944"/>
-            <text x="380" y="206" font-size="7" fill="#34D399" text-anchor="middle" font-weight="700">Other spend</text>
-            <text x="380" y="217" font-size="7" fill="#34D399" text-anchor="middle" font-weight="700">+ savings</text>
-            <text x="380" y="228" font-size="9" fill="#E2E8F0" text-anchor="middle" font-weight="900">$30k</text>
+            <text x="380" y="206" font-size="7" style="fill:var(--accent-green)" text-anchor="middle" font-weight="700">Other spend</text>
+            <text x="380" y="217" font-size="7" style="fill:var(--accent-green)" text-anchor="middle" font-weight="700">+ savings</text>
+            <text x="380" y="228" font-size="9" style="fill:var(--text-primary)" text-anchor="middle" font-weight="900">$30k</text>
           </svg>
           <div style="margin-top:.75rem;display:flex;align-items:center;justify-content:space-between">
-            <div style="font-size:11px;color:#64748B">Annual savings rate</div>
-            <div style="font-size:14px;font-weight:800;color:#34D399">36% <span style="font-size:10px;font-weight:400;color:#64748B">· $30.5k saved this year</span></div>
+            <div style="font-size:11px;color:var(--text-muted)">Annual savings rate</div>
+            <div style="font-size:14px;font-weight:800;color:var(--accent-green)">36% <span style="font-size:10px;font-weight:400;color:var(--text-muted)">· $30.5k saved this year</span></div>
           </div>
           <div style="background:#34D39912;border:1px solid #34D39930;border-radius:6px;height:6px;margin-top:6px;overflow:hidden">
-            <div style="width:36%;height:100%;background:#34D399;border-radius:6px"></div>
+            <div style="width:36%;height:100%;background:var(--accent-green);border-radius:6px"></div>
           </div>
         </div>
         <!-- Split / treemap panel -->
-        <div id="pc-4" style="display:none;background:#0F172A;border:1px solid #334155;border-radius:10px;padding:.75rem .85rem">
-          <div style="font-size:9px;color:#64748B;font-weight:600;letter-spacing:.07em;text-transform:uppercase;margin-bottom:.5rem">SPENDING SPLIT · This period</div>
+        <div id="pc-4" style="display:none;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem .85rem">
+          <div style="font-size:9px;color:var(--text-muted);font-weight:600;letter-spacing:.07em;text-transform:uppercase;margin-bottom:.5rem">SPENDING SPLIT · This period</div>
           <div style="display:flex;height:90px;gap:1px;border-radius:6px;overflow:hidden;margin-bottom:.4rem">
             <div style="flex:22;background:#F8717122;border:1px solid #F8717144;display:flex;flex-direction:column;justify-content:flex-end;padding:5px 6px;min-width:0">
-              <div style="font-size:8px;font-weight:700;color:#F87171;white-space:nowrap;overflow:hidden">Home</div>
-              <div style="font-size:13px;font-weight:900;color:#E2E8F0">22%</div>
+              <div style="font-size:8px;font-weight:700;color:var(--accent-red);white-space:nowrap;overflow:hidden">Home</div>
+              <div style="font-size:13px;font-weight:900;color:var(--text-primary)">22%</div>
             </div>
             <div style="flex:13;background:#34D39918;border:1px solid #34D39935;display:flex;flex-direction:column;justify-content:flex-end;padding:5px 5px;min-width:0">
-              <div style="font-size:8px;font-weight:700;color:#34D399;white-space:nowrap;overflow:hidden">Gro.</div>
-              <div style="font-size:11px;font-weight:900;color:#E2E8F0">13%</div>
+              <div style="font-size:8px;font-weight:700;color:var(--accent-green);white-space:nowrap;overflow:hidden">Gro.</div>
+              <div style="font-size:11px;font-weight:900;color:var(--text-primary)">13%</div>
             </div>
             <div style="flex:11;background:#FBBF2415;border:1px solid #FBBF2432;display:flex;flex-direction:column;justify-content:flex-end;padding:5px 4px;min-width:0">
-              <div style="font-size:8px;font-weight:700;color:#FBBF24;white-space:nowrap;overflow:hidden">Shop</div>
-              <div style="font-size:11px;font-weight:900;color:#E2E8F0">11%</div>
+              <div style="font-size:8px;font-weight:700;color:var(--accent-amber);white-space:nowrap;overflow:hidden">Shop</div>
+              <div style="font-size:11px;font-weight:900;color:var(--text-primary)">11%</div>
             </div>
             <div style="flex:9;background:#60A5FA12;border:1px solid #60A5FA30;display:flex;flex-direction:column;justify-content:flex-end;padding:5px 4px;min-width:0">
-              <div style="font-size:7px;font-weight:700;color:#60A5FA;white-space:nowrap;overflow:hidden">Bills</div>
-              <div style="font-size:10px;font-weight:900;color:#E2E8F0">9%</div>
+              <div style="font-size:7px;font-weight:700;color:var(--accent-blue-light);white-space:nowrap;overflow:hidden">Bills</div>
+              <div style="font-size:10px;font-weight:900;color:var(--text-primary)">9%</div>
             </div>
             <div style="flex:8;background:#FB923C12;border:1px solid #FB923C30;display:flex;flex-direction:column;justify-content:flex-end;padding:5px 4px;min-width:0">
               <div style="font-size:7px;font-weight:700;color:#FB923C;white-space:nowrap;overflow:hidden">Trav.</div>
-              <div style="font-size:10px;font-weight:900;color:#E2E8F0">8%</div>
+              <div style="font-size:10px;font-weight:900;color:var(--text-primary)">8%</div>
             </div>
-            <div style="flex:37;background:#1E293B;border:1px solid #334155;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0">
-              <div style="font-size:8px;color:#64748B;text-align:center;line-height:1.5">+8 more<br>37%</div>
+            <div style="flex:37;background:var(--bg-card);border:1px solid var(--border-mid);display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0">
+              <div style="font-size:8px;color:var(--text-muted);text-align:center;line-height:1.5">+8 more<br>37%</div>
             </div>
           </div>
-          <div style="font-size:9px;color:#64748B">Tile size ∝ spend · click any tile to drill into vendors</div>
+          <div style="font-size:9px;color:var(--text-muted)">Tile size ∝ spend · click any tile to drill into vendors</div>
         </div>
       </div>
     </div>
@@ -512,68 +540,68 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
     <div class="ptab-panel" id="pt1" style="display:none">
       <div style="padding:1rem 1.25rem">
         <!-- Summary bar -->
-        <div style="background:#1E293B;border:1px solid #334155;border-radius:10px;padding:.65rem .9rem;margin-bottom:.65rem">
+        <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.65rem .9rem;margin-bottom:.65rem">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
-            <div style="font-size:11px;font-weight:700;color:#E2E8F0">April — 3 weeks in</div>
+            <div style="font-size:11px;font-weight:700;color:var(--text-bright)">April — 3 weeks in</div>
             <div style="display:flex;gap:10px">
-              <span style="font-size:10px;font-weight:700;color:#F87171">4 over/at risk</span>
-              <span style="font-size:10px;font-weight:700;color:#34D399">6 on track</span>
+              <span style="font-size:10px;font-weight:700;color:var(--accent-red)">4 over/at risk</span>
+              <span style="font-size:10px;font-weight:700;color:var(--accent-green)">6 on track</span>
             </div>
           </div>
-          <div style="height:7px;border-radius:4px;background:#0F172A;overflow:hidden">
-            <div style="width:60%;height:100%;background:linear-gradient(90deg,#34D399,#34D39988);border-radius:4px"></div>
+          <div style="height:7px;border-radius:4px;background:var(--bg-deep);overflow:hidden">
+            <div style="width:60%;height:100%;background:var(--accent-green);border-radius:4px"></div>
           </div>
           <div style="display:flex;justify-content:space-between;margin-top:.3rem">
-            <div style="font-size:8px;color:#64748B">$4,820 of $8,050 budget used</div>
-            <div style="font-size:8px;color:#64748B">60%</div>
+            <div style="font-size:8px;color:var(--text-muted)">$4,820 of $8,050 budget used</div>
+            <div style="font-size:8px;color:var(--text-muted)">60%</div>
           </div>
           <!-- 12-month history strip -->
           <div style="margin-top:.55rem">
-            <div style="font-size:8px;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">12-month history</div>
+            <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">12-month history</div>
             <div style="display:flex;gap:3px;align-items:center">
-              <div style="flex:1;height:8px;border-radius:3px;background:#F87171"></div><div style="flex:1;height:8px;border-radius:3px;background:#34D399"></div><div style="flex:1;height:8px;border-radius:3px;background:#FBBF24"></div><div style="flex:1;height:8px;border-radius:3px;background:#34D399"></div><div style="flex:1;height:8px;border-radius:3px;background:#F87171"></div><div style="flex:1;height:8px;border-radius:3px;background:#FBBF24"></div><div style="flex:1;height:8px;border-radius:3px;background:#34D399"></div><div style="flex:1;height:8px;border-radius:3px;background:#34D399"></div><div style="flex:1;height:8px;border-radius:3px;background:#F87171"></div><div style="flex:1;height:8px;border-radius:3px;background:#34D399"></div><div style="flex:1;height:8px;border-radius:3px;background:#FBBF24"></div><div style="flex:1;height:8px;border-radius:3px;background:#34D399"></div>
+              <div style="flex:1;height:8px;border-radius:3px;background:var(--accent-red)"></div><div style="flex:1;height:8px;border-radius:3px;background:var(--accent-green)"></div><div style="flex:1;height:8px;border-radius:3px;background:var(--accent-amber)"></div><div style="flex:1;height:8px;border-radius:3px;background:var(--accent-green)"></div><div style="flex:1;height:8px;border-radius:3px;background:var(--accent-red)"></div><div style="flex:1;height:8px;border-radius:3px;background:var(--accent-amber)"></div><div style="flex:1;height:8px;border-radius:3px;background:var(--accent-green)"></div><div style="flex:1;height:8px;border-radius:3px;background:var(--accent-green)"></div><div style="flex:1;height:8px;border-radius:3px;background:var(--accent-red)"></div><div style="flex:1;height:8px;border-radius:3px;background:var(--accent-green)"></div><div style="flex:1;height:8px;border-radius:3px;background:var(--accent-amber)"></div><div style="flex:1;height:8px;border-radius:3px;background:var(--accent-green)"></div>
             </div>
           </div>
         </div>
         <!-- Rows -->
         <div style="display:flex;flex-direction:column;gap:5px">
-          <div style="font-size:8px;font-weight:700;color:#F87171;letter-spacing:.06em;text-transform:uppercase;padding:2px 0">⚠ Needs attention</div>
+          <div style="font-size:8px;font-weight:700;color:var(--accent-red);letter-spacing:.06em;text-transform:uppercase;padding:2px 0">⚠ Needs attention</div>
           <!-- Health & Wellness OVER -->
           <div class="pbrow pbrow-over">
-            <div><span style="font-size:11px;font-weight:700;color:#E2E8F0">Health &amp; Wellness</span> <span class="pbadge" style="background:#F8717118;color:#F87171;border-color:#F8717133">OVER</span></div>
-            <div style="font-size:10px;color:#64748B">→ $511 by end</div>
-            <div style="text-align:right;font-size:12px;font-weight:800;color:#F87171">$426 <span style="font-size:9px;color:#64748B">/ $200</span></div>
+            <div><span style="font-size:11px;font-weight:700;color:var(--text-bright)">Health &amp; Wellness</span> <span class="pbadge" style="background:#F8717118;color:var(--accent-red);border-color:#F8717133">OVER</span></div>
+            <div style="font-size:10px;color:var(--text-muted)">→ $511 by end</div>
+            <div style="text-align:right;font-size:12px;font-weight:800;color:var(--accent-red)">$426 <span style="font-size:9px;color:var(--text-muted)">/ $200</span></div>
           </div>
-          <div style="height:3px;border-radius:2px;background:#0F172A;margin:-3px 0 2px;overflow:hidden"><div style="width:100%;height:100%;background:#F87171"></div></div>
+          <div style="height:3px;border-radius:2px;background:var(--border);margin:-3px 0 2px;overflow:hidden"><div style="width:100%;height:100%;background:var(--accent-red)"></div></div>
           <!-- Shopping AT RISK -->
           <div class="pbrow pbrow-risk">
-            <div><span style="font-size:11px;font-weight:700;color:#E2E8F0">Shopping</span> <span class="pbadge" style="background:#FBBF2418;color:#FBBF24;border-color:#FBBF2433">AT RISK</span></div>
-            <div style="font-size:10px;color:#64748B">→ $480 by end</div>
-            <div style="text-align:right;font-size:12px;font-weight:800;color:#FBBF24">$344 <span style="font-size:9px;color:#64748B">/ $400</span></div>
+            <div><span style="font-size:11px;font-weight:700;color:var(--text-bright)">Shopping</span> <span class="pbadge" style="background:#FBBF2418;color:var(--accent-amber);border-color:#FBBF2433">AT RISK</span></div>
+            <div style="font-size:10px;color:var(--text-muted)">→ $480 by end</div>
+            <div style="text-align:right;font-size:12px;font-weight:800;color:var(--accent-amber)">$344 <span style="font-size:9px;color:var(--text-muted)">/ $400</span></div>
           </div>
-          <div style="height:3px;border-radius:2px;background:#0F172A;margin:-3px 0 2px;overflow:hidden"><div style="width:86%;height:100%;background:#FBBF24"></div></div>
+          <div style="height:3px;border-radius:2px;background:var(--border);margin:-3px 0 2px;overflow:hidden"><div style="width:86%;height:100%;background:var(--accent-amber)"></div></div>
           <!-- Dining AT RISK -->
           <div class="pbrow pbrow-risk">
-            <div><span style="font-size:11px;font-weight:700;color:#E2E8F0">Dining</span> <span class="pbadge" style="background:#FBBF2418;color:#FBBF24;border-color:#FBBF2433">AT RISK</span></div>
-            <div style="font-size:10px;color:#64748B">→ $290 by end</div>
-            <div style="text-align:right;font-size:12px;font-weight:800;color:#FBBF24">$218 <span style="font-size:9px;color:#64748B">/ $250</span></div>
+            <div><span style="font-size:11px;font-weight:700;color:var(--text-bright)">Dining</span> <span class="pbadge" style="background:#FBBF2418;color:var(--accent-amber);border-color:#FBBF2433">AT RISK</span></div>
+            <div style="font-size:10px;color:var(--text-muted)">→ $290 by end</div>
+            <div style="text-align:right;font-size:12px;font-weight:800;color:var(--accent-amber)">$218 <span style="font-size:9px;color:var(--text-muted)">/ $250</span></div>
           </div>
-          <div style="height:3px;border-radius:2px;background:#0F172A;margin:-3px 0 2px;overflow:hidden"><div style="width:87%;height:100%;background:#FBBF24"></div></div>
-          <div style="font-size:8px;font-weight:700;color:#34D399;letter-spacing:.06em;text-transform:uppercase;padding:2px 0;margin-top:2px">✓ On track</div>
+          <div style="height:3px;border-radius:2px;background:var(--border);margin:-3px 0 2px;overflow:hidden"><div style="width:87%;height:100%;background:var(--accent-amber)"></div></div>
+          <div style="font-size:8px;font-weight:700;color:var(--accent-green);letter-spacing:.06em;text-transform:uppercase;padding:2px 0;margin-top:2px">✓ On track</div>
           <!-- Groceries -->
-          <div class="pbrow" style="border-color:#33415566;border-left-color:#33415566">
-            <div><span style="font-size:11px;font-weight:700;color:#E2E8F0">Groceries</span></div>
-            <div style="font-size:10px;color:#64748B">→ $750 by end</div>
-            <div style="text-align:right;font-size:12px;font-weight:800;color:#34D399">$522 <span style="font-size:9px;color:#64748B">/ $700</span></div>
+          <div class="pbrow" style="border-color:var(--border-mid);border-left-color:var(--border-mid)">
+            <div><span style="font-size:11px;font-weight:700;color:var(--text-bright)">Groceries</span></div>
+            <div style="font-size:10px;color:var(--text-muted)">→ $750 by end</div>
+            <div style="text-align:right;font-size:12px;font-weight:800;color:var(--accent-green)">$522 <span style="font-size:9px;color:var(--text-muted)">/ $700</span></div>
           </div>
-          <div style="height:3px;border-radius:2px;background:#0F172A;margin:-3px 0 2px;overflow:hidden"><div style="width:75%;height:100%;background:#34D399"></div></div>
+          <div style="height:3px;border-radius:2px;background:var(--border);margin:-3px 0 2px;overflow:hidden"><div style="width:75%;height:100%;background:var(--accent-green)"></div></div>
           <!-- Home -->
-          <div class="pbrow" style="border-color:#33415566;border-left-color:#33415566">
-            <div><span style="font-size:11px;font-weight:700;color:#E2E8F0">Home</span></div>
-            <div style="font-size:10px;color:#64748B">→ $1,480 by end</div>
-            <div style="text-align:right;font-size:12px;font-weight:800;color:#34D399">$1,110 <span style="font-size:9px;color:#64748B">/ $1,400</span></div>
+          <div class="pbrow" style="border-color:var(--border-mid);border-left-color:var(--border-mid)">
+            <div><span style="font-size:11px;font-weight:700;color:var(--text-bright)">Home</span></div>
+            <div style="font-size:10px;color:var(--text-muted)">→ $1,480 by end</div>
+            <div style="text-align:right;font-size:12px;font-weight:800;color:var(--accent-green)">$1,110 <span style="font-size:9px;color:var(--text-muted)">/ $1,400</span></div>
           </div>
-          <div style="height:3px;border-radius:2px;background:#0F172A;margin:-3px 0 2px;overflow:hidden"><div style="width:79%;height:100%;background:#34D399"></div></div>
+          <div style="height:3px;border-radius:2px;background:var(--border);margin:-3px 0 2px;overflow:hidden"><div style="width:79%;height:100%;background:var(--accent-green)"></div></div>
         </div>
       </div>
     </div>
@@ -597,32 +625,33 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
             <div style="font-size:9px;color:#64748B;margin-top:3px">loan · credit card</div>
           </div>
         </div>
-        <div style="background:#0F172A;border:1px solid #334155;border-radius:10px;padding:.75rem .85rem;margin-bottom:.85rem">
-          <div style="font-size:8px;color:#64748B;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Trajectory to $150k goal</div>
+        <div style="background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem .85rem;margin-bottom:.85rem">
+          <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Trajectory to $150k goal</div>
           <svg viewBox="0 0 500 110" width="100%" style="display:block">
-            <line x1="0" y1="88" x2="500" y2="88" stroke="#334155" stroke-width="0.5"/>
-            <line x1="0" y1="58" x2="500" y2="58" stroke="#334155" stroke-width="0.5" stroke-dasharray="3,3"/>
-            <line x1="0" y1="28" x2="500" y2="28" stroke="#334155" stroke-width="0.5" stroke-dasharray="3,3"/>
-            <polyline points="0,92 42,88 84,82 126,85 168,76 210,70 252,64 294,59 336,52 378,46 420,40 462,34 500,30" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linejoin="round"/>
-            <polyline points="500,30 500,26" fill="none" stroke="#34D399" stroke-width="2" stroke-dasharray="4,3" opacity="0.6"/>
-            <line x1="0" y1="14" x2="500" y2="14" stroke="#60A5FA" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
-            <text x="496" y="12" font-size="5" fill="#60A5FA" text-anchor="end" opacity="0.8">$150k goal</text>
-            <circle cx="500" cy="30" r="4" fill="#34D399"/>
-            <text x="490" y="24" font-size="6" fill="#34D399" text-anchor="end" font-weight="700">$87.4k</text>
-            <text x="0"   y="104" font-size="5" fill="#475569">May '25</text>
-            <text x="500" y="104" font-size="5" fill="#64748B" text-anchor="end" font-weight="700">Apr '26</text>
+            <line x1="0" y1="88" x2="500" y2="88" style="stroke:var(--border-mid)" stroke-width="0.5"/>
+            <line x1="0" y1="58" x2="500" y2="58" style="stroke:var(--border-mid)" stroke-width="0.5" stroke-dasharray="3,3"/>
+            <line x1="0" y1="28" x2="500" y2="28" style="stroke:var(--border-mid)" stroke-width="0.5" stroke-dasharray="3,3"/>
+            <polyline points="0,92 42,88 84,82 126,85 168,76 210,70 252,64 294,59 336,52 378,46 420,40 462,34 500,30" fill="none" style="stroke:var(--accent-green)" stroke-width="2.5" stroke-linejoin="round"/>
+            <polyline points="500,30 500,26" fill="none" style="stroke:var(--accent-green)" stroke-width="2" stroke-dasharray="4,3" opacity="0.6"/>
+            <line x1="0" y1="14" x2="500" y2="14" style="stroke:var(--accent-blue-light)" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+            <text x="496" y="12" font-size="5" style="fill:var(--accent-blue-light)" text-anchor="end" opacity="0.8">$150k goal</text>
+            <circle cx="500" cy="30" r="4" style="fill:var(--accent-green)"/>
+            <text x="490" y="24" font-size="6" style="fill:var(--accent-green)" text-anchor="end" font-weight="700">$87.4k</text>
+            <text x="0"   y="104" font-size="5" style="fill:var(--text-muted)">May '25</text>
+            <text x="500" y="104" font-size="5" style="fill:var(--text-muted)" text-anchor="end" font-weight="700">Apr '26</text>
           </svg>
         </div>
         <div style="display:flex;flex-direction:column;gap:5px">
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:#1E293B;border-radius:8px;font-size:11px"><span style="color:#94A3B8">🏦 Ally Checking</span><span style="font-weight:700;color:#E2E8F0">$3,200</span></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:#1E293B;border-radius:8px;font-size:11px"><span style="color:#94A3B8">💰 Ally HYSA</span><span style="font-weight:700;color:#E2E8F0">$22,400</span></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:#1E293B;border-radius:8px;font-size:11px"><span style="color:#94A3B8">📈 Fidelity Roth IRA</span><span style="font-weight:700;color:#34D399">$41,200</span></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:#1E293B;border-radius:8px;font-size:11px"><span style="color:#94A3B8">🏢 Vanguard 401(k)</span><span style="font-weight:700;color:#34D399">$45,200</span></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:#1E293B;border-radius:8px;font-size:11px"><span style="color:#94A3B8">🎓 Navient Student Loan</span><span style="font-weight:700;color:#F87171">−$17,800</span></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:#1E293B;border-radius:8px;font-size:11px"><span style="color:#94A3B8">💳 Chase Sapphire</span><span style="font-weight:700;color:#F87171">−$6,800</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:var(--bg-card);border-radius:8px;font-size:11px"><span style="color:var(--text-secondary)">🏦 Ally Checking</span><span style="font-weight:700;color:var(--text-primary)">$3,200</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:var(--bg-card);border-radius:8px;font-size:11px"><span style="color:var(--text-secondary)">💰 Ally HYSA</span><span style="font-weight:700;color:var(--text-primary)">$22,400</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:var(--bg-card);border-radius:8px;font-size:11px"><span style="color:var(--text-secondary)">📈 Fidelity Roth IRA</span><span style="font-weight:700;color:var(--accent-green)">$41,200</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:var(--bg-card);border-radius:8px;font-size:11px"><span style="color:var(--text-secondary)">🏢 Vanguard 401(k)</span><span style="font-weight:700;color:var(--accent-green)">$45,200</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:var(--bg-card);border-radius:8px;font-size:11px"><span style="color:var(--text-secondary)">🎓 Navient Student Loan</span><span style="font-weight:700;color:var(--accent-red)">−$17,800</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:var(--bg-card);border-radius:8px;font-size:11px"><span style="color:var(--text-secondary)">💳 Chase Sapphire</span><span style="font-weight:700;color:var(--accent-red)">−$6,800</span></div>
         </div>
       </div>
     </div>
+  </div>
 </div>
 
 <section class="section" style="margin-top:4rem">
@@ -632,7 +661,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
     <div class="step">
       <div class="step-num">1</div>
       <h3>Download your CSV</h3>
-      <p>Under Statements or Download Activity in your bank or credit card portal.</p>
+      <p>Under Statements or Download Activity in your bank, credit union, or credit card portal.</p>
     </div>
     <div class="step">
       <div class="step-num">2</div>
@@ -676,13 +705,17 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
       <p>Checking, savings, investments, loans, real estate, and vehicles in one place. Save monthly snapshots and watch your trajectory toward a goal.</p>
     </div></div>
     <div class="fi"><div class="fi-icon">🧹</div><div>
-      <h3>Smart auto-categorization</h3>
+      <h3>Smart auto-categorization — US, Canada, UK, Australia, New Zealand, and Singapore</h3>
       <div style="display:flex;flex-direction:column;gap:5px;margin:.6rem 0">
         <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:#2563EB;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">1</span><span style="color:var(--text-secondary)"><strong style="color:var(--text-primary)">Your rules</strong> — keyword rules you've saved always win</span></div>
-        <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:#2563EB;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">2</span><span style="color:var(--text-secondary)"><strong style="color:var(--text-primary)">Community patterns</strong> — <span class="community-rules-count">336</span> community-contributed merchant mappings · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light)">Suggest one ↗</a></span></div>
-        <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:#2563EB;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">3</span><span style="color:var(--text-secondary)"><strong style="color:var(--text-primary)"><a href="https://en.wikipedia.org/wiki/Merchant_category_code" target="_blank" rel="noopener noreferrer" style="color:var(--text-primary);text-decoration:underline">MCC codes</a></strong> — your bank's merchant codes, if present</span></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:#2563EB;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">2</span><span style="color:var(--text-secondary)"><strong style="color:var(--text-primary)">Community patterns</strong> — <span class="community-rules-count">904</span> community-contributed merchant mappings covering US, CA, UK, AU, NZ, and SG · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light)">Suggest one ↗</a></span></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:#2563EB;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">3</span><span style="color:var(--text-secondary)"><strong style="color:var(--text-primary)"><a href="https://en.wikipedia.org/wiki/Merchant_category_code" target="_blank" rel="noopener noreferrer" style="color:var(--text-primary);text-decoration:underline">MCC codes</a></strong> — your bank or credit union's merchant codes, if present</span></div>
         <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:#2563EB;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">4</span><span style="color:var(--text-secondary)"><strong style="color:var(--text-primary)">300+ built-in keywords</strong> — fallback for everything else</span></div>
       </div>
+    </div></div>
+    <div class="fi"><div class="fi-icon">🌍</div><div>
+      <h3>Built for US, CA, UK, AU, NZ, and SG</h3>
+      <p>The app supports banks and credit unions from all six countries by name. Auto-categorization covers local merchants — groceries, telecoms, transport, energy, food, and retail — in each market. Configure your currency symbol in settings: $ · C$ · £ · A$ · NZ$ · S$ · or any custom symbol.</p>
     </div></div>
     <div class="fi"><div class="fi-icon">🎯</div><div>
       <h3>Budgets that update with every import</h3>
@@ -702,8 +735,8 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
   <div class="diff-grid">
     <div class="diff-card ab">
       <span class="diff-icon">🔒</span>
-      <h3>No bank connections</h3>
-      <p>No bank logins, no screen scraping, no third-party data brokers. You import a CSV — the same file your bank already gives you.</p>
+      <h3>Keep your login to yourself</h3>
+      <p>No bank logins, no screen scraping, no third-party data brokers. You import a CSV — the same file your bank or credit union already gives you.</p>
     </div>
     <div class="diff-card">
       <span class="diff-icon">💻</span>
@@ -712,8 +745,9 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
     </div>
     <div class="diff-card ag">
       <span class="diff-icon">📂</span>
-      <h3>Works with your bank's CSV</h3>
-      <p>Chase, Ally, Fidelity, Vanguard, and most banks. Drop the file in — format detected automatically.</p>
+      <h3>Works with your bank or credit union's CSV</h3>
+      <p>Chase, Ally, Fidelity, Vanguard, NFCU, BECU, PenFed, TD, RBC, Scotiabank, BMO, CIBC, and most banks and credit unions. Drop the file in — the app auto-detects the format.</p>
+      <p style="font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-light);margin-top:.5rem">Works with banks and credit unions from the US, Canada, UK, Australia, New Zealand, and Singapore. Configure your currency symbol in settings — $ · £ · C$ · A$ · NZ$ · S$ · or any symbol.</p>
       <p style="font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-light);margin-top:.5rem">Migrating from Mint, YNAB, or Monarch Money? Drop in your export and your categories map across automatically.</p>
     </div>
     <div class="diff-card">
@@ -723,7 +757,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
     </div>
   </div>
   <div style="margin-top:1rem;text-align:center">
-    <a href="privacy.html" style="color:var(--accent-blue-light);text-decoration:none;font-size:13px">Full privacy policy →</a>
+    <a href="privacy.html" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light);text-decoration:none;font-size:13px">Full privacy policy →</a>
   </div>
 </section>
 
@@ -735,12 +769,16 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
   </div>
 </div>
 
+<!-- FOOTER — shared pattern across all 3 pages. See trakyodollas.html footer comment for full notes.
+     Page-specific links here: "Open app", "Privacy". Footer MUST remain outside .preview-wrap and all other max-width wrappers — the unclosed .preview-wrap bug (fixed June 2026) caused the footer to be inset. -->
 <footer>
-  <a href="#" class="footer-logo">trak-yo-dolla<span>$</span></a>
-  <p style="font-size:12px;color:var(--text-muted);font-style:italic;margin:0">Don't obsess over money. Understand it.</p>
+  <div class="footer-left">
+    <a href="#" class="footer-logo">trak-yo-dolla<span>$</span></a>
+    <a href="https://ko-fi.com/gflo247" target="_blank" rel="noopener noreferrer" class="footer-support">♥ Support</a>
+  </div>
   <div class="footer-links">
-    <a href="privacy.html">Privacy</a>
-    <a href="trakyodollas.html?import=1">Import CSV</a>
+    <a href="trakyodollas.html">Open app</a>
+    <a href="privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a>
     <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer">GitHub</a>
     <a href="https://github.com/gflo247/trak-yo-dollas/issues" target="_blank" rel="noopener noreferrer">Report a bug</a>
     <a href="mailto:trakyodollas@gmail.com">Email me</a>
@@ -840,7 +878,7 @@ function toggleTheme() {
 
 function updateChartDots() {
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-  document.querySelectorAll('.snap-dot').forEach(c => c.setAttribute('stroke', isLight ? '#F8FAFC' : '#0D1525'));
+  document.querySelectorAll('.snap-dot').forEach(c => c.setAttribute('stroke', isLight ? '#F8FAFC' : '#0D1419'));
   document.querySelectorAll('.est-dot').forEach(c => c.setAttribute('fill', isLight ? '#94A3B8' : '#334155'));
 }
 updateChartDots();
@@ -852,16 +890,9 @@ function setPreviewChart(n){
   [0,1,2,3,4].forEach(i=>{
     const p=document.getElementById('pc-'+i);
     if(p)p.style.display=i===n?'block':'none';
-  });
-  for(let i=0;i<5;i++){
     const b=document.getElementById('pcm-'+i);
-    if(!b)continue;
-    const on=i===n;
-    b.style.background=on?'#1E3A5F':'#1E293B';
-    b.style.borderColor=on?'#2563EB55':'#334155';
-    b.style.color=on?'#60A5FA':'#64748B';
-    b.style.fontWeight=on?'600':'400';
-  }
+    if(b)b.classList.toggle('pcm-active',i===n);
+  });
   if(n===2)buildHeatmap();
 }
 function buildPreviewDailyBars(){
@@ -890,8 +921,8 @@ function filterPreviewTile(el,cat,color){
   }
 }
 
-// Live community rules count — uses force-cache so repeat visits cost nothing
-fetch('https://trak-yo-dollas.web.app/community-rules.json',{cache:'force-cache'})
+// Live community rules count — always fetches latest so the number stays current
+fetch('https://trak-yo-dollas.web.app/community-rules.json',{cache:'no-cache'})
   .then(r=>r.ok?r.json():null).then(d=>{
     if(Array.isArray(d))document.querySelectorAll('.community-rules-count').forEach(el=>el.textContent=d.length);
   }).catch(()=>{});

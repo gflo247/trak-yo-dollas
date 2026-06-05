@@ -10,20 +10,27 @@
 <meta property="og:title" content="trak-yo-dolla$ · Privacy Policy">
 <meta property="og:description" content="Simple, honest, local-first. Your CSV never leaves your browser. No bank connections. Full source code on GitHub.">
 <meta property="og:url" content="https://trak-yo-dollas.web.app/privacy.html">
+<meta property="og:image" content="https://trak-yo-dollas.web.app/og.png">
+<meta property="og:image:width" content="3212">
+<meta property="og:image:height" content="1804">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://trak-yo-dollas.web.app/og.png">
 <style>
 /* fonts self-hosted — see /fonts/fonts.css */
 
 :root{
-  --bg-page:#0F172A;--bg-card:#1E293B;--bg-deep:#0D1525;
+  --bg-page:#111720;--bg-card:#1E293B;--bg-deep:#0D1419;
   --border:#1E293B;--border-mid:#334155;
-  --text-bright:#F1F5F9;--text-primary:#E2E8F0;--text-secondary:#94A3B8;--text-muted:#64748B;
+  --text-bright:#F1F5F9;--text-primary:#D1DCE8;--text-secondary:#94A3B8;--text-muted:#64748B;
   --accent-blue:#2563EB;--accent-blue-light:#60A5FA;--accent-green:#34D399;
+  --clr-ok:#34D399;--clr-warn:#FBBF24;--clr-no:#F87171;
 }
 [data-theme="light"]{
-  --bg-page:#F8FAFC;--bg-card:#FFFFFF;--bg-deep:#F1F5F9;
+  --bg-page:#F8FAFC;--bg-card:#FFFEFB;--bg-deep:#F1F5F9;
   --border:#E2E8F0;--border-mid:#CBD5E1;
-  --text-bright:#0F172A;--text-primary:#1E293B;--text-secondary:#374151;--text-muted:#4B5563;
+  --text-bright:#0F172A;--text-primary:#1E293B;--text-secondary:#4B5563;--text-muted:#6B7280;
   --accent-blue-light:#1D4ED8;--accent-green:#059669;
+  --clr-ok:#047857;--clr-warn:#B45309;--clr-no:#DC2626;
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -61,12 +68,13 @@ h1{font-size:2rem;font-weight:800;color:var(--text-bright);letter-spacing:-.02em
 .back{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--text-muted);text-decoration:none;margin-bottom:2rem;transition:color .15s}
 .back:hover{color:var(--text-secondary)}
 
-footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
-.footer-logo{font-family:'DM Mono',monospace;font-size:14px;color:var(--text-muted);text-decoration:none}
+footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:12px}
+.footer-logo{font-family:'DM Mono',monospace;font-size:13px;color:var(--text-muted);text-decoration:none;letter-spacing:.02em}
 .footer-logo span{color:var(--accent-blue-light)}
-.footer-links{display:flex;gap:20px}
-.footer-links a{font-size:13px;color:var(--text-muted);text-decoration:none;white-space:nowrap}
-.footer-links a:hover{color:var(--text-secondary)}
+.footer-left{display:flex;align-items:center;gap:12px}
+.footer-links{display:flex;gap:16px;flex-wrap:wrap;margin-left:auto}
+.footer-links a,.footer-support{font-size:13px;color:var(--text-muted);text-decoration:none}
+.footer-links a:hover,.footer-support:hover{color:var(--text-secondary)}
 
 [data-theme="light"] .card-green{background:#ECFDF5;border-color:#6EE7B7}
 [data-theme="light"] .card-blue{background:#EFF6FF;border-color:#BFDBFE}
@@ -75,7 +83,14 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 [data-theme="light"] .card-blue .card-label{color:#1D4ED8}
 [data-theme="light"] .card-amber .card-label{color:#B45309}
 
-@media(max-width:640px){.page{padding:2.5rem 1.25rem 4rem}nav{padding:.65rem 1rem}}
+@media(max-width:640px){
+  .page{padding:2.5rem 1.25rem 4rem}
+  nav{padding:.65rem 1rem}
+  footer{flex-direction:column;align-items:center;padding:.75rem 1.5rem}
+  .footer-left{justify-content:center}
+  .footer-links{margin-left:0;justify-content:center;gap:14px}
+  .footer-links a,.footer-support{font-size:11px;padding:5px 2px;color:var(--text-muted)}
+}
 
 .data-table-desktop{display:block}
 .data-table-mobile{display:none}
@@ -86,14 +101,14 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
   .mr-event{padding:.6rem .85rem;font-size:13px;font-weight:700;color:var(--text-primary);background:var(--bg-deep);border-bottom:1px solid var(--border-mid)}
   .mr-field{display:flex;gap:.6rem;padding:.4rem .85rem;border-bottom:1px solid var(--border)}
   .mr-field:last-child{border-bottom:none}
-  .mr-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;flex:0 0 72px;padding-top:2px;line-height:1.4;white-space:nowrap}
+  .mr-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;flex:0 0 110px;min-width:110px;padding-top:2px;line-height:1.4;white-space:nowrap}
   .mr-val{font-size:12px;color:var(--text-secondary);line-height:1.5;flex:1}
 }
 
 .diag-dest{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
-@media(max-width:479px){
+@media(max-width:359px){
   .diag-dest{grid-template-columns:1fr!important}
-  .diag-dest>div{max-width:85%;margin-left:auto;margin-right:auto;width:100%}
+  .diag-dest>div{max-width:90%;margin-left:auto;margin-right:auto;width:100%}
 }
 
 .contact-item{display:flex;align-items:center;gap:.6rem;font-size:14px;color:var(--text-secondary)}
@@ -119,7 +134,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
   <a href="index.html" class="back">← Back</a>
   <div class="eyebrow">Your data & privacy</div>
   <h1>Simple, honest,<br>local-first.</h1>
-  <p class="intro">I built this app with no servers — your financial data has nowhere to go but your own device. Your browser translates your CSV files into spending data entirely on your device — nothing is uploaded. The app's full source code is public on <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer">GitHub</a> — anyone can read exactly what it does. Here's how it works.</p>
+  <p class="intro">I built this app for users in the US, Canada, UK, Australia, New Zealand, Singapore, and beyond — with no servers, so your financial data has nowhere to go but your own device. Your browser translates your CSV files into spending data entirely on your device — nothing is uploaded. The app's full source code is public on <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer">GitHub</a> — anyone can read exactly what it does. Here's how it works.</p>
   <p style="font-style: italic; color: #888; margin-top: 0rem; margin-bottom: 2rem;">Last updated June 1, 2026</p>
 
   <!-- "What leaves your device?" summary table -->
@@ -137,31 +152,31 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-primary);font-weight:600">Opening the app</div>
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-secondary)">Your browser fetches the app's files from the server</div>
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-secondary)">Firebase/Google servers<br><span style="font-size:11px;color:var(--text-muted)">records your internet address, browser type<br>(standard for any website you visit)</span></div>
-          <div style="padding:.7rem .85rem;font-size:13px;color:#F87171;font-weight:600">No</div>
+          <div style="padding:.7rem .85rem;font-size:13px;color:var(--clr-no);font-weight:600">No</div>
         </div>
         <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-deep);border-bottom:1px solid var(--border)">
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-primary);font-weight:600">Importing a CSV</div>
-          <div style="padding:.7rem .85rem;font-size:13px;color:#34D399;font-weight:600">Nothing</div>
-          <div style="padding:.7rem .85rem;font-size:13px;color:#34D399;font-weight:600">Stays on your device</div>
+          <div style="padding:.7rem .85rem;font-size:13px;color:var(--clr-ok);font-weight:600">Nothing</div>
+          <div style="padding:.7rem .85rem;font-size:13px;color:var(--clr-ok);font-weight:600">Stays on your device</div>
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-muted)">N/A</div>
         </div>
         <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-card);border-bottom:1px solid var(--border)">
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-primary);font-weight:600">Opening the import screen</div>
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-secondary)"><a href="#community-rules" style="color:var(--accent-blue-light)">community-rules.json</a></div>
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-secondary)">Firebase hosting</div>
-          <div style="padding:.7rem .85rem;font-size:13px;color:#34D399;font-weight:600">Yes</div>
+          <div style="padding:.7rem .85rem;font-size:13px;color:var(--clr-ok);font-weight:600">Yes</div>
         </div>
         <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-deep);border-bottom:1px solid var(--border)">
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-primary);font-weight:600">Signing in with Google</div>
-          <div style="padding:.7rem .85rem;font-size:13px;color:#FBBF24;font-weight:600">Your full financial data</div>
+          <div style="padding:.7rem .85rem;font-size:13px;color:var(--clr-warn);font-weight:600">Your full financial data</div>
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-secondary)">Your personal Google account</div>
-          <div style="padding:.7rem .85rem;font-size:13px;color:#FBBF24;font-weight:600">Don't sign in</div>
+          <div style="padding:.7rem .85rem;font-size:13px;color:var(--clr-warn);font-weight:600">Don't sign in</div>
         </div>
         <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-card)">
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-primary);font-weight:600">Analytics</div>
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-secondary)"><a href="#analytics" style="color:var(--accent-blue-light)">Session data only</a><br><span style="font-size:11px;color:var(--text-muted)">no financial data</span></div>
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-secondary)">Umami (no cookies or personal data)</div>
-          <div style="padding:.7rem .85rem;font-size:13px;color:#34D399;font-weight:600">Yes</div>
+          <div style="padding:.7rem .85rem;font-size:13px;color:var(--clr-ok);font-weight:600">Yes</div>
         </div>
       </div>
     </div>
@@ -170,31 +185,31 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
         <div class="mr-event">Opening the app</div>
         <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val">Your browser fetches the app's files from the server</span></div>
         <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Firebase/Google servers<br><span style="font-size:10px;color:var(--text-muted)">records your internet address, browser type (standard for any website)</span></span></div>
-        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:#F87171;font-weight:700">No</span></div>
+        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-no);font-weight:700">No</span></div>
       </div>
       <div class="mr-card">
         <div class="mr-event">Importing a CSV</div>
-        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val" style="color:#34D399;font-weight:700">Nothing</span></div>
-        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val" style="color:#34D399;font-weight:700">Stays on your device</span></div>
+        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val" style="color:var(--clr-ok);font-weight:700">Nothing</span></div>
+        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val" style="color:var(--clr-ok);font-weight:700">Stays on your device</span></div>
         <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val">N/A</span></div>
       </div>
       <div class="mr-card">
         <div class="mr-event">Opening the import screen</div>
         <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val"><a href="#community-rules" style="color:var(--accent-blue-light)">community-rules.json</a></span></div>
         <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Firebase hosting</span></div>
-        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:#34D399;font-weight:700">Yes</span></div>
+        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-ok);font-weight:700">Yes</span></div>
       </div>
       <div class="mr-card">
         <div class="mr-event">Signing in with Google</div>
-        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val" style="color:#FBBF24;font-weight:700">Your full financial data</span></div>
+        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val" style="color:var(--clr-warn);font-weight:700">Your full financial data</span></div>
         <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Your personal Google account</span></div>
-        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:#FBBF24;font-weight:700">Don't sign in</span></div>
+        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-warn);font-weight:700">Don't sign in</span></div>
       </div>
       <div class="mr-card">
         <div class="mr-event">Analytics</div>
         <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val"><a href="#analytics" style="color:var(--accent-blue-light)">Session data only</a><br><span style="font-size:10px;color:var(--text-muted)">no financial data</span></span></div>
         <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Umami · no personal data</span></div>
-        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:#34D399;font-weight:700">Yes</span></div>
+        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-ok);font-weight:700">Yes</span></div>
       </div>
     </div>
     <div style="font-size:11px;color:var(--text-muted);margin-top:.5rem">Yes = any privacy extension blocks it. No = infrastructure-level, outside your control.</div>
@@ -202,30 +217,29 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 
   <!-- Data flow visual -->
   <div style="margin:2rem 0 2.5rem;font-family:'DM Sans',sans-serif">
-    <div style="background:#0F172A;border:1px solid #1E293B;border-radius:16px;padding:2rem 1.5rem 1.25rem;max-width:560px;margin:0 auto;box-sizing:border-box">
+    <div style="background:var(--bg-page);border:1px solid var(--border);border-radius:16px;padding:2rem 1.5rem 1.25rem;max-width:560px;margin:0 auto;box-sizing:border-box">
 
       <!-- Source -->
       <div style="display:flex;justify-content:center;margin-bottom:.75rem">
-        <div style="background:#1E293B;border:1px solid #334155;border-radius:12px;padding:.55rem 2rem;text-align:center">
-          <!-- <div style="font-family:'DM Mono',monospace;font-size:10px;color:#64748B;letter-spacing:.08em;margin-bottom:.5rem">YOUR BANK OR CREDIT CARD</div> -->
+        <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:.55rem 2rem;text-align:center">
           <div style="font-size:20px;margin-bottom:.3rem">📄</div>
-          <div style="font-size:12px;color:#94A3B8;font-weight:600">YOUR BANK OR CREDIT CARD CSV FILE</div>
+          <div style="font-size:12px;color:var(--text-secondary);font-weight:600">YOUR BANK OR CREDIT CARD CSV FILE</div>
         </div>
       </div>
 
       <!-- Arrow down -->
       <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:.4rem">
-        <div style="font-size:11px;color:#34D399;font-weight:700;margin-bottom:1px">you import</div>
-        <div style="width:2px;height:20px;background:repeating-linear-gradient(to bottom,#34D399 0,#34D399 4px,transparent 4px,transparent 8px)"></div>
-        <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid #34D399"></div>
+        <div style="font-size:11px;color:var(--clr-ok);font-weight:700;margin-bottom:1px">you import</div>
+        <div style="width:2px;height:20px;background:repeating-linear-gradient(to bottom,var(--clr-ok) 0,var(--clr-ok) 4px,transparent 4px,transparent 8px)"></div>
+        <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid var(--clr-ok)"></div>
       </div>
 
       <!-- Browser box -->
       <div style="display:flex;justify-content:center;margin-bottom:.35rem">
-        <div style="background:#141E2E;border:1.5px solid #94A3B8;border-radius:14px;padding:.85rem 1.5rem;text-align:center;width:100%;max-width:380px;box-sizing:border-box">
+        <div style="background:var(--bg-deep);border:1.5px solid var(--border-strong);border-radius:14px;padding:.85rem 1.5rem;text-align:center;width:100%;max-width:380px;box-sizing:border-box">
           <div style="font-size:22px;margin-bottom:.3rem">💻 📱</div>
-          <div style="font-family:'DM Mono',monospace;font-size:9px;font-weight:600;color:#E2E8F0;letter-spacing:.08em;line-height:1.4;margin-bottom:.25rem">YOUR DATA STAYS IN YOUR BROWSER ON YOUR DEVICE</div>
-          <div style="font-size:11px;color:#64748B;line-height:1.5">nothing uploaded · no account required</div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;font-weight:600;color:var(--text-bright);letter-spacing:.08em;line-height:1.4;margin-bottom:.25rem">YOUR DATA STAYS IN YOUR BROWSER ON YOUR DEVICE</div>
+          <div style="font-size:11px;color:var(--text-muted);line-height:1.5">nothing uploaded · no account required</div>
         </div>
       </div>
 
@@ -233,48 +247,44 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
       <div style="display:flex;justify-content:center;margin:.2rem 0 0">
         <div style="border:1px dashed #2DD4BF44;border-radius:8px;padding:.4rem .85rem;max-width:380px;width:100%;box-sizing:border-box;text-align:center">
           <div style="font-size:11px;color:#2DD4BF88;line-height:1;margin-bottom:.15rem">⬇</div>
-          <div style="font-size:10px;color:#94A3B8;line-height:1.5">Firebase Hosting also sends categorization rules to your browser</div>
-          <div style="font-size:9px;color:#64748B;margin-top:1px">once per session · no financial data leaves your device</div>
+          <div style="font-size:10px;color:var(--text-secondary);line-height:1.5">Firebase Hosting also sends categorization rules to your browser</div>
+          <div style="font-size:9px;color:var(--text-muted);margin-top:1px">once per session · no financial data leaves your device</div>
         </div>
       </div>
 
       <!-- Fork -->
-      <div style="display:flex;justify-content:center;margin-bottom:.25rem">
-        <div style="width:380px;position:relative;height:44px">
-          <div style="position:absolute;left:50%;top:0;width:2px;height:14px;background:repeating-linear-gradient(to bottom,#64748B 0,#64748B 4px,transparent 4px,transparent 8px);transform:translateX(-50%)"></div>
-          <div style="position:absolute;left:20%;top:14px;right:20%;height:2px;background:repeating-linear-gradient(to right,#64748B 0,#64748B 4px,transparent 4px,transparent 8px)"></div>
-          <div style="position:absolute;left:20%;top:14px;width:2px;height:18px;background:repeating-linear-gradient(to bottom,#34D399 0,#34D399 4px,transparent 4px,transparent 8px);transform:translateX(-50%)"></div>
-          <div style="position:absolute;right:20%;top:14px;width:2px;height:18px;background:repeating-linear-gradient(to bottom,#60A5FA 0,#60A5FA 4px,transparent 4px,transparent 8px);transform:translateX(50%)"></div>
-          <div style="position:absolute;left:20%;top:30px;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #34D399"></div>
-          <div style="position:absolute;right:20%;top:30px;transform:translateX(50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #60A5FA"></div>
-        </div>
+      <div style="position:relative;height:44px;margin-bottom:.25rem">
+        <div style="position:absolute;left:50%;top:0;width:2px;height:14px;background:repeating-linear-gradient(to bottom,var(--border-mid) 0,var(--border-mid) 4px,transparent 4px,transparent 8px);transform:translateX(-50%)"></div>
+        <div style="position:absolute;left:25%;right:25%;top:14px;height:2px;background:repeating-linear-gradient(to right,var(--border-mid) 0,var(--border-mid) 4px,transparent 4px,transparent 8px)"></div>
+        <div style="position:absolute;left:25%;top:14px;width:2px;height:18px;background:repeating-linear-gradient(to bottom,var(--clr-ok) 0,var(--clr-ok) 4px,transparent 4px,transparent 8px);transform:translateX(-50%)"></div>
+        <div style="position:absolute;right:25%;top:14px;width:2px;height:18px;background:repeating-linear-gradient(to bottom,var(--accent-blue-light) 0,var(--accent-blue-light) 4px,transparent 4px,transparent 8px);transform:translateX(50%)"></div>
+        <div style="position:absolute;left:25%;top:30px;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--clr-ok)"></div>
+        <div style="position:absolute;right:25%;top:30px;transform:translateX(50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--accent-blue-light)"></div>
       </div>
 
       <!-- Destination boxes -->
       <div class="diag-dest">
         <div>
-          <div style="font-size:11px;font-weight:700;color:#34D399;text-align:center;margin-bottom:.35rem">without sign-in</div>
+          <div style="font-size:11px;font-weight:700;color:var(--clr-ok);text-align:center;margin-bottom:.35rem">without sign-in</div>
           <div style="background:#065F4620;border:1.5px solid #34D39988;border-radius:10px;padding:.65rem;text-align:center">
-            <div style="font-size:13px;font-weight:800;color:#34D399;margin-bottom:.25rem">Your device only</div>
-            <div style="font-size:10px;color:#34D39999">saved locally in your browser</div>
+            <div style="font-size:13px;font-weight:800;color:var(--clr-ok)">Your device only</div>
           </div>
         </div>
         <div>
-          <div style="font-size:11px;font-weight:700;color:#60A5FA;text-align:center;margin-bottom:.35rem">with sign-in</div>
+          <div style="font-size:11px;font-weight:700;color:var(--accent-blue-light);text-align:center;margin-bottom:.35rem">with sign-in</div>
           <div style="background:#1E3A5F22;border:1.5px solid #2563EB88;border-radius:10px;padding:.65rem;text-align:center">
-            <div style="font-size:11px;font-weight:800;color:#60A5FA;margin-bottom:.25rem">🔵 Your Google account</div>
-            <div style="font-size:9px;color:#475569;margin-bottom:.2rem">via Firebase · only you can read it</div>
-            <div style="font-size:9px;color:#64748B;margin-bottom:.35rem">your data travels to Google's servers</div>
-            <span style="background:#1E3A5F;border:1px solid #2563EB55;border-radius:5px;font-size:9px;font-weight:700;color:#60A5FA;padding:2px 8px">opt-in only</span>
+            <div style="font-size:11px;font-weight:800;color:var(--accent-blue-light);margin-bottom:.2rem">🔵 Your Google account</div>
+            <div style="font-size:9px;color:var(--text-muted);margin-bottom:.3rem">data leaves your device</div>
+            <span style="background:var(--bg-card);border:1px solid #2563EB55;border-radius:5px;font-size:9px;font-weight:700;color:var(--accent-blue-light);padding:2px 8px">opt-in only</span>
           </div>
         </div>
       </div>
 
       <!-- Legend -->
-      <div style="display:flex;gap:1.25rem;flex-wrap:wrap;margin-top:1.1rem;padding-top:.85rem;border-top:1px solid #1E293B">
-        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#475569"><div style="width:7px;height:7px;border-radius:50%;background:#34D399"></div>Without sign-in — stays on your device</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#475569"><div style="width:7px;height:7px;border-radius:50%;background:#60A5FA"></div>With sign-in — syncs to your Google account</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#475569"><div style="width:7px;height:6px;border-radius:2px;border:1px dashed #334155"></div>Firebase sends categorization rules (no financial data)</div>
+      <div style="display:flex;gap:1.25rem;flex-wrap:wrap;margin-top:1.1rem;padding-top:.85rem;border-top:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-muted)"><div style="width:7px;height:7px;border-radius:50%;background:#34D399"></div>Without sign-in — stays on your device</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-muted)"><div style="width:7px;height:7px;border-radius:50%;background:#60A5FA"></div>With sign-in — syncs to your Google account</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-muted)"><div style="width:7px;height:6px;border-radius:2px;border:1px dashed var(--border-mid)"></div>Firebase sends categorization rules (no financial data)</div>
       </div>
 
     </div>
@@ -304,14 +314,14 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
       </ul>
     </div>
 
-    <div class="card card-amber">
-      <div class="card-label" id="analytics" style="scroll-margin-top:72px">📊 Analytics — what's collected</div>
-      <p>This site uses <a href="https://umami.is" target="_blank" rel="noopener noreferrer">Umami</a>, a privacy-respecting analytics tool. It records <strong>page views, referrer, browser type, operating system, and country</strong> (inferred from your IP address, which Umami never stores). Umami sets no cookies, collects no personal data, and never identifies or tracks individual visitors across sessions. You can block it with any privacy extension — the app works fine without it.</p>
-    </div>
-
     <div class="card card-neutral">
       <div class="card-label">🖥 Firebase hosting logs</div>
       <p>When you visit this app, Firebase Hosting — Google's infrastructure — records standard server request data: <strong>your internet address, browser type, pages requested, and timestamps</strong> (this is standard for any website you visit). Google manages this logging under their own privacy policy — the developer has no control over it and no direct access to individual request logs. It contains no financial data; Google applies the same logging to every website on their infrastructure. See <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener noreferrer">firebase.google.com/support/privacy</a> for details.</p>
+    </div>
+
+    <div class="card card-amber">
+      <div class="card-label" id="analytics" style="scroll-margin-top:72px">📊 Analytics — what's collected</div>
+      <p>This site uses <a href="https://umami.is" target="_blank" rel="noopener noreferrer">Umami</a>, a privacy-respecting analytics tool. It records <strong>page views, referrer, browser type, operating system, and country</strong> (inferred from your IP address, which Umami never stores). Umami sets no cookies, collects no personal data, and never identifies or tracks individual visitors across sessions. You can block it with any privacy extension — the app works fine without it.</p>
     </div>
   </div>
 
@@ -322,7 +332,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer">
         <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">Can the developer see my financial data?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
-        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">No — and this isn't just a policy. It's how the app is built. By default, the app saves your data to your browser on your device. The developer built no mechanism to transmit it anywhere and runs no server to receive it. If you choose to sign in with Google, your data syncs to your personal Google account via Firebase — Google holds it, not us, and only you can read it. Either way, the developer has no way to see your financial data.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">No — and this isn't just a policy. It's how the app is built. By default, the app saves your data to your browser on your device. The developer built no mechanism to transmit it anywhere and runs no server to receive it. If you choose to sign in with Google, your data syncs to your personal Google account via Firebase — Google holds it, not me, and only you can read it. Either way, the developer has no way to see your financial data.</p>
       </details>
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
@@ -337,7 +347,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
         <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">Is my CSV safe after I import it?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
-        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">Yes — and not just because I say so. Your browser processes the CSV entirely on your device; nothing is uploaded. The app reads the file, parses the transactions locally, and discards the rest — the developer never receives the file or its contents. If you've signed in with Google, the parsed transaction records sync to your personal Google account, but your original CSV file never leaves your computer.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">Yes — and not just because I say so. Your browser processes the CSV entirely on your device and uploads nothing. The app reads the file, parses the transactions locally, and discards the rest — the developer never receives the file or its contents. If you've signed in with Google, the parsed transaction records sync to your personal Google account, but your original CSV file never leaves your computer.</p>
       </details>
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
@@ -362,7 +372,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
         <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">What is Firebase and why use it if you care about privacy?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
-        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">Honest answer: Firebase is Google infrastructure. It's used here for two things only — static file hosting (delivering the app's HTML, JS, and CSS to your browser, the same role any web host plays) and optional Google account sync. I chose it for reliability and because it offers a free tier suitable for an indie project. The tradeoff is that Google's servers handle file delivery and log standard request data. If that's a concern, the source code is public and the app can be self-hosted.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">Honest answer: Firebase is Google infrastructure. I use it here for two things only — static file hosting (delivering the app's HTML, JS, and CSS to your browser, the same role any web host plays) and optional Google account sync. I chose it for reliability and because it offers a free tier suitable for an indie project. The tradeoff is that Google's servers handle file delivery and log standard request data. If that's a concern, the source code is public and the app can be self-hosted.</p>
       </details>
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
@@ -383,7 +393,57 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
     </div>
   </div>
 
-  <!-- Report a bug -->
+  <!-- Your rights -->
+  <div style="margin-top:2.5rem;padding-top:2rem;border-top:1px solid var(--border-mid)">
+    <div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.75rem">Your rights</div>
+    <p style="font-size:14px;color:var(--text-secondary);line-height:1.7;font-weight:300;margin-bottom:1rem">These rights apply to users in the EU (GDPR — General Data Protection Regulation), UK (UK GDPR), and similar frameworks elsewhere. I honor them for everyone regardless of location. Because this app holds no financial data on its own servers, most of these rights are already satisfied by design — but here's the full picture:</p>
+    <div style="display:flex;flex-direction:column;gap:.65rem">
+      <div style="display:flex;gap:.75rem;font-size:14px">
+        <span style="font-weight:700;color:var(--text-primary);flex-shrink:0;min-width:100px">Access</span>
+        <span style="color:var(--text-muted);font-weight:300;line-height:1.6">Request a copy of personal data held about you. For most users the answer is: none — financial data stays on your device. If you've synced via Google, your data lives in your own Google account, accessible directly.</span>
+      </div>
+      <div style="display:flex;gap:.75rem;font-size:14px">
+        <span style="font-weight:700;color:var(--text-primary);flex-shrink:0;min-width:100px">Erasure</span>
+        <span style="color:var(--text-muted);font-weight:300;line-height:1.6">Request deletion of personal data. Use <strong style="color:var(--text-secondary)">Clear all data</strong> in the app to wipe local storage. If you've synced, delete your data from your Google account directly — the developer cannot access or delete it on your behalf.</span>
+      </div>
+      <div style="display:flex;gap:.75rem;font-size:14px">
+        <span style="font-weight:700;color:var(--text-primary);flex-shrink:0;min-width:100px">Portability</span>
+        <span style="color:var(--text-muted);font-weight:300;line-height:1.6">Export your data anytime. Use the CSV export buttons in the Spending and Budget tabs — no request needed, no waiting.</span>
+      </div>
+      <div style="display:flex;gap:.75rem;font-size:14px">
+        <span style="font-weight:700;color:var(--text-primary);flex-shrink:0;min-width:100px">Rectification</span>
+        <span style="color:var(--text-muted);font-weight:300;line-height:1.6">Correct inaccurate data. Your data lives on your device — edit transactions directly in the app. No request needed.</span>
+      </div>
+      <div style="display:flex;gap:.75rem;font-size:14px">
+        <span style="font-weight:700;color:var(--text-primary);flex-shrink:0;min-width:100px">Objection</span>
+        <span style="color:var(--text-muted);font-weight:300;line-height:1.6">Object to processing based on legitimate interest. The only processing in this category is Firebase Hosting's server logs (IP address, browser type). These are managed by Google's infrastructure — you can limit them by using a VPN or Tor, or contact Google directly.</span>
+      </div>
+      <div style="display:flex;gap:.75rem;font-size:14px">
+        <span style="font-weight:700;color:var(--text-primary);flex-shrink:0;min-width:100px">Restriction</span>
+        <span style="color:var(--text-muted);font-weight:300;line-height:1.6">Ask for processing to stop while a dispute is resolved. Email <a href="mailto:trakyodollas@gmail.com" style="color:var(--accent-blue-light)">trakyodollas@gmail.com</a> and I'll respond promptly.</span>
+      </div>
+    </div>
+
+    <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.65rem">Legal basis for each type of data processing</div>
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        <div style="display:flex;gap:.75rem;font-size:13px">
+          <span style="color:var(--text-secondary);flex-shrink:0;min-width:180px;font-weight:600">Firebase Hosting logs</span>
+          <span style="color:var(--text-muted);font-weight:300">Legitimate interest — logging IP address and browser type is technically necessary to deliver the website. Standard for any web host.</span>
+        </div>
+        <div style="display:flex;gap:.75rem;font-size:13px">
+          <span style="color:var(--text-secondary);flex-shrink:0;min-width:180px;font-weight:600">Umami analytics</span>
+          <span style="color:var(--text-muted);font-weight:300">Umami collects no personal data — GDPR doesn't apply to this processing. No cookies set, no identifiers stored. Block it with any privacy extension.</span>
+        </div>
+        <div style="display:flex;gap:.75rem;font-size:13px">
+          <span style="color:var(--text-secondary);flex-shrink:0;min-width:180px;font-weight:600">Google account sync</span>
+          <span style="color:var(--text-muted);font-weight:300">Performance of a user-initiated service — explicitly opt-in, clearly optional, and can be revoked by signing out. The app works fully without it.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact -->
   <div style="margin-top:2.5rem;padding-top:2rem;border-top:1px solid var(--border-mid)">
     <div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.75rem">Questions or concerns?</div>
     <p style="font-size:14px;color:var(--text-secondary);line-height:1.7;font-weight:300">If you have questions about this privacy policy or how your data is handled, there are two ways to reach me:</p>
@@ -399,13 +459,18 @@ footer{border-top:1px solid var(--border);padding:1.5rem 3rem;display:flex;align
         <span class="contact-desc" style="color:var(--text-muted);font-size:13px">— for bugs, feature requests, or public discussion</span>
       </div>
     </div>
-    <p style="font-size:13px;color:var(--text-muted);margin-top:.85rem;line-height:1.6">This app is built and maintained by one person. I read everything.</p>
+    <p style="font-size:13px;color:var(--text-muted);margin-top:.85rem;line-height:1.6">This app is built and maintained by one person. I read everything. It's free, with no data selling — if it's useful to you, you can <a href="https://ko-fi.com/gflo247" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light)">support its development</a>.</p>
   </div>
 
 </div>
 
+<!-- FOOTER — shared pattern across all 3 pages. See trakyodollas.html footer comment for full notes.
+     Page-specific link here: "Open app". Do NOT nest this footer inside any max-width content wrapper. -->
 <footer>
-  <a href="index.html" class="footer-logo">trak-yo-dolla<span>$</span></a>
+  <div class="footer-left">
+    <a href="index.html" class="footer-logo">trak-yo-dolla<span>$</span></a>
+    <a href="https://ko-fi.com/gflo247" target="_blank" rel="noopener noreferrer" class="footer-support">♥ Support</a>
+  </div>
   <div class="footer-links">
     <a href="trakyodollas.html">Open app</a>
     <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer">GitHub</a>
