@@ -4,7 +4,7 @@
 
 *Don't obsess over money. Understand it.*
 
-Import a CSV from your bank or credit card. Your browser translates it into spending data. Nothing leaves your device unless you choose to sync.
+Import a CSV from your bank, credit union, or credit card. Your browser translates it into spending data. Nothing leaves your device unless you choose to sync.
 
 → **[Try the live app](https://trak-yo-dollas.web.app/trakyodollas.html)**
 → **[Landing page](https://trak-yo-dollas.web.app/)**
@@ -14,11 +14,11 @@ Import a CSV from your bank or credit card. Your browser translates it into spen
 ## What it does
 
 - **"This month" narrative** — a plain-English summary of your most recent month: lighter or heavier than usual, biggest category mover, savings rate vs your own average. Written conversationally, not like a data report.
-- **Several ways to see your spending** — category bar charts, income flow chart, daily heatmap, vendor breakdown, trend view, and split treemap. Click any tile to filter transactions instantly.
+- **Several ways to see your spending** — category bar charts, income flow chart, daily heatmap, vendor breakdown, trend view, and split treemap. Click any tile to filter transactions instantly. Switch grain to Monthly, Quarterly, or Yearly — category cards and sparklines update to match.
 - **"At a Glance" insights** — curated monthly insights surfaced by urgency: savings rate, budget health, top mover, largest charge, subscriptions, weekend spending patterns. Each compares against your own history.
 - **Budget tab** — set monthly limits, track pace mid-month, see AT RISK warnings before you go over. Every category row shows 12-month history. Sort by % used, amount, or A–Z.
-- **Full picture net worth** — checking, savings, investments, loans, real estate, and vehicles in one place. Save monthly snapshots and track your trajectory toward a goal.
-- **Smart auto-categorization** — four-tier system: your keyword rules → 336 community-contributed patterns → MCC codes from your bank → 300+ built-in merchant keywords.
+- **Full picture net worth** — checking, savings, investments, loans, real estate, and vehicles in one place. Save monthly snapshots and track your trajectory toward a goal. Annualized growth rate shown alongside dollar change.
+- **Smart auto-categorization** — four-tier system: your keyword rules → community-contributed patterns → MCC codes from your bank → built-in merchant keywords. Vendor names display in proper case (Starbucks, not STARBUCKS) without changing your underlying data.
 - **Multi-source import** — import from multiple banks and credit cards. Sources with different date ranges prompt optional alignment to overlapping coverage.
 - **Spending exclusions** — hide categories like transfers and CC payments from spending totals. Reversible, per-category or per-transaction.
 - **Export anytime** — one click to export transactions or budget history as CSV.
@@ -33,9 +33,10 @@ Local-first by design. The developer cannot see your financial data — not by p
 - **No bank connections** — no logins, no screen scraping
 - **Runs entirely in your browser** — data saves to your device's local storage
 - **Nothing leaves your device unless you choose to sync**
-- **Optional Google sync** — opt-in only, never required
-- **Privacy-respecting analytics** — [Umami](https://umami.is) (no cookies, no personal data, page view counts only). Firebase Analytics has been removed entirely.
+- **Optional Google sign-in** — opt-in only, never required; syncs to your own Google account via Firebase
+- **Privacy-respecting analytics** — [Umami](https://umami.is) (no cookies, no personal data, page view counts only)
 - **Self-hosted fonts** — DM Mono and DM Sans are served from this repo, not Google Fonts
+- **Hash-based Content Security Policy** — inline scripts are allowlisted by SHA-256 hash; no `unsafe-inline`
 - **No paywall** — free to use, all features included
 
 Full details, data flow diagram, and FAQ: [privacy policy](https://trak-yo-dollas.web.app/privacy.html)
@@ -45,10 +46,10 @@ Full details, data flow diagram, and FAQ: [privacy policy](https://trak-yo-dolla
 ## How to use
 
 **1. Download your CSV**
-Under Statements or Download Activity in your bank or credit card portal.
+Under Statements or Download Activity in your bank, credit union, or credit card portal.
 
 **2. Import it**
-Open the app, click ⬆ Import CSV. Works with Chase, Ally, Fidelity, Vanguard, Capital One, Discover, Amex, USAA, Bank of America, Wells Fargo, most credit unions, and most major banks and credit cards.
+Open the app, click ⬆ Import CSV. Works with Chase, Ally, Fidelity, Vanguard, NFCU, BECU, PenFed, Alliant, TD, RBC, Scotiabank, BMO, CIBC, Capital One, Discover, Amex, USAA, Bank of America, Wells Fargo, and most banks and credit unions.
 
 **Migrating from another app?** The import modal has a dedicated section for Mint, YNAB, and Monarch Money — category names map across automatically.
 
@@ -65,17 +66,19 @@ Transactions auto-categorize on import. Switch between chart views, set budgets,
 | Priority | Source | Notes |
 |---|---|---|
 | 1 | **Your rules** | Keyword rules you've saved — always win |
-| 2 | **Community patterns** | [`community-rules.json`](community-rules.json) — 336 mappings, fetched once per session |
+| 2 | **Community patterns** | [`community-rules.json`](community-rules.json) — 900+ mappings, fetched once per session |
 | 3 | **MCC codes** | Merchant Category Codes from your bank CSV, if present |
-| 4 | **Built-in keywords** | ~300 common merchant names as a fallback |
+| 4 | **Built-in keywords** | Common merchant names covering major US, CA, UK, AU, NZ, and SG brands |
 
 ### Categories
 
-Groceries, Food & Drink, Shopping, Home, Gas, Bills & Utilities, Insurance, Health & Wellness, Entertainment, Gifts & Donations, Travel, Automotive, Education, Child Care, Pet, Checks, Taxes & Fees, Investment Contributions, Transfers, CC Payment, Other.
+Groceries, Food & Drink, Shopping, Home, Gas, Bills & Utilities, Insurance, Health & Wellness, Personal Care, Entertainment, Gifts & Donations, Travel, Automotive, Education, Child Care, Pet(s), Checks, Taxes & Fees, Investment Contributions, Transfers, CC Payment, College Fund(s), Other.
+
+Investment Contributions, Transfers, and CC Payment are excluded from spending totals by default (they're not spending — they're financial flows). Toggle any category's visibility from the spending tab.
 
 ### Community patterns
 
-[`community-rules.json`](community-rules.json) contains 336 community-contributed keyword→category mappings covering major merchants across all categories: airlines, hotel chains, streaming services, restaurant chains, gas stations, grocery chains, and more.
+[`community-rules.json`](community-rules.json) contains community-contributed keyword→category mappings covering merchants across all categories in the US, UK, Australia, Canada, New Zealand, and Singapore: airlines, hotel chains, streaming services, restaurant chains, gas stations, grocery chains, and more.
 
 The count in the app and on the landing page updates automatically when the file changes — no hardcoded numbers to maintain.
 
@@ -115,10 +118,16 @@ trak-yo-dollas/
   community-rules.json    ← community-contributed categorization rules
   sitemap.xml             ← sitemap for search engines
   robots.txt              ← crawler directives
-  firebase.json           ← Firebase Hosting config (security headers, 404, ignore list)
   fonts/                  ← self-hosted DM Mono and DM Sans (no Google Fonts request)
+  scripts/
+    update-csp-hashes.py  ← recomputes inline script SHA-256 hashes for the CSP
+    check-no-inline-handlers.sh ← lints for leftover onclick= attributes
+  .github/
+    FUNDING.yml           ← Ko-fi support link (shown on GitHub repo)
   README.md               ← this file
 ```
+
+`firebase.json` is auto-generated by the deploy command and is not committed.
 
 ---
 
@@ -126,15 +135,25 @@ trak-yo-dollas/
 
 Download [`trakyodollas.html`](trakyodollas.html) and open it in a browser. That's it.
 
-For the full site including the landing page, privacy policy, and self-hosted fonts, serve the directory with any static file server.
+For the full site including the landing page, privacy policy, and self-hosted fonts, serve the directory with any static file server:
+
+```bash
+npx serve .
+# or
+python3 -m http.server 8080
+```
 
 ---
 
 ## Deployment
 
-Deployed via [Firebase Hosting](https://firebase.google.com/docs/hosting). `firebase.json` is committed and contains the hosting config including security headers — no need to regenerate it on each deploy.
+Deployed via [Firebase Hosting](https://firebase.google.com/docs/hosting).
+
+The app uses a hash-based Content Security Policy — inline scripts are allowlisted by SHA-256 hash. **Run `update-csp-hashes.py` before every deploy** whenever any inline `<script>` block in `trakyodollas.html` changes; stale hashes silently block scripts in the browser.
 
 ```bash
+python3 scripts/update-csp-hashes.py
+echo '{"hosting":{"public":".","ignore":["firebase.json","deploy.sh","README.md","*.sh"],"releaseLimit":5}}' > firebase.json
 npx firebase-tools deploy --only hosting --project trak-yo-dollas
 ```
 
@@ -144,33 +163,27 @@ npx firebase-tools deploy --only hosting --project trak-yo-dollas
 
 ## Security
 
-- Firebase Analytics removed — replaced with [Umami](https://umami.is) (no cookies, GDPR-compliant by design)
-- Self-hosted fonts — eliminates the Google Fonts request on every page load
-- Security headers on all responses: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`
-- `noindex` on the app page — search traffic lands on the landing page, not the bare tool
-- All external links use `rel="noopener noreferrer"`
+- **Hash-based CSP** — `script-src` uses SHA-256 hashes for every inline script block; no `unsafe-inline`. `scripts/update-csp-hashes.py` recomputes hashes automatically.
+- **Self-hosted fonts** — eliminates the Google Fonts request on every page load
+- **Security headers on all responses** — `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`
+- **`noindex` on the app page** — search traffic lands on the landing page, not the bare tool
+- **All external links** use `rel="noopener noreferrer"`
+- **Google auth via redirect flow** — `signInWithRedirect` used on all devices (avoids popup-blocking issues on mobile); `authDomain` set to `web.app` to prevent cross-origin storage issues
+- **Community pattern submissions** are reviewed manually as plain text before any changes deploy
 - The developer's GitHub and Google accounts use two-factor authentication
-- Community pattern submissions are reviewed manually as plain text before any changes deploy
 
 ---
 
 ## Recent updates
 
-- **"This month" narrative card** — plain-English monthly summary in the At a Glance row; compares spending to 18-month average, calls out biggest category movers, references savings rate; expanded by default
-- **Privacy hardening** — Firebase Analytics removed and replaced with Umami (no cookies, no personal data); Google Fonts replaced with self-hosted fonts (no third-party requests on load); all external links get `rel="noopener noreferrer"`
-- **Security headers** — `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy` added via Firebase Hosting config
-- **State migration system** — `APP_VERSION = '1.1'`; version check runs on load; migrations handle `activeHorizon → rangeFrom/rangeTo` and `Tax & Gov → Taxes & Fees` renames in budgets, rules, and excluded categories
-- **Defensive state loading** — all fields use nullish coalescing (`??`) so missing keys in old localStorage silently fall back to defaults rather than producing `undefined` behavior
-- **Error boundary on load** — if localStorage parsing fails, the app clears only the corrupted state blob (preserving transactions), shows a non-alarming toast, and continues with defaults
-- **Dynamic community rules count** — the "336" in both the app and landing page updates automatically from the live JSON; no manual number to maintain
-- **Landing page overhaul** — interactive preview rebuilt: 12-month trend chart, 12-month flow chart with Remaining node, full daily heatmap with weekends and month labels, improved budget tab with pace bars and history strip, fixed net worth tab with correct account math
-- **Split chart on landing page** — proportional horizontal bar where each tile's width equals its percentage (adds up to 100%)
-- **Custom 404 page** — on-brand, links back to homepage and app
-- **sitemap.xml and robots.txt** — added for search engine discoverability
-- **Open Graph tags** — `og:title`, `og:description`, `og:url` on landing page and privacy page
-- **`noindex` on app** — search traffic routes to landing page instead of the bare app
-- **Privacy page** — updated to describe Umami accurately; active voice throughout; GDPR rights section; contact section with email and GitHub Issues
-- **Footer consistency** — unified link order across all three pages; "Report a bug" and "Email me" replace generic "Feedback" / "Contact"
-- **Migration imports** — Mint, YNAB, and Monarch Money export support in the import modal
-- **Gifts & Donations category** — new category; catches charitable giving, GoFundMe, Red Cross, church/tithe, and more
-- **Taxes & Fees** — renamed from "Tax & Gov"
+- **Event delegation refactor** — replaced all `onclick=` inline handlers with `data-action` attribute system; single IIFE dispatcher; eliminates inline script surface area
+- **Google sign-in** — working on all devices via redirect flow; hash-based CSP extended for Firebase auth; `authDomain` corrected to `web.app`
+- **WCAG AA theme compliance** — all accent colors, text hierarchy, and backgrounds pass AA contrast in both light and dark themes across all three pages; `update-csp-hashes.py` script maintains hash integrity
+- **Light mode readability** — darker borders, distinct card/page backgrounds, card shadows, nav active tab fixed; blue-cast reduction in dark mode for OLED displays
+- **Categories** — Personal Care added (salons, barbershops, massage, waxing, etc.); Pet renamed to Pet(s) with keyword fix (CHEWY/PETCO/PETSMART were incorrectly routing to Shopping); Professional Services removed; APP_VERSION 1.3 migration runs automatically
+- **`displayVendor()` proper casing** — bank ALL CAPS descriptions rendered as Proper Case (Starbucks, Best Buy, CVS Pharmacy) everywhere; never mutates underlying data; smart acronym detection keeps AT&T, CVS, NBC intact
+- **Grain-aware spending view** — Monthly/Quarterly/Yearly toggle now updates category tiles, sparklines, and average labels — not just the chart
+- **Footer unified** — consistent structure, typography, and spacing across app, privacy, and landing pages; mobile footer stacks and centers; landing page unclosed-div bug fixed
+- **Ko-fi support link** — in all three page footers and the privacy page; `FUNDING.yml` configured
+- **"At a Glance" net worth pill** — dollar change as headline; annualized %/yr in sub-line when ≥60 days of snapshot data; goal progress replaces rate when a goal is set
+- **Search bar** — rebuilt as flex row (no absolute-positioning padding math); SVG icon; `× clear` near transaction count when active

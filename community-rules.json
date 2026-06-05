@@ -1,374 +1,214 @@
 [
   {
-    "keyword": "PMUSA",
-    "cat": "Gas"
+    "keyword": "ADVANCE AUTO",
+    "cat": "Automotive"
   },
   {
-    "keyword": "2941 STREET FOOD",
-    "cat": "Food & Drink"
+    "keyword": "ADVANCED AUTO PARTS",
+    "cat": "Automotive"
   },
   {
-    "keyword": "GRANTS PIZZA",
-    "cat": "Food & Drink"
+    "keyword": "AMERICAS TIRE",
+    "cat": "Automotive"
   },
   {
-    "keyword": "GRANT'S PIZZA",
-    "cat": "Food & Drink"
+    "keyword": "AUTONATION",
+    "cat": "Automotive"
   },
   {
-    "keyword": "MARIONS PIAZZA",
-    "cat": "Food & Drink"
+    "keyword": "AUTOZONE",
+    "cat": "Automotive"
   },
   {
-    "keyword": "LITTLE GHOST",
-    "cat": "Food & Drink"
+    "keyword": "BEAUREPAIRES",
+    "cat": "Automotive"
   },
   {
-    "keyword": "SHAKE SHACK",
-    "cat": "Food & Drink"
+    "keyword": "BOC GASES",
+    "cat": "Automotive"
   },
   {
-    "keyword": "RAYS ICE CREAM",
-    "cat": "Food & Drink"
+    "keyword": "BRIDGESTONE AU",
+    "cat": "Automotive"
   },
   {
-    "keyword": "MOTHERSHIP COFFEE",
-    "cat": "Food & Drink"
+    "keyword": "CALIBER COLLISION",
+    "cat": "Automotive"
   },
   {
-    "keyword": "GINZA RAMEN",
-    "cat": "Food & Drink"
+    "keyword": "CARMAX",
+    "cat": "Automotive"
   },
   {
-    "keyword": "CONDADO TACOS",
-    "cat": "Food & Drink"
+    "keyword": "CARVANA",
+    "cat": "Automotive"
   },
   {
-    "keyword": "TUDORS BISCUIT",
-    "cat": "Food & Drink"
+    "keyword": "CHRISTIAN BROTHERS AUTO",
+    "cat": "Automotive"
   },
   {
-    "keyword": "TUDOR'S BISCUIT",
-    "cat": "Food & Drink"
+    "keyword": "DISCOUNT TIRE",
+    "cat": "Automotive"
   },
   {
-    "keyword": "OHIO TURNPIKE",
-    "cat": "Travel"
+    "keyword": "FIRESTONE COMPLETE",
+    "cat": "Automotive"
   },
   {
-    "keyword": "VICTORY LAWNSCAPE",
-    "cat": "Home"
+    "keyword": "GERBER COLLISION",
+    "cat": "Automotive"
   },
   {
-    "keyword": "BORDINE",
-    "cat": "Home"
+    "keyword": "GREASE MONKEY",
+    "cat": "Automotive"
   },
   {
-    "keyword": "TILE SHOP",
-    "cat": "Home"
+    "keyword": "HALFORDS",
+    "cat": "Automotive"
   },
   {
-    "keyword": "IKEA",
-    "cat": "Shopping"
+    "keyword": "JAX TYRES",
+    "cat": "Automotive"
   },
   {
-    "keyword": "WILLIAMS SONOMA",
-    "cat": "Shopping"
+    "keyword": "JIFFY LUBE",
+    "cat": "Automotive"
   },
   {
-    "keyword": "WILLIAMS-SONOMA",
-    "cat": "Shopping"
+    "keyword": "KMART TYRE AU",
+    "cat": "Automotive"
   },
   {
-    "keyword": "REI #",
-    "cat": "Shopping"
+    "keyword": "MAVIS TIRE",
+    "cat": "Automotive"
   },
   {
-    "keyword": "REI.COM",
-    "cat": "Shopping"
+    "keyword": "MEINEKE",
+    "cat": "Automotive"
   },
   {
-    "keyword": "MICHAELS #",
-    "cat": "Shopping"
+    "keyword": "MIDAS AU",
+    "cat": "Automotive"
   },
   {
-    "keyword": "MICHAELS STORES",
-    "cat": "Shopping"
+    "keyword": "MIDAS AUTO",
+    "cat": "Automotive"
   },
   {
-    "keyword": "NIKE.COM",
-    "cat": "Shopping"
+    "keyword": "MISTER CAR WASH",
+    "cat": "Automotive"
   },
   {
-    "keyword": "SWOOSH.COM",
-    "cat": "Shopping"
+    "keyword": "MONRO MUFFLER",
+    "cat": "Automotive"
   },
   {
-    "keyword": "TD BANK PAYMENT",
-    "cat": "CC Payment"
+    "keyword": "NAPA AUTO PARTS",
+    "cat": "Automotive"
   },
   {
-    "keyword": "PROGRESSIVE INS",
-    "cat": "Insurance"
+    "keyword": "NTB NATIONAL TIRE",
+    "cat": "Automotive"
   },
   {
-    "keyword": "PROTECTIVE COSTCO",
-    "cat": "Insurance"
+    "keyword": "O REILLY AUTO",
+    "cat": "Automotive"
   },
   {
-    "keyword": "HOMEOWNERS INSURANCE",
-    "cat": "Insurance"
+    "keyword": "OREILLY AUTO",
+    "cat": "Automotive"
   },
   {
-    "keyword": "GOOGLE *GOOGLE PHOTOS",
+    "keyword": "PENSKE AUTO",
+    "cat": "Automotive"
+  },
+  {
+    "keyword": "PEP BOYS",
+    "cat": "Automotive"
+  },
+  {
+    "keyword": "QUICK QUACK CAR WASH",
+    "cat": "Automotive"
+  },
+  {
+    "keyword": "REPCO",
+    "cat": "Automotive"
+  },
+  {
+    "keyword": "SECRETARY OF STATE",
+    "cat": "Automotive"
+  },
+  {
+    "keyword": "SERVICE KING",
+    "cat": "Automotive"
+  },
+  {
+    "keyword": "SUPER CHEAP AUTO",
+    "cat": "Automotive"
+  },
+  {
+    "keyword": "SUPERCHEAP AUTO",
+    "cat": "Automotive"
+  },
+  {
+    "keyword": "TAKE 5 OIL CHANGE",
+    "cat": "Automotive"
+  },
+  {
+    "keyword": "VALVOLINE",
+    "cat": "Automotive"
+  },
+  {
+    "keyword": "VROOM",
+    "cat": "Automotive"
+  },
+  {
+    "keyword": "ZIPS CAR WASH",
+    "cat": "Automotive"
+  },
+  {
+    "keyword": "1PASSWORD",
     "cat": "Bills & Utilities"
   },
   {
-    "keyword": "GOOGLE *YOUTUBE",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "PRIME VIDEO CHANNELS",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "SP COUNTER CULTURE",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "OLD NATIONAL BAN MTGMANAGER",
-    "cat": "Home"
-  },
-  {
-    "keyword": "MTGMANAGER",
-    "cat": "Home"
-  },
-  {
-    "keyword": "NEIGHBORHOOD0467",
-    "cat": "Child Care"
-  },
-  {
-    "keyword": "PRIORITY WASTE",
+    "keyword": "2DEGREES",
     "cat": "Bills & Utilities"
   },
   {
-    "keyword": "PNP BILLPAYMENT",
-    "cat": "Taxes & Fees"
-  },
-  {
-    "keyword": "STATE OF MICH SOS",
-    "cat": "Taxes & Fees"
-  },
-  {
-    "keyword": "STATE OF MI SOMIIT",
-    "cat": "Taxes & Fees"
-  },
-  {
-    "keyword": "MI DIR ACH CONTRIB",
-    "cat": "Investment Contributions"
-  },
-  {
-    "keyword": "AMZN MKTP",
-    "cat": "Shopping"
-  },
-  {
-    "keyword": "AMAZON MKTP",
-    "cat": "Shopping"
-  },
-  {
-    "keyword": "AMAZON PRIME",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "WHOLEFDS",
-    "cat": "Groceries"
-  },
-  {
-    "keyword": "WHOLE FOODS",
-    "cat": "Groceries"
-  },
-  {
-    "keyword": "TRADER JOE",
-    "cat": "Groceries"
-  },
-  {
-    "keyword": "KROGER",
-    "cat": "Groceries"
-  },
-  {
-    "keyword": "MEIJER",
-    "cat": "Groceries"
-  },
-  {
-    "keyword": "ALDI",
-    "cat": "Groceries"
-  },
-  {
-    "keyword": "COSTCO WHSE",
-    "cat": "Groceries"
-  },
-  {
-    "keyword": "CHIPOTLE",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "STARBUCKS",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "DOORDASH",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "GRUBHUB",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "UBER EATS",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "INSTACART",
-    "cat": "Groceries"
-  },
-  {
-    "keyword": "NETFLIX.COM",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "SPOTIFY",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "APPLE.COM/BILL",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "HULU",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "DISNEY PLUS",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "YOUTUBE PREMIUM",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "SHELL OIL",
-    "cat": "Gas"
-  },
-  {
-    "keyword": "BP#",
-    "cat": "Gas"
-  },
-  {
-    "keyword": "EXXONMOBIL",
-    "cat": "Gas"
-  },
-  {
-    "keyword": "MARATHON PETRO",
-    "cat": "Gas"
-  },
-  {
-    "keyword": "SPEEDWAY",
-    "cat": "Gas"
-  },
-  {
-    "keyword": "CIRCLE K",
-    "cat": "Gas"
-  },
-  {
-    "keyword": "CVS PHARMACY",
-    "cat": "Health & Wellness"
-  },
-  {
-    "keyword": "WALGREENS",
-    "cat": "Health & Wellness"
-  },
-  {
-    "keyword": "PLANET FITNESS",
-    "cat": "Health & Wellness"
-  },
-  {
-    "keyword": "ANYTIME FITNESS",
-    "cat": "Health & Wellness"
-  },
-  {
-    "keyword": "HOME DEPOT",
-    "cat": "Home"
-  },
-  {
-    "keyword": "LOWES #",
-    "cat": "Home"
-  },
-  {
-    "keyword": "MENARDS",
-    "cat": "Home"
-  },
-  {
-    "keyword": "ACE HARDWARE",
-    "cat": "Home"
-  },
-  {
-    "keyword": "VENMO",
-    "cat": "Transfers"
-  },
-  {
-    "keyword": "ZELLE",
-    "cat": "Transfers"
-  },
-  {
-    "keyword": "FLAGSTAR",
-    "cat": "Transfers"
-  },
-  {
-    "keyword": "PAYPAL",
-    "cat": "Transfers"
-  },
-  {
-    "keyword": "CASH APP",
-    "cat": "Transfers"
-  },
-  {
-    "keyword": "VANGUARD",
-    "cat": "Investment Contributions"
-  },
-  {
-    "keyword": "FIDELITY",
-    "cat": "Investment Contributions"
-  },
-  {
-    "keyword": "SCHWAB",
-    "cat": "Investment Contributions"
-  },
-  {
-    "keyword": "BETTERMENT",
-    "cat": "Investment Contributions"
-  },
-  {
-    "keyword": "NAVIENT",
-    "cat": "Education"
-  },
-  {
-    "keyword": "SALLIE MAE",
-    "cat": "Education"
-  },
-  {
-    "keyword": "MOHELA",
-    "cat": "Education"
-  },
-  {
-    "keyword": "COMCAST",
+    "keyword": "2DEGREES MOBILE",
     "cat": "Bills & Utilities"
   },
   {
-    "keyword": "XFINITY",
+    "keyword": "ADOBE CREATIVE",
     "cat": "Bills & Utilities"
   },
   {
-    "keyword": "VERIZON",
+    "keyword": "ADOBE INC",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "AGL ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "ALINTA ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "AMAYSIM",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "AMEREN",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "APS ARIZONA",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "ASANA APP",
     "cat": "Bills & Utilities"
   },
   {
@@ -376,7 +216,555 @@
     "cat": "Bills & Utilities"
   },
   {
-    "keyword": "T-MOBILE",
+    "keyword": "ATCO GAS",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "ATLASSIAN",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "AUSSIE BROADBAND",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "AVISTA UTILITIES",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "BASECAMP",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "BBC LICENCE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "BC HYDRO",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "BELL CANADA",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "BELONG AU",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "BELONG MOBILE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "BITWARDEN",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "BRITISH GAS",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "BT BROADBAND",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "BT GROUP",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "BULB ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "CANVA PTY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "CENTURYLINK",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "CIRCLE LIFE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "CIRCLES.LIFE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "CLICK ENERGY AU",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "COMCAST",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "CONED",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "CONSOLIDATED EDISON",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "CONTACT ENERGY NZ",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "COUNCIL TAX",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "COX CABLE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "COX COMMUNICATIONS",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "DIRECTV",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "DISH NETWORK",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "DODO AU",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "DOMINION ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "DROPBOX",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "DUKE ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "E.ON ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "EASTLINK CABLE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "EDF ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "EE LIMITED",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "EE MOBILE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "EE NETWORK",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "ENBRIDGE GAS",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "ENERGY AUSTRALIA",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "ENMAX ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "ENTERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "EON ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "EPCOR",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "EVERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "EVERSOURCE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "EXPRESSVPN",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "FASTMAIL",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "FIDO MOBILE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "FIGMA INC",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "FLORIDA POWER LIGHT",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "FORTIS BC",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "FORTISBC",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "FPL GROUP",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "FREEDOM MOBILE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "FRESHBOOKS",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "GENECO SG",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "GENESIS ENERGY NZ",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "GITHUB",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "GOOGLE *GOOGLE PHOTOS",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "GOOGLE ONE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "HYDRO ONE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "HYDRO QUEBEC",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "ICLOUD STORAGE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "IDAHO POWER",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "IINET",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "KOODO MOBILE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "LASTPASS",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "LUMEN TECHNOLOGIES",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "LUMO ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "M1 LIMITED",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "MELBOURNE WATER",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "MERCURY ENERGY NZ",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "MERIDIAN ENERGY NZ",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "MICROSOFT 365",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "MICROSOFT SUBSCRIPTION",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "MIDAMERICAN ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "MNPEI",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "MONDAY.COM",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "MYOB",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "NATIONAL GRID",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "NATURGAS",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "NB POWER",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "NEWFOUNDLAND POWER",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "NICOR GAS",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "NORDVPN",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "NOTION LABS",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "NOVA SCOTIA POWER",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "NPOWER",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "NV ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "O2 UK",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "OCTOPUS ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "OFFICE 365",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "ONE NZ",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "ONTARIO HYDRO",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "OPTUS",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "OPTUS AU",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "ORIGIN ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "OVO ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "PACIFIC GAS ELECTRIC",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "PEOPLES NATURAL GAS",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "PLUSNET",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "POWERSHOP",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "POWERSHOP NZ",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "PPL ELECTRIC",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "PRIORITY WASTE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "PROTON VPN",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "PROTONMAIL",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "PUB SINGAPORE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "PUGET SOUND ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "QUICKBOOKS ONLINE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "RED ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "REPUBLIC SERVICES",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "ROCKY MTN POWER",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "ROGERS COMMUNICATIONS",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "ROGERS WIRELESS",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SALT RIVER PROJECT",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SASKPOWER",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SCOTTISH POWER",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SENOKO ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SEQWATER",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SHAW CABLE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SHAW COMMUNICATIONS",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SHOPIFY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SIMBA TELECOM",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SIMPLY ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SINGTEL",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SKINNY MOBILE",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SKINNY MOBILE NZ",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SKY BROADBAND",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SKY SUBSCRIPTION",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SKY UK",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SLINGSHOT NZ",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SOUTHERN CALIFORNIA EDISON",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SP SERVICES",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SP UTILITIES",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "SPARK NZ",
     "cat": "Bills & Utilities"
   },
   {
@@ -384,103 +772,2163 @@
     "cat": "Bills & Utilities"
   },
   {
-    "keyword": "GEICO",
-    "cat": "Insurance"
+    "keyword": "SPINTEL",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "STATE FARM",
-    "cat": "Insurance"
+    "keyword": "SQUARESPACE",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "PROGRESSIVE",
-    "cat": "Insurance"
+    "keyword": "SSE ENERGY",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "LYFT",
-    "cat": "Travel"
+    "keyword": "STARHUB",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "UBER TRIP",
-    "cat": "Travel"
+    "keyword": "SURFSHARK VPN",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "AIRBNB",
-    "cat": "Travel"
+    "keyword": "SYDNEY WATER",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "SOUTHWEST",
-    "cat": "Travel"
+    "keyword": "SYNERGY ENERGY",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "DELTA AIR",
-    "cat": "Travel"
+    "keyword": "T-MOBILE",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "UNITED AIRLINES",
-    "cat": "Travel"
+    "keyword": "TALKTALK",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "MARRIOTT",
-    "cat": "Travel"
+    "keyword": "TELSTRA",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "HILTON",
-    "cat": "Travel"
+    "keyword": "TELUS MOBILITY",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "TRAVELERS INS",
-    "cat": "Insurance"
+    "keyword": "THREE UK",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "METLIFE",
-    "cat": "Insurance"
+    "keyword": "TORONTO HYDRO",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "CIGNA",
-    "cat": "Insurance"
+    "keyword": "TPG INTERNET",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "AETNA",
-    "cat": "Insurance"
+    "keyword": "TPG SG",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "HUMANA",
-    "cat": "Insurance"
+    "keyword": "TPG TELECOM",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "BLUE CROSS",
-    "cat": "Insurance"
+    "keyword": "TRELLO",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "UNITED HEALTH",
-    "cat": "Insurance"
+    "keyword": "TUCSON ELECTRIC",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "AFLAC",
-    "cat": "Insurance"
+    "keyword": "TV LICENCE",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "ERIE INSURANCE",
-    "cat": "Insurance"
+    "keyword": "UNION GAS",
+    "cat": "Bills & Utilities"
   },
   {
-    "keyword": "CHEVRON",
+    "keyword": "VERIZON",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "VIDEOTRON",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "VIRGIN MEDIA",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "VIRGIN PLUS",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "VODAFONE AU",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "VODAFONE NZ",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "VODAFONE UK",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "VOYAGER NZ",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "WASTE MANAGEMENT",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "WATERCARE NZ",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "WE ENERGIES",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "WELLINGTON WATER",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "WIX.COM",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "XCEL ENERGY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "XERO ACCOUNTING",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "XFINITY",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "ZOOM VIDEO",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "AMERICAN EXPRESS",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "AMEX EPAYMENT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "AMEX PAYMENT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "AMEX UK PAYMENT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "ANZ CREDIT CARD",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "BANK OF AMERICA CARD",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "BARCLAYCARD PAYMENT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "BARCLAYS CARD PYMT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "BARCLAYS CREDITCARD",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "BMO MASTERCARD PYMT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "BOFAMLBCC",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "BREAD FINANCIAL",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "CAPITAL ONE PAYMENT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "CAPITAL ONE PYMT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "CARD AUTOPAY",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "CBA CREDIT CARD",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "CC AUTOPAY",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "CHASE CARD PAYMENT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "CHASE CREDIT CRD",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "CIBC VISA PAYMENT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "CITI AUTOPAY",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "CITI CARD PAYMENT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "COMENITY PAYMENT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "CREDIT CARD AUTOPAY",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "CREDIT CARD PAYMENT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "DISCOVER E-PAYMENT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "DISCOVER PAYMENT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "FIFTH THIRD CC",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "FIRST NATIONAL BANK CC",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "HSBC CREDIT CARD",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "HUNTINGTON CC",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "LLOYDS CC PAYMENT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "NAB CREDIT CARD",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "NATWEST CREDIT CARD",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "NAVY FEDERAL CC",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "NFCU CREDIT CARD",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "PNC CREDIT CARD",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "RBC MASTERCARD",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "RBC VISA PAYMENT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "REGIONS CARD",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "SCOTIABANK VISA",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "SYNCHRONY BANK PYMT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "SYNCHRONY PAYMENT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "TANGERINE CREDIT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "TD BANK PAYMENT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "TD VISA PAYMENT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "TRUIST CARD",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "US BANK CARD",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "USAA CREDIT CARD",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "USB CREDIT CARD",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "WELLS FARGO CRD",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "WELLS FARGO CREDIT",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "WESTPAC CREDIT CARD",
+    "cat": "CC Payment"
+  },
+  {
+    "keyword": "AFTERSCHOOL PROGRAM",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "BEFORE SCHOOL CARE",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "BRIGHT HORIZONS",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "BUSY BEES CHILDCARE",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "CARE.COM",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "CHILDCARE",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "DAYCARE",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "G8 EDUCATION AU",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "GODDARD SCHOOL",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "GUARDIAN CHILDCARE AU",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "KIDDI CARU NURSERY",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "KINDERCARE",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "LA PETITE ACADEMY",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "LEARNING CARE GROUP",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "LITTLE SPROUTS",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "NEIGHBORHOOD0467",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "NIDO EARLY SCHOOL",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "NURSERY CHILDCARE",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "ONLY ABOUT CHILDREN",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "PRIMROSE SCHOOL",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "SITTERCITY",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "TODDLE CHILDCARE NZ",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "YMCA CHILD",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "ACT INC",
+    "cat": "Education"
+  },
+  {
+    "keyword": "ACT TEST",
+    "cat": "Education"
+  },
+  {
+    "keyword": "BABBEL",
+    "cat": "Education"
+  },
+  {
+    "keyword": "BABBLE LANGUAGE",
+    "cat": "Education"
+  },
+  {
+    "keyword": "BRILLIANT.ORG",
+    "cat": "Education"
+  },
+  {
+    "keyword": "CHEGG",
+    "cat": "Education"
+  },
+  {
+    "keyword": "CODECADEMY",
+    "cat": "Education"
+  },
+  {
+    "keyword": "COLLEGE BOARD",
+    "cat": "Education"
+  },
+  {
+    "keyword": "COMMON APP",
+    "cat": "Education"
+  },
+  {
+    "keyword": "COURSERA",
+    "cat": "Education"
+  },
+  {
+    "keyword": "DUOLINGO",
+    "cat": "Education"
+  },
+  {
+    "keyword": "EDUREKA",
+    "cat": "Education"
+  },
+  {
+    "keyword": "KHAN ACADEMY",
+    "cat": "Education"
+  },
+  {
+    "keyword": "KUMON",
+    "cat": "Education"
+  },
+  {
+    "keyword": "LEARNING TREE",
+    "cat": "Education"
+  },
+  {
+    "keyword": "LINKEDIN LEARNING",
+    "cat": "Education"
+  },
+  {
+    "keyword": "MASTERCLASS",
+    "cat": "Education"
+  },
+  {
+    "keyword": "MOHELA",
+    "cat": "Education"
+  },
+  {
+    "keyword": "NAVIENT",
+    "cat": "Education"
+  },
+  {
+    "keyword": "O REILLY MEDIA",
+    "cat": "Education"
+  },
+  {
+    "keyword": "PEARSON",
+    "cat": "Education"
+  },
+  {
+    "keyword": "PLURALSIGHT",
+    "cat": "Education"
+  },
+  {
+    "keyword": "PRODIGY GAME",
+    "cat": "Education"
+  },
+  {
+    "keyword": "QUIZLET",
+    "cat": "Education"
+  },
+  {
+    "keyword": "READING EGGS",
+    "cat": "Education"
+  },
+  {
+    "keyword": "ROSETTA STONE",
+    "cat": "Education"
+  },
+  {
+    "keyword": "SALLIE MAE",
+    "cat": "Education"
+  },
+  {
+    "keyword": "SAT REGISTRATION",
+    "cat": "Education"
+  },
+  {
+    "keyword": "SKILLSHARE",
+    "cat": "Education"
+  },
+  {
+    "keyword": "SYLVAN LEARNING",
+    "cat": "Education"
+  },
+  {
+    "keyword": "TREEHOUSE",
+    "cat": "Education"
+  },
+  {
+    "keyword": "TUTOR.COM",
+    "cat": "Education"
+  },
+  {
+    "keyword": "UDACITY",
+    "cat": "Education"
+  },
+  {
+    "keyword": "UDEMY",
+    "cat": "Education"
+  },
+  {
+    "keyword": "VARSITY TUTORS",
+    "cat": "Education"
+  },
+  {
+    "keyword": "WYZANT",
+    "cat": "Education"
+  },
+  {
+    "keyword": "2K GAMES",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "ACORN TV",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "ACTIVISION",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "ALAMO DRAFTHOUSE",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "ALTITUDE TRAMPOLINE",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "AMAZON MUSIC",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "AMAZON PRIME",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "AMC DINE",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "AMC THEATER",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "AMC THEATERS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "AMC THEATRE",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "AMF BOWLING",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "APPLE MUSIC",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "APPLE TV PLUS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "APPLE.COM/BILL",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "ATOM TICKETS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "AUDIBLE",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "AXS TICKETS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "BANDCAMP",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "BINGE STREAMING",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "BLINKIST",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "BLIZZARD ENTERTAINMENT",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "BOWLERO",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "BOWLMOR",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "BritBox",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "CHANNEL 4 STREAMING",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "CINEMARK",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "CINEPLEX",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "CINEWORLD",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "COMIXOLOGY",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "CRAVE TV",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "CRITERION CHANNEL",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "CRUNCHYROLL",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "CURIOSITY STREAM",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "DAVE AND BUSTERS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "DAVE BUSTER",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "DEEZER",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "DISCOVERY PLUS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "DISNEY PLUS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "EA SPORTS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "EPIC GAMES",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "ESCAPE ROOM",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "ESPN PLUS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "EVENT CINEMAS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "FANDANGO",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "FUBO TV",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "FUNKO",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "GOLF NOW",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "GOOGLE *YOUTUBE",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "HBO MAX",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "HOYTS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "HULU",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "HUMBLE BUNDLE",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "IHEARTRADIO",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "K1 SPEED",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "KAYO SPORTS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "KINDLE",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "LANDMARK CINEMAS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "LUCKY STRIKE LANES",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "MAIN EVENT",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "MARVEL UNLIMITED",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "MAX.COM",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "MUBI FILMS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "NEBULA STREAMING",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "NEON STREAMING",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "NETFLIX.COM",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "NINTENDO ESHOP",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "NINTENDO OF AMERICA",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "NINTENDO SWITCH ONLINE",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "NOW TV",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "ODEON CINEMA",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "PANDORA RADIO",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "PARAMOUNT PLUS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "PEACOCK TV",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "PICTUREHOUSE",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "PLAYSTATION PLUS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "PLAYSTATION STORE",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "PRIME VIDEO",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "PRIME VIDEO CHANNELS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "PS PLUS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "PUTTSHACK",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "REGAL CINEMA",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "RIOT GAMES",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "ROBLOX",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "ROUND 1 ENTERTAINMENT",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "SCRIBD",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "SEAT GEEK",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "SHOWTIME ANYTIME",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "SHUDDER",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "SKY GO",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "SKY ZONE",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "SLING TV",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "SOUNDCLOUD",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "SPOTIFY",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "STAN STREAMING",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "STARZ PLAY",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "STEAM GAMES",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "STEAM PURCHASE",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "STORE.STEAMPOWERED",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "STUBHUB",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "TICKETEK",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "TICKETMASTER",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "TIDAL MUSIC",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "TOP GOLF",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "TOPGOLF",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "TRAMPOLINE PARK",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "TUBI TV",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "TWITCH",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "UBISOFT",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "URBAN AIR",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "VILLAGE CINEMAS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "VIVID SEATS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "VUE CINEMA",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "XBOX GAME PASS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "XBOX LIVE",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "YOUTUBE PREMIUM",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "2941 STREET FOOD",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "7 ELEVEN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "7-ELEVEN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "A&W CANADA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "ALL BAR ONE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "APPLEBEES",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "ASK ITALIAN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "AUNTIE ANNES",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "AWFULLY CHOCOLATE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BAHAMA BREEZE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BASKIN ROBBINS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BELLA ITALIA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BEN & JERRYS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BENGAWAN SOLO",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BIGGBY COFFEE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BILL'S RESTAURANT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BOB EVANS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BOJANGLES",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BOOST JUICE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BOPARAN RESTAURANTS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BOSTON PIZZA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BREAD TALK",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BREADTALK",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BROWNS RESTAURANT UK",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BRUEGGERS BAGEL",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BRUMBYS BAKERY",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BUFFALO WILD WINGS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BURGER FUEL",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BURGER KING",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BWS LIQUOR",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BYRON BURGER",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CAFE ROUGE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CAFFE NERO",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CARIBOU COFFEE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CARLS JR",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CAVA RESTAURANT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CHATIME",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CHECKERS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CHEDDAR",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CHEESECAKE FACTORY",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CHICK-FIL-A",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CHICKEN TREAT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CHICKFILA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CHILIS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CHIPOTLE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CHIQUITO",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CHURCHS CHICKEN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CINNABON",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "COFFEE BEAN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "COFFEE BEANERY",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "COLD ROCK ICE CREAM",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "COLUMBUS COFFEE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CONDADO TACOS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "COOK OUT RESTAURANT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CORA BREAKFAST",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CORNER BAKERY",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "COSTA COFFEE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "COTE RESTAURANT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CRACKER BARREL",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CRYSTAL JADE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CULVERS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DAIRY QUEEN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DAN MURPHY",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DAN MURPHYS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DARDEN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DAVE HOT CHICKEN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DEL TACO",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DELIVEROO",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DENNY S RESTAURANT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DENNYS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DIN TAI FUNG",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DOMINO'S",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DOMINOS PIZZA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DONUT KING",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DOORDASH",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DUNKIN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DUNKIN DONUTS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "DUTCH BROS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "EAST SIDE MARIOS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "EGGS UP GRILL",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "EINSTEIN BAGELS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "EKIM BURGERS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "EL JANNAH",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "EL POLLO LOCO",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "ESQUIRES COFFEE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "FATBURGER",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "FERGBURGER",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "FIREHOUSE SUBS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "FIRST WATCH",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "FIVE GUYS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "FLAT IRON STEAK",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "FOOD REPUBLIC",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "FOODPANDA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "FOUR LEAVES BAKERY",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "FRANKIE AND BENNY",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "FREDDYS FROZEN CUSTARD",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "FULLERS BREWERY",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GELATISSIMO",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GINZA RAMEN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GLORIA JEANS COFFEE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GOFOOD",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GOLDEN CORRAL",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GONG CHA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GONGCHA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GRAB FOOD",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GRANT'S PIZZA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GRANTS PIZZA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GREENE KING PUB",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GREGGS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GRILL D",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GRUBHUB",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "GUZMAN Y GOMEZ",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "HABIT BURGER",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "HARDEES",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "HARVESTER RESTAURANT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "HARVEYS RESTAURANT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "HARVEYS UK",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "HAWKER CHAN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "HAWKSMOOR",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "HECTOR'S DELI",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "HELL PIZZA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "HONEST BURGERS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "HUNGRY JACKS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "IHOP",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "IMPERIAL TREASURE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "IN N OUT BURGER",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "IN-N-OUT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "ITSU",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "JACK IN THE BOX",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "JAMBA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "JAMBA JUICE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "JASONS DELI",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "JERSEY MIKE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "JERSEY MIKES",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "JUMBO SEAFOOD",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "JUST EAT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "KELSEY S RESTAURANT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "KFC",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "KOPITIAM SG",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "KRISPY KREME",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "LALAMOVE FOOD",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "LEON RESTAURANT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "LITTLE CAESARS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "LITTLE GHOST",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "LOCH FYNE RESTAURANT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "LONE STAR NZ",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "LONG BEACH SEAFOOD",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "LONGHORN STEAKHOUSE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "MANCHU WOK",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "MARIONS PIAZZA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "MARSTON PUB",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "MCALISTERS DELI",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "MCDONALD'S",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "MCDONALDS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "MENULOG",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "MICHEL'S PATISSERIE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "MILLER AND CARTER",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "MOES SOUTHWEST GRILL",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "MOJO COFFEE NZ",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "MONTANA S",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "MOTHERSHIP COFFEE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "MR SUB",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "MUFFIN BREAK",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "NANDOS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "NEW YORK FRIES",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "NO SIGNBOARD",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "NOODLE BOX AU",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "NOODLES AND COMPANY",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "NOTHING BUNDT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "OLD CHANG KEE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "OLIVE GARDEN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "OPORTO",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "OPORTO AU",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "ORANGE JULIUS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "OUTBACK",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "OUTBACK STEAKHOUSE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "PANDA EXPRESS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "PANERA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "PANERA BREAD",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "PAPA JOHN'S",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "PAPA JOHNS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "PAPA MURPHYS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "PARADISE DYNASTY",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "PATTY AND BUN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "PEET'S COFFEE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "PERKINS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "PERKINS RESTAURANT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "PITA PIT NZ",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "PIZZA EXPRESS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "PIZZA HUT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "PIZZA PILGRIMS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "POLAR PUFFS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "POPEYE'S",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "POPEYES",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "PORTILLOS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "POTBELLY SANDWICH",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "POULET RESTAURANT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "PRET A MANGER",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "QDOBA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "RAISING CANE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "RAISING CANES",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "RALLY'S",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "RAYS ICE CREAM",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "RED LOBSTER",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "RED ROBIN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "RED ROOSTER",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "ROLL'D",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SAL'S PIZZA NZ",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SBARRO",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SCOOTER'S COFFEE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SEASONS 52",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SECOND CUP",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SHAKE SHACK",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SHAKE SHACK SG",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SHOPEE FOOD",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SKIP THE DISHES",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SLUG AND LETTUCE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SMASHBURGER",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SMOOTHIE KING",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SNOOZE AM EATERY",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SONIC CORP",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SONIC DRIVE IN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SP COUNTER CULTURE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "STARBUCKS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "STEAK N SHAKE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "STONEGATE PUB",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SUBWAY",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SUMO SALAD",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SUNDAY FOLKS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SUSHI HUB",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SWENSENS ICE CREAM",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SWIGGY",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "SWISS CHALET",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "TACO BELL",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "TANK JUICE NZ",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "TERIYAKI EXPERIENCE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "TEXAS DE BRAZIL",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "TEXAS ROADHOUSE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "TIM HORTONS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "TIMS CANADA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "TOAST BOX",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "TOBY CARVERY",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "TREATS CAFE CA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "TROPICAL SMOOTHIE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "TUDOR'S BISCUIT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "TUDORS BISCUIT",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "TURTLE BAY",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "UBER EATS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "WAFFLE HOUSE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "WAGAMAMA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "WENDY'S",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "WENDYS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "WETHERSPOON",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "WHATABURGER",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "WHITE CASTLE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "WIMPY UK",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "WING STOP",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "WINGSTOP",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "YA KUN KAYA",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "YARD HOUSE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "YO SUSHI",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "YOUNG'S PUB",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "ZAMBRERO",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "ZARAFFAS COFFEE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "ZAXBYS",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "ZIZZI",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "ZOES KITCHEN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "ZOMATO",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "7-ELEVEN GAS",
     "cat": "Gas"
   },
   {
-    "keyword": "SUNOCO",
+    "keyword": "76 STATION",
     "cat": "Gas"
   },
   {
-    "keyword": "MOBIL",
+    "keyword": "AMPM",
     "cat": "Gas"
   },
   {
-    "keyword": "WAWA",
+    "keyword": "AT HOP",
     "cat": "Gas"
   },
   {
-    "keyword": "KWIK TRIP",
+    "keyword": "BP #",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "BP GAS",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "BP#",
     "cat": "Gas"
   },
   {
@@ -488,7 +2936,99 @@
     "cat": "Gas"
   },
   {
-    "keyword": "PILOT TRAVEL",
+    "keyword": "CASEYS GENERAL",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "CHEVRON",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "CIRCLE K",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "CIRCLE K GAS",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "COLES EXPRESS",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "COMFORTDELGRO",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "COMPASS CARD",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "CUMBERLAND FARMS",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "EXXONMOBIL",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "EZ LINK",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "FASMART",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "FIRST BUS",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "FLASH FOODS",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "GETGO GAS",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "GIANT EAGLE GAS",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "GO CARD",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "GO TRANSIT",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "GRAB SINGAPORE",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "GRABCAR",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "GREENCARD TAS",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "HOLIDAY STATIONS",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "KWIK FILL",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "KWIK TRIP",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "LOVE'S TRAVEL",
     "cat": "Gas"
   },
   {
@@ -496,11 +3036,59 @@
     "cat": "Gas"
   },
   {
+    "keyword": "MARATHON PETRO",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "MAVERIK",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "METLINK NZ",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "METROCARD SA",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "MOBIL",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "MURPHY EXPRESS",
+    "cat": "Gas"
+  },
+  {
     "keyword": "MURPHY USA",
     "cat": "Gas"
   },
   {
-    "keyword": "SHEETZ",
+    "keyword": "MYKI",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "OC TRANSPO",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "OPAL CARD",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "PILOT FLYING J",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "PILOT TRAVEL",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "PMUSA",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "PRESTO CARD",
     "cat": "Gas"
   },
   {
@@ -512,23 +3100,279 @@
     "cat": "Gas"
   },
   {
+    "keyword": "RACETRACK GAS",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "SBS TRANSIT",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "SHEETZ",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "SHELL OIL",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "SMRT TRAINS",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "SNAPPER CARD",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "SPEEDWAY",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "STAGECOACH",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "STM MONTREAL",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "SUNOCO",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "TFL TRAVEL",
+    "cat": "Gas"
+  },
+  {
     "keyword": "THORNTONS",
     "cat": "Gas"
   },
   {
-    "keyword": "MAVERIK",
+    "keyword": "TRANSIT LINK",
     "cat": "Gas"
   },
   {
-    "keyword": "7-ELEVEN GAS",
+    "keyword": "TRANSPERTH",
     "cat": "Gas"
   },
   {
-    "keyword": "PUBLIX",
-    "cat": "Groceries"
+    "keyword": "TRANSPORT FOR LONDON",
+    "cat": "Gas"
   },
   {
-    "keyword": "SAFEWAY",
+    "keyword": "TTC TORONTO",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "VALERO",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "WAWA",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "ACLU",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "AMAZON SMILE",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "AMERICAN CANCER SOCIETY",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "AMERICAN HEART ASSOCIATION",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "AMNESTY INTERNATIONAL",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "BENEVITY",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "BEYOND BLUE AU",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "BLACK DOG INSTITUTE",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "BRITISH RED CROSS",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "BUY ME A COFFEE",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "CANADIAN CANCER SOCIETY",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "CANCER RESEARCH UK",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "CHARITY WATER",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "CHURCH DONATION",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "DAFFY CHARITABLE",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "DEPAUL CHARITY",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "DIRECT RELIEF",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "DOCTORS WITHOUT BORDERS",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "FEEDING AMERICA",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "FUNDRAISE FOR",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "GOFUNDME",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "GOODWILL",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "HABITAT FOR HUMANITY",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "HEART FOUNDATION AU",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "JUST GIVING",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "JUSTGIVING",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "KIVA LOAN",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "KO-FI",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "MACMILLAN CANCER",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "NATIONAL MS SOCIETY",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "NFGIVING",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "OPEN COLLECTIVE",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "OXFAM",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "PATREON",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "PLANNED PARENTHOOD",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "RED CROSS",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "RSPCA",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "SAVE THE CHILDREN",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "SIERRA CLUB",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "SMILE TRAIN",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "ST JUDE",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "TITHE",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "UNICEF",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "UNITED WAY",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "UNITED WAY CANADA",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "VIRGIN MONEY GIVING",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "WIKIPEDIA",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "WORLD VISION",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "WOUNDED WARRIOR",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "WWF",
+    "cat": "Gifts & Donations"
+  },
+  {
+    "keyword": "ALBERT HEIJN",
     "cat": "Groceries"
   },
   {
@@ -536,15 +3380,91 @@
     "cat": "Groceries"
   },
   {
-    "keyword": "H-E-B",
+    "keyword": "ALDI",
     "cat": "Groceries"
   },
   {
-    "keyword": "WEGMANS",
+    "keyword": "ALDI UK",
     "cat": "Groceries"
   },
   {
-    "keyword": "SPROUTS",
+    "keyword": "AMAZON FRESH",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "ASDA",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "BI-LO",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "BJS WHOLESALE",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "BROOKSHIRE BROS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "BROOKSHIRE GROCERY",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "CARREFOUR",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "CERMAK FRESH MARKET",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "CHECKERS GROCERY",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "CO-OP FOOD",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "COLD STORAGE",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "COLD STORAGE SG",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "COLES SUPERMARKET",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "COLRUYT",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "COOP SWITZERLAND",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "COSTCO WHSE",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "COUNTDOWN NZ",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "DELHAIZE",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "FAIRPRICE XTRA",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "FOOD BASICS",
     "cat": "Groceries"
   },
   {
@@ -552,23 +3472,47 @@
     "cat": "Groceries"
   },
   {
+    "keyword": "FOUR SQUARE NZ",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "FRED MEYER",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "FRESH CHOICE",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "FRESHCO",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "GIANT FOOD",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "GIANT HYPERMARKET",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "GIANT SG",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "GROCERY OUTLET",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "H-E-B",
+    "cat": "Groceries"
+  },
+  {
     "keyword": "HANNAFORD",
     "cat": "Groceries"
   },
   {
-    "keyword": "SHOPRITE",
-    "cat": "Groceries"
-  },
-  {
-    "keyword": "WINCO FOODS",
-    "cat": "Groceries"
-  },
-  {
-    "keyword": "LIDL",
-    "cat": "Groceries"
-  },
-  {
-    "keyword": "MARKET BASKET",
+    "keyword": "HARRIS FARM",
     "cat": "Groceries"
   },
   {
@@ -576,655 +3520,187 @@
     "cat": "Groceries"
   },
   {
+    "keyword": "HEB GROCERY",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "ICELAND FOOD",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "IGA CANADA",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "IGA SUPERMARKET",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "INGLES MARKET",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "INSTACART",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "INTERMARCHE",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "JASON'S MARKET SG",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "JEWEL OSCO",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "JUMBO SUPERMARKT",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "KROGER",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "LECLERC",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "LIDL",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "LIDL UK",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "LOBLAWS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "LUCKY SUPERMARKETS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "M&S FOOD",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "MARIANO",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "MARKET BASKET",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "MARKS SPENCER FOOD",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "MAXI GROCERY",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "MEIJER",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "METRO INC",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "MIGROS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "MOORE WILSONS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "MORRISONS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "NATURAL GROCERS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "NETTO GROCERY",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "NEW WORLD NZ",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "NO FRILLS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "NTUC FAIRPRICE",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "OCADO",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "PAK N SAVE",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "PAKNSAVE",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "PENNY MARKET",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "PICK N PAY",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "PIGGLY WIGGLY",
+    "cat": "Groceries"
+  },
+  {
     "keyword": "PRICE CHOPPER",
     "cat": "Groceries"
   },
   {
-    "keyword": "PEACOCK TV",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "HBO MAX",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "MAX.COM",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "PARAMOUNT PLUS",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "DISCOVERY PLUS",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "ESPN PLUS",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "SLING TV",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "FUBO TV",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "CRUNCHYROLL",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "APPLE TV PLUS",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "RITE AID",
-    "cat": "Health & Wellness"
-  },
-  {
-    "keyword": "EQUINOX",
-    "cat": "Health & Wellness"
-  },
-  {
-    "keyword": "ORANGE THEORY",
-    "cat": "Health & Wellness"
-  },
-  {
-    "keyword": "LA FITNESS",
-    "cat": "Health & Wellness"
-  },
-  {
-    "keyword": "CRUNCH FITNESS",
-    "cat": "Health & Wellness"
-  },
-  {
-    "keyword": "YMCA",
-    "cat": "Health & Wellness"
-  },
-  {
-    "keyword": "COREPOWER",
-    "cat": "Health & Wellness"
-  },
-  {
-    "keyword": "SOULCYCLE",
-    "cat": "Health & Wellness"
-  },
-  {
-    "keyword": "LIFETIME FITNESS",
-    "cat": "Health & Wellness"
-  },
-  {
-    "keyword": "LIFE TIME",
-    "cat": "Health & Wellness"
-  },
-  {
-    "keyword": "CHEWY.COM",
-    "cat": "Pet"
-  },
-  {
-    "keyword": "PETCO",
-    "cat": "Pet"
-  },
-  {
-    "keyword": "PETSMART",
-    "cat": "Pet"
-  },
-  {
-    "keyword": "BARKBOX",
-    "cat": "Pet"
-  },
-  {
-    "keyword": "BANFIELD PET",
-    "cat": "Pet"
-  },
-  {
-    "keyword": "VCA ANIMAL",
-    "cat": "Pet"
-  },
-  {
-    "keyword": "ANTHEM",
-    "cat": "Insurance"
-  },
-  {
-    "keyword": "KAISER",
-    "cat": "Insurance"
-  },
-  {
-    "keyword": "TRAVELERS",
-    "cat": "Insurance"
-  },
-  {
-    "keyword": "DELTA.COM",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "DL ",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "AMERICAN AIRLINES",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "AMERICANAIR",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "AA ",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "UNITED.COM",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "UA ",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "WN ",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "JETBLUE",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "B6 ",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "ALASKA AIR",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "AS ",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "SPIRIT AIRLINES",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "NK ",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "FRONTIER AIRLINES",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "F9 ",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "ALLEGIANT",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "SUN COUNTRY",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "HAWAIIAN AIR",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "BREEZE AIRWAYS",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "COURTYARD BY",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "RESIDENCE INN",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "SPRINGHILL SUITES",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "FAIRFIELD INN",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "TOWNEPLACE SUITES",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "WESTIN",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "SHERATON",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "W HOTEL",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "ST REGIS",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "RITZ CARLTON",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "HYATT",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "PARK HYATT",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "ANDAZ",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "GRAND HYATT",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "HILTON GARDEN",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "HAMPTON INN",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "DOUBLETREE",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "EMBASSY SUITES",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "HOMEWOOD SUITES",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "HOME2 SUITES",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "CURIO COLLECTION",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "IHG",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "HOLIDAY INN",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "INTERCONTINENTAL",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "CROWNE PLAZA",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "STAYBRIDGE",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "CANDLEWOOD",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "EVEN HOTELS",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "WYNDHAM",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "DAYS INN",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "SUPER 8",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "RAMADA",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "LA QUINTA",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "MICROTEL",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "BEST WESTERN",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "MOTEL 6",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "RED ROOF",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "COMFORT INN",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "QUALITY INN",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "FOUR SEASONS",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "KIMPTON",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "AUTOGRAPH COLLECTION",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "ALOFT HOTEL",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "ELEMENT HOTEL",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "AC HOTEL",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "EXPEDIA",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "HOTELS.COM",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "BOOKING.COM",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "PRICELINE",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "HOTWIRE",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "TRAVELOCITY",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "TRIP.COM",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "GOOGLE TRAVEL",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "VRBO",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "HERTZ",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "ENTERPRISE RENT",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "AVIS",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "BUDGET RENT",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "NATIONAL CAR",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "ALAMO RENT",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "THRIFTY CAR",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "DOLLAR RENT",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "SIXT",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "TURO",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "GETAROUND",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "AMTRAK",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "GREYHOUND",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "FLIXBUS",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "MEGABUS",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "TSA PRECHECK",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "GLOBAL ENTRY",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "CLEAR ",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "AIRPORT PARKING",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "PARKWHIZ",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "SPOTHERO",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "CARNIVAL CRUISE",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "ROYAL CARIBBEAN",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "NORWEGIAN CRUISE",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "DISNEY CRUISE",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "CELEBRITY CRUISE",
-    "cat": "Travel"
-  },
-  {
-    "keyword": "OLIVE GARDEN",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "TEXAS ROADHOUSE",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "BUFFALO WILD WINGS",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "OUTBACK STEAKHOUSE",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "RED LOBSTER",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "CHEESECAKE FACTORY",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "DARDEN",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "LONGHORN STEAKHOUSE",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "APPLEBEES",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "CHILIS",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "IHOP",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "DENNYS",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "CRACKER BARREL",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "GOLDEN CORRAL",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "RED ROBIN",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "OUTBACK",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "TEXAS DE BRAZIL",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "BAHAMA BREEZE",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "YARD HOUSE",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "SEASONS 52",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "CHEDDAR",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "BOB EVANS",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "WAFFLE HOUSE",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "PERKINS",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "FIRST WATCH",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "EGGS UP GRILL",
-    "cat": "Food & Drink"
-  },
-  {
-    "keyword": "AMAZON WEB SERVICE",
-    "cat": "Shopping"
-  },
-  {
-    "keyword": "PRIME VIDEO",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "KINDLE",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "AUDIBLE",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "AMAZON MUSIC",
-    "cat": "Entertainment"
-  },
-  {
-    "keyword": "AMAZON FRESH",
+    "keyword": "PRIME SUPERMARKET",
     "cat": "Groceries"
   },
   {
-    "keyword": "WHOLE FOODS MKT",
+    "keyword": "PROVIGO",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "PUBLIX",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "REAL CANADIAN SUPERSTORE",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "REDMART",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "REWE MARKET",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "SAFEWAY",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "SAINSBURY",
     "cat": "Groceries"
   },
   {
@@ -1236,12 +3712,620 @@
     "cat": "Groceries"
   },
   {
-    "keyword": "BJS WHOLESALE",
+    "keyword": "SAVE ON FOODS",
     "cat": "Groceries"
   },
   {
-    "keyword": "COSTCO.COM",
-    "cat": "Shopping"
+    "keyword": "SHENG SIONG",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "SHOPRITE",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "SHOPRITE ZA",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "SMART AND FINAL",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "SOBEYS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "SPAR GROCERY",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "SPROUTS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "SPROUTS FARMERS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "STATER BROS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "STOP & SHOP",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "STOP AND SHOP",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "TESCO",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "TRADER JOE",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "WAITROSE",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "WEGMANS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "WEIS MARKETS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "WHOLE FOODS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "WHOLE FOODS MKT",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "WHOLEFDS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "WHOLESALE CLUB",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "WINCO FOODS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "WINN DIXIE",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "WOOLWORTHS AU",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "WOOLWORTHS METRO",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "WOOLWORTHS SA",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "24 HOUR FITNESS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "AMAZON PHARMACY",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "AMERICA S BEST CONTACTS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "AMERICAN FAMILY CARE",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "ANYTIME FITNESS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "ASPEN DENTAL",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "BARBERSHOP",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "BARRY S BOOTCAMP",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "BARRYS BOOTCAMP",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "BEAUTY SALON",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "BETTERHELP",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "BLOOMS THE CHEMIST",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "BOOTS PHARMACY",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "BOOTS UK",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "CALM APP",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "CARESPOT",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "CEREBRAL",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "CHEMIST WAREHOUSE",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "CIGNA PHARMACY",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "CLASSPASS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "CONCENTRA",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "CONCENTRA URGENT",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "COREPOWER",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "COST CUTTERS SALON",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "CROSSFIT",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "CRUNCH FITNESS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "CURVES GYM",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "CVS CAREMARK",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "CVS MINUTE CLINIC",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "CVS PHARMACY",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "DAY SPA",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "DRY BAR SALON",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "DRYBAR",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "EQUINOX",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "EQUINOX FITNESS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "EUROPEAN WAX CENTER",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "EXPRESS SCRIPTS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "EYEGLASS WORLD",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "F45 TRAINING",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "FANTASTIC SAMS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "FLOYD BARBERSHOP",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "GOLDS GYM",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "GOODRX",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "GREAT CLIPS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "GREEN CROSS HEALTH",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "GUARDIAN PHARMACY",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "HAIR CUTTERY",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "HAIR SALON",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "HAND AND STONE",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "HEADBAND SALON",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "HEADMASTERS SALON",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "HEADSPACE",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "HERS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "HERS HEALTH",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "HIMS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "HIMS HEALTH",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "JEAN COUTU",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "JUST CUTS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "LA FITNESS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "LABCORP",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "LABCORP PATIENT",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "LASH BAR",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "LENSCRAFTERS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "LIFE PHARMACY NZ",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "LIFE TIME",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "LIFETIME FITNESS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "LONDON DRUGS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "MDLIVE",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "MINDBODY",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "MINUTE CLINIC",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "MYEYEDR",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "NAIL SALON",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "NATIONAL VISION",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "NOOM",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "NURX",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "OPTUMRX",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "ORANGE THEORY",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "ORANGETHEORY",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "PACIFIC DENTAL",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "PELOTON",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "PHARMASAVE",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "PILL PACK",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "PLANET FITNESS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "PRICELINE PHARMACY",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "PURE BARRE",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "QUEST DIAGNOSTICS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "REGIS SALON",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "REXALL PHARMACY",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "RITE AID",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "ROMAN HEALTH",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "ROOSTERS MEN",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "RUSH HAIR",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "SHOPPERS DRUG MART",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "SMARTSTYLE SALON",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "SNAP FITNESS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "SOLIDCORE",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "SOULCYCLE",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "SPECSAVERS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "SPORT CLIPS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "SUPERCUTS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "SUPERCUTS UK",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "TALKSPACE",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "TELADOC",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "TERRY WHITE",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "THE ART OF SHAVING",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "THE LASH LOUNGE",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "TITLE BOXING",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "TONI AND GUY",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "TONI&GUY",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "UFC GYM",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "UNICHEM PHARMACY",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "UNITY PHARMACY",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "URGENT CARE",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "VISION EXPRESS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "VISIONWORKS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "WALGREENS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "WATSONS SG",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "WAXING THE CITY",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "WEIGHT WATCHERS",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "WESTERN DENTAL",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "WW INTERNATIONAL",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "YMCA",
+    "cat": "Health & Wellness"
+  },
+  {
+    "keyword": "84 LUMBER",
+    "cat": "Home"
+  },
+  {
+    "keyword": "AARONS RENT",
+    "cat": "Home"
+  },
+  {
+    "keyword": "ABC SUPPLY",
+    "cat": "Home"
+  },
+  {
+    "keyword": "ACE HARDWARE",
+    "cat": "Home"
+  },
+  {
+    "keyword": "ADT SECURITY",
+    "cat": "Home"
+  },
+  {
+    "keyword": "AMERICAN FURNITURE",
+    "cat": "Home"
   },
   {
     "keyword": "ANGI ",
@@ -1252,19 +4336,107 @@
     "cat": "Home"
   },
   {
+    "keyword": "ASHLEY FURNITURE",
+    "cat": "Home"
+  },
+  {
+    "keyword": "B&Q",
+    "cat": "Home"
+  },
+  {
+    "keyword": "B&Q UK",
+    "cat": "Home"
+  },
+  {
+    "keyword": "BENJAMIN MOORE",
+    "cat": "Home"
+  },
+  {
+    "keyword": "BOB S DISCOUNT FURNITURE",
+    "cat": "Home"
+  },
+  {
+    "keyword": "BORDINE",
+    "cat": "Home"
+  },
+  {
+    "keyword": "BRINKS HOME",
+    "cat": "Home"
+  },
+  {
+    "keyword": "BUILDERS FIRSTSOURCE",
+    "cat": "Home"
+  },
+  {
+    "keyword": "BUNNINGS NZ",
+    "cat": "Home"
+  },
+  {
+    "keyword": "BUNNINGS WAREHOUSE",
+    "cat": "Home"
+  },
+  {
+    "keyword": "DO IT BEST HARDWARE",
+    "cat": "Home"
+  },
+  {
+    "keyword": "FERGUSON BATH",
+    "cat": "Home"
+  },
+  {
+    "keyword": "FLOOR & DECOR",
+    "cat": "Home"
+  },
+  {
+    "keyword": "FLOOR AND DECOR",
+    "cat": "Home"
+  },
+  {
+    "keyword": "FLOOR DECOR",
+    "cat": "Home"
+  },
+  {
+    "keyword": "HOME DEPOT",
+    "cat": "Home"
+  },
+  {
     "keyword": "HOMEADVISOR",
     "cat": "Home"
   },
   {
-    "keyword": "THUMBTACK",
+    "keyword": "HOMEBASE",
     "cat": "Home"
   },
   {
-    "keyword": "TASKRABBIT",
+    "keyword": "HOMEBASE UK",
     "cat": "Home"
   },
   {
-    "keyword": "MR HANDYMAN",
+    "keyword": "ITM BUILDING NZ",
+    "cat": "Home"
+  },
+  {
+    "keyword": "LIVING SPACES",
+    "cat": "Home"
+  },
+  {
+    "keyword": "LL FLOORING",
+    "cat": "Home"
+  },
+  {
+    "keyword": "LOWES #",
+    "cat": "Home"
+  },
+  {
+    "keyword": "LUMBER LIQUIDATORS",
+    "cat": "Home"
+  },
+  {
+    "keyword": "MATHIS BROTHERS",
+    "cat": "Home"
+  },
+  {
+    "keyword": "MENARDS",
     "cat": "Home"
   },
   {
@@ -1272,11 +4444,23 @@
     "cat": "Home"
   },
   {
+    "keyword": "MITRE 10",
+    "cat": "Home"
+  },
+  {
     "keyword": "MOLLY MAID",
     "cat": "Home"
   },
   {
-    "keyword": "TERMINIX",
+    "keyword": "MR HANDYMAN",
+    "cat": "Home"
+  },
+  {
+    "keyword": "MTGMANAGER",
+    "cat": "Home"
+  },
+  {
+    "keyword": "OLD NATIONAL BAN MTGMANAGER",
     "cat": "Home"
   },
   {
@@ -1284,7 +4468,27 @@
     "cat": "Home"
   },
   {
-    "keyword": "TRUGREEN",
+    "keyword": "PLACEMAKERS NZ",
+    "cat": "Home"
+  },
+  {
+    "keyword": "PLUMBING SUPPLY",
+    "cat": "Home"
+  },
+  {
+    "keyword": "RENT A CENTER",
+    "cat": "Home"
+  },
+  {
+    "keyword": "RING ALARM",
+    "cat": "Home"
+  },
+  {
+    "keyword": "RONA HOME",
+    "cat": "Home"
+  },
+  {
+    "keyword": "ROOMS TO GO",
     "cat": "Home"
   },
   {
@@ -1292,15 +4496,1591 @@
     "cat": "Home"
   },
   {
-    "keyword": "TURBOTAX",
+    "keyword": "SCREWFIX",
+    "cat": "Home"
+  },
+  {
+    "keyword": "SERVICEMASTER",
+    "cat": "Home"
+  },
+  {
+    "keyword": "SERVPRO",
+    "cat": "Home"
+  },
+  {
+    "keyword": "SHERWIN WILLIAMS",
+    "cat": "Home"
+  },
+  {
+    "keyword": "SIMPLISAFE",
+    "cat": "Home"
+  },
+  {
+    "keyword": "SNAP FINANCING",
+    "cat": "Home"
+  },
+  {
+    "keyword": "TASKRABBIT",
+    "cat": "Home"
+  },
+  {
+    "keyword": "TERMINIX",
+    "cat": "Home"
+  },
+  {
+    "keyword": "THUMBTACK",
+    "cat": "Home"
+  },
+  {
+    "keyword": "TILE SHOP",
+    "cat": "Home"
+  },
+  {
+    "keyword": "TRUE VALUE HARDWARE",
+    "cat": "Home"
+  },
+  {
+    "keyword": "TRUGREEN",
+    "cat": "Home"
+  },
+  {
+    "keyword": "VICTORY LAWNSCAPE",
+    "cat": "Home"
+  },
+  {
+    "keyword": "VIVINT SMART",
+    "cat": "Home"
+  },
+  {
+    "keyword": "ADMIRAL INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "AETNA",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "AFLAC",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "AHM HEALTH",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "AIA INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "ANTHEM",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "AVIVA INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "BLUE CROSS",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "BRIGHT HEALTH",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "BUPA AU",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "CENTENE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "CHUBB INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "CIGNA",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "CLEARCOVER",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "COMPARETHEMARKET",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "CONFUSED.COM",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "DIRECT LINE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "ERIE INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "GEICO",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "GREAT EASTERN LIFE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "GUARDIAN LIFE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "HARTFORD INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "HCF HEALTH",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "HIPPO HOME",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "HIPPO INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "HISCOX INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "HOMEOWNERS INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "HUMANA",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "IAG INSURANCE AU",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "INTACT INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "KAISER",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "KIN INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "LEMONADE INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "LINCOLN FINANCIAL",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "MANULIFE CA",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "MASSMUTUAL",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "MEDIBANK",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "METLIFE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "MOLINA HEALTHCARE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "NEW YORK LIFE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "NIB HEALTH",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "NORTHWESTERN MUTUAL",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "NRMA INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "NTUC INCOME",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "OSCAR HEALTH",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "PACIFIC LIFE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "PRINCIPAL LIFE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "PROGRESSIVE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "PROGRESSIVE INS",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "PROTECTIVE COSTCO",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "PRUDENTIAL SINGAPORE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "ROOT INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "RSA INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "SOUTHERN CROSS HEALTH",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "STATE FARM",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "SUN LIFE CA",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "SURE INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "TOGGLE INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "TRAVELERS",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "TRAVELERS INS",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "UNITED HEALTH",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "UNUM GROUP",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "ACORNS INVEST",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "AMERIPRISE",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "AXA EQUITABLE",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "BETTERMENT",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "COINBASE",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "EDWARD JONES",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "EMPOWER RETIREMENT",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "FIDELITY",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "GEMINI CRYPTO",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "INTERACTIVE BROKERS",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "JOHN HANCOCK",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "KRAKEN",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "M1 FINANCE",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "MI DIR ACH CONTRIB",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "PRINCIPAL FINANCIAL",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "PUBLIC.COM",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "ROBINHOOD",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "SCHWAB",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "SOFI INVEST",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "STASH INVEST",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "TASTYTRADE",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "TD AMERITRADE",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "VANGUARD",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "WEALTHSIMPLE",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "WEBULL",
+    "cat": "Investment Contributions"
+  },
+  {
+    "keyword": "1800PETMEDS",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "ANIMAL HOSPITAL",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "BANFIELD PET",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "BARKBOX",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "CAMP BOW WOW",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "CHEWY.COM",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "DOGTOPIA",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "EMBRACE PET",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "FETCH PET INSURANCE",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "GLOBAL PET FOODS",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "GREENCROSS VETS",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "HEALTHY PAWS PET",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "NATIONWIDE PET",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "PET BARN",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "PET PLANET",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "PET SUPPLIES PLUS",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "PETCO",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "PETLAND",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "PETMEDS",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "PETPLAN",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "PETS AT HOME",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "PETSENSE",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "PETSMART",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "PETSTOCK",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "PETSUITES",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "ROVER DOG",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "ROVER.COM",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "TRUPANION",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "VCA ANIMAL",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "VET CLINIC",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "VETERINARY CLINIC",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "VETS4PETS",
+    "cat": "Pet"
+  },
+  {
+    "keyword": "AC MOORE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "ACADEMY SPORTS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "ADAIRS AU",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "ADDITION ELLE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "ALDO SHOES",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "AMAZON AU",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "AMAZON CA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "AMAZON MKTP",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "AMAZON UK",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "AMAZON WEB SERVICE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "AMAZON.CA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "AMAZON.CO.UK",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "AMAZON.COM.AU",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "AMZN MKTP",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "ANACONDA AU",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "ANN TAYLOR",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "ANTHROPOLOGIE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "ARDENE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "ARGOS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "AUTOBARN",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "B&M BARGAINS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "BANANA REPUBLIC",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "BATH BODY WORKS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "BEAUTY SUPPLY STORE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "BED BATH BEYOND",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "BENTLEY LEATHERWARE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "BEST AND LESS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "BEST BUY CANADA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "BIG 5 SPORTING",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "BIG LOTS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "BIG W",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "BLUENOTES CLOTHING",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "BOOTLEGGER",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "BOSSINI",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "BOWRING CA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "BRISCOES",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "BUILD-A-BEAR",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "BURLINGTON COAT",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "BURLINGTON FACTORY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "CANADIAN TIRE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "CARD FACTORY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "CHALLENGER STORE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "CHALLENGER TECH",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "CHAMPS SPORTS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "CHAPTERS INDIGO",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "CHARLES AND KEITH",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "CHARLOTTE TILBURY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "CHEWY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "CHICOS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "CITY BEACH",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "CLARKS SHOES",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "CLEO FASHION",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "COLUMBIA SPORTSWEAR",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "COST PLUS WORLD",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "COSTCO.COM",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "COTTON ON",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "COTTON ON SG",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "COUNTRY ROAD",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "COURTS SG",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "COURTS SINGAPORE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "CRATE AND BARREL",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "CRATE AND BARREL CA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "CURRYS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "DAVID JONES",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "DEPOP",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "DICKS SPORTING GOODS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "DOLLAR GENERAL",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "DOLLAR TREE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "DOLLARAMA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "DOTTI",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "DRUNK ELEPHANT",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "DSW DESIGNER SHOE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "DUNELM",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "DYNAMITE CLOTHING",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "EBAY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "ETSY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "EXPRESS FASHION",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "EXPRESS STORES",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "FAMILY DOLLAR",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "FAMOUS FOOTWEAR",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "FARMERS NZ",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "FENTY BEAUTY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "FINISH LINE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "FIVE BELOW",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "FLYING TIGER",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "FOOT LOCKER",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "FOOTLOCKER UK",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "FOREVER 21",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "FREE PEOPLE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "G2000",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "GAME DIGITAL",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "GAME STOP",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "GAMESTOP",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "GAP INC",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "GAP STORE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "GARAGE CLOTHING",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "GLOSSIER",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "GLUE STORE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "H&M",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "HALLMARK STORE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "HANNAHS SHOES NZ",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "HARRIS SCARFE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "HARVEY NORMAN",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "HARVEY NORMAN SG",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "HMV",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "HOBBY LOBBY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "HOME BARGAINS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "HOMESENSE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "HOT TOPIC",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "HUDSONS BAY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "IKEA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "INDIGO CHAPTERS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "ISETAN",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "ISETAN SG",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "J CREW",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "JAY JAYS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "JB HI-FI",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "JBHIFI",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "JC PENNEY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "JCPENNEY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "JD SPORTS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "JOANN FABRIC",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "JOHN LEWIS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "KATHMANDU",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "KIEHL'S",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "KINOKUNIYA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "KMART AU",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "KOHL'S",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "KOHLS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "LANE BRYANT",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "LAURA CANADA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "LE CHATEAU",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "LINCRAFT",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "LOFT OUTLET",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "LOWES MENSWEAR",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "LUSH COSMETICS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "MAC COSMETICS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "MACPAC",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "MACY'S",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "MACYS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "MARK S WORK WAREHOUSE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "MARSHALLS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "MATALAN",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "MECCA COSMETICA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "MECCA MAXIMA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "METRO SG",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "MICHAELS #",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "MICHAELS STORES",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "MUSTAFA CENTRE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "MYER",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "NEW LOOK",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "NEXT PLC",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "NEXT RETAIL",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "NIKE.COM",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "NOEL LEEMING",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "NORDSTROM",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "NORDSTROM RACK",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "NTUC LINK",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "NUMBER ONE SHOES NZ",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "OFFICEWORKS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "OG SINGAPORE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "OLD NAVY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "OVERSTOCK",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "OVERSTOCK.COM",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "PAGANI NZ",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "PAPER PLUS NZ",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "PAPERCHASE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "PATAGONIA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "PB TECH",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "PEACOCKS CLOTHING",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "PEDRO SHOES",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "PETER ALEXANDER",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "PETERS OF KENSINGTON",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "PIER 1",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "PILLOW TALK AU",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "POPULAR BOOKSTORE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "PORTMANS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "POSHMARK",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "POSTIE NZ",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "POTTERY BARN",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "POUNDLAND",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "PRIMARK",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "RAYS OUTDOORS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "REBEL SPORT",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "REI #",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "REI CO OP",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "REI.COM",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "REITMANS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "REPCO AU",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "RESTORATION HARDWARE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "RIVER ISLAND",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "RIVERS CLOTHING",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "ROBINSONS SG",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "RONA HARDWARE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "ROSS DRESS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "ROSS STORES",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "RYMAN STATIONERY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "SALLY BEAUTY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "SALVATION ARMY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "SCHUH",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "SEPHORA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "SHEIN",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "SIMONS CA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "SMITHS CITY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "SMYTHS TOYS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "SNOWYS OUTDOORS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "SPENCERS GIFTS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "SPORT CHEK",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "SPORTS DIRECT",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "SPOTLIGHT AU",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "STAPLES CANADA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "STIRLING SPORTS NZ",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "STRUCTUBE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "SUPERDRUG",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "SUPRE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "SWOOSH.COM",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "TAKASHIMAYA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "TANGS SINGAPORE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "TARGET AU",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "TATCHA SKINCARE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "TEMU",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "THE GOOD GUYS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "THE TOY SHOP",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "THE WAREHOUSE NZ",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "THE WORKS UK",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "THREDUP",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "TIMES BOOKSTORE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "TJ MAXX",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "TJMAXX",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "TOG SHOP SG",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "TOOLSTATION",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "TORPEDO7",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "TORRID",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "TUESDAY MORNING",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "ULTA BEAUTY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "UNIQLO",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "UNIQLO SG",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "URBAN OUTFITTERS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "URBAN PLANET",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "VICTORIA SECRET",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "W H SMITH",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WAL-MART",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WALMART",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WALMART.COM",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WATERSTONES",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WAYFAIR",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WEST ELM",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WHITCOULLS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WHITE HOUSE BLACK MARKET",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WHSMITH",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WICKES HOME",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WILKO",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WILLIAMS SONOMA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WILLIAMS-SONOMA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WINNERS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WISH.COM",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WITCHERY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "WORLD MARKET",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "YANKEE CANDLE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "ZARA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "COUNTY TREASURER",
     "cat": "Taxes & Fees"
   },
   {
-    "keyword": "H&R BLOCK",
+    "keyword": "DEPT OF REVENUE",
     "cat": "Taxes & Fees"
   },
   {
-    "keyword": "HRBLOCK",
+    "keyword": "DMV",
+    "cat": "Taxes & Fees"
+  },
+  {
+    "keyword": "FEDERAL TAX",
     "cat": "Taxes & Fees"
   },
   {
@@ -1312,35 +6092,1119 @@
     "cat": "Taxes & Fees"
   },
   {
-    "keyword": "GOFUNDME",
-    "cat": "Gifts & Donations"
+    "keyword": "H&R BLOCK",
+    "cat": "Taxes & Fees"
   },
   {
-    "keyword": "NFGIVING",
-    "cat": "Gifts & Donations"
+    "keyword": "HRBLOCK",
+    "cat": "Taxes & Fees"
   },
   {
-    "keyword": "UNITED WAY",
-    "cat": "Gifts & Donations"
+    "keyword": "IRS TAX",
+    "cat": "Taxes & Fees"
   },
   {
-    "keyword": "RED CROSS",
-    "cat": "Gifts & Donations"
+    "keyword": "IRS USATAXPYMT",
+    "cat": "Taxes & Fees"
   },
   {
-    "keyword": "SALVATION ARMY",
-    "cat": "Shopping"
+    "keyword": "PNP BILLPAYMENT",
+    "cat": "Taxes & Fees"
   },
   {
-    "keyword": "GOODWILL",
-    "cat": "Gifts & Donations"
+    "keyword": "PROPERTY TAX",
+    "cat": "Taxes & Fees"
   },
   {
-    "keyword": "HABITAT FOR HUMANITY",
-    "cat": "Gifts & Donations"
+    "keyword": "STATE OF MI SOMIIT",
+    "cat": "Taxes & Fees"
   },
   {
-    "keyword": "PLANNED PARENTHOOD",
-    "cat": "Gifts & Donations"
+    "keyword": "STATE OF MICH SOS",
+    "cat": "Taxes & Fees"
+  },
+  {
+    "keyword": "STATE TAX PAYMENT",
+    "cat": "Taxes & Fees"
+  },
+  {
+    "keyword": "TAX COLLECTOR",
+    "cat": "Taxes & Fees"
+  },
+  {
+    "keyword": "TURBOTAX",
+    "cat": "Taxes & Fees"
+  },
+  {
+    "keyword": "VEHICLE REGISTRATION",
+    "cat": "Taxes & Fees"
+  },
+  {
+    "keyword": "APPLE CASH",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "CASH APP",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "CASHAPP",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "CHIME TRANSFER",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "FLAGSTAR",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "GOOGLE PAY SEND",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "MONEYGRAM",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "PAYPAL",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "REMITLY",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "REVOLUT",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "SQUARE CASH",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "TRANSFERWISE",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "VENMO",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "WESTERN UNION",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "WISE TRANSFER",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "XOOM",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "ZELLE",
+    "cat": "Transfers"
+  },
+  {
+    "keyword": "AA ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AC HOTEL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ACCOR HOTELS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AEGEAN AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AEROFLOT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AEROMEXICO",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AGODA",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AIR ARABIA",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AIR CANADA",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AIR FRANCE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AIR INDIA",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AIR NEW ZEALAND",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AIRASIA",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AIRBNB",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AIRNZ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AIRPORT PARKING",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ALAMO RENT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ALASKA AIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ALLEGIANT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ALOFT HOTEL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AMERICAN AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AMERICANAIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AMTRAK",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ANA AIRLINE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ANDAZ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AS ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ASIANA AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AUSTRIAN AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AUTOGRAPH COLLECTION",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AVANTI WEST COAST",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AVIANCA",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AVIS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AZUL AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "B6 ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "BEST WESTERN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "BIRD SCOOTER",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "BLABLACAR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "BLUEBIKES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "BOLT RIDE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "BONZA AIRLINE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "BOOKING COM",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "BOOKING.COM",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "BREEZE AIRWAYS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "BRITISH AIRWAYS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "BUDGET RENT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CANDLEWOOD",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CAPITAL BIKESHARE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CARNIVAL CRUISE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CATHAY PACIFIC",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CELEBRITY CRUISE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CHILTERN RAILWAYS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CHOICE HOTELS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CITI BIKE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CLEAR ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "COMFORT INN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "COMPASS CARD BC",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CONTACTLESS TFL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "COPA AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "COURTYARD BY",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CROSSCOUNTRY TRAINS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CROWNE PLAZA",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "CURIO COLLECTION",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "DAYS INN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "DELTA AIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "DELTA.COM",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "DIDI RIDE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "DISNEY CRUISE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "DIVVY BIKES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "DL ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "DOLLAR RENT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "DOUBLETREE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "EASYJET",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "EGYPT AIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ELEMENT HOTEL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "EMBASSY SUITES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "EMIRATES AIRLINE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ENTERPRISE RENT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ETHIOPIAN AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ETIHAD AIRWAYS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "EUROSTAR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "EUROWINGS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "EVEN HOTELS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "EXPEDIA",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "EZ-LINK",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "F9 ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "FAIRFIELD INN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "FINNAIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "FLIXBUS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "FLY DUBAI",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "FOUR SEASONS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "FREE NOW",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "FRONTIER AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "GETAROUND",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "GLOBAL ENTRY",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "GOAIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "GOJEK",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "GOL AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "GOOGLE TRAVEL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "GRAB RIDE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "GRAND HYATT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "GREAT WESTERN RAIL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "GREATER ANGLIA",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "GREYHOUND",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "GWR TRAINS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HAMPTON INN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HAWAIIAN AIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HERTZ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HILTON",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HILTON GARDEN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HOLIDAY INN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HOME2 SUITES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HOMEWOOD SUITES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HONG KONG EXPRESS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HOSTELWORLD",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HOTELS.COM",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HOTWIRE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "HYATT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "IBERIA AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "IBIS HOTEL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "IHG",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "INDIGO AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "INTERCITY NZ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "INTERCONTINENTAL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "INTERJET",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "JAL AIRWAYS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "JAPAN AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "JETBLUE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "JETSTAR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "KAYAK",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "KEMPINSKI",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "KENYA AIRWAYS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "KIMPTON",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "KLM AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "KLM ROYAL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "KLOOK",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "KOREAN AIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "LA QUINTA",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "LATAM AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "LIME SCOOTER",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "LNER",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "LOEWS HOTELS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "LUFTHANSA",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "LYFT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "MALAYSIA AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "MANDARIN ORIENTAL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "MARRIOTT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "MEGABUS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "MELIA HOTELS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "MERCURE HOTEL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "METRO BIKE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "MICROTEL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "MOTEL 6",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "MYKI CARD",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "MYTAXI",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "MYWAY CARD",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "NATIONAL CAR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "NATIONAL EXPRESS UK",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "NATIONAL RAIL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "NETS FLASHPAY",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "NH HOTELS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "NK ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "NORTHERN RAIL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "NORWEGIAN AIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "NORWEGIAN CRUISE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "NOVOTEL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "OHIO TURNPIKE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "OLA CABS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "OMNI HOTELS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "OYSTER CARD",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "PAN PACIFIC",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "PARK HYATT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "PARK INN RADISSON",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "PARKWHIZ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "PEACH AVIATION",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "PORTER AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "PRICELINE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "QANTAS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "QATAR AIRWAYS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "QUALITY INN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "RADISSON",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "RAMADA",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "RED ROOF",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "RESIDENCE INN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "REX REGIONAL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "RITZ CARLTON",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ROYAL CARIBBEAN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "RYANAIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SAS SCANDINAVIAN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SCOOT AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SCOTRAIL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SHERATON",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SILKAIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SINGAPORE AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SIXT",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SKYSCANNER",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SOFITEL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SOUTH AFRICAN AIRWAYS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SOUTHERN RAIL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SOUTHWEST",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SPIN SCOOTER",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SPIRIT AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SPLYT RIDE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SPOTHERO",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SPRINGHILL SUITES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "ST REGIS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "STAGECOACH BUS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "STAMFORD HOTELS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "STAYBRIDGE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SUN COUNTRY",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SUPER 8",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SWISS AIR LINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "SWISS INTL AIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TAP AIR PORTUGAL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TAXI HIRE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "THAI AIRWAYS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "THAI LION AIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "THAMESLINK",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "THRIFTY CAR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TIGERAIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TOWNEPLACE SUITES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TRAINLINE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TRANSAVIA",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TRANSLINK AU",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TRAVELOCITY",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TRIP.COM",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TRIVAGO",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TSA PRECHECK",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TURKISH AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "TURO",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "UA ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "UBER TRIP",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "UNITED AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "UNITED.COM",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "VEORIDE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "VIA RAIL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "VIETJET",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "VIETNAM AIRLINES",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "VIRGIN ATLANTIC",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "VIRGIN AUSTRALIA",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "VOLARIS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "VRBO",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "VUELING",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "W HOTEL",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "WEST MIDLANDS TRAINS",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "WESTIN",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "WESTJET",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "WIZZ AIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "WIZZAIR",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "WN ",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "WYNDHAM",
+    "cat": "Travel"
   }
 ]
