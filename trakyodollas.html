@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-aseq38GZv17yX+CFLlyRhLiPrtICpGm3s+Em8HNnKRs=' 'sha256-oqh/SiGNIUL1JOdcnqvsxQSs2OArTL2vaj+KSunygVk=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://www.gstatic.com https://cloud.umami.is https://apis.google.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-NzEhh5ig4cngepWarcHVoBXq9jrNaISNoapv2eoj83o=' 'sha256-oqh/SiGNIUL1JOdcnqvsxQSs2OArTL2vaj+KSunygVk=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://www.gstatic.com https://cloud.umami.is https://apis.google.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -350,6 +350,8 @@ select option{background:var(--bg-card)}
 .section-box-sm{background:var(--bg-card);border-radius:10px;padding:.75rem 1rem;margin-bottom:.85rem}
 .venmo-label{display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:.6rem .75rem;border:1px solid var(--border-mid);border-radius:8px;background:var(--bg-deep)}
 .help-box{font-size:12px;color:var(--text-secondary);background:var(--bg-card);border-radius:6px;padding:.55rem .85rem;margin-bottom:.75rem;line-height:1.6;border-left:3px solid #2563EB40}
+details.csv-help>summary::before{content:'▸';display:inline-block;margin-right:5px;font-size:11px;transition:transform .15s;color:var(--text-muted)}
+details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 /* ── Utility classes ─────────────────────────────────────────────────── */
 /* Modal structure */
@@ -948,7 +950,7 @@ select option{background:var(--bg-card)}
 
     <!-- Source label -->
     <div class="form-group">
-      <label class="form-label">Label these transactions as</label>
+      <label class="form-label" for="import-source-label">Label these transactions as</label>
       <input type="text" id="import-source-label" placeholder="e.g. Checking, Visa Rewards…" value="Checking"/>
     </div>
 
@@ -970,6 +972,30 @@ select option{background:var(--bg-card)}
              data-drop="handleTxDropDelegated"
              data-change="handleTxFileSelectDelegated"/>
     </div>
+
+    <!-- CSV export help — native collapsible, no JS -->
+    <details class="csv-help" style="margin-top:.55rem;font-size:12px;color:var(--text-muted)">
+      <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:4px;color:var(--text-secondary);font-weight:600;user-select:none">Not sure what to upload?</summary>
+      <div class="help-box" style="margin-top:.4rem;border-left-color:var(--border-mid)">
+        <p style="margin-bottom:.4rem;color:var(--text-secondary);font-weight:600">How to export from your bank:</p>
+        <ul style="padding-left:1.1rem;margin-bottom:.5rem;line-height:1.7">
+          <li><strong style="color:var(--text-secondary)">Chase</strong> — Sign in → Accounts → <em>Download activity</em> → CSV</li>
+          <li><strong style="color:var(--text-secondary)">Amex</strong> — Sign in → Statements &amp; Activity → <em>Export</em> → CSV (all activity)</li>
+          <li>Most banks: look for <em>Download</em> or <em>Export</em> in your transaction history</li>
+        </ul>
+        <p style="margin-bottom:.25rem;color:var(--text-secondary);font-weight:600">Columns the app reads:</p>
+        <ul style="padding-left:1.1rem;line-height:1.7">
+          <li><strong style="color:var(--text-secondary)">Checking/savings</strong> — Date, Description, Amount, Type</li>
+          <li><strong style="color:var(--text-secondary)">Credit card (Chase, Amex, etc.)</strong> — Transaction Date, Description, Amount, Category</li>
+          <li><strong style="color:var(--text-secondary)">Debit/credit columns</strong> — Date, Description, Debit, Credit (or Withdrawals/Deposits)</li>
+          <li><strong style="color:var(--text-secondary)">Bank of America</strong> — Date, Description, Amount</li>
+          <li><strong style="color:var(--text-secondary)">Mint</strong> — Date, Description, Amount, Transaction Type, Category</li>
+          <li><strong style="color:var(--text-secondary)">YNAB</strong> — Date, Payee, Outflow, Inflow, Category</li>
+          <li><strong style="color:var(--text-secondary)">Monarch Money</strong> — Date, Merchant, Amount, Category</li>
+        </ul>
+        <p style="margin-top:.4rem;font-size:11px">Format is detected automatically. If it's not right, use <em>Having trouble?</em> below.</p>
+      </div>
+    </details>
 
     <!-- Detected format badge — shown after successful auto-detect -->
     <div id="import-detected-fmt" class="hidden" style="margin-top:.55rem;display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary)">
@@ -1128,12 +1154,12 @@ select option{background:var(--bg-card)}
 <div class="modal-overlay hidden" id="add-modal">
   <div class="modal">
     <h3 id="add-modal-title">Add account</h3>
-    <div class="form-group"><label class="form-label">Name</label><input type="text" id="f-name"/></div>
-    <div class="form-group"><label class="form-label">Institution</label>
+    <div class="form-group"><label class="form-label" for="f-name">Name</label><input type="text" id="f-name"/></div>
+    <div class="form-group"><label class="form-label" for="f-source">Institution</label>
       <select id="f-source"><option>Alliant</option><option>Ally</option><option>Amex</option><option>Bank of America</option><option>Barclays</option><option>BECU</option><option>BMO</option><option>Capital One</option><option>Chase</option><option>CIBC</option><option>Discover</option><option>E*TRADE</option><option>Fidelity</option><option>Marcus</option><option>Navy Federal</option><option>Old National</option><option>PenFed</option><option>RBC</option><option>Redfin</option><option>Schwab</option><option>Scotiabank</option><option>SoFi</option><option>Tangerine</option><option>TD Bank</option><option>Truist</option><option>USAA</option><option>Vanguard</option><option>Wells Fargo</option><option>Zillow</option><option>Other</option></select></div>
-    <div class="form-group"><label class="form-label">Type</label>
+    <div class="form-group"><label class="form-label" for="f-type">Type</label>
       <select id="f-type"><option value="cash">Cash/Savings</option><option value="investment">Investment</option><option value="home">Home</option><option value="vehicle">Vehicle</option><option value="mortgage">Mortgage</option><option value="credit">Credit card</option><option value="other-asset">Other asset</option><option value="other-liability">Other liability</option></select></div>
-    <div class="form-group"><label class="form-label">Balance ($)</label><input type="number" id="f-balance"/></div>
+    <div class="form-group"><label class="form-label" for="f-balance">Balance ($)</label><input type="number" id="f-balance"/></div>
     <div class="form-group" style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-deep);border-radius:8px;padding:.6rem .85rem">
       <div>
         <div style="font-size:13px;font-weight:600;color:var(--text-primary)">Exclude from net worth</div>
@@ -1150,13 +1176,13 @@ select option{background:var(--bg-card)}
 <div class="modal-overlay hidden" id="add-tx-modal">
   <div class="modal">
     <h3>Add transaction</h3>
-    <div class="form-group"><label class="form-label">Date</label><input type="text" id="t-date"/></div>
-    <div class="form-group"><label class="form-label">Description</label><input type="text" id="t-desc"/></div>
-    <div class="form-group"><label class="form-label">Source</label>
+    <div class="form-group"><label class="form-label" for="t-date">Date</label><input type="text" id="t-date"/></div>
+    <div class="form-group"><label class="form-label" for="t-desc">Description</label><input type="text" id="t-desc"/></div>
+    <div class="form-group"><label class="form-label" for="t-card">Source</label>
       <select id="t-card"><option>Chase Freedom Unlimited</option><option>Chase Prime Visa</option><option>Ally Checking</option><option>Ally Money Market Savings</option><option>Other</option></select></div>
-    <div class="form-group"><label class="form-label">Category</label>
+    <div class="form-group"><label class="form-label" for="t-cat">Category</label>
       <select id="t-cat"><option>Groceries</option><option>Shopping</option><option>Bills & Utilities</option><option>Home</option><option>Child Care</option><option>Checks</option><option>Health & Wellness</option><option>Travel</option><option>Food & Drink</option><option>Gas</option><option>College Fund(s)</option><option>Taxes & Fees</option><option>Education</option><option>Automotive</option><option>Entertainment</option><option>Gifts & Donations</option><option>Transfers</option><option>Other</option></select></div>
-    <div class="form-group"><label class="form-label">Amount ($)</label><input type="number" id="t-amount"/></div>
+    <div class="form-group"><label class="form-label" for="t-amount">Amount ($)</label><input type="number" id="t-amount"/></div>
     <div class="modal-footer">
       <button class="btn" data-action="closeModals" type="button">Cancel</button>
       <button class="btn btn-primary" data-action="saveTx" type="button">Save</button>
@@ -1169,10 +1195,10 @@ select option{background:var(--bg-card)}
     <div id="check-label-hint" style="display:none;background:#F59E0B18;border:1px solid #F59E0B44;border-radius:8px;padding:.45rem .75rem;margin-bottom:.6rem;font-size:11px;color:#FCD34D;line-height:1.4">
       ✏️ <strong>Check transaction</strong> — update the description to note what this was for (e.g. "Plumber", "Tuition"), then pick the right category.
     </div>
-    <div class="form-group"><label class="form-label">Description</label><input type="text" id="et-desc"/></div>
-    <div class="form-group"><label class="form-label">Date</label><input type="text" id="et-date"/></div>
-    <div class="form-group"><label class="form-label">Amount ($)</label><input type="number" id="et-amount"/></div>
-    <div class="form-group"><label class="form-label">Category</label>
+    <div class="form-group"><label class="form-label" for="et-desc">Description</label><input type="text" id="et-desc"/></div>
+    <div class="form-group"><label class="form-label" for="et-date">Date</label><input type="text" id="et-date"/></div>
+    <div class="form-group"><label class="form-label" for="et-amount">Amount ($)</label><input type="number" id="et-amount"/></div>
+    <div class="form-group"><label class="form-label" for="et-cat">Category</label>
       <select id="et-cat" data-change="onEditCatChange">
         <option>Groceries</option><option>Shopping</option><option>Bills & Utilities</option><option>Home</option>
         <option>Child Care</option><option>Checks</option><option>Health & Wellness</option><option>Travel</option>
@@ -1193,7 +1219,7 @@ select option{background:var(--bg-card)}
       </div>
     </div>
     <div class="form-group" style="border-top:1px solid var(--border);padding-top:.75rem;margin-top:.25rem">
-      <label class="form-label">Spending exclusion</label>
+      <div class="form-label">Spending exclusion</div>
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text-secondary)">
         <input type="checkbox" id="et-excluded" style="accent-color:#7C3AED;width:14px;height:14px" data-change="updateExclNote">
         Hide this transaction from spending totals &amp; charts
@@ -1227,20 +1253,20 @@ select option{background:var(--bg-card)}
       <button id="at-other" class="h-btn" data-action="setAssetType" data-arg="other" style="flex:1;padding:5px;font-size:11px" type="button">📦 Other asset</button>
     </div>
     <div id="asset-vehicle-fields">
-      <div class="form-group"><label class="form-label">VIN <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">(optional — auto-fills details)</span></label><div style="display:flex;gap:6px"><input type="text" id="v-vin" placeholder="e.g. 1FMCU9J96NUB12345" maxlength="17" style="flex:1;font-family:monospace;text-transform:uppercase" data-input="uppercaseInput"/><button class="btn btn-sm" id="v-vin-btn" data-action="lookupVIN" style="white-space:nowrap;flex-shrink:0" type="button">Look up</button></div><div id="v-vin-status" style="font-size:10px;margin-top:4px;min-height:14px"></div></div>
-      <div class="form-group"><label class="form-label">Year</label><input type="number" id="v-year"/></div>
-      <div class="form-group"><label class="form-label">Make</label><input type="text" id="v-make"/></div>
-      <div class="form-group"><label class="form-label">Model / Trim</label><input type="text" id="v-model"/></div>
-      <div class="form-group"><label class="form-label">Condition</label><select id="v-condition"><option value="excellent">Excellent</option><option value="very good" selected>Very good</option><option value="good">Good</option><option value="fair">Fair</option></select></div>
-      <div class="form-group"><label class="form-label">Mileage</label><input type="number" id="v-miles"/></div>
+      <div class="form-group"><label class="form-label" for="v-vin">VIN <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">(optional — auto-fills details)</span></label><div style="display:flex;gap:6px"><input type="text" id="v-vin" placeholder="e.g. 1FMCU9J96NUB12345" maxlength="17" style="flex:1;font-family:monospace;text-transform:uppercase" data-input="uppercaseInput"/><button class="btn btn-sm" id="v-vin-btn" data-action="lookupVIN" style="white-space:nowrap;flex-shrink:0" type="button">Look up</button></div><div id="v-vin-status" style="font-size:10px;margin-top:4px;min-height:14px"></div></div>
+      <div class="form-group"><label class="form-label" for="v-year">Year</label><input type="number" id="v-year"/></div>
+      <div class="form-group"><label class="form-label" for="v-make">Make</label><input type="text" id="v-make"/></div>
+      <div class="form-group"><label class="form-label" for="v-model">Model / Trim</label><input type="text" id="v-model"/></div>
+      <div class="form-group"><label class="form-label" for="v-condition">Condition</label><select id="v-condition"><option value="excellent">Excellent</option><option value="very good" selected>Very good</option><option value="good">Good</option><option value="fair">Fair</option></select></div>
+      <div class="form-group"><label class="form-label" for="v-miles">Mileage</label><input type="number" id="v-miles"/></div>
     </div>
     <div id="asset-other-fields" style="display:none">
-      <div class="form-group"><label class="form-label">Asset name</label><input type="text" id="v-other-name" placeholder="e.g. Diamond ring, Boston Whaler, Rolex"/></div>
-      <div class="form-group"><label class="form-label">Category</label><select id="v-other-cat"><option value="Boat">Boat / Watercraft</option><option value="Jewelry">Jewelry</option><option value="Art">Art / Collectibles</option><option value="Equipment">Equipment / Tools</option><option value="Electronics">Electronics</option><option value="Other">Other</option></select></div>
+      <div class="form-group"><label class="form-label" for="v-other-name">Asset name</label><input type="text" id="v-other-name" placeholder="e.g. Diamond ring, Boston Whaler, Rolex"/></div>
+      <div class="form-group"><label class="form-label" for="v-other-cat">Category</label><select id="v-other-cat"><option value="Boat">Boat / Watercraft</option><option value="Jewelry">Jewelry</option><option value="Art">Art / Collectibles</option><option value="Equipment">Equipment / Tools</option><option value="Electronics">Electronics</option><option value="Other">Other</option></select></div>
     </div>
-    <div class="form-group"><label class="form-label">Est. value ($)</label><input type="number" id="v-value"/></div>
-    <div class="form-group"><label class="form-label">Purchase price ($)</label><input type="number" id="v-purchase"/></div>
-    <div class="form-group"><label class="form-label">Purchase year</label><input type="number" id="v-purchase-year"/></div>
+    <div class="form-group"><label class="form-label" for="v-value">Est. value ($)</label><input type="number" id="v-value"/></div>
+    <div class="form-group"><label class="form-label" for="v-purchase">Purchase price ($)</label><input type="number" id="v-purchase"/></div>
+    <div class="form-group"><label class="form-label" for="v-purchase-year">Purchase year</label><input type="number" id="v-purchase-year"/></div>
     <div class="modal-footer"><button class="btn" data-action="closeModals" type="button">Cancel</button><button class="btn btn-primary" onclick="saveVehicle()" type="button">Save</button></div>
   </div>
 </div>
@@ -1290,7 +1316,7 @@ select option{background:var(--bg-card)}
   <div class="modal" style="width:min(360px,95vw)">
     <h3 id="budget-modal-title">Set monthly budget</h3>
     <div class="form-group">
-      <label class="form-label">Monthly target ($) <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">— leave blank to remove</span></label>
+      <label class="form-label" for="budget-amount">Monthly target ($) <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">— leave blank to remove</span></label>
       <input type="number" id="budget-amount" placeholder="e.g. 500" min="0"/>
     </div>
     <div id="budget-modal-context" style="font-size:11px;color:var(--text-muted);margin-bottom:.75rem;line-height:1.5"></div>
@@ -1315,7 +1341,7 @@ select option{background:var(--bg-card)}
       <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Rule preview</div>
       <div style="font-size:12px;color:var(--text-primary);line-height:1.6">If a transaction description contains <strong id="srp-keyword" style="color:#60A5FA;font-family:monospace"></strong>, categorize it as <strong id="srp-cat" style="color:#34D399"></strong>.</div>
       <div style="margin-top:.6rem">
-        <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;font-weight:600">Keyword (edit if needed)</label>
+        <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;font-weight:600" for="srp-keyword-input">Keyword (edit if needed)</label>
         <input type="text" id="srp-keyword-input" class="input-mono"/>
       </div>
     </div>
@@ -1345,11 +1371,11 @@ select option{background:var(--bg-card)}
       <div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.6rem">New rule</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.6rem">
         <div>
-          <label style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:3px">If description contains</label>
+          <label style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:3px" for="new-rule-keyword">If description contains</label>
           <input type="text" id="new-rule-keyword" placeholder="e.g. WHOLEFDS" class="input-mono"/>
         </div>
         <div>
-          <label style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:3px">Categorize as</label>
+          <label style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:3px" for="new-rule-cat">Categorize as</label>
           <select id="new-rule-cat" class="input-full" style="font-size:12px">
             <option>Groceries</option><option>Shopping</option><option>Bills & Utilities</option><option>Home</option>
             <option>Child Care</option><option>Checks</option><option>Health & Wellness</option><option>Travel</option>
@@ -1385,7 +1411,7 @@ select option{background:var(--bg-card)}
       <button data-action="applyCurrency" data-arg="€" class="btn btn-sm currency-preset" data-sym="€" type="button">€ Euro</button>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
-      <label style="font-size:13px;color:var(--text-secondary);flex-shrink:0">Custom:</label>
+      <label style="font-size:13px;color:var(--text-secondary);flex-shrink:0" for="currency-custom-input">Custom:</label>
       <input id="currency-custom-input" type="text" maxlength="4" placeholder="¥  ₹  kr  CHF…" style="flex:1" data-input="applyCustomCurrency"/>
     </div>
   </div>
@@ -1406,7 +1432,7 @@ select option{background:var(--bg-card)}
           <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:3px">Manual — enter your take-home pay</div>
           <div style="font-size:11px;color:var(--text-muted);line-height:1.5">Most accurate. Enter your monthly after-tax income once and we'll calculate your savings rate from your spending.</div>
           <div id="income-manual-input" class="hidden" style="margin-top:.75rem">
-            <label style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Monthly take-home pay (after tax)</label>
+            <label style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px" for="income-amount">Monthly take-home pay (after tax)</label>
             <div style="display:flex;gap:8px;align-items:center">
               <input type="number" id="income-amount" placeholder="e.g. 6500" min="0" style="flex:1;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-size:13px"/>
               <button class="btn btn-primary btn-sm" data-action="saveManualIncome" type="button">Save</button>
@@ -1452,7 +1478,7 @@ select option{background:var(--bg-card)}
     <h3 style="font-size:16px;margin-bottom:.5rem">💰 Monthly take-home income</h3>
     <p style="font-size:12px;color:var(--text-muted);margin-bottom:1rem;line-height:1.6">Set your actual monthly after-tax pay. Overrides deposit detection and feeds the savings rate insight.</p>
     <div style="margin-bottom:1.1rem">
-      <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.35rem">Monthly take-home (after tax)</label>
+      <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.35rem" for="declared-income-input">Monthly take-home (after tax)</label>
       <input type="number" id="declared-income-input" min="0" step="100" placeholder="e.g. 5000" style="width:100%;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-size:13px">
     </div>
     <div style="display:flex;gap:8px;align-items:center">
@@ -1485,13 +1511,13 @@ select option{background:var(--bg-card)}
       <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.6rem">Add alias</div>
       <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:.5rem">
         <div>
-          <label style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:3px">This vendor name</label>
+          <label style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:3px" for="alias-from">This vendor name</label>
           <input type="text" id="alias-from" placeholder="e.g. AMZN MKTP US" list="vendor-names-list"
             class="input-mono"/>
         </div>
         <div style="font-size:18px;color:var(--text-muted);text-align:center;padding-top:18px">→</div>
         <div>
-          <label style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:3px">Should display as</label>
+          <label style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:3px" for="alias-to">Should display as</label>
           <input type="text" id="alias-to" placeholder="e.g. AMAZON.COM" list="vendor-names-list"
             class="input-mono"/>
         </div>
@@ -1517,20 +1543,20 @@ select option{background:var(--bg-card)}
     <p class="modal-body-text">Backfill a past net worth data point to extend your trend line. Useful if you know what your net worth was at a specific date.</p>
     <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1rem">
       <div>
-        <label style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Date</label>
+        <label style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px" for="hist-snap-date">Date</label>
         <input type="date" id="hist-snap-date" class="input-full"/>
       </div>
       <div>
-        <label style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Net worth ($)</label>
+        <label style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px" for="hist-snap-nw">Net worth ($)</label>
         <input type="number" id="hist-snap-nw" placeholder="e.g. 250000" class="input-full"/>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div>
-          <label style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Total assets ($) <span style="font-weight:400;text-transform:none">optional</span></label>
+          <label style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px" for="hist-snap-assets">Total assets ($) <span style="font-weight:400;text-transform:none">optional</span></label>
           <input type="number" id="hist-snap-assets" placeholder="e.g. 400000" style="width:100%;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-size:12px;box-sizing:border-box"/>
         </div>
         <div>
-          <label style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Liabilities ($) <span style="font-weight:400;text-transform:none">optional</span></label>
+          <label style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px" for="hist-snap-liab">Liabilities ($) <span style="font-weight:400;text-transform:none">optional</span></label>
           <input type="number" id="hist-snap-liab" placeholder="e.g. 150000" style="width:100%;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-size:12px;box-sizing:border-box"/>
         </div>
       </div>
@@ -1692,7 +1718,7 @@ select option{background:var(--bg-card)}
     <h3>Set a custom goal</h3>
     <p class="modal-sub">Enter any net worth target. Milestone buttons will still work alongside it.</p>
     <div class="form-group">
-      <label class="form-label">Goal amount</label>
+      <label class="form-label" for="custom-goal-input">Goal amount</label>
       <input type="number" id="custom-goal-input" placeholder="e.g. 600000" min="1" style="font-size:15px" data-keydown="confirmGoalOnEnter"/>
       <div id="custom-goal-hint" style="font-size:11px;color:var(--text-muted);margin-top:5px;min-height:16px"></div>
     </div>
@@ -1740,6 +1766,43 @@ function stringToColor(str){
   return COLOR_PALETTE[Math.abs(hash)%COLOR_PALETTE.length];
 }
 
+function hexToHsl(hex){
+  const r=parseInt(hex.slice(1,3),16)/255,g=parseInt(hex.slice(3,5),16)/255,b=parseInt(hex.slice(5,7),16)/255;
+  const max=Math.max(r,g,b),min=Math.min(r,g,b);
+  let h,s,l=(max+min)/2;
+  if(max===min){h=s=0;}
+  else{
+    const d=max-min;
+    s=l>0.5?d/(2-max-min):d/(max+min);
+    switch(max){
+      case r:h=(g-b)/d+(g<b?6:0);break;
+      case g:h=(b-r)/d+2;break;
+      default:h=(r-g)/d+4;
+    }
+    h*=60;
+  }
+  return[h,s*100,l*100];
+}
+function hslToHex(h,s,l){
+  s/=100;l/=100;
+  const k=n=>(n+h/30)%12;
+  const a=s*Math.min(l,1-l);
+  const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+  const toHex=x=>Math.round(x*255).toString(16).padStart(2,'0');
+  return`#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`.toUpperCase();
+}
+// Beyond the 20-color palette (cycle 2+), derive a shifted variant instead of repeating
+// the same color — pushes lightness away from its current value (so pale colors get
+// deeper and vice versa) and rotates hue, keeping each lap visually distinct.
+function colorVariant(hex,level){
+  if(level<=0)return hex;
+  const[h,s,l]=hexToHsl(hex);
+  const dir=l>50?-1:1;
+  const newL=Math.max(22,Math.min(88,l+dir*18*level));
+  const newH=(h+level*25)%360;
+  return hslToHex(newH,Math.max(50,s-5*level),newL);
+}
+
 // Assign colors to a list of names using stride-7 stepping for max perceptual spread.
 // Custom category colors take priority. No fixed lookup — fully data-driven.
 function assignColors(names,offset=0){
@@ -1749,7 +1812,9 @@ function assignColors(names,offset=0){
   names.forEach(name=>{
     const custom=state?.customCategories?.find(c=>c.name===name);
     if(custom){map.set(name,custom.color);return;}
-    map.set(name,COLOR_PALETTE[(dynamicIdx*stride+offset)%COLOR_PALETTE.length]);
+    const base=COLOR_PALETTE[(dynamicIdx*stride+offset)%COLOR_PALETTE.length];
+    const cycle=Math.floor(dynamicIdx/COLOR_PALETTE.length);
+    map.set(name,colorVariant(base,cycle));
     dynamicIdx++;
   });
   return map;
@@ -1911,7 +1976,7 @@ let state={
       else if(a3!==undefined)f(a1,a2,a3,el);
       else if(a2!==undefined)f(a1,a2,el);
       else if(a1!==undefined)f(a1,el);
-      else f(el);
+      else f(undefined,el);
     });
   }
   document.addEventListener('click',e=>dispatch(e,'data-action',false));
@@ -2327,7 +2392,7 @@ function renderInsights(){
       const goalPct=Math.round(nwNow/state.nwGoal*100);
       const monthsLeft=monthlyGrowthForGoal>0?Math.ceil(goalNeeded/monthlyGrowthForGoal):null;
       const etaStr=monthsLeft&&monthsLeft<120
-        ?(monthsLeft<=3?' · almost there!':` · ~${Math.round(monthsLeft/12*10)/10}yr at this pace`)
+        ?(monthsLeft<=3?' · almost there!':(()=>{const yrs=Math.round(monthsLeft/12*10)/10;return ` · ~${yrs}yr${yrs>=1?'s':''} at this pace`;})())
         :'';
       nwSubLine=`<span style="color:#60A5FA">🎯 ${goalPct}% of the way to ${fmtC(state.nwGoal)}${etaStr}</span>`;
     } else if(nwUp){
@@ -3895,9 +3960,8 @@ function renderBucketGrid(){
 
     window._vendorTiles=[];
     const vendorNames=topVendors.map(([v])=>v);
-    const vendorColorMap=assignColors(vendorNames,3);
+    const vendorColorMap=assignColors(vendorNames,6); // offset 6 — 18.9° minHue gap (best of all 20 offsets, beats categories' 16.2°), zero color overlap with offsets 3/9
     const topTiles=topVendors.map(([vendor,data],vi)=>{
-      const isSecondCycle=vi>=COLOR_PALETTE.length;
       const color=vendorColorMap.get(vendor)||getVendorColor(vendor);
       const isActive=state.activeVendors&&state.activeVendors.has(vendor);
       const avg=Math.round(data.total/allPeriods);
@@ -3905,7 +3969,7 @@ function renderBucketGrid(){
       const sparkline=vendorSparkline(vendor,color);
       return`<div class="bucket-card ${isActive?'active-bucket':''}" style="border-color:${isActive?color:tc('#1E293B','#E2E8F0')};background:${isActive?color+'18':tc('#0F172A','#F8FAFC')};color:${color}" data-action="toggleVendorFilterByIdx" data-arg="${vi}">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
-          <div class="bucket-name" title="${vendor}" style="color:${color};margin:0">${esc(displayVendor(vendor))}${data.isCollapsed?` <span data-tip="Individual check numbers collapsed — categorize a check to split it out" style="font-size:9px;opacity:.5;cursor:pointer" data-action="showPillTip" data-stop="1">ⓘ</span>`:''}</div>
+          <div class="bucket-name" title="${vendor}" style="color:${color};margin:0">${esc(displayVendor(vendor))}${data.isCollapsed?` <span data-tip="Individual check numbers collapsed — categorize a check to split it out" style="font-size:14px;opacity:.5;cursor:pointer;line-height:1;vertical-align:middle" data-action="showPillTip" data-stop="1">ⓘ</span>`:''}</div>
           ${sparkline}
         </div>
         <div class="bucket-total" style="color:${color}">${fmt(data.total)}</div>
@@ -3996,7 +4060,7 @@ function renderBucketGrid(){
   const otherCatTile=hiddenCount>0&&!showAllBucketCats?`<div class="bucket-card" style="border-color:var(--border-mid);background:var(--bg-deep);cursor:pointer;opacity:.75" data-action="showPillTip" data-tip="${hiddenCount} categories:&#10;${otherCatBreakdown}">
     <div class="bucket-name" style="color:var(--text-muted)">+ ${hiddenCount} other categories</div>
     <div class="bucket-total" style="color:var(--text-muted)">${fmt(hiddenTotal)}</div>
-    <div class="bucket-meta">${grandCatTotal>0?Math.round(hiddenTotal/grandCatTotal*100):0}% of spend · hover for list</div>
+    <div class="bucket-meta">${grandCatTotal>0?Math.round(hiddenTotal/grandCatTotal*100):0}% of spend · tap for list</div>
   </div>`:'';
   const bucketCatNames=visibleCats.map(([cat])=>cat);
   // Use global catColorMap (built from lifetime spend) for consistency across all tabs
@@ -4027,7 +4091,7 @@ function renderBucketGrid(){
     :`<button data-action="openBudgetModal" data-arg="${sc}" data-stop="1" style="margin-top:5px;width:100%;background:none;border:1px solid var(--border-mid);border-radius:5px;padding:2px 6px;font-size:9px;font-weight:600;color:var(--text-muted);cursor:pointer;text-align:center" title="Set a monthly budget for ${cat}" type="button">+ Set budget</button>`;
     return`<div class="bucket-card ${isActive?'active-bucket':''}" style="${dashed?'opacity:.75':''};border-color:${isActive?color:tc('#1E293B','#E2E8F0')};background:${isActive?color+'18':tc('#0F172A','#F8FAFC')};color:${color}" data-action="toggleCatFilter" data-arg="${sc}">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
-        <div class="bucket-name" title="${cat}" style="color:${color};margin:0">${cat}${hint?` <span data-tip="${hint}" style="font-size:10px;opacity:.4;cursor:pointer" data-action="showPillTip" data-stop="1">ⓘ</span>`:''}</div>
+        <div class="bucket-name" title="${cat}" style="color:${color};margin:0">${cat}${hint?` <span data-tip="${hint}" style="font-size:15px;opacity:.4;cursor:pointer;line-height:1;vertical-align:middle" data-action="showPillTip" data-stop="1">ⓘ</span>`:''}</div>
         <div style="display:flex;align-items:center;gap:4px">
           ${catSparkline(cat,color,dashed)}
           <button data-action="toggleCatExclusion" data-arg="${sc}" data-stop="1" data-hide-cat="${sc}" style="background:none;border:none;cursor:pointer;font-size:11px;opacity:.35;padding:0 2px;color:currentColor;line-height:1;transition:opacity .1s" type="button">${state.excludedCats.has(sc)?'👁':'···'}</button>
@@ -4055,6 +4119,7 @@ function updateChartFade(){
 
 function setChartMode(mode){
   state.chartMode=mode;
+  try{localStorage.setItem('trakyo_chart',mode);}catch(e){}
   setTimeout(updateChartFade,50);
   state.chartShowAll=false;
   const hadDateFilter=!!state.activeDate&&mode!=='daily';
@@ -4312,10 +4377,15 @@ function renderSankey(){
   const totalSpend=Object.values(catTotals).reduce((a,b)=>a+b,0);
   const isOverspend=computePeriodSpendVsIncome().isOverspend;
   const saved=Math.max(0,totalIncome-totalSpend);
+  const SANKEY_SMALL=0.03;
   const allCats=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
-  const topCats=allCats.slice(0,8);
-  const otherTotal=allCats.slice(8).reduce((s,[,v])=>s+v,0);
-  const cats=[...topCats,...(otherTotal>0?[['Other',otherTotal]]:[])];
+  const bigCats=allCats.filter(([,v])=>v>=totalIncome*SANKEY_SMALL);
+  const smallCats=allCats.filter(([,v])=>v<totalIncome*SANKEY_SMALL);
+  const smallTotal=smallCats.reduce((s,[,v])=>s+v,0);
+  // Collapse only when 2+ categories fall below the threshold; a single small cat shows on its own
+  const cats=smallCats.length>=2
+    ?[...bigCats,...(smallTotal>0?[['__other__',smallTotal]]:[])]:
+    [...allCats];
   if(saved>0)cats.push(['Remaining',saved]);
 
   const isDark=getIsDark();
@@ -4331,9 +4401,15 @@ function renderSankey(){
   const W=wrap.getBoundingClientRect().width||640;
   const H=Math.max(300,cats.length*38+60);
 
+  const otherNodeLabel=`Other · ${smallCats.length} cats`;
+  const otherTipBody=smallCats.map(([c,v])=>`${c}: ${fmtC(v)} · ${Math.round(v/totalIncome*100)}%`).join('<br>');
   const nodes=[
     {id:'__income__',name:`${monthCount}mo income`,color:incomeColor},
-    ...cats.map(([cat])=>({id:cat,name:cat,color:cat==='Remaining'?(isDark?'#4b5563':'#94a3b8'):getCatColor(cat)}))
+    ...cats.map(([cat])=>({
+      id:cat,
+      name:cat==='__other__'?otherNodeLabel:cat,
+      color:cat==='Remaining'?(isDark?'#4b5563':'#94a3b8'):cat==='__other__'?(isDark?'#78716c':'#a8a29e'):getCatColor(cat)
+    }))
   ];
   const links=cats.map(([cat,val])=>({source:'__income__',target:cat,value:val}));
 
@@ -4362,7 +4438,10 @@ function renderSankey(){
     .attr('stroke-opacity',.4)
     .style('cursor','pointer')
     .on('mousemove',(e,d)=>{
-      tip.show(e,`<strong>${d.target.name}</strong>${fmtC(d.value)} · ${Math.round(d.value/totalIncome*100)}% of income`);
+      const body=d.target.id==='__other__'
+        ?`<strong>${otherNodeLabel}</strong> ${fmtC(d.value)} · ${Math.round(d.value/totalIncome*100)}% of income<br><span style="opacity:.7;font-size:10px">${otherTipBody}</span>`
+        :`<strong>${d.target.name}</strong>${fmtC(d.value)} · ${Math.round(d.value/totalIncome*100)}% of income`;
+      tip.show(e,body);
       linkSel.attr('stroke-opacity',l=>l===d?.75:.15);
     })
     .on('mouseleave',()=>{
@@ -4377,6 +4456,7 @@ function renderSankey(){
         }
         return;
       }
+      if(d.target.id==='__other__')return;
       const wasActive=state.activeCats.has(d.target.name);
       toggleCatFilter(d.target.name);
       if(!wasActive)requestAnimationFrame(()=>{
@@ -4391,16 +4471,23 @@ function renderSankey(){
     .attr('width',d=>d.x1-d.x0).attr('height',d=>Math.max(1,d.y1-d.y0))
     .attr('rx',3).attr('fill',d=>d.color).attr('opacity',.9)
     .style('cursor','pointer')
-    .on('mouseover',(_,d)=>{
+    .on('mouseover',(e,d)=>{
       if(d.id==='__income__')return;
+      if(d.id==='__other__'){
+        tip.show(e,`<strong>${otherNodeLabel}</strong> ${fmtC(d.value||0)} · ${Math.round((d.value||0)/totalIncome*100)}% of income<br><span style="opacity:.7;font-size:10px">${otherTipBody}</span>`);
+      }
       linkSel.attr('stroke-opacity',l=>l.target===d?.75:.15);
     })
-    .on('mouseout',()=>linkSel.attr('stroke-opacity',.4))
+    .on('mouseout',(_,d)=>{
+      if(d.id==='__other__')tip.hide();
+      linkSel.attr('stroke-opacity',.4);
+    })
     .on('click',(_,d)=>{
       if(d.id==='__income__'){
         openDeclaredIncomeModal();
         return;
       }
+      if(d.id==='__other__')return;
       const wasActive=state.activeCats.has(d.name);
       toggleCatFilter(d.name);
       if(!wasActive)requestAnimationFrame(()=>{
@@ -4431,9 +4518,9 @@ function renderSankey(){
     if(isOverspend){
       sfn.innerHTML=`<span style="color:#F87171;font-weight:700">⚠️ Spending (${fmtC(totalSpend)}) exceeds income (${fmtC(totalIncome)}) by ${fmtC(totalSpend-totalIncome)} — click the income bar to update your income</span>`;
     } else {
-      sfn.textContent=numCats>8
-        ?`Top 8 of ${numCats} categories · ${spendPct}% of income · transfers excluded · remaining = income minus tracked spend`
-        :`${numCats} categories · ${spendPct}% of income · click income bar to edit · remaining = income minus tracked spend`;
+      sfn.textContent=smallCats.length>=2
+        ?`${bigCats.length} of ${numCats} ${numCats===1?'category':'categories'} shown · ${smallCats.length} under 3% grouped · ${spendPct}% of income · remaining = income minus tracked spend`
+        :`${numCats} ${numCats===1?'category':'categories'} · ${spendPct}% of income · click income bar to edit · remaining = income minus tracked spend`;
     }
   }
   const incomeNode=graph.nodes.find(n=>n.id==='__income__');
@@ -4727,6 +4814,11 @@ function renderDailyCal(){
   });
   // Apply current zoom level after rendering
   if(_calZoom>0)applyCalZoom();
+  // Scroll to most recent (right edge) — useful at any viewport width when months overflow
+  requestAnimationFrame(()=>{
+    const sw=document.getElementById('cal-scroll-wrap');
+    if(sw)sw.scrollLeft=sw.scrollWidth;
+  });
 }
 
 function renderSpendChart(){
@@ -4900,7 +4992,7 @@ function renderSpendChart(){
     const smRow=document.getElementById('chart-show-more-row');
     if(smRow)smRow.style.display='none';
 
-    const vendorColorMap=assignColors(top5Vendors,3); // offset 3 to differ from category colors
+    const vendorColorMap=assignColors(top5Vendors,6); // offset 6 — 18.9° minHue gap (best of all 20 offsets, beats categories' 16.2°), zero color overlap with offsets 3/9
     const top5VData=top5Vendors.map((v,vi)=>({
       label:v,
       data:months.map(m=>(vendorMonthMap[v]||{})[m]||0),
@@ -4928,7 +5020,7 @@ function renderSpendChart(){
       )
     };
 
-    const vDatasets=[...top5VData,otherVData];
+    const vDatasets=otherVendorCount>0?[...top5VData,otherVData]:top5VData;
     const vMonthTotals=months.map((_,mi)=>top5VData.reduce((s,ds)=>s+(ds.data[mi]||0),0)+(otherVData.data[mi]||0));
 
     const vOpts=JSON.parse(JSON.stringify(commonOpts));
@@ -5023,7 +5115,7 @@ function renderSpendChart(){
       )
     };
 
-    const datasets=[...top5Data,otherData];
+    const datasets=otherCatCount>0?[...top5Data,otherData]:top5Data;
 
     // Custom tooltip for Other bar to show breakdown
     // Monthly totals = exactly what's rendered in each bar (top5 visible + other)
@@ -5248,7 +5340,7 @@ document.addEventListener('keydown',function(e){
   }
 });
 
-function openSrcRemovePop(el){
+function openSrcRemovePop(arg,el){
   closeSrcRemovePop();
   const src=el.getAttribute('data-src');
   const wrap=el.closest('.src-chip-wrap');
@@ -5256,7 +5348,7 @@ function openSrcRemovePop(el){
   if(!pop)return;
   const count=state.transactions.filter(t=>t.card===src).length;
   const safe=src.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  pop.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:.35rem">Remove ${count} transaction${count===1?'':'s'}?</div><div style="font-size:11px;color:var(--text-muted);margin-bottom:.55rem">${src}</div><div style="display:flex;gap:6px"><button onclick="confirmSrcRemove(this)" data-src="${safe}" style="background:#450A0A;border:1px solid #7F1D1D;border-radius:6px;color:#FCA5A5;font-size:11px;font-weight:700;cursor:pointer;padding:4px 10px;font-family:inherit" type="button">Remove</button><button data-action="closeSrcRemovePop" class="btn" style="font-size:11px;padding:4px 10px" type="button">Cancel</button></div>`;
+  pop.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:.35rem">Remove ${count} transaction${count===1?'':'s'}?</div><div style="font-size:11px;color:var(--text-muted);margin-bottom:.55rem">${src}</div><div style="display:flex;gap:6px"><button data-action="confirmSrcRemove" data-arg="${safe}" style="background:#450A0A;border:1px solid #7F1D1D;border-radius:6px;color:#FCA5A5;font-size:11px;font-weight:700;cursor:pointer;padding:4px 10px;font-family:inherit" type="button">Remove</button><button data-action="closeSrcRemovePop" class="btn" style="font-size:11px;padding:4px 10px" type="button">Cancel</button></div>`;
   pop.style.display='block';
   setTimeout(()=>document.addEventListener('click',_srcPopOutside,{once:true}),0);
 }
@@ -5268,8 +5360,7 @@ function closeSrcRemovePop(){
   document.querySelectorAll('.src-remove-pop').forEach(p=>p.style.display='none');
   document.removeEventListener('click',_srcPopOutside);
 }
-function confirmSrcRemove(btn){
-  const src=btn.getAttribute('data-src');
+function confirmSrcRemove(src){
   const count=state.transactions.filter(t=>t.card===src).length;
   state.transactions=state.transactions.filter(t=>t.card!==src);
   state.activeSources.delete(src);
@@ -5834,7 +5925,7 @@ function saveBudget(){
     // If the element with the title IS itself interactive, let the tap through
     if(titleEl){
       const tag=titleEl.tagName;
-      if(tag==='BUTTON'||tag==='A'||tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA'||titleEl.getAttribute('onclick')){
+      if(tag==='BUTTON'||tag==='A'||tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA'||titleEl.getAttribute('onclick')||titleEl.getAttribute('data-action')){
         hideTip();return;
       }
     }
@@ -5844,7 +5935,7 @@ function saveBudget(){
     let isInteractive=false;
     while(checkEl&&checkEl!==document.body&&checkEl!==titleEl){
       const tag=checkEl.tagName;
-      if(tag==='BUTTON'||tag==='A'||tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA'||checkEl.getAttribute('onclick')){
+      if(tag==='BUTTON'||tag==='A'||tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA'||checkEl.getAttribute('onclick')||checkEl.getAttribute('data-action')){
         isInteractive=true;break;
       }
       checkEl=checkEl.parentElement;
@@ -5922,8 +6013,14 @@ function editSnapshot(i){
   const s=state.snapshots[i];
   if(!s)return;
   // Pre-fill the historical snapshot modal with existing values
-  document.getElementById('hist-snap-date').value=s.date.includes('/')?
-    new Date(s.date).toISOString().slice(0,10):s.date;
+  // Normalize any date format ("Apr 30, 2026", "04/30/2026", "2026-04-30") to YYYY-MM-DD.
+  // Must use local-time components — toISOString() is UTC and shifts the date for UTC+ users.
+  function _normDateToISO(s){
+    if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+    const d=new Date(s);
+    return isNaN(d.getTime())?s:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  document.getElementById('hist-snap-date').value=_normDateToISO(s.date);
   document.getElementById('hist-snap-nw').value=s.nw;
   document.getElementById('hist-snap-assets').value=s.assets||s.nw;
   document.getElementById('hist-snap-liab').value=s.liab||0;
@@ -6057,6 +6154,7 @@ function confirmClearAllData(){
     localStorage.removeItem('trakyo_txs_v1');
     localStorage.removeItem('trakyo_state_v1');
     localStorage.removeItem('trakyo_tab');
+    localStorage.removeItem('trakyo_chart');
   }catch(e){}
   closeModals();
   location.reload();
@@ -6814,8 +6912,8 @@ function openSubscriptionsModal(){
   document.getElementById('subscriptions-modal').classList.remove('hidden');
 }
 
-function showPillTip(btn){
-  const tip=btn.getAttribute('data-tip');
+function showPillTip(_,el){
+  const tip=el.getAttribute('data-tip');
   if(!tip)return;
   // Show as a small overlay modal
   let overlay=document.getElementById('pill-tip-overlay');
@@ -7238,7 +7336,7 @@ function renderCatManagerList(){
   if(!el)return;
   const rows=[
     ...BASE.map(c=>({name:c,color:getCatColor(c),custom:false})),
-    ...state.customCategories.map(c=>({...c,custom:true}))
+    ...state.customCategories.map(c=>({...c,color:getCatColor(c.name),custom:true}))
   ];
   el.innerHTML=rows.map(c=>`<div style="display:flex;align-items:center;gap:8px;padding:.35rem .65rem;border-bottom:1px solid var(--border-mid)">
     <div style="width:10px;height:10px;border-radius:3px;background:${c.color};flex-shrink:0"></div>
@@ -7302,26 +7400,33 @@ function parseImportDate(str,fmt){
     return isNaN(d.getTime())?'':d.toISOString().slice(0,10);
   }
   // Fallback: unambiguous strings like "Jan 15, 2025"
+  // new Date(locale-string) parses as local midnight; toISOString() converts to UTC and
+  // shifts the date back by 1 day for UTC+ users. Use local-time components instead.
   const d=new Date(str);
-  return isNaN(d.getTime())?'':d.toISOString().slice(0,10);
+  return isNaN(d.getTime())?'':
+    `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
-// Scan first rows to detect date format; returns 'mdy', 'dmy', or null (ambiguous)
+// Scan first rows to detect date format; returns 'mdy', 'dmy', 'iso' (all ISO, toggle moot), or null (ambiguous)
 function detectImportDateFmt(rows){
   const fields=['date','transaction date','trans date','posting date'];
+  let sawSlash=false;
   for(const row of rows.slice(0,15)){
     for(const f of fields){
       const val=row[f];
       if(!val)continue;
-      const m=val.trim().match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})$/);
+      const trimmed=val.trim();
+      if(/^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}$/.test(trimmed))continue; // ISO — unambiguous, parsed directly
+      const m=trimmed.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})$/);
       if(m){
+        sawSlash=true;
         const a=parseInt(m[1]),b=parseInt(m[2]);
         if(a>12)return'dmy'; // day > 12 in first position → must be DD/MM
         if(b>12)return'mdy'; // month > 12 in second position → must be MM/DD
       }
     }
   }
-  return null; // genuinely ambiguous
+  return sawSlash?null:'iso'; // genuinely ambiguous slash-format, or no slash-format dates at all
 }
 
 function setDateFmt(fmt){
@@ -7441,7 +7546,12 @@ function parseTxFile(file){
     _importRawRows=rows;
     // Detect date format — update UI and store for re-parse on toggle
     const detectedFmt=detectImportDateFmt(rows);
-    updateDateFmtUI(detectedFmt||'mdy',detectedFmt===null);
+    if(detectedFmt==='iso'){
+      const dfRow=document.getElementById('import-date-fmt-row');
+      if(dfRow)dfRow.style.display='none';
+    } else {
+      updateDateFmtUI(detectedFmt||'mdy',detectedFmt===null);
+    }
     const source=document.getElementById('import-source-label').value.trim()||'Imported';
     importParsed=rows.map(r=>normalizeTxRow(r,source)).filter(Boolean);
     showImportPreview();
@@ -8733,6 +8843,32 @@ document.addEventListener('DOMContentLoaded',function(){
     }
   }catch(e){}
 
+  // Restore last chart mode (spending tab)
+  try{
+    const savedMode=localStorage.getItem('trakyo_chart');
+    const validModes=['category','source','vendor','trend','daily','split','sankey'];
+    if(savedMode&&validModes.includes(savedMode)){
+      state.chartMode=savedMode;
+      validModes.forEach(m=>{
+        const btn=document.getElementById('cv-'+m);
+        if(btn)btn.classList.toggle('active',m===savedMode);
+      });
+      // Mirror the wrapper show/hide that setChartMode normally handles,
+      // so renderAll renders into the right container on first load
+      const isCanvas=savedMode!=='daily'&&savedMode!=='split'&&savedMode!=='sankey';
+      const cw=document.getElementById('spend-chart-wrap');
+      const cb=document.getElementById('spend-chart-border');
+      const cal=document.getElementById('daily-cal-wrap');
+      const tm=document.getElementById('treemap-wrap');
+      const sk=document.getElementById('sankey-wrap');
+      if(cb)cb.style.display=isCanvas?'':'none';
+      if(cw)cw.style.display=isCanvas?'':'none';
+      if(cal)cal.style.display=savedMode==='daily'?'block':'none';
+      if(tm)tm.style.display=savedMode==='split'?'block':'none';
+      if(sk)sk.style.display=savedMode==='sankey'?'block':'none';
+    }
+  }catch(e){}
+
   if(hadSavedData){
     const hasDemoAccounts=state.accounts.some(a=>a.id<=11);
     const hasRealTx=state.transactions.some(t=>t.id>=5000);
@@ -8927,7 +9063,7 @@ const DEMO_PROFILE_2 = {
     {id:12,name:'College Fund(s)',source:'Education savings',type:'investment',balance:34000,excludeFromNW:true},
   ],
   vehicles:[{id:1,year:2021,make:'Honda',model:'CR-V EX',condition:'very good',miles:34000,value:22000,purchase:31500,purchaseYear:2021,vin:'',assetType:'vehicle'}],
-  snapshots:[{date:'Nov 30, 2024',label:'Nov',monthKey:'2024-11',nw:362000,assets:408000,liab:46000},{date:'Feb 28, 2025',label:'Feb',monthKey:'2025-02',nw:371500,assets:419000,liab:47500},{date:'May 31, 2025',label:'May',monthKey:'2025-05',nw:381000,assets:430000,liab:49000},{date:'Aug 31, 2025',label:'Aug',monthKey:'2025-08',nw:388000,assets:438000,liab:50000}],
+  snapshots:[{date:'Nov 30, 2024',label:'Nov',monthKey:'2024-11',nw:362000,assets:408000,liab:46000},{date:'Feb 28, 2025',label:'Feb',monthKey:'2025-02',nw:371500,assets:419000,liab:47500},{date:'May 31, 2025',label:'May',monthKey:'2025-05',nw:381000,assets:430000,liab:49000},{date:'Aug 31, 2025',label:'Aug',monthKey:'2025-08',nw:388000,assets:438000,liab:50000},{date:'Nov 30, 2025',label:'Nov',monthKey:'2025-11',nw:390000,assets:440000,liab:50000},{date:'Feb 28, 2026',label:'Feb',monthKey:'2026-02',nw:391500,assets:441500,liab:50000}],
   budgets:{'Groceries':700,'Home':1200,'Food & Drink':300,'Health & Wellness':200,'Gas':150,'Bills & Utilities':500,'Shopping':400,'Entertainment':150,'Education':100,'Transfers':200},
   activeSources:new Set(['Checking','Visa Rewards','Gold Card']),
   rangeFrom:null,

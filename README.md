@@ -187,3 +187,9 @@ npx firebase-tools deploy --only hosting --project trak-yo-dollas
 - **Ko-fi support link** — in all three page footers and the privacy page; `FUNDING.yml` configured
 - **"At a Glance" net worth pill** — dollar change as headline; annualized %/yr in sub-line when ≥60 days of snapshot data; goal progress replaces rate when a goal is set
 - **Search bar** — rebuilt as flex row (no absolute-positioning padding math); SVG icon; `× clear` near transaction count when active
+
+---
+
+## License
+
+[MIT](LICENSE) — Copyright (c) 2026 Nicholas Garofalo
