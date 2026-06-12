@@ -66,7 +66,7 @@ Transactions auto-categorize on import. Switch between chart views, set budgets,
 | Priority | Source | Notes |
 |---|---|---|
 | 1 | **Your rules** | Keyword rules you've saved — always win |
-| 2 | **Community patterns** | [`community-rules.json`](community-rules.json) — 900+ mappings, fetched once per session |
+| 2 | **Community patterns** | [`community-rules.json`](community-rules.json) — 1,800+ mappings, fetched once per session |
 | 3 | **MCC codes** | Merchant Category Codes from your bank CSV, if present |
 | 4 | **Built-in keywords** | Common merchant names covering major US, CA, UK, AU, NZ, and SG brands |
 
