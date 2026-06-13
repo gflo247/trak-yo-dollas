@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-NzEhh5ig4cngepWarcHVoBXq9jrNaISNoapv2eoj83o=' 'sha256-oqh/SiGNIUL1JOdcnqvsxQSs2OArTL2vaj+KSunygVk=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://www.gstatic.com https://cloud.umami.is https://apis.google.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-gx1e3RaHJ/ZOxDAc9sQyphTOLqtq4douPIoS0j9UDVE=' 'sha256-oqh/SiGNIUL1JOdcnqvsxQSs2OArTL2vaj+KSunygVk=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://www.gstatic.com https://cloud.umami.is https://apis.google.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -637,6 +637,10 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <button data-action="openTxImportModal" style="background:#D97706;color:#000;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 3px" type="button">Import a CSV</button>
   to see where your money actually goes. Nothing leaves your device. &nbsp;·&nbsp;
   <button data-action="openDemoPicker" data-arg="false" style="background:none;border:none;color:#D97706;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Switch profile</button>
+</div>
+<div id="demo-preview-banner" style="display:none;background:rgba(96,165,250,.1);border-bottom:1px solid rgba(96,165,250,.25);padding:8px 1rem;font-size:12px;color:var(--text-secondary);text-align:center;letter-spacing:.01em">
+  👀 <strong style="color:var(--accent-blue-light)">Previewing demo data</strong> — your saved data is untouched.
+  <a id="demo-preview-return" href="" style="color:var(--accent-blue-light);font-weight:700;text-decoration:underline">Return to your data</a>
 </div>
 <nav class="nav" aria-label="Main navigation" style="position:sticky;top:0;z-index:25">
   <a href="index.html" class="nav-logo hide-mobile">trak-yo-dolla<span>$</span></a>
@@ -2141,6 +2145,13 @@ function rebuildCatSelects(curVal){
   });
 }
 
+function showDemoPreviewBanner(){
+  const previewBanner=document.getElementById('demo-preview-banner');
+  if(!previewBanner)return;
+  previewBanner.style.display='block';
+  const returnLink=document.getElementById('demo-preview-return');
+  if(returnLink)returnLink.href=window.location.pathname;
+}
 function updateBannerOffset(){
   const banner=document.getElementById('demo-chip');
   const nav=document.querySelector('.nav');
@@ -6149,6 +6160,11 @@ function openClearDataModal(){
   document.getElementById('clear-data-modal').classList.remove('hidden');
 }
 function confirmClearAllData(){
+  if(window._isDemoPreview){
+    closeModals();
+    showToast('Not available while previewing demo data — your real data is untouched here','#94a3b8',9000);
+    return;
+  }
   try{
     localStorage.removeItem('trakyo_state_v2');
     localStorage.removeItem('trakyo_txs_v1');
@@ -6759,6 +6775,7 @@ function hideDemoBadge(){
   if(startHere)startHere.style.display='none';
 }
 function showDemoNudge(){
+  if((window._isDemoPreview||window._viewingDemoOverReal)&&window._hadSavedData)return; // viewing demo while real data is saved untouched — skip the "import a CSV" prompt
   const nudge=document.getElementById('demo-nudge');
   if(nudge&&!state.hasRealData)nudge.style.display='block';
   const startHere=document.getElementById('spending-start-here');
@@ -8341,6 +8358,7 @@ function openAuthModal(reason) {
 
 async function loadUserData(uid) {
   if (!window._fb) return;
+  if (window._isDemoPreview) return; // demo-preview sessions never load/overwrite with real account data
   try {
     // Load snapshots
     const snaps = await window._fb.loadSnapshots(uid);
@@ -8790,6 +8808,7 @@ function loadFromLocalStorage(){
 }
 
 function saveToLocalStorage(){
+  if(window._isDemoPreview)return; // demo-preview sessions never persist
   try{
     const s=serializeState();
     if(s)localStorage.setItem(LS_KEY,s);
@@ -8810,6 +8829,7 @@ function saveToLocalStorage(){
 // Debounced auto-save — fires 800ms after last mutation
 let _lsSaveTimer=null;
 function scheduleSave(){
+  if(window._isDemoPreview)return; // demo-preview sessions never persist
   clearTimeout(_lsSaveTimer);
   _lsSaveTimer=setTimeout(()=>{
     saveToLocalStorage();
@@ -8820,6 +8840,13 @@ function scheduleSave(){
 
 // Wire up after DOM ready
 document.addEventListener('DOMContentLoaded',function(){
+  // Check for demo / demo-preview params early — demo-preview disables all persistence for this session
+  const _params=new URLSearchParams(window.location.search);
+  const _isDemo=_params.get('demo')==='1';
+  const _isDemoPreview=_params.get('demoPreview')==='1';
+  window._isDemoPreview=_isDemoPreview;
+  if(_isDemo) window._fromLanding=true;
+
   // Wire chart scroll fade
   const _cs=document.getElementById('spend-chart-scroll');
   if(_cs)_cs.addEventListener('scroll',updateChartFade,{passive:true});
@@ -8869,7 +8896,7 @@ document.addEventListener('DOMContentLoaded',function(){
     }
   }catch(e){}
 
-  if(hadSavedData){
+  if(hadSavedData&&!_isDemoPreview){
     const hasDemoAccounts=state.accounts.some(a=>a.id<=11);
     const hasRealTx=state.transactions.some(t=>t.id>=5000);
     if(hasRealTx||!hasDemoAccounts){
@@ -8891,13 +8918,19 @@ document.addEventListener('DOMContentLoaded',function(){
 
   updateBannerOffset();
 
-  // Check for demo param
-  const _params=new URLSearchParams(window.location.search);
-  const _isDemo=_params.get('demo')==='1';
-  if(_isDemo) window._fromLanding=true;
-
-  // Load demo data synchronously before first render if no saved state
-  if(!_isDemo&&!window._hadSavedData){
+  // Load demo data synchronously before first render if no saved state, or to preview demo data on request
+  if(_isDemoPreview){
+    loadDemoProfile(2, true, true); // silent + skipRender — renderAll fires below; in-memory only, persistence disabled via window._isDemoPreview
+    const chip=document.getElementById('demo-chip');
+    if(chip)chip.style.display='';
+    const badge=document.getElementById('demo-nav-badge');
+    if(badge)badge.style.display='';
+    if(hadSavedData){
+      showDemoPreviewBanner();
+    }else{
+      requestAnimationFrame(()=>showToast('👀 Previewing demo data — nothing will be saved this session','#94a3b8',6000));
+    }
+  }else if(!_isDemo&&!window._hadSavedData){
     loadDemoProfile(2, true, true); // silent + skipRender — renderAll fires below
     requestAnimationFrame(()=>showToast('👋 Showing demo data — tap <span style="color:#D97706;cursor:pointer;text-decoration:underline" data-action="openDemoPicker" data-arg="false">switch profile</span> or import your own CSV','#94a3b8',6000));
   }
@@ -8930,7 +8963,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
     const params=new URLSearchParams(window.location.search);
     if(params.get('import')==='1')openTxImportModal();
-    if(params.has('import')||params.has('demo'))window.history.replaceState({},'',window.location.pathname);
+    if(params.has('import')||params.has('demo')||params.has('demoPreview'))window.history.replaceState({},'',window.location.pathname);
   }));
 
   if(_isDemo){
@@ -9093,6 +9126,7 @@ function openDemoPicker(firstVisit=true){
 
 function loadDemoProfile(n, silent=false, skipRender=false){
   if(silent instanceof Element||silent instanceof EventTarget)silent=false; // delegation passes el as 2nd arg
+  const hadRealData=state.hasRealData; // switching profiles must never overwrite real saved data
   window._demoPicked = true;
   if(!silent){document.getElementById('demo-picker-overlay').style.display='none';window.scrollTo(0,0);}
   const p = n===1 ? DEMO_PROFILE_1 : DEMO_PROFILE_2;
@@ -9154,7 +9188,11 @@ function loadDemoProfile(n, silent=false, skipRender=false){
       }
     }
   }));
-  if(!silent)scheduleSave();
+  if(!silent&&!hadRealData)scheduleSave();
+  if(!silent&&hadRealData){
+    window._viewingDemoOverReal=true;
+    showDemoPreviewBanner();
+  }
   showToast(n===1?'🌱 Switched to starter demo':'🌳 Switched to full demo');
 }
 window.addEventListener('error',function(e){console.error('GLOBAL ERROR:',e.message,'at',e.filename,'line',e.lineno,e.error);});
