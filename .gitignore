@@ -1,3 +1,7 @@
 HANDOFF.md
 .firebase
-.firebase
+.DS_Store
+.Rhistory
+screenshots/
+test-csvs/
+budget-redesign-prototype.html
