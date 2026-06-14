@@ -1,1 +1,1 @@
-{"hosting":{"public":".","ignore":["firebase.json","deploy.sh","README.md","*.sh",".DS_Store",".Rhistory","screenshots/**","test-csvs/**",".github/**"],"releaseLimit":5}}
+{"hosting":{"public":".","ignore":["firebase.json","deploy.sh","README.md","*.sh",".DS_Store",".Rhistory","screenshots/**","test-csvs/**",".github/**","HANDOFF.md","ENTIRE-SITE-ARCHITECTURE.md","ENTIRE-SITE-ARCHITECTURE.html","budget-redesign-prototype.html"],"releaseLimit":5}}
