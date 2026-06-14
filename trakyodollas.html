@@ -413,10 +413,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 /* Mobile tooltip popover */
 #mobile-tooltip{position:fixed;z-index:500;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.65rem .9rem;font-size:12px;color:var(--text-secondary);line-height:1.5;max-width:280px;box-shadow:0 8px 24px rgba(0,0,0,.5);display:none;pointer-events:none}
 #mobile-tooltip.visible{display:block}
-@media(max-width:600px){
-  .onboarding-btns{flex-direction:column;gap:8px}
-  .onboarding-btn-primary,.onboarding-btn-demo{width:100%;text-align:center;white-space:normal}
-}
 .show-mobile{display:none}
 @media(max-width:600px){
   .hide-mobile{display:none!important}
@@ -467,9 +463,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 [data-theme="light"] input,
 [data-theme="light"] select,
 [data-theme="light"] textarea{background:var(--bg-input)!important;border-color:var(--border-mid)!important;color:var(--text-primary)!important}
-
-/* Onboarding demo button */
-[data-theme="light"] .onboarding-btn-demo{background:#FEF3C7;color:#D97706;border-color:#D97706}
 
 /* Demo nudge banner */
 #demo-nudge{display:none;background:rgba(217,119,6,.08);border-bottom:1px solid rgba(217,119,6,.18);padding:7px 1rem;font-size:12px;color:var(--text-secondary);text-align:center;letter-spacing:.01em}
@@ -577,8 +570,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 /* Modal overlays stay dark */
 [data-theme="light"] .modal-overlay{background:rgba(15,23,42,.6)!important}
 
-/* Onboarding overlay */
-
 /* Insights card header & buttons */
 
 /* Insight pill labels & sub-text */
@@ -633,9 +624,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   </div>
 </div>
 <div id="demo-nudge" style="display:none;background:rgba(217,119,6,.1);border-bottom:1px solid rgba(217,119,6,.2);padding:8px 1rem;font-size:12px;color:var(--text-secondary);text-align:center;letter-spacing:.01em">
-  👇 This is demo data.
+  👇 Demo data fills all 4 tabs — explore them, then
   <button data-action="openTxImportModal" style="background:#D97706;color:#000;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 3px" type="button">Import a CSV</button>
-  to see where your money actually goes. Nothing leaves your device. &nbsp;·&nbsp;
+  for your own numbers. Nothing leaves your device. &nbsp;·&nbsp;
   <button data-action="openDemoPicker" data-arg="false" style="background:none;border:none;color:#D97706;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Switch profile</button>
 </div>
 <div id="demo-preview-banner" style="display:none;background:rgba(96,165,250,.1);border-bottom:1px solid rgba(96,165,250,.25);padding:8px 1rem;font-size:12px;color:var(--text-secondary);text-align:center;letter-spacing:.01em">
@@ -1150,9 +1141,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
   </div>
 </div>
-
-<!-- Onboarding overlay -->
-
 
 <!-- Modals -->
 <div class="modal-overlay hidden" id="add-modal">
