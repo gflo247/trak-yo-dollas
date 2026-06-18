@@ -1,0 +1,23 @@
+{
+  "name": "trak-yo-dolla$",
+  "short_name": "trak-yo-dolla$",
+  "description": "Private, local-first money tracking. No bank connections.",
+  "start_url": "/trakyodollas",
+  "display": "standalone",
+  "background_color": "#111720",
+  "theme_color": "#111720",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
