@@ -1,0 +1,6 @@
+name = "trak-yo-dollas"
+account_id = "0595d072acba5ad45f35db62150ee35c"
+compatibility_date = "2025-01-01"
+
+[assets]
+directory = "_cf_deploy"

@@ -6,16 +6,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>trak-yo-dolla$ · Free Mint Alternative · No Bank Connections Required</title>
 <meta name="description" content="Simple, private money tracking. Track spending, budgets, and net worth from a CSV — no bank logins, no subscriptions, no data leaving your browser. Free forever.">
-<link rel="canonical" href="https://trak-yo-dollas.web.app/index.html">
+<link rel="canonical" href="https://trakyodollas.com/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="trak-yo-dolla$ — Free Mint Alternative · No Bank Connections">
 <meta property="og:description" content="Simple, private money tracking. Track spending, budgets, and net worth from a CSV — no bank logins, no subscriptions, no data leaving your browser. Free forever.">
-<meta property="og:url" content="https://trak-yo-dollas.web.app/index.html">
-<meta property="og:image" content="https://trak-yo-dollas.web.app/og.png">
+<meta property="og:url" content="https://trakyodollas.com/">
+<meta property="og:image" content="https://trakyodollas.com/og.png">
 <meta property="og:image:width" content="3212">
 <meta property="og:image:height" content="1804">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://trak-yo-dollas.web.app/og.png">
+<meta name="twitter:image" content="https://trakyodollas.com/og.png">
 <style>
 /* fonts self-hosted — see /fonts/fonts.css */
 
@@ -257,6 +257,9 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 }
 </style>
 <link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#111720">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
 <script defer src="https://cloud.umami.is/script.js" data-website-id="e7ab8f18-2279-4b07-a0b4-cd497a4766ff"></script>
 </head>
 <body>
@@ -266,7 +269,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
   <div class="nav-right">
     <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:13px">GitHub</a>
     <button type="button" class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
-    <a href="trakyodollas.html?demo=1" class="btn-primary-sm">Try with demo data</a>
+    <a href="/trakyodollas?demo=1" class="btn-primary-sm">Try with demo data</a>
   </div>
 </nav>
 
@@ -275,10 +278,10 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
   <div class="hero-eyebrow fu fu1">💸 trak-yo-dolla$</div>
   <p style="font-size:var(--text-xs);color:var(--text-muted);margin-top:.4rem;margin-bottom:1.5rem;letter-spacing:.01em">Every dollar tracked. Nothing shared.</p>
   <h1 class="fu fu2">Your money.<br><em>Your device.</em><br>Your business.</h1>
-  <p class="hero-sub fu fu3">Track spending, budgets, and net worth — without handing your bank login to anyone. No subscriptions. Your data stays local by default. Optional Google sync available.</p>
+  <p class="hero-sub fu fu3">Track spending, budgets, and net worth — without handing your bank login to anyone. No subscriptions. Your data stays local by default. Optional sync — sign in with Google or a passwordless email link.</p>
   <div class="hero-ctas fu fu4">
-    <a href="trakyodollas.html?demo=1" class="btn-hero">Try with demo data</a>
-    <a href="trakyodollas.html?import=1" class="btn-hero-ghost">⬆ Import CSV</a>
+    <a href="/trakyodollas?demo=1" class="btn-hero">Try with demo data</a>
+    <a href="/trakyodollas?import=1" class="btn-hero-ghost">⬆ Import CSV</a>
   </div>
   <div id="import-nudge" style="display:none;margin-top:.75rem;font-size:13px;color:var(--text-muted)"></div>
   <div class="hero-trust fu fu4" style="margin-top:1.1rem;gap:6px">
@@ -555,7 +558,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
           </div>
           <div style="font-size:9px;color:var(--text-muted)">Tile size ∝ spend · click any tile to drill into vendors</div>
         </div>
-        <div style="text-align:center;font-size:9px;color:var(--text-muted);margin-top:.6rem">Simplified preview · <a href="trakyodollas.html?demo=1" style="color:var(--text-muted);text-decoration:underline;text-underline-offset:2px">Try with demo data</a> for the full experience →</div>
+        <div style="text-align:center;font-size:9px;color:var(--text-muted);margin-top:.6rem">Simplified preview · <a href="/trakyodollas?demo=1" style="color:var(--text-muted);text-decoration:underline;text-underline-offset:2px">Try with demo data</a> for the full experience →</div>
       </div>
     </div>
     <!-- TAB 1: Budget -->
@@ -693,7 +696,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
     <div class="step opt">
       <div class="step-num">3</div>
       <h3>Sync across devices <span style="font-size:11px;font-weight:400">(optional)</span></h3>
-      <p>Sign in with Google to access from any device. Everything works without an account.</p>
+      <p>Sign in with Google or a passwordless email link to access from any device. Everything works without an account.</p>
     </div>
   </div>
 </section>
@@ -720,7 +723,11 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
     </div></div>
     <div class="fi"><div class="fi-icon">⬇</div><div>
       <h3>Export your data anytime</h3>
-      <p>One click to export transactions or budget history as a CSV. Your data, portable, always.</p>
+      <p>Export transactions or budget history as a CSV, or export a full JSON backup — accounts, budgets, categories, and all transactions in one file. Import it back anytime to restore everything. Your data, portable, always.</p>
+    </div></div>
+    <div class="fi"><div class="fi-icon">📲</div><div>
+      <h3>Works offline. Installs as an app.</h3>
+      <p>Install it on any device — add to your home screen on Android or iPhone, or install from the address bar in Chrome on your computer. It runs in its own window like a regular app, no address bar in the way. Works without internet too; your data lives on your device.</p>
     </div></div>
     <div class="fi"><div class="fi-icon">🏦</div><div>
       <h3>Full picture net worth</h3>
@@ -823,7 +830,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <line x1="468.5" y1="122" x2="468.5" y2="124.5" stroke="var(--accent-green)" stroke-opacity="0.65" stroke-width="0.8" stroke-linecap="round"/>
 
 <rect x="398" y="218" width="254" height="22" rx="5" fill="none" stroke="#34D39940" stroke-width="0.5" stroke-dasharray="4,3"/>
-<text x="525" y="231" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">Optional sync — to your Google account</text>
+<text x="525" y="231" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">Optional sync — stored on Google's servers</text>
 
 <rect x="395" y="248" width="260" height="18" rx="9" fill="#34D39915" stroke="#34D39933" stroke-width="0.5"/>
 <text x="525" y="260" text-anchor="middle" font-size="9" font-weight="600" style="fill:var(--accent-green)">Your data stays local by default</text>
@@ -898,7 +905,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <line x1="113.5" y1="400" x2="113.5" y2="402.5" stroke="var(--accent-green)" stroke-opacity="0.65" stroke-width="0.8" stroke-linecap="round"/>
 
 <rect x="16" y="486" width="308" height="20" rx="5" fill="none" stroke="#34D39940" stroke-width="0.5" stroke-dasharray="4,3"/>
-<text x="170" y="499" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">Optional sync — to your Google account</text>
+<text x="170" y="499" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">Optional sync — stored on Google's servers</text>
 
 <rect x="45" y="514" width="250" height="18" rx="9" fill="#34D39915" stroke="#34D39933" stroke-width="0.5"/>
 <text x="170" y="526" text-anchor="middle" font-size="9" font-weight="600" style="fill:var(--accent-green)">Your data stays local by default</text>
@@ -926,11 +933,11 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
     <div class="diff-card">
       <span class="diff-icon">🔁</span>
       <h3>Optional sync — never required</h3>
-      <p>Sign in with Google to access across devices. Prefer to keep it local? Everything works without signing in.</p>
+      <p>Sign in with Google or a passwordless email link to access across devices. Prefer to keep it local? Everything works without signing in.</p>
     </div>
   </div>
   <div style="margin-top:1rem;text-align:center">
-    <a href="privacy.html" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light);text-decoration:none;font-size:13px">Full privacy policy →</a>
+    <a href="/privacy" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light);text-decoration:none;font-size:13px">Full privacy policy →</a>
   </div>
 </section>
 
@@ -938,7 +945,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <div class="cta-wrap">
   <div class="cta-box">
     <h2>Know where your money goes.</h2>
-    <a href="trakyodollas.html?import=1" class="btn-hero" style="font-size:16px;padding:15px 32px">⬆ Import CSV</a>
+    <a href="/trakyodollas?import=1" class="btn-hero" style="font-size:16px;padding:15px 32px">⬆ Import CSV</a>
   </div>
 </div>
 
@@ -950,11 +957,11 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
     <a href="https://ko-fi.com/gflo247" target="_blank" rel="noopener noreferrer" class="footer-support">♥ Support</a>
   </div>
   <div class="footer-links">
-    <a href="trakyodollas.html">Open app</a>
-    <a href="privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a>
+    <a href="/trakyodollas">Open app</a>
+    <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy</a>
     <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer">GitHub</a>
     <a href="https://github.com/gflo247/trak-yo-dollas/issues" target="_blank" rel="noopener noreferrer">Report a bug</a>
-    <a href="mailto:trakyodollas@gmail.com">Email me</a>
+    <a href="mailto:contact@trakyodollas.com">Email me</a>
   </div>
 </footer>
 <script>
@@ -1030,7 +1037,7 @@ setTimeout(buildHeatmap, 0);
     if(days<25)return;
     const el=document.getElementById('import-nudge');
     if(!el)return;
-    el.innerHTML=`Last import: ${days} days ago &nbsp;·&nbsp; <a href="trakyodollas.html?import=1" style="color:var(--accent-blue-light);text-decoration:none;font-weight:600">Time for a refresh ↗</a>`;
+    el.innerHTML=`Last import: ${days} days ago &nbsp;·&nbsp; <a href="/trakyodollas?import=1" style="color:var(--accent-blue-light);text-decoration:none;font-weight:600">Time for a refresh ↗</a>`;
     el.style.display='block';
   }catch(e){}
 })();
@@ -1095,7 +1102,7 @@ function filterPreviewTile(el,cat,color){
 }
 
 // Live community rules count — always fetches latest so the number stays current
-fetch('https://trak-yo-dollas.web.app/community-rules.json',{cache:'no-cache'})
+fetch('/community-rules.json',{cache:'no-cache'})
   .then(r=>r.ok?r.json():null).then(d=>{
     if(Array.isArray(d))document.querySelectorAll('.community-rules-count').forEach(el=>el.textContent=d.length);
   }).catch(()=>{});
@@ -1118,5 +1125,6 @@ document.querySelectorAll('.diff-card,.pi,.fi,.step,.cta-box').forEach(el => {
   observer.observe(el);
 });
 </script>
+<script>if('serviceWorker'in navigator){navigator.serviceWorker.register('/sw.js');}</script>
 </body>
-</html>        
+</html>
