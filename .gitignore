@@ -1,9 +1,9 @@
-HANDOFF.md
+_HANDOFF.md
 .firebase
+.wrangler
 .DS_Store
 .Rhistory
 screenshots/
 test-csvs/
-budget-redesign-prototype.html
 ENTIRE-SITE-ARCHITECTURE.md
 ENTIRE-SITE-ARCHITECTURE.html
