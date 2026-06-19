@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Zyaob+Jb2z28yU88GcjMbt3JVNONFhcquYqQSvcWv1c=' 'sha256-a0+XlTQAQgYYytU5KnDY3Ds2VGkVycNYqGFSm6+KWWM=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://www.gstatic.com https://cloud.umami.is https://apis.google.com https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-mB+VjVuaV9l2+HhJ6DKIYZNUdKV4GNvzcd/xYat6fAA=' 'sha256-a0+XlTQAQgYYytU5KnDY3Ds2VGkVycNYqGFSm6+KWWM=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://www.gstatic.com https://cloud.umami.is https://apis.google.com https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -7135,10 +7135,11 @@ function hideDemoBadge(){
 }
 function showDemoNudge(){
   if((window._isDemoPreview||window._viewingDemoOverReal)&&window._hadSavedData)return; // viewing demo while real data is saved untouched — skip the "import a CSV" prompt
+  const hasDemoData=state.transactions.length>0;
   const nudge=document.getElementById('demo-nudge');
-  if(nudge&&!state.hasRealData)nudge.style.display='block';
+  if(nudge&&!state.hasRealData)nudge.style.display=hasDemoData?'block':'none';
   const startHere=document.getElementById('spending-start-here');
-  if(startHere&&!state.hasRealData)startHere.style.display='';
+  if(startHere&&!state.hasRealData)startHere.style.display=hasDemoData?'':'none';
 }
 
 function exportTransactionsCSV(){
@@ -7704,6 +7705,7 @@ function openCatModal(){
   rebuildCatSelects();
   document.getElementById('cat-modal').classList.remove('hidden');
 }
+let _editingCatName=null;
 function renderCatManagerList(){
   const BASE=["Groceries","Food & Drink","Shopping","Home","Gas","Bills & Utilities","Insurance",
     "Health & Wellness","Personal Care","Entertainment","Gifts & Donations","Travel","Automotive","Education",
@@ -7715,11 +7717,26 @@ function renderCatManagerList(){
     ...BASE.map(c=>({name:c,color:getCatColor(c),custom:false})),
     ...state.customCategories.map(c=>({...c,color:getCatColor(c.name),custom:true}))
   ];
-  el.innerHTML=rows.map(c=>`<div style="display:flex;align-items:center;gap:8px;padding:.35rem .65rem;border-bottom:1px solid var(--border-mid)">
-    <div style="width:10px;height:10px;border-radius:3px;background:${c.color};flex-shrink:0"></div>
-    <span style="flex:1;font-size:12px;color:${c.custom?'var(--text-primary)':'var(--text-muted)'}">${c.name}${c.custom?'':' <span style="font-size:9px;color:var(--text-muted)">(built-in)</span>'}</span>
-    ${c.custom?`<button data-action="deleteCustomCat" data-arg="${esc(c.name)}" style="font-size:10px;background:none;border:none;color:#475569;cursor:pointer;padding:2px 6px" title="Delete" type="button">✕</button>`:''}
-  </div>`).join('');
+  el.innerHTML=rows.map(c=>{
+    const dot=`<div style="width:10px;height:10px;border-radius:3px;background:${c.color};flex-shrink:0"></div>`;
+    if(c.custom&&_editingCatName===c.name){
+      return `<div style="display:flex;align-items:center;gap:8px;padding:.35rem .65rem;border-bottom:1px solid var(--border-mid)">
+        ${dot}
+        <input id="rename-cat-input" value="${esc(c.name)}" data-arg="${esc(c.name)}" data-keydown="renameCatKeydown" style="flex:1;font-size:12px;padding:2px 6px;border-radius:4px;border:1px solid var(--border-mid);background:var(--bg-input);color:var(--text-primary)" type="text"/>
+        <button data-action="confirmRenameCat" data-arg="${esc(c.name)}" style="font-size:11px;background:none;border:none;color:#34D399;cursor:pointer;padding:2px 6px" title="Save" type="button">✓</button>
+        <button data-action="cancelRenameCat" style="font-size:11px;background:none;border:none;color:#475569;cursor:pointer;padding:2px 6px" title="Cancel" type="button">✕</button>
+      </div>`;
+    }
+    return `<div style="display:flex;align-items:center;gap:8px;padding:.35rem .65rem;border-bottom:1px solid var(--border-mid)">
+      ${dot}
+      <span style="flex:1;font-size:12px;color:${c.custom?'var(--text-primary)':'var(--text-muted)'}">${c.name}${c.custom?'':' <span style="font-size:9px;color:var(--text-muted)">(built-in)</span>'}</span>
+      ${c.custom?`
+        <button data-action="startRenameCat" data-arg="${esc(c.name)}" style="font-size:10px;background:none;border:none;color:#475569;cursor:pointer;padding:2px 6px" title="Rename" type="button">✏</button>
+        <button data-action="deleteCustomCat" data-arg="${esc(c.name)}" style="font-size:10px;background:none;border:none;color:#475569;cursor:pointer;padding:2px 6px" title="Delete" type="button">✕</button>
+      `:''}
+    </div>`;
+  }).join('');
+  if(_editingCatName){const inp=document.getElementById('rename-cat-input');if(inp){inp.focus();inp.select();}}
 }
 function addCustomCat(){
   const nameEl=document.getElementById('new-cat-name');
@@ -7747,6 +7764,43 @@ function deleteCustomCat(name){
   rebuildCatSelects();
   renderSpending();
   scheduleSave();
+}
+function startRenameCat(name){
+  _editingCatName=name;
+  renderCatManagerList();
+}
+function cancelRenameCat(){
+  _editingCatName=null;
+  renderCatManagerList();
+}
+function confirmRenameCat(oldName){
+  const inp=document.getElementById('rename-cat-input');
+  if(!inp)return;
+  const newName=inp.value.trim();
+  if(!newName||newName===oldName){cancelRenameCat();return;}
+  if(getAllCats().filter(c=>c!==oldName).includes(newName)){
+    inp.style.borderColor='#F87171';
+    setTimeout(()=>{inp.style.borderColor='';},1500);
+    return;
+  }
+  const cat=state.customCategories.find(c=>c.name===oldName);
+  if(cat)cat.name=newName;
+  state.transactions.forEach(t=>{if(t.cat===oldName)t.cat=newName;});
+  _txsDirty=true;
+  if(state.budgets[oldName]!==undefined){state.budgets[newName]=state.budgets[oldName];delete state.budgets[oldName];}
+  state.catRules.forEach(r=>{if(r.cat===oldName)r.cat=newName;});
+  if(state.excludedCats.has(oldName)){state.excludedCats.delete(oldName);state.excludedCats.add(newName);}
+  window._catColorMap=null;
+  _editingCatName=null;
+  renderCatManagerList();
+  rebuildCatSelects();
+  rebuildMonthly();
+  renderAll();
+  scheduleSave();
+}
+function renameCatKeydown(e,el){
+  if(e.key==='Enter')confirmRenameCat(el.dataset.arg);
+  if(e.key==='Escape')cancelRenameCat();
 }
 
 /* ── TX CSV IMPORT ─────────────────────────────────────────── */

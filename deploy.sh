@@ -29,6 +29,7 @@ rsync -a \
   --exclude='_HANDOFF.md' \
   --exclude='ENTIRE-SITE-ARCHITECTURE.md' \
   --exclude='ENTIRE-SITE-ARCHITECTURE.html' \
+  --exclude='ENTIRE-SITE-ARCHITECTURE-deep-dive.html' \
   --exclude='scripts' \
   --exclude='node_modules' \
   --exclude='.claude' \
