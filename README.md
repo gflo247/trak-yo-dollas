@@ -122,6 +122,7 @@ trak-yo-dollas/
   community-rules.json    ← community-contributed categorization rules
   sitemap.xml             ← sitemap for search engines
   robots.txt              ← crawler directives
+  app-screenshot.png      ← landing page app screenshot (with lightbox)
   og.png                  ← Open Graph / social share image
   icons/
     icon-192.png          ← PWA icon (192×192)
@@ -182,15 +183,18 @@ The app uses a hash-based Content Security Policy — inline scripts are allowli
 
 ## Recent updates
 
+- **Landing page screenshot + lightbox** — app screenshot with click/tap full-screen overlay and frosted zoom pill; mobile gets scrollable/pinch-zoomable view
+- **Interactive preview auto-advance** — landing page preview cycles through all chart modes and tabs via IntersectionObserver; manual interaction cancels auto-advance
+- **Category rename** — custom categories can now be renamed in-place; updates transactions, budgets, rules, and exclusions
+- **Delete account / asset** — inline confirmation pattern (no browser dialog) for removing accounts and physical assets
+- **Cloudflare Email Routing** — `contact@trakyodollas.com` forwarding and Gmail "Send mail as" now active
 - **Cloudflare Workers hosting** — migrated from Firebase Hosting; `trakyodollas.com` is the canonical domain; deploy via `./deploy.sh prod`
 - **Email magic link sign-in** — passwordless sign-in alongside Google; Firebase sends a one-time link, no password required
 - **PWA / offline support** — service worker caches the full app; install to home screen on Android, iPhone, or desktop Chrome; offline banner and graceful error page when network is unavailable
 - **JSON backup / restore** — export all data as a structured JSON file; import it back on any device
-- **Budget tab redesign** — single combined view shows budget, 12-month average, and YTD pace per category; combo tick marks merge when budget and average are close; configurable "near limit" warn threshold; Standouts/Unusual sort by deviation from your own average
+- **Budget tab redesign** — single combined view shows budget, 12-month average, and YTD pace per category; combo tick marks merge when budget and average are close; configurable "near limit" warn threshold; Unusual sort by deviation from your own average
 - **Event delegation refactor** — replaced all `onclick=` inline handlers with `data-action` attribute system; single IIFE dispatcher; eliminates inline script surface area
 - **WCAG AA theme compliance** — all accent colors, text hierarchy, and backgrounds pass AA contrast in both light and dark themes across all three pages
-- **Categories** — Personal Care added; Pet renamed to Pet(s) with keyword fix; Professional Services removed; APP_VERSION 1.3 migration runs automatically
-- **`displayVendor()` proper casing** — bank ALL CAPS descriptions rendered as Proper Case everywhere; never mutates underlying data
 
 ---
 

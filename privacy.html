@@ -347,6 +347,11 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
     <div style="display:flex;flex-direction:column;border:1px solid var(--border-mid);border-radius:12px;overflow:hidden">
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer">
+        <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">Why no bank login?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">By design. Most finance apps use third-party services to pull your transactions directly — which means your bank credentials end up on someone else's server, with ongoing access to your account. A CSV export is a file your bank already gives you. Same data, no credentials handed over, no third-party aggregation service in the middle, no ongoing access. You choose what gets imported and when.</p>
+      </details>
+
+      <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
         <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">Can the developer see my financial data?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
         <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">No — and this isn't just a policy. It's how the app is built. By default, the app saves your data to your browser on your device. I built no mechanism to transmit it anywhere and run no server to receive it. If you choose to sign in, your data syncs to Google's servers via Firebase — Google holds it, not me, and only you can read it. Either way, I have no way to see your financial data.</p>
       </details>

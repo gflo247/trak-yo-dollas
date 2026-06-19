@@ -1,1 +1,14 @@
-{"hosting":{"public":".","ignore":["firebase.json","deploy.sh","README.md","*.sh",".DS_Store",".Rhistory","screenshots/**","test-csvs/**",".github/**","HANDOFF.md","ENTIRE-SITE-ARCHITECTURE.md","ENTIRE-SITE-ARCHITECTURE.html","budget-redesign-prototype.html"],"releaseLimit":5}}
+{
+  "hosting": {
+    "public": ".",
+    "redirects": [
+      { "source": "/trakyodollas.html", "destination": "https://trakyodollas.com/trakyodollas", "type": 301 },
+      { "source": "/trakyodollas",      "destination": "https://trakyodollas.com/trakyodollas", "type": 301 },
+      { "source": "/privacy.html",      "destination": "https://trakyodollas.com/privacy",      "type": 301 },
+      { "source": "/privacy",           "destination": "https://trakyodollas.com/privacy",       "type": 301 },
+      { "source": "/",                  "destination": "https://trakyodollas.com/",              "type": 301 },
+      { "source": "/**",                "destination": "https://trakyodollas.com/",              "type": 301 }
+    ],
+    "ignore": ["firebase.json", "deploy.sh", "*.sh", ".DS_Store", "screenshots/**", "test-csvs/**", "_HANDOFF.md", "ENTIRE-SITE-ARCHITECTURE.*", ".github/**", "node_modules/**", ".claude/**", ".wrangler/**", "wrangler.toml", "scripts/**", "icons/**", "sw.js", "manifest.json", "README.md"]
+  }
+}
