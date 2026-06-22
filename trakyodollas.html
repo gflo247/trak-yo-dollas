@@ -9,12 +9,12 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-mB+VjVuaV9l2+HhJ6DKIYZNUdKV4GNvzcd/xYat6fAA=' 'sha256-a0+XlTQAQgYYytU5KnDY3Ds2VGkVycNYqGFSm6+KWWM=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://www.gstatic.com https://cloud.umami.is https://apis.google.com https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-QLZysLGZGkh2lF2ozteWCgqHcTgpM7Ts89HR1Vys2Nw=' 'sha256-zyrRNva2SSbS0VfLlYmcQBFkulFcU4Ei4j0+Y5LWwhI=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
   connect-src *;
-  frame-src https://trak-yo-dollas.web.app https://trak-yo-dollas.firebaseapp.com https://accounts.google.com https://apis.google.com;
+  frame-src https://accounts.google.com https://pjsvsdiplecoilzttyhd.supabase.co;
   worker-src 'self';
   object-src 'none';
 ">
@@ -25,8 +25,8 @@
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <meta name="color-scheme" content="light dark">
 <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-<link rel="preconnect" href="https://www.gstatic.com">
-<link rel="dns-prefetch" href="https://firebaseapp.com">
+<link rel="preconnect" href="https://pjsvsdiplecoilzttyhd.supabase.co">
+<link rel="dns-prefetch" href="https://pjsvsdiplecoilzttyhd.supabase.co">
 <script>
 // Restore theme before CSS renders to prevent flash
 // Wrapped in try/catch — localStorage throws SecurityError in some private browsing modes
@@ -60,7 +60,7 @@
   --text-bright:#F1F5F9;
   --text-primary:#D1DCE8;
   --text-secondary:#94A3B8;
-  --text-muted:#64748B;
+  --text-muted:#8595A8;
   --text-dim:#475569;
   --text-faint:#334155;
 
@@ -160,6 +160,7 @@
   --accent-green:#047857;
   --accent-red:#DC2626;
   --accent-amber:#B45309;
+  --accent-purple:#7C3AED;
   --text-faint:#6B7280;
   --bar-marker-halo:rgba(255,255,255,.65);
 }
@@ -1196,20 +1197,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       </div>
     </div>
 
-    <!-- Multi-device confirm (shown when magic link URL opens on a different device) -->
-    <div id="auth-magic-confirm-section" style="display:none">
-      <p style="font-size:13px;color:var(--text-secondary);margin:0 0 .6rem">Enter the email you used to request the sign-in link:</p>
-      <div style="display:flex;gap:6px">
-        <input type="email" id="magic-link-confirm-email" placeholder="you@example.com" autocomplete="email"
-          style="flex:1;padding:.6rem .75rem;border:1px solid var(--border-mid);border-radius:8px;background:var(--bg-deep);color:var(--text-primary);font-size:13px;outline:none;font-family:inherit">
-        <button type="button" data-action="confirmMagicLinkEmail"
-          style="padding:.6rem .85rem;border:1px solid rgba(251,191,36,.6);border-radius:8px;background:rgba(251,191,36,.12);color:rgba(251,191,36,1);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit">Sign in</button>
-      </div>
-    </div>
-
     <div style="margin-top:.75rem;background:#065F4622;border:1px solid #05996944;border-radius:8px;padding:.5rem .85rem;text-align:center">
       <span style="font-size:11px;font-weight:700;color:#34D399">🔒 Your browser handles CSV files locally — nothing leaves your device unless you choose to sync.</span>
-      <div style="font-size:10px;font-weight:600;color:#34D399;margin-top:4px">Synced data stored privately via <a href="https://firebase.google.com/" target="_blank" rel="noopener" style="color:#34D399;text-decoration:underline">Firebase</a> (Google) 🔥</div>
+      <div style="font-size:10px;font-weight:600;color:#34D399;margin-top:4px">Synced data encrypted on your device via <a href="https://supabase.com/" target="_blank" rel="noopener" style="color:#34D399;text-decoration:underline">Supabase</a> (open source) 🔒</div>
     </div>
     <div style="margin-top:.75rem;text-align:center">
       <button class="btn" data-action="closeModals" type="button" style="width:100%;color:var(--text-primary);font-size:13px;font-weight:600;padding:.65rem">No thanks, keep local</button>
@@ -2137,13 +2127,6 @@ function resetMagicLinkForm(){
   if(inp)inp.style.display='';
   if(sent)sent.style.display='none';
   if(emailEl)emailEl.value='';
-}
-function confirmMagicLinkEmail(){
-  const emailEl=document.getElementById('magic-link-confirm-email');
-  const email=emailEl?emailEl.value.trim():'';
-  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showToast('Enter a valid email address','#F87171',3000);return;}
-  if(!window._fb){showToast('App not ready — please refresh','#F87171',3000);return;}
-  window._fb.completeMagicLinkSignIn(email);
 }
 function onSearchInput(val){
   state.searchQuery=val.trim();
@@ -7689,7 +7672,7 @@ function saveSnapshot(){
   const sdn=document.getElementById('snap-demo-notice');if(sdn)sdn.style.display='none';
   renderHistory();renderNwChart();
   const hn=document.getElementById('demo-notice-history');if(hn)hn.style.display='none';
-  // Sync to Firebase if signed in
+  // Sync to Supabase if signed in
   if(window._fbUser&&window._fb){
     window._fb.saveSnapshot(window._fbUser.uid,snap)
       .then(()=>showToast(`✓ Snapshot saved · net worth ${fmtC(netWorth())}`))
@@ -8709,7 +8692,7 @@ function renderExcludedAccounts(){
   }
 }
 
-/* ── Firebase / Auth ─────────────────────────────────────────── */
+/* ── Auth ────────────────────────────────────────────────────── */
 window._fbUser = null;
 
 
@@ -8752,7 +8735,7 @@ function updateAuthUI(user, justSignedIn=false) {
     if (pop) pop.classList.add('hidden');
   }
 }
-// Expose for Firebase module script (type="module" runs in its own scope)
+// Expose for Supabase script block
 window.updateAuthUI = updateAuthUI;
 window.loadUserData = loadUserData;
 window.showPage = showPage;
@@ -8806,7 +8789,7 @@ async function loadUserData(uid) {
       }
       rebuildCatSelects();
     }
-    // Ensure activeSources is populated after Firebase restore
+    // Ensure activeSources is populated after cloud restore
     if(state.activeSources.size===0&&state.transactions.length>0){
       const allCards=[...new Set(state.transactions.map(t=>t.card).filter(Boolean))];
       state.activeSources=new Set(allCards);
@@ -8826,7 +8809,7 @@ async function loadUserData(uid) {
   }
 }
 
-async function syncToFirebase() {
+async function syncToCloud() {
   const user = window._fbUser;
   if (!user || !window._fb) return;
   try {
@@ -8855,7 +8838,7 @@ async function syncToFirebase() {
       setTimeout(() => { label.textContent = orig; label.style.color = ''; }, 2000);
     }
   } catch(e) {
-    console.error('syncToFirebase error:', e);
+    console.error('syncToCloud error:', e);
   }
 }
 
@@ -8882,13 +8865,9 @@ function closeModals(){
   const mlInp=document.getElementById('magic-link-input-section');
   const mlSent=document.getElementById('magic-link-sent-section');
   const mlEmail=document.getElementById('magic-link-email');
-  const mlOptions=document.getElementById('auth-signin-options');
-  const mlConfirm=document.getElementById('auth-magic-confirm-section');
   if(mlInp)mlInp.style.display='';
   if(mlSent)mlSent.style.display='none';
   if(mlEmail)mlEmail.value='';
-  if(mlOptions)mlOptions.style.display='';
-  if(mlConfirm)mlConfirm.style.display='none';
 }
 function openAddModal(){editAcctId=null;document.getElementById('add-modal-title').textContent='Add account';['f-name','f-balance'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-exclude').checked=false;const db=document.getElementById('delete-acct-btn');if(db)db.style.display='none';const dc=document.getElementById('delete-acct-confirm');if(dc)dc.style.display='none';document.getElementById('add-modal').classList.remove('hidden');}
 function openAcctCsvModal(){document.getElementById('acct-csv-modal').classList.remove('hidden');}
@@ -9400,8 +9379,8 @@ function scheduleSave(){
   clearTimeout(_lsSaveTimer);
   _lsSaveTimer=setTimeout(()=>{
     saveToLocalStorage();
-    // Also sync to Firebase if signed in
-    if(window._fbUser&&window._fb)syncToFirebase();
+    // Also sync to Supabase if signed in
+    if(window._fbUser&&window._fb)syncToCloud();
   },800);
 }
 
@@ -9771,152 +9750,137 @@ window.addEventListener('error',function(e){console.error('GLOBAL ERROR:',e.mess
 
 </script>
 
-<script type="module">
-import { initializeApp }       from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider,
-         signInWithRedirect, signInWithPopup, getRedirectResult,
-         onAuthStateChanged, signOut,
-         sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink }
-                               from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection,
-         getDocs, deleteDoc, serverTimestamp }
-                               from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// Supabase config — anon key is public by design; security enforced by RLS policies
+const _sb = supabase.createClient(
+  'https://pjsvsdiplecoilzttyhd.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqc3ZzZGlwbGVjb2lsenR0eWhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5Njk0NDUsImV4cCI6MjA5NzU0NTQ0NX0.mzEBaZP6srlSJiRUr2EMv-xRQywxcIpFuAFsttJviu0'
+);
 
-// Firebase config is intentionally public — these keys identify the project
-// but do not grant access. Security is enforced by Firestore rules, which
-// restrict all reads/writes to the authenticated user's own UID.
-const firebaseConfig = {
-  apiKey:            "AIzaSyBdfh7udZPd5suUidUpFTjtmvP3qndur-k",
-  authDomain:        "trak-yo-dollas.web.app",
-  projectId:         "trak-yo-dollas",
-  storageBucket:     "trak-yo-dollas.firebasestorage.app",
-  messagingSenderId: "828341374229",
-  appId:             "1:828341374229:web:2fc44d7580e89430ca2d1c"
-};
-
-const app  = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db        = getFirestore(app);
-
-// ── Handle Google redirect sign-in return ────────────────────
-getRedirectResult(auth).then(result => {
-  if (!result?.user) return;
-  window._fbUser = result.user;
-  if (window.updateAuthUI) window.updateAuthUI(result.user, true);
-  if (window.loadUserData)  window.loadUserData(result.user.uid);
-}).catch(e => {
-  console.error('Redirect sign-in error:', e);
-  if (e?.code && e.code !== 'auth/credential-already-in-use')
-    if (window.showToast) showToast(e.message || 'Sign-in failed — please try again', '#F87171');
-});
-
-// ── Handle email magic link sign-in return ───────────────────
-if (isSignInWithEmailLink(auth, window.location.href)) {
-  const email = localStorage.getItem('emailForSignIn');
-  const finish = (resolvedEmail) => {
-    signInWithEmailLink(auth, resolvedEmail, window.location.href)
-      .then(result => {
-        localStorage.removeItem('emailForSignIn');
-        window.history.replaceState({}, '', window.location.pathname);
-        window._fbUser = result.user;
-        if (window.updateAuthUI) window.updateAuthUI(result.user, true);
-        if (window.loadUserData)  window.loadUserData(result.user.uid);
-        if (window.showToast) showToast('Signed in as ' + result.user.email, '#34D399');
-      })
-      .catch(e => {
-        if (window.showToast) showToast(e.message || 'Sign-in link expired — please request a new one', '#F87171', 5000);
-      });
-  };
-  if (email) {
-    finish(email);
-  } else {
-    // Opened on a different device — show confirm-email UI after DOM is ready
-    window.addEventListener('DOMContentLoaded', () => {
-      const options  = document.getElementById('auth-signin-options');
-      const confirm  = document.getElementById('auth-magic-confirm-section');
-      const title    = document.getElementById('auth-modal-title');
-      const modal    = document.getElementById('auth-modal');
-      if (options)  options.style.display  = 'none';
-      if (confirm)  confirm.style.display  = '';
-      if (title)    title.textContent       = 'Complete sign-in';
-      if (modal)    modal.classList.remove('hidden');
-    });
-  }
-}
-
-// ── Auth state ────────────────────────────────────────────────
-onAuthStateChanged(auth, user => {
-  window._fbUser = user;
-  if(window.updateAuthUI) window.updateAuthUI(user);
-  if (user) {
-    if(window.loadUserData) window.loadUserData(user.uid);
-  } else {
-    if(window._demoPicked){
-      const nudge=document.getElementById('demo-nudge');
-      if(nudge)nudge.style.display='block';
-      // Only navigate to Spending if the user has not saved a non-spending tab preference
-      const _savedTab=localStorage.getItem('trakyo_tab');
-      if(!_savedTab||_savedTab==='spending'){
-        if(window.showPage) window.showPage('spending',document.querySelectorAll('.nav-btn')[0]);
+// ── Auth state — handles Google redirect return, magic link return, and session restore ──
+let _sbAuthHandled = false;
+_sb.auth.onAuthStateChange((event, session) => {
+  const user = session?.user ?? null;
+  window._fbUser = user ? Object.assign({}, user, {
+    uid: user.id,
+    displayName: user.user_metadata?.full_name || user.user_metadata?.name || user.email || ''
+  }) : null;
+  const isSignIn = event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && user);
+  if (window.updateAuthUI) window.updateAuthUI(window._fbUser, isSignIn && !_sbAuthHandled);
+  if (user && !_sbAuthHandled) {
+    _sbAuthHandled = true;
+    if (window.loadUserData) window.loadUserData(user.id);
+  } else if (!user) {
+    _sbAuthHandled = false;
+    if (window._demoPicked) {
+      const nudge = document.getElementById('demo-nudge');
+      if (nudge) nudge.style.display = 'block';
+      const _savedTab = localStorage.getItem('trakyo_tab');
+      if (!_savedTab || _savedTab === 'spending') {
+        if (window.showPage) window.showPage('spending', document.querySelectorAll('.nav-btn')[0]);
       }
     }
   }
+  if (window.location.hash.includes('access_token')) {
+    window.history.replaceState({}, '', window.location.pathname + window.location.search);
+  }
 });
 
+// ── Client-side encryption (AES-256-GCM via Web Crypto API) ──
+async function _getOrCreateSalt(uid) {
+  const { data } = await _sb.from('user_keys').select('salt').eq('user_id', uid);
+  if (data && data.length) return data[0].salt;
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const saltB64 = btoa(String.fromCharCode(...salt));
+  await _sb.from('user_keys').insert({ user_id: uid, salt: saltB64 });
+  return saltB64;
+}
+let _cryptoKey = null;
+let _cryptoUid = null;
+async function _deriveKey(uid) {
+  if (_cryptoKey && _cryptoUid === uid) return _cryptoKey;
+  const saltB64 = await _getOrCreateSalt(uid);
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(uid), 'PBKDF2', false, ['deriveKey']);
+  _cryptoKey = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: Uint8Array.from(atob(saltB64), c => c.charCodeAt(0)), iterations: 100000, hash: 'SHA-256' },
+    keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+  );
+  _cryptoUid = uid;
+  return _cryptoKey;
+}
+async function _encrypt(obj, uid) {
+  const key = await _deriveKey(uid);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const plaintext = new TextEncoder().encode(JSON.stringify(obj));
+  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext);
+  return { iv: btoa(String.fromCharCode(...iv)), ct: btoa(String.fromCharCode(...new Uint8Array(ciphertext))) };
+}
+async function _decrypt(envelope, uid) {
+  const key = await _deriveKey(uid);
+  const iv = Uint8Array.from(atob(envelope.iv), c => c.charCodeAt(0));
+  const ct = Uint8Array.from(atob(envelope.ct), c => c.charCodeAt(0));
+  const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+  return JSON.parse(new TextDecoder().decode(plaintext));
+}
 
-// ── Exposed to window so non-module JS can call ───────────────
+// ── Exposed to window so main script can call ───────────────
 window._fb = {
-  // Auth
   signInGoogle() {
-    const isMobile=/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-    const provider=new GoogleAuthProvider();
-    return isMobile?signInWithRedirect(auth,provider):signInWithPopup(auth,provider).catch(e=>{console.error('sign-in error',e);});
-  },
-  signOut() { return signOut(auth); },
-  sendMagicLink(email) {
-    return sendSignInLinkToEmail(auth, email, {
-      url: 'https://trakyodollas.com/trakyodollas',
-      handleCodeInApp: true,
-    }).then(() => {
-      localStorage.setItem('emailForSignIn', email);
+    return _sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + '/trakyodollas' }
     });
   },
-  completeMagicLinkSignIn(email) {
-    return signInWithEmailLink(auth, email, window.location.href)
-      .then(result => {
-        localStorage.removeItem('emailForSignIn');
-        window.history.replaceState({}, '', window.location.pathname);
-        window._fbUser = result.user;
-        if (window.updateAuthUI) window.updateAuthUI(result.user, true);
-        if (window.loadUserData)  window.loadUserData(result.user.uid);
-        if (window.showToast) showToast('Signed in as ' + result.user.email, '#34D399');
-        if (window.closeModals)  closeModals();
-      })
-      .catch(e => {
-        if (window.showToast) showToast(e.message || 'Sign-in link expired — please request a new one', '#F87171', 5000);
-      });
+  signOut() { return _sb.auth.signOut(); },
+  sendMagicLink(email) {
+    return _sb.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: 'https://trakyodollas.com/trakyodollas' }
+    }).then(({ error }) => {
+      if (error) throw error;
+    });
   },
+  completeMagicLinkSignIn() { return Promise.resolve(); },
 
-  // Firestore helpers
   async saveSnapshot(uid, snap) {
-    const ref = doc(db, 'users', uid, 'snapshots', snap.monthKey);
-    await setDoc(ref, { ...snap, updatedAt: serverTimestamp() });
+    const plain = { date: snap.date, label: snap.label, monthKey: snap.monthKey, nw: snap.nw, assets: snap.assets, liab: snap.liab };
+    const encrypted = await _encrypt(plain, uid);
+    const { error } = await _sb.from('snapshots').upsert({
+      user_id: uid, month_key: snap.monthKey, data: encrypted, updated_at: new Date().toISOString()
+    });
+    if (error) throw error;
   },
   async deleteSnapshot(uid, monthKey) {
-    await deleteDoc(doc(db, 'users', uid, 'snapshots', monthKey));
+    const { error } = await _sb.from('snapshots').delete().eq('user_id', uid).eq('month_key', monthKey);
+    if (error) throw error;
   },
   async loadSnapshots(uid) {
-    const snap = await getDocs(collection(db, 'users', uid, 'snapshots'));
-    return snap.docs.map(d => d.data());
+    const { data, error } = await _sb.from('snapshots').select('data').eq('user_id', uid);
+    if (error) throw error;
+    if (!data || !data.length) return [];
+    const results = [];
+    for (const row of data) {
+      if (row.data && row.data.ct) results.push(await _decrypt(row.data, uid));
+      else results.push(row.data);
+    }
+    return results;
   },
   async savePrefs(uid, prefs) {
-    await setDoc(doc(db, 'users', uid, 'prefs', 'data'), {
-      ...prefs, updatedAt: serverTimestamp()
+    const encrypted = await _encrypt(prefs, uid);
+    const { error } = await _sb.from('prefs').upsert({
+      user_id: uid, data: encrypted, updated_at: new Date().toISOString()
     });
+    if (error) throw error;
   },
   async loadPrefs(uid) {
-    const d = await getDoc(doc(db, 'users', uid, 'prefs', 'data'));
-    return d.exists() ? d.data() : null;
+    const { data, error } = await _sb.from('prefs').select('data').eq('user_id', uid);
+    if (error) throw error;
+    const row = data?.[0]?.data;
+    if (!row) return null;
+    if (row.ct) return await _decrypt(row, uid);
+    return row;
   },
 };
 </script>

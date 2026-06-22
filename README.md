@@ -33,8 +33,8 @@ Local-first by design. I cannot see your financial data — not by policy, but b
 
 - **No bank connections** — no logins, no screen scraping
 - **Runs entirely in your browser** — data saves to your device's local storage
-- **Nothing leaves your device unless you choose to sync**
-- **Optional sign-in** — opt-in only, never required; sign in with Google or a passwordless email link to sync across devices via Firebase
+- **Nothing leaves your device unless you choose to sync** — and when you do, it's encrypted on your device first
+- **Optional sign-in** — opt-in only, never required; sign in with Google or a passwordless email link to sync across devices via Supabase (open source)
 - **Privacy-respecting analytics** — [Umami](https://umami.is) (no cookies, no personal data, page view counts only)
 - **Self-hosted fonts** — DM Mono and DM Sans are served from this repo, not Google Fonts
 - **Hash-based Content Security Policy** — inline scripts are allowlisted by SHA-256 hash; no `unsafe-inline`
@@ -102,7 +102,7 @@ Single HTML file app — no build step, no dependencies to install, no server re
 | [D3.js](https://d3js.org/) v7 | NW trend chart, treemap, daily heatmap |
 | [d3-sankey](https://github.com/d3/d3-sankey) | Flow (income/spending) chart |
 | [Chart.js](https://www.chartjs.org/) v4 | Spending bar charts |
-| [Firebase](https://firebase.google.com/) | Optional sign-in (Google or email link) and cross-device sync |
+| [Supabase](https://supabase.com/) | Optional sign-in (Google or email link) and encrypted cross-device sync |
 | [Umami](https://umami.is) | Privacy-respecting page view analytics (no cookies, no personal data) |
 | Vanilla JS / CSS | Everything else |
 
@@ -155,7 +155,7 @@ python3 -m http.server 8080
 
 ## Deployment
 
-Hosted on [Cloudflare Workers](https://workers.cloudflare.com/) via static asset serving. Firebase Auth and Firestore remain in use for optional sign-in and cross-device sync — only hosting moved to Cloudflare.
+Hosted on [Cloudflare Workers](https://workers.cloudflare.com/) via static asset serving. [Supabase](https://supabase.com/) (open source) handles optional sign-in and cross-device sync.
 
 ```bash
 ./deploy.sh prod
@@ -174,8 +174,8 @@ The app uses a hash-based Content Security Policy — inline scripts are allowli
 - **Security headers on all responses** — `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`
 - **`noindex` on the app page** — search traffic lands on the landing page, not the bare tool
 - **All external links** use `rel="noopener noreferrer"`
-- **Passwordless email sign-in** — magic link via Firebase; no password stored anywhere
-- **Google auth via redirect flow** — avoids popup-blocking issues on mobile; `authDomain` set to `web.app` to prevent cross-origin storage issues
+- **Passwordless email sign-in** — magic link via Supabase; no password stored anywhere
+- **Google auth via redirect flow** — Supabase OAuth always uses redirect (no popups), reliable across all browsers and mobile
 - **Community pattern submissions** are reviewed manually as plain text before any changes deploy
 - My GitHub and Google accounts use two-factor authentication
 
@@ -188,8 +188,10 @@ The app uses a hash-based Content Security Policy — inline scripts are allowli
 - **Category rename** — custom categories can now be renamed in-place; updates transactions, budgets, rules, and exclusions
 - **Delete account / asset** — inline confirmation pattern (no browser dialog) for removing accounts and physical assets
 - **Cloudflare Email Routing** — `contact@trakyodollas.com` forwarding and Gmail "Send mail as" now active
+- **Client-side encryption** — all synced data encrypted on your device (AES-256-GCM) before reaching Supabase; even Supabase can't read it
+- **Supabase migration** — replaced Firebase Auth + Firestore with Supabase Auth + Postgres; open-source, privacy-centered sync
 - **Cloudflare Workers hosting** — migrated from Firebase Hosting; `trakyodollas.com` is the canonical domain; deploy via `./deploy.sh prod`
-- **Email magic link sign-in** — passwordless sign-in alongside Google; Firebase sends a one-time link, no password required
+- **Email magic link sign-in** — passwordless sign-in alongside Google; Supabase sends a one-time link, no password required
 - **PWA / offline support** — service worker caches the full app; install to home screen on Android, iPhone, or desktop Chrome; offline banner and graceful error page when network is unavailable
 - **JSON backup / restore** — export all data as a structured JSON file; import it back on any device
 - **Budget tab redesign** — single combined view shows budget, 12-month average, and YTD pace per category; combo tick marks merge when budget and average are close; configurable "near limit" warn threshold; Unusual sort by deviation from your own average

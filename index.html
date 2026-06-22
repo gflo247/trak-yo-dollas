@@ -87,7 +87,7 @@ nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-con
 .theme-btn{background:none;border:1px solid var(--border-mid);border-radius:6px;padding:5px 8px;font-size:var(--text-xs);cursor:pointer;color:var(--text-muted)}
 
 /* Hero */
-.hero{max-width:820px;margin:0 auto;padding:7rem 2rem 5rem;text-align:center}
+.hero{max-width:820px;margin:0 auto;padding:7rem 2rem 1.25rem;text-align:center}
 .hero-eyebrow{display:inline-flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:var(--text-2xs);font-weight:var(--fw-normal);color:var(--accent-blue-light);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem;background:#2563EB14;border:1px solid #2563EB33;border-radius:20px;padding:4px 14px}
 .hero h1{font-size:3.25rem;font-weight:var(--fw-black);color:var(--text-bright);line-height:var(--lh-tight);letter-spacing:-.02em;margin-bottom:1.25rem}
 .hero h1 em{font-style:normal;color:var(--accent-blue-light)}
@@ -238,7 +238,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 @media(max-width:640px){
   nav{padding:.65rem 1rem}
   .nav-right .btn-ghost{display:none}
-  .hero{padding:4rem 1.25rem 3rem}
+  .hero{padding:4rem 1.25rem 1.25rem}
   .preview-wrap,.section,.cta-wrap{padding:0 1.25rem}
   .preview-wrap{margin-bottom:4rem}
   .preview-inner{grid-template-columns:1fr 1fr}
@@ -278,33 +278,45 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
   <div class="hero-eyebrow fu fu1">💸 trak-yo-dolla$</div>
   <p style="font-size:var(--text-xs);color:var(--text-muted);margin-top:.4rem;margin-bottom:1.5rem;letter-spacing:.01em">Every dollar tracked. Nothing shared.</p>
   <h1 class="fu fu2">Your money.<br><em>Your device.</em><br>Your business.</h1>
-  <p class="hero-sub fu fu3">Track spending, budgets, and net worth — without handing your bank login to anyone. No subscriptions. Your data stays local by default. Optional sync — sign in with Google or a passwordless email link.</p>
+  <p class="hero-sub fu fu3">Track spending, budgets, and net worth — without handing your bank login to anyone. No subscriptions. Your data stays local by default. Optional encrypted sync — sign in with Google or a passwordless email link.</p>
   <div class="hero-ctas fu fu4">
     <a href="/trakyodollas?demo=1" class="btn-hero">Try with demo data</a>
     <a href="/trakyodollas?import=1" class="btn-hero-ghost">⬆ Import CSV</a>
   </div>
   <div id="import-nudge" style="display:none;margin-top:.75rem;font-size:13px;color:var(--text-muted)"></div>
   <div class="hero-trust fu fu4" style="margin-top:1.1rem;gap:6px">
-    <span style="font-size:12px;color:var(--text-muted);margin-right:2px">Works in</span>
-    <span style="font-size:14px" title="United States">🇺🇸</span>
+    <span style="font-size:13px;color:var(--text-muted);margin-right:2px">Works in</span>
+    <span style="font-size:18px" title="United States">🇺🇸</span>
     <span class="trust-dot"></span>
-    <span style="font-size:14px" title="Canada">🇨🇦</span>
+    <span style="font-size:18px" title="Canada">🇨🇦</span>
     <span class="trust-dot"></span>
-    <span style="font-size:14px" title="United Kingdom">🇬🇧</span>
+    <span style="font-size:18px" title="United Kingdom">🇬🇧</span>
     <span class="trust-dot"></span>
-    <span style="font-size:14px" title="Australia">🇦🇺</span>
+    <span style="font-size:18px" title="Australia">🇦🇺</span>
     <span class="trust-dot"></span>
-    <span style="font-size:14px" title="New Zealand">🇳🇿</span>
+    <span style="font-size:18px" title="New Zealand">🇳🇿</span>
     <span class="trust-dot"></span>
-    <span style="font-size:14px" title="Singapore">🇸🇬</span>
-    <span style="font-size:12px;color:var(--text-muted);margin-left:2px">and more</span>
+    <span style="font-size:18px" title="Singapore">🇸🇬</span>
+    <span style="font-size:13px;color:var(--text-muted);margin-left:2px">and more</span>
   </div>
 </section>
+
+<!-- App screenshot -->
+<section class="section" style="padding-top:0;margin-bottom:3rem">
+  <div id="screenshot-wrap" style="position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--border-mid);box-shadow:0 4px 32px rgba(0,0,0,.35);cursor:zoom-in">
+    <img src="/app-screenshot.png" alt="trak-yo-dolla$ spending dashboard showing monthly insights, category breakdown cards, and spending chart" width="100%" style="display:block;width:100%;height:auto">
+    <div style="position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);border-radius:20px;padding:4px 10px;font-size:11px;color:rgba(255,255,255,.7);pointer-events:none;letter-spacing:.02em">⊕ zoom</div>
+  </div>
+</section>
+<!-- Screenshot lightbox -->
+<div id="screenshot-lb" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;cursor:zoom-out;overflow:auto;padding:1rem">
+  <img src="/app-screenshot.png" alt="" style="display:block;max-width:1400px;min-width:min(900px,200vw);width:100%;margin:auto;border-radius:8px;box-shadow:0 8px 64px rgba(0,0,0,.6)">
+</div>
 
 
 
 <!-- Mint alternative callout -->
-<div style="max-width:680px;margin:0 auto 4rem;padding:0 2rem">
+<div style="max-width:680px;margin:0 auto 3rem;padding:0 2rem">
   <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.5rem 2rem">
     <p style="font-size:14px;color:var(--text-secondary);line-height:1.8;font-weight:300;margin:0">Looking for a Mint replacement? Mint shut down in early 2024 — most apps that filled the gap require a bank login. trak-yo-dolla$ doesn't. Import a CSV and you're done. Free forever. No account required.</p>
   </div>
@@ -558,7 +570,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
           </div>
           <div style="font-size:9px;color:var(--text-muted)">Tile size ∝ spend · click any tile to drill into vendors</div>
         </div>
-        <div style="text-align:center;font-size:9px;color:var(--text-muted);margin-top:.6rem">Simplified preview · <a href="/trakyodollas?demo=1" style="color:var(--text-muted);text-decoration:underline;text-underline-offset:2px">Try with demo data</a> for the full experience →</div>
+        <div style="text-align:center;font-size:10px;color:var(--text-muted);margin-top:.6rem">Simplified preview · <a href="/trakyodollas?demo=1" style="color:var(--text-muted);text-decoration:underline;text-underline-offset:2px">Try with demo data</a> for the full experience →</div>
       </div>
     </div>
     <!-- TAB 1: Budget -->
@@ -628,6 +640,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
           </div>
           <div style="height:3px;border-radius:2px;background:var(--border);margin:-3px 0 2px;overflow:hidden"><div style="width:79%;height:100%;background:var(--accent-green)"></div></div>
         </div>
+        <div style="text-align:center;font-size:10px;color:var(--text-muted);margin-top:.6rem">Simplified preview · <a href="/trakyodollas?demo=1" style="color:var(--text-muted);text-decoration:underline;text-underline-offset:2px">Try with demo data</a> for the full experience →</div>
       </div>
     </div>
     <!-- TAB 2: Net Worth -->
@@ -674,14 +687,14 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
           <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:var(--bg-card);border-radius:8px;font-size:11px"><span style="color:var(--text-secondary)">🎓 Navient Student Loan</span><span style="font-weight:700;color:var(--accent-red)">−$17,800</span></div>
           <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:var(--bg-card);border-radius:8px;font-size:11px"><span style="color:var(--text-secondary)">💳 Chase Sapphire</span><span style="font-weight:700;color:var(--accent-red)">−$6,800</span></div>
         </div>
+        <div style="text-align:center;font-size:10px;color:var(--text-muted);margin-top:.6rem">Simplified preview · <a href="/trakyodollas?demo=1" style="color:var(--text-muted);text-decoration:underline;text-underline-offset:2px">Try with demo data</a> for the full experience →</div>
       </div>
     </div>
   </div>
 </div>
 
 <section class="section">
-  <div class="section-eyebrow">Getting started</div>
-  <h2>Three steps.</h2>
+  <h2>Get started in two steps.</h2>
   <div class="steps" style="margin-top:2.5rem">
     <div class="step">
       <div class="step-num">1</div>
@@ -696,15 +709,14 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
     <div class="step opt">
       <div class="step-num">3</div>
       <h3>Sync across devices <span style="font-size:11px;font-weight:400">(optional)</span></h3>
-      <p>Sign in with Google or a passwordless email link to access from any device. Everything works without an account.</p>
+      <p>Sign in with Google or a passwordless email link. Your data is encrypted on your device before syncing. Everything works without an account.</p>
     </div>
   </div>
 </section>
 
 <!-- Features -->
 <section class="section">
-  <div class="section-eyebrow">What's inside</div>
-  <h2>Everything you need.<br>Nothing you don't.</h2>
+  <h2>What's inside.</h2>
   <div class="feature-list">
     <div class="fi"><div class="fi-icon">📊</div><div>
       <h3>Several ways to see your spending</h3>
@@ -747,8 +759,8 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       <p>The app supports banks and credit unions from all six countries by name. Auto-categorization covers local merchants — groceries, telecoms, transport, energy, food, and retail — in each market. Configure your currency symbol in settings: $ · C$ · £ · A$ · NZ$ · S$ · or any custom symbol.</p>
     </div></div>
     <div class="fi"><div class="fi-icon">🎯</div><div>
-      <h3>Budgets that update with every import</h3>
-      <p>Set monthly limits per category. Every import updates your pace — AT RISK warnings surface before you go over. 12-month history shows your patterns at a glance.</p>
+      <h3>Budgets that learn your patterns</h3>
+      <p>Set monthly limits and see them alongside your 12-month average and year-to-date pace in one view. AT RISK warnings surface before you go over, and Unusual sort flags categories spiking compared to your own history.</p>
     </div></div>
     <div class="fi"><div class="fi-icon">🔄</div><div>
       <h3>Recurring charge detection</h3>
@@ -759,8 +771,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
 <!-- Privacy -->
 <section class="section">
-  <div class="section-eyebrow">Privacy first</div>
-  <h2>The free Mint alternative<br>without bank logins.</h2>
+  <h2>The privacy-first Mint alternative.</h2>
   <div class="pf-desktop" style="overflow-x:auto;margin:1.75rem 0 2.25rem;-webkit-overflow-scrolling:touch">
 <svg id="privacy-flow" viewBox="0 0 680 292" role="img"
      style="font-family:'DM Sans',system-ui,sans-serif;display:block">
@@ -780,9 +791,9 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <rect x="10" y="12" width="290" height="270" rx="10" fill="#F8717108" stroke="#F8717133" stroke-width="0.5"/>
 <text x="155" y="34" text-anchor="middle" font-size="9" font-weight="700" letter-spacing=".06em" style="fill:var(--accent-red)">TYPICAL FINANCE APP</text>
 
-<rect x="105" y="46" width="100" height="40" rx="7" fill="#F8717118" stroke="#F8717133" stroke-width="0.5"/>
-<text x="155" y="62" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--accent-red)">Your bank</text>
-<text x="155" y="76" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">you log in</text>
+<rect x="95" y="46" width="120" height="40" rx="7" fill="#F8717118" stroke="#F8717133" stroke-width="0.5"/>
+<text x="155" y="62" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--accent-red)">Your bank login</text>
+<text x="155" y="76" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">shared with their app</text>
 
 <line x1="155" y1="86" x2="155" y2="106" stroke="#F87171" stroke-width="1" marker-end="url(#pflarrow-r)" opacity="0.5"/>
 
@@ -803,19 +814,19 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
 <text x="155" y="232" text-anchor="middle" font-size="8" font-style="italic" style="fill:var(--accent-red)" opacity="0.45">…credit bureaus, ad networks, and more</text>
 
-<rect x="55" y="248" width="200" height="18" rx="9" fill="#F8717115" stroke="#F8717133" stroke-width="0.5"/>
+<rect x="25" y="248" width="260" height="18" rx="9" fill="#F8717115" stroke="#F8717133" stroke-width="0.5"/>
 <text x="155" y="260" text-anchor="middle" font-size="9" font-weight="600" style="fill:var(--accent-red)">Your data leaves your device</text>
 
 <!-- ============ Right panel ============ -->
 <rect x="380" y="12" width="290" height="270" rx="10" fill="#34D39908" stroke="#34D39930" stroke-width="0.5"/>
 <text x="525" y="34" text-anchor="middle" font-size="9" font-weight="700" letter-spacing=".06em" style="fill:var(--accent-green)">TRAK-YO-DOLLA$</text>
 
-<rect x="475" y="46" width="100" height="40" rx="7" fill="#34D39918" stroke="#34D39935" stroke-width="0.5"/>
-<text x="525" y="62" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--accent-green)">Your bank</text>
-<text x="525" y="76" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">no login required</text>
+<rect x="455" y="46" width="140" height="40" rx="7" fill="#34D39918" stroke="#34D39935" stroke-width="0.5"/>
+<text x="525" y="62" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--accent-green)">Your CSV</text>
+<text x="525" y="76" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">exported from your bank</text>
 
 <line x1="525" y1="86" x2="525" y2="106" stroke="#34D399" stroke-width="1" marker-end="url(#pflarrow-g)" opacity="0.5"/>
-<text x="538" y="99" text-anchor="start" font-size="9" style="fill:var(--accent-green)">CSV export</text>
+<text x="538" y="99" text-anchor="start" font-size="9" style="fill:var(--accent-green)">drop it in</text>
 
 <rect x="396" y="108" width="258" height="100" rx="9" fill="#34D39912" stroke="#34D39944" stroke-width="1"/>
 <text x="525" y="126" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--accent-green)">Your browser</text>
@@ -830,7 +841,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <line x1="468.5" y1="122" x2="468.5" y2="124.5" stroke="var(--accent-green)" stroke-opacity="0.65" stroke-width="0.8" stroke-linecap="round"/>
 
 <rect x="398" y="218" width="254" height="22" rx="5" fill="none" stroke="#34D39940" stroke-width="0.5" stroke-dasharray="4,3"/>
-<text x="525" y="231" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">Optional sync — stored on Google's servers</text>
+<text x="525" y="231" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">Optional sync — encrypted before it leaves your device</text>
 
 <rect x="395" y="248" width="260" height="18" rx="9" fill="#34D39915" stroke="#34D39933" stroke-width="0.5"/>
 <text x="525" y="260" text-anchor="middle" font-size="9" font-weight="600" style="fill:var(--accent-green)">Your data stays local by default</text>
@@ -850,9 +861,9 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <rect x="8" y="8" width="324" height="248" rx="10" fill="#F8717108" stroke="#F8717133" stroke-width="0.5"/>
 <text x="170" y="28" text-anchor="middle" font-size="9" font-weight="700" letter-spacing=".06em" style="fill:var(--accent-red)">TYPICAL FINANCE APP</text>
 
-<rect x="120" y="40" width="100" height="40" rx="7" fill="#F8717118" stroke="#F8717133" stroke-width="0.5"/>
-<text x="170" y="56" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--accent-red)">Your bank</text>
-<text x="170" y="70" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">you log in</text>
+<rect x="110" y="40" width="120" height="40" rx="7" fill="#F8717118" stroke="#F8717133" stroke-width="0.5"/>
+<text x="170" y="56" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--accent-red)">Your bank login</text>
+<text x="170" y="70" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">shared with their app</text>
 
 <line x1="170" y1="80" x2="170" y2="100" stroke="#F87171" stroke-width="1" marker-end="url(#pflarrow-rm)" opacity="0.5"/>
 
@@ -885,12 +896,12 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <rect x="8" y="292" width="324" height="256" rx="10" fill="#34D39908" stroke="#34D39930" stroke-width="0.5"/>
 <text x="170" y="312" text-anchor="middle" font-size="9" font-weight="700" letter-spacing=".06em" style="fill:var(--accent-green)">TRAK-YO-DOLLA$</text>
 
-<rect x="120" y="324" width="100" height="40" rx="7" fill="#34D39918" stroke="#34D39935" stroke-width="0.5"/>
-<text x="170" y="340" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--accent-green)">Your bank</text>
-<text x="170" y="354" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">no login required</text>
+<rect x="100" y="324" width="140" height="40" rx="7" fill="#34D39918" stroke="#34D39935" stroke-width="0.5"/>
+<text x="170" y="340" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--accent-green)">Your CSV</text>
+<text x="170" y="354" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">exported from your bank</text>
 
 <line x1="170" y1="364" x2="170" y2="384" stroke="#34D399" stroke-width="1" marker-end="url(#pflarrow-gm)" opacity="0.5"/>
-<text x="183" y="377" text-anchor="start" font-size="9" style="fill:var(--accent-green)">CSV export</text>
+<text x="183" y="377" text-anchor="start" font-size="9" style="fill:var(--accent-green)">drop it in</text>
 
 <rect x="16" y="386" width="308" height="90" rx="9" fill="#34D39912" stroke="#34D39944" stroke-width="1"/>
 <text x="170" y="404" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--accent-green)">Your browser</text>
@@ -905,7 +916,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <line x1="113.5" y1="400" x2="113.5" y2="402.5" stroke="var(--accent-green)" stroke-opacity="0.65" stroke-width="0.8" stroke-linecap="round"/>
 
 <rect x="16" y="486" width="308" height="20" rx="5" fill="none" stroke="#34D39940" stroke-width="0.5" stroke-dasharray="4,3"/>
-<text x="170" y="499" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">Optional sync — stored on Google's servers</text>
+<text x="170" y="499" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">Optional sync — encrypted before it leaves your device</text>
 
 <rect x="45" y="514" width="250" height="18" rx="9" fill="#34D39915" stroke="#34D39933" stroke-width="0.5"/>
 <text x="170" y="526" text-anchor="middle" font-size="9" font-weight="600" style="fill:var(--accent-green)">Your data stays local by default</text>
@@ -933,11 +944,30 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
     <div class="diff-card">
       <span class="diff-icon">🔁</span>
       <h3>Optional sync — never required</h3>
-      <p>Sign in with Google or a passwordless email link to access across devices. Prefer to keep it local? Everything works without signing in.</p>
+      <p>Sign in with Google or a passwordless email link to access across devices. The app encrypts your data before syncing. Prefer to keep it local? Everything works without signing in.</p>
     </div>
   </div>
   <div style="margin-top:1rem;text-align:center">
     <a href="/privacy" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light);text-decoration:none;font-size:13px">Full privacy policy →</a>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section">
+  <h2>Common questions.</h2>
+  <div style="margin-top:2rem;display:flex;flex-direction:column;gap:1.5rem;max-width:680px">
+    <div>
+      <h3 style="font-size:1rem;font-weight:700;color:var(--text-bright);margin-bottom:.4rem">Does it work with my bank?</h3>
+      <p style="font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-light)">If your bank lets you download transactions as a CSV — and nearly all of them do — you're good. Chase, Ally, Bank of America, Amex, USAA, TD, RBC, Barclays, Monzo, and most credit unions all work out of the box. Look for a Download or Export button in your transaction history.</p>
+    </div>
+    <div>
+      <h3 style="font-size:1rem;font-weight:700;color:var(--text-bright);margin-bottom:.4rem">Is this a Mint replacement?</h3>
+      <p style="font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-light)">For spending, budgeting, and net worth tracking, yes. The main difference: Mint connected directly to your bank and synced automatically. This app doesn't — you import CSVs for spending and enter account balances manually. That's a deliberate trade-off. You update on your schedule, your data stays on your device, and there's nothing to breach.</p>
+    </div>
+    <div>
+      <h3 style="font-size:1rem;font-weight:700;color:var(--text-bright);margin-bottom:.4rem">Where is my data stored?</h3>
+      <p style="font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-light)">In your browser's local storage by default — on your device, not a server. Try it — close the tab, come back, it's all still there. If you sign in, your data is encrypted on your device and synced to Supabase's servers (open source) so you can access it from other devices. Signing in is optional and can be undone at any time. <a href="/privacy" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light)">Full data flow →</a></p>
+    </div>
   </div>
 </section>
 
@@ -965,21 +995,40 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
   </div>
 </footer>
 <script>
-function showTab(i) {
+let _previewTimer=null,_previewStep=0;
+const _previewCycle=[
+  {tab:0,chart:0},{tab:0,chart:1},{tab:0,chart:2},{tab:0,chart:3},{tab:0,chart:4},
+  {tab:1,chart:0},{tab:2,chart:0}
+];
+function showTab(i,auto){
   document.querySelectorAll('#preview-tabs button').forEach((t,j)=>t.classList.toggle('ptab-active',i===j));
   [0,1,2].forEach(j=>{
     const p=document.getElementById('pt'+j);
     if(!p)return;
-    if(i===j){
-      p.style.display='block';
-      p.style.opacity='1';
-      p.style.transform='none';
-      p.style.animation='none';
-    } else {
-      p.style.display='none';
-    }
+    if(i===j){p.style.display='block';p.style.opacity='1';p.style.transform='none';p.style.animation='none';}
+    else{p.style.display='none';}
   });
+  if(!auto){clearInterval(_previewTimer);_previewTimer=null;}
 }
+function _previewTick(){
+  _previewStep=(_previewStep+1)%_previewCycle.length;
+  const s=_previewCycle[_previewStep];
+  showTab(s.tab,true);
+  setPreviewChart(s.chart,true);
+}
+function _startPreviewCycle(){
+  if(_previewTimer)return;
+  _previewTimer=setInterval(_previewTick,4000);
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const wrap=document.querySelector('.preview-wrap');
+  if(!wrap)return;
+  const obs=new IntersectionObserver(entries=>{
+    if(entries[0].isIntersecting)_startPreviewCycle();
+    else{clearInterval(_previewTimer);_previewTimer=null;}
+  },{threshold:0.3});
+  obs.observe(wrap);
+});
 
 function buildHeatmap(){
   const el=document.getElementById('pheatmap');
@@ -1065,7 +1114,8 @@ updateChartDots();
 
 // Chart mode switcher
 let _pcActive=0,_ptileActive=null;
-function setPreviewChart(n){
+function setPreviewChart(n,auto){
+  if(!auto){clearInterval(_previewTimer);_previewTimer=null;}
   _pcActive=n;
   [0,1,2,3,4].forEach(i=>{
     const p=document.getElementById('pc-'+i);
@@ -1124,6 +1174,15 @@ document.querySelectorAll('.diff-card,.pi,.fi,.step,.cta-box').forEach(el => {
   el.style.transition = 'opacity .45s ease, transform .45s ease';
   observer.observe(el);
 });
+</script>
+<script>
+(function(){
+  var wrap=document.getElementById('screenshot-wrap'),lb=document.getElementById('screenshot-lb');
+  if(!wrap||!lb)return;
+  wrap.addEventListener('click',function(){lb.style.display='block';document.body.style.overflow='hidden';});
+  lb.addEventListener('click',function(){lb.style.display='none';document.body.style.overflow='';});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&lb.style.display==='block'){lb.style.display='none';document.body.style.overflow='';}});
+})();
 </script>
 <script>if('serviceWorker'in navigator){navigator.serviceWorker.register('/sw.js');}</script>
 </body>
