@@ -136,10 +136,9 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
 <div class="page">
   <a href="/" class="back">← Back</a>
-  <div class="eyebrow">Your data & privacy</div>
-  <h1>Simple, honest,<br>local-first.</h1>
+  <h1>Simple, honest, local-first.</h1>
   <p class="intro">I built this app for users in the US, Canada, UK, Australia, New Zealand, Singapore, and beyond — with no servers, so your financial data has nowhere to go but your own device. Your browser translates your CSV files into spending data entirely on your device — nothing is uploaded. The app's full source code is public on <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer">GitHub</a> — anyone can read exactly what it does. Here's how it works.</p>
-  <p style="font-style: italic; color: #888; margin-top: 0rem; margin-bottom: 2rem;">Last updated June 17, 2026</p>
+  <p style="font-style: italic; color: #888; margin-top: 0rem; margin-bottom: 2rem;">Last updated June 21, 2026</p>
 
   <!-- "What leaves your device?" summary table -->
   <div style="margin-bottom:2.5rem">
@@ -162,7 +161,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-primary);font-weight:600">Importing a CSV</div>
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--clr-ok);font-weight:600">Nothing</div>
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--clr-ok);font-weight:600">Stays on your device</div>
-          <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-muted)">N/A</div>
+          <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-muted)">Nothing to block</div>
         </div>
         <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-card);border-bottom:1px solid var(--border)">
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-primary);font-weight:600">Opening the import screen</div>
@@ -172,14 +171,14 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
         </div>
         <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-deep);border-bottom:1px solid var(--border)">
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-primary);font-weight:600">Signing in with Google</div>
-          <div style="padding:.7rem .85rem;font-size:13px;color:var(--clr-warn);font-weight:600">Your full financial data</div>
-          <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-secondary)">Google's servers</div>
+          <div style="padding:.7rem .85rem;font-size:13px;color:var(--clr-warn);font-weight:600">Your financial data (encrypted)</div>
+          <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-secondary)">Supabase's servers (encrypted)</div>
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--clr-warn);font-weight:600">Don't sign in</div>
         </div>
         <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-card);border-bottom:1px solid var(--border)">
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-primary);font-weight:600">Signing in with email link</div>
-          <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-secondary)">Your email address<br><span style="font-size:11px;color:var(--text-muted)">+ financial data after sign-in</span></div>
-          <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-secondary)">Firebase (to send the link)<br><span style="font-size:11px;color:var(--text-muted)">then your account like Google</span></div>
+          <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-secondary)">Your email address<br><span style="font-size:11px;color:var(--text-muted)">+ financial data after sign-in (encrypted)</span></div>
+          <div style="padding:.7rem .85rem;font-size:13px;color:var(--text-secondary)">Supabase (to send the link)<br><span style="font-size:11px;color:var(--text-muted)">then your account (encrypted)</span></div>
           <div style="padding:.7rem .85rem;font-size:13px;color:var(--clr-warn);font-weight:600">Don't sign in</div>
         </div>
         <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-deep)">
@@ -201,7 +200,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
         <div class="mr-event">Importing a CSV</div>
         <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val" style="color:var(--clr-ok);font-weight:700">Nothing</span></div>
         <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val" style="color:var(--clr-ok);font-weight:700">Stays on your device</span></div>
-        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val">N/A</span></div>
+        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val">Nothing to block</span></div>
       </div>
       <div class="mr-card">
         <div class="mr-event">Opening the import screen</div>
@@ -211,14 +210,14 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       </div>
       <div class="mr-card">
         <div class="mr-event">Signing in with Google</div>
-        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val" style="color:var(--clr-warn);font-weight:700">Your full financial data</span></div>
-        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Google's servers</span></div>
+        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val" style="color:var(--clr-warn);font-weight:700">Your financial data (encrypted)</span></div>
+        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Supabase's servers (encrypted)</span></div>
         <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-warn);font-weight:700">Don't sign in</span></div>
       </div>
       <div class="mr-card">
         <div class="mr-event">Signing in with email link</div>
-        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val">Your email address<br><span style="font-size:10px;color:var(--text-muted)">+ financial data after sign-in</span></span></div>
-        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Firebase (to send the link), then your account</span></div>
+        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val">Your email address<br><span style="font-size:10px;color:var(--text-muted)">+ financial data after sign-in (encrypted)</span></span></div>
+        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Supabase (to send the link), then your account (encrypted)</span></div>
         <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-warn);font-weight:700">Don't sign in</span></div>
       </div>
       <div class="mr-card">
@@ -289,8 +288,8 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
         <div>
           <div style="font-size:11px;font-weight:700;color:var(--accent-blue-light);text-align:center;margin-bottom:.35rem">with sign-in</div>
           <div style="background:#1E3A5F22;border:1.5px solid #2563EB88;border-radius:10px;padding:.65rem;text-align:center">
-            <div style="font-size:11px;font-weight:800;color:var(--accent-blue-light);margin-bottom:.2rem">🔵 Google's servers</div>
-            <div style="font-size:9px;color:var(--text-muted);margin-bottom:.3rem">data leaves your device</div>
+            <div style="font-size:11px;font-weight:800;color:var(--accent-blue-light);margin-bottom:.2rem">🔵 Supabase's servers</div>
+            <div style="font-size:9px;color:var(--text-muted);margin-bottom:.3rem">encrypted data leaves your device</div>
             <span style="background:var(--bg-card);border:1px solid #2563EB55;border-radius:5px;font-size:9px;font-weight:700;color:var(--accent-blue-light);padding:2px 8px">opt-in only</span>
           </div>
         </div>
@@ -299,7 +298,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       <!-- Legend -->
       <div style="display:flex;gap:1.25rem;flex-wrap:wrap;margin-top:1.1rem;padding-top:.85rem;border-top:1px solid var(--border)">
         <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-muted)"><div style="width:7px;height:7px;border-radius:50%;background:#34D399"></div>Without sign-in — stays on your device</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-muted)"><div style="width:7px;height:7px;border-radius:50%;background:#60A5FA"></div>With sign-in — stored on Google's servers</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-muted)"><div style="width:7px;height:7px;border-radius:50%;background:#60A5FA"></div>With sign-in — encrypted on your device, then stored on Supabase's servers</div>
         <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-muted)"><div style="width:7px;height:6px;border-radius:2px;border:1px dashed var(--border-mid)"></div>Cloudflare sends categorization rules (no financial data)</div>
       </div>
 
@@ -314,7 +313,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
     <div class="card card-blue">
       <div class="card-label">🔁 Sign in to sync across devices</div>
-      <p>Sign in with Google or a passwordless email link and the app backs up your full data — accounts, transactions, budgets, categories, and snapshots — directly to your account via <a href="https://firebase.google.com/" target="_blank" rel="noopener noreferrer">Firebase</a>. <strong>When you sign in, your transaction data leaves your device — it's stored in your personal account on Google's servers.</strong> Google enforces access at the database level so only you can read it — not me. Sign in on any device to restore everything instantly. If you'd rather your data never leave your device, skip sign-in — the app works fully without it.</p>
+      <p>Sign in with Google or a passwordless email link and the app backs up your full data — accounts, transactions, budgets, categories, and snapshots — directly to your account via <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer">Supabase</a> (open source). <strong>The app encrypts your data on your device before it leaves — Supabase stores only encrypted data it cannot read.</strong> Row-level security policies enforce access at the database level so only you can read it — not me. Sign in on any device to restore everything instantly. If you'd rather your data never leave your device, skip sign-in — the app works fully without it.</p>
     </div>
 
     <div class="card card-neutral">
@@ -353,32 +352,37 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
         <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">Can the developer see my financial data?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
-        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">No — and this isn't just a policy. It's how the app is built. By default, the app saves your data to your browser on your device. I built no mechanism to transmit it anywhere and run no server to receive it. If you choose to sign in, your data syncs to Google's servers via Firebase — Google holds it, not me, and only you can read it. Either way, I have no way to see your financial data.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">No — and this isn't just a policy. It's how the app is built. By default, the app saves your data to your browser on your device. I built no mechanism to transmit it anywhere and run no server to receive it. If you choose to sign in, the app encrypts your data on your device before syncing to Supabase's servers — even Supabase can't read it, and neither can I. Either way, I have no way to see your financial data.</p>
       </details>
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
         <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">Could a hacker access my financial data?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
-        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">No — and this isn't just a policy, it's structural. Neither the app nor the developer holds your financial data, so there's nothing to steal. That said, here are the three things someone could theoretically attack, and how each is protected:</p><ul style="font-size:13px;color:var(--text-muted);margin-top:.5rem;line-height:1.9;padding-left:1.25rem"><li><strong style="color:var(--text-secondary)">The app files</strong> — hosted on Cloudflare. Deploying any change requires the developer's Cloudflare account credentials plus their physical machine, and that account uses two-factor authentication. An attacker would need both to make any change.</li><li><strong style="color:var(--text-secondary)">The source code</strong> — stored on GitHub, also protected with two-factor authentication. Because the source is public, anyone can verify exactly what the app does and spot anything unexpected.</li><li><strong style="color:var(--text-secondary)">Your synced data</strong> — only relevant if you've signed in. Firebase security rules enforce that your data is accessible only with your own sign-in credentials. An attacker would need to compromise your account, not the developer's.</li></ul><p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">None of these paths expose your financial data — the app and the developer simply don't hold it.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">No — and this isn't just a policy, it's structural. Neither the app nor the developer holds your financial data, so there's nothing to steal. That said, here are the three things someone could theoretically attack, and how each is protected:</p><ul style="font-size:13px;color:var(--text-muted);margin-top:.5rem;line-height:1.9;padding-left:1.25rem"><li><strong style="color:var(--text-secondary)">The app files</strong> — hosted on Cloudflare. Deploying any change requires the developer's Cloudflare account credentials plus their physical machine, and that account uses two-factor authentication. An attacker would need both to make any change.</li><li><strong style="color:var(--text-secondary)">The source code</strong> — stored on GitHub, also protected with two-factor authentication. Because the source is public, anyone can verify exactly what the app does and spot anything unexpected.</li><li><strong style="color:var(--text-secondary)">Your synced data</strong> — only relevant if you've signed in. The app encrypts your data on your device before sending it to Supabase — even if someone accessed the database, they'd find only encrypted data they can't read. Row-level security policies add a second layer, restricting access to your sign-in credentials only.</li></ul><p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">None of these paths expose your financial data — the app and the developer simply don't hold it.</p>
       </details>
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
         <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">What if this app shuts down?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
-        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">Two scenarios:</p><ul style="font-size:13px;color:var(--text-muted);margin-top:.4rem;line-height:1.9;padding-left:1.25rem"><li><strong style="color:var(--text-secondary)">The website stops working</strong> — you'd see a 'page not found' message when you try to open it, but your data is unaffected. Without signing in, it lives on your device. With sign-in, it lives on Google's servers via Firebase — tied to your sign-in credentials, not to this app.</li><li><strong style="color:var(--text-secondary)">The developer stops updating it</strong> — the app keeps working exactly as-is. No data loss, no changes.</li></ul><p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">In either case, export your transactions from the Spending tab, budget history from the Budget tab, or a full JSON backup (everything in one file) from the overflow menu (⋯) on the Spending tab — anytime. Your data outlives the app.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">Two scenarios:</p><ul style="font-size:13px;color:var(--text-muted);margin-top:.4rem;line-height:1.9;padding-left:1.25rem"><li><strong style="color:var(--text-secondary)">The website stops working</strong> — you'd see a 'page not found' message when you try to open it, but your data is unaffected. Without signing in, it lives on your device. With sign-in, the app encrypts it on your device and stores it on Supabase's servers — tied to your sign-in credentials, not to this app.</li><li><strong style="color:var(--text-secondary)">The developer stops updating it</strong> — the app keeps working exactly as-is. No data loss, no changes.</li></ul><p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">In either case, export your transactions from the Spending tab, budget history from the Budget tab, or a full JSON backup (everything in one file) from the overflow menu (⋯) on the Spending tab — anytime. Your data outlives the app.</p>
       </details>
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
         <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">Is my CSV safe after I import it?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
-        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">Yes — and not just because I say so. Your browser processes the CSV entirely on your device and uploads nothing. The app reads the file, parses the transactions locally, and discards the rest — I never receive the file or its contents. If you've signed in, the parsed transaction records sync to Google's servers via Firebase, but your original CSV file never leaves your computer.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">Yes — and not just because I say so. Your browser processes the CSV entirely on your device and uploads nothing. The app reads the file, parses the transactions locally, and discards the rest — I never receive the file or its contents. If you've signed in, the parsed transaction records are encrypted on your device and synced to Supabase's servers, but your original CSV file never leaves your computer.</p>
+      </details>
+
+      <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
+        <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">Is my synced data encrypted?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">Yes. When you sign in, the app encrypts all your data — transactions, budgets, accounts, snapshots — on your device using AES-256-GCM before sending it to Supabase's servers. Supabase stores only encrypted data it cannot read. The encryption key is derived from your account and never leaves your browser. If you don't sign in, encryption isn't needed — your data never leaves your device in the first place.</p>
       </details>
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
         <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">Could the developer share my data with governments or law enforcement?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
-        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">No — and this is technical, not just policy. If you haven't signed in, the app stores your data only on your device and I receive none of it — nothing to hand over. If you have signed in, your data lives on Google's servers via Firebase — any legal request would need to go to Google directly, not to me. Either way, there's nothing for me to hand over.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">No — and this is technical, not just policy. If you haven't signed in, the app stores your data only on your device and I receive none of it — nothing to hand over. If you have signed in, the app encrypts your data on your device before sending it to Supabase's servers — even a legal request to Supabase would produce only encrypted data that neither they nor I can read. Either way, there's nothing usable for me to hand over.</p>
       </details>
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
         <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">Does this app use cookies?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
-        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">No — Umami sets no cookies and uses no persistent identifiers. Google's infrastructure may set cookies if you choose to sign in for the optional sync feature. You can block analytics entirely with any privacy extension.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">No — Umami sets no cookies and uses no persistent identifiers. Supabase and Google's sign-in infrastructure may set cookies if you choose to sign in for the optional sync feature. You can block analytics entirely with any privacy extension.</p>
       </details>
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
@@ -392,8 +396,8 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       </details>
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
-        <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">What is Firebase and why use it if you care about privacy?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
-        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">Honest answer: Firebase is Google infrastructure. I use it here for one thing only — optional sign-in and data sync (authentication and database). The app's files are served by Cloudflare, not Firebase. I chose Firebase for auth because it's reliable, well-audited, and handles the hard parts of secure sign-in. The tradeoff is that Google's servers store your data if you choose to sync. If that's a concern, skip sign-in — the app works fully without it, and the source code is public so anyone can verify exactly what it does.</p>
+        <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">What is Supabase and why use it if you care about privacy?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7"><a href="https://supabase.com/" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light)">Supabase</a> is an open-source backend platform — not an ad company. I use it here for one thing only — optional sign-in and data sync (authentication and database). The app's files are served by Cloudflare, not Supabase. I chose Supabase because it's open source, privacy-focused, and handles the hard parts of secure sign-in without tying your data to Google. The app encrypts your synced data on your device before sending it to Supabase's infrastructure (AWS servers in the US) — Supabase stores only encrypted data it cannot read. If that's still a concern, skip sign-in — the app works fully without it, and the source code is public so anyone can verify exactly what it does.</p>
       </details>
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
@@ -403,7 +407,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
         <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">What third-party code runs in the app?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
-        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">The app uses D3.js, a widely used open-source charting library, to draw the spending visualizations. Like most web apps, it loads this library from jsDelivr — a content delivery network (CDN) that serves open-source software files. Your browser fetches it when the app loads. jsDelivr receives no financial data — it only delivers a JavaScript file. The same applies to the Firebase Software Development Kit (SDK), loaded from Google's CDN. If you block either request using a privacy extension, your financial data remains completely safe — charts won't render without D3, but all your data stays intact and accessible.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">The app uses D3.js, a widely used open-source charting library, to draw the spending visualizations. Like most web apps, it loads this library from jsDelivr — a content delivery network (CDN) that serves open-source software files. Your browser fetches it when the app loads. jsDelivr receives no financial data — it only delivers a JavaScript file. The same applies to the Supabase client library, loaded from jsDelivr. If you block either request using a privacy extension, your financial data remains completely safe — charts won't render without D3, but all your data stays intact and accessible.</p>
       </details>
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
@@ -421,7 +425,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
     <div style="display:flex;flex-direction:column;gap:.65rem">
       <div style="display:flex;gap:.75rem;font-size:14px">
         <span style="font-weight:700;color:var(--text-primary);flex-shrink:0;min-width:100px">Access</span>
-        <span style="color:var(--text-muted);font-weight:300;line-height:1.6">Request a copy of personal data held about you. For most users the answer is: none — financial data stays on your device. If you've synced, your data is stored on Google's servers via Firebase — email me at contact@trakyodollas.com and I'll delete it from the database.</span>
+        <span style="color:var(--text-muted);font-weight:300;line-height:1.6">Request a copy of personal data held about you. For most users the answer is: none — financial data stays on your device. If you've synced, encrypted data is stored on Supabase's servers — email me at contact@trakyodollas.com and I'll delete it from the database.</span>
       </div>
       <div style="display:flex;gap:.75rem;font-size:14px">
         <span style="font-weight:700;color:var(--text-primary);flex-shrink:0;min-width:100px">Erasure</span>
