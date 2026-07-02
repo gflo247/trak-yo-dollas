@@ -104,6 +104,7 @@ nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-con
 .preview-wrap{max-width:1040px;margin:0 auto 6rem;padding:0 2rem}
 .preview-card{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.4)}
 .preview-bar{background:var(--bg-deep);border-radius:16px 16px 0 0;border-bottom:1px solid var(--border);padding:.5rem 1rem;display:flex;align-items:center;gap:6px}
+@media(max-width:640px){.preview-note-desktop{display:none!important}.preview-note-mobile{display:block!important}.ptab-panel>div:first-child{padding-top:.5rem!important}}
 .preview-dot{width:10px;height:10px;border-radius:50%}
 .preview-inner{padding:1.5rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 .pm{border-radius:10px;padding:.75rem 1rem;border:1px solid}
@@ -334,7 +335,9 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
         <button class="ptab" onclick="showTab(1)">Budget</button>
         <button class="ptab" onclick="showTab(2)">Net Worth</button>
       </div>
+      <div class="preview-note-desktop" style="margin-left:auto;font-size:10px;color:var(--text-muted)">Simplified preview · <a href="/trakyodollas?demo=1" style="color:var(--text-muted);text-decoration:underline;text-underline-offset:2px">Try with demo data</a> for the full experience →</div>
     </div>
+    <div class="preview-note-mobile" style="text-align:center;font-size:10px;color:var(--text-muted);padding:.2rem 1rem;display:none">Simplified preview · <a href="/trakyodollas?demo=1" style="color:var(--text-muted);text-decoration:underline;text-underline-offset:2px">Try with demo data</a> for the full experience →</div>
         <!-- TAB 0: Bar charts -->
     <div class="ptab-panel" id="pt0" style="display:block">
       <div style="padding:1rem 1.25rem">
@@ -349,19 +352,19 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
             <div style="font-size:10px;color:var(--text-muted);line-height:1.55">April was a lighter month — you spent $6,200, about $980 less than your 6-month average. Groceries dropped $280 from March — a solid save.</div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <div style="background:#F8717112;border:1.5px solid #F8717140;border-radius:10px;padding:.45rem .7rem;display:flex;justify-content:space-between;align-items:center;gap:4px">
+              <div style="min-width:0;flex:1">
+                <div style="font-size:8px;font-weight:700;color:var(--accent-red);text-transform:uppercase;letter-spacing:.05em">🔴 Budget health</div>
+                <div style="font-size:9px;color:var(--text-muted);margin-top:2px">4 over budget</div>
+              </div>
+              <div style="font-size:12px;font-weight:900;color:var(--accent-red);line-height:1;text-align:right;white-space:nowrap;flex-shrink:0">4/10 <span style="font-size:9px">need attention</span></div>
+            </div>
             <div style="background:#34D39912;border:1.5px solid #34D39940;border-radius:10px;padding:.45rem .7rem;display:flex;justify-content:space-between;align-items:center">
               <div>
                 <div style="font-size:8px;font-weight:700;color:var(--accent-green);text-transform:uppercase;letter-spacing:.05em">🟢 Savings rate</div>
                 <div style="font-size:9px;color:var(--text-muted);margin-top:2px">$2,532 kept · healthy</div>
               </div>
               <div style="font-size:20px;font-weight:900;color:var(--accent-green);line-height:1">36%</div>
-            </div>
-            <div style="background:#F8717112;border:1.5px solid #F8717140;border-radius:10px;padding:.45rem .7rem;display:flex;justify-content:space-between;align-items:center;gap:4px">
-              <div style="min-width:0;flex:1">
-                <div style="font-size:8px;font-weight:700;color:var(--accent-red);text-transform:uppercase;letter-spacing:.05em">🔴 Budget health</div>
-                <div style="font-size:9px;color:var(--text-muted);margin-top:2px">4 over · 6 on track</div>
-              </div>
-              <div style="font-size:12px;font-weight:900;color:var(--accent-red);line-height:1;text-align:right;white-space:nowrap;flex-shrink:0">4/10 <span style="font-size:9px">need attention</span></div>
             </div>
           </div>
         </div>
@@ -570,7 +573,6 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
           </div>
           <div style="font-size:9px;color:var(--text-muted)">Tile size ∝ spend · click any tile to drill into vendors</div>
         </div>
-        <div style="text-align:center;font-size:10px;color:var(--text-muted);margin-top:.6rem">Simplified preview · <a href="/trakyodollas?demo=1" style="color:var(--text-muted);text-decoration:underline;text-underline-offset:2px">Try with demo data</a> for the full experience →</div>
       </div>
     </div>
     <!-- TAB 1: Budget -->
@@ -640,7 +642,6 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
           </div>
           <div style="height:3px;border-radius:2px;background:var(--border);margin:-3px 0 2px;overflow:hidden"><div style="width:79%;height:100%;background:var(--accent-green)"></div></div>
         </div>
-        <div style="text-align:center;font-size:10px;color:var(--text-muted);margin-top:.6rem">Simplified preview · <a href="/trakyodollas?demo=1" style="color:var(--text-muted);text-decoration:underline;text-underline-offset:2px">Try with demo data</a> for the full experience →</div>
       </div>
     </div>
     <!-- TAB 2: Net Worth -->
@@ -687,7 +688,6 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
           <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:var(--bg-card);border-radius:8px;font-size:11px"><span style="color:var(--text-secondary)">🎓 Navient Student Loan</span><span style="font-weight:700;color:var(--accent-red)">−$17,800</span></div>
           <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;background:var(--bg-card);border-radius:8px;font-size:11px"><span style="color:var(--text-secondary)">💳 Chase Sapphire</span><span style="font-weight:700;color:var(--accent-red)">−$6,800</span></div>
         </div>
-        <div style="text-align:center;font-size:10px;color:var(--text-muted);margin-top:.6rem">Simplified preview · <a href="/trakyodollas?demo=1" style="color:var(--text-muted);text-decoration:underline;text-underline-offset:2px">Try with demo data</a> for the full experience →</div>
       </div>
     </div>
   </div>
@@ -765,6 +765,10 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
     <div class="fi"><div class="fi-icon">🔄</div><div>
       <h3>Recurring charge detection</h3>
       <p>Surfaces subscriptions and regular charges automatically — including that trial you forgot to cancel.</p>
+    </div></div>
+    <div class="fi"><div class="fi-icon">💼</div><div>
+      <h3>Freelancer-friendly</h3>
+      <p>Track income alongside spending, tag transactions as business or personal, and filter your whole view by either — all without a separate bookkeeping app.</p>
     </div></div>
   </div>
 </section>
