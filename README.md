@@ -23,6 +23,7 @@ Import a CSV from your bank, credit union, or credit card. Your browser translat
 - **Spending exclusions** — hide categories like transfers and CC payments from spending totals. Reversible, per-category or per-transaction.
 - **Export anytime** — one click to export transactions or budget history as CSV, or export a full JSON backup of all your data.
 - **Works offline, installs as an app** — service worker caches the full app; install to your home screen on Android or iPhone, or via Chrome on desktop.
+- **Freelancer-friendly** — opt-in income tracking alongside spending; tag transactions as business or personal and filter your whole view by either, all without a separate bookkeeping app.
 - **Two demo profiles** — explore every feature before touching your own data.
 
 ---
@@ -183,10 +184,11 @@ The app uses a hash-based Content Security Policy — inline scripts are allowli
 
 ## Recent updates
 
+- **Include income / freelancer support** — opt-in toggle adds income tracking and business categories; tag any transaction as business or personal and filter Spending by All/Business/Personal via a segmented pill control next to the tab title
 - **Landing page screenshot + lightbox** — app screenshot with click/tap full-screen overlay and frosted zoom pill; mobile gets scrollable/pinch-zoomable view
 - **Interactive preview auto-advance** — landing page preview cycles through all chart modes and tabs via IntersectionObserver; manual interaction cancels auto-advance
 - **Category rename** — custom categories can now be renamed in-place; updates transactions, budgets, rules, and exclusions
-- **Delete account / asset** — inline confirmation pattern (no browser dialog) for removing accounts and physical assets
+- **Delete account / asset / transaction** — inline confirmation pattern (no browser dialog) for removing accounts, physical assets, and individual transactions
 - **Cloudflare Email Routing** — `contact@trakyodollas.com` forwarding and Gmail "Send mail as" now active
 - **Client-side encryption** — all synced data encrypted on your device (AES-256-GCM) before reaching Supabase; even Supabase can't read it
 - **Supabase migration** — replaced Firebase Auth + Firestore with Supabase Auth + Postgres; open-source, privacy-centered sync
