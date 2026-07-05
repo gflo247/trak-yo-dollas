@@ -1,0 +1,9 @@
+{
+  "name": "trak-yo-dollas",
+  "private": true,
+  "version": "1.0.0",
+  "description": "trak-yo-dolla$ — private, local-first money tracking",
+  "scripts": {
+    "test": "node --test"
+  }
+}

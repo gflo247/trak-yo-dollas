@@ -313,7 +313,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
     <div class="card card-blue">
       <div class="card-label">🔁 Sign in to sync across devices</div>
-      <p>Sign in with Google or a passwordless email link and the app backs up your full data — accounts, transactions, budgets, categories, and snapshots — directly to your account via <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer">Supabase</a> (open source). <strong>The app encrypts your data on your device before it leaves — Supabase stores only encrypted data it cannot read.</strong> Row-level security policies enforce access at the database level so only you can read it — not me. Sign in on any device to restore everything instantly. If you'd rather your data never leave your device, skip sign-in — the app works fully without it.</p>
+      <p>Sign in with Google or a passwordless email link and the app backs up your full data — accounts, transactions, budgets, categories, and snapshots — directly to your account via <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer">Supabase</a> (open source). <strong>The app encrypts your data on your device before it leaves — Supabase stores only encrypted data it cannot read.</strong> Row-level security policies enforce access at the database level so only you can read it — not me. Sign in on any device and enter your sync passphrase to restore everything. If you'd rather your data never leave your device, skip sign-in — the app works fully without it.</p>
     </div>
 
     <div class="card card-neutral">
@@ -372,7 +372,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
         <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">Is my synced data encrypted?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
-        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">Yes. When you sign in, the app encrypts all your data — transactions, budgets, accounts, snapshots — on your device using AES-256-GCM before sending it to Supabase's servers. Supabase stores only encrypted data it cannot read. The encryption key is derived from your account and never leaves your browser. If you don't sign in, encryption isn't needed — your data never leaves your device in the first place.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">Yes. When you sign in, the app encrypts all your data — transactions, budgets, accounts, snapshots — on your device using AES-256-GCM before sending it to Supabase's servers. Supabase stores only encrypted data it cannot read. The app derives the encryption key from a passphrase you set — not your sign-in credentials — and that passphrase never leaves your browser, so Supabase never has what it would need to decrypt your data. <strong>There's no password reset for it:</strong> if you forget your sync passphrase, you can't recover your synced data — your local data on this device is unaffected either way. If you don't sign in, encryption isn't needed — your data never leaves your device in the first place.</p>
       </details>
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
