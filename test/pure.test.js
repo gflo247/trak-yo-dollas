@@ -106,6 +106,57 @@ test("parseCSV: blank lines are dropped", () => {
   assert.equal(rows.length, 2);
 });
 
+// ── parseImportDate() — a malformed or corrupted CSV row (out-of-range day/month,
+// e.g. from a truncated or hand-edited export) used to be silently "fixed" by
+// JS Date's rollover behavior (Date(2026,12,45) quietly becomes Feb 14 2027)
+// instead of being rejected. normalizeTxRow() treats an empty return as "skip
+// this row", so a round-trip validation guard was added to make that the
+// outcome for genuinely invalid calendar dates rather than a wrong-but-plausible
+// silent date shift. ──
+test("parseImportDate: rejects an invalid calendar date (Feb 30) instead of rolling over to March", () => {
+  const { parseImportDate } = loadFunctions(["parseImportDate"]);
+  assert.equal(parseImportDate("02/30/2026", "mdy"), "");
+});
+test("parseImportDate: rejects out-of-range month/day (13/45) instead of rolling into next year", () => {
+  const { parseImportDate } = loadFunctions(["parseImportDate"]);
+  assert.equal(parseImportDate("13/45/2026", "mdy"), "");
+});
+test("parseImportDate: rejects an invalid ISO calendar date (2026-02-30)", () => {
+  const { parseImportDate } = loadFunctions(["parseImportDate"]);
+  assert.equal(parseImportDate("2026-02-30"), "");
+});
+test("parseImportDate: still parses valid mdy, dmy, iso, and locale-string dates", () => {
+  const { parseImportDate } = loadFunctions(["parseImportDate"]);
+  assert.equal(parseImportDate("05/01/2026", "mdy"), "2026-05-01");
+  assert.equal(parseImportDate("25/12/2026", "dmy"), "2026-12-25");
+  assert.equal(parseImportDate("2026-05-01"), "2026-05-01");
+  assert.equal(parseImportDate("Jan 15, 2025"), "2025-01-15");
+});
+
+// ── detectGenericSignConvention() — the "generic" CSV format (fallback for any
+// bank/credit union that doesn't match one of the 7 known column signatures) used
+// to treat every positive amount as spend unconditionally, so a majority-negative
+// checking export (typical sign convention: negative=expense, positive=deposit)
+// silently imported every paycheck/deposit as an expense in "Other". This function
+// picks which sign is "expense" from the file's own majority polarity so
+// normalizeTxRow's generic branch can gate the minority sign behind Include Income,
+// the same way every other format already does. ──
+test("detectGenericSignConvention: majority-negative file (typical checking export) treats negative as expense", () => {
+  const { detectGenericSignConvention } = loadFunctions(["detectGenericSignConvention"]);
+  const rows = [{amount:"-4.50"},{amount:"-82.10"},{amount:"2500.00"},{amount:"-45.00"}];
+  assert.equal(detectGenericSignConvention(rows), false);
+});
+test("detectGenericSignConvention: majority-positive file (unsigned credit-card export) treats positive as expense", () => {
+  const { detectGenericSignConvention } = loadFunctions(["detectGenericSignConvention"]);
+  const rows = [{amount:"4.50"},{amount:"82.10"},{amount:"-25.00"},{amount:"45.00"}];
+  assert.equal(detectGenericSignConvention(rows), true);
+});
+test("detectGenericSignConvention: zero/unparseable amounts don't skew the majority", () => {
+  const { detectGenericSignConvention } = loadFunctions(["detectGenericSignConvention"]);
+  const rows = [{amount:"-10"},{amount:"0"},{amount:""},{amount:"-5"}];
+  assert.equal(detectGenericSignConvention(rows), false);
+});
+
 // ── Sync passphrase encryption (finding #2, this session) — the key is
 // now derived from a passphrase Supabase never sees, instead of the
 // user's uid (which Supabase stores in the same row as the ciphertext).
