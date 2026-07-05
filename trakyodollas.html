@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-MVdEIA9Y2/MR0BEptD2lkIjnSJBNnpKdTY5d2WKcfbE=' 'sha256-s0UlvtzVZkIyFoI5TxSu6JQaSUSLeoAnxxKDPdL8y9Y=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-pA5fJpwamNqpkaxMOMbfUiAIkiA2g4dt4YoS7Wdvw/0=' 'sha256-s0UlvtzVZkIyFoI5TxSu6JQaSUSLeoAnxxKDPdL8y9Y=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3873,8 +3873,8 @@ function renderSourceChips(){
     `<button class="chip chip-all ${allOn?'on':''}" data-action="toggleAllSources" type="button">All sources</button>`+
     sources.map(s=>{
       const cls=getSrcChipClass(s);
-      const safe=s.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-      return `<div class="src-chip-wrap" style="position:relative;display:inline-block"><button class="chip ${cls} ${state.activeSources.has(s)?'on':''}" data-action="toggleSource" data-arg="${safe}" type="button">${s}<span class="src-x-btn" data-action="openSrcRemovePop" data-stop="1" data-src="${safe}" title="Remove this source">×</span></button><div class="src-remove-pop" style="display:none"></div></div>`;
+      const safe=esc(s);
+      return `<div class="src-chip-wrap" style="position:relative;display:inline-block"><button class="chip ${cls} ${state.activeSources.has(s)?'on':''}" data-action="toggleSource" data-arg="${safe}" type="button">${safe}<span class="src-x-btn" data-action="openSrcRemovePop" data-stop="1" data-src="${safe}" title="Remove this source">×</span></button><div class="src-remove-pop" style="display:none"></div></div>`;
     }).join('')+
     (noneSelected?`<span style="font-size:11px;color:#F87171;align-self:center;margin-left:2px">← select a source to show spending</span>`:'')
     +hiddenChip;
@@ -3977,7 +3977,7 @@ function renderSpendSummary(){
   const top5=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,5);
   document.getElementById('spend-top5-inline').innerHTML=top5.map(([cat,amt])=>
     `<div style="font-size:10px;font-weight:600;color:rgba(255,255,255,.75);margin-bottom:2px;display:flex;justify-content:space-between;gap:14px">
-      <span style="opacity:${state.activeCats.has(cat)?1:.55}">${cat}</span><span style="opacity:.35">${fmt(amt)}</span></div>`).join('');
+      <span style="opacity:${state.activeCats.has(cat)?1:.55}">${esc(cat)}</span><span style="opacity:.35">${fmt(amt)}</span></div>`).join('');
 
   // Top 5 vendors — respect category filter
   const vendorTotals5={};
@@ -3994,7 +3994,7 @@ function renderSpendSummary(){
   const badge=document.getElementById('cat-filter-badge');
   if(state.activeCats.size>0){
     badge.classList.remove('hidden');
-    const pills=[...state.activeCats].map(c=>`<span data-action="toggleCatFilter" data-arg="${esc(c)}"  style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:${getCatColor(c)}22;color:${getCatColor(c)};border:1px solid ${getCatColor(c)}44;border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700">${c} <span style="opacity:.6">✕</span></span>`).join('');
+    const pills=[...state.activeCats].map(c=>`<span data-action="toggleCatFilter" data-arg="${esc(c)}"  style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:${getCatColor(c)}22;color:${getCatColor(c)};border:1px solid ${getCatColor(c)}44;border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700">${esc(c)} <span style="opacity:.6">✕</span></span>`).join('');
     badge.innerHTML=`<div class="cat-badge" style="flex-wrap:wrap;gap:5px"><span class="text-muted-xs">Filtering:</span>${pills}<button data-action="clearCatFilter" style="font-size:10px;background:none;border:none;color:var(--text-muted);cursor:pointer;margin-left:2px" type="button">clear all</button></div>`;
   } else {
     badge.classList.add('hidden');
@@ -4156,7 +4156,7 @@ function renderBucketGrid(){
       const sparkline=vendorSparkline(vendor,color);
       return`<div class="bucket-card ${isActive?'active-bucket':''}" style="border-color:${isActive?color:tc('#1E293B','#E2E8F0')};background:${isActive?color+'18':tc('#0F172A','#F8FAFC')};color:${color}" data-action="toggleVendorFilterByIdx" data-arg="${vi}">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
-          <div class="bucket-name" title="${vendor}" style="color:${color};margin:0">${esc(displayVendor(vendor))}${data.isCollapsed?` <span data-tip="Individual check numbers collapsed — categorize a check to split it out" style="font-size:14px;opacity:.5;cursor:pointer;line-height:1;vertical-align:middle" data-action="showPillTip" data-stop="1">ⓘ</span>`:''}</div>
+          <div class="bucket-name" title="${esc(vendor)}" style="color:${color};margin:0">${esc(displayVendor(vendor))}${data.isCollapsed?` <span data-tip="Individual check numbers collapsed — categorize a check to split it out" style="font-size:14px;opacity:.5;cursor:pointer;line-height:1;vertical-align:middle" data-action="showPillTip" data-stop="1">ⓘ</span>`:''}</div>
           ${sparkline}
         </div>
         <div class="bucket-total" style="color:${color}">${fmt(data.total)}</div>
@@ -4257,7 +4257,7 @@ function renderBucketGrid(){
     const color=bucketColorMap.get(cat)||getCatColor(cat),isActive=state.activeCats.has(cat);
     const dashed=idx>=BUCKET_CAT_CAP; // overflow cats get dashed sparkline
     const hint=HINTS[cat]||'';
-    const sc=cat.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const sc=esc(cat);
     const budget=state.budgets[cat];
     const filteredMs=getFilteredMonths();
     // Most recent month in filtered range with spend for this category
@@ -4275,13 +4275,13 @@ function renderBucketGrid(){
       <span style="font-size:9px;color:var(--text-muted)">${fmt(curAmt)} of ${fmt(budget)} budget</span>
       <span style="font-size:10px;font-weight:700;color:${curAmt>budget?'#F87171':curAmt/budget>0.8?'#FBBF24':'#34D399'}">${Math.round(curAmt/budget*100)}%</span>
     </div>`
-    :`<button data-action="openBudgetModal" data-arg="${sc}" data-stop="1" style="margin-top:5px;width:100%;background:none;border:1px solid var(--border-mid);border-radius:5px;padding:2px 6px;font-size:9px;font-weight:600;color:var(--text-muted);cursor:pointer;text-align:center" title="Set a monthly budget for ${cat}" type="button">+ Set budget</button>`;
+    :`<button data-action="openBudgetModal" data-arg="${sc}" data-stop="1" style="margin-top:5px;width:100%;background:none;border:1px solid var(--border-mid);border-radius:5px;padding:2px 6px;font-size:9px;font-weight:600;color:var(--text-muted);cursor:pointer;text-align:center" title="Set a monthly budget for ${sc}" type="button">+ Set budget</button>`;
     return`<div class="bucket-card ${isActive?'active-bucket':''}" style="${dashed?'opacity:.75':''};border-color:${isActive?color:tc('#1E293B','#E2E8F0')};background:${isActive?color+'18':tc('#0F172A','#F8FAFC')};color:${color}" data-action="toggleCatFilter" data-arg="${sc}">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
-        <div class="bucket-name" title="${cat}" style="color:${color};margin:0">${cat}${state.includeIncome&&_BIZ_CATS.includes(cat)?'<span style="font-size:8px;background:#2563EB22;color:#60A5FA;padding:1px 4px;border-radius:3px;font-weight:700;margin-left:4px;vertical-align:middle">BIZ</span>':''}${hint?` <span data-tip="${hint}" style="font-size:15px;opacity:.4;cursor:pointer;line-height:1;vertical-align:middle" data-action="showPillTip" data-stop="1">ⓘ</span>`:''}</div>
+        <div class="bucket-name" title="${sc}" style="color:${color};margin:0">${sc}${state.includeIncome&&_BIZ_CATS.includes(cat)?'<span style="font-size:8px;background:#2563EB22;color:#60A5FA;padding:1px 4px;border-radius:3px;font-weight:700;margin-left:4px;vertical-align:middle">BIZ</span>':''}${hint?` <span data-tip="${hint}" style="font-size:15px;opacity:.4;cursor:pointer;line-height:1;vertical-align:middle" data-action="showPillTip" data-stop="1">ⓘ</span>`:''}</div>
         <div style="display:flex;align-items:center;gap:4px">
           ${catSparkline(cat,color,dashed)}
-          <button data-action="toggleCatExclusion" data-arg="${sc}" data-stop="1" data-hide-cat="${sc}" style="background:none;border:none;cursor:pointer;font-size:11px;opacity:.35;padding:0 2px;color:currentColor;line-height:1;transition:opacity .1s" type="button">${state.excludedCats.has(sc)?'👁':'···'}</button>
+          <button data-action="toggleCatExclusion" data-arg="${sc}" data-stop="1" data-hide-cat="${sc}" style="background:none;border:none;cursor:pointer;font-size:11px;opacity:.35;padding:0 2px;color:currentColor;line-height:1;transition:opacity .1s" type="button">${state.excludedCats.has(cat)?'👁':'···'}</button>
         </div>
       </div>
       <div class="bucket-total" style="color:${color}">${fmt(s.total)}</div>
@@ -5553,8 +5553,8 @@ function openSrcRemovePop(arg,el){
   const pop=wrap&&wrap.querySelector('.src-remove-pop');
   if(!pop)return;
   const count=state.transactions.filter(t=>t.card===src).length;
-  const safe=src.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  pop.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:.35rem">Remove ${count} transaction${count===1?'':'s'}?</div><div style="font-size:11px;color:var(--text-muted);margin-bottom:.55rem">${src}</div><div style="display:flex;gap:6px"><button data-action="confirmSrcRemove" data-arg="${safe}" style="background:#450A0A;border:1px solid #7F1D1D;border-radius:6px;color:#FCA5A5;font-size:11px;font-weight:700;cursor:pointer;padding:4px 10px;font-family:inherit" type="button">Remove</button><button data-action="closeSrcRemovePop" class="btn" style="font-size:11px;padding:4px 10px" type="button">Cancel</button></div>`;
+  const safe=esc(src);
+  pop.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:.35rem">Remove ${count} transaction${count===1?'':'s'}?</div><div style="font-size:11px;color:var(--text-muted);margin-bottom:.55rem">${safe}</div><div style="display:flex;gap:6px"><button data-action="confirmSrcRemove" data-arg="${safe}" style="background:#450A0A;border:1px solid #7F1D1D;border-radius:6px;color:#FCA5A5;font-size:11px;font-weight:700;cursor:pointer;padding:4px 10px;font-family:inherit" type="button">Remove</button><button data-action="closeSrcRemovePop" class="btn" style="font-size:11px;padding:4px 10px" type="button">Cancel</button></div>`;
   pop.style.display='block';
   setTimeout(()=>document.addEventListener('click',_srcPopOutside,{once:true}),0);
 }
@@ -5574,7 +5574,7 @@ function confirmSrcRemove(src){
   scheduleSave();
   closeSrcRemovePop();
   renderSpending();
-  showToast(`Removed ${count} transaction${count===1?'':'s'} from "${src}"`);
+  showToast(`Removed ${count} transaction${count===1?'':'s'} from "${esc(src)}"`);
 }
 function showImportFreshConfirm(){
   const row=document.getElementById('import-fresh-row');
@@ -5653,7 +5653,7 @@ function showCatHideConfirm(cat){
   pop.id='cat-hide-confirm-pop';
   pop.style.cssText='position:absolute;z-index:300;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.65rem .85rem;min-width:220px;box-shadow:0 6px 20px #00000055;font-size:12px';
   pop.innerHTML=`
-    <div style="font-weight:700;color:var(--text-primary);margin-bottom:3px">Hide <em style="font-style:normal;color:#F87171">${cat}</em> from spending?</div>
+    <div style="font-weight:700;color:var(--text-primary);margin-bottom:3px">Hide <em style="font-style:normal;color:#F87171">${esc(cat)}</em> from spending?</div>
     <div style="color:var(--text-muted);font-size:11px;line-height:1.5;margin-bottom:.6rem">Reversible via the spending exclusion(s) button.</div>
     <div style="display:flex;gap:6px;justify-content:flex-end">
       <button data-action="closeCatHideConfirm" data-stop="1" style="background:none;border:1px solid var(--border-mid);border-radius:5px;padding:3px 12px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;font-family:inherit" type="button">Cancel</button>
@@ -5702,13 +5702,13 @@ function confirmCatExclusion(cat){
   state.activeCats.delete(cat);
   scheduleSave();
   renderSourceChips();renderSpendSummary();renderBucketGrid();renderTxList();renderActiveChart();
-  showToast(`${cat} hidden from spending`,'#94A3B8',2800);
+  showToast(`${esc(cat)} hidden from spending`,'#94A3B8',2800);
 }
 function undoCatExclusion(cat){
   state.excludedCats.delete(cat);
   scheduleSave();
   renderSourceChips();renderSpendSummary();renderBucketGrid();renderTxList();renderActiveChart();
-  showToast(`${cat} restored`,'#34D399');
+  showToast(`${esc(cat)} restored`,'#34D399');
 }
 function buildHiddenPopover(){
   const DEFAULT_EXCL=new Set(['Investment Contributions','Transfers','CC Payment']);
@@ -5720,7 +5720,7 @@ function buildHiddenPopover(){
       const isDefault=DEFAULT_EXCL.has(cat);
       const warn=!isDefault?'<span title="You added this — not a default exclusion" style="opacity:.5;margin-left:4px">⚠</span>':'';
       return `<div class="hidden-popover-row">
-        <span>${cat}${warn}</span>
+        <span>${esc(cat)}${warn}</span>
         <button class="hidden-popover-show" data-action="restoreCat" data-arg="${esc(cat)}" type="button">Show</button>
       </div>`;
     }).join('');
@@ -6377,7 +6377,7 @@ function addVendorAlias(){
   renderVendorAliasList();
   renderSpending();
   scheduleSave();
-  showToast(`⟲ Merged: ${from} → ${to}`,'#34D399');
+  showToast(`⟲ Merged: ${esc(from)} → ${esc(to)}`,'#34D399');
 }
 
 function deleteVendorAlias(from){
@@ -6430,7 +6430,7 @@ function removeBudget(cat){
   scheduleSave();
   renderBucketGrid();
   renderBudgetTab();
-  showToast(`Budget removed for ${cat} · <button data-action="undoBudgetCat" data-arg="${cat}" data-arg2="${prev}" style="background:none;border:none;color:#60A5FA;font-size:12px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit" type="button">Undo</button>`,4000);
+  showToast(`Budget removed for ${esc(cat)} · <button data-action="undoBudgetCat" data-arg="${esc(cat)}" data-arg2="${prev}" style="background:none;border:none;color:#60A5FA;font-size:12px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit" type="button">Undo</button>`,4000);
 }
 function buildCondensedDots(months,budgeted,totalBudget,mode,cat,budget){
   const warnPct=state.budgetWarnPct??80;
@@ -6632,7 +6632,14 @@ function renderBudgetTab(){
   const prevBtn=document.getElementById('budget-prev-month');
   if(prevBtn){const earliest=Object.keys(MONTHLY).sort()[0];prevBtn.disabled=!!earliest&&ym<=earliest;}
 
-  const monthTx=state.transactions.filter(t=>t.date.slice(0,7)===ym&&!t.excluded);
+  // Also drop Income rows — without this, Income showed up as "unbudgeted spending" (with a
+  // nonsensical "+ set limit" offer) any time Include Income was on, since only individually-
+  // excluded transactions (t.excluded) were filtered. Deliberately narrower than excluding all
+  // of state.excludedCats: Transfers/CC Payment/Investment Contributions are excluded from the
+  // Spending tab's charts but are still real outgoing spend a user may legitimately want to
+  // budget (the demo data itself ships a real budget on "Transfers") — only Income is never
+  // spend under any circumstance, so it's the one category this tab must always exclude.
+  const monthTx=state.transactions.filter(t=>t.date.slice(0,7)===ym&&!t.excluded&&t.cat!=='Income');
   const spendByCat={};
   monthTx.forEach(t=>{spendByCat[t.cat]=(spendByCat[t.cat]||0)+t.amount;});
   // Per-source latest date → use earliest across active sources (most conservative)
@@ -7764,7 +7771,7 @@ function confirmSaveRule(){
   const kw=document.getElementById('srp-keyword-input').value.trim();
   if(!kw||!_pendingRule)return;
   addCatRule(kw,_pendingRule.cat);
-  showToast(`⚡ Rule saved: "${kw}" → ${_pendingRule.cat}`,'#34D399');
+  showToast(`⚡ Rule saved: "${esc(kw)}" → ${esc(_pendingRule.cat)}`,'#34D399');
   _pendingRule=null;
   closeModals();
 }
@@ -7852,7 +7859,7 @@ function renderCatManagerList(){
     }
     return `<div style="display:flex;align-items:center;gap:8px;padding:.35rem .65rem;border-bottom:1px solid var(--border-mid)">
       ${dot}
-      <span style="flex:1;font-size:12px;color:${c.custom?'var(--text-primary)':'var(--text-muted)'}">${c.name}${c.custom?'':' <span style="font-size:9px;color:var(--text-muted)">(built-in)</span>'}</span>
+      <span style="flex:1;font-size:12px;color:${c.custom?'var(--text-primary)':'var(--text-muted)'}">${esc(c.name)}${c.custom?'':' <span style="font-size:9px;color:var(--text-muted)">(built-in)</span>'}</span>
       ${c.custom?`
         <button data-action="startRenameCat" data-arg="${esc(c.name)}" style="font-size:10px;background:none;border:none;color:#475569;cursor:pointer;padding:2px 6px" title="Rename" type="button">✏</button>
         <button data-action="deleteCustomCat" data-arg="${esc(c.name)}" style="font-size:10px;background:none;border:none;color:#475569;cursor:pointer;padding:2px 6px" title="Delete" type="button">✕</button>
@@ -7933,6 +7940,20 @@ let fmtPickerOpen=false;
 let importParsed=[];  // [{date,desc,cat,card,amount,excluded,is_offset}]
 let _importDateFmt='mdy'; // 'mdy'=MM/DD/YYYY (US), 'dmy'=DD/MM/YYYY (UK/AU)
 let _importRawRows=null;  // stored for re-parse when date format changes
+// Generic-format sign convention: most bank exports use negative=expense/positive=deposit,
+// but some unsigned exports (e.g. credit-card-only CSVs) list every charge as positive with
+// no separate debit/credit marker. Detected once per file from the majority polarity of the
+// 'amount' column so normalizeTxRow's generic branch knows which sign to treat as spend.
+let _genericPositiveIsExpense=false;
+function detectGenericSignConvention(rows){
+  let neg=0,pos=0;
+  for(const row of rows){
+    const raw=parseFloat(row['amount']||row['transaction amount']||'0');
+    if(!raw)continue;
+    if(raw<0)neg++;else pos++;
+  }
+  return pos>neg; // true only when positive amounts are the clear majority
+}
 
 // Parse a date string into YYYY-MM-DD, respecting the user's chosen date format
 function parseImportDate(str,fmt){
@@ -7941,8 +7962,13 @@ function parseImportDate(str,fmt){
   // ISO 8601: YYYY-MM-DD or YYYY/MM/DD — always unambiguous
   const iso=str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
   if(iso){
-    const d=new Date(parseInt(iso[1]),parseInt(iso[2])-1,parseInt(iso[3]),12,0,0);
-    return isNaN(d.getTime())?'':d.toISOString().slice(0,10);
+    const y=parseInt(iso[1]),mo=parseInt(iso[2]),dy=parseInt(iso[3]);
+    const d=new Date(y,mo-1,dy,12,0,0);
+    // Guard against JS Date's silent rollover for out-of-range values (e.g. day 32,
+    // month 13) — without this, a corrupted row silently produces a wrong-but-plausible
+    // date instead of being rejected. Round-trip the components to detect it.
+    if(isNaN(d.getTime())||d.getMonth()!==mo-1||d.getDate()!==dy)return'';
+    return d.toISOString().slice(0,10);
   }
   // Slash/dash/dot separated: MM/DD/YYYY or DD/MM/YYYY (or 2-digit year)
   const parts=str.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})$/);
@@ -7951,7 +7977,9 @@ function parseImportDate(str,fmt){
     if(y.length===2)y=parseInt(y)<50?'20'+y:'19'+y;
     const[mo,dy]=fmt==='dmy'?[parseInt(b),parseInt(a)]:[parseInt(a),parseInt(b)];
     const d=new Date(parseInt(y),mo-1,dy,12,0,0);
-    return isNaN(d.getTime())?'':d.toISOString().slice(0,10);
+    // Same rollover guard as the ISO branch above.
+    if(isNaN(d.getTime())||d.getMonth()!==mo-1||d.getDate()!==dy)return'';
+    return d.toISOString().slice(0,10);
   }
   // Fallback: unambiguous strings like "Jan 15, 2025"
   // new Date(locale-string) parses as local midnight; toISOString() converts to UTC and
@@ -8098,6 +8126,9 @@ function parseTxFile(file){
       showToast('Could not read this CSV — check the format and try again','#F87171');return;
     }
     _importRawRows=rows;
+    // Detect sign convention for the generic format's fallback parser (see
+    // detectGenericSignConvention) — recomputed per-file since it depends on this file's data.
+    _genericPositiveIsExpense=detectGenericSignConvention(rows);
     // Detect date format — update UI and store for re-parse on toggle
     const detectedFmt=detectImportDateFmt(rows);
     if(detectedFmt==='iso'){
@@ -8323,16 +8354,26 @@ function normalizeTxRow(row, source){
     if(!isIncome)cat=mapImportedCategory(row['category'])||guessCatFromDesc(desc);
 
   } else {
-    // Generic — try to figure out sign convention
+    // Generic — sign convention auto-detected from the whole file's majority polarity
+    // (_genericPositiveIsExpense, set by detectGenericSignConvention in parseTxFile).
+    // Most unsupported bank/credit-union exports use negative=expense, positive=deposit —
+    // deposits are then subject to the same Include Income gate as every other format
+    // instead of always being counted as spend (previously every deposit/paycheck row was
+    // silently imported as an expense in "Other", regardless of the Include Income toggle).
     date=row['date']||row['transaction date']||row['trans date']||row['posting date']||'';
     desc=(row['description']||row['desc']||row['merchant']||row['payee']||row['name']||'').trim();
     const rawAmt=parseFloat(row['amount']||row['transaction amount']||'0');
-    // Detect sign convention: if majority of amounts are positive, treat positive as expense
-    amount=rawAmt<0?Math.abs(rawAmt):rawAmt;
+    const isExpenseSign=_genericPositiveIsExpense?rawAmt>0:rawAmt<0;
+    if(isExpenseSign){
+      amount=Math.abs(rawAmt);
+    } else {
+      if(!rawAmt||!state.includeIncome)return null;
+      isIncome=true;amount=Math.abs(rawAmt);cat='Income';
+    }
     if(!amount)return null;
     mcc=row['mcc']||row['MCC']||'';
-    cat=guessCatFromDesc(desc);
-    if(cat==='Other')cat=row['category']||row['cat']||row['type']||'Other';
+    if(!isIncome)cat=guessCatFromDesc(desc);
+    if(!isIncome&&cat==='Other')cat=row['category']||row['cat']||row['type']||'Other';
   }
 
   // Normalize date to YYYY-MM-DD using the user's chosen date format
@@ -8560,7 +8601,7 @@ function showImportPreview(){
   const total=importParsed.reduce((s,t)=>s+t.amount,0);
   const cats={};
   importParsed.forEach(t=>{cats[t.cat]=(cats[t.cat]||0)+1;});
-  const topCats=Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,n])=>`${c} (${n})`).join(', ');
+  const topCats=Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,n])=>`${esc(c)} (${n})`).join(', ');
   stats.innerHTML=`<strong style="color:var(--text-bright)">${importParsed.length} transactions</strong> · <span style="color:#475569">$${total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} total</span> · Top: ${topCats}`;
 
   const sample=importParsed.slice(0,8);
@@ -8639,7 +8680,7 @@ function confirmTxImport(){
 
   closeModals();
   renderSpending();
-  showToast(`✓ Imported ${newTxs.length} transactions from ${source}`);
+  showToast(`✓ Imported ${newTxs.length} transactions from ${esc(source)}`);
   try{localStorage.setItem('trakyo_last_import',new Date().toISOString());}catch(e){}
   // Hide demo notices — real data is now loaded
   state.hasRealData=true;
@@ -8649,7 +8690,7 @@ function confirmTxImport(){
   const months=[...new Set(newTxs.map(t=>t.date.slice(0,7)))].sort();
   const monthRange=months.length>1?`${fmtMonthShort(months[0])} – ${fmtMonthShort(months[months.length-1])}`:(months[0]?fmtMonthShort(months[0]):'');
   const summaryEl=document.getElementById('import-success-summary');
-  if(summaryEl)summaryEl.innerHTML=`<strong style="color:var(--text-primary)">${newTxs.length} transactions</strong> from ${source}${monthRange?` · ${monthRange}`:''}`;
+  if(summaryEl)summaryEl.innerHTML=`<strong style="color:var(--text-primary)">${newTxs.length} transactions</strong> from ${esc(source)}${monthRange?` · ${esc(monthRange)}`:''}`;
   const uncatEl=document.getElementById('import-success-uncategorized');
   if(uncatEl){
     if(uncatCount>0){uncatEl.textContent=`⚠️ ${uncatCount} transaction${uncatCount===1?'':'s'} landed in "Other" — click them in the Spending tab to recategorize.`;uncatEl.classList.remove('hidden');}
