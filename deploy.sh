@@ -7,6 +7,15 @@ if [ "$target" != "dev" ] && [ "$target" != "prod" ]; then
   exit 1
 fi
 
+# Gate the deploy on the test suite and the inline-handler lint — previously
+# this script would ship straight to prod with no verification at all, the
+# only safety net being a developer remembering to run both by hand first.
+echo "=== Running tests ==="
+npm test
+
+echo "=== Checking for inline event handlers ==="
+bash scripts/check-no-inline-handlers.sh
+
 python3 scripts/update-csp-hashes.py
 python3 scripts/update-sitemap-dates.py
 

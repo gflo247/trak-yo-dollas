@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ZWyJDlmHZVbFgdAldWV7p2ocQ9oPjQus7X2RBR75TYo=' 'sha256-zyrRNva2SSbS0VfLlYmcQBFkulFcU4Ei4j0+Y5LWwhI=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-MVdEIA9Y2/MR0BEptD2lkIjnSJBNnpKdTY5d2WKcfbE=' 'sha256-s0UlvtzVZkIyFoI5TxSu6JQaSUSLeoAnxxKDPdL8y9Y=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1218,6 +1218,31 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   </div>
 </div>
 
+<div class="modal-overlay hidden" id="sync-passphrase-modal">
+  <div class="modal" style="max-width:380px">
+    <h3 id="sync-pp-title">Sync passphrase</h3>
+    <p class="modal-sub" id="sync-pp-desc" style="margin-bottom:.75rem"></p>
+    <div class="form-group">
+      <label class="form-label" for="sync-pp-input">Passphrase</label>
+      <input type="password" id="sync-pp-input" autocomplete="off" data-keydown="confirmSyncPassphraseOnEnter"
+        style="width:100%;padding:.6rem .75rem;border:1px solid var(--border-mid);border-radius:8px;background:var(--bg-deep);color:var(--text-primary);font-size:13px;outline:none;font-family:inherit">
+    </div>
+    <div class="form-group hidden" id="sync-pp-confirm-group">
+      <label class="form-label" for="sync-pp-confirm">Confirm passphrase</label>
+      <input type="password" id="sync-pp-confirm" autocomplete="off" data-keydown="confirmSyncPassphraseOnEnter"
+        style="width:100%;padding:.6rem .75rem;border:1px solid var(--border-mid);border-radius:8px;background:var(--bg-deep);color:var(--text-primary);font-size:13px;outline:none;font-family:inherit">
+    </div>
+    <p id="sync-pp-error" style="display:none;color:#F87171;font-size:12px;margin:.4rem 0 0"></p>
+    <div style="margin-top:.75rem;background:#065F4622;border:1px solid #05996944;border-radius:8px;padding:.5rem .85rem;text-align:center">
+      <span style="font-size:11px;font-weight:700;color:#34D399">We never see this passphrase and can't reset it. If you forget it, you can't recover your synced data — your local data on this device is unaffected.</span>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:.75rem">
+      <button class="btn" data-action="cancelSyncPassphrase" type="button" style="flex:1">Cancel</button>
+      <button class="btn btn-primary" id="sync-pp-submit-btn" data-action="submitSyncPassphrase" type="button" style="flex:1">Continue</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modals -->
 <div class="modal-overlay hidden" id="add-modal">
   <div class="modal">
@@ -2206,6 +2231,7 @@ function validateClearConfirm(val){const btn=document.getElementById('clear-conf
 function hoverRed(e,el){el.style.color='#F87171';}
 function unhoverRed(e,el){el.style.color='var(--text-muted)';}
 function confirmGoalOnEnter(e){if(e.key==='Enter')confirmCustomGoal();}
+function confirmSyncPassphraseOnEnter(e){if(e.key==='Enter')submitSyncPassphrase();}
 
 let spendChart=null,editAcctId=null,editVehicleId=null,editTxId=null,showTxN=50;
 
@@ -2293,6 +2319,18 @@ function updateBannerOffset(){
 // Run on load and on resize
 window.addEventListener('resize', updateBannerOffset);
 
+// Shared by the Spending tab's "Budget health" pill (renderInsights, below)
+// and the Budget tab's needs-attention/on-track grouping (renderBudgetTab)
+// — extracted after those two independently-written classifications
+// diverged (the pill wasn't filtering out $0/unset budgets the way the
+// Budget tab's own category list does), which let the two surfaces report
+// different "N categories need attention" counts for the same data.
+function classifyBudgetStatus(spend,budget,isCurrentMonth,daysPct,warnPct){
+  const pct=budget>0?Math.round(spend/budget*100):0;
+  const over=spend>budget;
+  const atRisk=!over&&pct>=warnPct&&isCurrentMonth&&daysPct<=0.6;
+  return{over,atRisk,pct};
+}
 
 function renderInsights(){
   const card=document.getElementById('insights-card');
@@ -2568,9 +2606,14 @@ function renderInsights(){
   }
 
   // Pill 4 — Budget health
-  const hasBudgets=Object.keys(state.budgets).length>0;
+  const hasBudgets=Object.keys(state.budgets).filter(cat=>state.budgets[cat]>0).length>0;
   if(hasBudgets&&latestFullM){
-    const budgetCats=Object.keys(state.budgets);
+    // Same v>0 filter the Budget tab's own `budgeted` list uses (see
+    // classifyBudgetStatus below) — without it, a category left at a $0
+    // budget (undoBudgetCat() can produce one instead of deleting the key)
+    // would count toward "needs attention" here while being invisible on
+    // the Budget tab entirely, so the two counts could never agree.
+    const budgetCats=Object.keys(state.budgets).filter(cat=>state.budgets[cat]>0);
     const today=new Date();
     const daysInMonth=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
     const daysPctForPill=latestFullM===currentM?today.getDate()/daysInMonth:1;
@@ -2579,9 +2622,7 @@ function renderInsights(){
     budgetCats.forEach(cat=>{
       const budget=state.budgets[cat];
       const spend=getTxForMonth(latestFullM).filter(t=>t.cat===cat).reduce((s,t)=>s+t.amount,0);
-      const pct=budget>0?Math.round(spend/budget*100):0;
-      const isOver=spend>budget;
-      const isAtRisk=!isOver&&pct>=(state.budgetWarnPct??80)&&daysPctForPill<=0.6;
+      const{over:isOver,atRisk:isAtRisk,pct}=classifyBudgetStatus(spend,budget,latestFullM===currentM,daysPctForPill,state.budgetWarnPct??80);
       if(isOver){over++;if(pct>worstPct){worstPct=pct;worstCat=cat;worstSpend=spend;worstBudget=budget;}}
       else if(isAtRisk){under++;}
       else{onTrack++;}
@@ -6770,11 +6811,7 @@ function renderBudgetTab(){
 
   // Over/at-risk classification, for grouping into "needs attention" / "on track"
   function getRowFlags(cat,budget){
-    const spent=spendByCat[cat]||0;
-    const pct=Math.round(spent/budget*100);
-    const over=spent>budget;
-    const atRisk=!over&&pct>=warnPct&&isCurrent&&daysPct<=0.6;
-    return{over,atRisk};
+    return classifyBudgetStatus(spendByCat[cat]||0,budget,isCurrent,daysPct,warnPct);
   }
 
   // Each branch returns an ascending comparison; _budgetSortDir flips it for the active sort
@@ -8529,9 +8566,9 @@ function showImportPreview(){
   const sample=importParsed.slice(0,8);
   rows.innerHTML=sample.map(t=>`
     <div style="display:flex;gap:8px;padding:.3rem .6rem;border-bottom:1px solid var(--border-mid);align-items:center">
-      <span style="font-size:9px;color:var(--text-muted);min-width:72px">${t.date}</span>
-      <span style="flex:1;font-size:10px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.desc}</span>
-      <span style="font-size:9px;padding:1px 6px;border-radius:99px;background:${getCatColor(t.cat)}22;color:${getCatColor(t.cat)}">${t.cat}</span>
+      <span style="font-size:9px;color:var(--text-muted);min-width:72px">${esc(t.date)}</span>
+      <span style="flex:1;font-size:10px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.desc)}</span>
+      <span style="font-size:9px;padding:1px 6px;border-radius:99px;background:${getCatColor(t.cat)}22;color:${getCatColor(t.cat)}">${esc(t.cat)}</span>
       <span style="font-size:10px;font-weight:700;color:#F87171;min-width:52px;text-align:right">$${t.amount.toFixed(2)}</span>
     </div>`).join('')+(importParsed.length>8?`<div style="padding:.3rem .6rem;font-size:10px;color:var(--text-muted)">…and ${importParsed.length-8} more</div>`:'');
 
@@ -8869,6 +8906,7 @@ function updateAuthUI(user, justSignedIn=false) {
 window.updateAuthUI = updateAuthUI;
 window.loadUserData = loadUserData;
 window.showPage = showPage;
+window.promptSyncPassphrase = promptSyncPassphrase;
 
 function openAuthModal(reason) {
   const title = document.getElementById('auth-modal-title');
@@ -8882,6 +8920,73 @@ function openAuthModal(reason) {
   document.getElementById('auth-modal').classList.remove('hidden');
 }
 
+// ── Sync passphrase — gates loadUserData() behind a secret Supabase never
+// sees (see the comment above _deriveKey). A cached passphrase (this
+// device's localStorage) is tried silently first so reloads, new tabs, and
+// browser restarts don't re-prompt; only shown when there's no cached
+// value or it turns out to be wrong. ──
+let _pendingSyncUid = null;
+let _pendingSyncIsFirstTime = false;
+async function promptSyncPassphrase(uid) {
+  if (window._isDemoPreview) return;
+  if (getSyncPassphrase()) {
+    try { await loadUserData(uid); return; }
+    catch(e) { clearSyncPassphrase(); }
+  }
+  _pendingSyncUid = uid;
+  _pendingSyncIsFirstTime = !(await _syncPassphraseAlreadySet(uid));
+  const title = document.getElementById('sync-pp-title');
+  const desc = document.getElementById('sync-pp-desc');
+  const confirmGroup = document.getElementById('sync-pp-confirm-group');
+  const errorEl = document.getElementById('sync-pp-error');
+  const input = document.getElementById('sync-pp-input');
+  const confirmInput = document.getElementById('sync-pp-confirm');
+  if (errorEl) { errorEl.style.display = 'none'; errorEl.textContent = ''; }
+  if (input) input.value = '';
+  if (confirmInput) confirmInput.value = '';
+  if (_pendingSyncIsFirstTime) {
+    if (title) title.textContent = 'Set a sync passphrase';
+    if (desc) desc.textContent = "This encrypts your data before it ever leaves your device. Choose something memorable — we never see it and can't reset it for you.";
+    if (confirmGroup) confirmGroup.classList.remove('hidden');
+  } else {
+    if (title) title.textContent = 'Enter your sync passphrase';
+    if (desc) desc.textContent = 'Enter the passphrase you set when you first enabled sync.';
+    if (confirmGroup) confirmGroup.classList.add('hidden');
+  }
+  document.getElementById('sync-passphrase-modal').classList.remove('hidden');
+  if (input) setTimeout(()=>input.focus(), 50);
+}
+async function submitSyncPassphrase() {
+  const input = document.getElementById('sync-pp-input');
+  const confirmInput = document.getElementById('sync-pp-confirm');
+  const errorEl = document.getElementById('sync-pp-error');
+  const showError = (msg) => { if (errorEl) { errorEl.textContent = msg; errorEl.style.display = 'block'; } };
+  const pw = input ? input.value : '';
+  if (!pw) { showError('Enter a passphrase.'); return; }
+  if (_pendingSyncIsFirstTime && pw !== (confirmInput ? confirmInput.value : '')) {
+    showError("Passphrases don't match.");
+    return;
+  }
+  const uid = _pendingSyncUid;
+  if (!uid) return;
+  setSyncPassphrase(pw);
+  const btn = document.getElementById('sync-pp-submit-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+  try {
+    await loadUserData(uid);
+    closeModals();
+  } catch(e) {
+    clearSyncPassphrase();
+    showError(e && e.message === 'wrong-passphrase' ? 'Incorrect passphrase — try again.' : 'Something went wrong — please try again.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Continue'; }
+  }
+}
+function cancelSyncPassphrase() {
+  closeModals();
+  _pendingSyncUid = null;
+  doSignOut();
+}
 
 async function loadUserData(uid) {
   if (!window._fb) return;
@@ -8936,6 +9041,9 @@ async function loadUserData(uid) {
     requestAnimationFrame(()=>requestAnimationFrame(()=>renderNwChart()));
     showToast('✓ Data loaded from your account');
   } catch(e) {
+    // Wrong/missing passphrase — let promptSyncPassphrase() catch this and
+    // re-prompt, instead of silently failing to load real (or any) data.
+    if (e && (e.message === 'wrong-passphrase' || e.message === 'missing-passphrase')) throw e;
     console.error('loadUserData error:', e);
   }
 }
@@ -9909,9 +10017,10 @@ _sb.auth.onAuthStateChange((event, session) => {
   if (window.updateAuthUI) window.updateAuthUI(window._fbUser, isSignIn && !_sbAuthHandled);
   if (user && !_sbAuthHandled) {
     _sbAuthHandled = true;
-    if (window.loadUserData) window.loadUserData(user.id);
+    if (window.promptSyncPassphrase) window.promptSyncPassphrase(user.id);
   } else if (!user) {
     _sbAuthHandled = false;
+    clearSyncPassphrase();
     if (window._demoPicked) {
       const nudge = document.getElementById('demo-nudge');
       if (nudge) nudge.style.display = 'block';
@@ -9927,6 +10036,48 @@ _sb.auth.onAuthStateChange((event, session) => {
 });
 
 // ── Client-side encryption (AES-256-GCM via Web Crypto API) ──
+// Key material is a passphrase the user sets, kept ONLY in memory + this
+// device's localStorage — never sent to Supabase. Previously this derived
+// the key from the user's uid, which Supabase itself stores right next to
+// the ciphertext (as every row's user_id column) — meaning Supabase (or
+// anyone with equivalent DB access) had every ingredient needed to derive
+// the same key and decrypt everything, defeating the point of encrypting
+// client-side at all. The salt can still live server-side (salts aren't
+// meant to be secret, only unique) — it's the passphrase that must never
+// reach the backend.
+// localStorage, not sessionStorage: Supabase's own sign-in session already
+// persists in localStorage across tabs and browser restarts, so caching
+// the passphrase any less durably just meant re-prompting far more often
+// than the sign-in itself actually expires. This doesn't weaken what the
+// passphrase protects against (a Supabase-side compromise never sees this
+// either way) — a compromised local device already defeats the app
+// regardless of which storage held it. Sign-out still clears it either way.
+let _syncPassphrase = null;
+function setSyncPassphrase(pw) {
+  _syncPassphrase = pw;
+  try { localStorage.setItem('trakyo_sync_pp', pw); } catch(e) {}
+}
+function clearSyncPassphrase() {
+  _syncPassphrase = null;
+  _cryptoKey = null; _cryptoKeyUid = null; _cryptoKeyPassphrase = null;
+  try { localStorage.removeItem('trakyo_sync_pp'); } catch(e) {}
+}
+function getSyncPassphrase() {
+  if (_syncPassphrase) return _syncPassphrase;
+  try {
+    const cached = localStorage.getItem('trakyo_sync_pp');
+    if (cached) { _syncPassphrase = cached; return cached; }
+  } catch(e) {}
+  return null;
+}
+// Does this uid already have a salt row from a previous session? Used to
+// decide whether to prompt for a new passphrase (confirm-twice, since
+// there's nothing yet to check it against) or an existing one (single
+// entry — a wrong guess will fail to decrypt and can be retried).
+async function _syncPassphraseAlreadySet(uid) {
+  const { data } = await _sb.from('user_keys').select('user_id').eq('user_id', uid);
+  return !!(data && data.length);
+}
 async function _getOrCreateSalt(uid) {
   const { data } = await _sb.from('user_keys').select('salt').eq('user_id', uid);
   if (data && data.length) return data[0].salt;
@@ -9936,17 +10087,21 @@ async function _getOrCreateSalt(uid) {
   return saltB64;
 }
 let _cryptoKey = null;
-let _cryptoUid = null;
+let _cryptoKeyUid = null;
+let _cryptoKeyPassphrase = null;
 async function _deriveKey(uid) {
-  if (_cryptoKey && _cryptoUid === uid) return _cryptoKey;
+  const pw = getSyncPassphrase();
+  if (!pw) throw new Error('missing-passphrase');
+  if (_cryptoKey && _cryptoKeyUid === uid && _cryptoKeyPassphrase === pw) return _cryptoKey;
   const saltB64 = await _getOrCreateSalt(uid);
   const enc = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(uid), 'PBKDF2', false, ['deriveKey']);
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
   _cryptoKey = await crypto.subtle.deriveKey(
     { name: 'PBKDF2', salt: Uint8Array.from(atob(saltB64), c => c.charCodeAt(0)), iterations: 100000, hash: 'SHA-256' },
     keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
   );
-  _cryptoUid = uid;
+  _cryptoKeyUid = uid;
+  _cryptoKeyPassphrase = pw;
   return _cryptoKey;
 }
 async function _encrypt(obj, uid) {
@@ -9956,11 +10111,19 @@ async function _encrypt(obj, uid) {
   const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext);
   return { iv: btoa(String.fromCharCode(...iv)), ct: btoa(String.fromCharCode(...new Uint8Array(ciphertext))) };
 }
+// Throws a recognizable 'wrong-passphrase' error on GCM auth-tag mismatch
+// (i.e. the passphrase was wrong) rather than letting the raw DOMException
+// (OperationError) leak out — callers can catch this to re-prompt cleanly.
 async function _decrypt(envelope, uid) {
   const key = await _deriveKey(uid);
   const iv = Uint8Array.from(atob(envelope.iv), c => c.charCodeAt(0));
   const ct = Uint8Array.from(atob(envelope.ct), c => c.charCodeAt(0));
-  const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+  let plaintext;
+  try {
+    plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+  } catch(e) {
+    throw new Error('wrong-passphrase');
+  }
   return JSON.parse(new TextDecoder().decode(plaintext));
 }
 
