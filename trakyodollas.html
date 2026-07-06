@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-YkDYWXtzFipmiUoqUNIoTLXbPktYFTTaupb6+xmlUu0=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-aBs8WzRhifLaQQnp/04QHmyvGru3HVbh60vlxdh42Bw=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2427,7 +2427,7 @@ function renderInsights(){
   const catChanges=[];
   const curTxBycat={},prevTxBycat={};
   state.transactions.forEach(t=>{
-    if(t.excluded||t.isIncome)return;
+    if(!isRealSpend(t))return;
     const m=t.date.slice(0,7);
     if(m===latestFullM){curTxBycat[t.cat]=(curTxBycat[t.cat]||0)+t.amount;}
     if(m===prevFullM){prevTxBycat[t.cat]=(prevTxBycat[t.cat]||0)+t.amount;}
@@ -2476,7 +2476,7 @@ function renderInsights(){
   if(fullMonths.length>=3){
     const recentMonths=fullMonths.slice(-6);
     let wkendTotal=0,wkendDays=new Set(),wkdayTotal=0,wkdayDays=new Set();
-    state.transactions.filter(t=>!t.excluded&&!t.isIncome&&recentMonths.includes(t.date.slice(0,7))).forEach(t=>{
+    state.transactions.filter(t=>isRealSpend(t)&&recentMonths.includes(t.date.slice(0,7))).forEach(t=>{
       const dow=new Date(t.date+'T12:00:00').getDay();
       if(dow===0||dow===6){wkendTotal+=t.amount;wkendDays.add(t.date);}
       else{wkdayTotal+=t.amount;wkdayDays.add(t.date);}
@@ -2564,7 +2564,7 @@ function renderInsights(){
     // Build emotionally resonant savings sub-label
     const allSavingsRates=allMonths.filter(m=>m!==currentM).map(m=>{
       const mInc=getEffectiveIncome(m);
-      const mSpent=state.transactions.filter(t=>t.date.slice(0,7)===m&&!t.excluded&&!t.isIncome&&!state.excludedCats.has(t.cat)).reduce((s,t)=>s+t.amount,0);
+      const mSpent=state.transactions.filter(t=>t.date.slice(0,7)===m&&isRealSpend(t)&&!state.excludedCats.has(t.cat)).reduce((s,t)=>s+t.amount,0);
       return mInc>0?Math.round(Math.max(0,mInc-mSpent)/mInc*100):null;
     }).filter(v=>v!==null);
     const avgSavingsRate=allSavingsRates.length?Math.round(allSavingsRates.reduce((a,b)=>a+b,0)/allSavingsRates.length):null;
@@ -2701,13 +2701,13 @@ function renderInsights(){
   if(biggestCat){
     const catUp=biggestCat.diff>0;
     const catVendors={};
-    state.transactions.filter(t=>t.date.slice(0,7)===latestFullM&&t.cat===biggestCat.cat&&!t.excluded&&!t.isIncome)
+    state.transactions.filter(t=>t.date.slice(0,7)===latestFullM&&t.cat===biggestCat.cat&&isRealSpend(t))
       .forEach(t=>{catVendors[t.desc]=(catVendors[t.desc]||0)+t.amount;});
     const sortedCatVendors=Object.entries(catVendors).sort((a,b)=>b[1]-a[1]);
     const topVendors=sortedCatVendors.slice(0,3);
     const vendorTooltipLines=sortedCatVendors.map(([v,a])=>`${esc(displayVendor(v))}: ${fmt(a)} (${biggestCat.cur>0?Math.round(a/biggestCat.cur*100):0}%)`).join('&#10;');
     const catMonthlyAmts=allMonths.filter(m=>m!==currentM).map(m=>{
-      let s=0;state.transactions.filter(t=>t.date.slice(0,7)===m&&t.cat===biggestCat.cat&&!t.excluded&&!t.isIncome).forEach(t=>s+=t.amount);return s;
+      let s=0;state.transactions.filter(t=>t.date.slice(0,7)===m&&t.cat===biggestCat.cat&&isRealSpend(t)).forEach(t=>s+=t.amount);return s;
     }).filter(v=>v>0);
     const catAvg=catMonthlyAmts.length?Math.round(catMonthlyAmts.reduce((a,b)=>a+b,0)/catMonthlyAmts.length):0;
     const vsNorm=catAvg>0?Math.round((biggestCat.cur-catAvg)/catAvg*100):null;
@@ -2763,7 +2763,7 @@ function renderInsights(){
   let _narHtml='';
   if(!state.hiddenPills.has('narrative')&&fullMonths.length>=2){
     const MON_FULL=['January','February','March','April','May','June','July','August','September','October','November','December'];
-    const nTx=m=>state.transactions.filter(t=>t.date.slice(0,7)===m&&!t.excluded&&!t.isIncome&&!state.excludedCats.has(t.cat)&&!YIR_EXCLUDE_CATS.has(t.cat));
+    const nTx=m=>state.transactions.filter(t=>t.date.slice(0,7)===m&&isRealSpend(t)&&!state.excludedCats.has(t.cat)&&!YIR_EXCLUDE_CATS.has(t.cat));
     const nSpend=m=>nTx(m).reduce((s,t)=>s+t.amount,0);
     const nCats=m=>{const r={};nTx(m).forEach(t=>{r[t.cat]=(r[t.cat]||0)+t.amount;});return r;};
     const narSpend=nSpend(latestFullM);
@@ -3049,7 +3049,7 @@ function renderYearInReview(){
   }
 
   // Aggregate — transfers/investments always excluded from cats/vendors
-  const txs=state.transactions.filter(t=>months.includes(t.date.slice(0,7))&&!t.excluded&&!t.isIncome);
+  const txs=state.transactions.filter(t=>months.includes(t.date.slice(0,7))&&isRealSpend(t));
   const totalSpent=txs.reduce((s,t)=>s+t.amount,0);
   const byMonth=months.map(m=>({m,label:fmtMonthShort(m),spent:txs.filter(t=>t.date.slice(0,7)===m).reduce((s,t)=>s+t.amount,0)}));
   const biggestMonth=byMonth.reduce((a,b)=>b.spent>a.spent?b:a,byMonth[0]);
@@ -3210,7 +3210,7 @@ function copyYirSummary(){
     const endIdx=_yirEndMonth?Math.max(0,allMonths.indexOf(_yirEndMonth)):allMonths.length-1;
     const months=allMonths.slice(Math.max(0,endIdx-11),endIdx+1);
     if(!months.length){showToast('No data to copy','#FCD34D');return;}
-    const txs=state.transactions.filter(t=>months.includes(t.date.slice(0,7))&&!t.excluded&&!t.isIncome);
+    const txs=state.transactions.filter(t=>months.includes(t.date.slice(0,7))&&isRealSpend(t));
     const totalSpent=txs.reduce((s,t)=>s+t.amount,0);
     const txsFiltered=txs.filter(t=>!YIR_EXCLUDE_CATS.has(t.cat));
     const byCat={};txsFiltered.forEach(t=>{byCat[t.cat]=(byCat[t.cat]||0)+t.amount;});
@@ -3770,6 +3770,18 @@ function getAggregatedData(){
     return{label:p.label,months:p.months,total,bySource,byCat};
   });
 }
+// A transaction counts as real spend only if it's not manually excluded and
+// not flagged as income — single source of truth for a check that recurred
+// independently (and was repeatedly forgotten) across ~15 call sites this
+// session: rebuildMonthly, the Budget tab, Sankey, getMonthlyFiltered,
+// renderTreemap, renderDailyCal, several dashboard insights, subscription
+// detection, and Year-in-Review. Route any new spend-aggregating code
+// through this instead of reinventing `!t.excluded&&!t.isIncome` from
+// scratch — that's exactly the pattern that kept getting written without
+// the isIncome half.
+function isRealSpend(t){
+  return !t.excluded&&!t.isIncome;
+}
 function getBaseTxs(){
   const ms=new Set(getFilteredMonths());
   return state.transactions.filter(t=>{
@@ -3844,7 +3856,7 @@ function getMonthTotalsMap(){
 
 function getCatStats(){
   const baseTxs=getBaseTxs(),months=getFilteredMonths(),numMonths=months.length||1,stats={};
-  baseTxs.filter(t=>!t.isIncome).forEach(t=>{
+  baseTxs.filter(isRealSpend).forEach(t=>{
     if(!stats[t.cat])stats[t.cat]={total:0,byMonth:{}};
     stats[t.cat].total+=t.amount;
     const m=t.date.slice(0,7);
@@ -3966,7 +3978,7 @@ function renderSpendSummary(){
   const isBizFiltered=_bizFilter!=='all';
   let total,months;
   if(isBizFiltered){
-    const bizSpend=baseTxs.filter(t=>!t.isIncome&&!t.excluded);
+    const bizSpend=baseTxs.filter(isRealSpend);
     total=bizSpend.reduce((s,t)=>s+t.amount,0);
     months=new Set(bizSpend.map(t=>t.date.slice(0,7))).size||1;
   } else {
@@ -3976,13 +3988,13 @@ function renderSpendSummary(){
   }
   const isFiltered=state.activeCats.size>0||state.searchQuery;
   const filtIncluded=filtTxs.filter(t=>!t.excluded);
-  const displayTotal=isFiltered?filtIncluded.filter(t=>!t.isIncome).reduce((s,t)=>s+t.amount,0):total;
+  const displayTotal=isFiltered?filtIncluded.filter(isRealSpend).reduce((s,t)=>s+t.amount,0):total;
 
   // Monthly avg: when cats selected, compute from filtered txs grouped by month
   let avgLabel;
   if(state.activeCats.size>0){
     const byMonth={};
-    filtIncluded.filter(t=>!t.isIncome).forEach(t=>{
+    filtIncluded.filter(isRealSpend).forEach(t=>{
       const m=t.date.slice(0,7);
       byMonth[m]=(byMonth[m]||0)+t.amount;
     });
@@ -4026,7 +4038,7 @@ function renderSpendSummary(){
   }
 
   const catTotals={};
-  baseTxs.filter(t=>!t.excluded&&!t.isIncome).forEach(t=>{catTotals[t.cat]=(catTotals[t.cat]||0)+t.amount;});
+  baseTxs.filter(isRealSpend).forEach(t=>{catTotals[t.cat]=(catTotals[t.cat]||0)+t.amount;});
   const top5=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,5);
   document.getElementById('spend-top5-inline').innerHTML=top5.map(([cat,amt])=>
     `<div style="font-size:10px;font-weight:600;color:rgba(255,255,255,.75);margin-bottom:2px;display:flex;justify-content:space-between;gap:14px">
@@ -4034,7 +4046,7 @@ function renderSpendSummary(){
 
   // Top 5 vendors — respect category filter
   const vendorTotals5={};
-  (isFiltered?filtIncluded.filter(t=>!t.isIncome):baseTxs.filter(t=>!t.excluded&&!t.isIncome)).forEach(t=>{
+  (isFiltered?filtIncluded.filter(isRealSpend):baseTxs.filter(isRealSpend)).forEach(t=>{
     const key=t.desc.match(/^CHECK (PAID|WRITTEN|#)/i)?'Checks written':resolveVendor(t.desc);
     vendorTotals5[key]=(vendorTotals5[key]||0)+t.amount;
   });
@@ -5497,7 +5509,7 @@ function renderTxList(){
     const monthCatTotal=state.activeCats.size>0
       ? state.transactions.filter(x=>x.date.slice(0,7)===monthKey&&state.activeSources.has(x.card)&&state.activeCats.has(x.cat)&&!x.excluded).reduce((s,x)=>s+x.amount,0)
       : monthTotal;
-    const pctOfMonth=monthCatTotal>0&&!t.excluded&&!t.isIncome?Math.round(t.amount/monthCatTotal*100):null;
+    const pctOfMonth=monthCatTotal>0&&isRealSpend(t)?Math.round(t.amount/monthCatTotal*100):null;
     return`<div class="tx-row ${t.excluded?'tx-excluded':''}" data-action="openEditTxModal" data-arg="${t.id}">
       <div class="tx-date">${fmtDate(t.date)}</div>
       <div class="tx-desc" title="${esc(t.desc)}">${highlight(displayVendor(t.desc))}</div>
@@ -6719,7 +6731,7 @@ function renderBudgetTab(){
   // Spending tab's charts but are still real outgoing spend a user may legitimately want to
   // budget (the demo data itself ships a real budget on "Transfers") — only Income is never
   // spend under any circumstance, so it's the one category this tab must always exclude.
-  const monthTx=state.transactions.filter(t=>t.date.slice(0,7)===ym&&!t.excluded&&!t.isIncome);
+  const monthTx=state.transactions.filter(t=>t.date.slice(0,7)===ym&&isRealSpend(t));
   const spendByCat={};
   monthTx.forEach(t=>{spendByCat[t.cat]=(spendByCat[t.cat]||0)+t.amount;});
   // Per-source latest date → use earliest across active sources (most conservative)
@@ -7405,7 +7417,7 @@ function exportBudgetCSV(){
 function detectSubscriptions(allMonths,latestFullM){
   const recentMonths=(allMonths||Object.keys(MONTHLY).sort()).slice(-6);
   const vendorMonths={};
-  state.transactions.filter(t=>!t.excluded&&!t.isIncome&&recentMonths.includes(t.date.slice(0,7))).forEach(t=>{
+  state.transactions.filter(t=>isRealSpend(t)&&recentMonths.includes(t.date.slice(0,7))).forEach(t=>{
     const v=resolveVendor(t.desc);
     if(!vendorMonths[v])vendorMonths[v]=[];
     vendorMonths[v].push({m:t.date.slice(0,7),amt:t.amount,desc:t.desc,cat:t.cat});
