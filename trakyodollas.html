@@ -9,14 +9,16 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-FuqRKALnxUwSbmHO4SwfeR3gZDI419cV7iTJO2m0vrI=' 'sha256-JY9K+cRdM1MQgOTC9y950ssJySFvY2fZkePTxBL2nKg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-YkDYWXtzFipmiUoqUNIoTLXbPktYFTTaupb6+xmlUu0=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
-  connect-src *;
+  connect-src 'self' https://pjsvsdiplecoilzttyhd.supabase.co https://cloud.umami.is https://*.cloudflareinsights.com https://vpic.nhtsa.dot.gov;
   frame-src https://accounts.google.com https://pjsvsdiplecoilzttyhd.supabase.co;
   worker-src 'self';
   object-src 'none';
+  form-action 'self';
+  base-uri 'self';
 ">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#111720">
@@ -1903,7 +1905,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <script>(function(){try{var t=localStorage.getItem('trakyo_tab');if(t&&t!=='spending'&&document.getElementById('page-'+t)){var idx=['spending','budget','dashboard','accounts'].indexOf(t);document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});document.getElementById('page-'+t).classList.add('active');var btns=document.querySelectorAll('.nav-btn');if(btns[idx])btns[idx].classList.add('active');}}catch(e){}}());</script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" integrity="sha384-dug+JxfBvklEQdJ4AYuBBAIScUz0bVN73xpy273gcAwHjb3qI0fXmuYNaNfdyYJG" crossorigin="anonymous"></script>
 <script>
 // Apply banner offset immediately before any rendering
 // Banner offset applied after DOM ready - see DOMContentLoaded below
@@ -1923,6 +1925,15 @@ function stringToColor(str){
   let hash=0;
   for(let i=0;i<str.length;i++)hash=((hash<<5)-hash+str.charCodeAt(i))|0;
   return COLOR_PALETTE[Math.abs(hash)%COLOR_PALETTE.length];
+}
+
+// A custom category's color is user data (including via JSON backup restore,
+// which doesn't validate per-item field contents) that flows straight into
+// style="background:${c.color}" at several render sites with no esc() —
+// hex-format validation at the source is what actually closes that off,
+// not escaping every consumer individually.
+function isValidHexColor(c){
+  return typeof c==='string' && /^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(c);
 }
 
 function hexToHsl(hex){
@@ -1970,7 +1981,7 @@ function assignColors(names,offset=0){
   let dynamicIdx=0;
   names.forEach(name=>{
     const custom=state?.customCategories?.find(c=>c.name===name);
-    if(custom){map.set(name,custom.color);return;}
+    if(custom){map.set(name,isValidHexColor(custom.color)?custom.color:stringToColor(name));return;}
     const base=COLOR_PALETTE[(dynamicIdx*stride+offset)%COLOR_PALETTE.length];
     const cycle=Math.floor(dynamicIdx/COLOR_PALETTE.length);
     map.set(name,colorVariant(base,cycle));
@@ -2000,7 +2011,7 @@ function getCatColor(cat){
   if(window._catColorMap.has(cat))return window._catColorMap.get(cat);
   // New category not yet in map — add it consistently
   const custom=state?.customCategories?.find(c=>c.name===cat);
-  if(custom?.color)return custom.color;
+  if(isValidHexColor(custom?.color))return custom.color;
   return stringToColor(cat);
 }
 
@@ -2067,6 +2078,14 @@ function getVendorMonthSpend(vendor,m){
 
 // NW goal milestones — single source of truth
 const NW_MILESTONES=[100000,250000,500000,750000,1000000,2000000,5000000];
+
+// Categories that represent money moving, not real spend or income —
+// single source of truth. This exact list was independently hardcoded in 5+
+// places (default excludedCats, loadDemoProfile, two DEFAULT_EXCL copies,
+// YIR_EXCLUDE_CATS, the credit-side income-vs-transfer check) and drifted
+// out of sync twice (missing 'Internal Transfer' after it was added here on
+// July 6, 2026) before being consolidated to this one array.
+const TRANSFER_LIKE_CATS=['Investment Contributions','Transfers','Internal Transfer','CC Payment'];
 // ── End shared utilities ─────────────────────────────────────────
 
 // Structural-only default state — demo data loaded at runtime via loadDemoProfile(2)
@@ -2100,7 +2119,7 @@ let state={
   sourceAlignDate:null,
   hasRealAccounts:false,
   hasRealSnapshot:false,
-  excludedCats:new Set(['Investment Contributions','Transfers','CC Payment']),
+  excludedCats:new Set(TRANSFER_LIKE_CATS),
   nwGoal:null,
   hideNwGoal:false,
   currency:'$',
@@ -2167,7 +2186,7 @@ let state={
 
 // ── Wrapper functions for complex inline handlers ───────────────────────
 
-function startGoogleSignIn(){if(window._fb)window._fb.signInGoogle().catch(e=>showToast(e.message||'Sign-in failed — please try again','#F87171'));}
+function startGoogleSignIn(){if(window._fb)window._fb.signInGoogle().catch(e=>showToast(esc(e.message||'Sign-in failed — please try again'),'#F87171'));}
 function sendMagicLink(){
   const emailEl=document.getElementById('magic-link-email');
   const email=emailEl?emailEl.value.trim():'';
@@ -2179,7 +2198,7 @@ function sendMagicLink(){
       document.getElementById('magic-link-sent-section').style.display='';
       document.getElementById('magic-link-sent-email').textContent=email;
     })
-    .catch(e=>showToast(e.message||'Failed to send — please try again','#F87171',4000));
+    .catch(e=>showToast(esc(e.message||'Failed to send — please try again'),'#F87171',4000));
 }
 function resetMagicLinkForm(){
   const inp=document.getElementById('magic-link-input-section');
@@ -2306,16 +2325,21 @@ const displayVendor=name=>{
   }).join('');
 };
 
+// Single source of truth for the built-in category list — previously
+// duplicated verbatim inside renderCatManagerList(), which drifted out of
+// sync (missing 'Internal Transfer' there after it was added here on July
+// 6, 2026, invisible in the Category Manager as a result). Referenced by
+// both getAllCats() and renderCatManagerList() now so they can't diverge.
+const BASE_CATEGORIES=["Groceries","Food & Drink","Shopping","Home","Gas","Bills & Utilities","Insurance",
+  "Health & Wellness","Personal Care","Entertainment","Gifts & Donations","Travel","Automotive","Education",
+  "Child Care","Pet(s)","Checks","Taxes & Fees","Investment Contributions","Transfers","Internal Transfer",
+  "CC Payment","College Fund(s)","Other"];
 function getAllCats(){
-  const base=["Groceries","Food & Drink","Shopping","Home","Gas","Bills & Utilities","Insurance",
-    "Health & Wellness","Personal Care","Entertainment","Gifts & Donations","Travel","Automotive","Education",
-    "Child Care","Pet(s)","Checks","Taxes & Fees","Investment Contributions","Transfers",
-    "CC Payment","College Fund(s)","Other"];
   const custom=state.customCategories.map(c=>c.name);
-  return [...base,...custom.filter(c=>!base.includes(c))];
+  return [...BASE_CATEGORIES,...custom.filter(c=>!BASE_CATEGORIES.includes(c))];
 }
 function rebuildCatSelects(curVal){
-  const opts=getAllCats().map(c=>`<option value="${c}">${c}</option>`).join('');
+  const opts=getAllCats().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
   ['et-cat','t-cat'].forEach(id=>{
     const el=document.getElementById(id);
     if(!el)return;
@@ -2403,6 +2427,7 @@ function renderInsights(){
   const catChanges=[];
   const curTxBycat={},prevTxBycat={};
   state.transactions.forEach(t=>{
+    if(t.excluded||t.isIncome)return;
     const m=t.date.slice(0,7);
     if(m===latestFullM){curTxBycat[t.cat]=(curTxBycat[t.cat]||0)+t.amount;}
     if(m===prevFullM){prevTxBycat[t.cat]=(prevTxBycat[t.cat]||0)+t.amount;}
@@ -2451,7 +2476,7 @@ function renderInsights(){
   if(fullMonths.length>=3){
     const recentMonths=fullMonths.slice(-6);
     let wkendTotal=0,wkendDays=new Set(),wkdayTotal=0,wkdayDays=new Set();
-    state.transactions.filter(t=>!t.excluded&&recentMonths.includes(t.date.slice(0,7))).forEach(t=>{
+    state.transactions.filter(t=>!t.excluded&&!t.isIncome&&recentMonths.includes(t.date.slice(0,7))).forEach(t=>{
       const dow=new Date(t.date+'T12:00:00').getDay();
       if(dow===0||dow===6){wkendTotal+=t.amount;wkendDays.add(t.date);}
       else{wkdayTotal+=t.amount;wkdayDays.add(t.date);}
@@ -2539,7 +2564,7 @@ function renderInsights(){
     // Build emotionally resonant savings sub-label
     const allSavingsRates=allMonths.filter(m=>m!==currentM).map(m=>{
       const mInc=getEffectiveIncome(m);
-      const mSpent=state.transactions.filter(t=>t.date.slice(0,7)===m&&!t.excluded&&!state.excludedCats.has(t.cat)).reduce((s,t)=>s+t.amount,0);
+      const mSpent=state.transactions.filter(t=>t.date.slice(0,7)===m&&!t.excluded&&!t.isIncome&&!state.excludedCats.has(t.cat)).reduce((s,t)=>s+t.amount,0);
       return mInc>0?Math.round(Math.max(0,mInc-mSpent)/mInc*100):null;
     }).filter(v=>v!==null);
     const avgSavingsRate=allSavingsRates.length?Math.round(allSavingsRates.reduce((a,b)=>a+b,0)/allSavingsRates.length):null;
@@ -2676,13 +2701,13 @@ function renderInsights(){
   if(biggestCat){
     const catUp=biggestCat.diff>0;
     const catVendors={};
-    state.transactions.filter(t=>t.date.slice(0,7)===latestFullM&&t.cat===biggestCat.cat&&!t.excluded)
+    state.transactions.filter(t=>t.date.slice(0,7)===latestFullM&&t.cat===biggestCat.cat&&!t.excluded&&!t.isIncome)
       .forEach(t=>{catVendors[t.desc]=(catVendors[t.desc]||0)+t.amount;});
     const sortedCatVendors=Object.entries(catVendors).sort((a,b)=>b[1]-a[1]);
     const topVendors=sortedCatVendors.slice(0,3);
     const vendorTooltipLines=sortedCatVendors.map(([v,a])=>`${esc(displayVendor(v))}: ${fmt(a)} (${biggestCat.cur>0?Math.round(a/biggestCat.cur*100):0}%)`).join('&#10;');
     const catMonthlyAmts=allMonths.filter(m=>m!==currentM).map(m=>{
-      let s=0;state.transactions.filter(t=>t.date.slice(0,7)===m&&t.cat===biggestCat.cat&&!t.excluded).forEach(t=>s+=t.amount);return s;
+      let s=0;state.transactions.filter(t=>t.date.slice(0,7)===m&&t.cat===biggestCat.cat&&!t.excluded&&!t.isIncome).forEach(t=>s+=t.amount);return s;
     }).filter(v=>v>0);
     const catAvg=catMonthlyAmts.length?Math.round(catMonthlyAmts.reduce((a,b)=>a+b,0)/catMonthlyAmts.length):0;
     const vsNorm=catAvg>0?Math.round((biggestCat.cur-catAvg)/catAvg*100):null;
@@ -2696,9 +2721,9 @@ function renderInsights(){
     const catSub=catUp
       ?`↑ ${fmt(Math.abs(biggestCat.diff))} vs last month${vsNormStr}${topVendorStr}`
       :`↓ ${fmt(Math.abs(biggestCat.diff))} vs last month${vsNormStr}${topVendorStr}`;
-    const catValue=`${biggestCat.cat} · ${catUp?'↑':'↓'} ${fmt(Math.abs(biggestCat.diff))}`;
+    const catValue=`${esc(biggestCat.cat)} · ${catUp?'↑':'↓'} ${fmt(Math.abs(biggestCat.diff))}`;
     const catScore=catUp&&vsNorm!==null&&vsNorm>=20?75:catUp?25:15;
-    addPill('topmover','Top mover',pillWithTip(catUp?'⬆️':'⬇️',`Top mover`,catValue,catUp?'#FBBF24':'#34D399',catSub,tooltip,{label:`See ${biggestCat.cat} transactions`,action:'filterToCatAndScroll',arg:biggestCat.cat}),catScore);
+    addPill('topmover','Top mover',pillWithTip(catUp?'⬆️':'⬇️',`Top mover`,catValue,catUp?'#FBBF24':'#34D399',catSub,tooltip,{label:`See ${esc(biggestCat.cat)} transactions`,action:'filterToCatAndScroll',arg:biggestCat.cat}),catScore);
   }
 
   // Pill 6 — Largest single transaction
@@ -2716,7 +2741,7 @@ function renderInsights(){
       const tooltip=`Largest non-transfer charge in ${latestLabel}&#10;${esc(displayVendor(biggest.desc))}: ${fmt(biggest.amount)}&#10;Category: ${esc(biggest.cat)}&#10;Date: ${biggest.date}${avgBiggest>0?`&#10;&#10;Avg largest charge: ${fmt(avgBiggest)}/mo`:''}`;
       const chargeSub=isHighVsNorm
         ?`${esc(displayVendor(biggest.desc))} · ${Math.round((biggest.amount/avgBiggest-1)*100)}% higher than your typical largest charge`
-        :`${esc(displayVendor(biggest.desc))} · ${biggest.cat}`;
+        :`${esc(displayVendor(biggest.desc))} · ${esc(biggest.cat)}`;
       addPill('largest-tx','Largest charge',pillWithTip('💥','Largest charge',`${fmt(biggest.amount)}`,isHighVsNorm?'#F87171':'#64748B',chargeSub,tooltip),isHighVsNorm?65:8);
     }
   }
@@ -2738,7 +2763,7 @@ function renderInsights(){
   let _narHtml='';
   if(!state.hiddenPills.has('narrative')&&fullMonths.length>=2){
     const MON_FULL=['January','February','March','April','May','June','July','August','September','October','November','December'];
-    const nTx=m=>state.transactions.filter(t=>t.date.slice(0,7)===m&&!t.excluded&&!state.excludedCats.has(t.cat)&&!YIR_EXCLUDE_CATS.has(t.cat));
+    const nTx=m=>state.transactions.filter(t=>t.date.slice(0,7)===m&&!t.excluded&&!t.isIncome&&!state.excludedCats.has(t.cat)&&!YIR_EXCLUDE_CATS.has(t.cat));
     const nSpend=m=>nTx(m).reduce((s,t)=>s+t.amount,0);
     const nCats=m=>{const r={};nTx(m).forEach(t=>{r[t.cat]=(r[t.cat]||0)+t.amount;});return r;};
     const narSpend=nSpend(latestFullM);
@@ -2911,8 +2936,8 @@ function renderMetrics(){
   const nw=netWorth(),assets=totalAssets(),liab=totalLiab(),f=state.dashFilter;
 
   // Sub-labels
-  const assetTypes=[...new Set(state.accounts.filter(a=>!isLiab(a.type)&&!a.excludeFromNW).map(a=>TL_M[a.type]||a.type))].slice(0,3).join(' · ')||'';
-  const liabTypes=[...new Set(state.accounts.filter(a=>isLiab(a.type)&&!a.excludeFromNW).map(a=>TL_M[a.type]||a.type))].slice(0,3).join(' · ')||'';
+  const assetTypes=[...new Set(state.accounts.filter(a=>!isLiab(a.type)&&!a.excludeFromNW).map(a=>esc(TL_M[a.type]||a.type)))].slice(0,3).join(' · ')||'';
+  const liabTypes=[...new Set(state.accounts.filter(a=>isLiab(a.type)&&!a.excludeFromNW).map(a=>esc(TL_M[a.type]||a.type)))].slice(0,3).join(' · ')||'';
 
   // YTD change — use monthKey (YYYY-MM) for reliable sorting
   const allSnaps=[...state.snapshots].filter(s=>s.monthKey).sort((a,b)=>a.monthKey.localeCompare(b.monthKey));
@@ -2945,27 +2970,29 @@ function renderNwBreakdown(){
   const assets=totalAssets(),f=state.dashFilter;
   const TL={cash:'Cash',investment:'Investment',home:'Real estate',vehicle:'Vehicle',mortgage:'Mortgage',credit:'Credit card','other-asset':'Other','other-liability':'Other liab'};
   const GROUPS=[
-    {label:'Investments',color:'#34D399',hdr:'#065F4618',accts:state.accounts.filter(a=>a.type==='investment'&&a.balance>0&&!a.excludeFromNW)},
+    {label:'Investments',color:'#34D399',hdr:'#065F4618',accts:state.accounts.filter(a=>a.type==='investment'&&a.balance!==0&&!a.excludeFromNW)},
     {label:'Real estate',color:'#A78BFA',hdr:'#4C1D9518',accts:state.accounts.filter(a=>a.type==='home'&&!a.excludeFromNW),deduct:0},
-    {label:'Cash',color:'#60A5FA',hdr:'#1E40AF18',accts:state.accounts.filter(a=>a.type==='cash'&&a.balance>0&&!a.excludeFromNW)},
-    {label:'Vehicles',color:'#2DD4BF',hdr:'#0D4A4418',accts:state.accounts.filter(a=>a.type==='vehicle'&&a.balance>0&&!a.excludeFromNW)},
-    {label:'Liabilities',color:'#F87171',hdr:'#7F1D1D18',accts:state.accounts.filter(a=>isLiab(a.type)&&a.balance>0&&!a.excludeFromNW),isLiab:true},
+    {label:'Cash',color:'#60A5FA',hdr:'#1E40AF18',accts:state.accounts.filter(a=>a.type==='cash'&&a.balance!==0&&!a.excludeFromNW)},
+    {label:'Vehicles',color:'#2DD4BF',hdr:'#0D4A4418',accts:state.accounts.filter(a=>a.type==='vehicle'&&a.balance!==0&&!a.excludeFromNW)},
+    {label:'Other assets',color:'#FBBF24',hdr:'#78350F18',accts:state.accounts.filter(a=>a.type==='other-asset'&&a.balance!==0&&!a.excludeFromNW)},
+    {label:'Liabilities',color:'#F87171',hdr:'#7F1D1D18',accts:state.accounts.filter(a=>isLiab(a.type)&&a.balance!==0&&!a.excludeFromNW),isLiab:true},
   ];
   const visible=f==='assets'?GROUPS.filter(g=>g.label!=='Liabilities'):f==='liabilities'?GROUPS.filter(g=>g.label==='Liabilities'):GROUPS;
   document.getElementById('nw-breakdown').innerHTML=visible.map(g=>{
     const raw=g.accts.reduce((s,a)=>s+a.balance,0),net=g.isLiab?-raw:raw-(g.deduct||0);
     const pct=assets>0?Math.abs(net)/assets*100:0;
     const items=g.accts.map(a=>{
-      const aPct=raw>0?a.balance/raw*100:0;
+      const aPct=raw!==0?Math.abs(a.balance/raw)*100:0;
+      const isNeg=(g.isLiab?-a.balance:a.balance)<0;
       return`<div class="nw-item">
         <div class="flex-center gap-8">
           <div style="width:8px;height:8px;border-radius:50%;background:${g.color}88;flex-shrink:0"></div>
-          <div><div class="nw-item-name">${esc(a.name)}</div><div class="nw-item-sub">${esc(a.source)} · ${TL[a.type]||a.type}</div></div>
+          <div><div class="nw-item-name">${esc(a.name)}</div><div class="nw-item-sub">${esc(a.source)} · ${esc(TL[a.type]||a.type)}</div></div>
         </div>
-        <div style="font-size:12px;font-weight:700;color:${g.isLiab?'#F87171':g.color}">${g.isLiab?'-':''}${fmt(a.balance)}</div>
+        <div style="font-size:12px;font-weight:700;color:${isNeg?'#F87171':g.color}">${isNeg?'-':''}${fmt(a.balance)}</div>
       </div>
       <div class="nw-bar-row"><div class="nw-bar-bg">
-        <div class="nw-bar-fill" style="width:${Math.min(100,aPct)}%;background:${g.color}55">
+        <div class="nw-bar-fill" style="width:${Math.max(0,Math.min(100,aPct))}%;background:${g.color}55">
           <div class="bar-tooltip">${aPct.toFixed(1)}%</div>
         </div>
       </div></div>`;}).join('');
@@ -2988,7 +3015,7 @@ function renderNwBreakdown(){
 
 let _yirEndMonth=null;
 let _narrativeExpanded=true;
-const YIR_EXCLUDE_CATS=new Set(['Checks','CC Payment','Transfers','Investment Contributions']);
+const YIR_EXCLUDE_CATS=new Set([...TRANSFER_LIKE_CATS,'Checks']);
 function toggleNarrative(){_narrativeExpanded=!_narrativeExpanded;renderInsights();}
 
 function openYearInReview(){
@@ -3022,7 +3049,7 @@ function renderYearInReview(){
   }
 
   // Aggregate — transfers/investments always excluded from cats/vendors
-  const txs=state.transactions.filter(t=>months.includes(t.date.slice(0,7))&&!t.excluded);
+  const txs=state.transactions.filter(t=>months.includes(t.date.slice(0,7))&&!t.excluded&&!t.isIncome);
   const totalSpent=txs.reduce((s,t)=>s+t.amount,0);
   const byMonth=months.map(m=>({m,label:fmtMonthShort(m),spent:txs.filter(t=>t.date.slice(0,7)===m).reduce((s,t)=>s+t.amount,0)}));
   const biggestMonth=byMonth.reduce((a,b)=>b.spent>a.spent?b:a,byMonth[0]);
@@ -3183,7 +3210,7 @@ function copyYirSummary(){
     const endIdx=_yirEndMonth?Math.max(0,allMonths.indexOf(_yirEndMonth)):allMonths.length-1;
     const months=allMonths.slice(Math.max(0,endIdx-11),endIdx+1);
     if(!months.length){showToast('No data to copy','#FCD34D');return;}
-    const txs=state.transactions.filter(t=>months.includes(t.date.slice(0,7))&&!t.excluded);
+    const txs=state.transactions.filter(t=>months.includes(t.date.slice(0,7))&&!t.excluded&&!t.isIncome);
     const totalSpent=txs.reduce((s,t)=>s+t.amount,0);
     const txsFiltered=txs.filter(t=>!YIR_EXCLUDE_CATS.has(t.cat));
     const byCat={};txsFiltered.forEach(t=>{byCat[t.cat]=(byCat[t.cat]||0)+t.amount;});
@@ -3748,7 +3775,8 @@ function getBaseTxs(){
   return state.transactions.filter(t=>{
     if(!ms.has(t.date.slice(0,7)))return false;
     if(!state.activeSources.has(t.card))return false;
-    if((t.excluded||state.excludedCats.has(t.cat))&&!state.showExcluded&&!(state.includeIncome&&t.isIncome))return false;
+    if(t.excluded&&!state.showExcluded)return false;
+    if(state.excludedCats.has(t.cat)&&!state.showExcluded&&!(state.includeIncome&&t.isIncome))return false;
     if(_bizFilter==='biz'&&!t.biz)return false;
     if(_bizFilter==='personal'&&t.biz)return false;
     return true;
@@ -3798,6 +3826,7 @@ function getMonthlyFiltered(){
       state.transactions.forEach(t=>{
         if(t.date.slice(0,7)!==m)return;
         if(!state.activeSources.has(t.card))return;
+        if(t.isIncome)return;
         bySource[t.card]=(bySource[t.card]||0)+t.amount;
         total+=t.amount;
       });
@@ -3885,7 +3914,7 @@ function renderSourceChips(){
   const hiddenCatCount=state.excludedCats.size;
   const hiddenTxCount=state.transactions.filter(t=>t.excluded).length;
   const totalHidden=hiddenCatCount+(hiddenTxCount>0?1:0); // cats + "transactions" bucket
-  const DEFAULT_EXCL=new Set(['Investment Contributions','Transfers','CC Payment']);
+  const DEFAULT_EXCL=new Set(TRANSFER_LIKE_CATS);
   const onlyDefaults=hiddenCatCount===DEFAULT_EXCL.size&&[...DEFAULT_EXCL].every(c=>state.excludedCats.has(c));
   const chipLabel=hiddenCatCount===0?'Spending exclusions':onlyDefaults?'Transfers & investments hidden':`${hiddenCatCount} spending exclusion${hiddenCatCount===1?'':'s'}`;
   const hiddenChip=`<div style="position:relative;display:inline-block">
@@ -4414,6 +4443,7 @@ function renderTreemap(drillCat){
   // Respect active sources, horizon, category filter
   const filteredMonths=getFilteredMonths();
   const activeTx=state.transactions.filter(t=>
+    !t.isIncome&&
     (state.showExcluded||!t.excluded)&&state.activeSources.has(t.card)&&
     filteredMonths.includes(t.date.slice(0,7))&&
     (state.showExcluded||!state.excludedCats.has(t.cat))
@@ -4590,6 +4620,7 @@ function renderSankey(){
 
   const catTotals={};
   state.transactions.filter(t=>
+    !t.isIncome&&
     (state.showExcluded||!t.excluded)&&state.activeSources.has(t.card)&&
     filteredMonths.includes(t.date.slice(0,7))&&
     (state.showExcluded||!state.excludedCats.has(t.cat))&&
@@ -4625,7 +4656,7 @@ function renderSankey(){
   const H=Math.max(300,cats.length*38+60);
 
   const otherNodeLabel=`Other · ${smallCats.length} cats`;
-  const otherTipBody=smallCats.map(([c,v])=>`${c}: ${fmtC(v)} · ${Math.round(v/totalIncome*100)}%`).join('<br>');
+  const otherTipBody=smallCats.map(([c,v])=>`${esc(c)}: ${fmtC(v)} · ${Math.round(v/totalIncome*100)}%`).join('<br>');
   const nodes=[
     {id:'__income__',name:`${monthCount}mo income`,color:incomeColor},
     ...cats.map(([cat])=>({
@@ -4663,7 +4694,7 @@ function renderSankey(){
     .on('mousemove',(e,d)=>{
       const body=d.target.id==='__other__'
         ?`<strong>${otherNodeLabel}</strong> ${fmtC(d.value)} · ${Math.round(d.value/totalIncome*100)}% of income<br><span style="opacity:.7;font-size:10px">${otherTipBody}</span>`
-        :`<strong>${d.target.name}</strong>${fmtC(d.value)} · ${Math.round(d.value/totalIncome*100)}% of income`;
+        :`<strong>${esc(d.target.name)}</strong>${fmtC(d.value)} · ${Math.round(d.value/totalIncome*100)}% of income`;
       tip.show(e,body);
       linkSel.attr('stroke-opacity',l=>l===d?.75:.15);
     })
@@ -4802,6 +4833,7 @@ function renderDailyCal(){
 
   // Respect active sources, horizon, and category filter
   const activeTx=state.transactions.filter(t=>
+    !t.isIncome&&
     (state.showExcluded||!t.excluded)&&state.activeSources.has(t.card)&&
     (state.showTransfersInCal||t.cat!=='Transfers')&&
     (state.showExcluded||!state.excludedCats.has(t.cat))&&
@@ -5641,7 +5673,7 @@ function renderCommunityRulesTable(q){
     ?rules.filter(r=>r.keyword.toLowerCase().includes(q.toLowerCase())||r.cat.toLowerCase().includes(q.toLowerCase()))
     :rules;
   if(!filtered.length){
-    el.innerHTML='<div style="padding:1.5rem;text-align:center;color:var(--text-muted)">No patterns match "'+q+'"</div>';
+    el.innerHTML='<div style="padding:1.5rem;text-align:center;color:var(--text-muted)">No patterns match "'+esc(q)+'"</div>';
     return;
   }
   el.innerHTML=`<table style="width:100%;border-collapse:collapse">
@@ -5650,8 +5682,8 @@ function renderCommunityRulesTable(q){
       <th style="text-align:left;padding:.4rem .75rem;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">Category</th>
     </tr></thead>
     <tbody>${filtered.map((r,i)=>`<tr style="border-bottom:1px solid var(--border)${i%2===0?';background:var(--bg-deep)':''}">
-      <td style="padding:.35rem .75rem;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-secondary)">${r.keyword}</td>
-      <td style="padding:.35rem .75rem;color:var(--text-secondary)">${r.cat}</td>
+      <td style="padding:.35rem .75rem;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-secondary)">${esc(r.keyword)}</td>
+      <td style="padding:.35rem .75rem;color:var(--text-secondary)">${esc(r.cat)}</td>
     </tr>`).join('')}</tbody>
   </table>
   <div style="padding:.4rem .75rem;font-size:10px;color:var(--text-muted);text-align:right">${filtered.length} of ${rules.length} patterns</div>`;
@@ -5735,7 +5767,7 @@ function undoCatExclusion(cat){
   showToast(`${esc(cat)} restored`,'#34D399');
 }
 function buildHiddenPopover(){
-  const DEFAULT_EXCL=new Set(['Investment Contributions','Transfers','CC Payment']);
+  const DEFAULT_EXCL=new Set(TRANSFER_LIKE_CATS);
   const cats=[...state.excludedCats].sort();
   const txExclCount=state.transactions.filter(t=>t.excluded).length;
   const catsHtml=cats.length===0
@@ -5966,7 +5998,15 @@ function deleteVehicle(){
   if(!editVehicleId)return;
   const v=state.vehicles.find(x=>x.id===editVehicleId);
   state.vehicles=state.vehicles.filter(x=>x.id!==editVehicleId);
-  if(v)state.accounts=state.accounts.filter(a=>!(a.type==='vehicle'&&a.name===v.name));
+  if(v){
+    // See saveVehicle() — pairs by acctId so deleting one vehicle/asset never
+    // removes another's account just because they share a name (e.g. two
+    // blank-make vehicles both auto-named "2024 Vehicle"). Falls back to the
+    // old name-match for a record saved before acctId existed and never
+    // since edited.
+    if(v.acctId!=null)state.accounts=state.accounts.filter(a=>a.id!==v.acctId);
+    else state.accounts=state.accounts.filter(a=>!(a.type==='vehicle'&&a.name===v.name));
+  }
   closeModals();
   renderAll();
   scheduleSave();
@@ -5979,9 +6019,10 @@ const SC_M={Ally:{bg:tc('#1E3A5F','#EFF6FF'),fg:'#60A5FA'},Amex:{bg:tc('#1E3A5F'
 const SA_M={Ally:'AL',Amex:'AX',Vanguard:'VG',Fidelity:'FD',Chase:'CH',Barclays:'BC','Old National':'ON',Zillow:'ZL',Redfin:'RF','Bank of America':'BA','Capital One':'CO',Discover:'DV','E*TRADE':'ET',Marcus:'MC',Alliant:'AT',BMO:'BM',BECU:'BU',CIBC:'CB','Navy Federal':'NV',RBC:'RB',PenFed:'PF',Scotiabank:'SK',Schwab:'SC',SoFi:'SF',Tangerine:'TN','TD Bank':'TD',Truist:'TR',USAA:'UA','Wells Fargo':'WF',Other:'OT'};
 function renderAccountLists(){
   const row=a=>{const sc=SC_M[a.source]||SC_M.Other,tc=TC_M[a.type]||'var(--text-muted)';
-    return`<div class="account-row"><div style="display:flex;align-items:center;gap:10px"><div class="acct-icon" style="background:${sc.bg};color:${sc.fg}">${SA_M[a.source]||'??'}</div><div><div class="account-name">${esc(a.name)}</div><div class="account-sub">${esc(a.source)} · ${TL_M[a.type]||a.type}</div></div></div>
-      <div class="flex-center gap-8"><div style="font-size:13px;font-weight:700;color:${isLiab(a.type)?'#F87171':tc}">${isLiab(a.type)?'-':''}${fmt(a.balance)}</div><button class="btn btn-sm" data-action="editAccount" data-arg="${a.id}" type="button">Edit</button></div></div>`;};
-  document.getElementById('asset-list').innerHTML=state.accounts.filter(a=>!isLiab(a.type)&&!a.excludeFromNW&&a.type!=='vehicle').map(row).join('');
+    return`<div class="account-row"><div style="display:flex;align-items:center;gap:10px"><div class="acct-icon" style="background:${sc.bg};color:${sc.fg}">${SA_M[a.source]||'??'}</div><div><div class="account-name">${esc(a.name)}</div><div class="account-sub">${esc(a.source)} · ${esc(TL_M[a.type]||a.type)}</div></div></div>
+      <div class="flex-center gap-8"><div style="font-size:13px;font-weight:700;color:${(isLiab(a.type)?-a.balance:a.balance)<0?'#F87171':tc}">${(isLiab(a.type)?-a.balance:a.balance)<0?'-':''}${fmt(a.balance)}</div><button class="btn btn-sm" data-action="editAccount" data-arg="${a.id}" type="button">Edit</button></div></div>`;};
+  const vehicleAcctIds=new Set(state.vehicles.filter(v=>v.acctId!=null).map(v=>v.acctId));
+  document.getElementById('asset-list').innerHTML=state.accounts.filter(a=>!isLiab(a.type)&&!a.excludeFromNW&&a.type!=='vehicle'&&!vehicleAcctIds.has(a.id)).map(row).join('');
   document.getElementById('liability-list').innerHTML=state.accounts.filter(a=>isLiab(a.type)&&!a.excludeFromNW).map(row).join('');
 }
 
@@ -6275,7 +6316,9 @@ function updateHistSnapDatePreview(_,el){
   const preview=document.getElementById('hist-snap-date-preview');
   if(preview)preview.textContent=isNaN(d.getTime())?'':'Saves as: '+d.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'});
 }
+let _editingSnapshotMonthKey=null;
 function openHistoricalSnapshotModal(){
+  _editingSnapshotMonthKey=null; // fresh add, not editing an existing snapshot
   const d=new Date();
   const iso=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   document.getElementById('hist-snap-date').value=iso;
@@ -6292,6 +6335,7 @@ function openHistoricalSnapshotModal(){
 function editSnapshot(i){
   const s=state.snapshots[i];
   if(!s)return;
+  _editingSnapshotMonthKey=s.monthKey;
   // Pre-fill the historical snapshot modal with existing values
   // Normalize any date format ("Apr 30, 2026", "04/30/2026", "2026-04-30") to YYYY-MM-DD.
   // Must use local-time components — toISOString() is UTC and shifts the date for UTC+ users.
@@ -6324,10 +6368,22 @@ function saveHistoricalSnapshot(){
   const d=new Date(date+'T12:00:00');
   const monthKey=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
   const displayDate=d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+  // If editing and the date changed to a different month, matching purely by
+  // the new monthKey (below) would leave the original entry behind as a
+  // stale duplicate, or — if the new month already has its own snapshot —
+  // silently overwrite that unrelated month's data instead of moving this one.
+  if(_editingSnapshotMonthKey&&_editingSnapshotMonthKey!==monthKey){
+    if(state.snapshots.some(s=>s.monthKey===monthKey)){
+      showToast(`Already have a snapshot for ${MON3[d.getMonth()]} ${d.getFullYear()} — delete it first if you want to replace it`,'#FCD34D');
+      return;
+    }
+    state.snapshots=state.snapshots.filter(s=>s.monthKey!==_editingSnapshotMonthKey);
+  }
   const existingIdx=state.snapshots.findIndex(s=>s.monthKey===monthKey);
   const snap={date:displayDate,label:MON3[d.getMonth()],monthKey,nw:Math.round(nw),assets:Math.round(assets),liab:Math.round(liab)};
   if(existingIdx>=0){state.snapshots[existingIdx]=snap;showToast(`📅 Updated snapshot for ${displayDate}`,'#34D399');}
   else{state.snapshots.push(snap);state.snapshots.sort((a,b)=>a.monthKey.localeCompare(b.monthKey));showToast(`📅 Historical snapshot added for ${displayDate}`,'#34D399');}
+  _editingSnapshotMonthKey=null;
   closeModals();renderHistory();renderNwChart();scheduleSave();
 }
 
@@ -6663,7 +6719,7 @@ function renderBudgetTab(){
   // Spending tab's charts but are still real outgoing spend a user may legitimately want to
   // budget (the demo data itself ships a real budget on "Transfers") — only Income is never
   // spend under any circumstance, so it's the one category this tab must always exclude.
-  const monthTx=state.transactions.filter(t=>t.date.slice(0,7)===ym&&!t.excluded&&t.cat!=='Income');
+  const monthTx=state.transactions.filter(t=>t.date.slice(0,7)===ym&&!t.excluded&&!t.isIncome);
   const spendByCat={};
   monthTx.forEach(t=>{spendByCat[t.cat]=(spendByCat[t.cat]||0)+t.amount;});
   // Per-source latest date → use earliest across active sources (most conservative)
@@ -7257,20 +7313,34 @@ function showDemoNudge(){
   if(startHere&&!state.hasRealData)startHere.style.display=hasDemoData?'':'none';
 }
 
+// Quotes a CSV field and neutralizes leading =/+/-/@ (and tab/CR) so a value
+// copied from an imported transaction can't be interpreted as a formula by
+// Excel/Sheets when the exported file is reopened there.
+function csvSafeField(s){
+  s=String(s==null?'':s);
+  if(/^[=+\-@\t\r]/.test(s))s="'"+s;
+  return `"${s.replace(/"/g,'""')}"`;
+}
+
 function exportTransactionsCSV(){
   const txs=getSortedTxs();
   if(!txs.length){showToast('No transactions to export','#FCD34D');return;}
 
-  // Build CSV — export what user currently sees (filtered + sorted)
-  const headers=['Date','Description','Vendor','Category','Amount','Source','Excluded'];
+  // Build CSV — export what user currently sees (filtered + sorted).
+  // IsIncome is included specifically so re-importing this exact export
+  // round-trips correctly (see the dedicated 'trakyodollas' import format
+  // below) — without it, every format's importer treats a positive Amount
+  // column as an expense, silently converting income to spend on reimport.
+  const headers=['Date','Description','Vendor','Category','Amount','Source','Excluded','IsIncome'];
   const rows=txs.map(t=>[
     t.date,
-    `"${(t.desc||'').replace(/"/g,'""')}"`,
-    `"${(resolveVendor(t.desc)||'').replace(/"/g,'""')}"`,
-    `"${(t.cat||'').replace(/"/g,'""')}"`,
+    csvSafeField(t.desc),
+    csvSafeField(resolveVendor(t.desc)),
+    csvSafeField(t.cat),
     t.amount.toFixed(2),
-    `"${(t.card||'').replace(/"/g,'""')}"`,
-    t.excluded?'yes':'no'
+    csvSafeField(t.card),
+    t.excluded?'yes':'no',
+    t.isIncome?'yes':'no'
   ].join(','));
 
   const csv=[headers.join(','),...rows].join('\n');
@@ -7310,7 +7380,7 @@ function exportBudgetCSV(){
     const pct=Math.round(latestSpent/budget*100);
     const status=latestSpent>budget?'OVER':pct>=(state.budgetWarnPct??80)?'AT RISK':'On track';
     return [
-      `"${cat.replace(/"/g,'""')}"`,
+      csvSafeField(cat),
       budget.toFixed(2),
       ...monthSpends.map(v=>v>0?v.toFixed(2):''),
       totalSpent.toFixed(2),
@@ -7335,7 +7405,7 @@ function exportBudgetCSV(){
 function detectSubscriptions(allMonths,latestFullM){
   const recentMonths=(allMonths||Object.keys(MONTHLY).sort()).slice(-6);
   const vendorMonths={};
-  state.transactions.filter(t=>!t.excluded&&recentMonths.includes(t.date.slice(0,7))).forEach(t=>{
+  state.transactions.filter(t=>!t.excluded&&!t.isIncome&&recentMonths.includes(t.date.slice(0,7))).forEach(t=>{
     const v=resolveVendor(t.desc);
     if(!vendorMonths[v])vendorMonths[v]=[];
     vendorMonths[v].push({m:t.date.slice(0,7),amt:t.amount,desc:t.desc,cat:t.cat});
@@ -7416,7 +7486,15 @@ function showPillTip(_,el){
     overlay.onclick=()=>overlay.remove();
     document.body.appendChild(overlay);
   }
-  overlay.innerHTML=`<div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:1rem 1.2rem;max-width:320px;width:100%;font-size:12px;color:#94A3B8;line-height:1.6;white-space:pre-line">${tip.replace(/&#10;/g,'\n').replace(/&quot;/g,'"')}</div>`;
+  // getAttribute() returns data-tip already fully HTML-entity-decoded by the
+  // browser's own attribute parser — including any &lt;/&gt;/&amp; that esc()
+  // added when the attribute was built, not just the &quot;/&#10; this used to
+  // manually reverse. That silently undid esc()'s escaping before it ever
+  // reached innerHTML below. esc() here (a *second* time, for this *new*
+  // context) is what actually makes it safe; #pill-tip-overlay's
+  // white-space:pre-line already renders the real newline characters
+  // &#10; decodes to, so no manual \n conversion is needed either.
+  overlay.innerHTML=`<div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:1rem 1.2rem;max-width:320px;width:100%;font-size:12px;color:#94A3B8;line-height:1.6;white-space:pre-line">${esc(tip)}</div>`;
   overlay.style.display='flex';
 }
 
@@ -7822,10 +7900,11 @@ function confirmDeleteSnapshot(){
   if(!s){closeModals();return;}
   const monthKey=s.monthKey;
   state.snapshots.splice(i,1);
+  if(!state.snapshots.length)state.hasRealSnapshot=false;
   _pendingDeleteSnapIdx=null;
   closeModals();
   renderHistory();renderNwChart();
-  if(window._fbUser&&window._fb&&monthKey){
+  if(window._fbUser&&window._fb&&monthKey&&!window._isDemoPreview&&!window._viewingDemoOverReal){
     window._fb.deleteSnapshot(window._fbUser.uid,monthKey).catch(e=>console.error(e));
   }
   showToast('Snapshot deleted','#F87171');
@@ -7843,8 +7922,10 @@ function saveSnapshot(){
   const sdn=document.getElementById('snap-demo-notice');if(sdn)sdn.style.display='none';
   renderHistory();renderNwChart();
   const hn=document.getElementById('demo-notice-history');if(hn)hn.style.display='none';
-  // Sync to Supabase if signed in
-  if(window._fbUser&&window._fb){
+  // Sync to Supabase if signed in (never during a demo preview, even over real signed-in data)
+  if(window._isDemoPreview||window._viewingDemoOverReal){
+    showToast(`✓ Snapshot saved · net worth ${fmtC(netWorth())}`);
+  } else if(window._fbUser&&window._fb){
     window._fb.saveSnapshot(window._fbUser.uid,snap)
       .then(()=>showToast(`✓ Snapshot saved · net worth ${fmtC(netWorth())}`))
       .catch(()=>showToast(`✓ Snapshot saved locally (sync failed)`,'#FCD34D'));
@@ -7861,14 +7942,10 @@ function openCatModal(){
 }
 let _editingCatName=null;
 function renderCatManagerList(){
-  const BASE=["Groceries","Food & Drink","Shopping","Home","Gas","Bills & Utilities","Insurance",
-    "Health & Wellness","Personal Care","Entertainment","Gifts & Donations","Travel","Automotive","Education",
-    "Child Care","Pet(s)","Checks","Taxes & Fees","Investment Contributions","Transfers",
-    "CC Payment","College Fund(s)","Other"];
   const el=document.getElementById('cat-manager-list');
   if(!el)return;
   const rows=[
-    ...BASE.map(c=>({name:c,color:getCatColor(c),custom:false})),
+    ...BASE_CATEGORIES.map(c=>({name:c,color:getCatColor(c),custom:false})),
     ...state.customCategories.map(c=>({...c,color:getCatColor(c.name),custom:true}))
   ];
   el.innerHTML=rows.map(c=>{
@@ -7914,9 +7991,21 @@ function deleteCustomCat(name){
   state.customCategories=state.customCategories.filter(c=>c.name!==name);
   _txsDirty=true;
   state.transactions.forEach(t=>{if(t.cat===name)t.cat='Other';});
+  // Mirror confirmRenameCat()'s cascade (it handles all of these; this
+  // function previously only touched customCategories/transactions) — a
+  // leftover state.budgets[name] rendered a permanent phantom row nobody
+  // could remove through the UI, and a leftover catRules entry kept
+  // silently re-assigning future imports to a category that no longer
+  // exists (invisible in getAllCats(), same failure shape as the
+  // 'Internal Transfer' bug above).
+  if(state.budgets[name]!==undefined)delete state.budgets[name];
+  state.catRules=state.catRules.filter(r=>r.cat!==name);
+  state.excludedCats.delete(name);
+  window._catColorMap=null;
   renderCatManagerList();
   rebuildCatSelects();
-  renderSpending();
+  rebuildMonthly();
+  renderAll();
   scheduleSave();
 }
 function startRenameCat(name){
@@ -8125,7 +8214,15 @@ function parseTxFile(file){
     importFmtAutoDetected=false;
     if(!fmtPickerOpen){
       const firstLine=text.split('\n')[0].toLowerCase();
-      if(firstLine.includes('transaction type')&&firstLine.includes('original description')){
+      // Our own exportTransactionsCSV() output — checked first since it's the
+      // most specific signature (no bank export has both 'vendor' and
+      // 'excluded' columns). Without this, reimporting your own export fell
+      // through to a generic format that treats every positive Amount as an
+      // expense, silently converting income to spend and re-guessing
+      // categories instead of trusting the exported ones.
+      if(firstLine.includes('vendor')&&firstLine.includes('excluded')){
+        importFmt='trakyodollas'; importFmtAutoDetected=true;
+      } else if(firstLine.includes('transaction type')&&firstLine.includes('original description')){
         importFmt='mint'; importFmtAutoDetected=true;
       } else if(firstLine.includes('outflow')&&firstLine.includes('inflow')&&firstLine.includes('payee')){
         importFmt='ynab'; importFmtAutoDetected=true;
@@ -8168,8 +8265,29 @@ function parseTxFile(file){
   reader.readAsText(file);
 }
 
+// Splits raw CSV text into logical rows, respecting quotes so a comma or
+// newline embedded inside a quoted field doesn't fracture the row.
+function splitCSVRows(text){
+  const rows=[];let cur='';let inQ=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(c==='"'){
+      cur+=c;
+      if(inQ&&text[i+1]==='"'){cur+='"';i++;}
+      else inQ=!inQ;
+    } else if((c==='\n'||c==='\r')&&!inQ){
+      if(c==='\r'&&text[i+1]==='\n')i++;
+      rows.push(cur);cur='';
+    } else {
+      cur+=c;
+    }
+  }
+  if(cur.trim()!=='')rows.push(cur);
+  return rows;
+}
+
 function parseCSV(text){
-  const lines=text.trim().split('\n').map(l=>l.trim()).filter(Boolean);
+  const lines=splitCSVRows(text.trim()).map(l=>l.trim()).filter(Boolean);
   if(lines.length<2)return [];
   const headers=splitCSVLine(lines[0]).map(h=>h.trim().replace(/^"|"$/g,'').toLowerCase());
   return lines.slice(1).map(line=>{
@@ -8184,7 +8302,10 @@ function splitCSVLine(line){
   const result=[];let cur='';let inQ=false;
   for(let i=0;i<line.length;i++){
     const c=line[i];
-    if(c==='"'){inQ=!inQ;}
+    if(c==='"'){
+      if(inQ&&line[i+1]==='"'){cur+='"';i++;}
+      else inQ=!inQ;
+    }
     else if(c===','&&!inQ){result.push(cur);cur='';}
     else cur+=c;
   }
@@ -8262,6 +8383,15 @@ function mapImportedCategory(cat){
   return mapped||null;
 }
 
+// A credit-side row whose description matches one of these categories is money
+// moving between the user's own accounts (or into a brokerage), not new income —
+// recognized via the same CAT_KEYWORDS patterns already used for the expense
+// side. TRANSFER_LIKE_CATS is the same shared list used for excludedCats.
+function _creditDepositCat(desc){
+  const c=guessCatFromDesc(desc);
+  return TRANSFER_LIKE_CATS.includes(c)?c:null;
+}
+
 function normalizeTxRow(row, source){
   let date, desc, amount, cat='Other', excluded=false, mcc='', isIncome=false;
 
@@ -8273,8 +8403,13 @@ function normalizeTxRow(row, source){
     mcc=row['mcc']||row['MCC']||row['mcc ']||'';
     const type=(row['type']||row['type ']||'').trim();
     if(!amount&&rawAmt>=0&&type==='Deposit'){
-      if(!state.includeIncome)return null;
-      isIncome=true;amount=Math.abs(rawAmt);cat='Income';
+      const xferCat=_creditDepositCat(desc);
+      if(xferCat){
+        amount=Math.abs(rawAmt);cat=xferCat;
+      } else {
+        if(!state.includeIncome)return null;
+        isIncome=true;amount=Math.abs(rawAmt);cat='Income';
+      }
     }
     if(!amount)return null;
     // Categorize
@@ -8291,8 +8426,13 @@ function normalizeTxRow(row, source){
     const type=(row['type']||'').trim();
     if(type==='Payment')return null;
     if(!amount&&rawAmt>=0){
-      if(!state.includeIncome)return null;
-      isIncome=true;amount=Math.abs(rawAmt);cat='Income';
+      const xferCat=_creditDepositCat(desc);
+      if(xferCat){
+        amount=Math.abs(rawAmt);cat=xferCat;
+      } else {
+        if(!state.includeIncome)return null;
+        isIncome=true;amount=Math.abs(rawAmt);cat='Income';
+      }
     }
     if(!amount)return null;
     mcc=row['mcc']||row['MCC']||'';
@@ -8307,12 +8447,17 @@ function normalizeTxRow(row, source){
     const credit=parseFloat(row['credit']||row['deposits']||row['deposit']||'0')||0;
     amount=debit>0?debit:0;
     if(!amount&&credit>0){
-      if(!state.includeIncome)return null;
-      isIncome=true;amount=credit;cat='Income';
+      const xferCat=_creditDepositCat(desc);
+      if(xferCat){
+        amount=credit;cat=xferCat;
+      } else {
+        if(!state.includeIncome)return null;
+        isIncome=true;amount=credit;cat='Income';
+      }
     }
     if(!amount)return null;
     mcc=row['mcc']||row['MCC']||'';
-    cat=guessCatFromDesc(desc);
+    if(!isIncome)cat=guessCatFromDesc(desc);
     if(cat==='Other')cat=row['category']||'Other';
 
   } else if(importFmt==='bofa'){
@@ -8322,8 +8467,13 @@ function normalizeTxRow(row, source){
     desc=(row['description']||'').trim();
     const rawAmt=parseFloat(row['amount']||'0');
     if(rawAmt>=0){
-      if(!state.includeIncome)return null;
-      isIncome=true;amount=rawAmt;cat='Income';
+      const xferCat=_creditDepositCat(desc);
+      if(xferCat){
+        amount=rawAmt;cat=xferCat;
+      } else {
+        if(!state.includeIncome)return null;
+        isIncome=true;amount=rawAmt;cat='Income';
+      }
     } else {
       amount=Math.abs(rawAmt);
     }
@@ -8339,8 +8489,13 @@ function normalizeTxRow(row, source){
     const txType=(row['transaction type']||'').trim().toLowerCase();
     const rawAmt=parseFloat(row['amount']||'0');
     if(txType==='credit'){
-      if(!state.includeIncome)return null;
-      isIncome=true;amount=rawAmt>0?rawAmt:0;cat='Income';
+      const xferCat=_creditDepositCat(desc);
+      if(xferCat){
+        amount=rawAmt>0?rawAmt:0;cat=xferCat;
+      } else {
+        if(!state.includeIncome)return null;
+        isIncome=true;amount=rawAmt>0?rawAmt:0;cat='Income';
+      }
     } else {
       amount=rawAmt>0?rawAmt:0;
     }
@@ -8355,8 +8510,14 @@ function normalizeTxRow(row, source){
     const outflow=parseFloat((row['outflow']||'0').replace(/[$,]/g,''))||0;
     const inflow=parseFloat((row['inflow']||'0').replace(/[$,]/g,''))||0;
     if(outflow<=0){
-      if(!state.includeIncome||inflow<=0)return null;
-      isIncome=true;amount=inflow;cat='Income';
+      if(inflow<=0)return null;
+      const xferCat=_creditDepositCat(desc);
+      if(xferCat){
+        amount=inflow;cat=xferCat;
+      } else {
+        if(!state.includeIncome)return null;
+        isIncome=true;amount=inflow;cat='Income';
+      }
     } else {
       amount=outflow;
     }
@@ -8369,13 +8530,32 @@ function normalizeTxRow(row, source){
     desc=(row['merchant']||row['original statement']||'').trim();
     const rawAmt=parseFloat(row['amount']||'0');
     if(rawAmt>=0){
-      if(!state.includeIncome)return null;
-      isIncome=true;amount=rawAmt;cat='Income';
+      const xferCat=_creditDepositCat(desc);
+      if(xferCat){
+        amount=rawAmt;cat=xferCat;
+      } else {
+        if(!state.includeIncome)return null;
+        isIncome=true;amount=rawAmt;cat='Income';
+      }
     } else {
       amount=Math.abs(rawAmt);
     }
     if(!amount)return null;
     if(!isIncome)cat=mapImportedCategory(row['category'])||guessCatFromDesc(desc);
+
+  } else if(importFmt==='trakyodollas'){
+    // Our own exportTransactionsCSV() output — trust every field directly
+    // instead of re-guessing category from the description or inferring
+    // income from sign (every other format's approach breaks here, since
+    // this export always stores a non-negative Amount for both income and
+    // expense rows). isIncome/excluded round-trip via their own columns.
+    date=row['date']||'';
+    desc=(row['description']||'').trim();
+    amount=Math.abs(parseFloat(row['amount']||'0'));
+    cat=row['category']||'Other';
+    excluded=(row['excluded']||'').trim().toLowerCase()==='yes';
+    isIncome=(row['isincome']||'').trim().toLowerCase()==='yes';
+    if(isIncome&&!state.includeIncome)return null; // same Include Income gate every other format applies
 
   } else {
     // Generic — sign convention auto-detected from the whole file's majority polarity
@@ -8391,8 +8571,14 @@ function normalizeTxRow(row, source){
     if(isExpenseSign){
       amount=Math.abs(rawAmt);
     } else {
-      if(!rawAmt||!state.includeIncome)return null;
-      isIncome=true;amount=Math.abs(rawAmt);cat='Income';
+      if(!rawAmt)return null;
+      const xferCat=_creditDepositCat(desc);
+      if(xferCat){
+        amount=Math.abs(rawAmt);cat=xferCat;
+      } else {
+        if(!state.includeIncome)return null;
+        isIncome=true;amount=Math.abs(rawAmt);cat='Income';
+      }
     }
     if(!amount)return null;
     mcc=row['mcc']||row['MCC']||'';
@@ -8402,7 +8588,10 @@ function normalizeTxRow(row, source){
 
   // Normalize date to YYYY-MM-DD using the user's chosen date format
   if(date)date=parseImportDate(date,_importDateFmt)||date;
-  if(!date||!desc||!amount)return null;
+  // Number.isFinite, not just !amount — parseFloat('Infinity')/parseFloat('1e400')
+  // both return a truthy Infinity, not NaN, so a malformed amount cell would
+  // otherwise slip through and poison every downstream sum that touches it.
+  if(!date||!desc||!amount||!Number.isFinite(amount))return null;
 
   // ATM detection: bank name followed by street address digits → Other.
   // Must run before community rules so keyword matches on the bank name don't override it.
@@ -8555,7 +8744,18 @@ async function fetchCommunityRules(){
   _communityRulesFetched=true;
   try{
     const res=await fetch('/community-rules.json',{cache:'no-store'});
-    if(res.ok){const data=await res.json();if(Array.isArray(data)){_communityRules=data;document.querySelectorAll('.community-rules-count').forEach(el=>el.textContent=data.length);}}
+    if(res.ok){
+      const data=await res.json();
+      if(Array.isArray(data)){
+        // Entries are hand-merged from a Google Form submission, not
+        // machine-validated — a malformed entry (missing/non-string
+        // keyword or cat) would otherwise throw uncaught deep inside CSV
+        // import categorization, breaking it file-wide until fixed.
+        const valid=data.filter(r=>r&&typeof r.keyword==='string'&&typeof r.cat==='string');
+        _communityRules=valid;
+        document.querySelectorAll('.community-rules-count').forEach(el=>el.textContent=valid.length);
+      }
+    }
   }catch(e){/* silently fail — community rules are optional */}
 }
 
@@ -8597,7 +8797,7 @@ function showImportPreview(){
   const detFmtTxt=document.getElementById('import-detected-fmt-text');
   if(!importParsed.length){
     if(detFmtEl)detFmtEl.classList.add('hidden');
-    const fmtNames={ally:'Checking/Savings',chase:'Credit card',debitcredit:'Debit/Credit columns',bofa:'Bank of America',generic:'Other',mint:'Mint',ynab:'YNAB',monarch:'Monarch Money'};
+    const fmtNames={ally:'Checking/Savings',chase:'Credit card',debitcredit:'Debit/Credit columns',bofa:'Bank of America',generic:'Other',mint:'Mint',ynab:'YNAB',monarch:'Monarch Money',trakyodollas:'trak-yo-dolla$ export'};
     if(!fmtPickerOpen){
       showToast('We couldn\'t read this file automatically — try selecting your format below','#F87171');
       expandFormatPicker();
@@ -8732,6 +8932,15 @@ function rebuildMonthly(){
   const m={};
   state.transactions.forEach(t=>{
     if(t.excluded)return;
+    // Every other spend-aggregating function in the file (getBaseTxs() and
+    // its many callers) already excludes income via !t.isIncome directly,
+    // not just via excludedCats.has('Income') — this one didn't, so a
+    // transaction whose .cat stops being 'Income' for any reason (deleting
+    // the category via the now-fixed deleteCustomCat() cascade, or simply
+    // hand-editing one income row's category) silently added its full
+    // (positive-signed) amount into MONTHLY as spend instead of disappearing
+    // as intended. isIncome is the durable signal; cat can drift.
+    if(t.isIncome)return;
     if(state.excludedCats&&state.excludedCats.has(t.cat))return;
     const mo=t.date.slice(0,7);
     m[mo]=m[mo]||{};
@@ -8993,9 +9202,18 @@ function openAuthModal(reason) {
 let _pendingSyncUid = null;
 let _pendingSyncIsFirstTime = false;
 async function promptSyncPassphrase(uid) {
-  if (window._isDemoPreview) return;
+  if (window._isDemoPreview||window._viewingDemoOverReal) return;
+  // Blocks scheduleSave()'s cloud push (not the local save) until the initial
+  // pull-and-merge below actually completes — window._fbUser is set the
+  // instant auth resolves, synchronously, well before this async pull/merge
+  // finishes; without this gate, an edit made in that window pushes
+  // pre-merge local state to Supabase, clobbering newer server data. Cleared
+  // only on a *successful* loadUserData() — an incorrect/pending passphrase
+  // leaves it set, so edits still save locally but never sync until the
+  // passphrase is actually resolved.
+  window._awaitingCloudMerge = true;
   if (getSyncPassphrase()) {
-    try { await loadUserData(uid); return; }
+    try { await loadUserData(uid); window._awaitingCloudMerge = false; return; }
     catch(e) { clearSyncPassphrase(); }
   }
   _pendingSyncUid = uid;
@@ -9026,6 +9244,12 @@ async function promptSyncPassphrase(uid) {
   if (input) setTimeout(()=>input.focus(), 50);
 }
 async function submitSyncPassphrase() {
+  const btn = document.getElementById('sync-pp-submit-btn');
+  // Enter-to-submit (confirmSyncPassphraseOnEnter) has no debounce of its
+  // own — a rapid double Enter/click used to fire this twice concurrently,
+  // before the first call's own `btn.disabled=true` (below) had a chance to
+  // take effect, letting two first-time-setup calls race in _getOrCreateSalt().
+  if (btn && btn.disabled) return;
   const input = document.getElementById('sync-pp-input');
   const confirmInput = document.getElementById('sync-pp-confirm');
   const errorEl = document.getElementById('sync-pp-error');
@@ -9039,10 +9263,10 @@ async function submitSyncPassphrase() {
   const uid = _pendingSyncUid;
   if (!uid) return;
   setSyncPassphrase(pw);
-  const btn = document.getElementById('sync-pp-submit-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
   try {
     await loadUserData(uid);
+    window._awaitingCloudMerge = false;
     closeModals();
   } catch(e) {
     clearSyncPassphrase();
@@ -9115,7 +9339,7 @@ async function confirmForgotPassphraseReset() {
 
 async function loadUserData(uid) {
   if (!window._fb) return;
-  if (window._isDemoPreview) return; // demo-preview sessions never load/overwrite with real account data
+  if (window._isDemoPreview||window._viewingDemoOverReal) return; // demo-preview sessions never load/overwrite with real account data
   try {
     // Load snapshots
     const snaps = await window._fb.loadSnapshots(uid);
@@ -9297,8 +9521,8 @@ async function lookupVIN(){
     else if(series&&!model.includes(series))modelStr+=` ${series}`;
     document.getElementById('v-model').value=modelStr;
     // Success message with KBB link
-    status.innerHTML=`<span style="color:#34D399">✓ ${year} ${make.charAt(0)+make.slice(1).toLowerCase()} ${model}</span>
-      <a href="javascript:void(0)" data-action="openKBB" data-arg="${year}" data-arg2="${make}" data-arg3="${model}"
+    status.innerHTML=`<span style="color:#34D399">✓ ${esc(year)} ${esc(make.charAt(0)+make.slice(1).toLowerCase())} ${esc(model)}</span>
+      <a href="javascript:void(0)" data-action="openKBB" data-arg="${esc(year)}" data-arg2="${esc(make)}" data-arg3="${esc(model)}"
          style="color:#60A5FA;text-decoration:underline;margin-left:8px;font-size:10px">Check value on Kelley Blue Book ↗</a>`;
   } catch(err) {
     status.textContent=`⚠ Lookup failed — check your connection and try again`;
@@ -9378,11 +9602,35 @@ function saveVehicle(){
     name=make?`${year} ${make} ${model.split(' ')[0]}`.trim():`${year} Vehicle`.trim();assetType='vehicle';
   }
   if(editVehicleId){
-    const v=state.vehicles.find(x=>x.id===editVehicleId);if(v)Object.assign(v,{year,make,model,condition,miles,value,purchase,purchaseYear,vin,assetType,name});
-    const a=state.accounts.find(a=>a.type==='vehicle');if(a){a.balance=value;a.name=name;}
+    const v=state.vehicles.find(x=>x.id===editVehicleId);
+    if(v){
+      Object.assign(v,{year,make,model,condition,miles,value,purchase,purchaseYear,vin,assetType,name});
+      // Vehicles/assets are paired 1:1 with a state.accounts entry via
+      // acctId, so editing one never touches another vehicle's account —
+      // matching by type alone (the old logic) always grabbed whichever
+      // vehicle-type account happened to be first, silently corrupting a
+      // different vehicle/asset's balance and name the moment a household
+      // had more than one. Records saved before acctId existed fall back to
+      // a best-effort match once (excluding accounts already claimed by
+      // another vehicle this session), then remember the id from here on.
+      let a=v.acctId!=null?state.accounts.find(x=>x.id===v.acctId):null;
+      if(!a){
+        const claimed=new Set(state.vehicles.filter(o=>o.id!==v.id&&o.acctId!=null).map(o=>o.acctId));
+        // Legacy pre-fix records may have been paired with an account mistagged
+        // type:'vehicle' even for an 'other' asset (see note above the push()
+        // below) — match either type once, then self-heal the type on save.
+        a=state.accounts.find(x=>(x.type==='vehicle'||x.type==='other-asset')&&!claimed.has(x.id));
+      }
+      if(a){a.balance=value;a.name=name;a.type=assetType==='other'?'other-asset':'vehicle';v.acctId=a.id;}
+    }
   } else {
-    state.vehicles.push({id:state.nextId++,year,make,model,condition,miles,value,purchase,purchaseYear,vin,assetType,name});
-    state.accounts.push({id:state.nextId++,name,source:'Other',type:'vehicle',balance:value});
+    const vehId=state.nextId++;
+    const acctId=state.nextId++;
+    state.vehicles.push({id:vehId,year,make,model,condition,miles,value,purchase,purchaseYear,vin,assetType,name,acctId});
+    // Paired account's type must match assetType — 'other' assets get
+    // 'other-asset' (not 'vehicle'), so renderNwBreakdown()'s Net Worth
+    // groups (§ Vehicles vs Other assets) categorize them correctly.
+    state.accounts.push({id:acctId,name,source:'Other',type:assetType==='other'?'other-asset':'vehicle',balance:value});
   }
   closeModals();renderAll();
 }
@@ -9484,6 +9732,20 @@ function runMigrations(fromVersion){
         }
       }
     }catch(e){}
+
+    // 'Internal Transfer' is a category CAT_KEYWORDS can assign (transfer-
+    // looking descriptions) via most CSV import formats, but until now it
+    // wasn't in getAllCats()'s base list — invisible/unmanageable in the
+    // category UI — and wasn't in the default excludedCats, unlike its
+    // siblings 'Transfers'/'CC Payment'/'Investment Contributions'. That
+    // silently counted ordinary transfers between a user's own accounts as
+    // real spend in the Budget tab and dashboard for every format except
+    // Ally (which drops these rows outright). Backfill existing installs so
+    // the correction takes effect without the user having to do anything.
+    if(Array.isArray(saved.excludedCats)&&!saved.excludedCats.includes('Internal Transfer')){
+      saved.excludedCats=[...saved.excludedCats,'Internal Transfer'];
+      dirty=true;
+    }
 
     if(dirty)localStorage.setItem(LS_KEY,JSON.stringify(saved));
     console.log(`[trak] migrated from v${fromVersion||'1.0'} to v${APP_VERSION}`);
@@ -9602,7 +9864,7 @@ function loadFromLocalStorage(){
 }
 
 function saveToLocalStorage(){
-  if(window._isDemoPreview)return; // demo-preview sessions never persist
+  if(window._isDemoPreview||window._viewingDemoOverReal)return; // demo-preview sessions never persist
   try{
     const s=serializeState();
     if(s)localStorage.setItem(LS_KEY,s);
@@ -9656,36 +9918,58 @@ function importBackup(file){
       if(payload.app!=='trak-yo-dollas'||payload.version!==1){
         showToast('Not a valid trak-yo-dollas backup.','#F87171');return;
       }
-      if(!confirm('Replace ALL current data with this backup? This cannot be undone.'))return;
       const saved=payload.state;
+      if(!saved||typeof saved!=='object'){
+        showToast('Backup file is missing its data — nothing was changed.','#F87171');return;
+      }
+      // Type-guard every field before touching live state: a hand-edited or
+      // corrupted backup with a wrong-shaped field (e.g. a string where an
+      // array was expected) used to throw mid-assignment here, leaving
+      // `state` a mix of old and partially-restored data with no rollback.
+      const arr=v=>Array.isArray(v)?v:[];
+      const obj=v=>(v&&typeof v==='object'&&!Array.isArray(v))?v:{};
+      if(!confirm('Replace ALL current data with this backup? This cannot be undone.'))return;
       // Restore state — mirrors loadFromLocalStorage field assignments
-      state.accounts=saved.accounts||[];
-      state.vehicles=saved.vehicles||[];
-      state.snapshots=saved.snapshots||[];
-      state.customCategories=saved.customCategories||[];
-      if(saved.budgets&&Object.keys(saved.budgets).length>0)state.budgets=saved.budgets;else state.budgets={};
-      state.catRules=saved.catRules||[];
-      state.income=saved.income||{method:null,monthlyAmount:0};
-      state.declaredIncome=saved.declaredIncome??0;
-      state.hiddenPills=new Set(saved.hiddenPills||[]);
-      state.vendorAliases=saved.vendorAliases??{};
-      state.activeSources=saved.activeSources&&saved.activeSources.length>0?new Set(saved.activeSources):new Set();
-      state.sourceAlignSkipped=saved.sourceAlignSkipped??false;
+      state.accounts=arr(saved.accounts);
+      state.vehicles=arr(saved.vehicles);
+      state.snapshots=arr(saved.snapshots);
+      state.customCategories=arr(saved.customCategories);
+      const savedBudgets=obj(saved.budgets);
+      state.budgets=Object.keys(savedBudgets).length>0?savedBudgets:{};
+      state.catRules=arr(saved.catRules);
+      state.income=(saved.income&&typeof saved.income==='object')?saved.income:{method:null,monthlyAmount:0};
+      state.declaredIncome=Number(saved.declaredIncome)||0;
+      state.hiddenPills=new Set(arr(saved.hiddenPills));
+      state.vendorAliases=obj(saved.vendorAliases);
+      const savedSources=arr(saved.activeSources);
+      state.activeSources=savedSources.length>0?new Set(savedSources):new Set();
+      state.sourceAlignSkipped=!!saved.sourceAlignSkipped;
       state.sourceAlignDate=saved.sourceAlignDate??null;
       state.chartGrain=saved.chartGrain??'month';
       state.rangeFrom=saved.rangeFrom??null;
       state.rangeTo=saved.rangeTo??null;
       state.currency=saved.currency??'$';
-      state.budgetWarnPct=saved.budgetWarnPct??80;
-      state.includeIncome=saved.includeIncome??false;
+      state.budgetWarnPct=Number(saved.budgetWarnPct)||80;
+      state.includeIncome=!!saved.includeIncome;
       state.nwGoal=saved.nwGoal??null;
-      state.hideNwGoal=saved.hideNwGoal??false;
-      state.nextId=saved.nextId||1;
+      state.hideNwGoal=!!saved.hideNwGoal;
+      state.nextId=Number(saved.nextId)||1;
       state.hasRealData=!!saved.hasRealData;
       state.hasRealAccounts=!!saved.hasRealAccounts;
       state.hasRealSnapshot=!!saved.hasRealSnapshot;
-      state.excludedCats=new Set(saved.excludedCats||[]);
-      state.transactions=(payload.transactions||[]).map(t=>({...t,amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
+      state.excludedCats=new Set(arr(saved.excludedCats));
+      // importBackup() restores fields directly and never runs
+      // runMigrations() — that function only ever fires once at boot
+      // against localStorage (see below), not against an uploaded backup.
+      // A backup exported before 'Internal Transfer' was added to the
+      // default excludedCats (July 6, 2026) would otherwise silently
+      // reintroduce that spend-inflation bug on restore. This is a narrow,
+      // one-off backfill, not a general fix — any *future* migration will
+      // have the same gap unless it also gets its own line here, or
+      // runMigrations() is refactored to run against an arbitrary object
+      // instead of reading/writing localStorage directly.
+      if(!state.excludedCats.has('Internal Transfer'))state.excludedCats.add('Internal Transfer');
+      state.transactions=arr(payload.transactions).map(t=>({...t,amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
       _txsDirty=true;
       rebuildMonthly();
       rebuildCatSelects();
@@ -9743,14 +10027,37 @@ window.addEventListener('offline',_updateOnlineStatus);
 // Debounced auto-save — fires 800ms after last mutation
 let _lsSaveTimer=null;
 function scheduleSave(){
-  if(window._isDemoPreview)return; // demo-preview sessions never persist
+  if(window._isDemoPreview||window._viewingDemoOverReal)return; // demo-preview sessions never persist
   clearTimeout(_lsSaveTimer);
   _lsSaveTimer=setTimeout(()=>{
     saveToLocalStorage();
-    // Also sync to Supabase if signed in
-    if(window._fbUser&&window._fb)syncToCloud();
+    // Also sync to Supabase if signed in — but not while the initial cloud
+    // pull/merge for this sign-in is still in flight (see promptSyncPassphrase).
+    if(window._fbUser&&window._fb&&!window._awaitingCloudMerge)syncToCloud();
   },800);
 }
+// Flush any pending debounced save immediately on tab close/navigate-away —
+// otherwise an edit made within the 800ms window is silently lost, since
+// localStorage.setItem is synchronous but the debounce timer is not.
+// pagehide (not just beforeunload) so it also fires on mobile Safari/Chrome
+// backgrounding, which doesn't reliably fire beforeunload.
+window.addEventListener('pagehide',()=>{
+  if(_lsSaveTimer){
+    clearTimeout(_lsSaveTimer);
+    saveToLocalStorage();
+  }
+});
+// The 'storage' event only fires in OTHER tabs of the same origin, never the
+// tab that made the write — so any time this fires, another tab of this app
+// just saved. There's no live reconciliation here (attempting an in-memory
+// merge is a much bigger, riskier change) — just a clear warning instead of
+// the previous silent behavior, where whichever tab's 800ms debounce fired
+// last would overwrite the other's edits with zero indication anything was lost.
+window.addEventListener('storage',(e)=>{
+  if(e.key===LS_KEY&&!window._isDemoPreview&&!window._viewingDemoOverReal){
+    showToast('⚠ This app is open in another tab — reload to avoid overwriting changes made there','#FCD34D',10000);
+  }
+});
 
 // Wire up after DOM ready
 document.addEventListener('DOMContentLoaded',function(){
@@ -9897,6 +10204,15 @@ document.addEventListener('DOMContentLoaded',function(){
       renderActiveChart();
     }
   });
+
+  // Shown last, deliberately — see _handleAuthLinkError above. An expired/
+  // reused magic-link error is more important than any of this handler's own
+  // informational toasts (data-restored, demo preview, etc.) and should be
+  // the one left showing on the shared #toast element.
+  if(window._pendingAuthLinkErrorMsg){
+    showToast(window._pendingAuthLinkErrorMsg,'#F87171',6000);
+    window._pendingAuthLinkErrorMsg=null;
+  }
 });
 
 const _tabScroll={};
@@ -10069,7 +10385,7 @@ function loadDemoProfile(n, silent=false, skipRender=false){
   state.hasRealAccounts=false;
   state.hasRealSnapshot=false;
   state.includeIncome=p.includeIncome||false;
-  state.excludedCats=new Set(['Investment Contributions','Transfers','CC Payment']);
+  state.excludedCats=new Set(TRANSFER_LIKE_CATS);
   if(state.includeIncome)state.excludedCats.add('Income');
   state.catRules=[...(p.catRules||[])];
   state.customCategories=[...(p.customCategories||[])];
@@ -10122,13 +10438,39 @@ window.addEventListener('error',function(e){console.error('GLOBAL ERROR:',e.mess
 
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.0/dist/umd/supabase.min.js" integrity="sha384-DjOvX/sJLsmbMrw4wTvf6l3kiGBjdxyOO6X2MTFwOOXGkjN/mE08BoDzrpaaIjil" crossorigin="anonymous"></script>
 <script>
 // Supabase config — anon key is public by design; security enforced by RLS policies
 const _sb = supabase.createClient(
   'https://pjsvsdiplecoilzttyhd.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqc3ZzZGlwbGVjb2lsenR0eWhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5Njk0NDUsImV4cCI6MjA5NzU0NTQ0NX0.mzEBaZP6srlSJiRUr2EMv-xRQywxcIpFuAFsttJviu0'
 );
+
+// An expired/already-used magic link redirects back with an error in the URL
+// hash (e.g. #error=access_denied&error_code=otp_expired&...) instead of
+// #access_token=... — no session gets established, so onAuthStateChange below
+// never fires meaningfully for this case. Previously nothing read this at
+// all: the page just loaded signed-out with the raw error fragment left
+// sitting in the address bar and no indication to the user why sign-in didn't
+// work.
+(function _handleAuthLinkError(){
+  const hash = window.location.hash;
+  if (!hash.includes('error=')) return;
+  const params = new URLSearchParams(hash.replace(/^#/, ''));
+  const code = params.get('error_code');
+  window._pendingAuthLinkErrorMsg = code === 'otp_expired'
+    ? 'That sign-in link has expired — request a new one.'
+    : 'That sign-in link is no longer valid — request a new one.';
+  window.history.replaceState({}, '', window.location.pathname + window.location.search);
+  // Not shown here directly — this script runs during initial parse, strictly
+  // before DOMContentLoaded (registered in the main script block) fires its
+  // own synchronous toasts (e.g. "Your data restored" for a returning
+  // signed-in user, exactly the person most likely to have an old magic
+  // link lying around). Calling showToast() here would always lose that
+  // race on the single shared #toast element. Stashed in a flag instead and
+  // shown from the end of the DOMContentLoaded handler, which deterministically
+  // runs after — see the `_pendingAuthLinkErrorMsg` check there.
+})();
 
 // ── Auth state — handles Google redirect return, magic link return, and session restore ──
 let _sbAuthHandled = false;
@@ -10208,7 +10550,18 @@ async function _getOrCreateSalt(uid) {
   if (data && data.length) return data[0].salt;
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const saltB64 = btoa(String.fromCharCode(...salt));
-  await _sb.from('user_keys').insert({ user_id: uid, salt: saltB64 });
+  const { error } = await _sb.from('user_keys').insert({ user_id: uid, salt: saltB64 });
+  if (error) {
+    // user_id is the table's primary key, so a concurrent call for the same
+    // brand-new account (two tabs/devices doing first-time setup at once,
+    // or a double-submitted passphrase form) makes this insert fail with a
+    // conflict — the loser used to silently return its own never-persisted
+    // salt instead of noticing, deriving a key nobody else's copy of the app
+    // would ever reproduce. Re-fetch and use whichever salt actually won.
+    const { data: existing } = await _sb.from('user_keys').select('salt').eq('user_id', uid);
+    if (existing && existing.length) return existing[0].salt;
+    throw error;
+  }
   return saltB64;
 }
 let _cryptoKey = null;
@@ -10317,8 +10670,8 @@ window._fb = {
 };
 </script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js" integrity="sha384-su5kReKyYlIFrI62mbQRKXHzFobMa7BHp1cK6julLPbnYcCW9NIZKJiTODjLPeDh" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js" integrity="sha384-SM54CE5h+qdDI046d2Y5ym7wq1kq4uxcQ1cqGq5/+5jrE5tPLeDJSq711Q8sIska" crossorigin="anonymous"></script>
 <script>
 // d3-sankey merges sankey() and sankeyLinkHorizontal() into the d3 global
 window.d3Sankey = (typeof d3 !== 'undefined' && typeof d3.sankey === 'function') ? d3 : null;

@@ -71,6 +71,27 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.origin !== self.location.origin) return;
 
+  // community-rules.json updates independently of a full app deploy (no
+  // CACHE_VERSION bump), but the cache-first strategy below would otherwise
+  // keep serving a stale cached copy forever regardless of the page's own
+  // fetch(...,{cache:'no-store'}) — that request-level hint never reaches
+  // the network if the SW answers from cache first. Network-first here so
+  // categorization-rule updates actually reach online users; falls back to
+  // the last cached copy (or a 503, handled as "rules unavailable" by the
+  // app) when offline.
+  if (url.pathname === '/community-rules.json') {
+    e.respondWith(
+      fetch(e.request).then(response => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+        }
+        return response;
+      }).catch(() => caches.match(e.request).then(r => r || new Response('', {status: 503, statusText: 'Offline'})))
+    );
+    return;
+  }
+
   // Normalize .html → clean URL so SW serves from cache instead of following
   // Cloudflare's 307 redirect (which may not resolve correctly inside a SW fetch).
   const cleanPath = HTML_CLEAN_URL[url.pathname];

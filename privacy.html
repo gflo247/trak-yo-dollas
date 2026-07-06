@@ -2,6 +2,18 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' 'sha256-ufhcvjGVj9df/HsbNJDnT3G/aCwAVCfVGbydHwbkRv8=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cloud.umami.is https://static.cloudflareinsights.com;
+  style-src 'self' 'unsafe-inline';
+  font-src 'self';
+  img-src 'self' data:;
+  connect-src 'self' https://cloud.umami.is https://*.cloudflareinsights.com;
+  worker-src 'self';
+  object-src 'none';
+  form-action 'self';
+  base-uri 'self';
+">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>trak-yo-dolla$ · Privacy policy</title>
@@ -129,7 +141,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <nav>
   <a href="/" class="nav-logo">trak-yo-dolla<span>$</span></a>
   <div class="nav-right">
-    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+    <button class="theme-btn" data-action="toggleTheme" id="theme-btn">🌙</button>
     <a href="/trakyodollas" class="btn-ghost">Open app</a>
   </div>
 </nav>
@@ -313,7 +325,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
     <div class="card card-blue">
       <div class="card-label">🔁 Sign in to sync across devices</div>
-      <p>Sign in with Google or a passwordless email link and the app backs up your full data — accounts, transactions, budgets, categories, and snapshots — directly to your account via <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer">Supabase</a> (open source). You'll also set a <strong>sync passphrase — separate from your Google or email sign-in</strong> — and the app uses it to encrypt your data on your device before it leaves. Supabase stores only encrypted data it cannot read. Row-level security policies enforce access at the database level so only you can read it — not me. <strong>Choose that passphrase carefully: there's no reset.</strong> Sign in on any device and enter it to restore everything. If you'd rather your data never leave your device, skip sign-in — the app works fully without it.</p>
+      <p>Sign in with Google or a passwordless email link and the app backs up your full data — accounts, transactions, budgets, categories, and snapshots — directly to your account via <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer">Supabase</a> (open source). You'll also set a <strong>sync passphrase — separate from your Google or email sign-in</strong> — and the app uses it to encrypt your data on your device before it leaves. Supabase stores only encrypted data it cannot read. Row-level security policies enforce access at the database level so only you can read it — not me. <strong>Choose that passphrase carefully: there's no reset.</strong> Sign in on any device and enter it to restore everything. Sync doesn't merge changes from multiple devices — if you edit on two devices before either syncs, the app keeps whichever save happened last. If you'd rather your data never leave your device, skip sign-in — the app works fully without it.</p>
     </div>
 
     <div class="card card-neutral">
@@ -505,6 +517,16 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 </footer>
 
 <script>
+// ── Event delegation — replaces inline onclick handlers (added July 6,
+// 2026 so this page can carry a hash-based CSP with no 'unsafe-inline' on
+// script-src, matching trakyodollas.html's existing pattern). ──
+document.addEventListener('click',function(e){
+  const el=e.target.closest('[data-action]');
+  if(!el)return;
+  const fn=window[el.dataset.action];
+  if(typeof fn==='function')fn();
+});
+
 const saved = localStorage.getItem('trakyo_theme') || 'dark';
 document.documentElement.setAttribute('data-theme', saved);
 document.getElementById('theme-btn').textContent = saved === 'light' ? '☀️' : '🌙';

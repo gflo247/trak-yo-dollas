@@ -2,6 +2,18 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' 'sha256-w2jw9b88qKLX0Cx6o6sRnT/mRFYEZ/6o/BnbW8MqZoY=' 'sha256-8poXjTfC+9LuzkQaS/1BLDE9IvFZ1yOvs0oy/CjPuP8=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cloud.umami.is https://static.cloudflareinsights.com;
+  style-src 'self' 'unsafe-inline';
+  font-src 'self';
+  img-src 'self' data:;
+  connect-src 'self' https://cloud.umami.is https://*.cloudflareinsights.com;
+  worker-src 'self';
+  object-src 'none';
+  form-action 'self';
+  base-uri 'self';
+">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>trak-yo-dolla$ · Free Mint Alternative · No Bank Connections Required</title>
@@ -269,7 +281,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
   <a href="#" class="nav-logo">trak-yo-dolla<span>$</span></a>
   <div class="nav-right">
     <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:13px">GitHub</a>
-    <button type="button" class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+    <button type="button" class="theme-btn" data-action="toggleTheme" id="theme-btn">🌙</button>
     <a href="/trakyodollas?demo=1" class="btn-primary-sm">Try with demo data</a>
   </div>
 </nav>
@@ -331,9 +343,9 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       <div class="preview-dot" style="background:#FBBF24"></div>
       <div class="preview-dot" style="background:#34D399"></div>
       <div style="margin-left:8px;display:flex;gap:0" id="preview-tabs">
-        <button class="ptab ptab-active" onclick="showTab(0)">Spending</button>
-        <button class="ptab" onclick="showTab(1)">Budget</button>
-        <button class="ptab" onclick="showTab(2)">Net Worth</button>
+        <button class="ptab ptab-active" data-action="showTab" data-arg="0">Spending</button>
+        <button class="ptab" data-action="showTab" data-arg="1">Budget</button>
+        <button class="ptab" data-action="showTab" data-arg="2">Net Worth</button>
       </div>
       <div class="preview-note-desktop" style="margin-left:auto;font-size:10px;color:var(--text-muted)">Simplified preview · <a href="/trakyodollas?demo=1" style="color:var(--text-muted);text-decoration:underline;text-underline-offset:2px">Try with demo data</a> for the full experience →</div>
     </div>
@@ -370,25 +382,25 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
         </div>
         <div style="font-size:9px;color:var(--text-muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.65rem">BY CATEGORY</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:6px;margin-bottom:1rem">
-          <div class="ptile" onclick="filterPreviewTile(this,'Home','#F87171')" style="background:var(--bg-deep);border:1px solid #F8717133;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
+          <div class="ptile" data-action="filterPreviewTile" data-arg="Home" data-arg2="#F87171" style="background:var(--bg-deep);border:1px solid #F8717133;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
             <div style="font-size:9px;font-weight:700;color:var(--accent-red);text-transform:uppercase;letter-spacing:.05em">Home</div>
             <div style="font-size:18px;font-weight:900;color:var(--text-primary);line-height:1">$21,976</div>
             <div style="font-size:9px;color:var(--text-muted)">↑82% · avg $1,221/mo · Peak: Jan</div>
             <svg viewBox="0 0 80 24" width="80" height="24" style="margin-top:4px"><polyline points="0,19 13,14 27,20 40,8 53,15 67,5 80,9" fill="none" stroke="#F87171" stroke-width="1.5" stroke-linejoin="round"/></svg>
           </div>
-          <div class="ptile" onclick="filterPreviewTile(this,'Groceries','#34D399')" style="background:var(--bg-deep);border:1px solid #34D39933;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
+          <div class="ptile" data-action="filterPreviewTile" data-arg="Groceries" data-arg2="#34D399" style="background:var(--bg-deep);border:1px solid #34D39933;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
             <div style="font-size:9px;font-weight:700;color:var(--accent-green);text-transform:uppercase;letter-spacing:.05em">Groceries</div>
             <div style="font-size:18px;font-weight:900;color:var(--text-primary);line-height:1">$12,525</div>
             <div style="font-size:9px;color:var(--text-muted)">↑60% · avg $696/mo · Peak: Dec</div>
             <svg viewBox="0 0 80 24" width="80" height="24" style="margin-top:4px"><polyline points="0,20 13,14 27,18 40,7 53,13 67,9 80,4" fill="none" stroke="#34D399" stroke-width="1.5" stroke-linejoin="round"/></svg>
           </div>
-          <div class="ptile" onclick="filterPreviewTile(this,'Shopping','#FBBF24')" style="background:var(--bg-deep);border:1px solid #FBBF2433;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
+          <div class="ptile" data-action="filterPreviewTile" data-arg="Shopping" data-arg2="#FBBF24" style="background:var(--bg-deep);border:1px solid #FBBF2433;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
             <div style="font-size:9px;font-weight:700;color:var(--accent-amber);text-transform:uppercase;letter-spacing:.05em">Shopping</div>
             <div style="font-size:18px;font-weight:900;color:var(--text-primary);line-height:1">$11,197</div>
             <div style="font-size:9px;color:var(--accent-amber)">↑11% · avg $622/mo · Peak: Dec</div>
             <svg viewBox="0 0 80 24" width="80" height="24" style="margin-top:4px"><polyline points="0,8 13,18 27,5 40,15 53,10 67,19 80,6" fill="none" stroke="#FBBF24" stroke-width="1.5" stroke-linejoin="round"/></svg>
           </div>
-          <div class="ptile pcat-4th" onclick="filterPreviewTile(this,'Bills &amp; Utilities','#60A5FA')" style="background:var(--bg-deep);border:1px solid #60A5FA33;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
+          <div class="ptile pcat-4th" data-action="filterPreviewTile" data-arg="Bills &amp; Utilities" data-arg2="#60A5FA" style="background:var(--bg-deep);border:1px solid #60A5FA33;border-radius:10px;padding:.65rem .75rem;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:opacity .15s,transform .15s">
             <div style="font-size:9px;font-weight:700;color:var(--accent-blue-light);text-transform:uppercase;letter-spacing:.05em">Bills &amp; Utilities</div>
             <div style="font-size:18px;font-weight:900;color:var(--text-primary);line-height:1">$8,899</div>
             <div style="font-size:9px;color:var(--text-muted)">↑76% · avg $494/mo · Peak: Mar</div>
@@ -396,11 +408,11 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
           </div>
         </div>
         <div style="display:flex;gap:5px;margin-bottom:.75rem">
-          <div id="pcm-0" onclick="setPreviewChart(0)" class="pcm-btn pcm-active">📊 <span>Bar charts</span></div>
-          <div id="pcm-1" onclick="setPreviewChart(1)" class="pcm-btn">📈 <span>Trend</span></div>
-          <div id="pcm-2" onclick="setPreviewChart(2)" class="pcm-btn">📅 <span>Daily</span></div>
-          <div id="pcm-3" onclick="setPreviewChart(3)" class="pcm-btn">🏦 <span>Flow</span></div>
-          <div id="pcm-4" onclick="setPreviewChart(4)" class="pcm-btn">⊞ <span>Split</span></div>
+          <div id="pcm-0" data-action="setPreviewChart" data-arg="0" class="pcm-btn pcm-active">📊 <span>Bar charts</span></div>
+          <div id="pcm-1" data-action="setPreviewChart" data-arg="1" class="pcm-btn">📈 <span>Trend</span></div>
+          <div id="pcm-2" data-action="setPreviewChart" data-arg="2" class="pcm-btn">📅 <span>Daily</span></div>
+          <div id="pcm-3" data-action="setPreviewChart" data-arg="3" class="pcm-btn">🏦 <span>Flow</span></div>
+          <div id="pcm-4" data-action="setPreviewChart" data-arg="4" class="pcm-btn">⊞ <span>Split</span></div>
         </div>
         <!-- Chart panels -->
         <div id="pc-0" style="background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem .85rem">
@@ -748,7 +760,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       <h3>Smart auto-categorization — US, Canada, UK, Australia, New Zealand, and Singapore</h3>
       <div style="display:flex;flex-direction:column;gap:5px;margin:.6rem 0">
         <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:#2563EB;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">1</span><span style="color:var(--text-secondary)"><strong style="color:var(--text-primary)">Your rules</strong> — keyword rules you've saved always win</span></div>
-        <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:#2563EB;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">2</span><span style="color:var(--text-secondary)"><strong style="color:var(--text-primary)">Community patterns</strong> — <span class="community-rules-count">904</span> community-contributed merchant mappings covering US, CA, UK, AU, NZ, and SG · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light)">Suggest one ↗</a></span></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:#2563EB;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">2</span><span style="color:var(--text-secondary)"><strong style="color:var(--text-primary)">Community patterns</strong> — <span class="community-rules-count">1802</span> community-contributed merchant mappings covering US, CA, UK, AU, NZ, and SG · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light)">Suggest one ↗</a></span></div>
         <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:#2563EB;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">3</span><span style="color:var(--text-secondary)"><strong style="color:var(--text-primary)"><a href="https://en.wikipedia.org/wiki/Merchant_category_code" target="_blank" rel="noopener noreferrer" style="color:var(--text-primary);text-decoration:underline">MCC codes</a></strong> — your bank or credit union's merchant codes, if present</span></div>
         <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:#2563EB;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">4</span><span style="color:var(--text-secondary)"><strong style="color:var(--text-primary)">300+ built-in keywords</strong> — fallback for everything else</span></div>
       </div>
@@ -998,12 +1010,35 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
   </div>
 </footer>
 <script>
+// ── Event delegation — replaces inline onclick handlers (added July 6,
+// 2026 so this page can carry a hash-based CSP with no 'unsafe-inline' on
+// script-src, matching trakyodollas.html's existing pattern). ──
+(function(){
+  function coerce(v){
+    if(v===undefined)return undefined;
+    if(v==='true')return true;
+    if(v==='false')return false;
+    if(v!==''&&!isNaN(v))return Number(v);
+    return v;
+  }
+  document.addEventListener('click',function(e){
+    const el=e.target.closest('[data-action]');
+    if(!el)return;
+    const fn=window[el.dataset.action];
+    if(typeof fn!=='function')return;
+    const a1=coerce(el.dataset.arg),a2=coerce(el.dataset.arg2);
+    if(a2!==undefined)fn(a1,a2,el);
+    else if(a1!==undefined)fn(a1,el);
+    else fn(undefined,el);
+  });
+})();
+
 let _previewTimer=null,_previewStep=0;
 const _previewCycle=[
   {tab:0,chart:0},{tab:0,chart:1},{tab:0,chart:2},{tab:0,chart:3},{tab:0,chart:4},
   {tab:1,chart:0},{tab:2,chart:0}
 ];
-function showTab(i,auto){
+function showTab(i,el){
   document.querySelectorAll('#preview-tabs button').forEach((t,j)=>t.classList.toggle('ptab-active',i===j));
   [0,1,2].forEach(j=>{
     const p=document.getElementById('pt'+j);
@@ -1011,13 +1046,16 @@ function showTab(i,auto){
     if(i===j){p.style.display='block';p.style.opacity='1';p.style.transform='none';p.style.animation='none';}
     else{p.style.display='none';}
   });
-  if(!auto){clearInterval(_previewTimer);_previewTimer=null;}
+  // el is only passed when a real click dispatched here (see the data-action
+  // delegation below) — the auto-cycle timer calls this with just `i`, so a
+  // real click (and only a real click) stops the auto-cycle.
+  if(el){clearInterval(_previewTimer);_previewTimer=null;}
 }
 function _previewTick(){
   _previewStep=(_previewStep+1)%_previewCycle.length;
   const s=_previewCycle[_previewStep];
-  showTab(s.tab,true);
-  setPreviewChart(s.chart,true);
+  showTab(s.tab);
+  setPreviewChart(s.chart);
 }
 function _startPreviewCycle(){
   if(_previewTimer)return;
@@ -1117,8 +1155,9 @@ updateChartDots();
 
 // Chart mode switcher
 let _pcActive=0,_ptileActive=null;
-function setPreviewChart(n,auto){
-  if(!auto){clearInterval(_previewTimer);_previewTimer=null;}
+function setPreviewChart(n,el){
+  // Same auto-cycle-vs-real-click distinction as showTab() above.
+  if(el){clearInterval(_previewTimer);_previewTimer=null;}
   _pcActive=n;
   [0,1,2,3,4].forEach(i=>{
     const p=document.getElementById('pc-'+i);
@@ -1138,7 +1177,7 @@ function buildPreviewDailyBars(){
     el.appendChild(d);
   });
 }
-function filterPreviewTile(el,cat,color){
+function filterPreviewTile(cat,color,el){
   const tiles=document.querySelectorAll('.ptile');
   const isActive=el===_ptileActive;
   tiles.forEach(t=>{t.style.opacity='';t.style.transform='';t.style.boxShadow='';});
