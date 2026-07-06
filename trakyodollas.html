@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-pA5fJpwamNqpkaxMOMbfUiAIkiA2g4dt4YoS7Wdvw/0=' 'sha256-s0UlvtzVZkIyFoI5TxSu6JQaSUSLeoAnxxKDPdL8y9Y=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-pA5fJpwamNqpkaxMOMbfUiAIkiA2g4dt4YoS7Wdvw/0=' 'sha256-JY9K+cRdM1MQgOTC9y950ssJySFvY2fZkePTxBL2nKg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -10137,8 +10137,13 @@ async function _deriveKey(uid) {
   const saltB64 = await _getOrCreateSalt(uid);
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
+  // 600,000 iterations — OWASP's current PBKDF2-HMAC-SHA256 minimum (July
+  // 2026), up from 100,000. Benchmarked via Node's Web Crypto (same
+  // implementation the browser runs): ~335ms on a normal desktop CPU,
+  // so likely under a second even on a slow phone — once per sign-in,
+  // then cached in _cryptoKey for the rest of the session.
   _cryptoKey = await crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt: Uint8Array.from(atob(saltB64), c => c.charCodeAt(0)), iterations: 100000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: Uint8Array.from(atob(saltB64), c => c.charCodeAt(0)), iterations: 600000, hash: 'SHA-256' },
     keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
   );
   _cryptoKeyUid = uid;
