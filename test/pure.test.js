@@ -27,6 +27,31 @@ test("esc: coerces non-string input instead of throwing", () => {
   assert.equal(esc(null), "null");
 });
 
+// ── isValidHexColor() — a custom category's color is user data (including
+// via JSON backup restore, which doesn't validate per-item field contents)
+// that used to flow raw into style="background:${c.color}" at several
+// render sites. This is the validation `assignColors()`/`getCatColor()` now
+// run before trusting a custom color, added during the July 6, 2026
+// pre-launch adversarial review. ──
+test("isValidHexColor: accepts standard 6-digit and shorthand 3-digit hex colors", () => {
+  const { isValidHexColor } = loadFunctions(["isValidHexColor"]);
+  assert.equal(isValidHexColor("#34D399"), true);
+  assert.equal(isValidHexColor("#fff"), true);
+});
+test("isValidHexColor: rejects a value that breaks out of a style attribute", () => {
+  const { isValidHexColor } = loadFunctions(["isValidHexColor"]);
+  assert.equal(isValidHexColor('red;background:url(javascript:alert(1))'), false);
+  assert.equal(isValidHexColor('#fff" onmouseover="alert(1)'), false);
+});
+test("isValidHexColor: rejects non-strings, empty string, and near-miss hex lengths", () => {
+  const { isValidHexColor } = loadFunctions(["isValidHexColor"]);
+  assert.equal(isValidHexColor(null), false);
+  assert.equal(isValidHexColor(undefined), false);
+  assert.equal(isValidHexColor(""), false);
+  assert.equal(isValidHexColor("#12345"), false);
+  assert.equal(isValidHexColor("blue"), false);
+});
+
 // ── classifyBudgetStatus() — shared by the Spending tab's "Budget health"
 // pill and the Budget tab's needs-attention/on-track grouping (finding
 // #3, this session). Before the fix, these were two separately-written
@@ -88,8 +113,15 @@ test("splitCSVLine: a trailing empty field after the last comma is preserved", (
   const { splitCSVLine } = loadFunctions(["splitCSVLine"]);
   assert.deepEqual(splitCSVLine("a,b,"), ["a", "b", ""]);
 });
+test("splitCSVLine: a doubled quote inside a quoted field is a literal quote, not two field boundaries", () => {
+  // Standard CSV escaping: "" inside a quoted field means one literal ".
+  // The naive quote-toggle parser used to treat each " independently and
+  // silently drop both characters instead of keeping one.
+  const { splitCSVLine } = loadFunctions(["splitCSVLine"]);
+  assert.deepEqual(splitCSVLine('"He said ""hi""",next'), ['He said "hi"', "next"]);
+});
 test("parseCSV: lowercases headers and maps each row to an object keyed by them", () => {
-  const { parseCSV } = loadFunctions(["parseCSV","splitCSVLine"]);
+  const { parseCSV } = loadFunctions(["parseCSV","splitCSVLine","splitCSVRows"]);
   const rows = parseCSV("Date,Description,Amount\n01/15/2026,Coffee Shop,5.00\n01/16/2026,Groceries,42.10");
   assert.deepEqual(rows, [
     { date: "01/15/2026", description: "Coffee Shop", amount: "5.00" },
@@ -97,13 +129,49 @@ test("parseCSV: lowercases headers and maps each row to an object keyed by them"
   ]);
 });
 test("parseCSV: a header-only file (no data rows) returns an empty array, not a crash", () => {
-  const { parseCSV } = loadFunctions(["parseCSV","splitCSVLine"]);
+  const { parseCSV } = loadFunctions(["parseCSV","splitCSVLine","splitCSVRows"]);
   assert.deepEqual(parseCSV("Date,Description,Amount"), []);
 });
 test("parseCSV: blank lines are dropped", () => {
-  const { parseCSV } = loadFunctions(["parseCSV","splitCSVLine"]);
+  const { parseCSV } = loadFunctions(["parseCSV","splitCSVLine","splitCSVRows"]);
   const rows = parseCSV("Date,Amount\n01/15/2026,5.00\n\n01/16/2026,42.10\n");
   assert.equal(rows.length, 2);
+});
+test("parseCSV: a newline embedded inside a quoted field doesn't fracture the row", () => {
+  // A bank memo/description field can legitimately contain a newline when
+  // quoted per RFC 4180. Splitting on '\n' before parsing quotes (the old
+  // behavior) silently misaligned columns for the rest of the file instead
+  // of surfacing an import error.
+  const { parseCSV } = loadFunctions(["parseCSV","splitCSVLine","splitCSVRows"]);
+  const rows = parseCSV('Date,Description,Amount\n01/15/2026,"Line one\nLine two",5.00\n01/16/2026,Groceries,42.10');
+  assert.deepEqual(rows, [
+    { date: "01/15/2026", description: "Line one\nLine two", amount: "5.00" },
+    { date: "01/16/2026", description: "Groceries", amount: "42.10" },
+  ]);
+});
+
+// ── csvSafeField() — quotes a CSV export cell and neutralizes a leading
+// =/+/-/@ so a value copied from an imported transaction (bank memo,
+// custom category name) can't be interpreted as a formula by Excel/Sheets
+// when the exported file is reopened there. ──
+test("csvSafeField: quotes a plain value and escapes embedded quotes", () => {
+  const { csvSafeField } = loadFunctions(["csvSafeField"]);
+  assert.equal(csvSafeField('Trader Joe\'s "Everything" Bagel'), '"Trader Joe\'s ""Everything"" Bagel"');
+});
+test("csvSafeField: prefixes a leading = with a single quote to defuse formula injection", () => {
+  const { csvSafeField } = loadFunctions(["csvSafeField"]);
+  assert.equal(csvSafeField("=HYPERLINK(\"http://evil\",\"click\")"), '"\'=HYPERLINK(""http://evil"",""click"")"');
+});
+test("csvSafeField: also defuses leading +, -, and @", () => {
+  const { csvSafeField } = loadFunctions(["csvSafeField"]);
+  assert.equal(csvSafeField("+1+1"), "\"'+1+1\"");
+  assert.equal(csvSafeField("-1+1"), "\"'-1+1\"");
+  assert.equal(csvSafeField("@SUM(1,2)"), "\"'@SUM(1,2)\"");
+});
+test("csvSafeField: null/undefined becomes an empty quoted field", () => {
+  const { csvSafeField } = loadFunctions(["csvSafeField"]);
+  assert.equal(csvSafeField(null), '""');
+  assert.equal(csvSafeField(undefined), '""');
 });
 
 // ── parseImportDate() — a malformed or corrupted CSV row (out-of-range day/month,
@@ -198,4 +266,50 @@ test("_encrypt: throws a recognizable error when no passphrase has been set yet"
   const ctx = makeCryptoContext();
   const { _encrypt } = loadFunctions(["_deriveKey", "_encrypt", "_decrypt"], ctx);
   await assert.rejects(() => _encrypt({ a: 1 }, "uid-1"), /missing-passphrase/);
+});
+
+// ── _getOrCreateSalt() — user_keys.user_id is the table's primary key, so
+// two concurrent first-time-setup calls for the same brand-new account (two
+// tabs/devices, or a double-submitted passphrase form — see
+// submitSyncPassphrase's now-added disabled-button guard) can both see "no
+// row yet" and race to insert a salt. Before this fix (July 6, 2026, 6th
+// adversarial pass) the loser's insert error was silently discarded, so it
+// returned its own never-persisted salt and derived a key nobody else's
+// session would ever reproduce — indistinguishable from real data loss on
+// the next load. ──
+function makeSaltMockSb({ selectResults, insertError, onInsert }) {
+  let selectCall = 0;
+  return {
+    from() {
+      return {
+        select() {
+          return { eq() { return Promise.resolve({ data: selectResults[Math.min(selectCall++, selectResults.length - 1)] }); } };
+        },
+        insert(row) { if (onInsert) onInsert(row); return Promise.resolve({ error: insertError || null }); },
+      };
+    },
+  };
+}
+const saltCtx = () => ({ crypto: globalThis.crypto, btoa: (s) => Buffer.from(s, "binary").toString("base64") });
+
+test("_getOrCreateSalt: an existing row is returned directly, no insert attempted", async () => {
+  let insertCalled = false;
+  const _sb = makeSaltMockSb({ selectResults: [[{ salt: "EXISTING" }]], onInsert: () => { insertCalled = true; } });
+  const { _getOrCreateSalt } = loadFunctions(["_getOrCreateSalt"], { ...saltCtx(), _sb });
+  const result = await _getOrCreateSalt("uid-existing");
+  assert.equal(result, "EXISTING");
+  assert.equal(insertCalled, false);
+});
+test("_getOrCreateSalt: no existing row, insert succeeds — returns the newly-created salt", async () => {
+  const _sb = makeSaltMockSb({ selectResults: [[]] });
+  const { _getOrCreateSalt } = loadFunctions(["_getOrCreateSalt"], { ...saltCtx(), _sb });
+  const result = await _getOrCreateSalt("uid-normal");
+  assert.equal(typeof result, "string");
+  assert.ok(result.length > 0);
+});
+test("_getOrCreateSalt: lost the insert race — re-fetches and returns the winner's salt, not its own orphaned one", async () => {
+  const _sb = makeSaltMockSb({ selectResults: [[], [{ salt: "WINNER_SALT" }]], insertError: { message: "duplicate key value violates unique constraint" } });
+  const { _getOrCreateSalt } = loadFunctions(["_getOrCreateSalt"], { ...saltCtx(), _sb });
+  const result = await _getOrCreateSalt("uid-race");
+  assert.equal(result, "WINNER_SALT");
 });

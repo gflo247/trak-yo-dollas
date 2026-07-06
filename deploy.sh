@@ -16,6 +16,15 @@ npm test
 echo "=== Checking for inline event handlers ==="
 bash scripts/check-no-inline-handlers.sh
 
+echo "=== Checking connect-src covers every network destination ==="
+python3 scripts/check-connect-src.py
+
+# Advisory only (not a hard gate — has known false positives, e.g. a
+# risky-named field used in a hardcoded/internal object rather than
+# rendered user data). Review the output; don't just wait for it to fail.
+echo "=== Scanning for unescaped user-data interpolations (advisory) ==="
+python3 scripts/check-escaping.py || true
+
 python3 scripts/update-csp-hashes.py
 python3 scripts/update-sitemap-dates.py
 
@@ -38,15 +47,23 @@ rsync -a \
   --exclude='_HANDOFF.md' \
   --exclude='ENTIRE-SITE-ARCHITECTURE.md' \
   --exclude='ENTIRE-SITE-ARCHITECTURE.html' \
-  $([ "$target" = "prod" ] && echo "--exclude=ENTIRE-SITE-ARCHITECTURE-deep-dive.html") \
+  --exclude='ENTIRE-SITE-ARCHITECTURE-deep-dive.html' \
   --exclude='scripts' \
+  --exclude='test' \
   --exclude='node_modules' \
   --exclude='.claude' \
+  --exclude='package.json' \
+  --exclude='package-lock.json' \
   . _cf_deploy/
 
-# Stamp sw.js with a deploy timestamp so every deploy busts the cache
-DEPLOY_TS=$(date -u +%Y%m%d%H%M%S)
-sed -i '' "s/__CACHE_VERSION__/$DEPLOY_TS/" _cf_deploy/sw.js
+# Stamp sw.js with a deploy timestamp so every deploy busts the cache.
+# Portable temp-file form, not `sed -i ''` — that's BSD-only syntax (works on
+# this Mac) that GNU sed on Linux interprets differently (would silently
+# treat '' as the sed script, not an empty in-place backup suffix). Same
+# root cause as the grep -P / BSD-grep incident earlier tonight, just the
+# opposite direction — an untested assumption about which sed this machine
+# has, not proof either one is actually portable.
+sed "s/__CACHE_VERSION__/$DEPLOY_TS/" _cf_deploy/sw.js > _cf_deploy/sw.js.tmp && mv _cf_deploy/sw.js.tmp _cf_deploy/sw.js
 
 if [ "$target" = "prod" ]; then
   echo "=== Deploying to Cloudflare (prod) ==="
