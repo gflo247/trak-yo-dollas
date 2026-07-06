@@ -335,3 +335,74 @@ test("isRealSpend: excluded and income together still returns false, not a crash
   const { isRealSpend } = loadFunctions(["isRealSpend"]);
   assert.equal(isRealSpend({ excluded: true, isIncome: true }), false);
 });
+
+// ── saveToLocalStorage() / scheduleSave() persistence gates — the CRITICAL
+// finding from the 9th adversarial pass (July 6, 2026): previewing a demo
+// profile over real saved data could silently overwrite it, because these
+// functions checked only window._isDemoPreview, never
+// window._viewingDemoOverReal. Covering the gate itself here so a future
+// change can't reintroduce that regression silently — this is exactly the
+// kind of fix that must never quietly break again. ──
+function makeLsSpy() {
+  const store = {};
+  return { setItem: (k, v) => { store[k] = v; }, _store: store };
+}
+function saveCtx(overrides) {
+  return {
+    window: { _isDemoPreview: false, _viewingDemoOverReal: false, ...overrides },
+    LS_KEY: "trakyo_state_v2",
+    LS_TXS_KEY: "trakyo_txs_v1",
+    serializeState: () => '{"fake":"state"}',
+    localStorage: makeLsSpy(),
+    _txsDirty: false,
+    state: { transactions: [] },
+    showToast: () => {},
+  };
+}
+
+test("saveToLocalStorage: demo-preview flag blocks the write entirely", () => {
+  const ctx = saveCtx({ _isDemoPreview: true });
+  const { saveToLocalStorage } = loadFunctions(["saveToLocalStorage"], ctx);
+  saveToLocalStorage();
+  assert.deepEqual(ctx.localStorage._store, {});
+});
+test("saveToLocalStorage: viewingDemoOverReal flag blocks the write entirely — the flag the CRITICAL bug was missing", () => {
+  const ctx = saveCtx({ _viewingDemoOverReal: true });
+  const { saveToLocalStorage } = loadFunctions(["saveToLocalStorage"], ctx);
+  saveToLocalStorage();
+  assert.deepEqual(ctx.localStorage._store, {});
+});
+test("saveToLocalStorage: with neither flag set, the write proceeds normally", () => {
+  const ctx = saveCtx();
+  const { saveToLocalStorage } = loadFunctions(["saveToLocalStorage"], ctx);
+  saveToLocalStorage();
+  assert.equal(ctx.localStorage._store["trakyo_state_v2"], '{"fake":"state"}');
+});
+
+test("scheduleSave: demo-preview flag prevents the debounced save from ever firing, even after the 800ms window", async () => {
+  let saveCalled = false;
+  const ctx = {
+    window: { _isDemoPreview: true, _viewingDemoOverReal: false, _fbUser: null, _fb: null, _awaitingCloudMerge: false },
+    _lsSaveTimer: null,
+    saveToLocalStorage: () => { saveCalled = true; },
+    syncToCloud: () => {},
+  };
+  const { scheduleSave } = loadFunctions(["scheduleSave"], ctx);
+  scheduleSave();
+  await new Promise((r) => setTimeout(r, 900));
+  assert.equal(saveCalled, false);
+});
+test("scheduleSave: awaitingCloudMerge gates only the cloud sync, not the local save — the sign-in-race fix from the 9th pass", async () => {
+  let saveCalled = false, syncCalled = false;
+  const ctx = {
+    window: { _isDemoPreview: false, _viewingDemoOverReal: false, _fbUser: { uid: "x" }, _fb: {}, _awaitingCloudMerge: true },
+    _lsSaveTimer: null,
+    saveToLocalStorage: () => { saveCalled = true; },
+    syncToCloud: () => { syncCalled = true; },
+  };
+  const { scheduleSave } = loadFunctions(["scheduleSave"], ctx);
+  scheduleSave();
+  await new Promise((r) => setTimeout(r, 900));
+  assert.equal(saveCalled, true);
+  assert.equal(syncCalled, false);
+});
