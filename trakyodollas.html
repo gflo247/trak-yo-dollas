@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-CWIYegn2gym4E0cxGyro7O6feIcGw+bA2FTo7iJ0jFM=' 'sha256-JY9K+cRdM1MQgOTC9y950ssJySFvY2fZkePTxBL2nKg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-FuqRKALnxUwSbmHO4SwfeR3gZDI419cV7iTJO2m0vrI=' 'sha256-JY9K+cRdM1MQgOTC9y950ssJySFvY2fZkePTxBL2nKg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1222,24 +1222,48 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="modal" style="max-width:380px">
     <h3 id="sync-pp-title">Sync passphrase</h3>
     <p class="modal-sub" id="sync-pp-desc" style="margin-bottom:.75rem"></p>
-    <div class="form-group">
-      <label class="form-label" for="sync-pp-input">Passphrase</label>
-      <input type="password" id="sync-pp-input" autocomplete="off" data-keydown="confirmSyncPassphraseOnEnter"
-        style="width:100%;padding:.6rem .75rem;border:1px solid var(--border-mid);border-radius:8px;background:var(--bg-deep);color:var(--text-primary);font-size:13px;outline:none;font-family:inherit">
+
+    <div id="sync-pp-main">
+      <div class="form-group">
+        <label class="form-label" for="sync-pp-input">Passphrase</label>
+        <input type="password" id="sync-pp-input" autocomplete="off" data-keydown="confirmSyncPassphraseOnEnter"
+          style="width:100%;padding:.6rem .75rem;border:1px solid var(--border-mid);border-radius:8px;background:var(--bg-deep);color:var(--text-primary);font-size:13px;outline:none;font-family:inherit">
+      </div>
+      <div class="form-group hidden" id="sync-pp-confirm-group">
+        <label class="form-label" for="sync-pp-confirm">Confirm passphrase</label>
+        <input type="password" id="sync-pp-confirm" autocomplete="off" data-keydown="confirmSyncPassphraseOnEnter"
+          style="width:100%;padding:.6rem .75rem;border:1px solid var(--border-mid);border-radius:8px;background:var(--bg-deep);color:var(--text-primary);font-size:13px;outline:none;font-family:inherit">
+      </div>
+      <p id="sync-pp-error" style="display:none;color:#F87171;font-size:12px;margin:.4rem 0 0"></p>
+      <p id="sync-pp-forgot-wrap" class="hidden" style="margin:.5rem 0 0;text-align:center">
+        <button type="button" data-action="showForgotPassphrase" style="background:none;border:none;color:var(--text-muted);font-size:12px;text-decoration:underline;cursor:pointer;font-family:inherit;padding:0">Forgot your passphrase?</button>
+      </p>
+      <div style="margin-top:.75rem;background:#065F4622;border:1px solid #05996944;border-radius:8px;padding:.5rem .85rem;text-align:center">
+        <span style="font-size:11px;font-weight:700;color:#34D399">We never see this passphrase and can't reset it. If you forget it, you can't recover your synced data — your local data on this device is unaffected.</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:.75rem">
+        <button class="btn" data-action="cancelSyncPassphrase" type="button" style="flex:1">Cancel</button>
+        <button class="btn btn-primary" id="sync-pp-submit-btn" data-action="submitSyncPassphrase" type="button" style="flex:1">Continue</button>
+      </div>
     </div>
-    <div class="form-group hidden" id="sync-pp-confirm-group">
-      <label class="form-label" for="sync-pp-confirm">Confirm passphrase</label>
-      <input type="password" id="sync-pp-confirm" autocomplete="off" data-keydown="confirmSyncPassphraseOnEnter"
-        style="width:100%;padding:.6rem .75rem;border:1px solid var(--border-mid);border-radius:8px;background:var(--bg-deep);color:var(--text-primary);font-size:13px;outline:none;font-family:inherit">
+
+    <div class="hidden" id="sync-pp-reset-panel">
+      <div style="background:#7F1D1D22;border:1px solid #DC262644;border-radius:8px;padding:.6rem .85rem">
+        <p style="font-size:12px;color:#FCA5A5;font-weight:700;margin:0 0 .35rem">This permanently deletes your synced data</p>
+        <p style="font-size:12px;color:#FCA5A5;margin:0;line-height:1.5">Nobody can decrypt it without the passphrase, so resetting is the only way back in. Your local data on this device stays untouched — you'll set a new passphrase and start syncing fresh.</p>
+      </div>
+      <div class="form-group" style="margin-top:.6rem">
+        <label class="form-label" for="sync-pp-reset-input">Type RESET to confirm</label>
+        <input type="text" id="sync-pp-reset-input" autocomplete="off" data-keydown="confirmSyncResetOnEnter"
+          style="width:100%;padding:.6rem .75rem;border:1px solid var(--border-mid);border-radius:8px;background:var(--bg-deep);color:var(--text-primary);font-size:13px;outline:none;font-family:inherit">
+      </div>
+      <p id="sync-pp-reset-error" style="display:none;color:#F87171;font-size:12px;margin:.4rem 0 0"></p>
+      <div style="display:flex;gap:8px;margin-top:.75rem">
+        <button class="btn" data-action="hideForgotPassphrase" type="button" style="flex:1">Back</button>
+        <button class="btn" id="sync-pp-reset-btn" data-action="confirmForgotPassphraseReset" type="button" style="flex:1;background:#DC2626;color:#fff;border-color:#DC2626">Delete synced data</button>
+      </div>
     </div>
-    <p id="sync-pp-error" style="display:none;color:#F87171;font-size:12px;margin:.4rem 0 0"></p>
-    <div style="margin-top:.75rem;background:#065F4622;border:1px solid #05996944;border-radius:8px;padding:.5rem .85rem;text-align:center">
-      <span style="font-size:11px;font-weight:700;color:#34D399">We never see this passphrase and can't reset it. If you forget it, you can't recover your synced data — your local data on this device is unaffected.</span>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:.75rem">
-      <button class="btn" data-action="cancelSyncPassphrase" type="button" style="flex:1">Cancel</button>
-      <button class="btn btn-primary" id="sync-pp-submit-btn" data-action="submitSyncPassphrase" type="button" style="flex:1">Continue</button>
-    </div>
+
   </div>
 </div>
 
@@ -8982,15 +9006,19 @@ async function promptSyncPassphrase(uid) {
   const errorEl = document.getElementById('sync-pp-error');
   const input = document.getElementById('sync-pp-input');
   const confirmInput = document.getElementById('sync-pp-confirm');
+  const email = (window._fbUser && window._fbUser.email) || '';
   if (errorEl) { errorEl.style.display = 'none'; errorEl.textContent = ''; }
   if (input) input.value = '';
   if (confirmInput) confirmInput.value = '';
+  hideForgotPassphrase();
+  const forgotWrap = document.getElementById('sync-pp-forgot-wrap');
+  if (forgotWrap) forgotWrap.classList.add('hidden');
   if (_pendingSyncIsFirstTime) {
-    if (title) title.textContent = 'Set a sync passphrase';
+    if (title) title.textContent = email ? `Set a sync passphrase for ${email}` : 'Set a sync passphrase';
     if (desc) desc.textContent = "This is separate from your Google or email sign-in — it only encrypts your synced data before it ever leaves your device. Choose something memorable — we never see it and can't reset it for you.";
     if (confirmGroup) confirmGroup.classList.remove('hidden');
   } else {
-    if (title) title.textContent = 'Enter your sync passphrase';
+    if (title) title.textContent = email ? `Enter your sync passphrase for ${email}` : 'Enter your sync passphrase';
     if (desc) desc.textContent = 'Enter the passphrase you set when you first enabled sync — separate from your Google or email sign-in.';
     if (confirmGroup) confirmGroup.classList.add('hidden');
   }
@@ -9019,6 +9047,10 @@ async function submitSyncPassphrase() {
   } catch(e) {
     clearSyncPassphrase();
     showError(e && e.message === 'wrong-passphrase' ? 'Incorrect passphrase — try again.' : 'Something went wrong — please try again.');
+    if (!_pendingSyncIsFirstTime && e && e.message === 'wrong-passphrase') {
+      const forgotWrap = document.getElementById('sync-pp-forgot-wrap');
+      if (forgotWrap) forgotWrap.classList.remove('hidden');
+    }
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Continue'; }
   }
@@ -9027,6 +9059,58 @@ function cancelSyncPassphrase() {
   closeModals();
   _pendingSyncUid = null;
   doSignOut();
+}
+
+// ── Forgot-passphrase reset — self-serve version of scripts/one-time-sync-reset.js.
+// Only reachable after a wrong-passphrase attempt on a returning account, and
+// gated behind typing RESET, so it can't delete synced data with a single
+// misclick. Deletes the same three tables the manual script does, scoped to
+// the signed-in uid; RLS would reject touching any other account's rows even
+// if this ran against a different uid. ──
+function showForgotPassphrase() {
+  const main = document.getElementById('sync-pp-main');
+  const panel = document.getElementById('sync-pp-reset-panel');
+  const resetInput = document.getElementById('sync-pp-reset-input');
+  const resetError = document.getElementById('sync-pp-reset-error');
+  if (main) main.classList.add('hidden');
+  if (panel) panel.classList.remove('hidden');
+  if (resetInput) resetInput.value = '';
+  if (resetError) { resetError.style.display = 'none'; resetError.textContent = ''; }
+  if (resetInput) setTimeout(()=>resetInput.focus(), 50);
+}
+function hideForgotPassphrase() {
+  const main = document.getElementById('sync-pp-main');
+  const panel = document.getElementById('sync-pp-reset-panel');
+  if (main) main.classList.remove('hidden');
+  if (panel) panel.classList.add('hidden');
+}
+function confirmSyncResetOnEnter(e) { if (e.key === 'Enter') confirmForgotPassphraseReset(); }
+async function confirmForgotPassphraseReset() {
+  const resetInput = document.getElementById('sync-pp-reset-input');
+  const resetError = document.getElementById('sync-pp-reset-error');
+  const showResetError = (msg) => { if (resetError) { resetError.textContent = msg; resetError.style.display = 'block'; } };
+  const typed = resetInput ? resetInput.value.trim().toUpperCase() : '';
+  if (typed !== 'RESET') { showResetError('Type RESET (all caps) to confirm.'); return; }
+  const uid = _pendingSyncUid;
+  if (!uid) return;
+  const btn = document.getElementById('sync-pp-reset-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
+  try {
+    const [snapsRes, prefsRes, keysRes] = await Promise.all([
+      _sb.from('snapshots').delete().eq('user_id', uid),
+      _sb.from('prefs').delete().eq('user_id', uid),
+      _sb.from('user_keys').delete().eq('user_id', uid),
+    ]);
+    const failed = [['snapshots', snapsRes], ['prefs', prefsRes], ['user_keys', keysRes]].find(([, res]) => res.error);
+    if (failed) throw failed[1].error;
+    clearSyncPassphrase();
+    showToast('✓ Synced data cleared — set a new passphrase');
+    await promptSyncPassphrase(uid);
+  } catch(e) {
+    showResetError('Something went wrong — please try again.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Delete synced data'; }
+  }
 }
 
 async function loadUserData(uid) {
