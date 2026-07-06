@@ -313,3 +313,25 @@ test("_getOrCreateSalt: lost the insert race — re-fetches and returns the winn
   const result = await _getOrCreateSalt("uid-race");
   assert.equal(result, "WINNER_SALT");
 });
+
+// ── isRealSpend() — single source of truth for "does this transaction count
+// as spend," consolidated from ~15 independent reimplementations of
+// `!t.excluded&&!t.isIncome` during the 10th adversarial pass (July 6,
+// 2026). A category rule can retag t.cat but never t.isIncome, which is
+// why isIncome (not cat) is the field this must check. ──
+test("isRealSpend: a normal, non-excluded, non-income transaction counts as spend", () => {
+  const { isRealSpend } = loadFunctions(["isRealSpend"]);
+  assert.equal(isRealSpend({ excluded: false, isIncome: false }), true);
+});
+test("isRealSpend: a manually-excluded transaction never counts as spend", () => {
+  const { isRealSpend } = loadFunctions(["isRealSpend"]);
+  assert.equal(isRealSpend({ excluded: true, isIncome: false }), false);
+});
+test("isRealSpend: an income transaction never counts as spend, even if a category rule retagged its cat away from 'Income'", () => {
+  const { isRealSpend } = loadFunctions(["isRealSpend"]);
+  assert.equal(isRealSpend({ excluded: false, isIncome: true, cat: "Salary" }), false);
+});
+test("isRealSpend: excluded and income together still returns false, not a crash", () => {
+  const { isRealSpend } = loadFunctions(["isRealSpend"]);
+  assert.equal(isRealSpend({ excluded: true, isIncome: true }), false);
+});
