@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-aBs8WzRhifLaQQnp/04QHmyvGru3HVbh60vlxdh42Bw=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-kqKZ7yWtU3Q04k4OxFq6HSpwWoaN9CDCOx66NoHbyjo=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2304,11 +2304,25 @@ function makeTip(wrap){
 // ── End format / theme / tooltip helpers ──────────────────────────
 const resolveVendor=desc=>{
   if(!desc)return desc;
-  const u=desc.toUpperCase();
-  for(const [alias,canonical] of Object.entries(state.vendorAliases||{})){
-    if(u===alias.toUpperCase())return canonical;
+  // Follows a chain of merges (e.g. "AMAZON.COM"→"Amazon", then later
+  // "Amazon"→"Shopping Hub") instead of a single-hop lookup — merging an
+  // already-resolved display name into a further alias used to be a
+  // silent no-op, since no transaction's raw description literally
+  // matched the intermediate name. `seen` guards against a cycle
+  // (A→B, B→A) causing an infinite loop.
+  let current=desc,hops=0;
+  const seen=new Set();
+  while(hops++<10){
+    const u=current.toUpperCase();
+    let matched=null;
+    for(const [alias,canonical] of Object.entries(state.vendorAliases||{})){
+      if(u===alias.toUpperCase()){matched=canonical;break;}
+    }
+    if(matched===null||seen.has(matched))break;
+    seen.add(matched);
+    current=matched;
   }
-  return desc;
+  return current;
 };
 // Display-only: convert ALL CAPS bank strings to Proper Case.
 // Keeps caps for: words containing & (AT&T, H&R), ≤2 alpha chars, or no vowels (CVS, NBC).
@@ -2728,11 +2742,11 @@ function renderInsights(){
 
   // Pill 6 — Largest single transaction
   if(latestFullM){
-    const monthTxs=getTxForMonth(latestFullM).filter(t=>!t.excluded);
+    const monthTxs=getTxForMonth(latestFullM).filter(isRealSpend);
     if(monthTxs.length>0){
       const biggest=monthTxs.reduce((a,b)=>a.amount>b.amount?a:b);
       const allMonthAmts=allMonths.filter(m=>m!==currentM).map(m=>{
-        const txs=getTxForMonth(m).filter(t=>!t.excluded&&!state.excludedCats.has(t.cat));
+        const txs=getTxForMonth(m).filter(t=>isRealSpend(t)&&!state.excludedCats.has(t.cat));
         return txs.length?txs.reduce((a,b)=>a.amount>b.amount?a:b).amount:0;
       }).filter(v=>v>0);
       const avgBiggest=allMonthAmts.length?allMonthAmts.reduce((a,b)=>a+b,0)/allMonthAmts.length:0;
@@ -6296,7 +6310,7 @@ function openOtherVendorsModal(){
     return`<div class="list-row" style="cursor:pointer" data-action="closeModalsSetVendorSearch" data-arg="${esc(v)}">
       <div style="flex:1;min-width:0">
         <div style="font-size:12px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(displayVendor(v))}</div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:1px">${d.count} transactions · Avg: ${fmt(Math.round(d.total/(Object.keys(MONTHLY).length||1)))}/mo</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:1px">${d.count} transaction${d.count===1?'':'s'} · Avg: ${fmt(Math.round(d.total/(Object.keys(MONTHLY).length||1)))}/mo</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div style="font-size:13px;font-weight:700;color:var(--text-primary)">${fmt(d.total)}</div>
@@ -7791,7 +7805,7 @@ function computePeriodSpendVsIncome(){
   const totalIncome=income*monthCount;
   let totalSpend=0;
   state.transactions.forEach(t=>{
-    if(t.excluded||!state.activeSources.has(t.card))return;
+    if(!isRealSpend(t)||!state.activeSources.has(t.card))return;
     if(!months.includes(t.date.slice(0,7)))return;
     if(state.excludedCats.has(t.cat))return;
     totalSpend+=t.amount;
@@ -7986,7 +8000,7 @@ function addCustomCat(){
   if(!nameEl)return;
   const name=nameEl.value.trim();
   if(!name)return;
-  if(getAllCats().includes(name)){
+  if(getAllCats().some(c=>c.toLowerCase()===name.toLowerCase())){
     nameEl.style.borderColor='#F87171';
     setTimeout(()=>{nameEl.style.borderColor='';},1500);
     return;
@@ -8033,7 +8047,7 @@ function confirmRenameCat(oldName){
   if(!inp)return;
   const newName=inp.value.trim();
   if(!newName||newName===oldName){cancelRenameCat();return;}
-  if(getAllCats().filter(c=>c!==oldName).includes(newName)){
+  if(getAllCats().filter(c=>c!==oldName).some(c=>c.toLowerCase()===newName.toLowerCase())){
     inp.style.borderColor='#F87171';
     setTimeout(()=>{inp.style.borderColor='';},1500);
     return;
@@ -8109,6 +8123,15 @@ function parseImportDate(str,fmt){
   // Fallback: unambiguous strings like "Jan 15, 2025"
   // new Date(locale-string) parses as local midnight; toISOString() converts to UTC and
   // shifts the date back by 1 day for UTC+ users. Use local-time components instead.
+  // Require an explicit 4-digit year somewhere in the string first — the two
+  // structured branches above already reject out-of-range days/months via a
+  // round-trip check, but this fallback had no equivalent guard: a
+  // genuinely incomplete date like "03/10" (missing year) matches neither
+  // regex, then new Date('03/10') silently parses as March 10, 2001 instead
+  // of being rejected. A real "Jan 15, 2025"-style string always carries its
+  // year explicitly, so this doesn't reject any legitimate case this branch
+  // is meant for.
+  if(!/\d{4}/.test(str))return'';
   const d=new Date(str);
   return isNaN(d.getTime())?'':
     `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -8251,6 +8274,18 @@ function parseTxFile(file){
       } else if(firstLine.includes('deposits')&&firstLine.includes('withdrawals')){
         importFmt='debitcredit'; importFmtAutoDetected=true;
       } else if(firstLine.includes('trans date')||firstLine.includes('posting date')){
+        importFmt='generic'; importFmtAutoDetected=true;
+      } else {
+        // Nothing matched — previously left importFmt at whatever it was
+        // before (stale from a prior import, or the 'ally' default on a
+        // fresh session), silently misparsing an unrecognized-but-plain
+        // file (e.g. just Date,Description,Amount) under the wrong
+        // format's column-name assumptions. 'ally' in particular requires
+        // a literal Type==='Deposit' column to recognize a positive amount
+        // as income — without one, every deposit/paycheck row silently
+        // vanished with zero warning. Falls through to the generic
+        // sign-convention-detected parser instead, which is built for
+        // exactly this "unknown format" case.
         importFmt='generic'; importFmtAutoDetected=true;
       }
     }
@@ -8823,7 +8858,7 @@ function showImportPreview(){
   const fmtLabels={ally:'Checking/Savings',chase:'Credit card',debitcredit:'Debit/Credit columns',bofa:'Bank of America',generic:'Other',mint:'Mint',ynab:'YNAB',monarch:'Monarch Money'};
   if(detFmtEl&&detFmtTxt){
     if(importFmtAutoDetected){
-      detFmtTxt.textContent=`Detected: ${fmtLabels[importFmt]||importFmt} — ${importParsed.length} transactions ready`;
+      detFmtTxt.textContent=`Detected: ${fmtLabels[importFmt]||importFmt} — ${importParsed.length} transaction${importParsed.length===1?'':'s'} ready`;
       detFmtEl.classList.remove('hidden');
     } else {
       detFmtEl.classList.add('hidden');
@@ -8838,7 +8873,7 @@ function showImportPreview(){
   const cats={};
   importParsed.forEach(t=>{cats[t.cat]=(cats[t.cat]||0)+1;});
   const topCats=Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,n])=>`${esc(c)} (${n})`).join(', ');
-  stats.innerHTML=`<strong style="color:var(--text-bright)">${importParsed.length} transactions</strong> · <span style="color:#475569">$${total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} total</span> · Top: ${topCats}`;
+  stats.innerHTML=`<strong style="color:var(--text-bright)">${importParsed.length} transaction${importParsed.length===1?'':'s'}</strong> · <span style="color:#475569">$${total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} total</span> · Top: ${topCats}`;
 
   const sample=importParsed.slice(0,8);
   rows.innerHTML=sample.map(t=>`
