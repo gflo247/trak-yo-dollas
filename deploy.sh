@@ -57,6 +57,18 @@ rsync -a \
   . _cf_deploy/
 
 # Stamp sw.js with a deploy timestamp so every deploy busts the cache.
+# CRITICAL regression found in the 14th adversarial pass: the portability
+# fix below (temp-file form instead of BSD-only `sed -i ''`) was made in the
+# same commit that accidentally deleted the DEPLOY_TS assignment that used
+# to live right above it -- so every deploy since has substituted an empty
+# string, making CACHE_NAME the literal constant "trakyo-" forever. Browsers
+# detect service-worker updates via a byte diff of sw.js; with CACHE_NAME
+# never changing, install/activate never re-fire for a returning user, so
+# the cache-first fetch handler could keep serving the app-shell snapshot
+# from whenever a user first got the service worker, indefinitely, across
+# every deploy since -- almost certainly the real cause of the "stale
+# service worker" false leads that cost debugging time earlier this cycle.
+DEPLOY_TS=$(date -u +%Y%m%d%H%M%S)
 # Portable temp-file form, not `sed -i ''` — that's BSD-only syntax (works on
 # this Mac) that GNU sed on Linux interprets differently (would silently
 # treat '' as the sed script, not an empty in-place backup suffix). Same
