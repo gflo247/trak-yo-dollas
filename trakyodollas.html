@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-EHiCCLJBURF8eniiqMInar1mLsZvQNYvyUOZX+GkIj8=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-jWIHnEvpDge+wYH5oIVVC1Nyr0U6Rnqt9P0omIjapcU=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2451,7 +2451,7 @@ function renderInsights(){
   const catChanges=[];
   const curTxBycat={},prevTxBycat={};
   state.transactions.forEach(t=>{
-    if(!isRealSpend(t))return;
+    if(!isRealSpend(t)||state.excludedCats.has(t.cat))return;
     const m=t.date.slice(0,7);
     if(m===latestFullM){curTxBycat[t.cat]=(curTxBycat[t.cat]||0)+t.amount;}
     if(m===prevFullM){prevTxBycat[t.cat]=(prevTxBycat[t.cat]||0)+t.amount;}
@@ -2500,7 +2500,7 @@ function renderInsights(){
   if(fullMonths.length>=3){
     const recentMonths=fullMonths.slice(-6);
     let wkendTotal=0,wkendDays=new Set(),wkdayTotal=0,wkdayDays=new Set();
-    state.transactions.filter(t=>isRealSpend(t)&&recentMonths.includes(t.date.slice(0,7))).forEach(t=>{
+    state.transactions.filter(t=>isRealSpend(t)&&!state.excludedCats.has(t.cat)&&recentMonths.includes(t.date.slice(0,7))).forEach(t=>{
       const dow=new Date(t.date+'T12:00:00').getDay();
       if(dow===0||dow===6){wkendTotal+=t.amount;wkendDays.add(t.date);}
       else{wkdayTotal+=t.amount;wkdayDays.add(t.date);}
@@ -2752,7 +2752,7 @@ function renderInsights(){
 
   // Pill 6 — Largest single transaction
   if(latestFullM){
-    const monthTxs=getTxForMonth(latestFullM).filter(isRealSpend);
+    const monthTxs=getTxForMonth(latestFullM).filter(t=>isRealSpend(t)&&!state.excludedCats.has(t.cat));
     if(monthTxs.length>0){
       const biggest=monthTxs.reduce((a,b)=>a.amount>b.amount?a:b);
       const allMonthAmts=allMonths.filter(m=>m!==currentM).map(m=>{
@@ -4482,7 +4482,8 @@ function renderTreemap(drillCat){
     !t.isIncome&&
     (state.showExcluded||!t.excluded)&&state.activeSources.has(t.card)&&
     filteredMonths.includes(t.date.slice(0,7))&&
-    (state.showExcluded||!state.excludedCats.has(t.cat))
+    (state.showExcluded||!state.excludedCats.has(t.cat))&&
+    (_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)
   );
 
   // Build cat totals and vendor breakdown
@@ -4582,7 +4583,12 @@ function renderTreemap(drillCat){
           if(txEl)requestAnimationFrame(()=>{const nav=document.querySelector('nav.nav');const offset=(nav?nav.offsetHeight:60)+16;const y=txEl.getBoundingClientRect().top+window.scrollY-offset;window.scrollTo({top:y,behavior:'smooth'});});
         }
       } else {
-        // Category tile clicked — drill into vendors
+        // Category tile clicked — drill into vendors. "Other" is a synthetic
+        // grouping of categories beyond the top 8, not a real category key in
+        // catVendors, so drilling into it always dead-ended on "No data for
+        // this period" — renderSankey already guards its equivalent grouped
+        // node (id==='__other__') the same way.
+        if(d.data.name==='Other')return;
         renderTreemap(d.data.name);
       }
     })
@@ -4873,7 +4879,8 @@ function renderDailyCal(){
     (state.showExcluded||!t.excluded)&&state.activeSources.has(t.card)&&
     (state.showTransfersInCal||t.cat!=='Transfers')&&
     (state.showExcluded||!state.excludedCats.has(t.cat))&&
-    (state.activeCats.size===0||state.activeCats.has(t.cat))
+    (state.activeCats.size===0||state.activeCats.has(t.cat))&&
+    (_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)
   );
 
   // Get date range from horizon
@@ -6201,6 +6208,7 @@ function openBudgetModal(cat){
     const withSpend=allCats.filter(c=>!state.budgets[c]&&Object.keys(MONTHLY).some(m=>getCatMonthSpend(c,m)>0));
     cat=withSpend[0]||allCats.find(c=>!state.budgets[c])||allCats[0]||'Other';
   }
+  cat=String(cat); // dispatcher coerces a bare-numeric category name (e.g. "2024") to a Number
   // Populate category select
   const sel=document.getElementById('budget-cat-select');
   sel.innerHTML=allCats.map(c=>`<option value="${esc(c)}"${c===cat?' selected':''}>${esc(c)}${state.budgets[c]?' ('+fmt(state.budgets[c])+'/mo)':''}</option>`).join('');
@@ -7000,7 +7008,7 @@ function renderBudgetTab(){
 
       const condensedDots=histMonths.map(mo=>{const ms=getCatMonthSpend(cat,mo);const mp=budget>0?Math.round(ms/budget*100):0;const mc=ms>budget?'#F87171':mp>warnPct?'#FBBF24':'#34D399';const ml=fmtMonthShort(mo);return`<div style="flex:1;height:9px;border-radius:4px;background:${ms>0?mc:tc('#1E293B','#E2E8F0')};min-width:0" title="${ml}: ${fmt(ms)} (${mp}%)"></div>`;}).join('');
       const pctDots=buildRowPctDots(histMonths,cat,budget);
-      const uid=`hist-${cat.replace(/\s+/g,'_')}`;
+      const uid=esc(`hist-${cat.replace(/\s+/g,'_')}`);
       const histHTML=histMonths.length
         ?'<div id="'+uid+'" data-state="condensed" style="margin-top:4px;min-height:44px;display:flex;flex-direction:column;justify-content:center">'
           +'<div class="rh-condensed" style="display:flex;align-items:center;flex-wrap:nowrap;width:100%;padding:4px 0">'
@@ -7467,7 +7475,7 @@ function exportBudgetCSV(){
 function detectSubscriptions(allMonths,latestFullM){
   const recentMonths=(allMonths||Object.keys(MONTHLY).sort()).slice(-6);
   const vendorMonths={};
-  state.transactions.filter(t=>isRealSpend(t)&&recentMonths.includes(t.date.slice(0,7))).forEach(t=>{
+  state.transactions.filter(t=>isRealSpend(t)&&!state.excludedCats.has(t.cat)&&recentMonths.includes(t.date.slice(0,7))).forEach(t=>{
     const v=resolveVendor(t.desc);
     if(!vendorMonths[v])vendorMonths[v]=[];
     vendorMonths[v].push({m:t.date.slice(0,7),amt:t.amount,desc:t.desc,cat:t.cat});
@@ -10016,7 +10024,7 @@ function loadFromLocalStorage(){
     state.rangeFrom=saved.rangeFrom??null;
     state.rangeTo=saved.rangeTo??null;
     state.currency=saved.currency??'$';
-    state.budgetWarnPct=saved.budgetWarnPct??80;
+    {const n=parseInt(saved.budgetWarnPct,10);state.budgetWarnPct=isNaN(n)?80:Math.min(99,Math.max(50,n));}
     state.includeIncome=saved.includeIncome??false;
     state.hiddenPills.delete('spending');
     state.hiddenPills.delete('spending-pill');
@@ -10139,7 +10147,7 @@ function importBackup(file){
       state.rangeFrom=saved.rangeFrom??null;
       state.rangeTo=saved.rangeTo??null;
       state.currency=saved.currency??'$';
-      state.budgetWarnPct=Number(saved.budgetWarnPct)||80;
+      {const n=parseInt(saved.budgetWarnPct,10);state.budgetWarnPct=isNaN(n)?80:Math.min(99,Math.max(50,n));}
       state.includeIncome=!!saved.includeIncome;
       state.nwGoal=saved.nwGoal??null;
       state.hideNwGoal=!!saved.hideNwGoal;
