@@ -200,6 +200,13 @@ test("parseImportDate: still parses valid mdy, dmy, iso, and locale-string dates
   assert.equal(parseImportDate("2026-05-01"), "2026-05-01");
   assert.equal(parseImportDate("Jan 15, 2025"), "2025-01-15");
 });
+test("parseImportDate: rejects an incomplete date missing a year (03/10) instead of the native parser's silent year-2001 guess — 11th adversarial pass", () => {
+  const { parseImportDate } = loadFunctions(["parseImportDate"]);
+  // Matches neither the ISO nor MM/DD/YYYY regex (both require a 2-4 digit
+  // year group), so it used to fall through to the unguarded native
+  // new Date('03/10') fallback branch, which silently parses as 2001-03-10.
+  assert.equal(parseImportDate("03/10", "mdy"), "");
+});
 
 // ── detectGenericSignConvention() — the "generic" CSV format (fallback for any
 // bank/credit union that doesn't match one of the 7 known column signatures) used
