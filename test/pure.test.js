@@ -453,3 +453,40 @@ test("_flushPendingSave: DOES flush a genuinely still-pending save — the origi
   _flushPendingSave(); // simulate an immediate pagehide/reload
   assert.equal(saveCallCount, 1);
 });
+
+// ── The shared event-dispatch coerce() turns any data-arg that "looks
+// numeric" into an actual Number before calling the handler — correct for
+// id-based actions, but broke every name-based one whenever a user's
+// category/vendor/source name happened to be a bare numeric string (e.g.
+// "76", "2024"). 13th adversarial pass: deleteVendorAlias() threw outright
+// (.replace is not a function on a Number) and toggleCatFilter() silently
+// stored a Number in a Set that real category names (always strings) could
+// never match, making the filtered view show zero data. Fixed by coercing
+// back to String at the top of each affected function. ──
+test("deleteVendorAlias: a numeric-looking vendor name (coerced to a Number by the dispatcher) doesn't throw and is actually removed", () => {
+  const ctx = {
+    state: { vendorAliases: { "76": "Gas Station" } },
+    renderVendorAliasList: () => {},
+    renderSpending: () => {},
+    scheduleSave: () => {},
+  };
+  const { deleteVendorAlias } = loadFunctions(["deleteVendorAlias"], ctx);
+  assert.doesNotThrow(() => deleteVendorAlias(76));
+  assert.equal("76" in ctx.state.vendorAliases, false);
+});
+test("toggleCatFilter: a numeric-looking category name (coerced to a Number) is stored and matched as a string, so real transactions in that category are found", () => {
+  const ctx = {
+    state: { activeCats: new Set(), chartMode: "category" },
+    showTxN: 50,
+    renderSpendSummary: () => {},
+    renderBucketGrid: () => {},
+    renderActiveChart: () => {},
+    renderTxList: () => {},
+    setChartMode: () => {},
+    document: { getElementById: () => null },
+  };
+  const { toggleCatFilter } = loadFunctions(["toggleCatFilter"], ctx);
+  toggleCatFilter(2024); // dispatcher would pass the Number 2024, not the string "2024"
+  assert.equal(ctx.state.activeCats.has("2024"), true);
+  assert.equal(ctx.state.activeCats.has(2024), false);
+});

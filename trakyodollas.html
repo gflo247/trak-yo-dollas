@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-UoMkABT1TZEDjokUHTDABvmvOePaWCd1w8UqkpWn5+o=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Mt9LVkYdLrKSJ+E8EJkDBLcGDlRkZ3fKjdJiqL9tJhE=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2260,8 +2260,20 @@ function navToDailyChart(){
   setTimeout(()=>{const el=document.getElementById('spending-breakdown-header');if(el){const y=el.getBoundingClientRect().top+window.scrollY-60;window.scrollTo({top:y,behavior:'smooth'});}},120);
 }
 function toggleVendorFilterByIdx(idx){const v=window._vendorTiles[Number(idx)];if(v!==undefined)toggleVendorFilter(v);}
-function closeModalsSetVendorSearch(v){closeModals();setVendorSearch(v);}
-function undoBudgetCat(cat,prev){state.budgets[cat]=Number(prev)||0;scheduleSave();renderBucketGrid();renderBudgetTab();}
+// String(...) here and at every other data-arg-driven function below that takes
+// a user-entered name (category/vendor/source) rather than a numeric id: the
+// shared event-dispatch coerce() (~line 2139) turns any data-arg that "looks
+// numeric" into an actual Number before calling the handler — correct for the
+// many id-based actions, but silently broke every name-based one whenever a
+// user's category/vendor/source name happened to be a bare numeric string
+// (e.g. "76", "2024") — .replace() throwing on a Number, or a Set ending up
+// with a Number that never strictly-equals the String everywhere else in the
+// app stores that same name. Fixing coerce() itself was judged too risky this
+// late (it's shared by every data-action in the app, including all the
+// id-based ones that correctly depend on receiving a Number) — coercing back
+// to a string at each affected call site is the narrow, safe fix.
+function closeModalsSetVendorSearch(v){closeModals();setVendorSearch(String(v));}
+function undoBudgetCat(cat,prev){state.budgets[String(cat)]=Number(prev)||0;scheduleSave();renderBucketGrid();renderBudgetTab();}
 function filterToDateDynamic(date){if(date)filterToDate(date);}
 function toggleDashFilterDynamic(key){if(key)toggleDashFilter(key);}
 function dragOverHighlight(e,el){e.preventDefault();el.style.borderColor='#2563EB';}
@@ -5673,7 +5685,7 @@ function hideImportFreshConfirm(){
   if(row)row.style.display='flex';
   if(conf)conf.style.display='none';
 }
-function toggleSource(s){if(state.activeSources.has(s))state.activeSources.delete(s);else state.activeSources.add(s);state.activeCats=new Set();state.searchQuery='';document.getElementById('tx-search').value='';document.getElementById('search-clear-btn').classList.add('hidden');showTxN=50;scheduleSave();renderSpending();}
+function toggleSource(s){s=String(s);if(state.activeSources.has(s))state.activeSources.delete(s);else state.activeSources.add(s);state.activeCats=new Set();state.searchQuery='';document.getElementById('tx-search').value='';document.getElementById('search-clear-btn').classList.add('hidden');showTxN=50;scheduleSave();renderSpending();}
 function updateExclNote(){
   const cb=document.getElementById('et-excluded');
   const note=document.getElementById('et-excl-note');
@@ -5716,6 +5728,7 @@ function renderCommunityRulesTable(q){
 }
 
 function toggleCatExclusion(cat){
+  cat=String(cat);
   if(state.excludedCats.has(cat)){
     // Already hidden — restore immediately
     restoreCat(cat);
@@ -5843,6 +5856,7 @@ function closeHiddenPopover(){
   if(pop)pop.style.display='none';
 }
 function restoreCat(cat){
+  cat=String(cat);
   state.excludedCats.delete(cat);
   scheduleSave();
   renderSourceChips();renderSpendSummary();renderBucketGrid();renderTxList();renderActiveChart();
@@ -5916,6 +5930,7 @@ function setGrain(g){
   });
 }
 function toggleCatFilter(cat){
+  cat=String(cat);
   const applying=!state.activeCats.has(cat);
   if(state.activeCats.has(cat)){
     state.activeCats.delete(cat);
@@ -6505,6 +6520,7 @@ function addVendorAlias(){
 
 function deleteVendorAlias(from){
   if(!state.vendorAliases)return;
+  from=String(from);
   // Decode HTML entities in the from key
   const decoded=from.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
   delete state.vendorAliases[decoded];
@@ -7999,7 +8015,7 @@ let _editingCatName=null;
 // banner in the way accounts/vehicles do.
 let _confirmingDeleteCatName=null;
 function startDeleteCat(name){
-  _confirmingDeleteCatName=name;
+  _confirmingDeleteCatName=String(name);
   _editingCatName=null;
   renderCatManagerList();
 }
@@ -8062,6 +8078,7 @@ function addCustomCat(){
   scheduleSave();
 }
 function deleteCustomCat(name){
+  name=String(name);
   _confirmingDeleteCatName=null;
   state.customCategories=state.customCategories.filter(c=>c.name!==name);
   _txsDirty=true;
@@ -8084,7 +8101,7 @@ function deleteCustomCat(name){
   scheduleSave();
 }
 function startRenameCat(name){
-  _editingCatName=name;
+  _editingCatName=String(name);
   _confirmingDeleteCatName=null;
   renderCatManagerList();
 }
@@ -8093,6 +8110,7 @@ function cancelRenameCat(){
   renderCatManagerList();
 }
 function confirmRenameCat(oldName){
+  oldName=String(oldName);
   const inp=document.getElementById('rename-cat-input');
   if(!inp)return;
   const newName=inp.value.trim();
@@ -9393,6 +9411,14 @@ function showForgotPassphrase() {
   const panel = document.getElementById('sync-pp-reset-panel');
   const resetInput = document.getElementById('sync-pp-reset-input');
   const resetError = document.getElementById('sync-pp-reset-error');
+  // The shared title/desc above #sync-pp-main previously stayed on whatever
+  // "Enter your sync passphrase for X" text was showing before this panel
+  // opened — a jarring, wrong-context header directly above a "this
+  // permanently deletes your synced data" warning box.
+  const title = document.getElementById('sync-pp-title');
+  const desc = document.getElementById('sync-pp-desc');
+  if (title) title.textContent = 'Reset your sync passphrase';
+  if (desc) desc.textContent = '';
   if (main) main.classList.add('hidden');
   if (panel) panel.classList.remove('hidden');
   if (resetInput) resetInput.value = '';
@@ -9402,6 +9428,18 @@ function showForgotPassphrase() {
 function hideForgotPassphrase() {
   const main = document.getElementById('sync-pp-main');
   const panel = document.getElementById('sync-pp-reset-panel');
+  // Restore the title/desc showForgotPassphrase() overwrote — mirrors the
+  // same branch promptSyncPassphrase() uses to set them in the first place.
+  const title = document.getElementById('sync-pp-title');
+  const desc = document.getElementById('sync-pp-desc');
+  const email = (window._fbUser && window._fbUser.email) || '';
+  if (_pendingSyncIsFirstTime) {
+    if (title) title.textContent = email ? `Set a sync passphrase for ${email}` : 'Set a sync passphrase';
+    if (desc) desc.textContent = "This is separate from your Google or email sign-in — it only encrypts your synced data before it ever leaves your device. Choose something memorable — we never see it and can't reset it for you.";
+  } else {
+    if (title) title.textContent = email ? `Enter your sync passphrase for ${email}` : 'Enter your sync passphrase';
+    if (desc) desc.textContent = 'Enter the passphrase you set when you first enabled sync — separate from your Google or email sign-in.';
+  }
   if (main) main.classList.remove('hidden');
   if (panel) panel.classList.add('hidden');
 }
