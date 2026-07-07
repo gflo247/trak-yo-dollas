@@ -614,3 +614,61 @@ test("triggerPwaInstall: a synchronous double-call only invokes .prompt() once",
   triggerPwaInstall(); // same tick, before userChoice has resolved
   assert.equal(promptCalls, 1);
 });
+
+// ── 15th adversarial pass: openBudgetModal(cat) was the one budget-related
+// handler in the "name-based data-action argument" family (see the 13th
+// pass's coerce() note above) that never re-stringified its argument. A
+// custom category literally named "2024" arrives as the Number 2024 from
+// the dispatcher; the modal's <select> compares `c===cat` against real
+// string category names, so the wrong (or no) <option> showed as selected
+// even though the budget itself still saved correctly (object bracket-key
+// access auto-stringifies). Fixed with the same String(cat) pattern used
+// elsewhere. ──
+test("openBudgetModal: a numeric-looking category name (coerced to a Number by the dispatcher) is compared as a string, so the matching <option> is marked selected", () => {
+  let selHTML = "";
+  const fakeSel = {
+    set innerHTML(v) { selHTML = v; },
+    get innerHTML() { return selHTML; },
+    onchange: null,
+  };
+  const fakeModal = { classList: { remove: () => {} } };
+  const fakeAmountInput = { focus: () => {} };
+  const ctx = {
+    getAllCats: () => ["Groceries", "2024"],
+    state: { budgets: {} },
+    MONTHLY: {},
+    getCatMonthSpend: () => 0,
+    esc: (s) => String(s),
+    fmt: (n) => String(n),
+    _refreshBudgetModalContext: () => {},
+    document: {
+      getElementById: (id) => {
+        if (id === "budget-cat-select") return fakeSel;
+        if (id === "budget-modal") return fakeModal;
+        if (id === "budget-amount") return fakeAmountInput;
+        return null;
+      },
+    },
+  };
+  const { openBudgetModal } = loadFunctions(["openBudgetModal"], ctx);
+  openBudgetModal(2024); // dispatcher would pass the Number 2024, not the string "2024"
+  assert.match(selHTML, /<option value="2024" selected>/);
+});
+
+// ── 15th adversarial pass: budgetWarnPct is clamped to [50,99] on every live
+// edit via setBudgetWarnPct(), but both restore paths (localStorage load and
+// JSON-backup import) only NaN-guarded it, never clamped the range. A
+// corrupted or hand-edited backup with e.g. budgetWarnPct:-20 restored
+// unmodified, making classifyBudgetStatus()'s atRisk check (pct>=warnPct)
+// true for nearly any nonzero spend -- flooding the Budget tab with false
+// "AT RISK" badges. Fixed by mirroring setBudgetWarnPct()'s own clamp at
+// both restore sites. ──
+test("both budgetWarnPct restore sites (localStorage load, JSON-backup import) clamp to the same [50,99] range as setBudgetWarnPct()", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const clampPattern = /Math\.min\(99,Math\.max\(50,n\)\)/g;
+  const matches = source.match(clampPattern) || [];
+  // setBudgetWarnPct() itself, plus the two restore sites -- 3 total.
+  assert.equal(matches.length, 3, `expected 3 uses of the [50,99] clamp (setBudgetWarnPct + 2 restore sites), found ${matches.length}`);
+});
