@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Mt9LVkYdLrKSJ+E8EJkDBLcGDlRkZ3fKjdJiqL9tJhE=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-EHiCCLJBURF8eniiqMInar1mLsZvQNYvyUOZX+GkIj8=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1900,8 +1900,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
   </div>
 </div>
-
-</main>
 
 <script>(function(){try{var t=localStorage.getItem('trakyo_tab');if(t&&t!=='spending'&&document.getElementById('page-'+t)){var idx=['spending','budget','dashboard','accounts'].indexOf(t);document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});document.getElementById('page-'+t).classList.add('active');var btns=document.querySelectorAll('.nav-btn');if(btns[idx])btns[idx].classList.add('active');}}catch(e){}}());</script>
 
@@ -9187,8 +9185,12 @@ function applyVenmoOpt(skip){
 }
 
 function openKBB(year,make,model){
-  const m=encodeURIComponent((make||'').toLowerCase().replace(/\s+/g,'-'));
-  const mo=encodeURIComponent((model||'').toLowerCase().replace(/\s+/g,'-'));
+  // make/model are coerced to a Number by the shared dispatcher if they look
+  // numeric (e.g. a model's first word like BMW "3 Series", Porsche "911",
+  // Fiat "500") -- (model||'').toLowerCase() then throws since a truthy
+  // Number has no .toLowerCase, silently killing the link.
+  const m=encodeURIComponent(String(make||'').toLowerCase().replace(/\s+/g,'-'));
+  const mo=encodeURIComponent(String(model||'').toLowerCase().replace(/\s+/g,'-'));
   window.open(`https://www.kbb.com/${m}/${mo}/${year}/`,'_blank','noopener,noreferrer');
 }
 
@@ -9770,9 +9772,55 @@ function saveVehicle(){
   closeModals();renderAll();
 }
 function saveTx(){const date=document.getElementById('t-date').value,desc=document.getElementById('t-desc').value.trim(),card=document.getElementById('t-card').value,cat=document.getElementById('t-cat').value,amount=parseFloat(document.getElementById('t-amount').value)||0;if(!desc||!amount)return;state.transactions.unshift({id:state.nextId++,date,desc,cat,card,amount,excluded:false});if(card)state.activeSources.add(card);closeModals();renderSpending();}
-function handleCsv(input){const file=input.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{parseCsvAccounts(e.target.result);closeModals();renderAll();};r.readAsText(file);}
-function importCsvText(){const t=document.getElementById('csv-text').value.trim();if(t)parseCsvAccounts(t);closeModals();renderAll();}
-function parseCsvAccounts(text){const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);const start=lines[0].toLowerCase().startsWith('name')?1:0;lines.slice(start).forEach(line=>{const p=line.split(',');if(p.length<4)return;const[name,source,type,bal]=p;const balance=parseFloat(bal)||0;if(name&&type&&balance)state.accounts.push({id:state.nextId++,name:name.trim(),source:source.trim(),type:type.trim(),balance});});}
+function handleCsv(input){
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const {imported,skipped}=parseCsvAccounts(e.target.result);
+    closeModals();renderAll();
+    if(imported>0)scheduleSave(); // async FileReader callback -- outside the sync auto-save patch below
+    showToast(imported>0?`✓ Imported ${imported} account${imported===1?'':'s'}${skipped>0?` (${skipped} row${skipped===1?'':'s'} skipped)`:''}`:'No valid rows found in that file','#FCD34D');
+  };
+  r.readAsText(file);
+}
+function importCsvText(){
+  const el=document.getElementById('csv-text');
+  const t=el.value.trim();
+  if(!t){closeModals();renderAll();return;}
+  const {imported,skipped}=parseCsvAccounts(t);
+  el.value='';
+  closeModals();renderAll();
+  showToast(imported>0?`✓ Imported ${imported} account${imported===1?'':'s'}${skipped>0?` (${skipped} row${skipped===1?'':'s'} skipped)`:''}`:'No valid rows found in that text','#FCD34D');
+}
+// name,source,type,balance -- balance of exactly 0 (a paid-off card, a
+// closed account) used to be treated the same as a missing/unparseable
+// balance and silently dropped, since 0 is falsy in JS. Now only a
+// genuinely missing/unparseable balance is skipped. Uses the same
+// quote-aware splitCSVLine() the transaction importer uses instead of a
+// naive split(',') -- a quoted name containing a comma used to shift every
+// later field left, discarding the real balance.
+function parseCsvAccounts(text){
+  const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
+  const start=lines[0].toLowerCase().startsWith('name')?1:0;
+  let imported=0,skipped=0;
+  lines.slice(start).forEach(line=>{
+    const p=splitCSVLine(line);
+    if(p.length<4){skipped++;return;}
+    const[name,source,type,bal]=p;
+    const balance=parseFloat(bal);
+    if(!name.trim()||!type.trim()||isNaN(balance)){skipped++;return;}
+    state.accounts.push({id:state.nextId++,name:name.trim(),source:source.trim(),type:type.trim(),balance});
+    imported++;
+  });
+  if(imported>0){
+    state.hasRealAccounts=true;
+    state.hasRealData=true;
+    hideDemoBadge();
+    const da=document.getElementById('demo-notice-accounts');if(da)da.style.display='none';
+    const dn=document.getElementById('demo-notice-dash');if(dn)dn.style.display='none';
+  }
+  return {imported,skipped};
+}
 
 // ── Local persistence ─────────────────────────────────────────
 const LS_KEY='trakyo_state_v2';
@@ -10140,13 +10188,20 @@ window.addEventListener('appinstalled',()=>{
 });
 function triggerPwaInstall(){
   if(!_installPrompt)return;
-  _installPrompt.prompt();
-  _installPrompt.userChoice.then(r=>{
+  // A BeforeInstallPromptEvent can only have .prompt() called once -- a fast
+  // double-click/tap before userChoice resolves used to call it a second
+  // time on the same event (thrown/rejected), which also aborted any other
+  // action chained after this one in the same data-action dispatch. Null it
+  // synchronously instead of only inside the async .then(), so a second
+  // click in the same tick is a no-op via the guard above.
+  const prompt=_installPrompt;
+  _installPrompt=null;
+  prompt.prompt();
+  prompt.userChoice.then(r=>{
     if(r.outcome==='accepted'){
       const btn=document.getElementById('pwa-install-btn');
       if(btn)btn.style.display='none';
     }
-    _installPrompt=null;
   });
 }
 
@@ -10291,7 +10346,17 @@ document.addEventListener('DOMContentLoaded',function(){
   }
 
   // Patch mutating functions to auto-save
-  ['saveAccount','saveVehicle','saveTx','confirmTxImport','deleteSnapshot','saveSnapshot','saveBudget'].forEach(fn=>{
+  // 'deleteSnapshot' here used to name the function that only *opens* the
+  // delete-confirm modal, not the one that actually mutates state.snapshots
+  // (confirmDeleteSnapshot, bound to the modal's real "Yes, delete" button)
+  // -- so a confirmed snapshot deletion never got auto-saved and could
+  // silently resurrect on the next reload. 'importCsvText' (bulk account
+  // CSV import, pasted-text path) had the same gap: pushed straight onto
+  // state.accounts with no scheduleSave() anywhere in that path. The
+  // file-upload variant (handleCsv) is patched separately below since its
+  // mutation happens inside an async FileReader callback, after this
+  // synchronous wrapper would already have fired.
+  ['saveAccount','saveVehicle','saveTx','confirmTxImport','confirmDeleteSnapshot','saveSnapshot','saveBudget','importCsvText'].forEach(fn=>{
     if(typeof window[fn]==='function'){
       const orig=window[fn];
       window[fn]=function(...args){const result=orig.apply(this,args);scheduleSave();return result;};
@@ -10848,5 +10913,22 @@ window.d3Sankey = (typeof d3 !== 'undefined' && typeof d3.sankey === 'function')
     <a href="mailto:contact@trakyodollas.com">Email me</a>
   </nav>
 </footer>
-<script>if('serviceWorker'in navigator){navigator.serviceWorker.register('/sw.js');}</script>
+<script>if('serviceWorker'in navigator){
+  // hadController distinguishes a genuine update (some SW was already
+  // running this page) from a brand-new install, where the controller goes
+  // from null -> a worker and would otherwise trigger an unwanted reload on
+  // someone's very first visit. Only reload for the former -- a real new
+  // deploy taking over an already-open tab, which used to leave that tab
+  // silently running old in-memory JS indefinitely with no way to know a
+  // fix had shipped. location.reload() safely flushes any pending debounced
+  // save via the existing pagehide handler before the page actually unloads.
+  const hadController=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('/sw.js');
+  let _swRefreshing=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(_swRefreshing||!hadController)return;
+    _swRefreshing=true;
+    location.reload();
+  });
+}</script>
 </body></html>

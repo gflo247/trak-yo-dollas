@@ -490,3 +490,127 @@ test("toggleCatFilter: a numeric-looking category name (coerced to a Number) is 
   assert.equal(ctx.state.activeCats.has("2024"), true);
   assert.equal(ctx.state.activeCats.has(2024), false);
 });
+
+// ── 14th adversarial pass: the "patch mutating functions to auto-save" list
+// (right before this in trakyodollas.html) named 'deleteSnapshot' -- the
+// function that only *opens* the delete-confirm modal -- instead of
+// 'confirmDeleteSnapshot', the one actually bound to the modal's "Yes,
+// delete" button that splices state.snapshots. A confirmed deletion never
+// got scheduleSave()'d, so it could silently resurrect on the next reload.
+// This test reads the real source (not an extracted function -- the patch
+// is inline top-level code, not itself a named function) and asserts the
+// list contains the real mutator and not the modal-opener. ──
+test("auto-save patch list wraps confirmDeleteSnapshot (the real mutator), not deleteSnapshot (the modal-opener)", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const m = source.match(/\/\/ Patch mutating functions to auto-save[\s\S]*?\[([^\]]+)\]\.forEach/);
+  assert.ok(m, "could not find the auto-save patch list in trakyodollas.html");
+  const patched = m[1];
+  assert.match(patched, /'confirmDeleteSnapshot'/);
+  assert.doesNotMatch(patched, /'deleteSnapshot'/);
+});
+
+// ── 14th adversarial pass: parseCsvAccounts() (bulk account CSV import) had
+// three independent bugs. (1) balance of exactly 0 (a paid-off card, a
+// closed account) is falsy in JS, so `if(...&&balance)` silently dropped
+// those rows same as a missing/unparseable balance. (2) a naive
+// line.split(',') shifted every field left when a quoted name contained a
+// comma, discarding the real balance. (3) it never set
+// hasRealAccounts/hasRealData, unlike saveAccount() and every other
+// account-mutating path, so the demo-data notice never dismissed and
+// onboarding nudges gated on hasRealData stayed stuck showing demo state.
+// Fixed by switching to the existing quote-aware splitCSVLine(), checking
+// isNaN() instead of falsiness, and mirroring saveAccount()'s flag updates. ──
+test("parseCsvAccounts: a zero balance is imported, not silently dropped", () => {
+  const ctx = {
+    state: { accounts: [], nextId: 1, hasRealAccounts: false, hasRealData: false },
+    hideDemoBadge: () => {},
+    document: { getElementById: () => null },
+  };
+  const { parseCsvAccounts } = loadFunctions(["parseCsvAccounts", "splitCSVLine"], ctx);
+  const { imported, skipped } = parseCsvAccounts("name,source,type,balance\nOld Card,Chase,Credit Card,0");
+  assert.equal(imported, 1);
+  assert.equal(skipped, 0);
+  assert.equal(ctx.state.accounts[0].balance, 0);
+});
+test("parseCsvAccounts: a quoted name containing a comma doesn't shift the balance field left", () => {
+  const ctx = {
+    state: { accounts: [], nextId: 1, hasRealAccounts: false, hasRealData: false },
+    hideDemoBadge: () => {},
+    document: { getElementById: () => null },
+  };
+  const { parseCsvAccounts } = loadFunctions(["parseCsvAccounts", "splitCSVLine"], ctx);
+  const { imported } = parseCsvAccounts('name,source,type,balance\n"Smith, John Checking",Chase,Checking,1500');
+  assert.equal(imported, 1);
+  assert.equal(ctx.state.accounts[0].name, "Smith, John Checking");
+  assert.equal(ctx.state.accounts[0].balance, 1500);
+});
+test("parseCsvAccounts: a successful import sets hasRealAccounts/hasRealData, matching saveAccount()", () => {
+  const ctx = {
+    state: { accounts: [], nextId: 1, hasRealAccounts: false, hasRealData: false },
+    hideDemoBadge: () => {},
+    document: { getElementById: () => null },
+  };
+  const { parseCsvAccounts } = loadFunctions(["parseCsvAccounts", "splitCSVLine"], ctx);
+  parseCsvAccounts("name,source,type,balance\nChecking,Chase,Checking,500");
+  assert.equal(ctx.state.hasRealAccounts, true);
+  assert.equal(ctx.state.hasRealData, true);
+});
+
+// ── 14th adversarial pass: openKBB()'s make/model can be coerced to a
+// Number by the shared dispatcher when a vehicle's model starts with a
+// number (BMW "3 Series", Porsche "911", Fiat "500") -- (model||'')
+// .toLowerCase() then throws (a truthy Number has no .toLowerCase),
+// silently killing the "Check value on Kelley Blue Book" link. ──
+test("openKBB: a numeric-looking model (coerced to a Number by the dispatcher) doesn't throw", () => {
+  const ctx = { window: { open: () => {} } };
+  const { openKBB } = loadFunctions(["openKBB"], ctx);
+  assert.doesNotThrow(() => openKBB(2020, "BMW", 3));
+});
+
+// ── 14th adversarial pass, CRITICAL: deploy.sh's `sed "s/__CACHE_VERSION__/
+// $DEPLOY_TS/"` line has referenced $DEPLOY_TS since this whole review
+// cycle's first commit (83daa34), but that same commit accidentally
+// deleted the `DEPLOY_TS=$(date -u +%Y%m%d%H%M%S)` assignment while making
+// the sed portable across BSD/GNU -- so every deploy since substituted an
+// empty string, making sw.js's CACHE_NAME the literal constant "trakyo-"
+// forever. Browsers detect service-worker updates via a byte diff of
+// sw.js; with CACHE_NAME never changing, install/activate never re-fire
+// for a returning user, so the cache-first fetch handler could keep
+// serving the app-shell snapshot from a user's first visit indefinitely,
+// across every deploy since -- almost certainly the real cause of the
+// "stale service worker" false leads that cost real debugging time earlier
+// in this review cycle. Verified live: curl-ing the deployed sw.js on both
+// dev and prod showed `const CACHE_VERSION = '';` before this fix. ──
+test("deploy.sh assigns DEPLOY_TS before using it in the CACHE_VERSION sed substitution", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "deploy.sh"), "utf8");
+  const sedIdx = source.indexOf("__CACHE_VERSION__/$DEPLOY_TS");
+  assert.notEqual(sedIdx, -1, "could not find the CACHE_VERSION sed line in deploy.sh");
+  const assignIdx = source.search(/^DEPLOY_TS=/m);
+  assert.notEqual(assignIdx, -1, "DEPLOY_TS is never assigned in deploy.sh");
+  assert.ok(assignIdx < sedIdx, "DEPLOY_TS must be assigned before the sed line that substitutes it");
+});
+
+// ── 14th adversarial pass: triggerPwaInstall() only nulled _installPrompt
+// inside the async userChoice.then() callback, so a fast double-click
+// before that promise resolved called .prompt() a second time on the same
+// already-used BeforeInstallPromptEvent -- which the spec disallows and
+// throws. That exception also aborted any other action chained after this
+// one in the same data-action dispatch (e.g. "triggerPwaInstall|
+// closeSpendingOverflow"). Fixed by nulling _installPrompt synchronously
+// before calling .prompt(), so a same-tick second call is a no-op. ──
+test("triggerPwaInstall: a synchronous double-call only invokes .prompt() once", () => {
+  let promptCalls = 0;
+  const fakeEvent = {
+    prompt: () => { promptCalls++; },
+    userChoice: Promise.resolve({ outcome: "accepted" }),
+  };
+  const ctx = { _installPrompt: fakeEvent, document: { getElementById: () => null } };
+  const { triggerPwaInstall } = loadFunctions(["triggerPwaInstall"], ctx);
+  triggerPwaInstall();
+  triggerPwaInstall(); // same tick, before userChoice has resolved
+  assert.equal(promptCalls, 1);
+});
