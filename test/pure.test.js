@@ -413,3 +413,43 @@ test("scheduleSave: awaitingCloudMerge gates only the cloud sync, not the local 
   assert.equal(saveCalled, true);
   assert.equal(syncCalled, false);
 });
+
+// ── scheduleSave() + _flushPendingSave() (the pagehide handler, extracted to
+// a named function for testability) — CRITICAL regression from the 12th
+// adversarial pass: a fired setTimeout ID is still truthy, so without
+// resetting _lsSaveTimer back to null once the debounced save actually
+// fires, _flushPendingSave() (called on every pagehide, including the
+// reload location.reload() triggers) kept re-saving forever after the
+// *first* save of a session — turning "Clear all data" (which removes the
+// localStorage keys then reloads) into a no-op for everything the reload's
+// resulting pagehide event wrote straight back. ──
+function flushCtx(overrides) {
+  return {
+    window: { _isDemoPreview: false, _viewingDemoOverReal: false, _fbUser: null, _fb: null, _awaitingCloudMerge: false, ...overrides },
+    _lsSaveTimer: null,
+    saveToLocalStorage: () => {},
+    syncToCloud: () => {},
+  };
+}
+test("_flushPendingSave: does NOT re-save once the debounced save has already fired — the 'Clear all data' regression", async () => {
+  let saveCallCount = 0;
+  const ctx = flushCtx();
+  ctx.saveToLocalStorage = () => { saveCallCount++; };
+  const { scheduleSave, _flushPendingSave } = loadFunctions(["scheduleSave", "_flushPendingSave"], ctx);
+  scheduleSave();
+  await new Promise((r) => setTimeout(r, 900)); // let the debounced save actually fire
+  assert.equal(saveCallCount, 1);
+  // Simulate a reload/pagehide happening after the save already completed
+  // (e.g. confirmClearAllData()'s location.reload()) — must NOT re-save.
+  _flushPendingSave();
+  assert.equal(saveCallCount, 1);
+});
+test("_flushPendingSave: DOES flush a genuinely still-pending save — the original pagehide-flush intent, still must work", async () => {
+  let saveCallCount = 0;
+  const ctx = flushCtx();
+  ctx.saveToLocalStorage = () => { saveCallCount++; };
+  const { scheduleSave, _flushPendingSave } = loadFunctions(["scheduleSave", "_flushPendingSave"], ctx);
+  scheduleSave(); // schedules but the 800ms debounce hasn't fired yet
+  _flushPendingSave(); // simulate an immediate pagehide/reload
+  assert.equal(saveCallCount, 1);
+});

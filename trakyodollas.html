@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-czN18o3BIKjcbFQZqGXH9VBvjZhL+rt/ddso2rF2y9M=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-UoMkABT1TZEDjokUHTDABvmvOePaWCd1w8UqkpWn5+o=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -6394,6 +6394,16 @@ function saveHistoricalSnapshot(){
   const d=new Date(date+'T12:00:00');
   const monthKey=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
   const displayDate=d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+  // Adding a *new* historical snapshot (not editing one) for a month that
+  // already has a snapshot used to silently overwrite it — openHistoricalSnapshotModal()
+  // always blanks the assets/liab fields, so a user who only fills in Net
+  // Worth (leaving those blank) would replace a real detailed breakdown with
+  // degenerate values (assets defaults to nw, liab defaults to 0), with no
+  // warning that this "Add" was actually an overwrite.
+  if(!_editingSnapshotMonthKey&&state.snapshots.some(s=>s.monthKey===monthKey)){
+    showToast(`Already have a snapshot for ${MON3[d.getMonth()]} ${d.getFullYear()} — use the edit (pencil) icon on that row instead`,'#FCD34D');
+    return;
+  }
   // If editing and the date changed to a different month, matching purely by
   // the new monthKey (below) would leave the original entry behind as a
   // stale duplicate, or — if the new month already has its own snapshot —
@@ -6477,6 +6487,13 @@ function addVendorAlias(){
   if(!from||!to){showToast('Enter both vendor names','#FCD34D');return;}
   if(from.toUpperCase()===to.toUpperCase()){showToast('Alias and target must be different','#FCD34D');return;}
   if(!state.vendorAliases)state.vendorAliases={};
+  // Case-insensitive dedup, matching addCatRule()'s existing precedent —
+  // resolveVendor() only ever matches the *first* case-insensitive hit for a
+  // description, so adding "amazon.com" alongside an existing "AMAZON.COM"
+  // key created a second, permanently dead alias (never reachable, despite
+  // showing a "success" toast) instead of actually updating the merge target.
+  const existingKey=Object.keys(state.vendorAliases).find(k=>k.toUpperCase()===from.toUpperCase());
+  if(existingKey)delete state.vendorAliases[existingKey];
   state.vendorAliases[from]=to;
   document.getElementById('alias-from').value='';
   document.getElementById('alias-to').value='';
@@ -6520,6 +6537,11 @@ function confirmClearAllData(){
     showToast('Not available while previewing demo data — your real data is untouched here','#94a3b8',9000);
     return;
   }
+  // Cancel any pending debounced save outright — belt-and-suspenders on top
+  // of the scheduleSave()/pagehide fix, so a save genuinely in flight within
+  // the last 800ms can never re-write the keys being deleted below.
+  clearTimeout(_lsSaveTimer);
+  _lsSaveTimer=null;
   try{
     localStorage.removeItem('trakyo_state_v2');
     localStorage.removeItem('trakyo_txs_v1');
@@ -9943,8 +9965,15 @@ function saveToLocalStorage(){
   try{
     const s=serializeState();
     if(s)localStorage.setItem(LS_KEY,s);
-    // Only re-serialize transactions when they've changed
-    if(_txsDirty){
+    // Re-serialize transactions when they've changed, OR when the key is
+    // unexpectedly missing despite having transactions to save — state and
+    // transactions live in two separate localStorage keys, and this one is
+    // normally skipped whenever _txsDirty is false. Without this check, an
+    // externally cleared/evicted trakyo_txs_v1 key (or one wiped by the
+    // "Clear all data" race the scheduleSave()/pagehide fix above addresses)
+    // stays permanently empty forever the moment any *other*,
+    // non-transaction-touching save runs first and finds _txsDirty already false.
+    if(_txsDirty||(state.transactions.length>0&&localStorage.getItem(LS_TXS_KEY)===null)){
       const txs=JSON.stringify(state.transactions);
       if(txs)localStorage.setItem(LS_TXS_KEY,txs);
       _txsDirty=false;
@@ -10105,6 +10134,17 @@ function scheduleSave(){
   if(window._isDemoPreview||window._viewingDemoOverReal)return; // demo-preview sessions never persist
   clearTimeout(_lsSaveTimer);
   _lsSaveTimer=setTimeout(()=>{
+    // Reset before the pending-save check below can see it — a fired
+    // setTimeout ID is still a truthy value, so without this the pagehide
+    // handler's `if(_lsSaveTimer)` stayed true forever after the *first*
+    // save of the session, not just while a save was genuinely pending.
+    // That silently turned "Clear all data" (which removes the localStorage
+    // keys then calls location.reload()) into a no-op for everything except
+    // transactions: the resulting pagehide event re-ran saveToLocalStorage()
+    // with the untouched in-memory state, writing accounts/budgets/rules/
+    // snapshots straight back moments after the user was told the deletion
+    // was permanent.
+    _lsSaveTimer=null;
     saveToLocalStorage();
     // Also sync to Supabase if signed in — but not while the initial cloud
     // pull/merge for this sign-in is still in flight (see promptSyncPassphrase).
@@ -10116,12 +10156,14 @@ function scheduleSave(){
 // localStorage.setItem is synchronous but the debounce timer is not.
 // pagehide (not just beforeunload) so it also fires on mobile Safari/Chrome
 // backgrounding, which doesn't reliably fire beforeunload.
-window.addEventListener('pagehide',()=>{
+function _flushPendingSave(){
   if(_lsSaveTimer){
     clearTimeout(_lsSaveTimer);
+    _lsSaveTimer=null;
     saveToLocalStorage();
   }
-});
+}
+window.addEventListener('pagehide',_flushPendingSave);
 // The 'storage' event only fires in OTHER tabs of the same origin, never the
 // tab that made the write — so any time this fires, another tab of this app
 // just saved. There's no live reconciliation here (attempting an in-memory
