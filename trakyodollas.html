@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-kqKZ7yWtU3Q04k4OxFq6HSpwWoaN9CDCOx66NoHbyjo=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-czN18o3BIKjcbFQZqGXH9VBvjZhL+rt/ddso2rF2y9M=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -7962,11 +7962,29 @@ function saveSnapshot(){
 }
 
 function openCatModal(){
+  _confirmingDeleteCatName=null;
   renderCatManagerList();
   rebuildCatSelects();
   document.getElementById('cat-modal').classList.remove('hidden');
 }
 let _editingCatName=null;
+// Category deletion previously had zero confirmation — a single click on
+// the ✕ button immediately deleted, cascading through budgets/rules/
+// transactions with no way back, unlike every other destructive action in
+// the app (accounts, vehicles, snapshots all have an inline confirm step).
+// Mirrors the existing inline-rename pattern (_editingCatName) rather than
+// a full modal, since this list has no per-item modal to embed a confirm
+// banner in the way accounts/vehicles do.
+let _confirmingDeleteCatName=null;
+function startDeleteCat(name){
+  _confirmingDeleteCatName=name;
+  _editingCatName=null;
+  renderCatManagerList();
+}
+function cancelDeleteCat(){
+  _confirmingDeleteCatName=null;
+  renderCatManagerList();
+}
 function renderCatManagerList(){
   const el=document.getElementById('cat-manager-list');
   if(!el)return;
@@ -7984,12 +8002,20 @@ function renderCatManagerList(){
         <button data-action="cancelRenameCat" style="font-size:11px;background:none;border:none;color:#475569;cursor:pointer;padding:2px 6px" title="Cancel" type="button">✕</button>
       </div>`;
     }
+    if(c.custom&&_confirmingDeleteCatName===c.name){
+      return `<div style="display:flex;align-items:center;gap:8px;padding:.35rem .65rem;border-bottom:1px solid var(--border-mid);background:#F8717118">
+        ${dot}
+        <span style="flex:1;font-size:11px;color:#F87171">Delete "${esc(c.name)}"? This cannot be undone.</span>
+        <button data-action="cancelDeleteCat" type="button" style="font-size:11px;padding:2px 10px;background:none;border:1px solid var(--border-mid);border-radius:4px;color:var(--text-primary);cursor:pointer">No</button>
+        <button data-action="deleteCustomCat" data-arg="${esc(c.name)}" type="button" style="font-size:11px;padding:2px 10px;background:#DC2626;color:#fff;border:1px solid #DC2626;border-radius:4px;cursor:pointer">Yes, delete</button>
+      </div>`;
+    }
     return `<div style="display:flex;align-items:center;gap:8px;padding:.35rem .65rem;border-bottom:1px solid var(--border-mid)">
       ${dot}
       <span style="flex:1;font-size:12px;color:${c.custom?'var(--text-primary)':'var(--text-muted)'}">${esc(c.name)}${c.custom?'':' <span style="font-size:9px;color:var(--text-muted)">(built-in)</span>'}</span>
       ${c.custom?`
         <button data-action="startRenameCat" data-arg="${esc(c.name)}" style="font-size:10px;background:none;border:none;color:#475569;cursor:pointer;padding:2px 6px" title="Rename" type="button">✏</button>
-        <button data-action="deleteCustomCat" data-arg="${esc(c.name)}" style="font-size:10px;background:none;border:none;color:#475569;cursor:pointer;padding:2px 6px" title="Delete" type="button">✕</button>
+        <button data-action="startDeleteCat" data-arg="${esc(c.name)}" style="font-size:10px;background:none;border:none;color:#475569;cursor:pointer;padding:2px 6px" title="Delete" type="button">✕</button>
       `:''}
     </div>`;
   }).join('');
@@ -8014,6 +8040,7 @@ function addCustomCat(){
   scheduleSave();
 }
 function deleteCustomCat(name){
+  _confirmingDeleteCatName=null;
   state.customCategories=state.customCategories.filter(c=>c.name!==name);
   _txsDirty=true;
   state.transactions.forEach(t=>{if(t.cat===name)t.cat='Other';});
@@ -8036,6 +8063,7 @@ function deleteCustomCat(name){
 }
 function startRenameCat(name){
   _editingCatName=name;
+  _confirmingDeleteCatName=null;
   renderCatManagerList();
 }
 function cancelRenameCat(){
