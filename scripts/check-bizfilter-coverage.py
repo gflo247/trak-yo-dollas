@@ -14,11 +14,15 @@ month" badge (pass 16), and the MONTHLY cache + computePeriodSpendVsIncome
 same guard added, because nothing forced every call site touching this
 logic to be looked at together.
 
-This script flags every state.transactions.filter(...)/.forEach(...) call
-whose predicate references a signal that it's reimplementing base spend-
-filtering (isRealSpend(t), t.excluded, excludedCats, t.isIncome) but does
-NOT reference _bizFilter anywhere in the same expression. That is exactly
-the shape of every confirmed bug in this class so far.
+This script flags every state.transactions.filter(...)/.forEach(...)/
+.some(...)/.every(...) call whose predicate references a signal that it's
+reimplementing base spend-filtering (isRealSpend(t), t.excluded,
+excludedCats, t.isIncome) but does NOT reference _bizFilter anywhere in
+the same expression. That is exactly the shape of every confirmed bug in
+this class so far. (.some()/.every() were added after the 18th pass found
+a real instance -- renderBucketGrid()'s category-tile "latest month with
+spend" check -- that the original filter/forEach/map/reduce-only regex
+missed entirely.)
 
 This is a heuristic, not a JS parser — it WILL have false positives:
 - A loop deliberately searching for excluded/income transactions (the
@@ -44,7 +48,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
 
-ANCHOR_RE = re.compile(r'state\.transactions\.(filter|forEach|map|reduce)\(')
+ANCHOR_RE = re.compile(r'state\.transactions\.(filter|forEach|map|reduce|some|every)\(')
 
 # Presence of any of these inside the call's arguments means the call is
 # reimplementing some piece of getBaseTxs()'s exclusion logic by hand.
