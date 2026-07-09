@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-tH6X7xylXNGnr9OI+rU5jc2+s+z5SFLDXXN+LEYg9a4=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-J225B85Twe1/+1YMwWRUew8AakncKMl9FTV2Ws8pfE8=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -5513,6 +5513,15 @@ function renderTxList(){
     return!shownIds.has(t.id);
   });
   const monthTotals=getMonthTotalsMap();
+  const activeCatMonthTotals=state.activeCats.size>0?(()=>{
+    const map={};
+    getBaseTxs().forEach(x=>{
+      if(!state.activeCats.has(x.cat))return;
+      const mk=x.date.slice(0,7);
+      map[mk]=(map[mk]||0)+x.amount;
+    });
+    return map;
+  })():null;
   const CARD_S={'Visa Rewards':{bg:'#2E106522',fg:'#A78BFA'},'Gold Card':{bg:'#78350F22',fg:'#FCD34D'},'Checking':{bg:'#1E3A5F22',fg:'#60A5FA'},'High-yield Savings':{bg:tc('#1E293B','#EFF6FF'),fg:'#60A5FA'}};
   const q=state.searchQuery.toLowerCase();
 
@@ -5537,9 +5546,7 @@ function renderTxList(){
     const cc=CARD_S[t.card]||{bg:tc('#1E293B','#F1F5F9'),fg:tc('#475569','#64748B')},color=getCatColor(t.cat);
     const monthKey=t.date.slice(0,7);
     const monthTotal=monthTotals[monthKey]||0;
-    const monthCatTotal=state.activeCats.size>0
-      ? getBaseTxs().filter(x=>x.date.slice(0,7)===monthKey&&state.activeCats.has(x.cat)).reduce((s,x)=>s+x.amount,0)
-      : monthTotal;
+    const monthCatTotal=activeCatMonthTotals?(activeCatMonthTotals[monthKey]||0):monthTotal;
     const pctOfMonth=monthCatTotal>0&&isRealSpend(t)?Math.round(t.amount/monthCatTotal*100):null;
     return`<div class="tx-row ${t.excluded?'tx-excluded':''}" data-action="openEditTxModal" data-arg="${t.id}">
       <div class="tx-date">${fmtDate(t.date)}</div>
@@ -7674,12 +7681,13 @@ function toggleIncludeIncome(){
   if(btn)btn.textContent=state.includeIncome?'✓ 💼 Include income & business categories':'💼 Include income & business categories';
   if(!state.includeIncome)_bizFilter='all';
   showToast(state.includeIncome?'Income tracking enabled — deposits will import, business categories added':'Income tracking disabled','#34D399',3500);
-  scheduleSave();renderAll();
+  scheduleSave();rebuildMonthly();renderAll();
 }
 function setBizFilter(val){
   _bizFilter=val||'all';
   const bizRow=document.getElementById('biz-filter-inline');
   if(bizRow)bizRow.querySelectorAll('.biz-chip').forEach(b=>b.classList.toggle('active',b.getAttribute('data-arg')===_bizFilter));
+  rebuildMonthly();
   renderSpending();
 }
 function toggleTxBiz(id){
@@ -7688,6 +7696,7 @@ function toggleTxBiz(id){
   t.biz=!t.biz;
   _txsDirty=true;
   scheduleSave();
+  rebuildMonthly();
   renderTxList();
 }
 
@@ -7852,6 +7861,8 @@ function computePeriodSpendVsIncome(){
     if(!isRealSpend(t)||!state.activeSources.has(t.card))return;
     if(!months.includes(t.date.slice(0,7)))return;
     if(state.excludedCats.has(t.cat))return;
+    if(_bizFilter==='biz'&&!t.biz)return;
+    if(_bizFilter==='personal'&&t.biz)return;
     totalSpend+=t.amount;
   });
   const isOverspend=totalIncome>0&&totalSpend>totalIncome;
@@ -9063,6 +9074,8 @@ function rebuildMonthly(){
     // as intended. isIncome is the durable signal; cat can drift.
     if(t.isIncome)return;
     if(state.excludedCats&&state.excludedCats.has(t.cat))return;
+    if(_bizFilter==='biz'&&!t.biz)return;
+    if(_bizFilter==='personal'&&t.biz)return;
     const mo=t.date.slice(0,7);
     m[mo]=m[mo]||{};
     m[mo][t.card]=Math.max(0,((m[mo][t.card]||0)+t.amount));
