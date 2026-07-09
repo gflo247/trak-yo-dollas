@@ -25,6 +25,16 @@ python3 scripts/check-connect-src.py
 echo "=== Scanning for unescaped user-data interpolations (advisory) ==="
 python3 scripts/check-escaping.py || true
 
+# Advisory only, same posture as check-escaping.py above — added after
+# passes 15/16/17 each independently found a function that hand-rolled its
+# own state.transactions loop instead of calling getBaseTxs(), and so
+# silently missed the _bizFilter (Business/Personal) guard getBaseTxs()
+# has. Known false positives: loops deliberately searching for excluded/
+# income transactions rather than filtering them out, and loops that are
+# lifetime-scoped by design.
+echo "=== Scanning for spend loops missing the _bizFilter guard (advisory) ==="
+python3 scripts/check-bizfilter-coverage.py || true
+
 python3 scripts/update-csp-hashes.py
 python3 scripts/update-sitemap-dates.py
 
