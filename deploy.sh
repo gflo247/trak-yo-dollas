@@ -35,6 +35,28 @@ python3 scripts/check-escaping.py || true
 echo "=== Scanning for spend loops missing the _bizFilter guard (advisory) ==="
 python3 scripts/check-bizfilter-coverage.py || true
 
+# Advisory only, same posture as the scanners above — added after passes
+# 14, 16, and 20 each independently found a function that mutated
+# persisted state (transactions, or another synced field) without
+# actually triggering a save for it, including a CRITICAL bug (saveTx())
+# where the function WAS in the auto-save patch list and scheduleSave()
+# genuinely fired, but the transactions key still never got rewritten
+# because _txsDirty was never set. Known false positives: a mutator whose
+# only caller already handles the save itself (this scanner only looks
+# one level deep) and load-path functions that read data into state
+# rather than a user action that needs saving.
+echo "=== Scanning for state mutations missing a save trigger (advisory) ==="
+python3 scripts/check-persistence-coverage.py || true
+
+# Advisory only, same posture as the scanners above — added after the
+# 21st pass found saveTx()/saveEditTx()/deleteTx() mutated transactions
+# without calling rebuildMonthly(), leaving the MONTHLY/ALL_MONTHS caches
+# (and everything downstream: the date-range dropdown, chart x-axes, the
+# Budget tab's default month, the Spending tab's headline total) stale
+# until an unrelated action happened to rebuild them.
+echo "=== Scanning for transaction mutations missing rebuildMonthly() (advisory) ==="
+python3 scripts/check-rebuild-coverage.py || true
+
 python3 scripts/update-csp-hashes.py
 python3 scripts/update-sitemap-dates.py
 
