@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-8mtu3qtXl6I8HazF8YJP+028bo/3cfx5efA9jt/N/gI=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-P+ozdwTi4lWPBiAUZATRIbOyQkKPmgr9rFwOAxEpSow=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3520,7 +3520,7 @@ function openCustomNwGoal(){
   const input=document.getElementById('custom-goal-input');
   const hint=document.getElementById('custom-goal-hint');
   if(input){input.value=current||'';input.select();}
-  if(hint)hint.textContent=current?`Current goal: ${fmtC(current)}`:'';
+  if(hint){hint.textContent=current?`Current goal: ${fmtC(current)}`:'';hint.style.color='var(--text-muted)';}
   document.getElementById('custom-goal-modal').classList.remove('hidden');
   setTimeout(()=>{if(input)input.focus();},80);
 }
@@ -9569,7 +9569,7 @@ async function loadUserData(uid) {
       if (prefs.budgets) state.budgets = prefs.budgets;
       if (prefs.catRules) state.catRules = prefs.catRules;
       if (prefs.income) state.income = prefs.income;
-      if (prefs.includeIncome !== undefined) state.includeIncome = prefs.includeIncome;
+      if (prefs.includeIncome !== undefined) { state.includeIncome = prefs.includeIncome; _bizFilter='all'; }
       if (prefs.nwGoal !== undefined) state.nwGoal = prefs.nwGoal;
       if (prefs.hideNwGoal !== undefined) state.hideNwGoal = prefs.hideNwGoal;
       if (prefs.hiddenPills) state.hiddenPills = new Set(prefs.hiddenPills);
@@ -10697,6 +10697,14 @@ function loadDemoProfile(n, silent=false, skipRender=false){
   state.hasRealAccounts=false;
   state.hasRealSnapshot=false;
   state.includeIncome=p.includeIncome||false;
+  // toggleIncludeIncome() is the only other place _bizFilter resets to
+  // 'all' when income tracking turns off -- this assigns state.includeIncome
+  // directly, bypassing that, so a Business/Personal filter left active on
+  // one profile silently carried over to the next. If the new profile has
+  // no matching .biz-tagged transactions (or income tracking is off here,
+  // which hides the filter chip row entirely), every spend-aggregating
+  // view matches zero transactions with no UI control left to reset it.
+  _bizFilter='all';
   state.excludedCats=new Set(TRANSFER_LIKE_CATS);
   if(state.includeIncome)state.excludedCats.add('Income');
   state.catRules=[...(p.catRules||[])];
@@ -10800,6 +10808,13 @@ _sb.auth.onAuthStateChange((event, session) => {
   } else if (!user) {
     _sbAuthHandled = false;
     clearSyncPassphrase();
+    // cancelSyncPassphrase() closes the modal (unblocking the UI) before
+    // doSignOut() actually resolves -- without resetting this here, a
+    // snapshot save/delete triggered in that brief window starts an
+    // _fbCallAfterMerge() poll that would never resolve while signed out,
+    // then fire later under whatever session happens to be signed in when
+    // this device next completes a passphrase flow.
+    window._awaitingCloudMerge = false;
     if (window._demoPicked) {
       const nudge = document.getElementById('demo-nudge');
       if (nudge) nudge.style.display = 'block';
