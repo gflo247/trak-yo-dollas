@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-3tBlevkk9vLaeZ9hjxTyxWuULnq9FRQy+nOtFpvts2U=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-waDCrP7aQJigr4pa3DoNvGjul+1zKT1Oofm03NchZZQ=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -9109,7 +9109,19 @@ function rebuildMonthly(){
   buildCatColorMap();
 }
 
-
+// Wraps a state.transactions mutation with the three steps every CRITICAL/
+// HIGH persistence bug this cycle forgot at least one of: mark dirty so the
+// debounced save actually rewrites the transactions key, rebuild the
+// MONTHLY/ALL_MONTHS caches, and schedule the save. Rebuilding slightly more
+// often than strictly necessary is cheap (one O(n) pass); forgetting to is a
+// data-correctness bug -- so this always rebuilds rather than judging
+// per-call whether the specific mutation needs it.
+function mutateTransactions(mutatorFn){
+  mutatorFn();
+  _txsDirty=true;
+  rebuildMonthly();
+  scheduleSave();
+}
 
 
 function selectVenmoOpt(radio){
