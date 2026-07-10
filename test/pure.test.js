@@ -414,6 +414,37 @@ test("scheduleSave: awaitingCloudMerge gates only the cloud sync, not the local 
   assert.equal(syncCalled, false);
 });
 
+// ── mutateTransactions() — the wrapper added to collapse the three-step
+// manual contract (set _txsDirty, call rebuildMonthly, call scheduleSave)
+// that saveTx()/confirmSrcRemove()/applyVenmoOpt()/loadUserData() each
+// independently forgot a piece of at some point this cycle. This tests the
+// real end-to-end guarantee -- that a mutation actually reaches the mocked
+// localStorage after the debounce -- not just that _txsDirty gets
+// internally reassigned (not observable from outside: it's a primitive
+// parameter in the generated-function scope loadFunctions() creates, not a
+// mutable object). _txsDirty must be passed explicitly in ctx even though
+// mutateTransactions immediately overwrites it -- omitting it would make
+// the assignment an implicit global on the realm, which can leak across
+// other test files in the same node --test process. ──
+test("mutateTransactions: a mutation reaches localStorage after the debounce", async () => {
+  const ctx = {
+    window: { _isDemoPreview: false, _viewingDemoOverReal: false, _fbUser: null, _fb: null, _awaitingCloudMerge: false },
+    LS_KEY: "trakyo_state_v2",
+    LS_TXS_KEY: "trakyo_txs_v1",
+    serializeState: () => '{"fake":"state"}',
+    localStorage: makeLsSpy(),
+    _txsDirty: false,
+    _lsSaveTimer: null,
+    state: { transactions: [{ id: 1, cat: "Other" }] },
+    rebuildMonthly: () => {}, // spy/no-op -- rebuildMonthly's own correctness is covered elsewhere
+    showToast: () => {},
+  };
+  const { mutateTransactions } = loadFunctions(["mutateTransactions", "scheduleSave", "saveToLocalStorage"], ctx);
+  mutateTransactions(() => { ctx.state.transactions[0].cat = "Groceries"; });
+  await new Promise((r) => setTimeout(r, 900));
+  assert.equal(JSON.parse(ctx.localStorage._store["trakyo_txs_v1"])[0].cat, "Groceries");
+});
+
 // ── scheduleSave() + _flushPendingSave() (the pagehide handler, extracted to
 // a named function for testability) — CRITICAL regression from the 12th
 // adversarial pass: a fired setTimeout ID is still truthy, so without

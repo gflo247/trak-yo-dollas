@@ -72,7 +72,10 @@ TX_REASSIGN_RE = re.compile(r'state\.transactions\s*=(?!=)')
 TX_ARRAY_METHOD_RE = re.compile(r'state\.transactions\.(push|unshift|splice)\(')
 TX_FOREACH_RE = re.compile(r'state\.transactions\.(?:filter\([^)]*\)\.)?forEach\(')
 ANY_FIELD_ASSIGN_RE = re.compile(r'\b\w+\.\w+\s*=(?!=)')
-TXSDIRTY_RE = re.compile(r'_txsDirty\s*=\s*true')
+# mutateTransactions() (added 2026-07-09) sets _txsDirty=true internally --
+# a function that routes its mutation through it satisfies check A without
+# the literal text appearing in its own body.
+TXSDIRTY_RE = re.compile(r'_txsDirty\s*=\s*true|mutateTransactions\(')
 
 # --- Check B: other persisted fields need scheduleSave() or patch-list membership ---
 PERSISTED_FIELDS = [
@@ -85,7 +88,11 @@ FIELD_MUTATION_RE = re.compile(
     r'|state\.(?:' + '|'.join(PERSISTED_FIELDS) + r')\.(?:push|unshift|splice|delete|add)\('
     r'|state\.(?:' + '|'.join(PERSISTED_FIELDS) + r')\[[^\]]+\]\s*=(?!=)'
 )
-SCHEDULE_SAVE_RE = re.compile(r'scheduleSave\(|saveToLocalStorage\(')
+# mutateTransactions() also calls scheduleSave() internally -- a function
+# migrated onto it (and no longer in the patch list) still satisfies check B
+# for any other persisted field it happens to touch alongside transactions
+# (e.g. confirmTxImport()'s state.budgets={} branch).
+SCHEDULE_SAVE_RE = re.compile(r'scheduleSave\(|saveToLocalStorage\(|mutateTransactions\(')
 
 
 def extract_balanced_braces(text, open_brace_idx):

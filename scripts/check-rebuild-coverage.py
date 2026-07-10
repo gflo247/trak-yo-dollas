@@ -63,7 +63,10 @@ TX_FOREACH_RE = re.compile(r'state\.transactions\.(?:filter\([^)]*\)\.)?forEach\
 # category is deliberately excluded, see the module docstring.
 MONTHLY_RELEVANT_FIELD_ASSIGN_RE = re.compile(r'\.(date|amount|card|excluded|isIncome|biz)\s*=(?!=)')
 
-REBUILD_RE = re.compile(r'rebuildMonthly\(')
+# mutateTransactions() (added 2026-07-09) calls rebuildMonthly() internally
+# -- a function that routes its mutation through it satisfies this check
+# without the literal text appearing in its own body.
+REBUILD_RE = re.compile(r'rebuildMonthly\(|mutateTransactions\(')
 
 # Functions whose whole purpose is loading/replacing all of state.transactions
 # wholesale (import, backup restore, demo/account load) -- these call
