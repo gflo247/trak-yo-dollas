@@ -62,11 +62,11 @@ ROOT = Path(__file__).parent.parent
 
 FUNC_RE = re.compile(r'function\s+(\w+)\s*\([^)]*\)\s*\{')
 
-# 'saveTx' removed 2026-07-09 once migrated onto mutateTransactions(),
-# which makes scheduleSave() unconditional and internal to the function
-# itself rather than relying on this external wrap.
+# 'saveTx' and 'confirmTxImport' removed 2026-07-09 once migrated onto
+# mutateTransactions(), which makes scheduleSave() unconditional and
+# internal to the function itself rather than relying on this external wrap.
 PATCHED_FNS = {
-    'saveAccount', 'saveVehicle', 'confirmTxImport',
+    'saveAccount', 'saveVehicle',
     'confirmDeleteSnapshot', 'saveSnapshot', 'saveBudget', 'importCsvText',
 }
 

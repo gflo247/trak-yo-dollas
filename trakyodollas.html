@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-IwXiRRtMLM6vWQUEL6xWL90TEUU2m2tSawzIzM1/i/E=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-d6VxTlEJoyP5hGiUXiAx4+yrfTwOle1YDimJQIqxJ4A=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -6462,18 +6462,18 @@ function saveHistoricalSnapshot(){
 function applyRulesToExisting(){
   if(!state.catRules.length){showToast('No rules to apply — add some rules first','#FCD34D');return;}
   let changed=0;
-  state.transactions.forEach(t=>{
-    const descUpper=t.desc.toUpperCase();
-    for(const rule of state.catRules){
-      if(rule.keyword&&descUpper.includes(rule.keyword.toUpperCase())){
-        if(t.cat!==rule.cat){t.cat=rule.cat;t._edited=true;changed++;_txsDirty=true;}
-        break;
+  mutateTransactions(()=>{
+    state.transactions.forEach(t=>{
+      const descUpper=t.desc.toUpperCase();
+      for(const rule of state.catRules){
+        if(rule.keyword&&descUpper.includes(rule.keyword.toUpperCase())){
+          if(t.cat!==rule.cat){t.cat=rule.cat;t._edited=true;changed++;}
+          break;
+        }
       }
-    }
+    });
   });
-  rebuildMonthly();
   renderSpending();
-  scheduleSave();
   const el=document.getElementById('apply-rules-result');
   if(el){el.textContent=`✓ Updated ${changed} transaction${changed===1?'':'s'}`;el.style.display='block';setTimeout(()=>el.style.display='none',3000);}
   if(changed>0)showToast(`⚡ ${changed} transaction${changed===1?'':'s'} re-categorized`,'#34D399');
@@ -7708,10 +7708,9 @@ function setBizFilter(val){
 function toggleTxBiz(id){
   const t=state.transactions.find(tx=>tx.id===id);
   if(!t)return;
-  t.biz=!t.biz;
-  _txsDirty=true;
-  scheduleSave();
-  rebuildMonthly();
+  mutateTransactions(()=>{
+    t.biz=!t.biz;
+  });
   renderTxList();
 }
 
@@ -9023,31 +9022,28 @@ function confirmTxImport(){
     SOURCES.push(source);
   }
 
-  // If this is the first real import on a demo session, wipe all demo data first
-  if(!state.hasRealData){
-    state.transactions=[];
-    state.activeSources=new Set();
-    state.budgets={};
-    _txsDirty=true;
-  }
+  let newTxs;
+  mutateTransactions(()=>{
+    // If this is the first real import on a demo session, wipe all demo data first
+    if(!state.hasRealData){
+      state.transactions=[];
+      state.activeSources=new Set();
+      state.budgets={};
+    }
 
-  // Remove existing from this source if replace checked
-  if(replace){
-    _txsDirty=true;
-    state.transactions=state.transactions.filter(t=>t.card!==source);
-  }
+    // Remove existing from this source if replace checked
+    if(replace){
+      state.transactions=state.transactions.filter(t=>t.card!==source);
+    }
 
-  // Auto-activate new source
-  state.activeSources.add(source);
+    // Auto-activate new source
+    state.activeSources.add(source);
 
-  // Assign IDs and stamp current source label onto card (user may have edited it after parsing)
-  const newTxs=importParsed.map(t=>({...t,card:source,id:state.nextId++}));
-  _txsDirty=true;
-  state.transactions=[...state.transactions,...newTxs];
-  state.transactions.sort((a,b)=>b.date.localeCompare(a.date));
-
-  // Rebuild MONTHLY from transactions
-  rebuildMonthly();
+    // Assign IDs and stamp current source label onto card (user may have edited it after parsing)
+    newTxs=importParsed.map(t=>({...t,card:source,id:state.nextId++}));
+    state.transactions=[...state.transactions,...newTxs];
+    state.transactions.sort((a,b)=>b.date.localeCompare(a.date));
+  });
 
   closeModals();
   renderSpending();
@@ -9215,21 +9211,20 @@ function applyVenmoOpt(skip){
   if(!sel){closeModals();return;}
   const opt=sel.value;
   const customCat=document.getElementById('venmo-custom-cat').value;
-  state.transactions.forEach(t=>{
-    if(!t.desc||!t.desc.toUpperCase().includes('VENMO CASHOUT'))return;
-    if(opt==='exclude'){
-      t.excluded=true;t.is_offset=false;
-    } else {
-      const cat=opt==='custom'?customCat:'Shopping';
-      t.cat=cat;t.excluded=false;t.is_offset=true;
-      t.amount=-Math.abs(t.amount); // make negative = offset
-    }
-    _txsDirty=true;
+  mutateTransactions(()=>{
+    state.transactions.forEach(t=>{
+      if(!t.desc||!t.desc.toUpperCase().includes('VENMO CASHOUT'))return;
+      if(opt==='exclude'){
+        t.excluded=true;t.is_offset=false;
+      } else {
+        const cat=opt==='custom'?customCat:'Shopping';
+        t.cat=cat;t.excluded=false;t.is_offset=true;
+        t.amount=-Math.abs(t.amount); // make negative = offset
+      }
+    });
   });
-  rebuildMonthly();
   closeModals();
   renderSpending();
-  scheduleSave();
   showToast('✓ Venmo cashouts updated');
 }
 
@@ -10406,7 +10401,7 @@ document.addEventListener('DOMContentLoaded',function(){
   // file-upload variant (handleCsv) is patched separately below since its
   // mutation happens inside an async FileReader callback, after this
   // synchronous wrapper would already have fired.
-  ['saveAccount','saveVehicle','confirmTxImport','confirmDeleteSnapshot','saveSnapshot','saveBudget','importCsvText'].forEach(fn=>{
+  ['saveAccount','saveVehicle','confirmDeleteSnapshot','saveSnapshot','saveBudget','importCsvText'].forEach(fn=>{
     if(typeof window[fn]==='function'){
       const orig=window[fn];
       window[fn]=function(...args){const result=orig.apply(this,args);scheduleSave();return result;};
