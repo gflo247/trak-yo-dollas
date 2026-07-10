@@ -64,6 +64,7 @@ python3 scripts/update-sitemap-dates.py
 rm -rf _cf_deploy
 rsync -a \
   --exclude='.git' \
+  --exclude='.gitignore' \
   --exclude='.wrangler' \
   --exclude='_cf_deploy' \
   --exclude='firebase.json' \
