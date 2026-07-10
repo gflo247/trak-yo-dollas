@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-eBrsU5xe7GEeQZDlrBoURlDZhnlrpH7Rp8a5OrknBOI=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-8mtu3qtXl6I8HazF8YJP+028bo/3cfx5efA9jt/N/gI=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2639,9 +2639,9 @@ function renderInsights(){
     const nwNow=netWorth();
     const nwMonthlyRate=daysSince>0?Math.round(nwDiff/daysSince*30):0;
     let nwSubLine;
-    if(state.nwGoal&&state.nwGoal<=nwNow){
+    if(state.nwGoal&&state.nwGoal<=nwNow&&!state.hideNwGoal){
       nwSubLine=`<span style="color:#34D399">🎯 Goal reached! ${fmtC(state.nwGoal)}</span>`;
-    } else if(state.nwGoal&&state.nwGoal>nwNow){
+    } else if(state.nwGoal&&state.nwGoal>nwNow&&!state.hideNwGoal){
       const goalNeeded=state.nwGoal-nwNow;
       const goalPct=Math.round(nwNow/state.nwGoal*100);
       const monthsLeft=monthlyGrowthForGoal>0?Math.ceil(goalNeeded/monthlyGrowthForGoal):null;
@@ -3277,6 +3277,7 @@ function toggleNwGoal(){
   state.hideNwGoal=!state.hideNwGoal;
   renderNwGoalWidget();
   renderNwChart();
+  renderInsights();
   scheduleSave();
 }
 function renderNwGoalWidget(){
@@ -3531,6 +3532,15 @@ function confirmCustomGoal(){
   if(isNaN(parsed)||parsed<=0){
     const hint=document.getElementById('custom-goal-hint');
     if(hint){hint.textContent='Please enter a valid amount.';hint.style.color='#F87171';}
+    return;
+  }
+  if(parsed<=netWorth()){
+    // Without this check, renderNwGoalWidget()'s own auto-select ("Auto-select
+    // next milestone... if goal exceeded") would silently swap this goal for
+    // the next milestone the instant it renders below -- including in the
+    // confirmation toast, which reads state.nwGoal *after* that render call.
+    const hint=document.getElementById('custom-goal-hint');
+    if(hint){hint.textContent=`Already at or above that — try something higher than ${fmtC(netWorth())}.`;hint.style.color='#F87171';}
     return;
   }
   state.nwGoal=Math.round(parsed);
@@ -7711,7 +7721,7 @@ function toggleTxBiz(id){
   mutateTransactions(()=>{
     t.biz=!t.biz;
   });
-  renderTxList();
+  renderSpending();
 }
 
 // Vendor chart patterns — same 8 patterns as vendorColors array order
@@ -7980,6 +7990,20 @@ function showToast(msg,color,duration){
   t._timer=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(-50%) translateY(80px)';},duration||2800);
 }
 let _pendingDeleteSnapIdx=null;
+// saveSnapshot()/confirmDeleteSnapshot() write directly to Supabase (unlike
+// prefs, which go through the debounced scheduleSave()/syncToCloud() path
+// that already checks _awaitingCloudMerge) -- calling this instead of
+// firing immediately avoids racing loadUserData()'s in-flight cloud pull,
+// which unconditionally overwrites state.snapshots wholesale once it
+// resolves and would silently erase a snapshot added/removed in that
+// window from the current tab's memory (the write itself still reaches
+// Supabase either way -- this is about the in-tab UI staying consistent,
+// not data loss). Polls rather than skipping, since snapshots have no
+// other sync path that would ever catch up a dropped write.
+function _fbCallAfterMerge(fn){
+  if(!window._awaitingCloudMerge){fn();return;}
+  setTimeout(()=>_fbCallAfterMerge(fn),300);
+}
 function deleteSnapshot(i){
   const s=state.snapshots[i];
   if(!s)return;
@@ -8000,7 +8024,7 @@ function confirmDeleteSnapshot(){
   closeModals();
   renderHistory();renderNwChart();
   if(window._fbUser&&window._fb&&monthKey&&!window._isDemoPreview&&!window._viewingDemoOverReal){
-    window._fb.deleteSnapshot(window._fbUser.uid,monthKey).catch(e=>console.error(e));
+    _fbCallAfterMerge(()=>window._fb.deleteSnapshot(window._fbUser.uid,monthKey).catch(e=>console.error(e)));
   }
   showToast('Snapshot deleted','#F87171');
 }
@@ -8021,9 +8045,9 @@ function saveSnapshot(){
   if(window._isDemoPreview||window._viewingDemoOverReal){
     showToast(`✓ Snapshot saved · net worth ${fmtC(netWorth())}`);
   } else if(window._fbUser&&window._fb){
-    window._fb.saveSnapshot(window._fbUser.uid,snap)
+    _fbCallAfterMerge(()=>window._fb.saveSnapshot(window._fbUser.uid,snap)
       .then(()=>showToast(`✓ Snapshot saved · net worth ${fmtC(netWorth())}`))
-      .catch(()=>showToast(`✓ Snapshot saved locally (sync failed)`,'#FCD34D'));
+      .catch(()=>showToast(`✓ Snapshot saved locally (sync failed)`,'#FCD34D')));
   } else {
     showToast(`✓ Snapshot saved · net worth ${fmtC(netWorth())}`);
     setTimeout(()=>openAuthModal('save'), 2000);
@@ -9375,7 +9399,15 @@ async function promptSyncPassphrase(uid) {
   window._awaitingCloudMerge = true;
   if (getSyncPassphrase()) {
     try { await loadUserData(uid); window._awaitingCloudMerge = false; return; }
-    catch(e) { clearSyncPassphrase(); }
+    catch(e) {
+      // Only forget the cached passphrase if it was actually wrong -- a
+      // network/Supabase error doesn't mean the passphrase is bad, and
+      // clearing it would force a needless re-entry prompt. _awaitingCloudMerge
+      // deliberately stays true here (never reached the line above that
+      // clears it), keeping scheduleSave()'s cloud push blocked until a
+      // genuine successful load happens.
+      if (e && (e.message === 'wrong-passphrase' || e.message === 'missing-passphrase')) clearSyncPassphrase();
+    }
   }
   _pendingSyncUid = uid;
   _pendingSyncIsFirstTime = !(await _syncPassphraseAlreadySet(uid));
@@ -9430,7 +9462,7 @@ async function submitSyncPassphrase() {
     window._awaitingCloudMerge = false;
     closeModals();
   } catch(e) {
-    clearSyncPassphrase();
+    if (e && (e.message === 'wrong-passphrase' || e.message === 'missing-passphrase')) clearSyncPassphrase();
     showError(e && e.message === 'wrong-passphrase' ? 'Incorrect passphrase — try again.' : 'Something went wrong — please try again.');
     if (!_pendingSyncIsFirstTime && e && e.message === 'wrong-passphrase') {
       const forgotWrap = document.getElementById('sync-pp-forgot-wrap');
@@ -9538,12 +9570,20 @@ async function loadUserData(uid) {
       if (prefs.catRules) state.catRules = prefs.catRules;
       if (prefs.income) state.income = prefs.income;
       if (prefs.includeIncome !== undefined) state.includeIncome = prefs.includeIncome;
+      if (prefs.nwGoal !== undefined) state.nwGoal = prefs.nwGoal;
+      if (prefs.hideNwGoal !== undefined) state.hideNwGoal = prefs.hideNwGoal;
       if (prefs.hiddenPills) state.hiddenPills = new Set(prefs.hiddenPills);
       if (prefs.vendorAliases) state.vendorAliases = prefs.vendorAliases;
-      if (prefs.accounts && prefs.accounts.length) state.accounts = prefs.accounts;
-      if (prefs.vehicles && prefs.vehicles.length) state.vehicles = prefs.vehicles;
+      // Array.isArray (not truthiness) so a genuinely empty array -- e.g.
+      // every account/transaction was deleted on another device -- actually
+      // overwrites local state instead of being indistinguishable from the
+      // field being absent (an older payload that never had it), which
+      // silently kept stale local data and re-uploaded it, reviving the
+      // deletion.
+      if (Array.isArray(prefs.accounts)) state.accounts = prefs.accounts;
+      if (Array.isArray(prefs.vehicles)) state.vehicles = prefs.vehicles;
       if (prefs.nextId) state.nextId = prefs.nextId;
-      if (prefs.transactions && prefs.transactions.length) {
+      if (Array.isArray(prefs.transactions)) {
         state.transactions = prefs.transactions.map(t=>({...t,amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
         _txsDirty=true;
         rebuildMonthly();
@@ -9573,10 +9613,14 @@ async function loadUserData(uid) {
     requestAnimationFrame(()=>requestAnimationFrame(()=>renderNwChart()));
     showToast('✓ Data loaded from your account');
   } catch(e) {
-    // Wrong/missing passphrase — let promptSyncPassphrase() catch this and
-    // re-prompt, instead of silently failing to load real (or any) data.
-    if (e && (e.message === 'wrong-passphrase' || e.message === 'missing-passphrase')) throw e;
+    // Re-throw everything, not just wrong/missing-passphrase -- callers
+    // (promptSyncPassphrase(), submitSyncPassphrase()) rely on an exception
+    // here to know the pull genuinely failed and keep _awaitingCloudMerge
+    // set, so a later edit doesn't push stale pre-merge local state over
+    // real synced data. A network/Supabase error swallowed here used to
+    // look identical to a successful load to those callers.
     console.error('loadUserData error:', e);
+    throw e;
   }
 }
 
@@ -9599,6 +9643,8 @@ async function syncToCloud() {
       transactions: state.transactions.map(t=>({...t})),
       nextId: state.nextId,
       includeIncome: state.includeIncome,
+      nwGoal: state.nwGoal,
+      hideNwGoal: state.hideNwGoal,
       txEdits
     });
     // Flash "Saved ✓" in auth bar
