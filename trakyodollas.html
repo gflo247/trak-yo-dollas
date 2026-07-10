@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-P+ozdwTi4lWPBiAUZATRIbOyQkKPmgr9rFwOAxEpSow=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-/xX2ZW+PNNn7E+SJzZ95jOW4Kr/QBmvmS9hGe9jspGs=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -4759,13 +4759,15 @@ function renderSankey(){
       linkSel.attr('stroke-opacity',.4);
     })
     .on('click',(_,d)=>{
-      if(d.target.id==='__income__'||d.source.id==='__income__'){
-        if(state.activeCats.size>0){
-          state.activeCats=new Set();
-          showTxN=50;renderSpendSummary();renderBucketGrid();renderActiveChart();renderTxList();
-        }
-        return;
-      }
+      // Every link's source is '__income__' by construction (all flows
+      // originate from income) -- a prior version of this condition also
+      // checked d.source.id==='__income__', which was therefore always
+      // true and made toggleCatFilter() below unreachable dead code for
+      // every single flow-ribbon click. The income node's own click
+      // handler opens the declared-income modal (not a filter reset), so
+      // there's no valid "reset" case for a link to special-case here;
+      // links should drill into their category exactly like clicking the
+      // category's node does.
       if(d.target.id==='__other__')return;
       const wasActive=state.activeCats.has(d.target.name);
       toggleCatFilter(d.target.name);
@@ -5187,18 +5189,26 @@ function renderSpendChart(){
     const smRow=document.getElementById('chart-show-more-row');
     if(smRow)smRow.style.display='none';
     if(fn)fn.textContent='';
-    // When a category filter is active, compute source totals from filtered transactions
+    // When a category filter is active, compute source totals from filtered
+    // transactions -- grouped by period (a month, or every month in a
+    // quarter/year) so this stays correct regardless of chartGrain. Used to
+    // only run this branch `&&!useAgg`, so switching to Quarterly/Yearly
+    // while a category filter was active silently fell back to `monthly`
+    // (built from unfiltered getAggregatedData()), reverting the chart to
+    // all categories with no indication the filter stopped applying.
     let sourceMonthly=monthly;
-    if(state.activeCats.size>0&&!useAgg){
-      const filtMonthKeys=getFilteredMonths();
-      sourceMonthly=filtMonthKeys.map(m=>{
+    if(state.activeCats.size>0){
+      const periods=useAgg?getAggregatedPeriods():getFilteredMonths().map(m=>({label:fmtMonthShort(m),months:[m]}));
+      sourceMonthly=periods.map(p=>{
         const bySource={};
         [...state.activeSources].forEach(s=>bySource[s]=0);
-        state.transactions.filter(t=>
-          t.date.slice(0,7)===m&&state.activeSources.has(t.card)&&
-          state.activeCats.has(t.cat)&&!t.excluded&&
-          (_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)
-        ).forEach(t=>bySource[t.card]=(bySource[t.card]||0)+t.amount);
+        p.months.forEach(m=>{
+          state.transactions.filter(t=>
+            t.date.slice(0,7)===m&&state.activeSources.has(t.card)&&
+            state.activeCats.has(t.cat)&&!t.excluded&&
+            (_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)
+          ).forEach(t=>bySource[t.card]=(bySource[t.card]||0)+t.amount);
+        });
         return {bySource};
       });
     }
@@ -5222,16 +5232,25 @@ function renderSpendChart(){
     if(smRow)smRow.style.display='none';
     const chartFn=document.getElementById('chart-footnote');
     if(chartFn)chartFn.textContent='';
-    const months=getFilteredMonths();
-    const totals=months.map(m=>{
+    // Grouped by period (one month, or every month in a quarter/year when
+    // chartGrain isn't 'month') so `totals` always has the same length as
+    // `labels` above -- this used to always be one entry per calendar
+    // month regardless of grain, while `labels` correctly shrank to one
+    // per quarter/year, so Chart.js received mismatched-length arrays and
+    // rendered a visibly garbled chart the instant Quarterly/Yearly was
+    // selected in Trend mode.
+    const periods=useAgg?getAggregatedPeriods():getFilteredMonths().map(m=>({label:fmtMonthShort(m),months:[m]}));
+    const totals=periods.map(p=>{
       if(state.activeCats.size===0){
-        const row=MONTHLY[m]||{};
-        return [...state.activeSources].reduce((s,src)=>s+(row[src]||0),0);
+        return p.months.reduce((sum,m)=>{
+          const row=MONTHLY[m]||{};
+          return sum+[...state.activeSources].reduce((s,src)=>s+(row[src]||0),0);
+        },0);
       }
-      return state.transactions.filter(t=>
+      return p.months.reduce((sum,m)=>sum+state.transactions.filter(t=>
         t.date.slice(0,7)===m&&state.activeSources.has(t.card)&&state.activeCats.has(t.cat)&&!t.excluded&&
         (_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)
-      ).reduce((s,t)=>s+t.amount,0);
+      ).reduce((s,t)=>s+t.amount,0),0);
     });
     const rolling=totals.map((v,i)=>{
       const slice=totals.slice(Math.max(0,i-2),i+1);
@@ -8001,6 +8020,18 @@ let _pendingDeleteSnapIdx=null;
 // not data loss). Polls rather than skipping, since snapshots have no
 // other sync path that would ever catch up a dropped write.
 function _fbCallAfterMerge(fn){
+  // A cached-passphrase sign-in (the normal case for a returning user) runs
+  // loadUserData() with no modal shown, so the UI stays fully interactive
+  // during that await -- a snapshot save/delete queued in that window and
+  // still polling here can outlive a sign-out that happens before it
+  // resolves (the auth listener's sign-out branch also clears
+  // _awaitingCloudMerge, so the poll below would otherwise fire fn() with a
+  // now-null window._fbUser, throwing inside the deferred Supabase call).
+  // Drop it instead: the local edit already applied synchronously before
+  // this was ever queued, so nothing is lost from the user's perspective --
+  // it just won't reach Supabase until the next successful sync, same as
+  // any other write made while signed out.
+  if(!window._fbUser)return;
   if(!window._awaitingCloudMerge){fn();return;}
   setTimeout(()=>_fbCallAfterMerge(fn),300);
 }
@@ -8931,9 +8962,26 @@ async function fetchCommunityRules(){
 
 function guessCatFromDesc(d){
   const u=d.toUpperCase();
-  // Specific Insurance strings that would otherwise match a broader keyword first
+  // Specific strings that would otherwise match a broader, earlier-checked
+  // keyword first -- CAT_KEYWORDS is checked in array order and returns on
+  // the first substring match, so a short generic keyword in an earlier
+  // category permanently shadows a more specific keyword listed in a later
+  // one. Found in the 25th adversarial pass (July 10, 2026): 'MOBIL' (Gas,
+  // for the gas-station brand) shadowed the explicit 'T-MOBILE' entry in
+  // Bills & Utilities, so every T-Mobile bill -- one of the most common US
+  // carriers -- categorized as gas-station spend. Same shape for bare
+  // 'COSTCO'/'HOSPITAL'/'CLINIC'/'FUEL' shadowing pharmacy, vet, and utility
+  // keywords explicitly added later in the array.
   if(u.includes('PROTECTIVE COSTCO'))return 'Insurance';
   if(u.includes('HOMEOWNERS INSURANCE'))return 'Insurance';
+  if(u.includes('T-MOBILE'))return 'Bills & Utilities';
+  if(u.includes('NATIONAL FUEL'))return 'Bills & Utilities';
+  if(u.includes('COSTCO PHARMACY'))return 'Health & Wellness';
+  if(u.includes('SAM\'S PHARMACY'))return 'Health & Wellness';
+  if(u.includes('WALMART PHARMACY'))return 'Health & Wellness';
+  if(u.includes('BROOKSHIRES PHARMACY'))return 'Health & Wellness';
+  if(u.includes('KAISER PHARMACY'))return 'Health & Wellness';
+  if(u.includes('ANIMAL HOSPITAL')||u.includes('ANIMAL CLINIC'))return 'Pet(s)';
   // Unambiguous donation signals override everything except investment/CC keywords (caught earlier in CAT_KEYWORDS)
   if(u.includes('DONATION')||u.includes('DONATE')){
     return 'Gifts & Donations';
