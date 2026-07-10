@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-njR7LQdXzxNlcRDL52v+pztY0y9d3d5VjW7jPt1kZqY=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-jxKqLcsjm59qhzNoZ+rah6SZh9QjxBckKPgdM1CvWRs=' 'sha256-BzW6E87d+JmJpXCSZ8GTYVv8VyTmdmi4CJEa6bBP3+Q=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -6522,6 +6522,13 @@ function addVendorAlias(){
   const to=document.getElementById('alias-to').value.trim();
   if(!from||!to){showToast('Enter both vendor names','#FCD34D');return;}
   if(from.toUpperCase()===to.toUpperCase()){showToast('Alias and target must be different','#FCD34D');return;}
+  // resolveVendor(to) walks the *existing* chain forward from `to`; if it
+  // already terminates at `from`, adding from->to would close a loop
+  // (A->B, B->A, or a longer multi-hop cycle) that silently neutralizes
+  // both merges — resolveVendor()'s own `seen` cycle-guard makes every
+  // vendor in the loop resolve back to itself, with no error shown and
+  // the alias list still displaying both entries as if active.
+  if(resolveVendor(to).toUpperCase()===from.toUpperCase()){showToast('That would create a merge loop — remove the existing alias first','#FCD34D');return;}
   if(!state.vendorAliases)state.vendorAliases={};
   // Case-insensitive dedup, matching addCatRule()'s existing precedent —
   // resolveVendor() only ever matches the *first* case-insensitive hit for a
@@ -9164,7 +9171,6 @@ function applySourceAlign(fromDate){
   state.sourceAlignDate=fromDate.slice(0,7);
   state.rangeFrom=fromDate.slice(0,7);
   state.rangeTo=null;
-  _txsDirty=false;
   scheduleSave();renderSpending();
   showToast(`✓ Showing from ${fmtMonthShort(fromDate.slice(0,7))} — click "All" to see everything`);
 }
@@ -9802,7 +9808,7 @@ function saveVehicle(){
   }
   closeModals();renderAll();
 }
-function saveTx(){const date=document.getElementById('t-date').value,desc=document.getElementById('t-desc').value.trim(),card=document.getElementById('t-card').value,cat=document.getElementById('t-cat').value,amount=parseFloat(document.getElementById('t-amount').value)||0;if(!desc||!amount)return;state.transactions.unshift({id:state.nextId++,date,desc,cat,card,amount,excluded:false});if(card)state.activeSources.add(card);closeModals();renderSpending();}
+function saveTx(){const date=document.getElementById('t-date').value,desc=document.getElementById('t-desc').value.trim(),card=document.getElementById('t-card').value,cat=document.getElementById('t-cat').value,amount=parseFloat(document.getElementById('t-amount').value)||0;if(!desc||!amount)return;state.transactions.unshift({id:state.nextId++,date,desc,cat,card,amount,excluded:false});if(card)state.activeSources.add(card);_txsDirty=true;closeModals();renderSpending();}
 function handleCsv(input){
   const file=input.files[0];if(!file)return;
   const r=new FileReader();
