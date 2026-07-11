@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ba8cRy4D97Hs/++5jjHH8bB05QIuBOn3OA3l6c0pGxg=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-lroNIgo3JPCfkXcl6bXMK8rOAHqrFUf1MDjGBVwut8I=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -4684,18 +4684,28 @@ function renderSankey(){
   }
 
   const catTotals={};
+  // totalSpendAll stays unfiltered by state.activeCats even though catTotals
+  // (the bars actually drawn) doesn't -- "Remaining" must reflect income
+  // minus ALL tracked spend, not just the clicked/filtered category's
+  // spend, or clicking any one category node made "Remaining" balloon to
+  // include every other category's real spending, misattributed as
+  // savings (self-contradictory with the overspend warning above it,
+  // which is computed unfiltered). Found in the 30th adversarial pass.
+  let totalSpendAll=0;
   state.transactions.filter(t=>
     !t.isIncome&&
     (state.showExcluded||!t.excluded)&&state.activeSources.has(t.card)&&
     filteredMonths.includes(t.date.slice(0,7))&&
     (state.showExcluded||!state.excludedCats.has(t.cat))&&
-    (state.activeCats.size===0||state.activeCats.has(t.cat))&&
     (_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)
-  ).forEach(t=>{ catTotals[t.cat]=(catTotals[t.cat]||0)+t.amount; });
+  ).forEach(t=>{
+    totalSpendAll+=t.amount;
+    if(state.activeCats.size===0||state.activeCats.has(t.cat))catTotals[t.cat]=(catTotals[t.cat]||0)+t.amount;
+  });
 
   const totalSpend=Object.values(catTotals).reduce((a,b)=>a+b,0);
   const isOverspend=computePeriodSpendVsIncome().isOverspend;
-  const saved=Math.max(0,totalIncome-totalSpend);
+  const saved=Math.max(0,totalIncome-totalSpendAll);
   const SANKEY_SMALL=0.03;
   const allCats=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
   const bigCats=allCats.filter(([,v])=>v>=totalIncome*SANKEY_SMALL);
@@ -4837,7 +4847,11 @@ function renderSankey(){
     const numCats=Object.keys(catTotals).length;
     const spendPct=totalIncome>0?Math.round(totalSpend/totalIncome*100):0;
     if(isOverspend){
-      sfn.innerHTML=`<span style="color:#F87171;font-weight:700">⚠️ Spending (${fmtC(totalSpend)}) exceeds income (${fmtC(totalIncome)}) by ${fmtC(totalSpend-totalIncome)} — click the income bar to update your income</span>`;
+      // Uses totalSpendAll, not the (possibly category-filtered) totalSpend
+      // -- isOverspend itself is computed unfiltered, so this text must
+      // match or it can show a nonsensical negative "exceeds by" figure
+      // when a small filtered category's spend alone is under income.
+      sfn.innerHTML=`<span style="color:#F87171;font-weight:700">⚠️ Spending (${fmtC(totalSpendAll)}) exceeds income (${fmtC(totalIncome)}) by ${fmtC(totalSpendAll-totalIncome)} — click the income bar to update your income</span>`;
     } else {
       const incomeEditHint=usingImportedIncome?'income from imported transactions':'click income bar to edit';
       sfn.textContent=smallCats.length>=2
@@ -9915,7 +9929,15 @@ function saveAccount(){
         type=document.getElementById('f-type').value,
         balance=parseFloat(document.getElementById('f-balance').value)||0,
         excludeFromNW=document.getElementById('f-exclude').checked;
-  if(!name)return;
+  // type is a <select>; if a stored account's type doesn't match any of
+  // its <option>s (e.g. a legacy/foreign type value), assigning .value in
+  // editAccount() silently leaves nothing selected and .value reads back
+  // as '' -- saving would then silently reclassify the account as an
+  // asset (isLiab('') is false), no matter what it actually was. Refuse
+  // to save rather than corrupt it, matching the existing !name guard.
+  // Found in the 30th adversarial pass, after the demo's own 'Student
+  // Loan' account (type:'loan', never a valid <option>) hit exactly this.
+  if(!name||!type)return;
   // Dismiss dashboard notice on first real edit
   const dn=document.getElementById('demo-notice-dash');if(dn)dn.style.display='none';
   const da=document.getElementById('demo-notice-accounts');if(da)da.style.display='none';
@@ -10708,7 +10730,7 @@ const DEMO_PROFILE_1 = {
     {id:2,name:'High-yield Savings',source:'Ally',type:'cash',balance:9800},
     {id:3,name:'Roth IRA',source:'Fidelity',type:'investment',balance:13400},
     {id:4,name:'401(k)',source:'Fidelity',type:'investment',balance:12600},
-    {id:5,name:'Student Loan',source:'Navient',type:'loan',balance:17800},
+    {id:5,name:'Student Loan',source:'Navient',type:'other-liability',balance:17800},
     {id:6,name:'Visa Rewards',source:'Chase',type:'credit',balance:580},
   ],
   vehicles:[],
