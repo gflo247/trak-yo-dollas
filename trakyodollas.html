@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-wwFTVgSpDhsKMjFSBFYttFA1iF6QRzNGlsX2Ouj6t9o=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ba8cRy4D97Hs/++5jjHH8bB05QIuBOn3OA3l6c0pGxg=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3092,8 +3092,15 @@ function renderYearInReview(){
   const lastSnap=snapsSorted.filter(s=>s.monthKey<=months[months.length-1]).slice(-1)[0];
   const nwChange=firstSnap&&lastSnap&&firstSnap!==lastSnap?lastSnap.nw-firstSnap.nw:null;
   const income=getEffectiveIncome(months[months.length-1]);
-  const annualIncome=income*12;
-  const savingsRate=annualIncome>0?Math.round((annualIncome-totalSpent)/annualIncome*100):null;
+  // Income for the actual window, not always x12 -- the window is
+  // frequently shorter than 12 months (a user with <1 year of history,
+  // or the "Ending" selector set to an early month), and totalSpent above
+  // is already summed only over the real window. Comparing a partial-
+  // period spend total against a hardcoded full-year income baseline
+  // silently overstated the savings rate whenever the window was short.
+  // Found in the 29th adversarial pass.
+  const periodIncome=income*months.length;
+  const savingsRate=periodIncome>0?Math.round((periodIncome-totalSpent)/periodIncome*100):null;
   const dateRange=months.length>1?fmtMonthShort(months[0])+' – '+fmtMonthShort(months[months.length-1]):fmtMonthShort(months[0]);
 
   content.innerHTML=`
@@ -3128,7 +3135,7 @@ function renderYearInReview(){
       ${savingsRate!==null?`<div class="deep-box">
         <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Savings rate</div>
         <div style="font-size:15px;font-weight:800;color:${savingsRate>=20?'#34D399':savingsRate>=10?'#FBBF24':'#F87171'}">${savingsRate}%</div>
-        <div class="text-muted-sm">${fmt(annualIncome)} income</div>
+        <div class="text-muted-sm">${fmt(periodIncome)} income</div>
       </div>`:''}
       ${nwChange!==null?`<div class="deep-box">
         <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Net worth · snapshots</div>
@@ -3249,15 +3256,17 @@ function copyYirSummary(){
     const quietestMonth=byMonth.filter(m=>m.spent>0).reduce((a,b)=>b.spent<a.spent?b:a,byMonth[0]);
     const avgMonth=totalSpent/months.length;
     const income=getEffectiveIncome(months[months.length-1]);
-    const annualIncome=income*12;
-    const savingsRate=annualIncome>0?Math.round((annualIncome-totalSpent)/annualIncome*100):null;
+    // Same window-aware fix as renderYearInReview() -- see the 29th
+    // adversarial pass note there.
+    const periodIncome=income*months.length;
+    const savingsRate=periodIncome>0?Math.round((periodIncome-totalSpent)/periodIncome*100):null;
     const snapsSorted=getSortedSnaps();
     const firstSnap=snapsSorted.find(s=>s.monthKey>=months[0]);
     const lastSnap=snapsSorted.filter(s=>s.monthKey<=months[months.length-1]).slice(-1)[0];
     const nwChange=firstSnap&&lastSnap&&firstSnap!==lastSnap?lastSnap.nw-firstSnap.nw:null;
     const dateRange=months.length>1?`${fmtMonthShort(months[0])} – ${fmtMonthShort(months[months.length-1])}`:fmtMonthShort(months[0]);
     const lines=[
-      `📅 12-month spending summary (${dateRange})`,
+      `📅 ${months.length}-month spending summary (${dateRange})`,
       `Total spent: ${fmt(totalSpent)}`,
       `Avg/month: ${fmt(Math.round(avgMonth))}`,
       topCat?`Top category: ${topCat[0]} (${fmt(topCat[1])})`:null,
@@ -6753,10 +6762,26 @@ function getBudgetHistMonths(ym){
 // Derived "vs average" and "YTD pace" figures for one budgeted category
 function getBudgetRowMetrics(cat,budget,ym,spent,histMonths){
   const avg12=histMonths.length?histMonths.reduce((s,m)=>s+getCatMonthSpend(cat,m),0)/histMonths.length:0;
-  const monthsElapsed=parseInt(ym.slice(5,7),10);
   const year=ym.slice(0,4);
+  const calendarMonth=parseInt(ym.slice(5,7),10);
+  // "YTD" starts from whichever is later: January, or the user's first
+  // tracked month -- a fresh import rarely starts in January, and
+  // monthsElapsed previously always counted from calendar January
+  // regardless, silently deflating ytdPace (and therefore the YTD ring's
+  // ratio) for every category during a user's entire first partial
+  // calendar year -- the most common state for a new user. Found in the
+  // 29th adversarial pass.
+  const firstTracked=ALL_MONTHS.length?ALL_MONTHS[0]:ym;
+  const yearStart=`${year}-01`;
+  const effectiveStart=firstTracked>yearStart?firstTracked:yearStart;
+  const startMo=parseInt(effectiveStart.slice(5,7),10);
+  // Clamped to 0, not just left to go negative -- reachable by navigating
+  // the Budget tab's < arrow to a month before the user's first tracked
+  // month (no lower bound on _budgetNavOffset). ringHTML's ytdPace>0
+  // check already renders "no data" correctly once this can't go negative.
+  const monthsElapsed=Math.max(0,calendarMonth-startMo+1);
   let ytdSpend=0;
-  for(let mo=1;mo<=monthsElapsed;mo++){
+  for(let mo=startMo;mo<=calendarMonth;mo++){
     const m=`${year}-${String(mo).padStart(2,'0')}`;
     ytdSpend+=m===ym?spent:getCatMonthSpend(cat,m);
   }
