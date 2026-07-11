@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ryjmEm4FWcXKSHVTMkUEGd5NddAz1eZuy2urCYipvEM=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-H1CrhtppTjAjDlOaPgH/3cx7G1MBJ8QRDA3JUIi0IaE=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -5816,12 +5816,17 @@ document.addEventListener('click',function(e){
 });
 
 document.addEventListener('keydown',function(e){
-  // Don't fire shortcuts when typing in an input
-  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
-  if(e.key==='?'){
-    document.getElementById('shortcuts-modal').classList.remove('hidden');
-    return;
-  }
+  // Escape is handled before the "don't fire shortcuts while typing" guard
+  // below (unlike every other shortcut) -- the shortcuts modal documents
+  // "Esc: Clear filters · close modals" with no caveat, but many modals
+  // autofocus a text input the instant they open (e.g. the historical-
+  // snapshot modal, the sync-passphrase prompt), so pressing Escape right
+  // after opening one did nothing until the user first clicked/tabbed out
+  // of the field. rename-cat-input is the one exception: it already has
+  // its own Escape handling (renameCatKeydown, which calls
+  // e.stopPropagation() precisely so this block doesn't also fire and
+  // close the whole category modal out from under an in-progress rename).
+  // Found in the 42nd adversarial pass.
   if(e.key==='Escape'){
     // Close cat hide confirm popover first
     if(document.getElementById('cat-hide-confirm-pop')){closeCatHideConfirm();return;}
@@ -5841,6 +5846,13 @@ document.addEventListener('keydown',function(e){
     if(state.activeCats.size>0){state.activeCats=new Set();cleared=true;}
     if(state.searchQuery){state.searchQuery='';const s=document.getElementById('tx-search');if(s)s.value='';document.getElementById('search-clear-btn')?.classList.add('hidden');cleared=true;}
     if(cleared){showTxN=50;renderSpendSummary();renderBucketGrid();renderActiveChart();renderTxList();}
+    return;
+  }
+  // Don't fire other shortcuts when typing in an input
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+  if(e.key==='?'){
+    document.getElementById('shortcuts-modal').classList.remove('hidden');
+    return;
   }
 });
 
@@ -8544,7 +8556,15 @@ function confirmRenameCat(oldName){
 }
 function renameCatKeydown(e,el){
   if(e.key==='Enter')confirmRenameCat(el.dataset.arg);
-  if(e.key==='Escape')cancelRenameCat();
+  // stopImmediatePropagation, not stopPropagation -- both this delegated
+  // data-keydown dispatcher and the global Escape handler (42nd-pass fix
+  // above) are plain bubble-phase listeners on the same document node, so
+  // by the time either fires the event has already fully bubbled up to
+  // document; stopPropagation() has nowhere further to stop and the next
+  // same-node listener (registered later in the file) still runs. Without
+  // stopImmediatePropagation, canceling this inline rename would also
+  // close the whole category modal out from under it.
+  if(e.key==='Escape'){cancelRenameCat();e.stopImmediatePropagation();}
 }
 
 /* ── TX CSV IMPORT ─────────────────────────────────────────── */
@@ -10772,9 +10792,19 @@ function triggerPwaInstall(){
   _installPrompt=null;
   prompt.prompt();
   prompt.userChoice.then(r=>{
+    const btn=document.getElementById('pwa-install-btn');
     if(r.outcome==='accepted'){
-      const btn=document.getElementById('pwa-install-btn');
       if(btn)btn.style.display='none';
+    } else {
+      // A BeforeInstallPromptEvent is spent after its first .prompt() call
+      // regardless of outcome, and browsers don't refire beforeinstallprompt
+      // for the rest of the session -- so once dismissed, this button was
+      // silently dead (the guard above just returns) with no feedback,
+      // looking exactly as clickable as before. Found in the 42nd
+      // adversarial pass. Hide it, same as the accepted branch, and tell
+      // the user why rather than leaving a live-looking dead button.
+      if(btn)btn.style.display='none';
+      showToast('Install dismissed — you can add it from your browser menu anytime',tc('#64748B','#374151'));
     }
   });
 }
