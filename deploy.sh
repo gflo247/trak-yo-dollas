@@ -35,6 +35,20 @@ python3 scripts/check-escaping.py || true
 echo "=== Scanning for spend loops missing the _bizFilter guard (advisory) ==="
 python3 scripts/check-bizfilter-coverage.py || true
 
+# Advisory only, same posture and same underlying pattern as the
+# _bizFilter scanner above — added after passes 34/35/36 found 13+ sites
+# where a hand-rolled state.transactions loop reimplemented getBaseTxs()'s
+# exclusion logic but dropped state.activeSources (the deselected card/
+# account filter) instead of _bizFilter. Kept as a separate script since
+# the two guards are dropped independently. Known false positives:
+# lifetime/unfiltered-by-design loops (buildCatColorMap()), count badges
+# that aren't spend totals, datalist population, deliberate excluded-
+# transaction scans, per-source cache builders whose readers already
+# filter (rebuildMonthly()), and deliberate bulk-recategorization actions
+# (applyVenmoOpt()/checkForVenmoCashouts()).
+echo "=== Scanning for spend loops missing the activeSources guard (advisory) ==="
+python3 scripts/check-activesources-coverage.py || true
+
 # Advisory only, same posture as the scanners above — added after passes
 # 14, 16, and 20 each independently found a function that mutated
 # persisted state (transactions, or another synced field) without
@@ -56,6 +70,22 @@ python3 scripts/check-persistence-coverage.py || true
 # until an unrelated action happened to rebuild them.
 echo "=== Scanning for transaction mutations missing rebuildMonthly() (advisory) ==="
 python3 scripts/check-rebuild-coverage.py || true
+
+# Advisory only, same posture as the scanners above — added after a field
+# added to local persistence (serializeState()) recurred 3 times without
+# also being added to the cloud sync payload (syncToCloud()) and restore
+# logic (loadUserData()): nwGoal/hideNwGoal, then excludedCats and
+# declaredIncome (37th pass). excludedCats in particular gates spend
+# totals app-wide, so this isn't cosmetic — a customized value on one
+# device silently disagreed with another. Known false positives:
+# transactions/snapshots (deliberately separate sync paths, not part of
+# the prefs payload at all), hasRealData/hasRealAccounts/hasRealSnapshot
+# (re-derived flags). A few flagged fields (activeSources, budgetWarnPct,
+# currency) are genuine judgment calls worth a closer look in a future
+# pass rather than an established false positive yet — could plausibly be
+# real gaps, not confirmed either way.
+echo "=== Scanning for fields persisted locally but missing from cloud sync (advisory) ==="
+python3 scripts/check-cloudsync-coverage.py || true
 
 python3 scripts/update-csp-hashes.py
 python3 scripts/update-sitemap-dates.py
