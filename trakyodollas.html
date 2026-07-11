@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ZaTWL0K94ATUhMEQxNDwDgquDMvt+g38M3dgev3ME4k=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-bydBXZaJBLhw8RYCGnU9rFaI1Ftmmwy+kcZJPQYTv3E=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2060,8 +2060,14 @@ function getSortedSnaps(){
 }
 
 // Get transactions for a specific YYYY-MM month, excluding excluded ones
+// Missing state.activeSources.has(t.card) until the 35th adversarial pass --
+// this feeds getCatMonthSpend()/getVendorMonthSpend(), which drive most of
+// the Budget tab (category history dots, 12-month average, YTD ring,
+// "Unusual" sort). Deselecting a card/source left its spend still counted
+// here, silently disagreeing with the Spending tab's chart, which already
+// respects the same toggle.
 function getTxForMonth(m,extraFilter){
-  return state.transactions.filter(t=>t.date.slice(0,7)===m&&!t.excluded&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)&&(!extraFilter||extraFilter(t)));
+  return state.transactions.filter(t=>t.date.slice(0,7)===m&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)&&(!extraFilter||extraFilter(t)));
 }
 
 // Get spend total for a category in a given month
@@ -2412,7 +2418,13 @@ function renderInsights(){
   const allMonths=Object.keys(MONTHLY).sort();
   if(allMonths.length<2){card.style.display='none';return;}
 
-  const sumMonth=m=>Object.values(MONTHLY[m]||{}).reduce((a,b)=>a+b,0);
+  // Sums only state.activeSources, not every source column in the month's
+  // row -- fixed in the 35th adversarial pass. This feeds nearly every
+  // pill on the Insights card (spending up/down, streak, savings rate,
+  // peak-pace projection), all of which silently included deselected
+  // sources' spend before this fix, unlike getMonthlyFiltered() and the
+  // chart's own monthSumsFn, which already summed this way.
+  const sumMonth=m=>{const row=MONTHLY[m]||{};return [...state.activeSources].reduce((s,src)=>s+(row[src]||0),0);};
 
   const curM=allMonths[allMonths.length-1];
   const prevM=allMonths[allMonths.length-2];
@@ -2451,7 +2463,7 @@ function renderInsights(){
   const catChanges=[];
   const curTxBycat={},prevTxBycat={};
   state.transactions.forEach(t=>{
-    if(!isRealSpend(t)||state.excludedCats.has(t.cat))return;
+    if(!isRealSpend(t)||state.excludedCats.has(t.cat)||!state.activeSources.has(t.card))return;
     if(_bizFilter==='biz'&&!t.biz)return;
     if(_bizFilter==='personal'&&t.biz)return;
     const m=t.date.slice(0,7);
@@ -2502,7 +2514,7 @@ function renderInsights(){
   if(fullMonths.length>=3){
     const recentMonths=fullMonths.slice(-6);
     let wkendTotal=0,wkendDays=new Set(),wkdayTotal=0,wkdayDays=new Set();
-    state.transactions.filter(t=>isRealSpend(t)&&!state.excludedCats.has(t.cat)&&recentMonths.includes(t.date.slice(0,7))&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).forEach(t=>{
+    state.transactions.filter(t=>isRealSpend(t)&&!state.excludedCats.has(t.cat)&&state.activeSources.has(t.card)&&recentMonths.includes(t.date.slice(0,7))&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).forEach(t=>{
       const dow=new Date(t.date+'T12:00:00').getDay();
       if(dow===0||dow===6){wkendTotal+=t.amount;wkendDays.add(t.date);}
       else{wkdayTotal+=t.amount;wkdayDays.add(t.date);}
@@ -2590,7 +2602,7 @@ function renderInsights(){
     // Build emotionally resonant savings sub-label
     const allSavingsRates=allMonths.filter(m=>m!==currentM).map(m=>{
       const mInc=getEffectiveIncome(m);
-      const mSpent=state.transactions.filter(t=>t.date.slice(0,7)===m&&isRealSpend(t)&&!state.excludedCats.has(t.cat)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((s,t)=>s+t.amount,0);
+      const mSpent=state.transactions.filter(t=>t.date.slice(0,7)===m&&isRealSpend(t)&&!state.excludedCats.has(t.cat)&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((s,t)=>s+t.amount,0);
       return mInc>0?Math.round(Math.max(0,mInc-mSpent)/mInc*100):null;
     }).filter(v=>v!==null);
     const avgSavingsRate=allSavingsRates.length?Math.round(allSavingsRates.reduce((a,b)=>a+b,0)/allSavingsRates.length):null;
@@ -2727,13 +2739,13 @@ function renderInsights(){
   if(biggestCat){
     const catUp=biggestCat.diff>0;
     const catVendors={};
-    state.transactions.filter(t=>t.date.slice(0,7)===latestFullM&&t.cat===biggestCat.cat&&isRealSpend(t)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz))
+    state.transactions.filter(t=>t.date.slice(0,7)===latestFullM&&t.cat===biggestCat.cat&&isRealSpend(t)&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz))
       .forEach(t=>{catVendors[t.desc]=(catVendors[t.desc]||0)+t.amount;});
     const sortedCatVendors=Object.entries(catVendors).sort((a,b)=>b[1]-a[1]);
     const topVendors=sortedCatVendors.slice(0,3);
     const vendorTooltipLines=sortedCatVendors.map(([v,a])=>`${esc(displayVendor(v))}: ${fmt(a)} (${biggestCat.cur>0?Math.round(a/biggestCat.cur*100):0}%)`).join('&#10;');
     const catMonthlyAmts=allMonths.filter(m=>m!==currentM).map(m=>{
-      let s=0;state.transactions.filter(t=>t.date.slice(0,7)===m&&t.cat===biggestCat.cat&&isRealSpend(t)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).forEach(t=>s+=t.amount);return s;
+      let s=0;state.transactions.filter(t=>t.date.slice(0,7)===m&&t.cat===biggestCat.cat&&isRealSpend(t)&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).forEach(t=>s+=t.amount);return s;
     }).filter(v=>v>0);
     const catAvg=catMonthlyAmts.length?Math.round(catMonthlyAmts.reduce((a,b)=>a+b,0)/catMonthlyAmts.length):0;
     const vsNorm=catAvg>0?Math.round((biggestCat.cur-catAvg)/catAvg*100):null;
@@ -2789,7 +2801,7 @@ function renderInsights(){
   let _narHtml='';
   if(!state.hiddenPills.has('narrative')&&fullMonths.length>=2){
     const MON_FULL=['January','February','March','April','May','June','July','August','September','October','November','December'];
-    const nTx=m=>state.transactions.filter(t=>t.date.slice(0,7)===m&&isRealSpend(t)&&!state.excludedCats.has(t.cat)&&!YIR_EXCLUDE_CATS.has(t.cat)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz));
+    const nTx=m=>state.transactions.filter(t=>t.date.slice(0,7)===m&&isRealSpend(t)&&!state.excludedCats.has(t.cat)&&!YIR_EXCLUDE_CATS.has(t.cat)&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz));
     const nSpend=m=>nTx(m).reduce((s,t)=>s+t.amount,0);
     const nCats=m=>{const r={};nTx(m).forEach(t=>{r[t.cat]=(r[t.cat]||0)+t.amount;});return r;};
     const narSpend=nSpend(latestFullM);
@@ -3074,8 +3086,10 @@ function renderYearInReview(){
     sel.innerHTML=`<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-muted)">Ending: <select data-change="setYirEndMonth" style="background:var(--bg-input);border:1px solid var(--border-mid);border-radius:6px;padding:3px 8px;font-size:12px;color:var(--text-primary);cursor:pointer">${opts}</select></div>`;
   }
 
-  // Aggregate — transfers/investments always excluded from cats/vendors
-  const txs=state.transactions.filter(t=>months.includes(t.date.slice(0,7))&&isRealSpend(t)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz));
+  // Aggregate — transfers/investments always excluded from cats/vendors.
+  // state.activeSources check added in the 35th adversarial pass -- was
+  // silently including deselected sources' spend in every YIR total.
+  const txs=state.transactions.filter(t=>months.includes(t.date.slice(0,7))&&isRealSpend(t)&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz));
   const totalSpent=txs.reduce((s,t)=>s+t.amount,0);
   const byMonth=months.map(m=>({m,label:fmtMonthShort(m),spent:txs.filter(t=>t.date.slice(0,7)===m).reduce((s,t)=>s+t.amount,0)}));
   const biggestMonth=byMonth.reduce((a,b)=>b.spent>a.spent?b:a,byMonth[0]);
@@ -3243,7 +3257,8 @@ function copyYirSummary(){
     const endIdx=_yirEndMonth?Math.max(0,allMonths.indexOf(_yirEndMonth)):allMonths.length-1;
     const months=allMonths.slice(Math.max(0,endIdx-11),endIdx+1);
     if(!months.length){showToast('No data to copy','#FCD34D');return;}
-    const txs=state.transactions.filter(t=>months.includes(t.date.slice(0,7))&&isRealSpend(t)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz));
+    // Same state.activeSources fix as renderYearInReview() above.
+    const txs=state.transactions.filter(t=>months.includes(t.date.slice(0,7))&&isRealSpend(t)&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz));
     const totalSpent=txs.reduce((s,t)=>s+t.amount,0);
     const txsFiltered=txs.filter(t=>!YIR_EXCLUDE_CATS.has(t.cat));
     const byCat={};txsFiltered.forEach(t=>{byCat[t.cat]=(byCat[t.cat]||0)+t.amount;});
@@ -4214,9 +4229,14 @@ function renderBucketGrid(){
     // flat/empty sparkline while the tile's total/count right next to it
     // stayed correct. Found in the 31st adversarial pass.
     const CHECK_RE=/^CHECK (PAID|WRITTEN|#)/i;
+    // state.activeSources check added in the 35th adversarial pass -- the
+    // tile's own total (built from getBaseTxs(), which already respects
+    // it) stayed correct, but this sparkline still included deselected
+    // sources' spend, the same tile-vs-sparkline mismatch shape as the
+    // vendor-alias bug the 31st pass fixed here.
     const pts=grainedPeriods.map(pMonths=>
       pMonths.reduce((s,m)=>s+state.transactions.filter(t=>{
-        if(t.date.slice(0,7)!==m||t.excluded)return false;
+        if(t.date.slice(0,7)!==m||t.excluded||!state.activeSources.has(t.card))return false;
         if(_bizFilter==='biz'&&!t.biz)return false;
         if(_bizFilter==='personal'&&t.biz)return false;
         const key=CHECK_RE.test(t.desc)?'Checks written':resolveVendor(t.desc);
@@ -4227,7 +4247,7 @@ function renderBucketGrid(){
   }
   function catSparkline(cat,color,dashed=false){
     const pts=grainedPeriods.map(pMonths=>
-      pMonths.reduce((s,m)=>s+state.transactions.filter(t=>t.date.slice(0,7)===m&&t.cat===cat&&!t.excluded&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0),0)
+      pMonths.reduce((s,m)=>s+state.transactions.filter(t=>t.date.slice(0,7)===m&&t.cat===cat&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0),0)
     );
     return makeSpark(pts,color,dashed);
   }
@@ -4289,15 +4309,18 @@ function renderBucketGrid(){
         </div>
         <div class="bucket-total" style="color:${color}">${fmt(data.total)}</div>
         <div class="bucket-meta">${(()=>{
+          // state.activeSources check added in the 35th adversarial pass to
+          // all 3 filters below -- was silently including deselected
+          // sources' spend in this "vs your average" badge.
           const filteredMs=getFilteredMonths();
           // Most recent month in filtered range that has any spend for this vendor
-          const vendorMonths=filteredMs.filter(m=>state.transactions.some(t=>t.date.slice(0,7)===m&&resolveVendor(t.desc)===vendor&&!t.excluded&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)));
+          const vendorMonths=filteredMs.filter(m=>state.transactions.some(t=>t.date.slice(0,7)===m&&resolveVendor(t.desc)===vendor&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)));
           if(!vendorMonths.length)return`${data.count} transactions · ${fmt(avg)}${grainLabel}`;
           const latestM=vendorMonths[vendorMonths.length-1];
-          const curAmt=state.transactions.filter(t=>t.date.slice(0,7)===latestM&&resolveVendor(t.desc)===vendor&&!t.excluded&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0);
+          const curAmt=state.transactions.filter(t=>t.date.slice(0,7)===latestM&&resolveVendor(t.desc)===vendor&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0);
           // Average only over months with actual spend for this vendor
           const spendMonths=vendorMonths.slice(0,-1); // exclude latest to compare against
-          const periodAvg=spendMonths.length>0?Math.round(spendMonths.map(m=>state.transactions.filter(t=>t.date.slice(0,7)===m&&resolveVendor(t.desc)===vendor&&!t.excluded&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0)).reduce((a,b)=>a+b,0)/spendMonths.length):0;
+          const periodAvg=spendMonths.length>0?Math.round(spendMonths.map(m=>state.transactions.filter(t=>t.date.slice(0,7)===m&&resolveVendor(t.desc)===vendor&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0)).reduce((a,b)=>a+b,0)/spendMonths.length):0;
           const vsAvg=periodAvg>0&&curAmt>0?Math.round((curAmt-periodAvg)/periodAvg*100):0;
           const sig=periodAvg>0?(vsAvg>=20?`<span class="text-danger">↑${vsAvg}%</span> · `:vsAvg<=-20?`<span class="text-success">↓${Math.abs(vsAvg)}%</span> · `:Math.abs(vsAvg)>=5?`<span style="color:#64748B">${vsAvg>=0?'+':''}${vsAvg}%</span> · `:''):'';
           return`${sig}${data.count} transactions · Avg: ${fmt(avg)}${grainLabel}`;
@@ -4388,13 +4411,16 @@ function renderBucketGrid(){
     const sc=esc(cat);
     const budget=state.budgets[cat];
     const filteredMs=getFilteredMonths();
+    // state.activeSources check added in the 35th adversarial pass to all
+    // 4 filters below -- the vendor-tile twin of this exact badge had the
+    // identical gap, fixed in the same pass.
     // Most recent month in filtered range with spend for this category
-    const catMonths=filteredMs.filter(m=>state.transactions.some(t=>t.date.slice(0,7)===m&&t.cat===cat&&!t.excluded&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)));
+    const catMonths=filteredMs.filter(m=>state.transactions.some(t=>t.date.slice(0,7)===m&&t.cat===cat&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)));
     const latestCatM=catMonths.length?catMonths[catMonths.length-1]:null;
-    const curAmt=latestCatM?(state.transactions||[]).filter(t=>t.date.slice(0,7)===latestCatM&&t.cat===cat&&!t.excluded&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0):0;
+    const curAmt=latestCatM?(state.transactions||[]).filter(t=>t.date.slice(0,7)===latestCatM&&t.cat===cat&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0):0;
     // Average only over months with actual spend (excluding latest)
     const priorCatMonths=catMonths.slice(0,-1);
-    const periodAvg=priorCatMonths.length>0?Math.round(priorCatMonths.map(m=>(state.transactions||[]).filter(t=>t.date.slice(0,7)===m&&t.cat===cat&&!t.excluded&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0)).reduce((a,b)=>a+b,0)/priorCatMonths.length):s.avg;
+    const periodAvg=priorCatMonths.length>0?Math.round(priorCatMonths.map(m=>(state.transactions||[]).filter(t=>t.date.slice(0,7)===m&&t.cat===cat&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0)).reduce((a,b)=>a+b,0)/priorCatMonths.length):s.avg;
     const vsAvg=periodAvg>0?Math.round((curAmt-periodAvg)/periodAvg*100):0;
     const signal=curAmt>0?(vsAvg>=20?`<span class="text-danger">↑${vsAvg}%</span>`:vsAvg<=-20?`<span class="text-success">↓${Math.abs(vsAvg)}%</span>`:(Math.abs(vsAvg)>=5?`<span style="color:#64748B">${vsAvg>=0?'+':''}${vsAvg}%</span>`:'')):'';
     // Compact budget badge — replaces progress bar
@@ -6972,7 +6998,10 @@ function renderBudgetTab(){
   // Spending tab's charts but are still real outgoing spend a user may legitimately want to
   // budget (the demo data itself ships a real budget on "Transfers") — only Income is never
   // spend under any circumstance, so it's the one category this tab must always exclude.
-  const monthTx=state.transactions.filter(t=>t.date.slice(0,7)===ym&&isRealSpend(t)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz));
+  // state.activeSources check added in the 35th adversarial pass -- this
+  // drives the whole tab's spendByCat/totalSpent/overallPct; was silently
+  // including deselected sources' spend.
+  const monthTx=state.transactions.filter(t=>t.date.slice(0,7)===ym&&isRealSpend(t)&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz));
   const spendByCat={};
   monthTx.forEach(t=>{spendByCat[t.cat]=(spendByCat[t.cat]||0)+t.amount;});
   // Per-source latest date → use earliest across active sources (most conservative)
@@ -8165,7 +8194,17 @@ function showToast(msg,color,duration){
   clearTimeout(t._timer);
   t._timer=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(-50%) translateY(80px)';},duration||2800);
 }
-let _pendingDeleteSnapIdx=null;
+// Keyed by monthKey, not array index -- deleteSnapshot() opens the confirm
+// dialog well before confirmDeleteSnapshot() actually fires (a user has to
+// click Confirm), and the comment below documents that loadUserData()'s
+// cloud pull can run with no modal shown and unconditionally overwrites
+// state.snapshots wholesale once it resolves. A stale index captured at
+// dialog-open time could then point at a completely different snapshot
+// (or nothing) by confirm time, deleting the wrong one with no error.
+// monthKey is stable across that overwrite (one snapshot per month) and
+// is re-resolved to a live index only at the moment of the actual splice.
+// Found in the 35th adversarial pass.
+let _pendingDeleteSnapMonthKey=null;
 // saveSnapshot()/confirmDeleteSnapshot() write directly to Supabase (unlike
 // prefs, which go through the debounced scheduleSave()/syncToCloud() path
 // that already checks _awaitingCloudMerge) -- calling this instead of
@@ -8195,20 +8234,19 @@ function _fbCallAfterMerge(fn){
 function deleteSnapshot(i){
   const s=state.snapshots[i];
   if(!s)return;
-  _pendingDeleteSnapIdx=i;
+  _pendingDeleteSnapMonthKey=s.monthKey;
   const desc=document.getElementById('delete-snap-desc');
   if(desc)desc.textContent=`This will permanently delete the snapshot for ${s.date} — net worth ${fmtC(s.nw)}.`;
   document.getElementById('delete-snap-modal').classList.remove('hidden');
 }
 function confirmDeleteSnapshot(){
-  const i=_pendingDeleteSnapIdx;
-  if(i===null||i===undefined)return;
-  const s=state.snapshots[i];
-  if(!s){closeModals();return;}
-  const monthKey=s.monthKey;
+  const monthKey=_pendingDeleteSnapMonthKey;
+  if(!monthKey)return;
+  const i=state.snapshots.findIndex(s=>s.monthKey===monthKey);
+  if(i===-1){_pendingDeleteSnapMonthKey=null;closeModals();return;}
   state.snapshots.splice(i,1);
   if(!state.snapshots.length)state.hasRealSnapshot=false;
-  _pendingDeleteSnapIdx=null;
+  _pendingDeleteSnapMonthKey=null;
   closeModals();
   renderHistory();renderNwChart();
   if(window._fbUser&&window._fb&&monthKey&&!window._isDemoPreview&&!window._viewingDemoOverReal){
@@ -10107,6 +10145,7 @@ function saveVehicle(){
   if(editVehicleId){
     const v=state.vehicles.find(x=>x.id===editVehicleId);
     if(v){
+      const oldName=v.name;
       Object.assign(v,{year,make,model,condition,miles,value,purchase,purchaseYear,vin,assetType,name});
       // Vehicles/assets are paired 1:1 with a state.accounts entry via
       // acctId, so editing one never touches another vehicle's account —
@@ -10119,10 +10158,21 @@ function saveVehicle(){
       let a=v.acctId!=null?state.accounts.find(x=>x.id===v.acctId):null;
       if(!a){
         const claimed=new Set(state.vehicles.filter(o=>o.id!==v.id&&o.acctId!=null).map(o=>o.acctId));
-        // Legacy pre-fix records may have been paired with an account mistagged
-        // type:'vehicle' even for an 'other' asset (see note above the push()
-        // below) — match either type once, then self-heal the type on save.
-        a=state.accounts.find(x=>(x.type==='vehicle'||x.type==='other-asset')&&!claimed.has(x.id));
+        // The claimed-account exclusion above only helps once at least one
+        // sibling vehicle has already self-healed an acctId this session —
+        // two still-unpaired legacy vehicles both resolve to an empty
+        // claimed set, so editing either one first could grab whichever
+        // vehicle-type account happened to be first in array order and
+        // silently corrupt the OTHER vehicle's real account. Prefer an
+        // exact name match against the account's stored name (which was
+        // set to the vehicle's name at creation time and only diverges if
+        // either side is later renamed) before falling back to blind
+        // first-unclaimed-of-type — oldName captured above, before
+        // Object.assign overwrites v.name with this edit's new value, so a
+        // same-edit rename doesn't defeat its own match. Found in the 35th
+        // adversarial pass.
+        a=state.accounts.find(x=>(x.type==='vehicle'||x.type==='other-asset')&&!claimed.has(x.id)&&x.name===oldName)
+          ||state.accounts.find(x=>(x.type==='vehicle'||x.type==='other-asset')&&!claimed.has(x.id));
       }
       if(a){a.balance=value;a.name=name;a.type=assetType==='other'?'other-asset':'vehicle';v.acctId=a.id;}
     }
