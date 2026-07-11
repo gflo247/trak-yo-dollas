@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-UV2BDljOFxyGRdpXJLgTvqpiECos5z8sSnnO2q9bQDw=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-icYkFSXUOo4jKlMyhq73wol/aiRabK+kUTYtLIe4qnc=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -6660,6 +6660,13 @@ function addVendorAlias(){
   const to=document.getElementById('alias-to').value.trim();
   if(!from||!to){showToast('Enter both vendor names','#FCD34D');return;}
   if(from.toUpperCase()===to.toUpperCase()){showToast('Alias and target must be different','#FCD34D');return;}
+  // Same '__'-prefix reserved-word check as isReservedCatName() (§ category
+  // names) -- merging a vendor to a name like '__other__' makes
+  // resolveVendor() resolve real transactions to that string, which
+  // Treemap's vendor-tile view (renderTreemap()'s drillCat branch) then
+  // silently mislabels/recolors as its synthetic "Other" grouping instead
+  // of the real merged vendor name. Found in the 33rd adversarial pass.
+  if(isReservedCatName(to)){showToast('That target name is reserved — try a different one','#FCD34D');return;}
   // resolveVendor(to) walks the *existing* chain forward from `to`; if it
   // already terminates at `from`, adding from->to would close a loop
   // (A->B, B->A, or a longer multi-hop cycle) that silently neutralizes
@@ -7685,7 +7692,21 @@ function detectSubscriptions(allMonths,latestFullM){
 
 function openSubscriptionsModal(){
   const allMonths=Object.keys(MONTHLY).sort();
-  const latestM=allMonths.slice(-1)[0];
+  // Last *completed* month, not just the latest month with any data --
+  // renderInsights() already computes latestFullM this way (excluding
+  // the current in-progress month) for the same detectSubscriptions()
+  // call; this modal instead used whatever month had any transaction at
+  // all, including the current partial month the moment anything posts
+  // to it. A subscription billed later in the month (e.g. the 25th) then
+  // has no entry yet for that partial month, so detectSubscriptions()'s
+  // exact-month lookup silently dropped it from the list entirely --
+  // not shown with a stale amount, just absent -- until its own charge
+  // posted, at which point it could vanish again early the following
+  // month. Found in the 33rd adversarial pass.
+  const today=new Date();
+  const thisYM=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+  const fullMonths=allMonths.filter(m=>m<thisYM);
+  const latestM=fullMonths.length?fullMonths[fullMonths.length-1]:allMonths.slice(-1)[0];
   const {subVendors,subTotal}=detectSubscriptions(allMonths,latestM);
   const list=document.getElementById('subscriptions-list');
   if(!list)return;
@@ -8275,12 +8296,27 @@ function renderCatManagerList(){
   }).join('');
   if(_editingCatName){const inp=document.getElementById('rename-cat-input');if(inp){inp.focus();inp.select();}}
 }
+// Category names starting with '__' collide with the internal synthetic
+// bucket keys renderSankey()/renderTreemap() use to group "everything
+// else" (__other__, __filtered_out__, __remaining__, __income__) --
+// those functions distinguish a real category from their own synthetic
+// buckets purely by string identity, so a real category sharing one of
+// those exact ids gets silently merged into (Treemap) or, worse for
+// __income__ specifically, corrupts the entire Sankey diagram's layout
+// (d3-sankey's node-id lookup keeps only the last of two same-id nodes,
+// so the real income node loses every link to the newly-added
+// look-alike category node). Named categories only ever come from user
+// input (addCustomCat/confirmRenameCat below), so rejecting the '__'
+// prefix at that single boundary closes the whole collision class by
+// construction rather than special-casing each synthetic key as it's
+// discovered. Found in the 33rd adversarial pass.
+const isReservedCatName=name=>name.startsWith('__');
 function addCustomCat(){
   const nameEl=document.getElementById('new-cat-name');
   if(!nameEl)return;
   const name=nameEl.value.trim();
   if(!name)return;
-  if(getAllCats().some(c=>c.toLowerCase()===name.toLowerCase())){
+  if(isReservedCatName(name)||getAllCats().some(c=>c.toLowerCase()===name.toLowerCase())){
     nameEl.style.borderColor='#F87171';
     setTimeout(()=>{nameEl.style.borderColor='';},1500);
     return;
@@ -8338,7 +8374,7 @@ function confirmRenameCat(oldName){
   if(!inp)return;
   const newName=inp.value.trim();
   if(!newName||newName===oldName){cancelRenameCat();return;}
-  if(getAllCats().filter(c=>c!==oldName).some(c=>c.toLowerCase()===newName.toLowerCase())){
+  if(isReservedCatName(newName)||getAllCats().filter(c=>c!==oldName).some(c=>c.toLowerCase()===newName.toLowerCase())){
     inp.style.borderColor='#F87171';
     setTimeout(()=>{inp.style.borderColor='';},1500);
     return;
