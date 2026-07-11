@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-C5/Cw5wqBhaYCqLby2B4qLaoSzED6vm8IOBYiD8zh/8=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-UV2BDljOFxyGRdpXJLgTvqpiECos5z8sSnnO2q9bQDw=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -4567,7 +4567,19 @@ function renderTreemap(drillCat){
   const allCatEntries=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
   const topEntries=allCatEntries.slice(0,8);
   const otherCatTotal=allCatEntries.slice(8).reduce((s,[,v])=>s+v,0);
-  if(otherCatTotal>0)topEntries.push(['Other',otherCatTotal]);
+  // Namespaced key, not the literal display string 'Other' -- 'Other' is
+  // also a real, permanent BASE_CATEGORIES entry (the universal catch-all
+  // every categorization tier falls back to), so reusing it as this
+  // synthetic "beyond top 8" bucket's key collided with any real "Other"
+  // spend: drilling into it always dead-ended (the guard below couldn't
+  // tell the synthetic tile from the real category), and if real "Other"
+  // spend happened to rank in the top 8 on its own, two same-keyed tiles
+  // could render at once. Sankey's equivalent grouping already used a
+  // namespaced '__other__' id for the same reason. Found in the 32nd
+  // adversarial pass.
+  const OTHER_KEY='__other__';
+  if(otherCatTotal>0)topEntries.push([OTHER_KEY,otherCatTotal]);
+  const tmDisplayName=name=>name===OTHER_KEY?'Other':name;
 
   const data=drillCat
     ?Object.entries(catVendors[drillCat]||{}).map(([name,value])=>({name,value})).sort((a,b)=>b.value-a.value)
@@ -4583,7 +4595,7 @@ function renderTreemap(drillCat){
       bfn.textContent=`${drillCat} · ${fmtC(catTotal)} · ${catPct}% of total spend · percentages show share within category`;
     } else {
       const allTotal=Object.values(catTotals).reduce((a,b)=>a+b,0);
-      const topTotal=data.filter(d=>d.name!=='Other').reduce((s,d)=>s+d.value,0);
+      const topTotal=data.filter(d=>d.name!==OTHER_KEY).reduce((s,d)=>s+d.value,0);
       const topPct=allTotal>0?Math.round(topTotal/allTotal*100):0;
       const numCats=Object.keys(catTotals).length;
       bfn.textContent=numCats>8?`Top 8 of ${numCats} categories · ${topPct}% of spend · remaining grouped into Other`:`${numCats} categories · 100% of spend`;
@@ -4622,12 +4634,12 @@ function renderTreemap(drillCat){
           if(txEl)requestAnimationFrame(()=>{const nav=document.querySelector('nav.nav');const offset=(nav?nav.offsetHeight:60)+16;const y=txEl.getBoundingClientRect().top+window.scrollY-offset;window.scrollTo({top:y,behavior:'smooth'});});
         }
       } else {
-        // Category tile clicked — drill into vendors. "Other" is a synthetic
-        // grouping of categories beyond the top 8, not a real category key in
-        // catVendors, so drilling into it always dead-ended on "No data for
-        // this period" — renderSankey already guards its equivalent grouped
-        // node (id==='__other__') the same way.
-        if(d.data.name==='Other')return;
+        // Category tile clicked — drill into vendors. __other__ is a
+        // synthetic grouping of categories beyond the top 8, not a real
+        // category key in catVendors, so drilling into it always
+        // dead-ended on "No data for this period" — renderSankey already
+        // guards its equivalent grouped node the same way.
+        if(d.data.name===OTHER_KEY)return;
         renderTreemap(d.data.name);
       }
     })
@@ -4638,17 +4650,18 @@ function renderTreemap(drillCat){
       if(x+180>W)x=e.clientX-rect.left-194;
       if(y<0)y=4;
       tip.style.cssText=`display:block;left:${x}px;top:${y}px;position:absolute`;
-      tip.innerHTML=`<strong>${esc(d.data.name)}</strong>${fmtC(d.data.value)}${drillCat?` · ${pct}% of ${esc(drillCat)}`:`· ${pct}% of spend`}`;
+      tip.innerHTML=`<strong>${esc(tmDisplayName(d.data.name))}</strong>${fmtC(d.data.value)}${drillCat?` · ${pct}% of ${esc(drillCat)}`:`· ${pct}% of spend`}`;
     })
     .on('mouseleave',()=>{tip.style.display='none';});
 
+  const tmTileColor=d=>d.data.name===OTHER_KEY?tc('#78716c','#a8a29e'):getCatColor(drillCat||d.data.name);
   cell.append('rect')
     .attr('class','tm-tile-rect')
     .attr('width',d=>Math.max(0,d.x1-d.x0))
     .attr('height',d=>Math.max(0,d.y1-d.y0))
     .attr('rx',4)
-    .attr('fill',d=>getCatColor(drillCat||d.data.name)+'44')
-    .attr('stroke',d=>getCatColor(drillCat||d.data.name))
+    .attr('fill',d=>tmTileColor(d)+'44')
+    .attr('stroke',d=>tmTileColor(d))
     .attr('stroke-width',2)
     .attr('stroke-opacity',1);
 
@@ -4656,15 +4669,16 @@ function renderTreemap(drillCat){
     const w=d.x1-d.x0,h=d.y1-d.y0;
     if(w<36||h<20)return;
     const g=d3.select(this);
-    const tc=getCatColor(drillCat||d.data.name);
+    const tileColor=tmTileColor(d);
     const pct=Math.round(d.data.value/total*100);
-    const label=d.data.name.length>16&&w<120?d.data.name.slice(0,14)+'…':d.data.name;
+    const dispName=tmDisplayName(d.data.name);
+    const label=dispName.length>16&&w<120?dispName.slice(0,14)+'…':dispName;
     if(h>44&&w>70){
-      g.append('text').attr('x',7).attr('y',19).attr('font-size',w>140?13:10).attr('font-weight','600').attr('fill',tc).text(label);
-      g.append('text').attr('x',7).attr('y',33).attr('font-size',10).attr('fill',tc).attr('opacity',.85).text(fmtC(d.data.value)+(drillCat?'':' · '+pct+'%'));
+      g.append('text').attr('x',7).attr('y',19).attr('font-size',w>140?13:10).attr('font-weight','600').attr('fill',tileColor).text(label);
+      g.append('text').attr('x',7).attr('y',33).attr('font-size',10).attr('fill',tileColor).attr('opacity',.85).text(fmtC(d.data.value)+(drillCat?'':' · '+pct+'%'));
     } else if(h>24&&w>50){
-      g.append('text').attr('x',5).attr('y',15).attr('font-size',9).attr('font-weight','600').attr('fill',tc).text(d.data.name.split(' ')[0]);
-      g.append('text').attr('x',5).attr('y',26).attr('font-size',9).attr('fill',tc).attr('opacity',.85).text(fmtC(d.data.value));
+      g.append('text').attr('x',5).attr('y',15).attr('font-size',9).attr('font-weight','600').attr('fill',tileColor).text(dispName.split(' ')[0]);
+      g.append('text').attr('x',5).attr('y',26).attr('font-size',9).attr('fill',tileColor).attr('opacity',.85).text(fmtC(d.data.value));
     }
   });
   restoreActiveVendor();
@@ -4743,7 +4757,15 @@ function renderSankey(){
     ?[...bigCats,...(smallTotal>0?[['__other__',smallTotal]]:[])]:
     [...allCats];
   if(filteredOutSpend>0)cats.push(['__filtered_out__',filteredOutSpend]);
-  if(saved>0)cats.push(['Remaining',saved]);
+  // Namespaced key, not the literal display string 'Remaining' -- nothing
+  // stops a user from creating/renaming a real category to exactly
+  // "Remaining" (addCustomCat()/confirmRenameCat() only check for
+  // duplicates against existing category names, no reserved-word check),
+  // and d3-sankey's node lookup keeps only the last of two same-id nodes,
+  // so a real "Remaining" category's spend would silently merge into this
+  // synthetic savings bucket while the real category's own node renders
+  // as a data-less orphan. Found in the 32nd adversarial pass.
+  if(saved>0)cats.push(['__remaining__',saved]);
 
   const isDark=getIsDark();
   const incomeColor=isOverspend?(isDark?'#F87171':'#EF4444'):(isDark?'#60A5FA':'#2563EB');
@@ -4767,8 +4789,8 @@ function renderSankey(){
     {id:'__income__',name:`${monthCount}mo income`,color:incomeColor},
     ...cats.map(([cat])=>({
       id:cat,
-      name:cat==='__other__'?otherNodeLabel:cat==='__filtered_out__'?filteredOutNodeLabel:cat,
-      color:cat==='Remaining'?(isDark?'#4b5563':'#94a3b8'):cat==='__other__'||cat==='__filtered_out__'?(isDark?'#78716c':'#a8a29e'):getCatColor(cat)
+      name:cat==='__other__'?otherNodeLabel:cat==='__filtered_out__'?filteredOutNodeLabel:cat==='__remaining__'?'Remaining':cat,
+      color:cat==='__remaining__'?(isDark?'#4b5563':'#94a3b8'):cat==='__other__'||cat==='__filtered_out__'?(isDark?'#78716c':'#a8a29e'):getCatColor(cat)
     }))
   ];
   const links=cats.map(([cat,val])=>({source:'__income__',target:cat,value:val}));
@@ -4819,15 +4841,15 @@ function renderSankey(){
       // handler opens the declared-income modal (not a filter reset), so
       // there's no valid "reset" case for a link to special-case here;
       // links should drill into their category exactly like clicking the
-      // category's node does. __other__/__filtered_out__ are grouped
-      // buckets, not real categories, and 'Remaining' is savings, not
-      // spend -- toggleCatFilter() on any of these would silently filter
-      // to a "category" no transaction ever has, producing an empty tx
-      // list with no explanation. The 'Remaining' guard was a
-      // pre-existing latent bug (never previously reachable to notice,
-      // since Remaining always used to fill the whole rest of the
-      // diagram) found alongside this fix in the 31st adversarial pass.
-      if(d.target.id==='__other__'||d.target.id==='__filtered_out__'||d.target.id==='Remaining')return;
+      // category's node does. __other__/__filtered_out__/__remaining__
+      // are synthetic buckets, not real categories -- toggleCatFilter()
+      // on any of these would silently filter to a "category" no
+      // transaction ever has, producing an empty tx
+      // list with no explanation. The Remaining guard was a pre-existing
+      // latent bug (never previously reachable to notice, since Remaining
+      // always used to fill the whole rest of the diagram) found
+      // alongside this fix in the 31st adversarial pass.
+      if(d.target.id==='__other__'||d.target.id==='__filtered_out__'||d.target.id==='__remaining__')return;
       const wasActive=state.activeCats.has(d.target.name);
       toggleCatFilter(d.target.name);
       if(!wasActive)requestAnimationFrame(()=>{
@@ -4861,9 +4883,9 @@ function renderSankey(){
         return;
       }
       // See the matching comment on the link click handler above --
-      // __other__/__filtered_out__ are grouped buckets and 'Remaining'
-      // is savings, none are real categories to filter by.
-      if(d.id==='__other__'||d.id==='__filtered_out__'||d.id==='Remaining')return;
+      // __other__/__filtered_out__/__remaining__ are synthetic buckets,
+      // none are real categories to filter by.
+      if(d.id==='__other__'||d.id==='__filtered_out__'||d.id==='__remaining__')return;
       const wasActive=state.activeCats.has(d.name);
       toggleCatFilter(d.name);
       if(!wasActive)requestAnimationFrame(()=>{
@@ -10787,6 +10809,15 @@ const DEMO_PROFILE_1 = {
     {date:'Apr 30, 2026',label:'Apr',monthKey:'2026-04',nw:20360,assets:38760,liab:18400},
   ],
   budgets:{'Groceries':280,'Food & Drink':180,'Rent':1350,'Transportation':120,'Bills & Utilities':150,'Shopping':150,'Entertainment':80,'Health & Wellness':60},
+  // 'Rent'/'Transportation' aren't in BASE_CATEGORIES -- without registering
+  // them here, getAllCats() never lists them, so the Edit Transaction
+  // modal's category <select> has no matching <option> for either. Editing
+  // ANY field of a Rent/Transportation transaction (not just the category)
+  // then silently blanked t.cat to '' on save, since the unmatched <select>
+  // reads back as ''. Found in the 32nd adversarial pass -- reachable via
+  // the very first demo profile every new visitor sees, on its single most
+  // common transaction type (Rent, tagged once per month).
+  customCategories:[{name:'Rent',color:null},{name:'Transportation',color:null}],
   activeSources:new Set(['Checking','Visa Rewards']),
   rangeFrom:'2025-06',
   rangeTo:null,
