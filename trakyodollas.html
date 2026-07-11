@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Ytb+K3SuX8NccHfP+VHMAwie9P3MnZg/bCNioSC3Wp0=' 'sha256-4nt7g+jpE2RAJHTKJD5QTky+hzHU3Y9XFOZOewSHm/U=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-9sVku8RHOKgx8xMLUc+Xumn9ihR9AhkLesUKKSAfIYA=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -7706,7 +7706,20 @@ function detectSubscriptions(allMonths,latestFullM){
   // this one didn't, so deselecting a card/account left its recurring
   // charges still counted here, silently disagreeing with every other
   // figure on the page.
-  state.transactions.filter(t=>isRealSpend(t)&&!state.excludedCats.has(t.cat)&&state.activeSources.has(t.card)&&recentMonths.includes(t.date.slice(0,7))&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).forEach(t=>{
+  //
+  // !t.is_offset added in the 37th adversarial pass -- isRealSpend() only
+  // strips excluded/income transactions, not offset credits (the one
+  // source of a negative t.amount, set by applyVenmoOpt()). A recurring
+  // Venmo-cashout offset isn't a subscription -- it's a recurring credit,
+  // the opposite concept -- but beyond being conceptually wrong to
+  // include, its negative amounts also broke the consistency check below:
+  // when a vendor's entries are all negative, `median` is negative, and
+  // Math.abs(a-median)/median is always <= 0, so amts.every(...<0.20) is
+  // unconditionally true regardless of actual variance -- a wildly
+  // inconsistent set of offset credits could still pass as "consistent"
+  // and get listed as a subscription with a negative monthly cost,
+  // silently subtracting from the displayed recurring-spend total.
+  state.transactions.filter(t=>isRealSpend(t)&&!t.is_offset&&!state.excludedCats.has(t.cat)&&state.activeSources.has(t.card)&&recentMonths.includes(t.date.slice(0,7))&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).forEach(t=>{
     const v=resolveVendor(t.desc);
     if(!vendorMonths[v])vendorMonths[v]=[];
     vendorMonths[v].push({m:t.date.slice(0,7),amt:t.amount,desc:t.desc,cat:t.cat});
@@ -9536,7 +9549,17 @@ function skipSourceAlignPermanent(){
 }
 
 function checkForVenmoCashouts(txs){
-  const cashouts=txs.filter(t=>t.desc&&t.desc.toUpperCase().includes('VENMO CASHOUT'));
+  // !t.is_offset added in the 37th adversarial pass -- since the 36th
+  // pass made is_offset/the offset sign round-trip correctly through
+  // exportTransactionsCSV()/re-import, a transaction that was already
+  // resolved through this exact modal (Shopping, or a custom category)
+  // now imports back with is_offset:true intact. Without this check, any
+  // re-import of your own backup CSV (restoring on a new device, or just
+  // verifying a round-trip) re-opened this modal for transactions that
+  // don't need it -- and the modal's "Shopping" option is pre-selected by
+  // default, so clicking Apply without noticing could silently overwrite
+  // an already-correct custom category back to Shopping.
+  const cashouts=txs.filter(t=>t.desc&&t.desc.toUpperCase().includes('VENMO CASHOUT')&&!t.is_offset);
   if(!cashouts.length)return;
   const total=cashouts.reduce((s,t)=>s+Math.abs(t.amount),0);
   const countEl=document.getElementById('venmo-cashout-count');
@@ -9887,6 +9910,8 @@ async function loadUserData(uid) {
       if (prefs.budgets) state.budgets = prefs.budgets;
       if (prefs.catRules) state.catRules = prefs.catRules;
       if (prefs.income) state.income = prefs.income;
+      if (prefs.declaredIncome !== undefined) state.declaredIncome = prefs.declaredIncome;
+      if (Array.isArray(prefs.excludedCats)) state.excludedCats = new Set(prefs.excludedCats);
       if (prefs.includeIncome !== undefined) { state.includeIncome = prefs.includeIncome; _bizFilter='all'; }
       if (prefs.nwGoal !== undefined) state.nwGoal = prefs.nwGoal;
       if (prefs.hideNwGoal !== undefined) state.hideNwGoal = prefs.hideNwGoal;
@@ -9954,6 +9979,15 @@ async function syncToCloud() {
       budgets: state.budgets,
       catRules: state.catRules,
       income: state.income,
+      // declaredIncome/excludedCats were both missing from this payload
+      // (and never read back by loadUserData()) until the 37th adversarial
+      // pass -- the same "field persisted locally but never synced" gap
+      // an earlier pass already found and fixed for nwGoal. excludedCats
+      // in particular gates spend totals at dozens of call sites app-wide,
+      // not a cosmetic setting -- a customized exclusion set on one device
+      // silently reverted to the hardcoded default on another.
+      declaredIncome: state.declaredIncome,
+      excludedCats: [...state.excludedCats],
       hiddenPills: [...state.hiddenPills],
       vendorAliases: state.vendorAliases,
       accounts: state.accounts,
@@ -11338,13 +11372,25 @@ window._fb = {
   },
   async savePrefs(uid, prefs) {
     const encrypted = await _encrypt(prefs, uid);
+    // Explicit onConflict target, found in the 37th adversarial pass --
+    // same gap the 36th pass fixed for saveSnapshot()'s upsert, just here
+    // on the table that holds the user's ENTIRE cloud-synced state
+    // (categories, budgets, rules, accounts, vehicles, all transactions)
+    // and is written on every syncToCloud() call, far more often than a
+    // once-a-month snapshot. Without a conflict target, a second tab/
+    // device whose upsert doesn't resolve against the existing row could
+    // insert a fresh one instead of updating it.
     const { error } = await _sb.from('prefs').upsert({
       user_id: uid, data: encrypted, updated_at: new Date().toISOString()
-    });
+    }, { onConflict: 'user_id' });
     if (error) throw error;
   },
   async loadPrefs(uid) {
-    const { data, error } = await _sb.from('prefs').select('data').eq('user_id', uid);
+    // Ordered + limited to the most recent row, found alongside the
+    // onConflict fix above -- without this, if any duplicate rows already
+    // exist from the pre-fix window, which one "wins" on load was
+    // whatever Postgres/PostgREST happened to return first, unspecified.
+    const { data, error } = await _sb.from('prefs').select('data').eq('user_id', uid).order('updated_at', { ascending: false }).limit(1);
     if (error) throw error;
     const row = data?.[0]?.data;
     if (!row) return null;
