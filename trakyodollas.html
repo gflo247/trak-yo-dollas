@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-bydBXZaJBLhw8RYCGnU9rFaI1Ftmmwy+kcZJPQYTv3E=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Ytb+K3SuX8NccHfP+VHMAwie9P3MnZg/bCNioSC3Wp0=' 'sha256-4nt7g+jpE2RAJHTKJD5QTky+hzHU3Y9XFOZOewSHm/U=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -7617,7 +7617,14 @@ function exportTransactionsCSV(){
   // transaction silently loses its Business/Personal tag (found in the
   // 27th adversarial pass — t.biz is read by ~30 call sites gated on
   // _bizFilter, but was never written to or read from the CSV at all).
-  const headers=['Date','Description','Vendor','Category','Amount','Source','Excluded','IsIncome','Business'];
+  // IsOffset is included for the same reason: applyVenmoOpt() is the one
+  // place in the app that produces a negative t.amount (an offset credit
+  // that reduces a category's spend total, shown green/no-% in the tx
+  // list) — without this column, re-import stripped the sign and forced
+  // is_offset:false, silently flipping a -$50 offset credit into a +$50
+  // ordinary expense: a $100 swing on that category/month's total, not
+  // just a display change. Found in the 36th adversarial pass.
+  const headers=['Date','Description','Vendor','Category','Amount','Source','Excluded','IsIncome','Business','IsOffset'];
   const rows=txs.map(t=>[
     t.date,
     csvSafeField(t.desc),
@@ -7627,7 +7634,8 @@ function exportTransactionsCSV(){
     csvSafeField(t.card),
     t.excluded?'yes':'no',
     t.isIncome?'yes':'no',
-    t.biz?'yes':'no'
+    t.biz?'yes':'no',
+    t.is_offset?'yes':'no'
   ].join(','));
 
   const csv=[headers.join(','),...rows].join('\n');
@@ -8814,7 +8822,7 @@ function _creditDepositCat(desc){
 }
 
 function normalizeTxRow(row, source){
-  let date, desc, amount, cat='Other', excluded=false, mcc='', isIncome=false, biz;
+  let date, desc, amount, cat='Other', excluded=false, mcc='', isIncome=false, biz, isOffset=false;
 
   if(importFmt==='ally'){
     date=row['date']||row['date ']||'';
@@ -8967,12 +8975,18 @@ function normalizeTxRow(row, source){
   } else if(importFmt==='trakyodollas'){
     // Our own exportTransactionsCSV() output — trust every field directly
     // instead of re-guessing category from the description or inferring
-    // income from sign (every other format's approach breaks here, since
-    // this export always stores a non-negative Amount for both income and
-    // expense rows). isIncome/excluded round-trip via their own columns.
+    // income from sign. isIncome/excluded/isOffset round-trip via their
+    // own columns. Amount is non-negative for every row EXCEPT an
+    // is_offset:true row (an applyVenmoOpt() offset credit, the one place
+    // in the app that produces a negative t.amount) -- forcing Math.abs()
+    // unconditionally here used to silently flip an exported offset
+    // credit's sign on re-import, turning a spend-reducing credit into an
+    // ordinary expense. Found in the 36th adversarial pass.
     date=row['date']||'';
     desc=(row['description']||'').trim();
-    amount=Math.abs(parseFloat(row['amount']||'0'));
+    isOffset=(row['isoffset']||'').trim().toLowerCase()==='yes';
+    amount=parseFloat(row['amount']||'0');
+    if(!isOffset)amount=Math.abs(amount);
     cat=row['category']||'Other';
     excluded=(row['excluded']||'').trim().toLowerCase()==='yes';
     isIncome=(row['isincome']||'').trim().toLowerCase()==='yes';
@@ -9078,7 +9092,7 @@ function normalizeTxRow(row, source){
   // pass -- just via an entry point that guard was never wired into.
   // Found in the 34th adversarial pass.
   if(isReservedCatName(cat))cat='Other';
-  return {date,desc:desc.slice(0,50),cat,card:source,amount:Math.round(amount*100)/100,excluded,is_offset:false,isIncome:isIncome||false,biz:biz||false};
+  return {date,desc:desc.slice(0,50),cat,card:source,amount:Math.round(amount*100)/100,excluded,is_offset:isOffset,isIncome:isIncome||false,biz:biz||false};
 }
 
 // Shared keyword → category map, used by all import formats
@@ -11292,9 +11306,19 @@ window._fb = {
   async saveSnapshot(uid, snap) {
     const plain = { date: snap.date, label: snap.label, monthKey: snap.monthKey, nw: snap.nw, assets: snap.assets, liab: snap.liab };
     const encrypted = await _encrypt(plain, uid);
+    // Explicit onConflict target, found in the 36th adversarial pass --
+    // upsert() without one resolves against the table's primary key, not
+    // necessarily (user_id, month_key). saveSnapshot()'s local caller only
+    // guards against the CURRENT tab's own in-memory state already having
+    // a snapshot for this month; two sessions signed into the same account
+    // (two tabs, phone + laptop) that both still think a given month is
+    // unsaved would otherwise each insert a fresh row instead of updating
+    // one, leaving two snapshots sharing a monthKey -- which the delete
+    // path's monthKey-based lookup (see confirmDeleteSnapshot()) can then
+    // resolve ambiguously.
     const { error } = await _sb.from('snapshots').upsert({
       user_id: uid, month_key: snap.monthKey, data: encrypted, updated_at: new Date().toISOString()
-    });
+    }, { onConflict: 'user_id,month_key' });
     if (error) throw error;
   },
   async deleteSnapshot(uid, monthKey) {
