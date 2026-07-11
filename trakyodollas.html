@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-C59nWFkZhqF/LV248n5m0qlSa2QasD3/yicSFqkecu8=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-cKpATmFwF9To8SCF+seBYOXgMKrBssKk2wa1Xo//SZI=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -5152,10 +5152,22 @@ function renderSpendChart(){
   const labels=useAgg?aggPeriods.map(p=>p.label):monthly.map(m=>fmtMonthShort(m.month));
   const allFilteredMonths=getFilteredMonths();
 
-  // ── Shared: peak month across all chart modes ──────────
+  // ── Shared: peak period across all chart modes ──────────
+  // Indexes into whatever's actually plotted (calendar months, or
+  // quarters/years when a non-Monthly grain is active) -- both the
+  // peakPlugin bar highlight below and Category mode's "Peak month"
+  // tooltip text read this same index, and both silently pointed at the
+  // wrong bar (or nothing) at Quarterly/Yearly grain before this fix,
+  // since it was previously always computed over calendar months
+  // regardless of chartGrain. Found in the 26th pass (peakPlugin) and
+  // 27th pass (the tooltip had the identical bug, missed by the 26th
+  // pass's fix). getAggregatedData()'s p.total already sums across
+  // state.activeSources the same way monthSumsFn does, so this stays a
+  // like-for-like swap.
   const monthSumsFn=m=>{const row=MONTHLY[m]||{};return [...state.activeSources].reduce((s,src)=>s+(row[src]||0),0);};
   const allMonthSums=allFilteredMonths.map(m=>monthSumsFn(m));
-  const peakIdx=allMonthSums.indexOf(Math.max(...allMonthSums));
+  const periodSums=useAgg?aggPeriods.map(p=>p.total):allMonthSums;
+  const peakIdx=periodSums.indexOf(Math.max(...periodSums));
 
   const peakPlugin={
     id:'peakHighlight',
@@ -7458,11 +7470,15 @@ function exportTransactionsCSV(){
   if(!txs.length){showToast('No transactions to export','#FCD34D');return;}
 
   // Build CSV — export what user currently sees (filtered + sorted).
-  // IsIncome is included specifically so re-importing this exact export
-  // round-trips correctly (see the dedicated 'trakyodollas' import format
-  // below) — without it, every format's importer treats a positive Amount
-  // column as an expense, silently converting income to spend on reimport.
-  const headers=['Date','Description','Vendor','Category','Amount','Source','Excluded','IsIncome'];
+  // IsIncome and Business are included specifically so re-importing this
+  // exact export round-trips correctly (see the dedicated 'trakyodollas'
+  // import format below) — without IsIncome, every format's importer
+  // treats a positive Amount column as an expense, silently converting
+  // income to spend on reimport; without Business, every re-imported
+  // transaction silently loses its Business/Personal tag (found in the
+  // 27th adversarial pass — t.biz is read by ~30 call sites gated on
+  // _bizFilter, but was never written to or read from the CSV at all).
+  const headers=['Date','Description','Vendor','Category','Amount','Source','Excluded','IsIncome','Business'];
   const rows=txs.map(t=>[
     t.date,
     csvSafeField(t.desc),
@@ -7471,7 +7487,8 @@ function exportTransactionsCSV(){
     t.amount.toFixed(2),
     csvSafeField(t.card),
     t.excluded?'yes':'no',
-    t.isIncome?'yes':'no'
+    t.isIncome?'yes':'no',
+    t.biz?'yes':'no'
   ].join(','));
 
   const csv=[headers.join(','),...rows].join('\n');
@@ -8230,6 +8247,9 @@ function confirmRenameCat(oldName){
   if(state.budgets[oldName]!==undefined){state.budgets[newName]=state.budgets[oldName];delete state.budgets[oldName];}
   state.catRules.forEach(r=>{if(r.cat===oldName)r.cat=newName;});
   if(state.excludedCats.has(oldName)){state.excludedCats.delete(oldName);state.excludedCats.add(newName);}
+  // Same activeCats-goes-stale shape deleteCustomCat() was fixed for in the
+  // 26th pass, just for rename instead of delete. Found in the 27th pass.
+  if(state.activeCats.has(oldName)){state.activeCats.delete(oldName);state.activeCats.add(newName);}
   window._catColorMap=null;
   _editingCatName=null;
   renderCatManagerList();
@@ -8611,7 +8631,7 @@ function _creditDepositCat(desc){
 }
 
 function normalizeTxRow(row, source){
-  let date, desc, amount, cat='Other', excluded=false, mcc='', isIncome=false;
+  let date, desc, amount, cat='Other', excluded=false, mcc='', isIncome=false, biz;
 
   if(importFmt==='ally'){
     date=row['date']||row['date ']||'';
@@ -8773,6 +8793,7 @@ function normalizeTxRow(row, source){
     cat=row['category']||'Other';
     excluded=(row['excluded']||'').trim().toLowerCase()==='yes';
     isIncome=(row['isincome']||'').trim().toLowerCase()==='yes';
+    biz=(row['business']||'').trim().toLowerCase()==='yes';
     if(isIncome&&!state.includeIncome)return null; // same Include Income gate every other format applies
 
   } else {
@@ -8813,7 +8834,11 @@ function normalizeTxRow(row, source){
 
   // ATM detection: bank name followed by street address digits → Other.
   // Must run before community rules so keyword matches on the bank name don't override it.
-  const isATM=ATM_BRANCH_RE.test(desc);
+  // Skipped for our own re-imported CSV export (see the trakyodollas branch
+  // above) -- same "trust every field directly" reasoning as the community-
+  // rules/MCC exemptions below, which only guarded against those two tiers
+  // and missed this one. Found in the 27th adversarial pass.
+  const isATM=importFmt!=='trakyodollas'&&ATM_BRANCH_RE.test(desc);
   if(isATM)cat='Other';
 
   // Apply user-defined categorization rules (highest priority — always win, even over ATM)
@@ -8849,7 +8874,7 @@ function normalizeTxRow(row, source){
     if(mccCat)cat=mccCat;
   }
 
-  return {date,desc:desc.slice(0,50),cat,card:source,amount:Math.round(amount*100)/100,excluded,is_offset:false,isIncome:isIncome||false};
+  return {date,desc:desc.slice(0,50),cat,card:source,amount:Math.round(amount*100)/100,excluded,is_offset:false,isIncome:isIncome||false,biz:biz||false};
 }
 
 // Shared keyword → category map, used by all import formats
