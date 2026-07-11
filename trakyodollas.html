@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-cKpATmFwF9To8SCF+seBYOXgMKrBssKk2wa1Xo//SZI=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-GF40x0PMDD32w2/e1q7wy2DnwSeyIU9BtbiuN+8ZqcE=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -8842,8 +8842,15 @@ function normalizeTxRow(row, source){
   if(isATM)cat='Other';
 
   // Apply user-defined categorization rules (highest priority — always win, even over ATM)
+  // -- except for our own re-imported CSV export, same "trust every field
+  // directly" reasoning as the ATM/community-rules/MCC exemptions below.
+  // This tier is commented as "always win, even over ATM," so it's the
+  // most likely of the four to silently override an exported category on
+  // re-import -- every user with any saved rule and a broadly-matching
+  // keyword is exposed, not just users relying on the downloaded
+  // community list. Found in the 28th adversarial pass.
   const descUpper=desc.toUpperCase();
-  if(state.catRules&&state.catRules.length){
+  if(importFmt!=='trakyodollas'&&state.catRules&&state.catRules.length){
     for(const rule of state.catRules){
       if(rule.keyword&&descUpper.includes(rule.keyword.toUpperCase())){
         cat=rule.cat;break;
