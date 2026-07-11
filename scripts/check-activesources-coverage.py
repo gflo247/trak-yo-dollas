@@ -31,8 +31,17 @@ anywhere in the same expression.
 
 This is a heuristic, not a JS parser — it WILL have false positives:
 - A loop deliberately searching for excluded/income transactions (the
-  opposite of filtering them out), e.g. `t.excluded && !t.is_offset` when
-  scanning specifically for excluded deposits.
+  opposite of filtering them out) that's genuinely meant to look at
+  every source's history, not just active ones. Caution: this shape
+  isn't automatically a false positive — detectDepositIncome() (line
+  ~8093, `t.excluded && !t.is_offset`) looked like exactly this pattern
+  when the scanner was first built, but the 38th adversarial pass found
+  it was a real bug: its output feeds getEffectiveIncome(), and
+  computePeriodSpendVsIncome()'s spend side already checks
+  activeSources while the income side (via this function) didn't,
+  silently inflating the displayed savings rate whenever a source was
+  deselected. Confirm the surrounding call chain actually stays
+  unfiltered-by-design end to end before waving one of these through.
 - A loop that's deliberately meant to be lifetime/unfiltered-by-design
   rather than an oversight (e.g. buildCatColorMap()'s permanent color
   assignment, which intentionally looks at all-time spend regardless of

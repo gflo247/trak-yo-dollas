@@ -72,18 +72,21 @@ echo "=== Scanning for transaction mutations missing rebuildMonthly() (advisory)
 python3 scripts/check-rebuild-coverage.py || true
 
 # Advisory only, same posture as the scanners above — added after a field
-# added to local persistence (serializeState()) recurred 3 times without
-# also being added to the cloud sync payload (syncToCloud()) and restore
-# logic (loadUserData()): nwGoal/hideNwGoal, then excludedCats and
-# declaredIncome (37th pass). excludedCats in particular gates spend
-# totals app-wide, so this isn't cosmetic — a customized value on one
-# device silently disagreed with another. Known false positives:
+# added to local persistence (serializeState()) recurred without also
+# being added to the cloud sync payload (syncToCloud()) and restore logic
+# (loadUserData()): nwGoal/hideNwGoal, then excludedCats/declaredIncome
+# (37th pass), then budgetWarnPct/currency (38th pass, found via this
+# scanner's own first run — currency turned out to be a security-relevant
+# miss too, unsanitized at every write site and unescaped at every
+# render site; fixed by escaping it at its one shared point of entry
+# into HTML instead). excludedCats/currency gate/appear in dozens of
+# call sites app-wide, so this class isn't cosmetic — a customized value
+# on one device silently disagreed with another. Known false positives:
 # transactions/snapshots (deliberately separate sync paths, not part of
 # the prefs payload at all), hasRealData/hasRealAccounts/hasRealSnapshot
-# (re-derived flags). A few flagged fields (activeSources, budgetWarnPct,
-# currency) are genuine judgment calls worth a closer look in a future
-# pass rather than an established false positive yet — could plausibly be
-# real gaps, not confirmed either way.
+# (re-derived flags), activeSources (confirmed device-local by design —
+# loadUserData() derives it fresh from restored transactions, never
+# reads a synced value).
 echo "=== Scanning for fields persisted locally but missing from cloud sync (advisory) ==="
 python3 scripts/check-cloudsync-coverage.py || true
 

@@ -694,12 +694,15 @@ test("openBudgetModal: a numeric-looking category name (coerced to a Number by t
 // true for nearly any nonzero spend -- flooding the Budget tab with false
 // "AT RISK" badges. Fixed by mirroring setBudgetWarnPct()'s own clamp at
 // both restore sites. ──
-test("both budgetWarnPct restore sites (localStorage load, JSON-backup import) clamp to the same [50,99] range as setBudgetWarnPct()", () => {
+test("all budgetWarnPct restore sites (localStorage load, JSON-backup import, cloud-sync restore) clamp to the same [50,99] range as setBudgetWarnPct()", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   const clampPattern = /Math\.min\(99,Math\.max\(50,n\)\)/g;
   const matches = source.match(clampPattern) || [];
-  // setBudgetWarnPct() itself, plus the two restore sites -- 3 total.
-  assert.equal(matches.length, 3, `expected 3 uses of the [50,99] clamp (setBudgetWarnPct + 2 restore sites), found ${matches.length}`);
+  // setBudgetWarnPct() itself, plus 3 restore sites (localStorage load,
+  // JSON-backup import, and loadUserData()'s cloud-sync restore -- added
+  // in the 38th adversarial pass alongside budgetWarnPct/currency finally
+  // being added to the cloud sync payload at all) -- 4 total.
+  assert.equal(matches.length, 4, `expected 4 uses of the [50,99] clamp (setBudgetWarnPct + 3 restore sites), found ${matches.length}`);
 });
