@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-Heuristic scanner for a bug class that's recurred three times across the
+Heuristic scanner for a bug class that's recurred repeatedly across the
 pre-launch review cycle (all 2026-07-11): a field gets added to
 serializeState() (local persistence, via localStorage) but syncToCloud()'s
 savePrefs() payload and/or loadUserData()'s restore logic are never
 updated to match, so the field silently doesn't round-trip across
-devices. First found for nwGoal/hideNwGoal, then again for excludedCats
-and declaredIncome (37th pass) -- excludedCats in particular gates spend
-totals at dozens of call sites app-wide, so this isn't a cosmetic gap: a
-user who customizes it on one device sees every headline number disagree
-on another, with no error or warning either way.
+devices. First found for nwGoal/hideNwGoal, then excludedCats and
+declaredIncome (37th pass), then budgetWarnPct and currency (38th pass,
+found via this scanner's own first run) -- excludedCats in particular
+gates spend totals at dozens of call sites app-wide, so this isn't a
+cosmetic gap: a user who customizes it on one device sees every headline
+number disagree on another, with no error or warning either way.
 
 This script extracts the top-level object-literal keys from three
 places:
@@ -37,6 +38,25 @@ This is a heuristic, not a JS parser -- it WILL have false positives:
   serializeState" or vice versa and are expected, not bugs.
 - hasRealData/hasRealAccounts/hasRealSnapshot are re-derived flags, not
   really "data" -- plausible to intentionally exclude from cloud sync.
+- state.activeSources -- confirmed genuinely device-local, not a bug, by
+  the 38th adversarial pass: loadUserData() has its own "Ensure
+  activeSources is populated after cloud restore" logic that *derives*
+  it fresh from the restored transactions whenever empty, and never
+  reads a synced value at all -- deliberate design, the same treatment
+  as _bizFilter/date-range filters (also device-local view state).
+
+Two other first-run candidates (budgetWarnPct, currency) were
+investigated by the same pass and found to be real gaps of the exact
+"nwGoal" shape -- both fixed (added to syncToCloud()'s payload and
+loadUserData()'s restore). currency in particular turned out to be a
+security-relevant miss, not just a sync gap: it was never sanitized at
+ANY of its write sites (the currency-modal input's maxlength="4" is a
+UI attribute, not a data-layer guard), and flows unescaped into dozens
+of innerHTML render sites via fmt()/fmtC()/fmtD()/fmtH() -- fixed by
+escaping it at that one shared point of entry instead, which also
+covers the newly-added cloud-sync path for free. If this field
+reappears in a future run (e.g. after a schema refactor), don't assume
+it's still just a cosmetic sync gap without re-checking.
 
 Every flagged key needs a human look, not blind trust. Run manually:
     python3 scripts/check-cloudsync-coverage.py [file ...]

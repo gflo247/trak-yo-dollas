@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-9sVku8RHOKgx8xMLUc+Xumn9ihR9AhkLesUKKSAfIYA=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-F0ykNrtXqNWkPxr/tq0GajmLgrD7pqJHiIZKk0cwRhY=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2295,10 +2295,24 @@ function confirmSyncPassphraseOnEnter(e){if(e.key==='Enter')submitSyncPassphrase
 let spendChart=null,editAcctId=null,editVehicleId=null,editTxId=null,showTxN=50;
 
 // ── Format / theme / tooltip helpers ─────────────────────────────
-const fmt=n=>(state.currency||'$')+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
-const fmtC=n=>{const a=Math.abs(n),s=n<0?'-':'',c=state.currency||'$';return s+(a>=1e6?c+parseFloat((a/1e6).toFixed(2))+'M':a>=1e3?c+Math.round(a/1e3)+'k':c+Math.round(a));};
-const fmtD=n=>(state.currency||'$')+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtH=n=>(state.currency||'$')+(Math.round(n/100)*100).toLocaleString(undefined);
+// state.currency is escaped here, at its one shared point of entry into
+// every dollar-figure string in the app, rather than validated at each of
+// its several write sites (applyCustomCurrency(), loadFromLocalStorage(),
+// importBackup(), and cloud-sync restore) -- state.currency was never
+// sanitized at any of them (the currency-modal input's maxlength="4" is a
+// UI attribute, not a data-layer guard, and a hand-crafted backup JSON or
+// synced payload bypasses it entirely), and these 4 helpers' output is
+// interpolated unescaped into innerHTML at dozens of render sites
+// throughout the app (bucket tiles, chart tooltips, the overspend banner,
+// modals). No real currency symbol contains an HTML-significant
+// character, so esc() is a no-op for every legitimate value (including
+// multi-character ones like "CHF"/"kr"/"C$") and only neutralizes
+// exactly the malicious/invalid inputs this fix exists for. Found in the
+// 38th adversarial pass.
+const fmt=n=>esc(state.currency||'$')+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
+const fmtC=n=>{const a=Math.abs(n),s=n<0?'-':'',c=esc(state.currency||'$');return s+(a>=1e6?c+parseFloat((a/1e6).toFixed(2))+'M':a>=1e3?c+Math.round(a/1e3)+'k':c+Math.round(a));};
+const fmtD=n=>esc(state.currency||'$')+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtH=n=>esc(state.currency||'$')+(Math.round(n/100)*100).toLocaleString(undefined);
 const getIsDark=()=>document.documentElement.getAttribute('data-theme')!=='light';
 // Theme-aware value helper — returns darkVal or lightVal based on current theme
 function themeColor(darkVal,lightVal){return getIsDark()?darkVal:lightVal;}
@@ -8076,7 +8090,16 @@ function detectDepositIncome(){
   // We stored them with amount=0 (filtered out) so we need to re-scan from a different angle
   // Instead: look at excluded transactions that are deposits (is_offset=false, excluded=true, and positive original)
   // Best approach: use transactions with cat that suggests income
-  state.transactions.filter(t=>t.excluded&&!t.is_offset).forEach(t=>{
+  //
+  // state.activeSources check added in the 38th adversarial pass --
+  // computePeriodSpendVsIncome() (the app's own documented "single source
+  // of truth for period-level spend vs income") already checks it on the
+  // spend side, but this function fed its income side with no such check
+  // at all. With income method set to "auto" and 2+ linked sources, a
+  // deselected source's deposits kept counting as income while its spend
+  // was correctly excluded -- silently inflating the displayed savings
+  // rate / suppressing the overspend warning.
+  state.transactions.filter(t=>t.excluded&&!t.is_offset&&state.activeSources.has(t.card)).forEach(t=>{
     const d=t.desc.toUpperCase();
     const isTransfer=EXCLUDE_KEYWORDS.some(k=>d.includes(k));
     if(!isTransfer&&t.amount>0){
@@ -9915,6 +9938,14 @@ async function loadUserData(uid) {
       if (prefs.includeIncome !== undefined) { state.includeIncome = prefs.includeIncome; _bizFilter='all'; }
       if (prefs.nwGoal !== undefined) state.nwGoal = prefs.nwGoal;
       if (prefs.hideNwGoal !== undefined) state.hideNwGoal = prefs.hideNwGoal;
+      // budgetWarnPct/currency, found in the 38th adversarial pass -- same
+      // "persisted locally, never synced" gap as the fields above.
+      // budgetWarnPct clamped the same way setBudgetWarnPct()/importBackup()
+      // already do; currency doesn't need extra validation here since
+      // fmt()/fmtC()/fmtD()/fmtH() now escape it at their one shared point
+      // of entry into HTML regardless of which write path set it.
+      if (prefs.budgetWarnPct !== undefined) { const n=parseInt(prefs.budgetWarnPct,10); state.budgetWarnPct = isNaN(n)?80:Math.min(99,Math.max(50,n)); }
+      if (prefs.currency !== undefined) state.currency = prefs.currency;
       if (prefs.hiddenPills) state.hiddenPills = new Set(prefs.hiddenPills);
       if (prefs.vendorAliases) state.vendorAliases = prefs.vendorAliases;
       // Array.isArray (not truthiness) so a genuinely empty array -- e.g.
@@ -9997,6 +10028,14 @@ async function syncToCloud() {
       includeIncome: state.includeIncome,
       nwGoal: state.nwGoal,
       hideNwGoal: state.hideNwGoal,
+      // budgetWarnPct/currency had the identical gap, found in the 38th
+      // adversarial pass while triaging check-cloudsync-coverage.py's
+      // first-run output -- currency in particular is fully wired
+      // (fmt()/fmtC()/fmtD()/fmtH() prefix every dollar figure in the
+      // app), so a user who set it on one device saw every number
+      // silently revert to '$' on another.
+      budgetWarnPct: state.budgetWarnPct,
+      currency: state.currency,
       txEdits
     });
     // Flash "Saved ✓" in auth bar
