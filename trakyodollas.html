@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-/xX2ZW+PNNn7E+SJzZ95jOW4Kr/QBmvmS9hGe9jspGs=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-C59nWFkZhqF/LV248n5m0qlSa2QasD3/yicSFqkecu8=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -5301,6 +5301,15 @@ function renderSpendChart(){
   } else if(state.chartMode==='vendor'){
     // Vendor stacked — top 5 vendors per month get color, rest = Other
     const months=getFilteredMonths();
+    // Grouped by period (same fix shape as the 25th pass's Trend/Source fix
+    // below) -- data arrays built directly from `months` always had one
+    // entry per calendar month regardless of chartGrain, mismatching the
+    // shared `labels` array (which does shrink to one per quarter/year),
+    // producing a garbled chart the instant a non-Monthly grain was
+    // selected. That pass only fixed Trend/Source; Vendor and Category
+    // (below) had the identical gap, found in the 26th adversarial pass.
+    const periods=useAgg?getAggregatedPeriods():months.map(m=>({label:fmtMonthShort(m),months:[m]}));
+    const sumForPeriod=(map,key,p)=>p.months.reduce((s,m)=>s+((map[key]||{})[m]||0),0);
     const vendorMonthMap={};
     const CHECK_PAT=/^CHECK (PAID|WRITTEN|#)/i;
     getBaseTxs().filter(t=>(state.showExcluded||!t.excluded)&&!t.isIncome).forEach(t=>{
@@ -5329,7 +5338,7 @@ function renderSpendChart(){
     const vendorColorMap=assignColors(top5Vendors,6); // offset 6 — 18.9° minHue gap (best of all 20 offsets, beats categories' 16.2°), zero color overlap with offsets 3/9
     const top5VData=top5Vendors.map((v,vi)=>({
       label:v,
-      data:months.map(m=>(vendorMonthMap[v]||{})[m]||0),
+      data:periods.map(p=>sumForPeriod(vendorMonthMap,v,p)),
       backgroundColor:_patternsEnabled
         ? makePattern(vendorColorMap.get(v)||getVendorColor(v), VENDOR_PATTERNS[vi%VENDOR_PATTERNS.length])
         : (vendorColorMap.get(v)||getVendorColor(v))+'CC',
@@ -5338,15 +5347,15 @@ function renderSpendChart(){
 
     const otherVData={
       label:'Other',
-      data:months.map(m=>
+      data:periods.map(p=>
         allVendors.filter(v=>!top5Vendors.includes(v))
-          .reduce((s,v)=>s+((vendorMonthMap[v]||{})[m]||0),0)
+          .reduce((s,v)=>s+sumForPeriod(vendorMonthMap,v,p),0)
       ),
       backgroundColor:tc('#47556988','#94A3B822'),
       borderRadius:2,stack:'s',
-      _otherBreakdown:months.map(m=>
+      _otherBreakdown:periods.map(p=>
         allVendors.filter(v=>!top5Vendors.includes(v))
-          .map(v=>({v,val:(vendorMonthMap[v]||{})[m]||0}))
+          .map(v=>({v,val:sumForPeriod(vendorMonthMap,v,p)}))
           .filter(x=>x.val>0)
           .sort((a,b)=>b.val-a.val)
           .slice(0,8)
@@ -5355,7 +5364,7 @@ function renderSpendChart(){
     };
 
     const vDatasets=otherVendorCount>0?[...top5VData,otherVData]:top5VData;
-    const vMonthTotals=months.map((_,mi)=>top5VData.reduce((s,ds)=>s+(ds.data[mi]||0),0)+(otherVData.data[mi]||0));
+    const vMonthTotals=periods.map((_,mi)=>top5VData.reduce((s,ds)=>s+(ds.data[mi]||0),0)+(otherVData.data[mi]||0));
 
     const vOpts=JSON.parse(JSON.stringify(commonOpts));
     vOpts.plugins.tooltip={callbacks:{label:function(ctx){
@@ -5374,6 +5383,12 @@ function renderSpendChart(){
   } else {
     // Category stacked — ALL categories included, top 5 per month get color, rest = "Other"
     const months=getFilteredMonths();
+    // Same period-grouping fix as Vendor mode above (26th adversarial
+    // pass) -- this is the app's default chart mode, so the garbled-chart
+    // bug at Quarterly/Yearly grain was live on the very first thing a
+    // user sees on the Spending tab.
+    const periods=useAgg?getAggregatedPeriods():months.map(m=>({label:fmtMonthShort(m),months:[m]}));
+    const sumForPeriod=(map,key,p)=>p.months.reduce((s,m)=>s+((map[key]||{})[m]||0),0);
 
     // Build per-month per-category totals across ALL sources
     const catMonthMap={};
@@ -5400,7 +5415,7 @@ function renderSpendChart(){
       const catsToShow=[...state.activeCats];
       const datasets=catsToShow.map(cat=>({
         label:cat,
-        data:months.map(m=>(catMonthMap[cat]||{})[m]||0),
+        data:periods.map(p=>sumForPeriod(catMonthMap,cat,p)),
         backgroundColor:getCatFill(cat,getCatColor(cat)),
         borderRadius:2,stack:'s'
       }));
@@ -5426,7 +5441,7 @@ function renderSpendChart(){
 
     const top5Data=top5.map(cat=>({
       label:cat,
-      data:months.map(m=>(catMonthMap[cat]||{})[m]||0),
+      data:periods.map(p=>sumForPeriod(catMonthMap,cat,p)),
       backgroundColor:getCatFill(cat,getCatColor(cat)),
       borderRadius:2,stack:'s'
     }));
@@ -5434,15 +5449,15 @@ function renderSpendChart(){
     // Other = all categories NOT in overall top 5
     const otherData={
       label:'Other',
-      data:months.map(m=>
+      data:periods.map(p=>
         allCats.filter(c=>!top5.includes(c))
-          .reduce((s,c)=>s+((catMonthMap[c]||{})[m]||0),0)
+          .reduce((s,c)=>s+sumForPeriod(catMonthMap,c,p),0)
       ),
       backgroundColor:tc('#47556988','#94A3B822'),
       borderRadius:2,stack:'s',
-      _otherBreakdown:months.map(m=>
+      _otherBreakdown:periods.map(p=>
         allCats.filter(c=>!top5.includes(c))
-          .map(c=>({c,v:(catMonthMap[c]||{})[m]||0}))
+          .map(c=>({c,v:sumForPeriod(catMonthMap,c,p)}))
           .filter(x=>x.v>0)
           .sort((a,b)=>b.v-a.v)
           .map(x=>`${x.c}: ${fmtH(x.v)}`)
@@ -5452,9 +5467,9 @@ function renderSpendChart(){
     const datasets=otherCatCount>0?[...top5Data,otherData]:top5Data;
 
     // Custom tooltip for Other bar to show breakdown
-    // Monthly totals = exactly what's rendered in each bar (top5 visible + other)
-    // This ensures percentages sum to 100 for each month
-    const monthTotalsForChart=months.map((m,mi)=>{
+    // Period totals = exactly what's rendered in each bar (top5 visible + other)
+    // This ensures percentages sum to 100 for each period
+    const monthTotalsForChart=periods.map((p,mi)=>{
       const top5Total=top5Data.reduce((s,ds)=>s+(ds.data[mi]||0),0);
       const otherTotal=otherData.data[mi]||0;
       return top5Total+otherTotal;
@@ -5475,29 +5490,24 @@ function renderSpendChart(){
     };
 
     // Feature 1: Find peak month, highlight in chart title
-    // Feature 2: Enhanced tooltip — MoM delta per category
-    const prevMonthMap={};
-    allCats.forEach(c=>{
-      months.forEach((m,i)=>{
-        if(i>0){
-          const prev=(catMonthMap[c]||{})[months[i-1]]||0;
-          const cur=(catMonthMap[c]||{})[m]||0;
-          if(!prevMonthMap[m])prevMonthMap[m]={};
-          prevMonthMap[m][c]={prev,cur,pct:prev>0?Math.round((cur-prev)/prev*100):null};
-        }
-      });
-    });
-
+    // Feature 2: Enhanced tooltip — MoM (or per-period) delta per category.
+    // Used to precompute this from catMonthMap keyed by literal calendar
+    // month strings (prevMonthMap), which broke the instant `periods` could
+    // represent quarters/years instead of months (26th adversarial pass) --
+    // reads directly from the dataset's own already-period-grouped data
+    // array instead, same source `ctx.raw` itself comes from, so it's
+    // correct at every grain by construction and needs no separate map.
     customOpts.plugins.tooltip.callbacks.label=function(ctx){
-      const m=months[ctx.dataIndex];
       const monthTotal=monthTotalsForChart[ctx.dataIndex]||0;
       const pct=monthTotal>0?Math.round(ctx.raw/monthTotal*100):0;
       const cat=ctx.dataset.label;
       if(cat==='Other'){
         return formatOtherTooltip(ctx, otherData, monthTotalsForChart[ctx.dataIndex]||0, 'Other');
       }
-      const delta=prevMonthMap[m]?.[cat];
-      const momStr=delta&&delta.prev>0?(delta.pct>=0?` ↑${delta.pct}%`:(` ↓${Math.abs(delta.pct)}%`)):' (first month)';
+      const i=ctx.dataIndex;
+      const prev=i>0?ctx.dataset.data[i-1]:0;
+      const pctDelta=(i>0&&prev>0)?Math.round((ctx.raw-prev)/prev*100):null;
+      const momStr=pctDelta!==null?(pctDelta>=0?` ↑${pctDelta}%`:` ↓${Math.abs(pctDelta)}%`):' (first period)';
       const peakStr=ctx.dataIndex===peakIdx?' 🔺 Peak month':'';
       return`${cat}: ${fmtH(ctx.raw)} · ${pct}% of month${momStr}${peakStr}`;
     };
@@ -8179,6 +8189,13 @@ function deleteCustomCat(name){
   if(state.budgets[name]!==undefined)delete state.budgets[name];
   state.catRules=state.catRules.filter(r=>r.cat!==name);
   state.excludedCats.delete(name);
+  // Found in the 26th adversarial pass: without this, filtering by a
+  // category then deleting that same category left state.activeCats
+  // holding a name nothing matches anymore (every transaction was just
+  // reassigned to 'Other' above) -- every chart/list stayed stuck showing
+  // zero results under a stale, oddly-colored filter chip until the user
+  // noticed and manually clicked it off.
+  state.activeCats.delete(name);
   window._catColorMap=null;
   renderCatManagerList();
   rebuildCatSelects();
@@ -8808,16 +8825,26 @@ function normalizeTxRow(row, source){
       }
     }
   }
-  // Community rules (second priority — skip for ATM matches to prevent re-categorization)
-  if(!isATM&&(!cat||cat==='Other')&&_communityRules){
+  // Community rules (second priority — skip for ATM matches to prevent
+  // re-categorization, and skip entirely for our own re-imported CSV
+  // export: that format's whole design is "trust every field directly
+  // instead of re-guessing" (see the 'trakyodollas' branch above) --
+  // without this exemption, a transaction legitimately categorized
+  // 'Other' in the export (by explicit choice or because it was never
+  // auto-categorized) could get silently reassigned on re-import if its
+  // description happened to match a community-rules.json keyword,
+  // contradicting that documented intent. Found in the 26th adversarial
+  // pass.
+  if(!isATM&&importFmt!=='trakyodollas'&&(!cat||cat==='Other')&&_communityRules){
     for(const rule of _communityRules){
       if(rule.keyword&&descUpper.includes(rule.keyword.toUpperCase())){
         cat=rule.cat;break;
       }
     }
   }
-  // MCC lookup (third priority — skip for ATM matches)
-  if(!isATM&&(!cat||cat==='Other')){
+  // MCC lookup (third priority — skip for ATM matches, same trakyodollas
+  // exemption as community rules above)
+  if(!isATM&&importFmt!=='trakyodollas'&&(!cat||cat==='Other')){
     const mccCat=guessCatFromMCC(mcc);
     if(mccCat)cat=mccCat;
   }
@@ -8977,7 +9004,7 @@ function guessCatFromDesc(d){
   if(u.includes('T-MOBILE'))return 'Bills & Utilities';
   if(u.includes('NATIONAL FUEL'))return 'Bills & Utilities';
   if(u.includes('COSTCO PHARMACY'))return 'Health & Wellness';
-  if(u.includes('SAM\'S PHARMACY'))return 'Health & Wellness';
+  if(u.includes('SAM\'S PHARMACY')||u.includes('SAMS PHARMACY'))return 'Health & Wellness';
   if(u.includes('WALMART PHARMACY'))return 'Health & Wellness';
   if(u.includes('BROOKSHIRES PHARMACY'))return 'Health & Wellness';
   if(u.includes('KAISER PHARMACY'))return 'Health & Wellness';
