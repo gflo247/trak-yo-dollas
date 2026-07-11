@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-H1CrhtppTjAjDlOaPgH/3cx7G1MBJ8QRDA3JUIi0IaE=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-J0m2E+HBs/5lk0xVt8WcxsQbTyHO5Ts/y8/aulBdJFg=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -4612,7 +4612,8 @@ function renderTreemap(drillCat){
 
   const allCatEntries=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
   const topEntries=allCatEntries.slice(0,8);
-  const otherCatTotal=allCatEntries.slice(8).reduce((s,[,v])=>s+v,0);
+  const beyondTop8=allCatEntries.slice(8);
+  const otherCatTotal=beyondTop8.reduce((s,[,v])=>s+v,0);
   // Namespaced key, not the literal display string 'Other' -- 'Other' is
   // also a real, permanent BASE_CATEGORIES entry (the universal catch-all
   // every categorization tier falls back to), so reusing it as this
@@ -4625,7 +4626,14 @@ function renderTreemap(drillCat){
   // adversarial pass.
   const OTHER_KEY='__other__';
   if(otherCatTotal>0)topEntries.push([OTHER_KEY,otherCatTotal]);
-  const tmDisplayName=name=>name===OTHER_KEY?'Other':name;
+  // The key collision above was fixed, but the *display label* collision
+  // wasn't: a real "Other" category ranking in the top 8 (topEntries) and
+  // this synthetic beyond-top-8 bucket (OTHER_KEY) both rendered as a tile
+  // literally labeled "Other" -- same text, no visual cue, yet one drills
+  // in normally and the other silently no-ops on click (the guard below).
+  // Matches Sankey's own "Other · N cats" convention (otherNodeLabel,
+  // ~line 4829) to disambiguate. Found in the 43rd adversarial pass.
+  const tmDisplayName=name=>name===OTHER_KEY?`Other · ${beyondTop8.length} cat${beyondTop8.length===1?'':'s'}`:name;
 
   const data=drillCat
     ?Object.entries(catVendors[drillCat]||{}).map(([name,value])=>({name,value})).sort((a,b)=>b.value-a.value)
@@ -5824,8 +5832,10 @@ document.addEventListener('keydown',function(e){
   // after opening one did nothing until the user first clicked/tabbed out
   // of the field. rename-cat-input is the one exception: it already has
   // its own Escape handling (renameCatKeydown, which calls
-  // e.stopPropagation() precisely so this block doesn't also fire and
-  // close the whole category modal out from under an in-progress rename).
+  // e.stopImmediatePropagation() precisely so this block doesn't also fire
+  // and close the whole category modal out from under an in-progress
+  // rename -- stopPropagation() alone doesn't work here since both
+  // listeners are on document in bubble phase).
   // Found in the 42nd adversarial pass.
   if(e.key==='Escape'){
     // Close cat hide confirm popover first
@@ -5838,7 +5848,21 @@ document.addEventListener('keydown',function(e){
     if(pop&&pop.style.display!=='none'){pop.style.display='none';return;}
     // Close any open modal first
     const openModal=document.querySelector('.modal-overlay:not(.hidden)');
-    if(openModal){closeModals();return;}
+    if(openModal){
+      // sync-passphrase-modal's Cancel button is deliberately not a plain
+      // close -- cancelSyncPassphrase() also signs the user out, since
+      // leaving window._fbUser set with no passphrase resolved leaves
+      // _awaitingCloudMerge stuck true forever, silently blocking cloud
+      // sync for the rest of the session. Before Escape was unblocked
+      // while typing (see the comment above this handler), this modal's
+      // autofocused input meant that gap was reachable only in a ~50ms
+      // race before focus landed; now Escape fires on this modal at any
+      // time, so it needs the same explicit routing its own Cancel button
+      // uses instead of the generic close. Found in the 43rd adversarial
+      // pass.
+      if(openModal.id==='sync-passphrase-modal'){cancelSyncPassphrase();return;}
+      closeModals();return;
+    }
     // Clear active filters
     let cleared=false;
     if(state.activeDate){state.activeDate=null;document.querySelectorAll('.cal-day-active').forEach(el=>{el.classList.remove('cal-day-active');el.style.outline='';});cleared=true;}
@@ -6687,8 +6711,19 @@ function saveHistoricalSnapshot(){
   // (unconditional wholesale overwrite of state.snapshots) on this device
   // or any other. Found in the 41st adversarial pass.
   if(window._fbUser&&window._fb&&!window._isDemoPreview&&!window._viewingDemoOverReal){
-    _fbCallAfterMerge(()=>window._fb.saveSnapshot(window._fbUser.uid,snap).catch(e=>console.error(e)));
-    if(movedFromMonthKey)_fbCallAfterMerge(()=>window._fb.deleteSnapshot(window._fbUser.uid,movedFromMonthKey).catch(e=>console.error(e)));
+    // .catch() here shows a toast, matching saveSnapshot()'s own convention
+    // (8403-8405), rather than only console.error()'ing -- a silently
+    // dropped delete on the move-month path would otherwise resurrect the
+    // stale old-month snapshot on the next cloud pull (loadUserData()
+    // wholesale-overwrites state.snapshots from every row Supabase
+    // returns, with no dedup by monthKey) with zero indication anything
+    // went wrong. Found in the 43rd adversarial pass.
+    _fbCallAfterMerge(()=>window._fb.saveSnapshot(window._fbUser.uid,snap).catch(()=>showToast('📅 Saved locally (cloud sync failed — will retry next time you\'re online)','#FCD34D')));
+    if(movedFromMonthKey){
+      const[my,mm]=movedFromMonthKey.split('-');
+      const movedFromLabel=`${MON3[parseInt(mm,10)-1]} ${my}`;
+      _fbCallAfterMerge(()=>window._fb.deleteSnapshot(window._fbUser.uid,movedFromMonthKey).catch(()=>showToast(`⚠️ Moved locally, but couldn't remove the old ${movedFromLabel} snapshot from the cloud — it may reappear until you delete it manually`,'#FCD34D',5000)));
+    }
   }
 }
 
@@ -9338,6 +9373,18 @@ async function fetchCommunityRules(){
         const valid=data.filter(r=>r&&typeof r.keyword==='string'&&typeof r.cat==='string');
         _communityRules=valid;
         document.querySelectorAll('.community-rules-count').forEach(el=>el.textContent=valid.length);
+        // Re-render the table itself, not just the count badges -- if the
+        // user opened "View patterns" (openCommunityRulesModal(), reachable
+        // right from the import modal this fetch is kicked off from) before
+        // this fetch resolved, renderCommunityRulesTable() ran against
+        // _communityRules still null and rendered a permanent "No patterns
+        // match" empty state that nothing ever refreshed once the real data
+        // arrived -- the table stayed stuck until the user manually typed
+        // into (or cleared) the search box. Safe to call unconditionally:
+        // it no-ops harmlessly if the modal was never opened (cr-table
+        // still exists in the DOM, just hidden). Found in the 43rd
+        // adversarial pass.
+        renderCommunityRulesTable(document.getElementById('cr-search')?.value||'');
       }
     }
   }catch(e){/* silently fail — community rules are optional */}
