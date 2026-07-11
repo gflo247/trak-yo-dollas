@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-NHjsaHM0g75NVrCdumzUad2fDj+hBtHWt4wmpKA2x6E=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-9u5ypJ8w6SQUax/SsNy6t5zyKgKt1zlilDnVTelLObg=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3398,7 +3398,11 @@ function renderNwGoalWidget(){
     const income=getEffectiveIncome(getLatestDataMonth());
     if(income>0){
       const recentMonths=Object.keys(MONTHLY).sort().slice(-3);
-      const avgSpend=recentMonths.length?recentMonths.map(m=>Object.values(MONTHLY[m]||{}).reduce((a,b)=>a+b,0)).reduce((a,b)=>a+b,0)/recentMonths.length:0;
+      // [...state.activeSources].reduce(...), not Object.values(...) --
+      // found in the 40th adversarial pass (a deselected source inflated
+      // this widget's spend projection, same shape as sumMonth()/
+      // monthSumsFn() elsewhere in the file).
+      const avgSpend=recentMonths.length?recentMonths.map(m=>{const row=MONTHLY[m]||{};return[...state.activeSources].reduce((s,src)=>s+(row[src]||0),0);}).reduce((a,b)=>a+b,0)/recentMonths.length:0;
       monthlyGrowth=Math.max(0,income-avgSpend);
       growthSource='income − spending';
     }
@@ -6012,7 +6016,12 @@ function buildHiddenPopover(){
   // deselected source meant only some of those actually appeared there.
   // Found in the 39th adversarial pass.
   const hiddenMs=new Set(getFilteredMonths());
-  const txExclCount=state.transactions.filter(t=>{
+  // When showExcluded is on, getBaseTxs() includes excluded transactions in
+  // the normal list (not dimmed at the bottom), so there's nothing to count
+  // here -- found in the 40th adversarial pass (buildHiddenPopover() still
+  // showed a stale "N hidden...shown dimmed at bottom" count after toggling
+  // "Included in totals" in the same still-open popover).
+  const txExclCount=state.showExcluded?0:state.transactions.filter(t=>{
     if(!t.excluded)return false;
     if(!hiddenMs.has(t.date.slice(0,7)))return false;
     if(!state.activeSources.has(t.card))return false;
@@ -7502,7 +7511,9 @@ function openIncomeModal(){
   const today=new Date();
   const thisYM=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
   const fullMonths=allMonths.filter(mo=>mo<thisYM);
-  _latestSpendForPreview=fullMonths.length?Object.values(MONTHLY[fullMonths[fullMonths.length-1]]||{}).reduce((a,b)=>a+b,0):0;
+  // [...state.activeSources].reduce(...), not Object.values(...) -- same
+  // fix as renderNwGoalWidget() above, found in the 40th adversarial pass.
+  _latestSpendForPreview=fullMonths.length?(()=>{const row=MONTHLY[fullMonths[fullMonths.length-1]]||{};return[...state.activeSources].reduce((s,src)=>s+(row[src]||0),0);})():0;
   if(m==='manual'&&state.income.monthlyAmount){
     document.getElementById('income-amount').value=state.income.monthlyAmount;
     document.getElementById('income-manual-hint').textContent=`Current: ${fmt(state.income.monthlyAmount)}/mo take-home`;
@@ -9379,7 +9390,7 @@ function showImportPreview(){
       <span style="font-size:9px;color:var(--text-muted);min-width:72px">${esc(t.date)}</span>
       <span style="flex:1;font-size:10px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.desc)}</span>
       <span style="font-size:9px;padding:1px 6px;border-radius:99px;background:${getCatColor(t.cat)}22;color:${getCatColor(t.cat)}">${esc(t.cat)}</span>
-      <span style="font-size:10px;font-weight:700;color:#F87171;min-width:52px;text-align:right">$${t.amount.toFixed(2)}</span>
+      <span style="font-size:10px;font-weight:700;color:#F87171;min-width:52px;text-align:right">${fmtD(t.amount)}</span>
     </div>`).join('')+(importParsed.length>8?`<div style="padding:.3rem .6rem;font-size:10px;color:var(--text-muted)">…and ${importParsed.length-8} more</div>`:'');
 
   preview.classList.remove('hidden');
