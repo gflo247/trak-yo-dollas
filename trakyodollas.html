@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-lroNIgo3JPCfkXcl6bXMK8rOAHqrFUf1MDjGBVwut8I=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-C5/Cw5wqBhaYCqLby2B4qLaoSzED6vm8IOBYiD8zh/8=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -4204,8 +4204,24 @@ function renderBucketGrid(){
     </svg>`;
   }
   function vendorSparkline(vendor,color){
+    // Match by the same resolved/aliased key vendorMap below is built
+    // from (resolveVendor(), with the CHECK_RE override), not the raw
+    // t.desc -- a plain t.desc===vendor check only ever matched a
+    // transaction whose raw description was already identical to its
+    // canonical vendor name, so every aliased/merged vendor (the entire
+    // point of the alias feature) and every "Checks written" bucket
+    // (raw desc is never literally that string) silently rendered a
+    // flat/empty sparkline while the tile's total/count right next to it
+    // stayed correct. Found in the 31st adversarial pass.
+    const CHECK_RE=/^CHECK (PAID|WRITTEN|#)/i;
     const pts=grainedPeriods.map(pMonths=>
-      pMonths.reduce((s,m)=>s+state.transactions.filter(t=>t.date.slice(0,7)===m&&t.desc===vendor&&!t.excluded&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0),0)
+      pMonths.reduce((s,m)=>s+state.transactions.filter(t=>{
+        if(t.date.slice(0,7)!==m||t.excluded)return false;
+        if(_bizFilter==='biz'&&!t.biz)return false;
+        if(_bizFilter==='personal'&&t.biz)return false;
+        const key=CHECK_RE.test(t.desc)?'Checks written':resolveVendor(t.desc);
+        return key===vendor;
+      }).reduce((a,t)=>a+t.amount,0),0)
     );
     return makeSpark(pts,color);
   }
@@ -4691,7 +4707,16 @@ function renderSankey(){
   // include every other category's real spending, misattributed as
   // savings (self-contradictory with the overspend warning above it,
   // which is computed unfiltered). Found in the 30th adversarial pass.
+  //
+  // filteredOutCatTotals tracks real spend in categories the active
+  // filter excludes -- without folding this into its own bar, the 30th
+  // pass's fix traded one wrongness for another: with a filter active,
+  // catTotals' bars plus the now-correct "Remaining" summed to less than
+  // totalIncome, so filtered-out spend just silently vanished from the
+  // diagram instead of appearing anywhere. Found in the 31st adversarial
+  // pass.
   let totalSpendAll=0;
+  const filteredOutCatTotals={};
   state.transactions.filter(t=>
     !t.isIncome&&
     (state.showExcluded||!t.excluded)&&state.activeSources.has(t.card)&&
@@ -4701,9 +4726,11 @@ function renderSankey(){
   ).forEach(t=>{
     totalSpendAll+=t.amount;
     if(state.activeCats.size===0||state.activeCats.has(t.cat))catTotals[t.cat]=(catTotals[t.cat]||0)+t.amount;
+    else filteredOutCatTotals[t.cat]=(filteredOutCatTotals[t.cat]||0)+t.amount;
   });
 
   const totalSpend=Object.values(catTotals).reduce((a,b)=>a+b,0);
+  const filteredOutSpend=Object.values(filteredOutCatTotals).reduce((a,b)=>a+b,0);
   const isOverspend=computePeriodSpendVsIncome().isOverspend;
   const saved=Math.max(0,totalIncome-totalSpendAll);
   const SANKEY_SMALL=0.03;
@@ -4715,6 +4742,7 @@ function renderSankey(){
   const cats=smallCats.length>=2
     ?[...bigCats,...(smallTotal>0?[['__other__',smallTotal]]:[])]:
     [...allCats];
+  if(filteredOutSpend>0)cats.push(['__filtered_out__',filteredOutSpend]);
   if(saved>0)cats.push(['Remaining',saved]);
 
   const isDark=getIsDark();
@@ -4732,12 +4760,15 @@ function renderSankey(){
 
   const otherNodeLabel=`Other · ${smallCats.length} cats`;
   const otherTipBody=smallCats.map(([c,v])=>`${esc(c)}: ${fmtC(v)} · ${Math.round(v/totalIncome*100)}%`).join('<br>');
+  const filteredOutCatEntries=Object.entries(filteredOutCatTotals).sort((a,b)=>b[1]-a[1]);
+  const filteredOutNodeLabel=`Filtered out · ${filteredOutCatEntries.length} cat${filteredOutCatEntries.length===1?'':'s'}`;
+  const filteredOutTipBody=filteredOutCatEntries.map(([c,v])=>`${esc(c)}: ${fmtC(v)} · ${Math.round(v/totalIncome*100)}%`).join('<br>');
   const nodes=[
     {id:'__income__',name:`${monthCount}mo income`,color:incomeColor},
     ...cats.map(([cat])=>({
       id:cat,
-      name:cat==='__other__'?otherNodeLabel:cat,
-      color:cat==='Remaining'?(isDark?'#4b5563':'#94a3b8'):cat==='__other__'?(isDark?'#78716c':'#a8a29e'):getCatColor(cat)
+      name:cat==='__other__'?otherNodeLabel:cat==='__filtered_out__'?filteredOutNodeLabel:cat,
+      color:cat==='Remaining'?(isDark?'#4b5563':'#94a3b8'):cat==='__other__'||cat==='__filtered_out__'?(isDark?'#78716c':'#a8a29e'):getCatColor(cat)
     }))
   ];
   const links=cats.map(([cat,val])=>({source:'__income__',target:cat,value:val}));
@@ -4769,6 +4800,8 @@ function renderSankey(){
     .on('mousemove',(e,d)=>{
       const body=d.target.id==='__other__'
         ?`<strong>${otherNodeLabel}</strong> ${fmtC(d.value)} · ${Math.round(d.value/totalIncome*100)}% of income<br><span style="opacity:.7;font-size:10px">${otherTipBody}</span>`
+        :d.target.id==='__filtered_out__'
+        ?`<strong>${filteredOutNodeLabel}</strong> ${fmtC(d.value)} · ${Math.round(d.value/totalIncome*100)}% of income<br><span style="opacity:.7;font-size:10px">${filteredOutTipBody}</span>`
         :`<strong>${esc(d.target.name)}</strong>${fmtC(d.value)} · ${Math.round(d.value/totalIncome*100)}% of income`;
       tip.show(e,body);
       linkSel.attr('stroke-opacity',l=>l===d?.75:.15);
@@ -4786,8 +4819,15 @@ function renderSankey(){
       // handler opens the declared-income modal (not a filter reset), so
       // there's no valid "reset" case for a link to special-case here;
       // links should drill into their category exactly like clicking the
-      // category's node does.
-      if(d.target.id==='__other__')return;
+      // category's node does. __other__/__filtered_out__ are grouped
+      // buckets, not real categories, and 'Remaining' is savings, not
+      // spend -- toggleCatFilter() on any of these would silently filter
+      // to a "category" no transaction ever has, producing an empty tx
+      // list with no explanation. The 'Remaining' guard was a
+      // pre-existing latent bug (never previously reachable to notice,
+      // since Remaining always used to fill the whole rest of the
+      // diagram) found alongside this fix in the 31st adversarial pass.
+      if(d.target.id==='__other__'||d.target.id==='__filtered_out__'||d.target.id==='Remaining')return;
       const wasActive=state.activeCats.has(d.target.name);
       toggleCatFilter(d.target.name);
       if(!wasActive)requestAnimationFrame(()=>{
@@ -4806,11 +4846,13 @@ function renderSankey(){
       if(d.id==='__income__')return;
       if(d.id==='__other__'){
         tip.show(e,`<strong>${otherNodeLabel}</strong> ${fmtC(d.value||0)} · ${Math.round((d.value||0)/totalIncome*100)}% of income<br><span style="opacity:.7;font-size:10px">${otherTipBody}</span>`);
+      } else if(d.id==='__filtered_out__'){
+        tip.show(e,`<strong>${filteredOutNodeLabel}</strong> ${fmtC(d.value||0)} · ${Math.round((d.value||0)/totalIncome*100)}% of income<br><span style="opacity:.7;font-size:10px">${filteredOutTipBody}</span>`);
       }
       linkSel.attr('stroke-opacity',l=>l.target===d?.75:.15);
     })
     .on('mouseout',(_,d)=>{
-      if(d.id==='__other__')tip.hide();
+      if(d.id==='__other__'||d.id==='__filtered_out__')tip.hide();
       linkSel.attr('stroke-opacity',.4);
     })
     .on('click',(_,d)=>{
@@ -4818,7 +4860,10 @@ function renderSankey(){
         openDeclaredIncomeModal();
         return;
       }
-      if(d.id==='__other__')return;
+      // See the matching comment on the link click handler above --
+      // __other__/__filtered_out__ are grouped buckets and 'Remaining'
+      // is savings, none are real categories to filter by.
+      if(d.id==='__other__'||d.id==='__filtered_out__'||d.id==='Remaining')return;
       const wasActive=state.activeCats.has(d.name);
       toggleCatFilter(d.name);
       if(!wasActive)requestAnimationFrame(()=>{
