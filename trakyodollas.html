@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-F0ykNrtXqNWkPxr/tq0GajmLgrD7pqJHiIZKk0cwRhY=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-NHjsaHM0g75NVrCdumzUad2fDj+hBtHWt4wmpKA2x6E=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -4000,8 +4000,6 @@ function renderSourceChips(){
   }
   const allOn=sources.every(s=>state.activeSources.has(s));
   const hiddenCatCount=state.excludedCats.size;
-  const hiddenTxCount=state.transactions.filter(t=>t.excluded).length;
-  const totalHidden=hiddenCatCount+(hiddenTxCount>0?1:0); // cats + "transactions" bucket
   const DEFAULT_EXCL=new Set(TRANSFER_LIKE_CATS);
   const onlyDefaults=hiddenCatCount===DEFAULT_EXCL.size&&[...DEFAULT_EXCL].every(c=>state.excludedCats.has(c));
   const chipLabel=hiddenCatCount===0?'Spending exclusions':onlyDefaults?'Transfers & investments hidden':`${hiddenCatCount} spending exclusion${hiddenCatCount===1?'':'s'}`;
@@ -6006,7 +6004,27 @@ function undoCatExclusion(cat){
 function buildHiddenPopover(){
   const DEFAULT_EXCL=new Set(TRANSFER_LIKE_CATS);
   const cats=[...state.excludedCats].sort();
-  const txExclCount=state.transactions.filter(t=>t.excluded).length;
+  // Matches renderTxList()'s alwaysShowExcl filters (date range,
+  // activeSources, activeCats, _bizFilter, searchQuery) instead of an
+  // unfiltered all-time/all-source count -- previously this popover could
+  // claim e.g. "5 individual transactions hidden... shown dimmed at
+  // bottom of transactions list" while a narrower date range or a
+  // deselected source meant only some of those actually appeared there.
+  // Found in the 39th adversarial pass.
+  const hiddenMs=new Set(getFilteredMonths());
+  const txExclCount=state.transactions.filter(t=>{
+    if(!t.excluded)return false;
+    if(!hiddenMs.has(t.date.slice(0,7)))return false;
+    if(!state.activeSources.has(t.card))return false;
+    if(state.activeCats.size>0&&!state.activeCats.has(t.cat))return false;
+    if(_bizFilter==='biz'&&!t.biz)return false;
+    if(_bizFilter==='personal'&&t.biz)return false;
+    if(state.searchQuery){
+      const q=state.searchQuery.toLowerCase();
+      if(!t.desc.toLowerCase().includes(q)&&!t.cat.toLowerCase().includes(q)&&!t.card.toLowerCase().includes(q))return false;
+    }
+    return true;
+  }).length;
   const catsHtml=cats.length===0
     ?'<div class="hidden-popover-empty">No categories hidden</div>'
     :cats.map(cat=>{
@@ -9350,7 +9368,10 @@ function showImportPreview(){
   const cats={};
   importParsed.forEach(t=>{cats[t.cat]=(cats[t.cat]||0)+1;});
   const topCats=Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,n])=>`${esc(c)} (${n})`).join(', ');
-  stats.innerHTML=`<strong style="color:var(--text-bright)">${importParsed.length} transaction${importParsed.length===1?'':'s'}</strong> · <span style="color:#475569">$${total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} total</span> · Top: ${topCats}`;
+  // fmtD(total), not a hardcoded '$' prefix -- this preview showed '$'
+  // regardless of the user's chosen currency symbol, unlike every other
+  // dollar figure in the import flow. Found in the 39th adversarial pass.
+  stats.innerHTML=`<strong style="color:var(--text-bright)">${importParsed.length} transaction${importParsed.length===1?'':'s'}</strong> · <span style="color:#475569">${fmtD(total)} total</span> · Top: ${topCats}`;
 
   const sample=importParsed.slice(0,8);
   rows.innerHTML=sample.map(t=>`
@@ -9588,7 +9609,12 @@ function checkForVenmoCashouts(txs){
   const countEl=document.getElementById('venmo-cashout-count');
   const totalEl=document.getElementById('venmo-cashout-total');
   if(countEl)countEl.textContent=cashouts.length;
-  if(totalEl)totalEl.textContent='$'+total.toFixed(2);
+  // fmtD(total), not a hardcoded '$' prefix -- same currency-consistency
+  // gap as showImportPreview()/renderExcludedAccounts(), found in the
+  // same 39th-pass sweep. fmtD() itself is esc()-wrapped, but that's
+  // moot for a .textContent assignment (never an XSS vector here either
+  // way) -- fixed purely for currency-symbol consistency.
+  if(totalEl)totalEl.textContent=fmtD(total);
   // Pre-select all radio highlight
   selectVenmoOpt({value:'shopping'});
   document.getElementById('venmo-cashout-modal').classList.remove('hidden');
@@ -9627,7 +9653,13 @@ function openKBB(year,make,model){
 }
 
 function renderExcludedAccounts(){
-  const fmt=n=>'$'+n.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
+  // Previously shadowed the shared, currency-aware fmt() (§2298) with a
+  // local copy hardcoding '$' -- excluded accounts (529s, custodial/trust
+  // accounts, the demo's own excluded accounts) always showed '$' here
+  // regardless of the user's chosen currency symbol, on both this tab and
+  // the Net Worth tab's excluded-accounts group. Removed so both
+  // fmt(a.balance) call sites below fall through to the real one. Found
+  // in the 39th adversarial pass.
   const colorHex='#D97706';
   const color='var(--amber-text)';
   const excluded=state.accounts.filter(a=>a.excludeFromNW);
