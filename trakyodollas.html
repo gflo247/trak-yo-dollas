@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-9u5ypJ8w6SQUax/SsNy6t5zyKgKt1zlilDnVTelLObg=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ryjmEm4FWcXKSHVTMkUEGd5NddAz1eZuy2urCYipvEM=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3345,7 +3345,11 @@ function renderNwGoalWidget(){
     milestonesEl.innerHTML=MILESTONES.map(m=>{
       const isSelected=goal===m;
       const isReached=nw>=m;
-      const label=m>=1000000?`$${m/1000000}M`:`$${m/1000}k`;
+      // esc(state.currency), not a hardcoded '$' -- found in the 41st
+      // adversarial pass (missed by the 38th/39th passes' currency sweep
+      // since it builds a label string rather than calling fmt/fmtC).
+      const curSym=esc(state.currency||'$');
+      const label=m>=1000000?`${curSym}${m/1000000}M`:`${curSym}${m/1000}k`;
       return`<button data-action="setNwGoal" data-arg="${m}" style="
         padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:${isReached?'default':'pointer'};
         background:${isSelected?'#2563EB':tc('#1E293B','#F1F5F9')};
@@ -6658,10 +6662,22 @@ function saveHistoricalSnapshot(){
   }
   const existingIdx=state.snapshots.findIndex(s=>s.monthKey===monthKey);
   const snap={date:displayDate,label:MON3[d.getMonth()],monthKey,nw:Math.round(nw),assets:Math.round(assets),liab:Math.round(liab)};
+  const movedFromMonthKey=(_editingSnapshotMonthKey&&_editingSnapshotMonthKey!==monthKey)?_editingSnapshotMonthKey:null;
   if(existingIdx>=0){state.snapshots[existingIdx]=snap;showToast(`📅 Updated snapshot for ${displayDate}`,'#34D399');}
   else{state.snapshots.push(snap);state.snapshots.sort((a,b)=>a.monthKey.localeCompare(b.monthKey));showToast(`📅 Historical snapshot added for ${displayDate}`,'#34D399');}
   _editingSnapshotMonthKey=null;
   closeModals();renderHistory();renderNwChart();scheduleSave();
+  // Unlike saveSnapshot()/confirmDeleteSnapshot(), this path never wrote to
+  // Supabase's per-row snapshots table -- scheduleSave() only syncs the
+  // `prefs` payload, which deliberately excludes snapshots (see
+  // check-cloudsync-coverage.py's docstring). Any snapshot added or edited
+  // here was silently reverted by the next loadUserData() cloud pull
+  // (unconditional wholesale overwrite of state.snapshots) on this device
+  // or any other. Found in the 41st adversarial pass.
+  if(window._fbUser&&window._fb&&!window._isDemoPreview&&!window._viewingDemoOverReal){
+    _fbCallAfterMerge(()=>window._fb.saveSnapshot(window._fbUser.uid,snap).catch(e=>console.error(e)));
+    if(movedFromMonthKey)_fbCallAfterMerge(()=>window._fb.deleteSnapshot(window._fbUser.uid,movedFromMonthKey).catch(e=>console.error(e)));
+  }
 }
 
 function applyRulesToExisting(){
@@ -8188,9 +8204,21 @@ function renderRulesList(){
       No rules yet. Add your first rule above, or edit any transaction, change its category, and choose <strong style="color:var(--text-primary)">Save Rule</strong> — it will apply automatically on every future import.
     </div>`;return;
   }
-  // Count how many transactions match each rule
+  // Count how many transactions match each rule. applyRulesToExisting() and
+  // the CSV-import auto-categorizer both use first-match-wins (state.catRules
+  // is checked in order, break on first hit), and addCatRule() unshifts new/
+  // edited rules to the front -- so a transaction matching two rules is only
+  // ever actually claimed by the earlier (higher-priority) one. A naive
+  // per-rule substring count (ignoring earlier rules) overstates what a
+  // later, broader rule will actually do -- found in the 41st adversarial
+  // pass.
+  const _claimed=new Set();
   el.innerHTML=state.catRules.map((r,i)=>{
-    const matches=state.transactions.filter(t=>t.desc.toUpperCase().includes(r.keyword.toUpperCase())).length;
+    const matches=state.transactions.reduce((n,t)=>{
+      if(_claimed.has(t)||!t.desc.toUpperCase().includes(r.keyword.toUpperCase()))return n;
+      _claimed.add(t);
+      return n+1;
+    },0);
     return`<div class="list-row">
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
