@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-GF40x0PMDD32w2/e1q7wy2DnwSeyIU9BtbiuN+8ZqcE=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-wwFTVgSpDhsKMjFSBFYttFA1iF6QRzNGlsX2Ouj6t9o=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -5201,32 +5201,26 @@ function renderSpendChart(){
     const smRow=document.getElementById('chart-show-more-row');
     if(smRow)smRow.style.display='none';
     if(fn)fn.textContent='';
-    // When a category filter is active, compute source totals from filtered
-    // transactions -- grouped by period (a month, or every month in a
-    // quarter/year) so this stays correct regardless of chartGrain. Used to
-    // only run this branch `&&!useAgg`, so switching to Quarterly/Yearly
-    // while a category filter was active silently fell back to `monthly`
-    // (built from unfiltered getAggregatedData()), reverting the chart to
-    // all categories with no indication the filter stopped applying.
-    let sourceMonthly=monthly;
-    if(state.activeCats.size>0){
-      const periods=useAgg?getAggregatedPeriods():getFilteredMonths().map(m=>({label:fmtMonthShort(m),months:[m]}));
-      sourceMonthly=periods.map(p=>{
-        const bySource={};
-        [...state.activeSources].forEach(s=>bySource[s]=0);
-        p.months.forEach(m=>{
-          state.transactions.filter(t=>
-            t.date.slice(0,7)===m&&state.activeSources.has(t.card)&&
-            state.activeCats.has(t.cat)&&!t.excluded&&
-            (_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)
-          ).forEach(t=>bySource[t.card]=(bySource[t.card]||0)+t.amount);
-        });
-        return {bySource};
-      });
-    }
+    // Built from getBaseTxs(), the same base Category/Vendor/Trend modes
+    // use -- grouped by period so this stays correct regardless of
+    // chartGrain, and correctly matches state.showExcluded ("Show in
+    // totals") with or without a category filter. This used to branch:
+    // unfiltered read `monthly` (built from unfiltered getAggregatedData(),
+    // which never respected showExcluded at non-Monthly grain), and the
+    // filtered branch hardcoded !t.excluded, ignoring the toggle
+    // entirely. Found in the 28th adversarial pass, fixed as a follow-up
+    // per Nicholas's explicit request to make Source match rather than
+    // drop the toggle.
+    const sourcePeriods=useAgg?getAggregatedPeriods():getFilteredMonths().map(m=>({label:fmtMonthShort(m),months:[m]}));
+    const sourceMonthMap={};
+    getBaseTxs().filter(t=>(state.showExcluded||!t.excluded)&&!t.isIncome&&(state.activeCats.size===0||state.activeCats.has(t.cat))).forEach(t=>{
+      const m=t.date.slice(0,7);
+      if(!sourceMonthMap[t.card])sourceMonthMap[t.card]={};
+      sourceMonthMap[t.card][m]=(sourceMonthMap[t.card][m]||0)+t.amount;
+    });
     const datasets=[...state.activeSources].map(s=>({
       label:s,
-      data:sourceMonthly.map(m=>m.bySource[s]||0),
+      data:sourcePeriods.map(p=>p.months.reduce((sum,m)=>sum+((sourceMonthMap[s]||{})[m]||0),0)),
       backgroundColor:_patternsEnabled
         ? makePattern(SRC_CHART_COLORS[s], SRC_PATTERNS[s]||'diagonal')
         : SRC_CHART_COLORS[s]+'BB',
@@ -5252,18 +5246,21 @@ function renderSpendChart(){
     // rendered a visibly garbled chart the instant Quarterly/Yearly was
     // selected in Trend mode.
     const periods=useAgg?getAggregatedPeriods():getFilteredMonths().map(m=>({label:fmtMonthShort(m),months:[m]}));
-    const totals=periods.map(p=>{
-      if(state.activeCats.size===0){
-        return p.months.reduce((sum,m)=>{
-          const row=MONTHLY[m]||{};
-          return sum+[...state.activeSources].reduce((s,src)=>s+(row[src]||0),0);
-        },0);
-      }
-      return p.months.reduce((sum,m)=>sum+state.transactions.filter(t=>
-        t.date.slice(0,7)===m&&state.activeSources.has(t.card)&&state.activeCats.has(t.cat)&&!t.excluded&&
-        (_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)
-      ).reduce((s,t)=>s+t.amount,0),0);
+    // Built from getBaseTxs(), the same base Category/Vendor mode use --
+    // matches state.showExcluded ("Show in totals") correctly at every
+    // grain and with or without a category filter. The unfiltered branch
+    // used to read MONTHLY directly, which always excludes hidden/
+    // excluded transactions regardless of the toggle, so "Show in
+    // totals" had no visible effect on this chart at all; the filtered
+    // branch hardcoded !t.excluded, ignoring the toggle too. Found in
+    // the 28th adversarial pass, fixed as a follow-up per Nicholas's
+    // explicit request to make Trend match rather than drop the toggle.
+    const trendMonthTotals={};
+    getBaseTxs().filter(t=>(state.showExcluded||!t.excluded)&&!t.isIncome&&(state.activeCats.size===0||state.activeCats.has(t.cat))).forEach(t=>{
+      const m=t.date.slice(0,7);
+      trendMonthTotals[m]=(trendMonthTotals[m]||0)+t.amount;
     });
+    const totals=periods.map(p=>p.months.reduce((sum,m)=>sum+(trendMonthTotals[m]||0),0));
     const rolling=totals.map((v,i)=>{
       const slice=totals.slice(Math.max(0,i-2),i+1);
       return Math.round(slice.reduce((a,b)=>a+b,0)/slice.length);
