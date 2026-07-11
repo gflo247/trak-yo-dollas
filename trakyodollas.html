@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-icYkFSXUOo4jKlMyhq73wol/aiRabK+kUTYtLIe4qnc=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ZaTWL0K94ATUhMEQxNDwDgquDMvt+g38M3dgev3ME4k=' 'sha256-uR1XgnIZ/+b0luk25nYGct77lwIRBLB7HIbmkgcljdU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -7663,7 +7663,13 @@ function exportBudgetCSV(){
 function detectSubscriptions(allMonths,latestFullM){
   const recentMonths=(allMonths||Object.keys(MONTHLY).sort()).slice(-6);
   const vendorMonths={};
-  state.transactions.filter(t=>isRealSpend(t)&&!state.excludedCats.has(t.cat)&&recentMonths.includes(t.date.slice(0,7))&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).forEach(t=>{
+  // Missing state.activeSources.has(t.card) until the 34th adversarial
+  // pass -- every comparable spend-aggregating view in the app (getBaseTxs()
+  // and its ~45 call sites) respects the user's deselected-source filter;
+  // this one didn't, so deselecting a card/account left its recurring
+  // charges still counted here, silently disagreeing with every other
+  // figure on the page.
+  state.transactions.filter(t=>isRealSpend(t)&&!state.excludedCats.has(t.cat)&&state.activeSources.has(t.card)&&recentMonths.includes(t.date.slice(0,7))&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).forEach(t=>{
     const v=resolveVendor(t.desc);
     if(!vendorMonths[v])vendorMonths[v]=[];
     vendorMonths[v].push({m:t.date.slice(0,7),amt:t.amount,desc:t.desc,cat:t.cat});
@@ -9020,6 +9026,20 @@ function normalizeTxRow(row, source){
     if(mccCat)cat=mccCat;
   }
 
+  // isReservedCatName() (guards addCustomCat()/confirmRenameCat()/
+  // addVendorAlias() against user-typed '__'-prefixed names that collide
+  // with Sankey/Treemap's internal synthetic bucket keys) only guards
+  // category *creation* through the UI -- CSV import assigns t.cat
+  // directly from parsed row data (row['category']/row['cat']/row['type'],
+  // several branches above, including the trakyodollas re-import branch's
+  // "trust every field directly" path) with no path through either of
+  // those functions at all. A hand-edited or malicious CSV could set a
+  // row's category cell to '__income__' and reach renderSankey() with a
+  // category sharing the real income node's id, corrupting the whole
+  // diagram exactly like a UI-created one would have before the 33rd
+  // pass -- just via an entry point that guard was never wired into.
+  // Found in the 34th adversarial pass.
+  if(isReservedCatName(cat))cat='Other';
   return {date,desc:desc.slice(0,50),cat,card:source,amount:Math.round(amount*100)/100,excluded,is_offset:false,isIncome:isIncome||false,biz:biz||false};
 }
 
