@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-nOyAKu5i2bZuzdIwJ76V38vTMhhuj1IlGYh0Earsj6A=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-oZ/4hBe9+qPaAH4JvDDCZX4gphyqg8DLUUb13kI/jQM=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2359,6 +2359,30 @@ let _treemapPrevActiveCats=null;
 // Found in the 48th adversarial pass.
 function _restoreCatsFromTreemapStash(){
   if(_treemapPrevActiveCats){state.activeCats=_treemapPrevActiveCats;_treemapPrevActiveCats=null;}
+}
+// Discards (not restores) any active vendor drill-down, calendar-day
+// filter, and Treemap category stash -- for a site where state.transactions
+// is about to be wholesale-replaced (a demo profile switch, a cloud-sync
+// pull landing mid-session while the UI is fully interactive), a stale
+// state.activeVendors/activeDate pointing at values from the OLD dataset
+// would silently zero-filter the Spending tab's chart/bucket grid/tx list
+// against the NEW one -- no visible cause, no UI control left to notice or
+// fix it, same shape as the _bizFilter reset already done in
+// loadDemoProfile(). Restoring (not discarding) _treemapPrevActiveCats
+// would be wrong here too -- the category filter it stashed refers to the
+// OLD dataset, same reasoning resetTreemapToCategories()/Escape already use
+// for their own "deliberate reset" exit paths. Found in the 55th
+// adversarial pass.
+function _clearVendorDayFiltersForDataReplace(){
+  if(state.activeDate){
+    state.activeDate=null;
+    document.querySelectorAll('.cal-day-active').forEach(el=>{el.classList.remove('cal-day-active');el.style.outline='';});
+  }
+  if(state.activeVendors?.size>0){
+    state.activeVendors=new Set();
+    state.bucketMode='category';
+  }
+  _treemapPrevActiveCats=null;
 }
 
 // ── Format / theme / tooltip helpers ─────────────────────────────
@@ -10107,6 +10131,21 @@ function checkForVenmoCashouts(txs){
   // default, so clicking Apply without noticing could silently overwrite
   // an already-correct custom category back to Shopping.
   const cashouts=txs.filter(t=>t.desc&&t.desc.toUpperCase().includes('VENMO CASHOUT')&&!t.is_offset);
+  // Merge in any still-unresolved batch from an earlier call whose modal
+  // got closed by some path other than applyVenmoOpt() (a second import's
+  // unconditional closeModals(), the generic Escape handler) before the
+  // user actually resolved it -- otherwise those ids would be silently
+  // dropped from the only variable applyVenmoOpt() reads below, permanently
+  // stranding them with no future UI path to categorize/offset/exclude
+  // them (checkForVenmoCashouts() only ever inspects the freshly-imported
+  // batch passed in, never re-scans all of state.transactions). Found in
+  // the 55th adversarial pass, reachable via the ordinary "Import another"
+  // back-to-back import flow.
+  if(_pendingVenmoCashoutIds){
+    const stillPresentIds=new Set(cashouts.map(t=>t.id));
+    const stranded=state.transactions.filter(t=>_pendingVenmoCashoutIds.has(t.id)&&!t.is_offset&&!stillPresentIds.has(t.id));
+    cashouts.push(...stranded);
+  }
   if(!cashouts.length)return;
   // Stashed so applyVenmoOpt() only touches this exact batch (below) --
   // it used to re-match every VENMO CASHOUT description in
@@ -10503,6 +10542,7 @@ async function loadUserData(uid) {
       if (Array.isArray(prefs.transactions)) {
         state.transactions = prefs.transactions.map(t=>({...t,amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
         _txsDirty=true;
+        _clearVendorDayFiltersForDataReplace();
         rebuildMonthly();
       } else if (prefs.txEdits) {
         // Legacy: apply edits to existing transactions
@@ -10974,7 +11014,13 @@ function importCsvText(){
   const {imported,skipped}=parseCsvAccounts(t);
   el.value='';
   closeModals();renderAll();
-  if(imported>0)scheduleSave(); // handleCsv() (file-upload sibling path) already does this; this text-paste path never did, so pasted accounts silently vanished on reload
+  // No inline scheduleSave() needed here -- importCsvText is in the
+  // auto-save patch list below (search 'Patch mutating functions'), which
+  // wraps window.importCsvText to call scheduleSave() unconditionally
+  // after every invocation. A 54th-pass review incorrectly diagnosed this
+  // as a CRITICAL missing-save bug and added a redundant inline call here;
+  // caught and reverted by the 55th pass once the patch-list wrapper (added
+  // back in the 14th pass, for this exact function) was found.
   showToast(imported>0?`✓ Imported ${imported} account${imported===1?'':'s'}${skipped>0?` (${skipped} row${skipped===1?'':'s'} skipped)`:''}`:'No valid rows found in that text','#FCD34D');
 }
 // name,source,type,balance -- balance of exactly 0 (a paid-off card, a
@@ -11848,6 +11894,7 @@ function loadDemoProfile(n, silent=false, skipRender=false){
   state.dashFilter=null;
   state.searchQuery='';
   state.showExcluded=false;
+  _clearVendorDayFiltersForDataReplace();
   rebuildMonthly();
   rebuildCatSelects();
   if(skipRender)return; // caller handles rendering
