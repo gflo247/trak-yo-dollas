@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-smgHwMIiGNZwekNae03bRSfvp2UypJs5PY/+M6byaho=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-g1P9b3Y3z06GUkNBo0Zfy8jVBZ0una3fSAOs9mzevEQ=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -638,8 +638,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Demo profile picker -->
 <div id="demo-picker-overlay" class="demo-picker-overlay" style="display:none">
-  <div class="demo-picker">
-    <h2>Try the app with demo data</h2>
+  <div class="demo-picker" role="dialog" aria-modal="true" aria-labelledby="demo-picker-title" tabindex="-1">
+    <h2 id="demo-picker-title">Try the app with demo data</h2>
     <p>Pick a profile and explore all four tabs with realistic sample data. Switch profiles anytime.</p>
     <button class="demo-profile-btn" data-action="loadDemoProfile" data-arg="1" type="button">
       <div class="demo-profile-icon">🌱</div>
@@ -6048,9 +6048,15 @@ document.addEventListener('keydown',function(e){
   // click on a background element) would need page-wide focusin handling,
   // a materially bigger change than what pass 52 actually flagged.
   if(e.key==='Tab'){
-    const openModal=document.querySelector('.modal-overlay:not(.hidden)');
+    // #demo-picker-overlay fallback added in accessibility chunk 5/5 --
+    // mirrors, doesn't fix, the fact this same first-DOM-match selector
+    // (and the Escape block above) can't distinguish it stacking on top of
+    // an already-open .modal-overlay (found in pass 52); noted, not solved.
+    const demoPicker=document.getElementById('demo-picker-overlay');
+    const openModal=document.querySelector('.modal-overlay:not(.hidden)')
+      ||(demoPicker&&demoPicker.style.display!=='none'?demoPicker:null);
     if(!openModal)return;
-    const scope=openModal.querySelector('.modal')||openModal;
+    const scope=openModal.querySelector('.modal, .demo-picker')||openModal;
     const focusable=_a11yGetFocusable(scope);
     if(focusable.length===0){e.preventDefault();return;}
     const first=focusable[0],last=focusable[focusable.length-1];
@@ -8270,6 +8276,11 @@ function openSubscriptionsModal(){
 function showPillTip(_,el){
   const tip=el.getAttribute('data-tip');
   if(!tip)return;
+  // Deliberately not a role="dialog" focus-trap target (accessibility
+  // chunk 5/5) -- this is a dismiss-on-click tooltip with no focusable
+  // content, not a task surface a user tabs through; role="dialog" would
+  // be wrong per WAI-ARIA APG, and trapping Tab inside an element with
+  // zero focusable descendants is a no-op at best.
   // Show as a small overlay modal
   let overlay=document.getElementById('pill-tip-overlay');
   if(!overlay){
@@ -10594,7 +10605,13 @@ function _avatarPopOutside(e){
 let _a11yOpenModalEl=null, _a11yReturnFocusEl=null, _a11yFocusGen=0;
 
 function _a11yOnModalAttrChange(modalEl){
-  const isOpen=!modalEl.classList.contains('hidden');
+  // #demo-picker-overlay is the one deliberate exception -- it predates
+  // and doesn't use the .modal-overlay/.hidden convention every other
+  // dialog does (style.display instead), so it needs its own isOpen check
+  // rather than the class-based one. Added in accessibility chunk 5/5.
+  const isOpen=modalEl.id==='demo-picker-overlay'
+    ?modalEl.style.display!=='none'
+    :!modalEl.classList.contains('hidden');
   if(isOpen&&_a11yOpenModalEl!==modalEl)_a11yHandleOpen(modalEl);
   else if(!isOpen&&_a11yOpenModalEl===modalEl)_a11yHandleClose();
 }
@@ -10620,7 +10637,7 @@ function _a11yFallbackFocus(modalEl,myGen){
   // user simply tabbed/clicked somewhere themselves before this fired --
   // either way, don't fight it.
   if(document.activeElement!==_a11yReturnFocusEl)return;
-  const scope=modalEl.querySelector('.modal')||modalEl;
+  const scope=modalEl.querySelector('.modal, .demo-picker')||modalEl;
   const first=_a11yGetFocusable(scope)[0];
   (first||scope).focus();
 }
@@ -10640,6 +10657,11 @@ const _a11yModalObserver=new MutationObserver(records=>records.forEach(r=>_a11yO
 document.querySelectorAll('.modal-overlay').forEach(el=>{
   _a11yModalObserver.observe(el,{attributes:true,attributeFilter:['class']});
 });
+// #demo-picker-overlay uses style.display, not the .hidden class -- one
+// extra .observe() call on the same shared observer instance, watching
+// `style` instead of `class` for this one node only.
+const _a11yDemoPicker=document.getElementById('demo-picker-overlay');
+if(_a11yDemoPicker)_a11yModalObserver.observe(_a11yDemoPicker,{attributes:true,attributeFilter:['style']});
 
 function closeModals(){
   document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.add('hidden'));
