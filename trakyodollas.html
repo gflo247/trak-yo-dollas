@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-MLEbqFE0FMIhBntaj9HKZTlYJKGgemeNPBe4VosxBRY=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-/YHHUm8WHfqM0wlMlR4R9TmlM//8QUwXh/8bTektA4o=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2195,8 +2195,17 @@ let state={
   // Calling preventDefault() twice on the same event (once here, once
   // inside dragOverHighlight()/handleTxDrop() when the target does match)
   // is harmless. Found in the 44th adversarial pass.
-  document.addEventListener('dragover',e=>e.preventDefault());
-  document.addEventListener('drop',e=>e.preventDefault());
+  //
+  // Scoped to an actual file drag (dataTransfer.types includes 'Files'),
+  // not every drag -- an unconditional preventDefault() here also silently
+  // canceled the browser's native "insert dragged text" behavior for any
+  // input/textarea in the app (e.g. dragging selected text from tx-search
+  // into another field), since defaultPrevented is evaluated once for the
+  // whole event dispatch regardless of which listener set it. Found in the
+  // 45th adversarial pass, a regression in the 44th pass's own fix.
+  const isFileDrag=e=>e.dataTransfer&&[...e.dataTransfer.types].includes('Files');
+  document.addEventListener('dragover',e=>{if(isFileDrag(e))e.preventDefault();});
+  document.addEventListener('drop',e=>{if(isFileDrag(e))e.preventDefault();});
   ['mouseover','mouseout','keydown'].forEach(evt=>{
     document.addEventListener(evt,e=>dispatch(e,'data-'+evt,true));
   });
@@ -6335,7 +6344,15 @@ function deleteVehicle(){
     // old name-match for a record saved before acctId existed and never
     // since edited.
     if(v.acctId!=null)state.accounts=state.accounts.filter(a=>a.id!==v.acctId);
-    else state.accounts=state.accounts.filter(a=>!(a.type==='vehicle'&&a.name===v.name));
+    // (type==='vehicle'||type==='other-asset'), not just 'vehicle' -- matches
+    // saveVehicle()'s own self-heal fallback (~line 10467) for the identical
+    // pre-acctId legacy-record case. A legacy "Other" physical asset
+    // (boat/jewelry/etc., paired to an 'other-asset' account, never edited
+    // since acctId was introduced in the 35th pass) fell through this
+    // filter unmatched, leaving its account behind as an orphaned duplicate
+    // in the Accounts tab and net worth after "deleting" it. Found in the
+    // 45th adversarial pass.
+    else state.accounts=state.accounts.filter(a=>!((a.type==='vehicle'||a.type==='other-asset')&&a.name===v.name));
   }
   closeModals();
   renderAll();
@@ -6751,12 +6768,21 @@ function saveHistoricalSnapshot(){
     // once, not just one) would silently clobber each other, and the user
     // would only ever see whichever settled last. Found in the 44th
     // adversarial pass.
-    const saveP=new Promise(res=>{_fbCallAfterMerge(()=>window._fb.saveSnapshot(window._fbUser.uid,snap).then(()=>res(true)).catch(()=>res(false)));});
+    // Raced against a 15s timeout -- _fbCallAfterMerge() silently drops fn()
+    // (never calls it, so res() never fires) if window._fbUser goes null
+    // while its 300ms poll is still waiting out an in-flight cloud merge
+    // (e.g. the user signs out in that window). Without a bound, that left
+    // this Promise permanently pending, so Promise.all below never resolved
+    // and the completion toast never fired for an edit that's now
+    // permanently unsynced with zero indication. Found in the 45th
+    // adversarial pass.
+    const withTimeout=p=>Promise.race([p,new Promise(res=>setTimeout(()=>res(false),15000))]);
+    const saveP=withTimeout(new Promise(res=>{_fbCallAfterMerge(()=>window._fb.saveSnapshot(window._fbUser.uid,snap).then(()=>res(true)).catch(()=>res(false)));}));
     let deleteP=Promise.resolve(true),movedFromLabel=null;
     if(movedFromMonthKey){
       const[my,mm]=movedFromMonthKey.split('-');
       movedFromLabel=`${MON3[parseInt(mm,10)-1]} ${my}`;
-      deleteP=new Promise(res=>{_fbCallAfterMerge(()=>window._fb.deleteSnapshot(window._fbUser.uid,movedFromMonthKey).then(()=>res(true)).catch(()=>res(false)));});
+      deleteP=withTimeout(new Promise(res=>{_fbCallAfterMerge(()=>window._fb.deleteSnapshot(window._fbUser.uid,movedFromMonthKey).then(()=>res(true)).catch(()=>res(false)));}));
     }
     Promise.all([saveP,deleteP]).then(([saveOk,deleteOk])=>{
       if(saveOk&&deleteOk)return;
@@ -10353,6 +10379,16 @@ function openVehicleModal(){
   document.getElementById('v-modal-title').textContent='Add physical asset';
   ['v-vin','v-year','v-make','v-model','v-miles','v-value','v-purchase','v-purchase-year','v-other-name'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const vcs=document.getElementById('v-condition');if(vcs)vcs.value='very good';
+  // v-other-cat was never reset here (only editVehicle()'s edit path sets
+  // it) -- adding one "Other" physical asset with a non-default category
+  // (e.g. Jewelry), closing the modal, then opening it again to add a
+  // second, unrelated "Other" asset left the category select showing the
+  // previous session's stale value unless the user noticed and changed it
+  // manually, silently mis-tagging the new asset's Net Worth breakdown
+  // grouping on save. Reset to the select's own default (its first,
+  // unmarked option, "Boat / Watercraft") to match. Found in the 45th
+  // adversarial pass.
+  const voc=document.getElementById('v-other-cat');if(voc)voc.value='Boat';
   const s=document.getElementById('v-vin-status');if(s)s.textContent='';
   const db=document.getElementById('delete-vehicle-btn');if(db)db.style.display='none';
   const dc=document.getElementById('delete-vehicle-confirm');if(dc)dc.style.display='none';
