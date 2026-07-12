@@ -391,6 +391,7 @@ test("scheduleSave: demo-preview flag prevents the debounced save from ever firi
   const ctx = {
     window: { _isDemoPreview: true, _viewingDemoOverReal: false, _fbUser: null, _fb: null, _awaitingCloudMerge: false },
     _lsSaveTimer: null,
+    _clearAllDataInProgress: false,
     saveToLocalStorage: () => { saveCalled = true; },
     syncToCloud: () => {},
   };
@@ -404,6 +405,7 @@ test("scheduleSave: awaitingCloudMerge gates only the cloud sync, not the local 
   const ctx = {
     window: { _isDemoPreview: false, _viewingDemoOverReal: false, _fbUser: { uid: "x" }, _fb: {}, _awaitingCloudMerge: true },
     _lsSaveTimer: null,
+    _clearAllDataInProgress: false,
     saveToLocalStorage: () => { saveCalled = true; },
     syncToCloud: () => { syncCalled = true; },
   };
@@ -412,6 +414,27 @@ test("scheduleSave: awaitingCloudMerge gates only the cloud sync, not the local 
   await new Promise((r) => setTimeout(r, 900));
   assert.equal(saveCalled, true);
   assert.equal(syncCalled, false);
+});
+test("scheduleSave: _clearAllDataInProgress blocks a new debounced save from arming — the 60th-pass fix for a race in confirmClearAllData()'s await", async () => {
+  // confirmClearAllData() awaits window._fb.signOut() before wiping
+  // localStorage; during that await the app is fully interactive again
+  // (Escape closes the confirmation modal, since it isn't special-cased),
+  // so any edit in that window used to arm a brand-new _lsSaveTimer that
+  // outlived the function's own clearTimeout() at its top -- the reload's
+  // resulting pagehide/_flushPendingSave() would then re-save the very
+  // keys just deleted, resurrecting the "permanently deleted" data.
+  let saveCalled = false;
+  const ctx = {
+    window: { _isDemoPreview: false, _viewingDemoOverReal: false, _fbUser: null, _fb: null, _awaitingCloudMerge: false },
+    _lsSaveTimer: null,
+    _clearAllDataInProgress: true,
+    saveToLocalStorage: () => { saveCalled = true; },
+    syncToCloud: () => {},
+  };
+  const { scheduleSave } = loadFunctions(["scheduleSave"], ctx);
+  scheduleSave();
+  await new Promise((r) => setTimeout(r, 900));
+  assert.equal(saveCalled, false);
 });
 
 // ── mutateTransactions() — the wrapper added to collapse the three-step
@@ -435,6 +458,7 @@ test("mutateTransactions: a mutation reaches localStorage after the debounce", a
     localStorage: makeLsSpy(),
     _txsDirty: false,
     _lsSaveTimer: null,
+    _clearAllDataInProgress: false,
     state: { transactions: [{ id: 1, cat: "Other" }] },
     rebuildMonthly: () => {}, // spy/no-op -- rebuildMonthly's own correctness is covered elsewhere
     showToast: () => {},
@@ -458,6 +482,7 @@ function flushCtx(overrides) {
   return {
     window: { _isDemoPreview: false, _viewingDemoOverReal: false, _fbUser: null, _fb: null, _awaitingCloudMerge: false, ...overrides },
     _lsSaveTimer: null,
+    _clearAllDataInProgress: false,
     saveToLocalStorage: () => {},
     syncToCloud: () => {},
   };

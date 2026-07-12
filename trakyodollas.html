@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-+o02j0ua2U0CgVy9NgwIpnVOKHEC1aXDez/rAkbtRGU=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Zfho1Cc04dRSgb26cMEFzyFUWe6PEWxoPKRDM+03XFs=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1500,7 +1500,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <div style="font-size:12px;color:var(--text-primary);line-height:1.6">If a transaction description contains <strong id="srp-keyword" style="color:#60A5FA;font-family:monospace"></strong>, categorize it as <strong id="srp-cat" style="color:#34D399"></strong>.</div>
       <div style="margin-top:.6rem">
         <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;font-weight:600" for="srp-keyword-input">Keyword (edit if needed)</label>
-        <input type="text" id="srp-keyword-input" class="input-mono"/>
+        <input type="text" id="srp-keyword-input" class="input-mono" data-input="validateSrpKeyword"/>
       </div>
     </div>
     <div id="srp-existing-warning" class="hidden" style="background:#78350F18;border:1px solid #D9770633;border-radius:8px;padding:.5rem .75rem;margin-bottom:.75rem;font-size:11px;color:#D97706"></div>
@@ -6081,6 +6081,13 @@ document.addEventListener('keydown',function(e){
       // the sync-passphrase-modal case above. Found in the 49th
       // adversarial pass.
       if(openModal.id==='income-modal'){closeIncomeModal();return;}
+      // A no-op, not the generic close, while confirmClearAllData()'s
+      // signOut() await is actually in flight -- otherwise Escape visually
+      // closes this modal, looking like the user cancelled a "cannot be
+      // undone" deletion, while the wipe silently keeps running underneath
+      // and the page still reloads moments later with no further warning.
+      // Found in the 60th adversarial pass.
+      if(openModal.id==='clear-data-modal'&&_clearAllDataInProgress)return;
       closeModals();return;
     }
     // Clear active filters
@@ -7201,32 +7208,62 @@ async function confirmClearAllData(){
   // the last 800ms can never re-write the keys being deleted below.
   clearTimeout(_lsSaveTimer);
   _lsSaveTimer=null;
-  // Sign out (awaited) and clear the cached sync passphrase BEFORE wiping
-  // local keys and reloading -- without this, a signed-in cloud-sync user's
-  // Supabase session survives the reload untouched (it's stored under its
-  // own localStorage keys, not any of the trakyo_* ones removed below), so
-  // onAuthStateChange's INITIAL_SESSION handler fires for the still-valid
-  // session, finds the still-cached passphrase, and promptSyncPassphrase()
-  // silently calls loadUserData() with no prompt -- fully repopulating
-  // every deleted transaction/account/budget/rule/snapshot from the cloud
-  // within about a second, directly contradicting this feature's own
-  // confirmation copy ("This cannot be undone"). Awaited (not fire-and-
-  // forget like doSignOut()'s other callers) so the reload below can't
-  // race ahead of Supabase's own local-session-token cleanup. Does NOT
-  // delete the cloud-stored backup itself -- that's the materially
-  // different, more severe action confirmForgotPassphraseReset() already
-  // handles under its own explicit "permanently delete your synced data"
-  // copy; this button only ever promised to reset what's on this device.
-  // Found in the 59th adversarial pass.
-  if(window._fb){try{await window._fb.signOut();}catch(e){}}
-  clearSyncPassphrase();
+  // _clearAllDataInProgress gates scheduleSave() (search its definition)
+  // for the duration of the await below -- the 59th pass's own signOut()
+  // await (added to fix the cloud-repopulation bug documented there)
+  // introduced a real yield point: the global Escape handler doesn't
+  // special-case clear-data-modal, so pressing Escape while this await is
+  // pending visually closes the modal (looking like a cancel) while this
+  // function keeps running underneath. Any state-mutating action taken in
+  // that window (the app is fully interactive again) would otherwise arm a
+  // brand-new _lsSaveTimer via scheduleSave() -- created after the
+  // clearTimeout() above already ran, so nothing here would know to cancel
+  // it. When the await resolves and location.reload() fires pagehide,
+  // _flushPendingSave() would see that live timer and call
+  // saveToLocalStorage(), writing the just-deleted keys straight back
+  // moments before the reload, resurrecting data the user was told is gone
+  // for good. try/finally so an unexpected throw can't leave scheduleSave()
+  // permanently gated for the rest of the session. Found in the 60th
+  // adversarial pass, a direct regression from the 59th pass's own await.
+  _clearAllDataInProgress=true;
   try{
-    localStorage.removeItem('trakyo_state_v2');
-    localStorage.removeItem('trakyo_txs_v1');
-    localStorage.removeItem('trakyo_state_v1');
-    localStorage.removeItem('trakyo_tab');
-    localStorage.removeItem('trakyo_chart');
-  }catch(e){}
+    // Sign out (awaited) and clear the cached sync passphrase BEFORE wiping
+    // local keys and reloading -- without this, a signed-in cloud-sync
+    // user's Supabase session survives the reload untouched (it's stored
+    // under its own localStorage keys, not any of the trakyo_* ones removed
+    // below), so onAuthStateChange's INITIAL_SESSION handler fires for the
+    // still-valid session, finds the still-cached passphrase, and
+    // promptSyncPassphrase() silently calls loadUserData() with no prompt
+    // -- fully repopulating every deleted transaction/account/budget/
+    // rule/snapshot from the cloud within about a second, directly
+    // contradicting this feature's own confirmation copy ("This cannot be
+    // undone"). Awaited (not fire-and-forget like doSignOut()'s other
+    // callers) so the reload below can't race ahead of Supabase's own
+    // local-session-token cleanup. Does NOT delete the cloud-stored backup
+    // itself -- that's the materially different, more severe action
+    // confirmForgotPassphraseReset() already handles under its own explicit
+    // "permanently delete your synced data" copy; this button only ever
+    // promised to reset what's on this device. Found in the 59th
+    // adversarial pass.
+    if(window._fb){try{await window._fb.signOut();}catch(e){}}
+    clearSyncPassphrase();
+    // Re-cleared here too, not just at the top -- defense-in-depth in case
+    // anything managed to arm a timer through some path other than
+    // scheduleSave() during the await above (none currently exists, but
+    // this costs nothing and directly guards the exact keys about to be
+    // removed).
+    clearTimeout(_lsSaveTimer);
+    _lsSaveTimer=null;
+    try{
+      localStorage.removeItem('trakyo_state_v2');
+      localStorage.removeItem('trakyo_txs_v1');
+      localStorage.removeItem('trakyo_state_v1');
+      localStorage.removeItem('trakyo_tab');
+      localStorage.removeItem('trakyo_chart');
+    }catch(e){}
+  }finally{
+    _clearAllDataInProgress=false;
+  }
   closeModals();
   location.reload();
 }
@@ -8789,12 +8826,18 @@ function deleteRule(i){
 }
 
 let _pendingRule=null;
-function openSaveRulePrompt(keyword,cat,fullDesc){
-  _pendingRule={keyword,cat};
-  document.getElementById('srp-keyword').textContent=keyword;
-  document.getElementById('srp-cat').textContent=cat;
-  document.getElementById('srp-keyword-input').value=keyword;
-  // Check for conflicts
+// Shared by openSaveRulePrompt() (initial check at open time) and
+// validateSrpKeyword() (live re-check as the user edits the field) --
+// the input is explicitly labeled "Keyword (edit if needed)", but before
+// the 60th adversarial pass the conflict warning was only ever computed
+// once, at open time, against the ORIGINAL keyword. saveEditTx() (the
+// input's one live caller) only opens this modal when the original
+// keyword has no conflict, so the warning could never actually show
+// through normal use -- except by the very edit this label invites: a
+// user generalizing "NETFLIXCOM" down to "NETFLIX" to match an existing
+// rule got no warning at all, and Save Rule silently deleted/replaced the
+// existing "NETFLIX" rule with zero indication anything was overwritten.
+function _checkSrpKeywordConflict(keyword){
   const warn=document.getElementById('srp-existing-warning');
   const conflict=state.catRules.find(r=>r.keyword.toUpperCase()===keyword.toUpperCase());
   if(conflict){
@@ -8803,6 +8846,16 @@ function openSaveRulePrompt(keyword,cat,fullDesc){
   } else {
     warn.classList.add('hidden');
   }
+}
+function validateSrpKeyword(val){
+  _checkSrpKeywordConflict((val||'').trim());
+}
+function openSaveRulePrompt(keyword,cat,fullDesc){
+  _pendingRule={keyword,cat};
+  document.getElementById('srp-keyword').textContent=keyword;
+  document.getElementById('srp-cat').textContent=cat;
+  document.getElementById('srp-keyword-input').value=keyword;
+  _checkSrpKeywordConflict(keyword);
   document.getElementById('save-rule-modal').classList.remove('hidden');
 }
 
@@ -11560,8 +11613,13 @@ window.addEventListener('offline',_updateOnlineStatus);
 
 // Debounced auto-save — fires 800ms after last mutation
 let _lsSaveTimer=null;
+// Set by confirmClearAllData() (search its definition) for the duration of
+// its signOut() await -- see the comment there for why arming a new
+// _lsSaveTimer during that window would resurrect the very data being
+// deleted. Found in the 60th adversarial pass.
+let _clearAllDataInProgress=false;
 function scheduleSave(){
-  if(window._isDemoPreview||window._viewingDemoOverReal)return; // demo-preview sessions never persist
+  if(window._isDemoPreview||window._viewingDemoOverReal||_clearAllDataInProgress)return; // demo-preview sessions never persist; a clear-all-data wipe is in flight
   clearTimeout(_lsSaveTimer);
   _lsSaveTimer=setTimeout(()=>{
     // Reset before the pending-save check below can see it — a fired
