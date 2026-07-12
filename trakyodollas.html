@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-vX0F2ims0QbeHgjIJvzANyKv6deH/IRW8Hir4spQw58=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-kQPFkWV0/zoWZLMQ2v6UI1BA4CkWTVFlO3wxklOcBWk=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -7813,6 +7813,7 @@ function applyCustomCurrency(val){
 }
 function openIncomeModal(){
   const m=state.income.method;
+  _lastSelectedIncomeMethod=m||null;
   selectIncomeMethodUI(m||null);
   // Compute latest full month spend for preview
   const allMonths=Object.keys(MONTHLY).sort();
@@ -7862,7 +7863,18 @@ function updateIncomePreview(incomeVal){
     <div style="font-size:11px;color:var(--text-muted);line-height:1.6">${fmt(saved)} kept of ${fmt(incomeVal)} take-home · <strong style="color:${color}">${bench}</strong></div>`;
 }
 
+// Tracks the user's most recent explicit method click, distinct from which
+// section closeIncomeModal() finds visible in the DOM -- clicking Auto then
+// clicking back onto Manual just to look (without changing anything) left
+// #income-manual-input visible again with its stale, never-cleared value
+// still in it, which closeIncomeModal()'s original visibility-only check
+// (49th pass) would have mistaken for "the user just chose Manual,"
+// silently reverting the just-made Auto selection on Done. Explicit intent
+// tracking avoids inferring the wrong thing from incidental DOM state.
+// Found in the 50th adversarial pass.
+let _lastSelectedIncomeMethod=null;
 function selectIncomeMethod(method){
+  _lastSelectedIncomeMethod=method;
   selectIncomeMethodUI(method);
   if(method==='auto'){
     state.income.method='auto';
@@ -7931,8 +7943,15 @@ function saveManualIncome(){
 // empty/invalid field (nothing to silently error about on a simple Done
 // click).
 function closeIncomeModal(){
-  const inputA=document.getElementById('income-manual-input');
-  if(inputA&&!inputA.classList.contains('hidden')){
+  // _lastSelectedIncomeMethod, not "is #income-manual-input currently
+  // visible" -- clicking Auto (committing immediately) and then clicking
+  // back onto Manual just to look re-reveals this section with its stale
+  // value still sitting in it, which the DOM-visibility check alone
+  // couldn't distinguish from an actual, deliberate re-selection of Manual.
+  // Using the last explicit click instead means a mere peek back at Manual
+  // without retyping anything doesn't silently revert an Auto selection
+  // that was already made and saved. Found in the 50th adversarial pass.
+  if(_lastSelectedIncomeMethod==='manual'){
     const val=parseFloat(document.getElementById('income-amount').value);
     if(val>0&&(state.income.method!=='manual'||Math.round(val)!==state.income.monthlyAmount))saveManualIncome();
   }
@@ -10659,6 +10678,18 @@ function toggleVendorFilter(vendor){
   if(!state.activeVendors)state.activeVendors=new Set();
   if(state.activeVendors.has(vendor))state.activeVendors.delete(vendor);
   else state.activeVendors.add(vendor);
+  // A 5th path clearing state.activeVendors the 49th pass's audit of
+  // "explicit reset" sites didn't cover, since this is a plain toggle, not
+  // a mode-reset function -- it only incidentally empties activeVendors via
+  // .delete() when the last vendor is removed. The bucket-grid vendor tiles
+  // this drives read/write the exact same state.activeVendors Treemap's own
+  // vendor-tile click handler does, so a vendor selected via Treemap (which
+  // stashes the prior category filter into _treemapPrevActiveCats) could be
+  // deselected via this bucket-grid path instead of the same Treemap tile --
+  // leaving the stash dangling and state.bucketMode never reset to
+  // 'category', the same silent category-filter-loss shape as passes 46-48.
+  // Found in the 50th adversarial pass.
+  if(state.activeVendors.size===0){state.bucketMode='category';_restoreCatsFromTreemapStash();}
   showTxN=50;renderBucketGrid();renderSpendSummary();renderTxList();renderSpendChart();
 }
 function saveVehicle(){
@@ -11536,7 +11567,21 @@ const DEMO_PROFILE_2 = {
     {id:11,name:'Gold Card',source:'Chase',type:'credit',balance:310},
     {id:12,name:'College Fund(s)',source:'Education savings',type:'investment',balance:34000,excludeFromNW:true},
   ],
-  vehicles:[{id:1,year:2021,make:'Honda',model:'CR-V EX',condition:'very good',miles:34000,value:22000,purchase:31500,purchaseYear:2021,vin:'',assetType:'vehicle'}],
+  // name/acctId, matching every legitimately-created vehicle (saveVehicle()
+  // always sets both) -- this seed object previously had neither, so
+  // deleteVehicle()'s pre-acctId legacy fallback (a.name===v.name) compared
+  // every account's name against v.name===undefined, never matching, and
+  // silently left the paired $22,000 account (accounts[7], id:8) behind as
+  // an orphan uncounted-for-deletion but still summed into net worth, with
+  // no UI path to remove it afterward (invisible in both the Vehicles tab,
+  // which reads state.vehicles, and the Accounts tab, which explicitly
+  // excludes type:'vehicle' rows). Reachable by clicking Delete on this
+  // demo vehicle without editing it first (editing would have self-healed
+  // acctId via saveVehicle()'s own fallback match). name matches what
+  // saveVehicle() would itself generate from these fields (year + make +
+  // model's first word), and equals accounts[7]'s own name exactly. Found
+  // in the 50th adversarial pass.
+  vehicles:[{id:1,year:2021,make:'Honda',model:'CR-V EX',condition:'very good',miles:34000,value:22000,purchase:31500,purchaseYear:2021,vin:'',assetType:'vehicle',name:'2021 Honda CR-V',acctId:8}],
   snapshots:[{date:'Nov 30, 2024',label:'Nov',monthKey:'2024-11',nw:362000,assets:408000,liab:46000},{date:'Feb 28, 2025',label:'Feb',monthKey:'2025-02',nw:371500,assets:419000,liab:47500},{date:'May 31, 2025',label:'May',monthKey:'2025-05',nw:381000,assets:430000,liab:49000},{date:'Aug 31, 2025',label:'Aug',monthKey:'2025-08',nw:388000,assets:438000,liab:50000},{date:'Nov 30, 2025',label:'Nov',monthKey:'2025-11',nw:390000,assets:440000,liab:50000},{date:'Feb 28, 2026',label:'Feb',monthKey:'2026-02',nw:391500,assets:441500,liab:50000}],
   budgets:{'Groceries':700,'Home':1200,'Food & Drink':300,'Health & Wellness':200,'Gas':150,'Bills & Utilities':500,'Shopping':400,'Entertainment':150,'Education':100,'Transfers':200},
   activeSources:new Set(['Checking','Visa Rewards','Gold Card']),
