@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-qTuorZxh1wD9J9hhJ3e2ipFMybhXnxB//PTGesdxBl8=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-smgHwMIiGNZwekNae03bRSfvp2UypJs5PY/+M6byaho=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -6027,6 +6027,35 @@ document.addEventListener('keydown',function(e){
     if(state.activeCats.size>0){state.activeCats=new Set();cleared=true;}
     if(state.searchQuery){state.searchQuery='';const s=document.getElementById('tx-search');if(s)s.value='';document.getElementById('search-clear-btn')?.classList.add('hidden');cleared=true;}
     if(cleared){showTxN=50;renderSpendSummary();renderBucketGrid();renderActiveChart();renderTxList();}
+    return;
+  }
+  // Modal keyboard focus trap (accessibility chunk 3/5) -- a fully isolated
+  // sibling branch, added after the Escape block above rather than nested
+  // inside or interleaved with it. Zero bytes of the Escape logic (including
+  // the sync-passphrase-modal/income-modal special-casing) are touched --
+  // this keydown handler has caused 4+ regressions this review cycle every
+  // time it was restructured, so this is purely additive. Runs before the
+  // "don't fire shortcuts while typing" guard below for the same reason
+  // Escape does: most Tab presses inside a modal happen with a text input
+  // focused. document.querySelector('.modal-overlay:not(.hidden)') (first
+  // DOM match) is reused verbatim from the Escape block above -- the exact
+  // same selector it already uses to find "the open modal," so this
+  // inherits that selector's already-accepted stacking ambiguity (e.g.
+  // #demo-picker-overlay opening on top of an already-open .modal-overlay)
+  // rather than introducing a new one. Deliberately boundary-wrap only
+  // (intervenes only when focus is about to leave via the two edges) --
+  // full containment against every way focus could leave (e.g. a stray
+  // click on a background element) would need page-wide focusin handling,
+  // a materially bigger change than what pass 52 actually flagged.
+  if(e.key==='Tab'){
+    const openModal=document.querySelector('.modal-overlay:not(.hidden)');
+    if(!openModal)return;
+    const scope=openModal.querySelector('.modal')||openModal;
+    const focusable=_a11yGetFocusable(scope);
+    if(focusable.length===0){e.preventDefault();return;}
+    const first=focusable[0],last=focusable[focusable.length-1];
+    if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+    else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
     return;
   }
   // Don't fire other shortcuts when typing in an input
