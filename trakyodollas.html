@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Zfho1Cc04dRSgb26cMEFzyFUWe6PEWxoPKRDM+03XFs=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-j8KLp9P/XnPSuoAUkF30wqhX4Ybg7Ok248BCzHvJf34=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2267,7 +2267,17 @@ function closeCommunityRulesModal(){document.getElementById('community-rules-mod
 function closeAddRuleForm(){document.getElementById('add-rule-form').classList.add('hidden');}
 function triggerCsvFileInput(){document.getElementById('csv-file').click();}
 function selectVenmoCustom(){const i=document.querySelector('input[value=custom]');if(i){i.checked=true;selectVenmoOpt(i);}}
-function clearConfirmAndClose(){closeModals();try{const i=document.getElementById('clear-confirm-input');const b=document.getElementById('clear-confirm-btn');if(i)i.value='';if(b){b.disabled=true;b.style.opacity='.5';b.style.cursor='not-allowed';}}catch(e){}}
+// _clearAllDataInProgress guard, matching the Escape-handler fix (60th
+// pass) for the same underlying race -- confirmClearAllData()'s signOut()
+// await leaves this modal open and fully interactive, and this Cancel
+// button had no awareness of that at all, unlike Escape (which the 60th
+// pass patched). Clicking Cancel while the wipe is actually in flight
+// closed the modal exactly like a successful cancel, while the deletion
+// kept running underneath and the page still reloaded moments later with
+// no further warning -- arguably more reachable than the Escape path,
+// since Cancel is the expected, advertised way to back out. Found in the
+// 61st adversarial pass.
+function clearConfirmAndClose(){if(_clearAllDataInProgress)return;closeModals();try{const i=document.getElementById('clear-confirm-input');const b=document.getElementById('clear-confirm-btn');if(i)i.value='';if(b){b.disabled=true;b.style.opacity='.5';b.style.cursor='not-allowed';}}catch(e){}}
 function doSignOut(){if(window._fb)window._fb.signOut();}
 // Deferred via setTimeout, not called synchronously right after
 // closeModals() -- same reasoning as importSuccessAndReopen()/
@@ -9296,6 +9306,21 @@ function setImportFmt(fmt){
     if(btn)btn.classList.toggle('active-fmt',f===fmt);
     if(help)help.classList.toggle('hidden',f!==fmt);
   });
+  // Re-parse the stored raw rows with the new format -- same pattern
+  // setDateFmt() already uses above. Without this, picking a manual format
+  // only updated the button highlighting; importParsed (what the preview
+  // table and confirmTxImport() actually import) stayed computed under
+  // whatever format auto-detected, silently ignoring the manual override.
+  // Worse when auto-detect failed outright (importParsed empty,
+  // import-confirm-btn stays hidden): picking any manual format never
+  // repopulated importParsed either, permanently trapping the user with no
+  // visible way to actually import the file short of re-dropping it after
+  // picking a format first. Found in the 61st adversarial pass.
+  if(_importRawRows){
+    const source=document.getElementById('import-source-label')?.value.trim()||'Imported';
+    importParsed=_importRawRows.map(r=>normalizeTxRow(r,source)).filter(Boolean);
+    showImportPreview();
+  }
 }
 
 function handleTxDrop(e){
