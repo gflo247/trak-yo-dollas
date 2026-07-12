@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ZGS5EnqCb1Aaw0dgz7D4Z1Fowjn6ql0gRrFfiWY3RaI=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Bnho1oL6bOK/29cj10hfPCLpXsmn8W0/7i+ODHcQ+ac=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -6059,6 +6059,21 @@ document.addEventListener('keydown',function(e){
     // Close hidden popover next
     const pop=document.getElementById('hidden-popover');
     if(pop&&pop.style.display!=='none'){pop.style.display='none';return;}
+    // #demo-picker-overlay isn't a .modal-overlay (predates that
+    // convention, uses style.display instead of .hidden -- see the a11y
+    // mechanism's own comments below), so the generic .modal-overlay
+    // detection just below never matches it and Escape did nothing while
+    // it was open. Only closes it here when re-opened via
+    // openDemoPicker(false) ("Switch profile"/the demo-nav-badge/the
+    // "switch profile" toast link), which adds a real "Keep current demo"
+    // cancel button -- mirrors that button's own close behavior exactly.
+    // The mandatory first-visit picker (openDemoPicker(true), no cancel
+    // button, nothing to fall back to yet since no real data exists) has
+    // no such button and deliberately stays non-dismissible via Escape,
+    // unchanged. Found in the 63rd adversarial pass.
+    const demoPickerCancelBtn=document.getElementById('demo-picker-cancel');
+    const demoPickerEl=document.getElementById('demo-picker-overlay');
+    if(demoPickerCancelBtn&&demoPickerEl&&demoPickerEl.style.display!=='none'){demoPickerEl.style.display='none';return;}
     // Close any open modal first
     const openModal=document.querySelector('.modal-overlay:not(.hidden)');
     if(openModal){
@@ -7264,7 +7279,18 @@ async function confirmClearAllData(){
     // "permanently delete your synced data" copy; this button only ever
     // promised to reset what's on this device. Found in the 59th
     // adversarial pass.
-    if(window._fb){try{await window._fb.signOut();}catch(e){}}
+    // Raced against a 45s timeout (same bound this file already uses
+    // elsewhere for "don't let a hung network call block forever" --
+    // search 45000) -- signOut() rejecting is already caught above, but a
+    // request that never settles at all (a dead network mid-flight, not
+    // an outright failure) would otherwise leave _clearAllDataInProgress
+    // stuck true for the rest of the session, since the finally block
+    // below would never run either. That silently turns every future
+    // scheduleSave() call into a permanent no-op -- total loss of
+    // persistence for anything the user does afterward, a materially
+    // worse outcome than the wipe itself finishing a few seconds late.
+    // Found in the 63rd adversarial pass.
+    if(window._fb){try{await Promise.race([window._fb.signOut(),new Promise(res=>setTimeout(res,45000))]);}catch(e){}}
     clearSyncPassphrase();
     // Re-cleared here too, not just at the top -- defense-in-depth in case
     // anything managed to arm a timer through some path other than
@@ -10437,7 +10463,21 @@ function updateAuthUI(user, justSignedIn=false) {
     signOutBtn.classList.remove('hidden');
     if (signOutBtn) { signOutBtn.style.color='var(--accent-green)'; signOutBtn.style.borderColor='var(--accent-green)'; }
     if (userInfo) userInfo.classList.remove('hidden');
-    closeModals();
+    // justSignedIn-gated, not unconditional -- this function is called on
+    // EVERY Supabase auth event (onAuthStateChange fires for
+    // TOKEN_REFRESHED too, which the client auto-triggers roughly hourly
+    // in the background for as long as a signed-in tab stays open, per
+    // the SDK's default autoRefreshToken:true), not just a genuine sign-in
+    // -- an unconditional closeModals() here silently force-closed
+    // whatever modal a signed-in user happened to have open (mid-edit on
+    // a transaction, an in-progress CSV import, anything) at a completely
+    // unpredictable time unrelated to any action they took, discarding
+    // unsaved form input with zero warning. The one caller already
+    // computes justSignedIn correctly (true only for a genuine SIGNED_IN
+    // event, or the very first INITIAL_SESSION check on page load, when
+    // nothing has had a chance to be open yet anyway) -- it just wasn't
+    // being used here. Found in the 63rd adversarial pass.
+    if(justSignedIn)closeModals();
     const name = user.displayName || user.email || '';
     if (label) label.textContent = name;
     if (avatar) {
@@ -10693,7 +10733,7 @@ async function loadUserData(uid) {
       // field being absent (an older payload that never had it), which
       // silently kept stale local data and re-uploaded it, reviving the
       // deletion.
-      if (Array.isArray(prefs.accounts)) state.accounts = prefs.accounts;
+      if (Array.isArray(prefs.accounts)) state.accounts = _normalizeAccountTypes(prefs.accounts);
       if (Array.isArray(prefs.vehicles)) state.vehicles = prefs.vehicles;
       if (prefs.nextId) state.nextId = prefs.nextId;
       if (Array.isArray(prefs.transactions)) {
@@ -11226,6 +11266,26 @@ const ACCT_TYPE_ALIASES={
   'other-asset':'other-asset','other asset':'other-asset',
   'other-liability':'other-liability','other liability':'other-liability','other liab':'other-liability',
 };
+// Normalizes each account's `type` through ACCT_TYPE_ALIASES wherever it
+// resolves -- the same "human-readable label instead of the internal
+// code" gap parseCsvAccounts() fixes below, but also reachable through
+// importBackup() (a hand-edited or older/different-version backup JSON)
+// and loadUserData() (a legacy or corrupted Supabase prefs.accounts row),
+// neither of which validated account.type at all before restoring it
+// straight into live state. Unlike CSV import, this restores PRE-EXISTING
+// accounts rather than parsing fresh rows, so an unrecognized type is
+// left unchanged here rather than dropped -- silently deleting a user's
+// real account during a restore/sync would be a materially worse outcome
+// than the net-worth miscount this closes for the realistic case (a
+// label variant, not outright garbage). Found in the 63rd adversarial
+// pass.
+function _normalizeAccountTypes(accounts){
+  accounts.forEach(a=>{
+    const norm=ACCT_TYPE_ALIASES[String(a.type||'').trim().toLowerCase()];
+    if(norm)a.type=norm;
+  });
+  return accounts;
+}
 // name,source,type,balance -- balance of exactly 0 (a paid-off card, a
 // closed account) used to be treated the same as a missing/unparseable
 // balance and silently dropped, since 0 is falsy in JS. Now only a
@@ -11561,7 +11621,7 @@ function importBackup(file){
       const obj=v=>(v&&typeof v==='object'&&!Array.isArray(v))?v:{};
       if(!confirm('Replace ALL current data with this backup? This cannot be undone.'))return;
       // Restore state — mirrors loadFromLocalStorage field assignments
-      state.accounts=arr(saved.accounts);
+      state.accounts=_normalizeAccountTypes(arr(saved.accounts));
       state.vehicles=arr(saved.vehicles);
       state.snapshots=arr(saved.snapshots);
       state.customCategories=arr(saved.customCategories);
