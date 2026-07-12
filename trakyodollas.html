@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-g1P9b3Y3z06GUkNBo0Zfy8jVBZ0una3fSAOs9mzevEQ=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-nOyAKu5i2bZuzdIwJ76V38vTMhhuj1IlGYh0Earsj6A=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2257,7 +2257,16 @@ function triggerCsvFileInput(){document.getElementById('csv-file').click();}
 function selectVenmoCustom(){const i=document.querySelector('input[value=custom]');if(i){i.checked=true;selectVenmoOpt(i);}}
 function clearConfirmAndClose(){closeModals();try{const i=document.getElementById('clear-confirm-input');const b=document.getElementById('clear-confirm-btn');if(i)i.value='';if(b){b.disabled=true;b.style.opacity='.5';b.style.cursor='not-allowed';}}catch(e){}}
 function doSignOut(){if(window._fb)window._fb.signOut();}
-function closeModalsOpenIncome(){closeModals();openIncomeModal();}
+// Deferred via setTimeout, not called synchronously right after
+// closeModals() -- same reasoning as importSuccessAndReopen()/
+// importSuccessAndAlign() above: a synchronous close+reopen batches both
+// class mutations into one MutationObserver callback (the new modal
+// accessibility mechanism, added the pre-launch a11y initiative), and the
+// close handler's return-focus call fires before the open handler
+// captures document.activeElement -- corrupting which element the newly-
+// opened modal treats as its return-focus target. Found in the 54th
+// adversarial pass.
+function closeModalsOpenIncome(){closeModals();setTimeout(()=>openIncomeModal(),80);}
 function expandInsightPills(){state.insightsPillsExpanded=true;renderInsights();scheduleSave();}
 function collapseInsightPills(){state.insightsPillsExpanded=false;renderInsights();scheduleSave();}
 function resumeSourceAlign(){state.sourceAlignSkipped=false;checkSourceAlignment();}
@@ -10081,6 +10090,11 @@ function skipSourceAlignPermanent(){
   if(modal)modal.remove();
 }
 
+// Set of t.id from the exact batch checkForVenmoCashouts() detected and
+// showed in the modal, so applyVenmoOpt() (below) only touches those
+// transactions rather than re-matching every VENMO CASHOUT description in
+// state.transactions -- see the comment at that stash site.
+let _pendingVenmoCashoutIds=null;
 function checkForVenmoCashouts(txs){
   // !t.is_offset added in the 37th adversarial pass -- since the 36th
   // pass made is_offset/the offset sign round-trip correctly through
@@ -10094,6 +10108,12 @@ function checkForVenmoCashouts(txs){
   // an already-correct custom category back to Shopping.
   const cashouts=txs.filter(t=>t.desc&&t.desc.toUpperCase().includes('VENMO CASHOUT')&&!t.is_offset);
   if(!cashouts.length)return;
+  // Stashed so applyVenmoOpt() only touches this exact batch (below) --
+  // it used to re-match every VENMO CASHOUT description in
+  // state.transactions regardless of date/batch, so a second, later
+  // import with a different resolution choice silently re-applied itself
+  // to already-resolved transactions from an earlier import too.
+  _pendingVenmoCashoutIds=new Set(cashouts.map(t=>t.id));
   const total=cashouts.reduce((s,t)=>s+Math.abs(t.amount),0);
   const countEl=document.getElementById('venmo-cashout-count');
   const totalEl=document.getElementById('venmo-cashout-total');
@@ -10109,14 +10129,15 @@ function checkForVenmoCashouts(txs){
   document.getElementById('venmo-cashout-modal').classList.remove('hidden');
 }
 function applyVenmoOpt(skip){
-  if(skip==='skip'){closeModals();return;}
+  if(skip==='skip'){closeModals();_pendingVenmoCashoutIds=null;return;}
   const sel=document.querySelector('input[name="venmo-opt"]:checked');
-  if(!sel){closeModals();return;}
+  if(!sel){closeModals();_pendingVenmoCashoutIds=null;return;}
   const opt=sel.value;
   const customCat=document.getElementById('venmo-custom-cat').value;
+  const ids=_pendingVenmoCashoutIds;
   mutateTransactions(()=>{
     state.transactions.forEach(t=>{
-      if(!t.desc||!t.desc.toUpperCase().includes('VENMO CASHOUT'))return;
+      if(!ids||!ids.has(t.id))return;
       if(opt==='exclude'){
         t.excluded=true;t.is_offset=false;
       } else {
@@ -10126,6 +10147,7 @@ function applyVenmoOpt(skip){
       }
     });
   });
+  _pendingVenmoCashoutIds=null;
   closeModals();
   renderSpending();
   showToast('✓ Venmo cashouts updated');
@@ -10952,6 +10974,7 @@ function importCsvText(){
   const {imported,skipped}=parseCsvAccounts(t);
   el.value='';
   closeModals();renderAll();
+  if(imported>0)scheduleSave(); // handleCsv() (file-upload sibling path) already does this; this text-paste path never did, so pasted accounts silently vanished on reload
   showToast(imported>0?`✓ Imported ${imported} account${imported===1?'':'s'}${skipped>0?` (${skipped} row${skipped===1?'':'s'} skipped)`:''}`:'No valid rows found in that text','#FCD34D');
 }
 // name,source,type,balance -- balance of exactly 0 (a paid-off card, a
