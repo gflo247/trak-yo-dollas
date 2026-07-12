@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-AAHuvHSfQ9DnhQJ8JSEEwjf8+yN81yRDiTwEzCSNg6Q=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-vX0F2ims0QbeHgjIJvzANyKv6deH/IRW8Hir4spQw58=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1625,7 +1625,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
 
     <div style="display:flex;justify-content:flex-end">
-      <button class="btn btn-primary" data-action="closeModals" type="button">Done</button>
+      <button class="btn btn-primary" data-action="closeIncomeModal" type="button">Done</button>
     </div>
   </div>
 </div>
@@ -2262,7 +2262,13 @@ function expandInsightPills(){state.insightsPillsExpanded=true;renderInsights();
 function collapseInsightPills(){state.insightsPillsExpanded=false;renderInsights();scheduleSave();}
 function resumeSourceAlign(){state.sourceAlignSkipped=false;checkSourceAlignment();}
 function resetSourceAlign(){state.sourceAlignDate=null;state.rangeFrom=null;scheduleSave();renderSpending();}
-function resetTreemapToCategories(){state.activeVendors=new Set();state.bucketMode='category';renderTxList();renderSpendSummary();renderTreemap();}
+// _treemapPrevActiveCats is discarded, not restored, here -- "All
+// categories" (this breadcrumb link's own label) is an explicit request to
+// see every category, so silently reintroducing a stashed single-category
+// filter would contradict it. Left populated instead of nulled, it could
+// otherwise incorrectly resurrect on some later, unrelated Treemap
+// vendor-select/deselect cycle. Found in the 49th adversarial pass.
+function resetTreemapToCategories(){state.activeVendors=new Set();state.bucketMode='category';_treemapPrevActiveCats=null;renderTxList();renderSpendSummary();renderTreemap();}
 function cycleBudgetHeroHist(){const h=document.getElementById('budget-hero-hist');if(h)cycleHistState(h,'bhh');}
 function cycleBudgetRowHist(arg,el){const card=el.closest('[data-card]');if(!card)return;const h=card.querySelector('[data-hist]');if(h)cycleHistState(h,'rh');}
 function importSuccessAndReopen(){onImportSuccessClose();closeModals();window._pendingAlignmentCheck=false;setTimeout(()=>openTxImportModal(),80);}
@@ -2283,6 +2289,11 @@ function filterToCatAndScroll(cat){
 }
 function navToDailyChart(){
   state.activeCats=new Set();state.activeVendors=new Set();
+  // Nulled, not left populated -- setChartMode('daily') two lines below
+  // would otherwise silently restore a stashed Treemap category filter
+  // via _restoreCatsFromTreemapStash(), directly undoing the explicit
+  // clear on the line above. Found in the 49th adversarial pass.
+  _treemapPrevActiveCats=null;
   renderSpendSummary();renderBucketGrid();setChartMode('daily');renderActiveChart();
   setTimeout(()=>{const el=document.getElementById('spending-breakdown-header');if(el){const y=el.getBoundingClientRect().top+window.scrollY-60;window.scrollTo({top:y,behavior:'smooth'});}},120);
 }
@@ -4216,6 +4227,12 @@ function setBucketMode(mode){
   if(mode==='vendor'){state.activeCats=new Set();}
   else{
     if(state.activeVendors)state.activeVendors=new Set();
+    // Discarded, not restored -- explicitly clicking "By category" here is
+    // a deliberate mode switch, same reasoning as resetTreemapToCategories()
+    // above. Left populated instead, it could incorrectly resurrect on a
+    // later, unrelated Treemap vendor-select/deselect. Found in the 49th
+    // adversarial pass.
+    _treemapPrevActiveCats=null;
     const bfn=document.getElementById('bucket-footnote');
     if(bfn)bfn.textContent='';
   }
@@ -5637,7 +5654,16 @@ function renderSpendChart(){
     const catMonthMap={};
     // Option A: if vendor tiles are selected, filter chart to those vendors
     const vendorFilter=state.bucketMode==='vendor'&&state.activeVendors&&state.activeVendors.size>0;
-    getBaseTxs().filter(t=>(state.showExcluded||!t.excluded)&&!t.isIncome&&(!vendorFilter||state.activeVendors.has(t.desc))).forEach(t=>{
+    // resolveVendor(t.desc), not the raw t.desc -- state.activeVendors is
+    // always populated with resolved/canonical vendor names (aliases,
+    // "Checks written" grouping), matching every other vendor-aware
+    // consumer in the file (renderTxList(), buildHiddenPopover(),
+    // getFilteredTxs(), the Treemap click handler). Comparing against the
+    // raw, unresolved description silently produced a near-empty or wrong
+    // chart whenever the active vendor filter was on an aliased/merged
+    // vendor, even though the footnote right below correctly named the
+    // filtered vendor. Found in the 49th adversarial pass.
+    getBaseTxs().filter(t=>(state.showExcluded||!t.excluded)&&!t.isIncome&&(!vendorFilter||state.activeVendors.has(resolveVendor(t.desc)))).forEach(t=>{
       const m=t.date.slice(0,7);
       if(!months.includes(m))return;
       if(!catMonthMap[t.cat])catMonthMap[t.cat]={};
@@ -5833,7 +5859,13 @@ function renderTxList(){
 
   const _txLbl=document.getElementById('tx-count-label');
   if(_txLbl){
-    const _base=`Transactions (${txs.length}${state.activeCats.size>0?' · filtered':''}${state.showExcluded?' +contributions':''})`;
+    // Same missing-vendor-mode gap the 48th pass fixed for
+    // renderSpendSummary()'s headline and alwaysShowExcl/txExclCount --
+    // this header label never checked bucketMode==='vendor' either, so it
+    // omitted "· filtered" while a vendor selection was actively scoping
+    // the list below. Found in the 49th adversarial pass.
+    const _isVendorFiltered=state.bucketMode==='vendor'&&state.activeVendors&&state.activeVendors.size>0;
+    const _base=`Transactions (${txs.length}${(state.activeCats.size>0||_isVendorFiltered)?' · filtered':''}${state.showExcluded?' +contributions':''})`;
     if(state.searchQuery){
       _txLbl.innerHTML=_base+` <button data-action="clearSearch" style="background:none;border:none;color:var(--accent-blue-light);font-size:10px;font-weight:700;cursor:pointer;padding:0;font-family:inherit;vertical-align:middle" type="button">× clear</button>`;
     } else {
@@ -5969,12 +6001,29 @@ document.addEventListener('keydown',function(e){
         if(resetPanel&&!resetPanel.classList.contains('hidden')){hideForgotPassphrase();return;}
         cancelSyncPassphrase();return;
       }
+      // income-modal's Done button routes through closeIncomeModal(), not
+      // the generic closeModals(), so a pending typed manual-income value
+      // isn't silently discarded on close -- Escape reaches this same
+      // generic-close branch too and needs the same routing, same shape as
+      // the sync-passphrase-modal case above. Found in the 49th
+      // adversarial pass.
+      if(openModal.id==='income-modal'){closeIncomeModal();return;}
       closeModals();return;
     }
     // Clear active filters
     let cleared=false;
     if(state.activeDate){state.activeDate=null;document.querySelectorAll('.cal-day-active').forEach(el=>{el.classList.remove('cal-day-active');el.style.outline='';});cleared=true;}
     if(state.activeVendors&&state.activeVendors.size>0){state.activeVendors=new Set();state.bucketMode='category';cleared=true;}
+    // Discards _treemapPrevActiveCats rather than restoring it (contrast
+    // with setChartMode()/showPage()/the Treemap deselect click, which
+    // legitimately restore it) -- Escape's own documented job here is
+    // "Clear filters," an explicit comprehensive reset, so silently
+    // reintroducing a stashed category filter would contradict what the
+    // user just asked for. But leaving the stash populated instead of
+    // nulling it here was its own bug: a completely unrelated future
+    // Treemap vendor-select/deselect cycle could incorrectly resurrect
+    // this discarded filter. Found in the 49th adversarial pass.
+    _treemapPrevActiveCats=null;
     if(state.activeCats.size>0){state.activeCats=new Set();cleared=true;}
     if(state.searchQuery){state.searchQuery='';const s=document.getElementById('tx-search');if(s)s.value='';document.getElementById('search-clear-btn')?.classList.add('hidden');cleared=true;}
     if(cleared){showTxN=50;renderSpendSummary();renderBucketGrid();renderActiveChart();renderTxList();}
@@ -7713,6 +7762,13 @@ function saveDeclaredIncome(){
     closeModals();
     renderSankey();
     renderInsights();
+  } else {
+    // Matches saveManualIncome()'s existing toast for the identical invalid-
+    // input shape -- this one silently did nothing at all (no toast, no
+    // modal close), leaving a user who entered 0/negative/blank with zero
+    // indication why clicking Save had no effect. Found in the 49th
+    // adversarial pass.
+    showToast('Please enter a valid monthly income','#FCD34D');
   }
 }
 function clearDeclaredIncome(){
@@ -7857,6 +7913,30 @@ function saveManualIncome(){
   scheduleSave();
   renderInsights();
   showToast('💰 Income saved — savings rate now tracking','#34D399');
+}
+// selectIncomeMethod('auto') commits state.income.method='auto' and
+// scheduleSave()s the instant its card is clicked -- but selectIncomeMethod
+// ('manual') deliberately doesn't touch state.income at all, only reveals
+// the input; the actual commit only happens via saveManualIncome(), wired
+// to a separate "Save" button nested inside that card. The asymmetry meant
+// a user could select Manual, type a new take-home figure, watch the live
+// preview update, and close the modal via "Done" (or Escape, unblocked
+// while typing since the 42nd adversarial pass) without ever clicking that
+// separate Save button -- the typed value was silently discarded with the
+// app left computing savings rate from whatever method/value it had
+// before. Found in the 49th adversarial pass. This wraps closeModals()
+// with an implicit save of a pending, valid, actually-changed manual value
+// -- deliberately not on every close (would re-toast "Income saved" on a
+// plain look-then-close with an unmodified pre-filled value) and not on an
+// empty/invalid field (nothing to silently error about on a simple Done
+// click).
+function closeIncomeModal(){
+  const inputA=document.getElementById('income-manual-input');
+  if(inputA&&!inputA.classList.contains('hidden')){
+    const val=parseFloat(document.getElementById('income-amount').value);
+    if(val>0&&(state.income.method!=='manual'||Math.round(val)!==state.income.monthlyAmount))saveManualIncome();
+  }
+  closeModals();
 }
 
 function showAutoPreview(){
