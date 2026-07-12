@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-l8FW/aWoTTALYJFhJT8XzE/n+2GX9xYVoq8OC6H1UCg=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-pvms+XCUGrvtSJCgSsftXBAMnvQatlR9tGlBhAyz7Rg=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -7814,6 +7814,7 @@ function applyCustomCurrency(val){
 function openIncomeModal(){
   const m=state.income.method;
   _lastSelectedIncomeMethod=m||null;
+  _incomeAmountDirty=false;
   selectIncomeMethodUI(m||null);
   // Compute latest full month spend for preview
   const allMonths=Object.keys(MONTHLY).sort();
@@ -7835,7 +7836,7 @@ function openIncomeModal(){
   }
   // Wire input to live preview
   const input=document.getElementById('income-amount');
-  if(input) input.oninput=()=>updateIncomePreview(parseFloat(input.value)||0);
+  if(input) input.oninput=()=>{_incomeAmountDirty=true;updateIncomePreview(parseFloat(input.value)||0);};
   document.getElementById('income-modal').classList.remove('hidden');
 }
 
@@ -7873,6 +7874,21 @@ function updateIncomePreview(incomeVal){
 // tracking avoids inferring the wrong thing from incidental DOM state.
 // Found in the 50th adversarial pass.
 let _lastSelectedIncomeMethod=null;
+// True only once the user has actually typed in #income-amount during this
+// modal session (set by the real input event, never by a programmatic
+// pre-fill). closeIncomeModal() previously decided whether to auto-save by
+// comparing the field's current value against state.income -- but
+// state.income can legitimately change *while the modal is open* from
+// something other than this modal (loadUserData()'s cloud-merge pull runs
+// with the UI fully interactive per its own comment; loadDemoProfile()
+// overwrites state.income directly too), making that comparison race
+// against an external update rather than reflect a real edit. A user who
+// opens the modal, changes nothing, and happens to close it after an
+// external update landed could have the stale pre-fill value silently
+// clobber the freshly-synced/switched-profile value. Requiring an actual
+// edit this session closes that race regardless of its cause. Found in the
+// 52nd adversarial pass.
+let _incomeAmountDirty=false;
 function selectIncomeMethod(method){
   _lastSelectedIncomeMethod=method;
   selectIncomeMethodUI(method);
@@ -7887,7 +7903,13 @@ function selectIncomeMethod(method){
   if(method==='manual'){
     const input=document.getElementById('income-amount');
     if(input){
-      input.oninput=()=>updateIncomePreview(parseFloat(input.value)||0);
+      // Must also set _incomeAmountDirty=true, matching openIncomeModal()'s
+      // own oninput wiring -- this assignment overwrites that one (a
+      // DOM element only has one oninput slot), so without this, clicking
+      // the Manual card after the modal opens would silently drop dirty
+      // tracking for every keystroke from then on, defeating the fix.
+      // Found in the 52nd adversarial pass.
+      input.oninput=()=>{_incomeAmountDirty=true;updateIncomePreview(parseFloat(input.value)||0);};
       setTimeout(()=>input.focus(),80);
     }
   }
@@ -7951,7 +7973,19 @@ function closeIncomeModal(){
   // Using the last explicit click instead means a mere peek back at Manual
   // without retyping anything doesn't silently revert an Auto selection
   // that was already made and saved. Found in the 50th adversarial pass.
-  if(_lastSelectedIncomeMethod==='manual'){
+  //
+  // Also requires _incomeAmountDirty (an actual edit this session), not
+  // just "the field's value differs from state.income" -- state.income can
+  // legitimately change *while this modal is open* from something other
+  // than this modal (loadUserData()'s cloud-merge pull runs with the UI
+  // fully interactive; loadDemoProfile() overwrites state.income directly
+  // too), so a plain value-comparison was racing against those external
+  // updates rather than reflecting a real edit. A user who opens the
+  // modal, changes nothing, and closes it after an external update landed
+  // mid-session could otherwise have the stale pre-fill silently clobber
+  // the freshly-synced/switched-profile value. Found in the 52nd
+  // adversarial pass.
+  if(_lastSelectedIncomeMethod==='manual'&&_incomeAmountDirty){
     const val=parseFloat(document.getElementById('income-amount').value);
     if(val>0&&(state.income.method!=='manual'||Math.round(val)!==state.income.monthlyAmount))saveManualIncome();
   }
