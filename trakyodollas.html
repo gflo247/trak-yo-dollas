@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Bnho1oL6bOK/29cj10hfPCLpXsmn8W0/7i+ODHcQ+ac=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-cv63ZNfTT6IyLj/Ms0UVP3amz1xKj5ROaQ8175kcFos=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1768,7 +1768,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 <div class="modal-overlay hidden" id="clear-data-modal">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="clear-data-modal-title" tabindex="-1" style="max-width:380px">
     <h3 id="clear-data-modal-title" style="color:#F87171;margin-bottom:.5rem">Clear all data?</h3>
-    <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:1.25rem">This will permanently delete all your transactions, accounts, budgets, rules, and snapshots. This cannot be undone.</p>
+    <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:1rem">This will permanently delete all your transactions, accounts, budgets, rules, and snapshots on this device. This cannot be undone.</p>
+    <p id="clear-data-cloud-caveat" class="hidden" style="font-size:12px;color:var(--text-muted);line-height:1.5;margin-bottom:1.25rem">Your cloud-synced backup isn't affected by this — signing back in with your sync passphrase will restore it. To delete your synced data too, use "Delete synced data" under "Forgot your passphrase?" in the sync settings.</p>
     <div style="background:#F8717118;border:1px solid #F8717133;border-radius:8px;padding:.6rem .85rem;margin-bottom:1.25rem">
       <div style="font-size:12px;color:#F87171;font-weight:600">To confirm, type <strong>clear</strong> below:</div>
       <input id="clear-confirm-input" type="text" placeholder="type clear" style="margin-top:6px;width:100%;box-sizing:border-box" data-input="validateClearConfirm"/>
@@ -1843,7 +1844,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
           <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Categorization priority</div>
           <div style="padding:.5rem .75rem;color:var(--text-secondary)">
             <span style="color:#60A5FA;font-weight:600">1. Your rules</span> — keyword rules you've saved always win<br>
-            <span style="color:#34D399;font-weight:600">2. Community patterns</span> — <span class="community-rules-count">904</span> community-contributed keyword→category mappings covering US, UK, AU, CA, NZ, and SG merchants — fetched once per session · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" style="color:#34D399">Suggest a pattern ↗</a><br>
+            <span style="color:#34D399;font-weight:600">2. Community patterns</span> — <span class="community-rules-count">1802</span> community-contributed keyword→category mappings covering US, UK, AU, CA, NZ, and SG merchants — fetched once per session · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" style="color:#34D399">Suggest a pattern ↗</a><br>
             <span style="color:#94A3B8;font-weight:600">3. Merchant Category Codes (MCC)</span> — 4-digit codes your bank or credit union assigns to merchants, if present in your CSV<br>
             <span style="color:#64748B;font-weight:600">4. Built-in keywords</span> — ~300 common merchant names as a fallback
           </div>
@@ -7229,6 +7230,13 @@ function openClearDataModal(){
   document.getElementById('clear-confirm-btn').disabled=true;
   document.getElementById('clear-confirm-btn').style.opacity='.5';
   document.getElementById('clear-confirm-btn').style.cursor='not-allowed';
+  // Shown only for a signed-in cloud-sync user -- confirmClearAllData()
+  // deliberately only resets local state (see its own comment), so this
+  // modal's "cannot be undone" promise was misleading for anyone whose
+  // data would silently come back the next time they sign in with their
+  // sync passphrase. Found in the 64th adversarial pass.
+  const caveat=document.getElementById('clear-data-cloud-caveat');
+  if(caveat)caveat.classList.toggle('hidden',!window._fbUser);
   document.getElementById('clear-data-modal').classList.remove('hidden');
 }
 async function confirmClearAllData(){
