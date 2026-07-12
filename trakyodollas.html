@@ -969,8 +969,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Category manager modal -->
 <div class="modal-overlay hidden" id="cat-modal">
-  <div class="modal">
-    <h3>Manage categories</h3>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cat-modal-title" tabindex="-1">
+    <h3 id="cat-modal-title">Manage categories</h3>
     <p class="modal-sub">Add custom categories. The app picks colors automatically to keep your categories visually distinct from each other.</p>
     <div id="cat-manager-list" style="max-height:200px;overflow-y:auto;border:1px solid var(--border-mid);border-radius:8px;margin-bottom:.7rem"></div>
     <div style="display:flex;gap:6px;align-items:center">
@@ -985,8 +985,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Transaction CSV import modal -->
 <div class="modal-overlay hidden" id="tx-import-modal">
-  <div class="modal" style="width:min(520px,96vw)">
-    <h3>Import transactions</h3>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tx-import-modal-title" tabindex="-1" style="width:min(520px,96vw)">
+    <h3 id="tx-import-modal-title">Import transactions</h3>
     <p class="modal-sub" style="margin-bottom:.35rem">Drop your CSV and we'll figure out the format automatically. Nothing leaves your device.</p>
     <p style="font-size:11px;color:var(--text-muted);margin-bottom:.85rem">Also accepts Mint, YNAB, and Monarch Money exports.</p>
 
@@ -1132,8 +1132,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Venmo cashout categorization modal -->
 <div class="modal-overlay hidden" id="venmo-cashout-modal">
-  <div class="modal">
-    <h3>Venmo cashouts detected</h3>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="venmo-cashout-modal-title" tabindex="-1">
+    <h3 id="venmo-cashout-modal-title">Venmo cashouts detected</h3>
     <p class="modal-sub">We found <strong id="venmo-cashout-count" style="color:var(--text-primary)">0</strong> Venmo cashout(s) totaling <strong id="venmo-cashout-total" style="color:#34D399">$0</strong>. These are incoming payments — how should we treat them?</p>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem">
       <label class="venmo-label" id="venmo-opt-shopping">
@@ -1171,7 +1171,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Auth modal -->
 <div class="modal-overlay hidden" id="auth-modal">
-  <div class="modal" style="max-width:380px">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" tabindex="-1" style="max-width:380px">
     <h3 id="auth-modal-title">Save your progress</h3>
     <p class="modal-sub" id="auth-modal-desc" style="margin-bottom:.75rem">Sign in to sync your data — accounts, transactions, budgets, and snapshots — across devices.</p>
 
@@ -1221,7 +1221,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 </div>
 
 <div class="modal-overlay hidden" id="sync-passphrase-modal">
-  <div class="modal" style="max-width:380px">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sync-pp-title" tabindex="-1" style="max-width:380px">
     <h3 id="sync-pp-title">Sync passphrase</h3>
     <p class="modal-sub" id="sync-pp-desc" style="margin-bottom:.75rem"></p>
 
@@ -1271,7 +1271,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Modals -->
 <div class="modal-overlay hidden" id="add-modal">
-  <div class="modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="add-modal-title" tabindex="-1">
     <h3 id="add-modal-title">Add account</h3>
     <div class="form-group"><label class="form-label" for="f-name">Name</label><input type="text" id="f-name"/></div>
     <div class="form-group"><label class="form-label" for="f-source">Institution</label>
@@ -1303,8 +1303,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   </div>
 </div>
 <div class="modal-overlay hidden" id="add-tx-modal">
-  <div class="modal">
-    <h3>Add transaction</h3>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="add-tx-modal-title" tabindex="-1">
+    <h3 id="add-tx-modal-title">Add transaction</h3>
     <div class="form-group"><label class="form-label" for="t-date">Date</label><input type="text" id="t-date"/></div>
     <div class="form-group"><label class="form-label" for="t-desc">Description</label><input type="text" id="t-desc"/></div>
     <div class="form-group"><label class="form-label" for="t-card">Source</label>
@@ -1319,8 +1319,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   </div>
 </div>
 <div class="modal-overlay hidden" id="edit-tx-modal">
-  <div class="modal">
-    <h3>Edit transaction</h3>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-tx-modal-title" tabindex="-1">
+    <h3 id="edit-tx-modal-title">Edit transaction</h3>
     <div id="check-label-hint" style="display:none;background:#F59E0B18;border:1px solid #F59E0B44;border-radius:8px;padding:.45rem .75rem;margin-bottom:.6rem;font-size:11px;color:#FCD34D;line-height:1.4">
       ✏️ <strong>Check transaction</strong> — update the description to note what this was for (e.g. "Plumber", "Tuition"), then pick the right category.
     </div>
@@ -1372,8 +1372,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   </div>
 </div>
 <div class="modal-overlay hidden" id="acct-csv-modal">
-  <div class="modal">
-    <h3>Import CSV</h3>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="acct-csv-modal-title" tabindex="-1">
+    <h3 id="acct-csv-modal-title">Import CSV</h3>
     <p class="modal-sub">Columns: <strong style="color:var(--text-secondary)">name, source, type, balance</strong></p>
     <div class="csv-zone" data-action="triggerCsvFileInput">Click to select CSV
       <input type="file" id="csv-file" accept=".csv,.CSV" style="display:none" data-change="handleCsvDelegated"/></div>
@@ -1385,7 +1385,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   </div>
 </div>
 <div class="modal-overlay hidden" id="vehicle-modal">
-  <div class="modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="v-modal-title" tabindex="-1">
     <h3 id="v-modal-title">Add physical asset</h3>
     <div style="display:flex;gap:4px;background:var(--bg-deep);border-radius:8px;padding:3px;margin-bottom:.85rem">
       <button id="at-vehicle" class="h-btn active" data-action="setAssetType" data-arg="vehicle" style="flex:1;padding:5px;font-size:11px" type="button">🚗 Vehicle</button>
@@ -1426,10 +1426,10 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Post-import success modal -->
 <div class="modal-overlay hidden" id="import-success-modal">
-  <div class="modal" style="width:min(420px,95vw)">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="import-success-modal-title" tabindex="-1" style="width:min(420px,95vw)">
     <div style="text-align:center;margin-bottom:1.25rem">
       <div style="font-size:36px;margin-bottom:.6rem">✓</div>
-      <h3 style="font-size:19px;margin-bottom:.35rem">Import successful!</h3>
+      <h3 id="import-success-modal-title" style="font-size:19px;margin-bottom:.35rem">Import successful!</h3>
       <div id="import-success-summary" style="font-size:13px;color:var(--text-muted)"></div>
     </div>
 
@@ -1447,10 +1447,10 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Community rules modal -->
 <div class="modal-overlay hidden" id="community-rules-modal">
-  <div class="modal" style="width:min(560px,95vw);max-height:80vh;display:flex;flex-direction:column">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="community-rules-modal-title" tabindex="-1" style="width:min(560px,95vw);max-height:80vh;display:flex;flex-direction:column">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-shrink:0">
       <div>
-        <h3 style="font-size:16px;margin:0">Community patterns</h3>
+        <h3 id="community-rules-modal-title" style="font-size:16px;margin:0">Community patterns</h3>
         <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Keyword→category mappings that run on every import</div>
       </div>
       <button data-action="closeCommunityRulesModal" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-muted);padding:0" type="button">✕</button>
@@ -1466,8 +1466,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Budget modal -->
 <div class="modal-overlay hidden" id="budget-modal">
-  <div class="modal" style="width:min(360px,95vw)">
-    <h3>Set monthly budget</h3>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="budget-modal-title" tabindex="-1" style="width:min(360px,95vw)">
+    <h3 id="budget-modal-title">Set monthly budget</h3>
     <div class="form-group">
       <label class="form-label" for="budget-cat-select">Category</label>
       <select id="budget-cat-select"></select>
@@ -1487,11 +1487,11 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Save rule prompt (appears after recategorizing) -->
 <div class="modal-overlay hidden" id="save-rule-modal">
-  <div class="modal" style="width:min(420px,95vw)">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="save-rule-modal-title" tabindex="-1" style="width:min(420px,95vw)">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem">
       <div style="font-size:24px">⚡</div>
       <div>
-        <h3 style="margin:0">Save as auto-categorization rule?</h3>
+        <h3 id="save-rule-modal-title" style="margin:0">Save as auto-categorization rule?</h3>
         <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Next time you import a CSV, matching transactions will be categorized automatically.</div>
       </div>
     </div>
@@ -1513,9 +1513,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Rules manager modal -->
 <div class="modal-overlay hidden" id="rules-modal">
-  <div class="modal" style="width:min(560px,95vw)">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rules-modal-title" tabindex="-1" style="width:min(560px,95vw)">
     <div class="modal-header">
-      <h3 style="margin:0">⚡ Auto-categorization rules</h3>
+      <h3 id="rules-modal-title" style="margin:0">⚡ Auto-categorization rules</h3>
       <button class="btn btn-primary btn-sm" data-action="openAddRuleForm" type="button">+ Add rule</button>
     </div>
     <div style="background:#065F4618;border:1px solid #05996933;border-radius:10px;padding:.75rem 1rem;margin-bottom:1rem">
@@ -1556,8 +1556,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Currency symbol modal -->
 <div class="modal-overlay hidden" id="currency-modal">
-  <div class="modal" style="width:min(380px,94vw)">
-    <div class="modal-header"><h3 style="font-size:16px;margin:0">🌍 Currency symbol</h3><button class="btn btn-primary" data-action="closeModals" type="button">Done</button></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="currency-modal-title" tabindex="-1" style="width:min(380px,94vw)">
+    <div class="modal-header"><h3 id="currency-modal-title" style="font-size:16px;margin:0">🌍 Currency symbol</h3><button class="btn btn-primary" data-action="closeModals" type="button">Done</button></div>
     <p style="font-size:13px;color:var(--text-muted);margin-bottom:.9rem;line-height:1.6">Choose the symbol displayed next to all amounts in the app. This is cosmetic only — the app does not convert between currencies.</p>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.85rem">
       <button data-action="applyCurrency" data-arg="$" class="btn btn-sm currency-preset" data-sym="$" type="button">$ Dollar</button>
@@ -1577,8 +1577,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Income / savings rate modal -->
 <div class="modal-overlay hidden" id="income-modal">
-  <div class="modal" style="width:min(480px,95vw)">
-    <h3 style="font-size:16px;margin-bottom:.4rem">💰 Income & savings rate</h3>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="income-modal-title" tabindex="-1" style="width:min(480px,95vw)">
+    <h3 id="income-modal-title" style="font-size:16px;margin-bottom:.4rem">💰 Income & savings rate</h3>
     <p style="font-size:12px;color:var(--text-muted);margin-bottom:.5rem;line-height:1.6">Your savings rate is how much of your income you keep each month. Choose how you want to track it:</p>
     <p style="font-size:11px;color:var(--text-muted);background:var(--bg-card);border-radius:8px;padding:.5rem .75rem;margin-bottom:1rem;line-height:1.5">Once saved, your savings rate will appear as a pill in the <strong style="color:#94A3B8">'26 Apr at a glance</strong> card on the Net Worth tab.</p>
 
@@ -1632,8 +1632,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Flow chart declared income modal -->
 <div class="modal-overlay hidden" id="declared-income-modal">
-  <div class="modal" style="width:min(360px,95vw)">
-    <h3 style="font-size:16px;margin-bottom:.5rem">💰 Monthly take-home income</h3>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="declared-income-modal-title" tabindex="-1" style="width:min(360px,95vw)">
+    <h3 id="declared-income-modal-title" style="font-size:16px;margin-bottom:.5rem">💰 Monthly take-home income</h3>
     <p style="font-size:12px;color:var(--text-muted);margin-bottom:1rem;line-height:1.6">Set your actual monthly after-tax pay. Overrides deposit detection and feeds the savings rate insight.</p>
     <div style="margin-bottom:1.1rem">
       <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.35rem" for="declared-income-input">Monthly take-home (after tax)</label>
@@ -1649,8 +1649,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Pill customizer modal -->
 <div class="modal-overlay hidden" id="pill-customizer-modal">
-  <div class="modal" style="width:min(380px,95vw)">
-    <h3 style="font-size:15px;margin-bottom:.35rem">⚙ Customize insight pills</h3>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pill-customizer-modal-title" tabindex="-1" style="width:min(380px,95vw)">
+    <h3 id="pill-customizer-modal-title" style="font-size:15px;margin-bottom:.35rem">⚙ Customize insight pills</h3>
     <p style="font-size:11px;color:var(--text-muted);margin-bottom:1rem;line-height:1.5">Choose which pills appear in your at-a-glance card. Changes save automatically.</p>
     <div id="pill-toggle-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem"></div>
     <div style="display:flex;align-items:center;justify-content:space-between">
@@ -1662,8 +1662,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Vendor alias / merge modal -->
 <div class="modal-overlay hidden" id="vendor-alias-modal">
-  <div class="modal" style="width:min(520px,95vw)">
-    <h3 style="font-size:16px;margin-bottom:.35rem">⟲ Merge duplicate vendors</h3>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="vendor-alias-modal-title" tabindex="-1" style="width:min(520px,95vw)">
+    <h3 id="vendor-alias-modal-title" style="font-size:16px;margin-bottom:.35rem">⟲ Merge duplicate vendors</h3>
     <p style="font-size:11px;color:var(--text-muted);margin-bottom:.75rem;line-height:1.5">Bank CSVs often use different names for the same vendor — <em>AMZN MKTP US</em>, <em>AMAZON.COM</em>, <em>AMAZON PRIME</em>. Merging them combines their totals everywhere: charts, buckets, insights, and summaries. Your raw transactions are unchanged.</p>
     <div class="section-box-sm">
       <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.6rem">Add alias</div>
@@ -1696,8 +1696,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Historical snapshot modal -->
 <div class="modal-overlay hidden" id="historical-snapshot-modal">
-  <div class="modal" style="width:min(420px,95vw)">
-    <h3 style="font-size:16px;margin-bottom:.35rem">📅 Add historical snapshot</h3>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="historical-snapshot-modal-title" tabindex="-1" style="width:min(420px,95vw)">
+    <h3 id="historical-snapshot-modal-title" style="font-size:16px;margin-bottom:.35rem">📅 Add historical snapshot</h3>
     <p class="modal-body-text">Backfill a past net worth data point to extend your trend line. Useful if you know what your net worth was at a specific date.</p>
     <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1rem">
       <div>
@@ -1729,9 +1729,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Other vendors modal -->
 <div class="modal-overlay hidden" id="other-vendors-modal">
-  <div class="modal" style="width:min(480px,95vw)">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="other-vendors-modal-title" tabindex="-1" style="width:min(480px,95vw)">
     <div class="modal-header">
-      <h3 style="margin:0">Other vendors</h3>
+      <h3 id="other-vendors-modal-title" style="margin:0">Other vendors</h3>
       <button class="btn" data-action="closeModals" type="button">Done</button>
     </div>
     <p style="font-size:11px;color:var(--text-muted);margin-bottom:.75rem;line-height:1.5">Vendors outside the top 8. Click any to search their transactions.</p>
@@ -1741,9 +1741,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Subscriptions modal -->
 <div class="modal-overlay hidden" id="subscriptions-modal">
-  <div class="modal" style="width:min(480px,95vw)">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="subscriptions-modal-title" tabindex="-1" style="width:min(480px,95vw)">
     <div class="modal-header">
-      <h3 style="margin:0">🔄 Recurring charges</h3>
+      <h3 id="subscriptions-modal-title" style="margin:0">🔄 Recurring charges</h3>
       <button class="btn btn-primary" data-action="closeModals" type="button">Done</button>
     </div>
     <div id="subscriptions-list" style="max-height:480px;overflow-y:auto"></div>
@@ -1752,9 +1752,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Year in Review modal -->
 <div class="modal-overlay hidden" id="year-review-modal">
-  <div class="modal" style="width:min(580px,95vw);max-height:90vh;overflow-y:auto">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="year-review-modal-title" tabindex="-1" style="width:min(580px,95vw);max-height:90vh;overflow-y:auto">
     <div class="modal-header">
-      <h3 style="margin:0">📅 Year in review</h3>
+      <h3 id="year-review-modal-title" style="margin:0">📅 Year in review</h3>
       <button class="btn" data-action="closeModals" type="button">Done</button>
     </div>
     <!-- Start month selector -->
@@ -1766,8 +1766,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Clear all data confirmation modal -->
 <div class="modal-overlay hidden" id="clear-data-modal">
-  <div class="modal" style="max-width:380px">
-    <h3 style="color:#F87171;margin-bottom:.5rem">Clear all data?</h3>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="clear-data-modal-title" tabindex="-1" style="max-width:380px">
+    <h3 id="clear-data-modal-title" style="color:#F87171;margin-bottom:.5rem">Clear all data?</h3>
     <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:1.25rem">This will permanently delete all your transactions, accounts, budgets, rules, and snapshots. This cannot be undone.</p>
     <div style="background:#F8717118;border:1px solid #F8717133;border-radius:8px;padding:.6rem .85rem;margin-bottom:1.25rem">
       <div style="font-size:12px;color:#F87171;font-weight:600">To confirm, type <strong>clear</strong> below:</div>
@@ -1782,9 +1782,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Keyboard shortcuts / tips modal -->
 <div class="modal-overlay hidden" id="shortcuts-modal">
-  <div class="modal" style="width:min(480px,95vw)">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="shortcuts-modal-title" tabindex="-1" style="width:min(480px,95vw)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-      <h3 style="margin:0">Tips & shortcuts</h3>
+      <h3 id="shortcuts-modal-title" style="margin:0">Tips & shortcuts</h3>
       <button data-action="closeModals" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0;line-height:1" type="button">×</button>
     </div>
 
@@ -1873,8 +1873,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   </div>
 </div>
 <div class="modal-overlay hidden" id="custom-goal-modal">
-  <div class="modal" style="width:min(360px,94vw)">
-    <h3>Set a custom goal</h3>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="custom-goal-modal-title" tabindex="-1" style="width:min(360px,94vw)">
+    <h3 id="custom-goal-modal-title">Set a custom goal</h3>
     <p class="modal-sub">Enter any net worth target. Milestone buttons will still work alongside it.</p>
     <div class="form-group">
       <label class="form-label" for="custom-goal-input">Goal amount</label>
@@ -1890,8 +1890,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Delete snapshot confirm modal -->
 <div class="modal-overlay hidden" id="delete-snap-modal">
-  <div class="modal" style="width:min(360px,94vw)">
-    <h3>Delete snapshot?</h3>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-snap-modal-title" tabindex="-1" style="width:min(360px,94vw)">
+    <h3 id="delete-snap-modal-title">Delete snapshot?</h3>
     <p class="modal-sub" id="delete-snap-desc"></p>
     <div style="background:#7F1D1D22;border:1px solid #DC262633;border-radius:8px;padding:.6rem .85rem;margin-bottom:1rem;font-size:12px;color:#F87171">This cannot be undone. The snapshot will also be removed from your net worth chart.</div>
     <div class="modal-footer">
