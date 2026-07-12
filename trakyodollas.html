@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-J0m2E+HBs/5lk0xVt8WcxsQbTyHO5Ts/y8/aulBdJFg=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-MLEbqFE0FMIhBntaj9HKZTlYJKGgemeNPBe4VosxBRY=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2183,6 +2183,20 @@ let state={
   ['dragover','dragleave','drop'].forEach(evt=>{
     document.addEventListener(evt,e=>dispatch(e,'data-'+evt,true));
   });
+  // Global fallback: dispatch() above only preventDefault()s dragover/drop
+  // when the event target has a data-dragover/data-drop attribute (the CSV
+  // drop-zone and its covering file input) -- everywhere else in the
+  // document, including the rest of the same import modal (title, "Label
+  // these transactions as" input, help text, backdrop), a dropped file hit
+  // the browser's default action: navigate the whole tab away to render
+  // the raw file, discarding the SPA and the in-progress import with no
+  // warning. Any imprecise drag near the drop-zone (plausible -- the modal
+  // has substantial area surrounding the actual dashed box) triggered this.
+  // Calling preventDefault() twice on the same event (once here, once
+  // inside dragOverHighlight()/handleTxDrop() when the target does match)
+  // is harmless. Found in the 44th adversarial pass.
+  document.addEventListener('dragover',e=>e.preventDefault());
+  document.addEventListener('drop',e=>e.preventDefault());
   ['mouseover','mouseout','keydown'].forEach(evt=>{
     document.addEventListener(evt,e=>dispatch(e,'data-'+evt,true));
   });
@@ -5859,8 +5873,18 @@ document.addEventListener('keydown',function(e){
       // race before focus landed; now Escape fires on this modal at any
       // time, so it needs the same explicit routing its own Cancel button
       // uses instead of the generic close. Found in the 43rd adversarial
-      // pass.
-      if(openModal.id==='sync-passphrase-modal'){cancelSyncPassphrase();return;}
+      // pass. The modal has a second sub-panel (sync-pp-reset-panel, the
+      // "type RESET" flow) toggled by class rather than being its own
+      // .modal-overlay -- that panel's own Back button (hideForgotPassphrase)
+      // does NOT sign out, it just returns to the main panel, so Escape
+      // must check which sub-panel is actually visible rather than always
+      // routing to the full-modal Cancel. Found in the 44th adversarial
+      // pass (a gap in the 43rd pass's own fix).
+      if(openModal.id==='sync-passphrase-modal'){
+        const resetPanel=document.getElementById('sync-pp-reset-panel');
+        if(resetPanel&&!resetPanel.classList.contains('hidden')){hideForgotPassphrase();return;}
+        cancelSyncPassphrase();return;
+      }
       closeModals();return;
     }
     // Clear active filters
@@ -6711,19 +6735,35 @@ function saveHistoricalSnapshot(){
   // (unconditional wholesale overwrite of state.snapshots) on this device
   // or any other. Found in the 41st adversarial pass.
   if(window._fbUser&&window._fb&&!window._isDemoPreview&&!window._viewingDemoOverReal){
-    // .catch() here shows a toast, matching saveSnapshot()'s own convention
-    // (8403-8405), rather than only console.error()'ing -- a silently
-    // dropped delete on the move-month path would otherwise resurrect the
-    // stale old-month snapshot on the next cloud pull (loadUserData()
-    // wholesale-overwrites state.snapshots from every row Supabase
-    // returns, with no dedup by monthKey) with zero indication anything
-    // went wrong. Found in the 43rd adversarial pass.
-    _fbCallAfterMerge(()=>window._fb.saveSnapshot(window._fbUser.uid,snap).catch(()=>showToast('📅 Saved locally (cloud sync failed — will retry next time you\'re online)','#FCD34D')));
+    // Toast on failure, matching saveSnapshot()'s own convention (8403-8405),
+    // rather than only console.error()'ing -- a silently dropped delete on
+    // the move-month path would otherwise resurrect the stale old-month
+    // snapshot on the next cloud pull (loadUserData() wholesale-overwrites
+    // state.snapshots from every row Supabase returns, with no dedup by
+    // monthKey) with zero indication anything went wrong. Found in the 43rd
+    // adversarial pass.
+    //
+    // The two calls resolve into a single combined outcome (Promise.all)
+    // rather than each independently calling showToast() in its own
+    // .catch() -- showToast() has one shared #toast element with no queue,
+    // so two calls landing close together (a real, plausible case: a brief
+    // offline blip is likely to fail *both* the save and the delete at
+    // once, not just one) would silently clobber each other, and the user
+    // would only ever see whichever settled last. Found in the 44th
+    // adversarial pass.
+    const saveP=new Promise(res=>{_fbCallAfterMerge(()=>window._fb.saveSnapshot(window._fbUser.uid,snap).then(()=>res(true)).catch(()=>res(false)));});
+    let deleteP=Promise.resolve(true),movedFromLabel=null;
     if(movedFromMonthKey){
       const[my,mm]=movedFromMonthKey.split('-');
-      const movedFromLabel=`${MON3[parseInt(mm,10)-1]} ${my}`;
-      _fbCallAfterMerge(()=>window._fb.deleteSnapshot(window._fbUser.uid,movedFromMonthKey).catch(()=>showToast(`⚠️ Moved locally, but couldn't remove the old ${movedFromLabel} snapshot from the cloud — it may reappear until you delete it manually`,'#FCD34D',5000)));
+      movedFromLabel=`${MON3[parseInt(mm,10)-1]} ${my}`;
+      deleteP=new Promise(res=>{_fbCallAfterMerge(()=>window._fb.deleteSnapshot(window._fbUser.uid,movedFromMonthKey).then(()=>res(true)).catch(()=>res(false)));});
     }
+    Promise.all([saveP,deleteP]).then(([saveOk,deleteOk])=>{
+      if(saveOk&&deleteOk)return;
+      if(!saveOk&&!deleteOk)showToast(`⚠️ Saved locally, but cloud sync failed for both this snapshot and removing the old ${movedFromLabel} entry`,'#FCD34D',5000);
+      else if(!saveOk)showToast('📅 Saved locally (cloud sync failed — will retry next time you\'re online)','#FCD34D');
+      else showToast(`⚠️ Moved locally, but couldn't remove the old ${movedFromLabel} snapshot from the cloud — it may reappear until you delete it manually`,'#FCD34D',5000);
+    });
   }
 }
 
@@ -6887,7 +6927,17 @@ function buildCondensedDots(months,budgeted,totalBudget,mode,cat,budget){
       :getCatMonthSpend(cat,m);
     const limit=mode==='hero'?totalBudget:budget;
     const mp=limit>0?Math.round(ms/limit*100):0;
-    const mc=ms>limit?'#F87171':mp>warnPct?'#FBBF24':'#34D399';
+    // >=, not >, matching classifyBudgetStatus()'s canonical logic and the
+    // Budget tab's own documented legend ("On track: <warnPct%", "Near
+    // limit: warnPct-100%" -- warnPct itself is documented as the start of
+    // Near limit, not the end of On track). Found in the 44th adversarial
+    // pass: this dot and 6 other budgetWarnPct consumers used > instead,
+    // so a category sitting at exactly the warn percentage (e.g. spending
+    // precisely 80% of budget at the default 80% threshold) showed amber
+    // "AT RISK" in the row badge/CSV export while these history dots, the
+    // YTD ring, and the tab's top summary color simultaneously showed
+    // green "on track" for the same number.
+    const mc=ms>limit?'#F87171':mp>=warnPct?'#FBBF24':'#34D399';
     const ml=fmtMonthShort(m);
     return '<div style="flex:1;height:9px;border-radius:4px;background:'+(ms>0?mc:'#1E293B')+';min-width:0" title="'+ml+': '+fmtC(ms)+' ('+mp+'%)"></div>';
   }).join('');
@@ -6899,7 +6949,7 @@ function buildPctDots(months,getSpend,limit){
   return months.map((m,i)=>{
     const ms=getSpend(m);
     const mp=limit>0?Math.round(ms/limit*100):0;
-    const mc=ms>limit?'#F87171':mp>warnPct?'#FBBF24':'#34D399';
+    const mc=ms>limit?'#F87171':mp>=warnPct?'#FBBF24':'#34D399';
     const ml=fmtMonthShort(m);
     const topLabel=_labelIdxs.has(i)?(ml.slice(0,3)+' \''+m.slice(2,4)):'';
     const bottomText=ms>0?mp+'%':'–';
@@ -7023,7 +7073,7 @@ function ringHTML({ytd,ytdPace},size='',bg='var(--bg-card)'){
   const ratio=ytdPace>0?ytd/ytdPace:null;
   const arcPct=ratio==null?0:Math.min(ratio,1)*100;
   const warnRatio=(state.budgetWarnPct??80)/100;
-  const color=ratio==null?'var(--text-muted)':ratio>1?'#F87171':ratio>warnRatio?'#FBBF24':'#34D399';
+  const color=ratio==null?'var(--text-muted)':ratio>1?'#F87171':ratio>=warnRatio?'#FBBF24':'#34D399';
   const label=ratio==null?'–':Math.round(ratio*100)+'%';
   const title=ratio==null?'No budget set':`YTD ${fmt(ytd)} of ${fmt(ytdPace)} pace (${label})`;
   const cls=size?` ${size}`:'';
@@ -7134,7 +7184,7 @@ function renderBudgetTab(){
   const totalLeft=totalBudget-totalSpent;
   const overallPct=totalBudget>0?Math.round(totalSpent/totalBudget*100):0;
   const warnPct=state.budgetWarnPct??80;
-  const summaryColor=overallPct>100?'#F87171':overallPct>warnPct?'#FBBF24':'#34D399';
+  const summaryColor=overallPct>100?'#F87171':overallPct>=warnPct?'#FBBF24':'#34D399';
 
   const totalUnbudgeted=unbudgetedCats.reduce((s,c)=>s+(spendByCat[c]||0),0);
   const totalAllSpent=totalSpent+totalUnbudgeted;
@@ -7176,7 +7226,7 @@ function renderBudgetTab(){
 
   const summaryBar=document.getElementById('budget-summary-bar');
   if(summaryBar){
-    const heroColor=overallPct>100?'#F87171':overallPct>warnPct?'#FBBF24':'#34D399';
+    const heroColor=overallPct>100?'#F87171':overallPct>=warnPct?'#FBBF24':'#34D399';
     const heroLabel=totalLeft>=0
       ?`<span style="color:#34D399">${fmt(totalLeft)} left</span>`
       :`<span style="color:#F87171">${fmt(Math.abs(totalLeft))} over</span>`;
@@ -7195,7 +7245,7 @@ function renderBudgetTab(){
     const histDots=histMonths.map((m,i)=>{
       const mSpent=budgeted.reduce((s,[c])=>s+getCatMonthSpend(c,m),0);
       const mPct=totalBudget>0?Math.round(mSpent/totalBudget*100):0;
-      const mColor=mSpent>totalBudget?'#F87171':mPct>warnPct?'#FBBF24':'#34D399';
+      const mColor=mSpent>totalBudget?'#F87171':mPct>=warnPct?'#FBBF24':'#34D399';
       const mLabel=fmtMonthShort(m);
       const topLabel=_labelIdxs.has(i)?(mLabel.slice(0,3)+' \''+m.slice(2,4)):'';
       const mBottomText=mSpent>0?mPct+'%':'–';
@@ -7322,7 +7372,7 @@ function renderBudgetTab(){
       const{over,atRisk}=getRowFlags(cat,budget);
       const accentColor=over?'#F87171':atRisk?'#FBBF24':null;
 
-      const condensedDots=histMonths.map(mo=>{const ms=getCatMonthSpend(cat,mo);const mp=budget>0?Math.round(ms/budget*100):0;const mc=ms>budget?'#F87171':mp>warnPct?'#FBBF24':'#34D399';const ml=fmtMonthShort(mo);return`<div style="flex:1;height:9px;border-radius:4px;background:${ms>0?mc:tc('#1E293B','#E2E8F0')};min-width:0" title="${ml}: ${fmt(ms)} (${mp}%)"></div>`;}).join('');
+      const condensedDots=histMonths.map(mo=>{const ms=getCatMonthSpend(cat,mo);const mp=budget>0?Math.round(ms/budget*100):0;const mc=ms>budget?'#F87171':mp>=warnPct?'#FBBF24':'#34D399';const ml=fmtMonthShort(mo);return`<div style="flex:1;height:9px;border-radius:4px;background:${ms>0?mc:tc('#1E293B','#E2E8F0')};min-width:0" title="${ml}: ${fmt(ms)} (${mp}%)"></div>`;}).join('');
       const pctDots=buildRowPctDots(histMonths,cat,budget);
       const uid=esc(`hist-${cat.replace(/\s+/g,'_')}`);
       const histHTML=histMonths.length
@@ -7336,7 +7386,7 @@ function renderBudgetTab(){
         +'</div>'
         :'';
 
-      const color=over?'#F87171':pct>warnPct?'#FBBF24':'#34D399';
+      const color=over?'#F87171':pct>=warnPct?'#FBBF24':'#34D399';
       let avgBadgeHTML='';
       if(_budgetSort==='unusual'&&m.avgRatio!=null&&!gated){
         const dev=Math.round((m.avgRatio-1)*100);
