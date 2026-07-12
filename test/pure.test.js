@@ -583,6 +583,16 @@ test("parseCsvAccounts: a zero balance is imported, not silently dropped", () =>
     state: { accounts: [], nextId: 1, hasRealAccounts: false, hasRealData: false },
     hideDemoBadge: () => {},
     document: { getElementById: () => null },
+    ACCT_TYPE_ALIASES: {
+      cash: "cash", "cash/savings": "cash", checking: "cash", savings: "cash",
+      investment: "investment",
+      home: "home", "real estate": "home",
+      vehicle: "vehicle",
+      mortgage: "mortgage",
+      credit: "credit", "credit card": "credit",
+      "other-asset": "other-asset", "other asset": "other-asset",
+      "other-liability": "other-liability", "other liability": "other-liability", "other liab": "other-liability",
+    },
   };
   const { parseCsvAccounts } = loadFunctions(["parseCsvAccounts", "splitCSVLine"], ctx);
   const { imported, skipped } = parseCsvAccounts("name,source,type,balance\nOld Card,Chase,Credit Card,0");
@@ -595,6 +605,16 @@ test("parseCsvAccounts: a quoted name containing a comma doesn't shift the balan
     state: { accounts: [], nextId: 1, hasRealAccounts: false, hasRealData: false },
     hideDemoBadge: () => {},
     document: { getElementById: () => null },
+    ACCT_TYPE_ALIASES: {
+      cash: "cash", "cash/savings": "cash", checking: "cash", savings: "cash",
+      investment: "investment",
+      home: "home", "real estate": "home",
+      vehicle: "vehicle",
+      mortgage: "mortgage",
+      credit: "credit", "credit card": "credit",
+      "other-asset": "other-asset", "other asset": "other-asset",
+      "other-liability": "other-liability", "other liability": "other-liability", "other liab": "other-liability",
+    },
   };
   const { parseCsvAccounts } = loadFunctions(["parseCsvAccounts", "splitCSVLine"], ctx);
   const { imported } = parseCsvAccounts('name,source,type,balance\n"Smith, John Checking",Chase,Checking,1500');
@@ -607,11 +627,65 @@ test("parseCsvAccounts: a successful import sets hasRealAccounts/hasRealData, ma
     state: { accounts: [], nextId: 1, hasRealAccounts: false, hasRealData: false },
     hideDemoBadge: () => {},
     document: { getElementById: () => null },
+    ACCT_TYPE_ALIASES: {
+      cash: "cash", "cash/savings": "cash", checking: "cash", savings: "cash",
+      investment: "investment",
+      home: "home", "real estate": "home",
+      vehicle: "vehicle",
+      mortgage: "mortgage",
+      credit: "credit", "credit card": "credit",
+      "other-asset": "other-asset", "other asset": "other-asset",
+      "other-liability": "other-liability", "other liability": "other-liability", "other liab": "other-liability",
+    },
   };
   const { parseCsvAccounts } = loadFunctions(["parseCsvAccounts", "splitCSVLine"], ctx);
   parseCsvAccounts("name,source,type,balance\nChecking,Chase,Checking,500");
   assert.equal(ctx.state.hasRealAccounts, true);
   assert.equal(ctx.state.hasRealData, true);
+});
+
+// ── 62nd adversarial pass: parseCsvAccounts() only checked that `type`
+// was non-empty, storing whatever string was typed verbatim -- pasting a
+// human-readable label the app's own UI shows for an account type (e.g.
+// "Credit Card", copied straight from the Add Account form's dropdown)
+// created an account isLiab() doesn't recognize (it only matches the
+// exact lowercase-hyphenated code "credit"), silently adding its balance
+// to totalAssets() instead of subtracting it via totalLiab() -- a 2x
+// net-worth swing with a clean "✓ Imported" toast and no warning. Fixed
+// by normalizing `type` through ACCT_TYPE_ALIASES (case-insensitive,
+// covers both the internal codes and every label variant) and skipping
+// rows whose type doesn't resolve to a real code at all. ──
+function acctAliasCtx() {
+  return {
+    state: { accounts: [], nextId: 1, hasRealAccounts: false, hasRealData: false },
+    hideDemoBadge: () => {},
+    document: { getElementById: () => null },
+    ACCT_TYPE_ALIASES: {
+      cash: "cash", "cash/savings": "cash", checking: "cash", savings: "cash",
+      investment: "investment",
+      home: "home", "real estate": "home",
+      vehicle: "vehicle",
+      mortgage: "mortgage",
+      credit: "credit", "credit card": "credit",
+      "other-asset": "other-asset", "other asset": "other-asset",
+      "other-liability": "other-liability", "other liability": "other-liability", "other liab": "other-liability",
+    },
+  };
+}
+test("parseCsvAccounts: a human-readable type label (\"Credit Card\", copied from the Add Account dropdown) normalizes to the internal code isLiab() recognizes", () => {
+  const ctx = acctAliasCtx();
+  const { parseCsvAccounts } = loadFunctions(["parseCsvAccounts", "splitCSVLine"], ctx);
+  const { imported } = parseCsvAccounts("name,source,type,balance\nMy Card,Chase,Credit Card,5000");
+  assert.equal(imported, 1);
+  assert.equal(ctx.state.accounts[0].type, "credit");
+});
+test("parseCsvAccounts: an unrecognized type is skipped, not silently stored verbatim and mis-classified as an asset", () => {
+  const ctx = acctAliasCtx();
+  const { parseCsvAccounts } = loadFunctions(["parseCsvAccounts", "splitCSVLine"], ctx);
+  const { imported, skipped } = parseCsvAccounts("name,source,type,balance\nMy Card,Chase,Gibberish Type,5000");
+  assert.equal(imported, 0);
+  assert.equal(skipped, 1);
+  assert.equal(ctx.state.accounts.length, 0);
 });
 
 // ── 14th adversarial pass: openKBB()'s make/model can be coerced to a
