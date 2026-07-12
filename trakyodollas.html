@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-kQPFkWV0/zoWZLMQ2v6UI1BA4CkWTVFlO3wxklOcBWk=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-l8FW/aWoTTALYJFhJT8XzE/n+2GX9xYVoq8OC6H1UCg=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -8457,6 +8457,19 @@ function dismissBudgetHealthPill(){
 function disableIncome(){
   state.income={method:null,monthlyAmount:0};
   selectIncomeMethodUI(null);
+  // _lastSelectedIncomeMethod, not left stale -- closeIncomeModal() (50th
+  // adversarial pass) checks this variable to decide whether to implicitly
+  // re-save #income-amount's value on close. Without resetting it here, a
+  // user who had previously selected Manual (setting it to 'manual'),
+  // clicked this "Remove savings rate tracking" button, then clicked
+  // Done/Escape to close would have the just-disabled income silently
+  // resurrected -- #income-amount's stale value was never cleared by
+  // selectIncomeMethodUI(null) above, and state.income.method!=='manual'
+  // (now null) satisfied closeIncomeModal()'s "actually changed" check,
+  // triggering saveManualIncome() and a contradictory "Income saved" toast
+  // right after this function's own "removed" toast. Found in the 51st
+  // adversarial pass.
+  _lastSelectedIncomeMethod=null;
   scheduleSave();
   renderInsights();
   showToast('Savings rate tracking removed');
