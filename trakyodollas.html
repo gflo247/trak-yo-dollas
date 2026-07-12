@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-zD9QiHmoBO6oRYUdJqWa3GMGPKyiiMHq2fDleZoIX+A=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-AAHuvHSfQ9DnhQJ8JSEEwjf8+yN81yRDiTwEzCSNg6Q=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2329,6 +2329,17 @@ let _vehicleModalGen=0;
 // otherwise silently lost, even though nothing about that filter was ever
 // meant to change. Found in the 47th adversarial pass.
 let _treemapPrevActiveCats=null;
+// Shared by every path that clears state.activeVendors while a Treemap
+// vendor selection might be active -- the 47th pass's fix only restored
+// _treemapPrevActiveCats on the one path where the user re-clicks the same
+// vendor tile to deselect it. Switching chart mode away from Treemap
+// (setChartMode()) or navigating to a different tab (showPage()) both also
+// clear state.activeVendors/reset bucketMode without ever restoring
+// activeCats -- two more silent-loss exit paths for the exact same bug.
+// Found in the 48th adversarial pass.
+function _restoreCatsFromTreemapStash(){
+  if(_treemapPrevActiveCats){state.activeCats=_treemapPrevActiveCats;_treemapPrevActiveCats=null;}
+}
 
 // ── Format / theme / tooltip helpers ─────────────────────────────
 // state.currency is escaped here, at its one shared point of entry into
@@ -4104,13 +4115,21 @@ function renderSpendSummary(){
     total=monthly.reduce((s,m)=>s+m.total,0);
     months=monthly.filter(m=>m.total>0).length||1;
   }
-  const isFiltered=state.activeCats.size>0||state.searchQuery;
+  // bucketMode==='vendor' with activeVendors set is a real, active filter
+  // -- getFilteredTxs() (filtTxs, above) already restricts by it -- but was
+  // never included here, so the headline total/label/avg silently fell
+  // back to the unfiltered "Total spend" figures the instant a vendor tile
+  // was selected (bucket-grid's vendor view, or a Treemap vendor-tile
+  // click), while the transaction list right below correctly showed only
+  // that vendor's transactions. Found in the 48th adversarial pass.
+  const isVendorFiltered=state.bucketMode==='vendor'&&state.activeVendors&&state.activeVendors.size>0;
+  const isFiltered=state.activeCats.size>0||state.searchQuery||isVendorFiltered;
   const filtIncluded=filtTxs.filter(t=>!t.excluded);
   const displayTotal=isFiltered?filtIncluded.filter(isRealSpend).reduce((s,t)=>s+t.amount,0):total;
 
-  // Monthly avg: when cats selected, compute from filtered txs grouped by month
+  // Monthly avg: when cats/vendors selected, compute from filtered txs grouped by month
   let avgLabel;
-  if(state.activeCats.size>0){
+  if(state.activeCats.size>0||isVendorFiltered){
     const byMonth={};
     filtIncluded.filter(isRealSpend).forEach(t=>{
       const m=t.date.slice(0,7);
@@ -4129,6 +4148,7 @@ function renderSpendSummary(){
   let label;
   if(state.activeCats.size===1)label=`${[...state.activeCats][0]} spend`;
   else if(state.activeCats.size>1)label=`${state.activeCats.size} categories`;
+  else if(isVendorFiltered)label=state.activeVendors.size===1?`${displayVendor([...state.activeVendors][0])} spend`:`${state.activeVendors.size} vendors`;
   else if(state.searchQuery)label=`"${state.searchQuery}" results`;
   else {
     const f=state.rangeFrom,t=state.rangeTo,a=ALL_MONTHS;
@@ -4526,6 +4546,13 @@ function setChartMode(mode){
   if(mode!=='split'){
     state.activeVendors=new Set();
     state.bucketMode='category';
+    // Same silent-loss gap the Treemap vendor-tile deselect path had before
+    // the 47th/48th adversarial passes -- switching away from Treemap
+    // (Split mode) while a vendor was still selected cleared activeVendors
+    // here without ever restoring the category filter _treemapPrevActiveCats
+    // stashed when that vendor was selected. Found in the 48th adversarial
+    // pass.
+    _restoreCatsFromTreemapStash();
   }
   // Re-render tx list only if a date or vendor filter was cleared; cat filter persists across modes
   if(hadDateFilter||hadVendorFilter){
@@ -4716,9 +4743,11 @@ function renderTreemap(drillCat){
           // discarding a category filter the user had set via bucket-grid
           // before drilling into Treemap, even though nothing about that
           // filter was ever meant to change just from toggling a vendor
-          // tile off. Found in the 47th adversarial pass.
-          state.activeCats=_treemapPrevActiveCats||new Set();
-          _treemapPrevActiveCats=null;
+          // tile off. Found in the 47th adversarial pass. activeCats is
+          // already empty at this point (cleared on entry below), so the
+          // shared helper correctly leaves it empty when there was nothing
+          // stashed to restore.
+          _restoreCatsFromTreemapStash();
         } else {
           state.activeVendors=new Set([vendorName]);
           state.bucketMode='vendor';
@@ -5764,7 +5793,15 @@ function renderTxList(){
     if(!t.excluded)return false;
     if(!ms.has(t.date.slice(0,7)))return false;
     if(!state.activeSources.has(t.card))return false;
-    if(state.activeCats.size>0&&!state.activeCats.has(t.cat))return false;
+    // bucketMode==='vendor'/vendor check, mirroring getFilteredTxs()'s own
+    // mutually-exclusive category-vs-vendor gating -- this predicate never
+    // checked state.activeVendors at all, so an excluded transaction from
+    // a different vendor could still surface in the "Hidden from spending"
+    // dimmed section while the visible "Filtering: [vendor]" context
+    // implied everything on screen was scoped to one vendor. Found in the
+    // 48th adversarial pass.
+    if(state.bucketMode==='vendor'&&state.activeVendors&&state.activeVendors.size>0&&!state.activeVendors.has(resolveVendor(t.desc)))return false;
+    if(state.bucketMode!=='vendor'&&state.activeCats.size>0&&!state.activeCats.has(t.cat))return false;
     if(_bizFilter==='biz'&&!t.biz)return false;
     if(_bizFilter==='personal'&&t.biz)return false;
     if(state.searchQuery){
@@ -6136,7 +6173,11 @@ function buildHiddenPopover(){
     if(!t.excluded)return false;
     if(!hiddenMs.has(t.date.slice(0,7)))return false;
     if(!state.activeSources.has(t.card))return false;
-    if(state.activeCats.size>0&&!state.activeCats.has(t.cat))return false;
+    // Same bucketMode==='vendor' gap as renderTxList()'s alwaysShowExcl
+    // (fixed alongside it in the 48th adversarial pass) -- this count
+    // never checked state.activeVendors either.
+    if(state.bucketMode==='vendor'&&state.activeVendors&&state.activeVendors.size>0&&!state.activeVendors.has(resolveVendor(t.desc)))return false;
+    if(state.bucketMode!=='vendor'&&state.activeCats.size>0&&!state.activeCats.has(t.cat))return false;
     if(_bizFilter==='biz'&&!t.biz)return false;
     if(_bizFilter==='personal'&&t.biz)return false;
     if(state.searchQuery){
@@ -11299,6 +11340,12 @@ function showPage(id,eventOrBtn){
     if(state.activeVendors?.size>0){
       state.activeVendors=new Set();
       state.bucketMode='category';
+      // Same silent-loss gap as setChartMode() above -- navigating away
+      // from the Spending tab while a Treemap vendor selection was active
+      // cleared activeVendors here without ever restoring the category
+      // filter _treemapPrevActiveCats stashed. Found in the 48th
+      // adversarial pass.
+      _restoreCatsFromTreemapStash();
     }
   }
 
