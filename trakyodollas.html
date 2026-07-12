@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-r9NbkbANuJ5urKv0TGn4GKPqcxYINNjUw5sZjKP/z2E=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-acZAIuVhdgsjuPIraLfQquQa4p7nc7GmcgPwoqu0XYs=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2753,7 +2753,13 @@ function renderInsights(){
     const nwUp=nwDiff>0;
     const snapDate=parseYM(lastSnap.monthKey);
     const daysSince=Math.max(1,Math.round((Date.now()-snapDate.getTime())/(1000*60*60*24)));
-    const annualPct=lastSnap.nw>0&&daysSince>=60?Math.min(999,Math.round((Math.pow(nw/lastSnap.nw,365/daysSince)-1)*100)):null;
+    // nw>0 too, not just lastSnap.nw>0 -- Math.pow() of a negative base to
+    // a non-integer exponent is NaN, which nw/lastSnap.nw produces whenever
+    // current net worth has gone negative since a positive snapshot (a new
+    // large liability, an asset value drop) -- a real, reachable state for
+    // a finance-tracking audience that includes people paying down debt.
+    // Found in the 58th adversarial pass.
+    const annualPct=lastSnap.nw>0&&nw>0&&daysSince>=60?Math.min(999,Math.round((Math.pow(nw/lastSnap.nw,365/daysSince)-1)*100)):null;
     const snapShort=fmtMonthShort(lastSnap.monthKey);
     const tooltip=`${nwUp?'↑':'↓'} ${fmt(nwDiff)} over ${daysSince} days${annualPct!==null?' · '+Math.abs(annualPct)+'%/yr annualized':''}&#10;Now: ${fmt(nw)} · Snapshot (${snapShort}): ${fmt(lastSnap.nw)}`;
     const pillValue=`${nwUp?'↑':'↓'} ${fmtC(nwDiff)}`;
@@ -3159,7 +3165,12 @@ function renderNwBreakdown(){
         </div>
         <div class="flex-center gap-8">
           ${g.isLiab
-            ? `<span style="font-size:10px;font-weight:700;color:#F87171;background:#F8717118;padding:2px 8px;border-radius:10px" title="Total liabilities ÷ total assets">${(raw/assets*100).toFixed(1)}% debt-to-asset</span>`
+            // assets>0 guard, matching pct's own guard above -- a user with
+            // only liability-type accounts (tracking debt before adding any
+            // cash/investment account) has assets===0, which rendered
+            // "Infinity% debt-to-asset" (or "NaN%" with no liabilities
+            // either) unguarded. Found in the 58th adversarial pass.
+            ? `<span style="font-size:10px;font-weight:700;color:#F87171;background:#F8717118;padding:2px 8px;border-radius:10px" title="Total liabilities ÷ total assets">${(assets>0?raw/assets*100:0).toFixed(1)}% debt-to-asset</span>`
             : `<span style="font-size:10px;font-weight:700;color:${g.color};background:${g.color}18;padding:2px 8px;border-radius:10px">${pct.toFixed(1)}% of assets</span>`
           }
           <span style="font-size:14px;font-weight:800;color:${g.isLiab?'#F87171':'var(--text-primary)'}">${g.isLiab?`-${fmt(raw)}`:fmt(net)}</span>
@@ -3713,7 +3724,17 @@ function renderNwChart(){
   // Snapshots and transactions don't have to cover the same period.
   const txMonths=Object.keys(MONTHLY).sort();
   let mKeys;
-  if(snapsorted.length>=2){
+  // >=1, not >=2 -- a single manually-seeded historical snapshot (the
+  // feature's own stated purpose: recording a net-worth data point from
+  // before transaction tracking began) predating any transaction month
+  // fell into the txMonths-only branch below, whose mKeys had no slot for
+  // that snapshot's month -- state.snapshots.forEach's indexOf lookup
+  // silently no-opped, so the snapshot had zero influence on the chart and
+  // no green dot, contradicting the chart's own "Green dots mark saved
+  // snapshots" caption. The span-building logic below already generalizes
+  // correctly to a single snapshot; it just needed the >=2 lowered to >=1.
+  // Found in the 58th adversarial pass.
+  if(snapsorted.length>=1){
     // Span from oldest snapshot to current month, filling every month in between
     const startKey=snapsorted[0].monthKey;
     const today=new Date();
@@ -10970,7 +10991,14 @@ function saveVehicle(){
   // allows negative there -- an overdrawn checking account is a real,
   // legitimate state), a physical asset's estimated value can never be
   // negative; the worst case is $0. Found in the 47th adversarial pass.
-  if(!value||value<0)return;
+  // value<0 only, not !value -- !value is also true for a legitimate $0
+  // (the comment above already establishes $0 is the correct floor, not
+  // rejected; this line just still had the pre-47th-pass falsy check for
+  // the zero case specifically). A totaled/worthless-but-still-owned
+  // vehicle has no way to be recorded as $0 without this fix -- the modal
+  // just silently sits there with no save, no toast, no error. Found in
+  // the 58th adversarial pass.
+  if(value<0)return;
   let name,make,model,year,condition,miles,assetType,vin='';
   if(currentAssetType==='other'){
     const oName=(document.getElementById('v-other-name')||{}).value||'';const oCat=(document.getElementById('v-other-cat')||{}).value||'Other';
