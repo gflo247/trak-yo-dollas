@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-pvms+XCUGrvtSJCgSsftXBAMnvQatlR9tGlBhAyz7Rg=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-W/GAU8CTyyufssjiOqUt6Jmjn3nTT0JAsCJl1EsjkDY=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -7105,7 +7105,15 @@ function removeBudget(cat){
   scheduleSave();
   renderBucketGrid();
   renderBudgetTab();
-  showToast(`Budget removed for ${esc(cat)} · <button data-action="undoBudgetCat" data-arg="${esc(cat)}" data-arg2="${prev}" style="background:none;border:none;color:#60A5FA;font-size:12px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit" type="button">Undo</button>`,4000);
+  // pointer-events:all -- #toast's own inline style sets pointer-events:none
+  // (it's a non-interactive status message everywhere else in the app) and
+  // that's an inherited property, so this button was invisible to clicks
+  // without its own override -- the visible, underlined, cursor:pointer
+  // "Undo" text simply didn't respond to clicks, the only recovery path for
+  // an accidental budget deletion. Matches the same override already used
+  // on the savings-nudge pill's dismiss button for the identical reason.
+  // Found in the 53rd adversarial pass.
+  showToast(`Budget removed for ${esc(cat)} · <button data-action="undoBudgetCat" data-arg="${esc(cat)}" data-arg2="${prev}" style="background:none;border:none;color:#60A5FA;font-size:12px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit;pointer-events:all" type="button">Undo</button>`,4000);
 }
 function buildCondensedDots(months,budgeted,totalBudget,mode,cat,budget){
   const warnPct=state.budgetWarnPct??80;
