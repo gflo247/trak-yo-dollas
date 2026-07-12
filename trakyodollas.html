@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ScURbAS6bboN68Voj84ZY6kfFotKoXSP2SUiUFNkBYc=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-zD9QiHmoBO6oRYUdJqWa3GMGPKyiiMHq2fDleZoIX+A=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1403,7 +1403,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <div class="form-group"><label class="form-label" for="v-other-name">Asset name <span style="color:#F87171">*</span></label><input type="text" id="v-other-name" placeholder="e.g. Diamond ring, Boston Whaler, Rolex"/></div>
       <div class="form-group"><label class="form-label" for="v-other-cat">Category</label><select id="v-other-cat"><option value="Boat">Boat / Watercraft</option><option value="Jewelry">Jewelry</option><option value="Art">Art / Collectibles</option><option value="Equipment">Equipment / Tools</option><option value="Electronics">Electronics</option><option value="Other">Other</option></select></div>
     </div>
-    <div class="form-group"><label class="form-label" for="v-value">Est. value ($) <span style="color:#F87171">*</span></label><input type="number" id="v-value"/></div>
+    <div class="form-group"><label class="form-label" for="v-value">Est. value ($) <span style="color:#F87171">*</span></label><input type="number" id="v-value" min="0"/></div>
     <div class="form-group"><label class="form-label" for="v-purchase">Purchase price ($)</label><input type="number" id="v-purchase"/></div>
     <div class="form-group"><label class="form-label" for="v-purchase-year">Purchase year</label><input type="number" id="v-purchase-year"/></div>
     <div style="font-size:10px;color:var(--text-muted);margin-bottom:.75rem"><span style="color:#F87171">*</span> required</div>
@@ -2321,6 +2321,14 @@ let spendChart=null,editAcctId=null,editVehicleId=null,editTxId=null,showTxN=50;
 // switched to a different vehicle or closed the modal mid-flight. Found in
 // the 46th adversarial pass.
 let _vehicleModalGen=0;
+// Remembers whatever state.activeCats was before a Treemap vendor-tile
+// click clears it to enter vendor mode (renderTreemap()'s click handler),
+// so deselecting that same vendor can restore it instead of leaving
+// activeCats permanently empty -- a category filter set via bucket-grid
+// before drilling into Treemap and selecting/deselecting a vendor was
+// otherwise silently lost, even though nothing about that filter was ever
+// meant to change. Found in the 47th adversarial pass.
+let _treemapPrevActiveCats=null;
 
 // ── Format / theme / tooltip helpers ─────────────────────────────
 // state.currency is escaped here, at its one shared point of entry into
@@ -4701,6 +4709,16 @@ function renderTreemap(drillCat){
         if(isActive){
           state.activeVendors=new Set();
           state.bucketMode='category';
+          // Restore whatever category filter was active before this vendor
+          // was selected, rather than leaving activeCats permanently empty
+          // -- the first version of this fix (46th adversarial pass) cleared
+          // activeCats on entry but never restored it on exit, silently
+          // discarding a category filter the user had set via bucket-grid
+          // before drilling into Treemap, even though nothing about that
+          // filter was ever meant to change just from toggling a vendor
+          // tile off. Found in the 47th adversarial pass.
+          state.activeCats=_treemapPrevActiveCats||new Set();
+          _treemapPrevActiveCats=null;
         } else {
           state.activeVendors=new Set([vendorName]);
           state.bucketMode='vendor';
@@ -4717,6 +4735,7 @@ function renderTreemap(drillCat){
           // purchases, showing that vendor's spend across every category
           // while the UI insisted otherwise. Found in the 46th adversarial
           // pass.
+          _treemapPrevActiveCats=new Set(state.activeCats);
           state.activeCats=new Set();
         }
         showTxN=50;
@@ -6826,11 +6845,22 @@ function saveHistoricalSnapshot(){
       deleteP=withTimeout(new Promise(res=>{_fbCallAfterMerge(()=>window._fb.deleteSnapshot(window._fbUser.uid,movedFromMonthKey).then(()=>res(true)).catch(()=>res(false)));}));
     }
     Promise.all([saveP,deleteP]).then(([saveOk,deleteOk])=>{
-      if(saveOk===null||deleteOk===null)return;
-      if(saveOk&&deleteOk)return;
-      if(!saveOk&&!deleteOk)showToast(`⚠️ Saved locally, but cloud sync failed for both this snapshot and removing the old ${movedFromLabel} entry`,'#FCD34D',5000);
-      else if(!saveOk)showToast('📅 Saved locally (cloud sync failed — will retry next time you\'re online)','#FCD34D');
-      else showToast(`⚠️ Moved locally, but couldn't remove the old ${movedFromLabel} snapshot from the cloud — it may reappear until you delete it manually`,'#FCD34D',5000);
+      // Checks each side for a *definite* false first, independent of the
+      // other side's state -- the original version's "either side is null,
+      // stay silent" guard discarded a known, confirmed failure whenever
+      // the two calls happened to settle at different speeds (a real
+      // Supabase rejection resolves fast; the sibling call merely being
+      // slow enough to hit the 45s timeout doesn't make the fast, definite
+      // failure any less real). Only when neither side is definitely false
+      // -- both true, or the unresolved one is truly unknown -- is there
+      // nothing confirmed to report. Found in the 47th adversarial pass.
+      if(saveOk===true&&deleteOk===true)return;
+      if(saveOk===false&&deleteOk===false){showToast(`⚠️ Saved locally, but cloud sync failed for both this snapshot and removing the old ${movedFromLabel} entry`,'#FCD34D',5000);return;}
+      if(saveOk===false){showToast('📅 Saved locally (cloud sync failed — will retry next time you\'re online)','#FCD34D');return;}
+      if(deleteOk===false){showToast(`⚠️ Moved locally, but couldn't remove the old ${movedFromLabel} snapshot from the cloud — it may reappear until you delete it manually`,'#FCD34D',5000);return;}
+      // Neither side is a confirmed failure -- at least one is still
+      // unresolved (null) and the other isn't false either, so there's
+      // nothing known to report yet.
     });
   }
 }
@@ -10514,7 +10544,16 @@ function saveVehicle(){
   const value=parseFloat(document.getElementById('v-value').value)||0;
   const purchase=parseFloat(document.getElementById('v-purchase').value)||0;
   const purchaseYear=parseInt(document.getElementById('v-purchase-year').value)||new Date().getFullYear();
-  if(!value)return;
+  // value<0, not just !value -- a negative "Est. value" is truthy so it
+  // passed straight through the old check, was written directly into the
+  // paired account's balance, and totalAssets() sums that unconditionally
+  // for every non-liability account -- silently corrupting net worth as
+  // if the user owed money on an asset, with no validation or warning
+  // anywhere. Unlike a regular account's balance (saveAccount() correctly
+  // allows negative there -- an overdrawn checking account is a real,
+  // legitimate state), a physical asset's estimated value can never be
+  // negative; the worst case is $0. Found in the 47th adversarial pass.
+  if(!value||value<0)return;
   let name,make,model,year,condition,miles,assetType,vin='';
   if(currentAssetType==='other'){
     const oName=(document.getElementById('v-other-name')||{}).value||'';const oCat=(document.getElementById('v-other-cat')||{}).value||'Other';
