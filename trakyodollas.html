@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-oZ/4hBe9+qPaAH4JvDDCZX4gphyqg8DLUUb13kI/jQM=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-f9ic3qqCmPBg0fgHdzkPjR2ikX/QVmXop6WHlqkldB0=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -9053,7 +9053,13 @@ function parseImportDate(str,fmt){
     // month 13) — without this, a corrupted row silently produces a wrong-but-plausible
     // date instead of being rejected. Round-trip the components to detect it.
     if(isNaN(d.getTime())||d.getMonth()!==mo-1||d.getDate()!==dy)return'';
-    return d.toISOString().slice(0,10);
+    // Local-time components, not toISOString() -- same UTC-shift-back-a-day
+    // bug the fallback branch below already documents and avoids, just
+    // missed here. Only reachable for UTC+13/+13:45/+14 users (local noon
+    // minus an offset over 12h crosses back into the previous UTC day),
+    // but every CSV-imported transaction goes through this branch, so it's
+    // systematic once reached. Found in the 56th adversarial pass.
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
   // Slash/dash/dot separated: MM/DD/YYYY or DD/MM/YYYY (or 2-digit year)
   const parts=str.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})$/);
@@ -9064,7 +9070,8 @@ function parseImportDate(str,fmt){
     const d=new Date(parseInt(y),mo-1,dy,12,0,0);
     // Same rollover guard as the ISO branch above.
     if(isNaN(d.getTime())||d.getMonth()!==mo-1||d.getDate()!==dy)return'';
-    return d.toISOString().slice(0,10);
+    // Local-time components -- same fix as the ISO branch above.
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
   // Fallback: unambiguous strings like "Jan 15, 2025"
   // new Date(locale-string) parses as local midnight; toISOString() converts to UTC and
@@ -10550,6 +10557,12 @@ async function loadUserData(uid) {
           const t = state.transactions.find(x => x.date === edit.date && x.desc === edit.origDesc);
           _txsDirty=true; if (t) { t.cat = edit.cat; t.desc = edit.desc; t.excluded = !!edit.excluded; }
         });
+        // A desc edit here can change what resolveVendor() resolves an
+        // already-loaded row to -- same staleness risk as the array-replace
+        // branch above, just narrower (shifts membership of individual
+        // rows rather than zero-filtering against an entirely new dataset).
+        // Found in the 56th adversarial pass.
+        _clearVendorDayFiltersForDataReplace();
         rebuildMonthly();
       }
       rebuildCatSelects();
@@ -10748,7 +10761,14 @@ function openAddTxModal(){
     if(!sources.length)sources.push('Other');
     cardSel.innerHTML=sources.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
   }
-  document.getElementById('t-date').value=new Date().toISOString().slice(0,10);
+  // Local-time components, not toISOString() (which is UTC and silently
+  // pre-fills tomorrow's date for any UTC-negative-timezone user opening
+  // this modal in the evening -- roughly 7pm-midnight local, depending on
+  // exact offset, so this fires nightly for a large share of the app's
+  // likely US/Americas audience). Same correct pattern already used by
+  // openHistoricalSnapshotModal(). Found in the 56th adversarial pass.
+  const _now=new Date();
+  document.getElementById('t-date').value=`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
   ['t-desc','t-amount'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('add-tx-modal').classList.remove('hidden');
 }
