@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-W/GAU8CTyyufssjiOqUt6Jmjn3nTT0JAsCJl1EsjkDY=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-qTuorZxh1wD9J9hhJ3e2ipFMybhXnxB//PTGesdxBl8=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -10547,6 +10547,71 @@ function _avatarPopOutside(e){
   const pop=document.getElementById('auth-avatar-pop');
   if(pop&&!pop.contains(e.target))pop.classList.add('hidden');
 }
+// ── Modal keyboard accessibility: focus trap + ARIA + return-focus ──────
+// Pre-launch accessibility initiative (chunk 2/5) closing the systemic gap
+// the 52nd adversarial pass deferred: no modal had a focus trap, ARIA
+// dialog semantics, or return-focus-on-close. There is no shared
+// openModal() wrapper in this file -- each of the 28 modals has its own
+// dedicated open*()/show*() function that independently calls
+// .classList.remove('hidden') -- so open/close is detected via a single
+// shared MutationObserver watching the `class` attribute on every
+// .modal-overlay, rather than editing 28 different functions. Scoped
+// per-node to `class` only (no subtree:true on document.body, which would
+// fire on every unrelated class toggle in the app). Self-maintaining:
+// driven by querySelectorAll('.modal-overlay') rather than a hardcoded id
+// list, so a 29th modal using the same convention needs no code change
+// here. #demo-picker-overlay uses a different mechanism (style.display,
+// not the .hidden class) and is added separately in chunk 5.
+let _a11yOpenModalEl=null, _a11yReturnFocusEl=null, _a11yFocusGen=0;
+
+function _a11yOnModalAttrChange(modalEl){
+  const isOpen=!modalEl.classList.contains('hidden');
+  if(isOpen&&_a11yOpenModalEl!==modalEl)_a11yHandleOpen(modalEl);
+  else if(!isOpen&&_a11yOpenModalEl===modalEl)_a11yHandleClose();
+}
+function _a11yHandleOpen(modalEl){
+  _a11yReturnFocusEl=document.activeElement;
+  _a11yOpenModalEl=modalEl;
+  const myGen=++_a11yFocusGen;
+  // 120ms is a deliberate margin above the slowest of this file's dozen
+  // existing setTimeout(()=>field.focus(),NN) calls used to focus a
+  // specific field on modal open (delays range 0-80ms) -- this fallback
+  // must always lose that race, never fight them.
+  setTimeout(()=>_a11yFallbackFocus(modalEl,myGen),120);
+}
+function _a11yHandleClose(){
+  const returnTo=_a11yReturnFocusEl;
+  _a11yOpenModalEl=null;_a11yReturnFocusEl=null;
+  if(returnTo&&document.contains(returnTo)&&typeof returnTo.focus==='function')returnTo.focus();
+}
+function _a11yFallbackFocus(modalEl,myGen){
+  if(myGen!==_a11yFocusGen||modalEl!==_a11yOpenModalEl)return; // superseded by a re-open
+  // Stronger than an .contains() check: correctly no-ops whether one of
+  // the existing explicit .focus() calls already claimed focus, or the
+  // user simply tabbed/clicked somewhere themselves before this fired --
+  // either way, don't fight it.
+  if(document.activeElement!==_a11yReturnFocusEl)return;
+  const scope=modalEl.querySelector('.modal')||modalEl;
+  const first=_a11yGetFocusable(scope)[0];
+  (first||scope).focus();
+}
+// Live-recomputed every call, never cached -- several modals' content
+// changes while they stay open (sync-passphrase-modal's reset sub-panel,
+// income-modal's manual/auto sections, cat-modal's full innerHTML
+// re-render on every rename/delete-confirm click), so a focusable-elements
+// list captured once at open time would go stale. offsetParent!==null is
+// a correct visibility filter here specifically because this app hides
+// sub-panels via display:none (.hidden{display:none!important}) or
+// inline style.display, never visibility:hidden.
+function _a11yGetFocusable(container){
+  const nodes=container.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+  return Array.prototype.filter.call(nodes,el=>el.offsetParent!==null);
+}
+const _a11yModalObserver=new MutationObserver(records=>records.forEach(r=>_a11yOnModalAttrChange(r.target)));
+document.querySelectorAll('.modal-overlay').forEach(el=>{
+  _a11yModalObserver.observe(el,{attributes:true,attributeFilter:['class']});
+});
+
 function closeModals(){
   document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.add('hidden'));
   editAcctId=null;editVehicleId=null;editTxId=null;rebuildCatSelects();
