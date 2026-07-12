@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-f9ic3qqCmPBg0fgHdzkPjR2ikX/QVmXop6WHlqkldB0=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-r9NbkbANuJ5urKv0TGn4GKPqcxYINNjUw5sZjKP/z2E=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2067,7 +2067,19 @@ function getSortedSnaps(){
 // here, silently disagreeing with the Spending tab's chart, which already
 // respects the same toggle.
 function getTxForMonth(m,extraFilter){
-  return state.transactions.filter(t=>t.date.slice(0,7)===m&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)&&(!extraFilter||extraFilter(t)));
+  // !t.isIncome, not just !t.excluded -- every other spend-aggregating
+  // function in the file (isRealSpend()/getBaseTxs(), and rebuildMonthly()
+  // since an earlier pass) already excludes income this way rather than
+  // relying on excludedCats.has('Income'), since a transaction's category
+  // can drift (a bulk-applied rule, or a hand-edit via Edit Transaction)
+  // while isIncome stays the durable signal. This helper backs
+  // getCatMonthSpend()/getVendorMonthSpend() -- the Budget tab's 12-month
+  // average/YTD pace/history dots, the Insights "Budget health" pill, and
+  // exportBudgetCSV() -- so a recategorized income transaction was
+  // silently counted as spend in all of them, contradicting the
+  // currently-displayed month's correctly-filtered hero figure. Found in
+  // the 57th adversarial pass.
+  return state.transactions.filter(t=>t.date.slice(0,7)===m&&!t.excluded&&!t.isIncome&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)&&(!extraFilter||extraFilter(t)));
 }
 
 // Get spend total for a category in a given month
@@ -11338,7 +11350,13 @@ function exportBackup(){
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    const dateStr=new Date().toISOString().slice(0,10);
+    // Local-time components, not toISOString() -- same UTC-shift-back-a-day
+    // straggler the 56th adversarial pass already fixed for
+    // exportTransactionsCSV()/exportBudgetCSV()'s filenames, just missed
+    // here. Cosmetic only (filename, not the payload's exportedAt
+    // metadata), but a US-evening backup was silently dated tomorrow.
+    const _now=new Date();
+    const dateStr=`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
     a.href=url;a.download=`trak-yo-dollas-backup-${dateStr}.json`;
     document.body.appendChild(a);a.click();
     setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);
