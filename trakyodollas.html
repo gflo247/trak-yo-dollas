@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-j8KLp9P/XnPSuoAUkF30wqhX4Ybg7Ok248BCzHvJf34=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ZGS5EnqCb1Aaw0dgz7D4Z1Fowjn6ql0gRrFfiWY3RaI=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1374,7 +1374,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 <div class="modal-overlay hidden" id="acct-csv-modal">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="acct-csv-modal-title" tabindex="-1">
     <h3 id="acct-csv-modal-title">Import CSV</h3>
-    <p class="modal-sub">Columns: <strong style="color:var(--text-secondary)">name, source, type, balance</strong></p>
+    <p class="modal-sub">Columns: <strong style="color:var(--text-secondary)">name, source, type, balance</strong> — type must be one of: cash, investment, home, vehicle, mortgage, credit, other-asset, other-liability</p>
     <div class="csv-zone" data-action="triggerCsvFileInput">Click to select CSV
       <input type="file" id="csv-file" accept=".csv,.CSV" style="display:none" data-change="handleCsvDelegated"/></div>
     <textarea id="csv-text" rows="3" style="margin-top:.6rem;font-family:monospace;font-size:11px" placeholder="name,source,type,balance"></textarea>
@@ -6093,11 +6093,20 @@ document.addEventListener('keydown',function(e){
       if(openModal.id==='income-modal'){closeIncomeModal();return;}
       // A no-op, not the generic close, while confirmClearAllData()'s
       // signOut() await is actually in flight -- otherwise Escape visually
-      // closes this modal, looking like the user cancelled a "cannot be
-      // undone" deletion, while the wipe silently keeps running underneath
-      // and the page still reloads moments later with no further warning.
-      // Found in the 60th adversarial pass.
-      if(openModal.id==='clear-data-modal'&&_clearAllDataInProgress)return;
+      // closes whatever modal happens to be open, looking like the user
+      // cancelled a "cannot be undone" deletion, while the wipe silently
+      // keeps running underneath and the page still reloads moments later
+      // with no further warning. Deliberately NOT scoped to a specific
+      // modal id (originally clear-data-modal only, 60th adversarial
+      // pass) -- confirmClearAllData() has a second entry point, the
+      // tx-import-modal's "Want to start fresh?" quick-clear confirm,
+      // which never opens clear-data-modal at all, so an id-specific check
+      // missed it entirely. Checking the flag alone covers every current
+      // and future call site regardless of which modal triggered it.
+      // Found in the 62nd adversarial pass (a gap in the 60th pass's own
+      // fix, the same shape the 61st pass already found once for the
+      // Cancel button).
+      if(_clearAllDataInProgress)return;
       closeModals();return;
     }
     // Clear active filters
@@ -11191,6 +11200,32 @@ function importCsvText(){
   // back in the 14th pass, for this exact function) was found.
   showToast(imported>0?`✓ Imported ${imported} account${imported===1?'':'s'}${skipped>0?` (${skipped} row${skipped===1?'':'s'} skipped)`:''}`:'No valid rows found in that text','#FCD34D');
 }
+// Case-insensitive account-type aliases for CSV import -- maps both the
+// exact internal type code and every human-readable label the app's own
+// UI shows for it back to the canonical code. The Add Account form's
+// dropdown (search id="f-type") and TL_M (the display-label map used
+// elsewhere) use slightly different label text for the same codes (e.g.
+// "Home" vs. "Real estate"), so both are covered here. Without this,
+// parseCsvAccounts() below only checked that `type` was non-empty and
+// stored whatever string was typed verbatim -- pasting the exact label a
+// user has already seen elsewhere in this app (e.g. "Credit Card",
+// copied straight from the Add Account form) silently created an account
+// isLiab() doesn't recognize, adding its balance to totalAssets() instead
+// of subtracting it via totalLiab() -- a silent net-worth swing of 2x the
+// balance, with a clean "✓ Imported" toast and no warning. The account
+// then also can't be edited afterward (saveAccount()'s type guard rejects
+// an unrecognized value, and #f-type has no matching <option> to
+// pre-select). Found in the 62nd adversarial pass.
+const ACCT_TYPE_ALIASES={
+  cash:'cash','cash/savings':'cash',checking:'cash',savings:'cash',
+  investment:'investment',
+  home:'home','real estate':'home',
+  vehicle:'vehicle',
+  mortgage:'mortgage',
+  credit:'credit','credit card':'credit',
+  'other-asset':'other-asset','other asset':'other-asset',
+  'other-liability':'other-liability','other liability':'other-liability','other liab':'other-liability',
+};
 // name,source,type,balance -- balance of exactly 0 (a paid-off card, a
 // closed account) used to be treated the same as a missing/unparseable
 // balance and silently dropped, since 0 is falsy in JS. Now only a
@@ -11207,8 +11242,9 @@ function parseCsvAccounts(text){
     if(p.length<4){skipped++;return;}
     const[name,source,type,bal]=p;
     const balance=parseFloat(bal);
-    if(!name.trim()||!type.trim()||isNaN(balance)){skipped++;return;}
-    state.accounts.push({id:state.nextId++,name:name.trim(),source:source.trim(),type:type.trim(),balance});
+    const normType=ACCT_TYPE_ALIASES[type.trim().toLowerCase()];
+    if(!name.trim()||!normType||isNaN(balance)){skipped++;return;}
+    state.accounts.push({id:state.nextId++,name:name.trim(),source:source.trim(),type:normType,balance});
     imported++;
   });
   if(imported>0){
