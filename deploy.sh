@@ -90,6 +90,19 @@ python3 scripts/check-rebuild-coverage.py || true
 echo "=== Scanning for fields persisted locally but missing from cloud sync (advisory) ==="
 python3 scripts/check-cloudsync-coverage.py || true
 
+# Advisory only, same posture as the scanners above -- added after the
+# pre-launch modal-accessibility initiative (focus trap, ARIA dialog
+# semantics, return-focus-on-close) added role="dialog"/aria-modal="true"/
+# aria-labelledby/tabindex="-1" to all 28 .modal-overlay dialogs plus
+# #demo-picker-overlay. Unlike the other scanners here, this one verifies a
+# deterministic invariant (either the attributes are present and
+# aria-labelledby resolves to a real id, or it doesn't), so it's a real
+# PASS/FAIL check, not fuzzy heuristic triage material -- kept advisory
+# (|| true) here anyway so a future modal added without these attributes
+# doesn't block a deploy, just gets flagged.
+echo "=== Scanning modals for ARIA dialog attributes (advisory) ==="
+python3 scripts/check-modal-aria.py || true
+
 python3 scripts/update-csp-hashes.py
 python3 scripts/update-sitemap-dates.py
 
