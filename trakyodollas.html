@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-acZAIuVhdgsjuPIraLfQquQa4p7nc7GmcgPwoqu0XYs=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-+o02j0ua2U0CgVy9NgwIpnVOKHEC1aXDez/rAkbtRGU=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -5898,7 +5898,14 @@ function renderTxList(){
     if(_bizFilter==='personal'&&t.biz)return false;
     if(state.searchQuery){
       const q=state.searchQuery.toLowerCase();
-      if(!t.desc.toLowerCase().includes(q)&&!t.cat.toLowerCase().includes(q)&&!t.card.toLowerCase().includes(q))return false;
+      // resolveVendor(t.desc) too, not just raw t.desc -- matching
+      // getFilteredTxs()'s own search predicate. An aliased vendor's
+      // excluded transaction (e.g. raw "AMZN MKTP US*1A2B3" aliased to
+      // "Amazon") searched for "Amazon" would otherwise never surface in
+      // this dimmed section even though every non-excluded Amazon-aliased
+      // row above it correctly does. Found in the 59th adversarial pass.
+      const resolvedDesc=resolveVendor(t.desc).toLowerCase();
+      if(!t.desc.toLowerCase().includes(q)&&!resolvedDesc.includes(q)&&!t.cat.toLowerCase().includes(q)&&!t.card.toLowerCase().includes(q))return false;
     }
     return!shownIds.has(t.id);
   });
@@ -6332,7 +6339,11 @@ function buildHiddenPopover(){
     if(_bizFilter==='personal'&&t.biz)return false;
     if(state.searchQuery){
       const q=state.searchQuery.toLowerCase();
-      if(!t.desc.toLowerCase().includes(q)&&!t.cat.toLowerCase().includes(q)&&!t.card.toLowerCase().includes(q))return false;
+      // Same resolveVendor(t.desc) fix as alwaysShowExcl above -- this
+      // count's own comment already says it's meant to match that filter
+      // exactly. Found in the 59th adversarial pass.
+      const resolvedDesc=resolveVendor(t.desc).toLowerCase();
+      if(!t.desc.toLowerCase().includes(q)&&!resolvedDesc.includes(q)&&!t.cat.toLowerCase().includes(q)&&!t.card.toLowerCase().includes(q))return false;
     }
     return true;
   }).length;
@@ -7179,7 +7190,7 @@ function openClearDataModal(){
   document.getElementById('clear-confirm-btn').style.cursor='not-allowed';
   document.getElementById('clear-data-modal').classList.remove('hidden');
 }
-function confirmClearAllData(){
+async function confirmClearAllData(){
   if(window._isDemoPreview){
     closeModals();
     showToast('Not available while previewing demo data — your real data is untouched here','#94a3b8',9000);
@@ -7190,6 +7201,25 @@ function confirmClearAllData(){
   // the last 800ms can never re-write the keys being deleted below.
   clearTimeout(_lsSaveTimer);
   _lsSaveTimer=null;
+  // Sign out (awaited) and clear the cached sync passphrase BEFORE wiping
+  // local keys and reloading -- without this, a signed-in cloud-sync user's
+  // Supabase session survives the reload untouched (it's stored under its
+  // own localStorage keys, not any of the trakyo_* ones removed below), so
+  // onAuthStateChange's INITIAL_SESSION handler fires for the still-valid
+  // session, finds the still-cached passphrase, and promptSyncPassphrase()
+  // silently calls loadUserData() with no prompt -- fully repopulating
+  // every deleted transaction/account/budget/rule/snapshot from the cloud
+  // within about a second, directly contradicting this feature's own
+  // confirmation copy ("This cannot be undone"). Awaited (not fire-and-
+  // forget like doSignOut()'s other callers) so the reload below can't
+  // race ahead of Supabase's own local-session-token cleanup. Does NOT
+  // delete the cloud-stored backup itself -- that's the materially
+  // different, more severe action confirmForgotPassphraseReset() already
+  // handles under its own explicit "permanently delete your synced data"
+  // copy; this button only ever promised to reset what's on this device.
+  // Found in the 59th adversarial pass.
+  if(window._fb){try{await window._fb.signOut();}catch(e){}}
+  clearSyncPassphrase();
   try{
     localStorage.removeItem('trakyo_state_v2');
     localStorage.removeItem('trakyo_txs_v1');
