@@ -1050,3 +1050,68 @@ test("deleteVehicle: the common case (acctId already set) removes exactly that o
   assert.deepEqual(ctx.state.vehicles, []);
   assert.deepEqual(ctx.state.accounts, []);
 });
+
+// ── 71st adversarial pass: renderAccountLists()'s legacy-vehicle exclusion
+// loop, and _refreshBudgetModalContext()'s "% under/above avg" text, both
+// found while giving the 70th pass's own diff a hard second look (the
+// standing "fix regresses/is incomplete in the next pass" note) and a
+// fresh-territory pass over the Budget modal. ──
+function renderAccountListsCtx(vehicles, accounts) {
+  let assetHTML = "";
+  return {
+    ctx: {
+      state: { vehicles, accounts },
+      isLiab: (t) => t === "credit" || t === "mortgage" || t === "other-liability",
+      SC_M: {}, TC_M: {}, SA_M: {}, TL_M: {},
+      esc: (s) => String(s),
+      fmt: (n) => String(n),
+      document: {
+        getElementById: (id) => {
+          if (id === "asset-list") return { set innerHTML(v) { assetHTML = v; }, get innerHTML() { return assetHTML; } };
+          if (id === "liability-list") return { set innerHTML(v) {}, get innerHTML() { return ""; } };
+          return null;
+        },
+      },
+    },
+    getAssetHTML: () => assetHTML,
+  };
+}
+test("renderAccountLists: two ambiguous same-named legacy 'Other' assets both get excluded from Financial assets, not just the first match", () => {
+  const vehicles = [
+    { id: 1, name: "Boat", acctId: null },
+    { id: 2, name: "Boat", acctId: null },
+  ];
+  const accounts = [
+    { id: 101, type: "other-asset", name: "Boat", balance: 1000 },
+    { id: 102, type: "other-asset", name: "Boat", balance: 2000 },
+  ];
+  const { ctx, getAssetHTML } = renderAccountListsCtx(vehicles, accounts);
+  const { renderAccountLists, isPairedAccount } = loadFunctions(["renderAccountLists", "isPairedAccount"], ctx);
+  renderAccountLists();
+  assert.doesNotMatch(getAssetHTML(), /1000|2000/, "neither legacy Boat account should appear in Financial assets -- both are paired to Physical assets, not just the first-matched one");
+});
+
+test("_refreshBudgetModalContext: '% under/above avg' divides by avg, not the budget amount", () => {
+  let contextHTML = "";
+  const ctx = {
+    window: {},
+    document: {
+      getElementById: (id) => {
+        if (id === "budget-modal") return { style: { setProperty: () => {} } };
+        if (id === "budget-amount") return { value: "" };
+        if (id === "budget-modal-context") return { set innerHTML(v) { contextHTML = v; }, get innerHTML() { return contextHTML; } };
+        return null;
+      },
+    },
+    getCatColor: () => "#000",
+    getCatStats: () => ({ Groceries: { avg: 200 } }),
+    fmt: (n) => String(n),
+    state: { budgets: { Groceries: 100 } },
+  };
+  const { _refreshBudgetModalContext } = loadFunctions(["_refreshBudgetModalContext"], ctx);
+  _refreshBudgetModalContext("Groceries");
+  // avg=200, budget=100 -- old buggy formula divided by cur (100): (200-100)/100*100 = 100%.
+  // Correct formula divides by avg (200): (200-100)/200*100 = 50%.
+  assert.match(contextHTML, /50% under avg/, "should read 50% under avg (divided by the $200 average), not 100% (divided by the $100 budget)");
+  assert.doesNotMatch(contextHTML, /100% under avg/);
+});
