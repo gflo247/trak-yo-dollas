@@ -805,3 +805,62 @@ test("all budgetWarnPct restore sites (localStorage load, JSON-backup import, cl
   // being added to the cloud sync payload at all) -- 4 total.
   assert.equal(matches.length, 4, `expected 4 uses of the [50,99] clamp (setBudgetWarnPct + 3 restore sites), found ${matches.length}`);
 });
+
+// ── 65th adversarial pass: computePeriodSpendVsIncome() ("the app's own
+// documented single source of truth for period-level spend vs income") sums
+// each filtered month's own getEffectiveIncome() instead of multiplying the
+// latest month's figure by the month count. For the "auto-detect from
+// deposits" method, income varies per month, so the old formula let one
+// outlier month (a bonus, or a lean month) at the end of a multi-month range
+// stand in for the whole period's income. ──
+function periodIncomeCtx(byMonth) {
+  const transactions = Object.entries(byMonth).map(([date, amount], i) => ({
+    id: `dep-${i}`,
+    date: `${date}-15`,
+    amount,
+    card: "chase",
+    desc: "PAYROLL DEPOSIT",
+    excluded: true,
+    is_offset: false,
+    isIncome: false,
+    cat: "",
+    biz: false,
+  }));
+  return {
+    ALL_MONTHS: Object.keys(byMonth).sort(),
+    _bizFilter: "all",
+    state: {
+      transactions,
+      activeSources: new Set(["chase"]),
+      excludedCats: new Set(),
+      income: { method: "auto", monthlyAmount: 0 },
+      declaredIncome: 0,
+      rangeFrom: Object.keys(byMonth).sort()[0],
+      rangeTo: Object.keys(byMonth).sort().slice(-1)[0],
+      sourceAlignDate: null,
+    },
+  };
+}
+test("computePeriodSpendVsIncome: sums each month's auto-detected income instead of multiplying the latest month's figure by month count", () => {
+  const ctx = periodIncomeCtx({ "2026-05": 3000, "2026-06": 6000, "2026-07": 3000 });
+  const { computePeriodSpendVsIncome, getFilteredMonths, getEffectiveIncome, detectDepositIncome, isRealSpend } =
+    loadFunctions(
+      ["computePeriodSpendVsIncome", "getFilteredMonths", "getEffectiveIncome", "detectDepositIncome", "isRealSpend"],
+      ctx
+    );
+  const result = computePeriodSpendVsIncome();
+  // Old buggy formula: getEffectiveIncome(last month = July, $3000) * 3 = $9000.
+  assert.equal(result.totalIncome, 12000, "should sum $3000 + $6000 + $3000, not multiply July's $3000 by 3 months");
+  assert.equal(result.income, 4000, "the period's average monthly income should be totalIncome / monthCount");
+});
+test("computePeriodSpendVsIncome: a single-month period is unaffected (income equals that month's detected deposits)", () => {
+  const ctx = periodIncomeCtx({ "2026-07": 5000 });
+  const { computePeriodSpendVsIncome, getFilteredMonths, getEffectiveIncome, detectDepositIncome, isRealSpend } =
+    loadFunctions(
+      ["computePeriodSpendVsIncome", "getFilteredMonths", "getEffectiveIncome", "detectDepositIncome", "isRealSpend"],
+      ctx
+    );
+  const result = computePeriodSpendVsIncome();
+  assert.equal(result.totalIncome, 5000);
+  assert.equal(result.income, 5000);
+});

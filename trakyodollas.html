@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-cv63ZNfTT6IyLj/Ms0UVP3amz1xKj5ROaQ8175kcFos=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-/obyrJ3iYydB1uItLiIyPpo4zPa19XVe5SUIzJGl+qI=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -4928,6 +4928,7 @@ function renderSankey(){
 
   const filteredMonths=getFilteredMonths();
   const monthCount=Math.max(1,filteredMonths.length);
+  const periodFlow=computePeriodSpendVsIncome();
   // Prefer imported income transactions when includeIncome is on; fall back to manual/estimated
   let totalIncome=0,usingImportedIncome=false;
   if(state.includeIncome){
@@ -4937,9 +4938,12 @@ function renderSankey(){
       .reduce((s,t)=>s+t.amount,0);
     if(importedIncome>0){totalIncome=importedIncome;usingImportedIncome=true;}
   }
+  // Falls back to computePeriodSpendVsIncome()'s totalIncome (the app's own
+  // "single source of truth") rather than re-deriving it here -- this used
+  // to duplicate the same formula independently, which meant a fix to one
+  // could silently diverge from the other. Found in the 65th adversarial pass.
   if(!totalIncome){
-    const effectiveIncome=getEffectiveIncome(filteredMonths[filteredMonths.length-1]||null);
-    totalIncome=effectiveIncome*monthCount;
+    totalIncome=periodFlow.totalIncome;
   }
 
   if(!totalIncome){
@@ -4983,7 +4987,7 @@ function renderSankey(){
 
   const totalSpend=Object.values(catTotals).reduce((a,b)=>a+b,0);
   const filteredOutSpend=Object.values(filteredOutCatTotals).reduce((a,b)=>a+b,0);
-  const isOverspend=computePeriodSpendVsIncome().isOverspend;
+  const isOverspend=periodFlow.isOverspend;
   const saved=Math.max(0,totalIncome-totalSpendAll);
   const SANKEY_SMALL=0.03;
   const allCats=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
@@ -8788,8 +8792,14 @@ function getEffectiveIncome(monthKey){
 function computePeriodSpendVsIncome(){
   const months=getFilteredMonths();
   const monthCount=Math.max(1,months.length);
-  const income=getEffectiveIncome(months[months.length-1]||null);
-  const totalIncome=income*monthCount;
+  // Sum each month's own effective income rather than multiplying one month's
+  // figure by monthCount -- for the "auto-detect from deposits" method,
+  // getEffectiveIncome(m) varies per month, so using just the latest month's
+  // detected deposits as a stand-in for the whole period misrepresented
+  // variable income (e.g. a single bonus or lean month at the end of the
+  // range skewed the whole period's total). Found in the 65th adversarial pass.
+  const totalIncome=months.length?months.reduce((s,m)=>s+getEffectiveIncome(m),0):getEffectiveIncome(null);
+  const income=totalIncome/monthCount;
   let totalSpend=0;
   state.transactions.forEach(t=>{
     if(!isRealSpend(t)||!state.activeSources.has(t.card))return;
