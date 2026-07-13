@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-sxxkIuXJJNvhqUf+EE3dC17C2MOy3QEO2pBmVr1ya5w=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-+GGncbFTpmglhXeQJrxLxnqnNh0LwOfCrxFyp8WupqI=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3724,10 +3724,16 @@ function confirmCustomGoal(){
     return;
   }
   if(parsed<=netWorth()){
-    // Without this check, renderNwGoalWidget()'s own auto-select ("Auto-select
-    // next milestone... if goal exceeded") would silently swap this goal for
-    // the next milestone the instant it renders below -- including in the
-    // confirmation toast, which reads state.nwGoal *after* that render call.
+    // A goal already met on entry isn't a meaningful goal -- reject upfront
+    // and prompt for something higher, rather than accepting it and having
+    // it immediately show as "Goal reached!" with nothing left to track
+    // toward. (Before the 68th adversarial pass's fix, skipping this check
+    // would have caused something worse -- renderNwGoalWidget()'s own
+    // auto-select used to silently swap any already-met goal for the next
+    // milestone the instant it rendered, including in this function's own
+    // confirmation toast, which read state.nwGoal *after* that render call.
+    // That auto-swap-on-reach behavior no longer exists, but this guard is
+    // still the right UX call on its own merits.)
     const hint=document.getElementById('custom-goal-hint');
     if(hint){hint.textContent=`Already at or above that — try something higher than ${fmtC(netWorth())}.`;hint.style.color='#F87171';}
     return;
@@ -6673,6 +6679,20 @@ function renderAccountLists(){
     return`<div class="account-row"><div style="display:flex;align-items:center;gap:10px"><div class="acct-icon" style="background:${sc.bg};color:${sc.fg}">${SA_M[a.source]||'??'}</div><div><div class="account-name">${esc(a.name)}</div><div class="account-sub">${esc(a.source)} · ${esc(TL_M[a.type]||a.type)}</div></div></div>
       <div class="flex-center gap-8"><div style="font-size:13px;font-weight:700;color:${(isLiab(a.type)?-a.balance:a.balance)<0?'#F87171':tc}">${(isLiab(a.type)?-a.balance:a.balance)<0?'-':''}${fmt(a.balance)}</div><button class="btn btn-sm" data-action="editAccount" data-arg="${a.id}" type="button">Edit</button></div></div>`;};
   const vehicleAcctIds=new Set(state.vehicles.filter(v=>v.acctId!=null).map(v=>v.acctId));
+  // Legacy vehicles/physical assets saved before acctId existed (35th pass)
+  // have no acctId to match by. That's harmless for 'vehicle'-type accounts
+  // (blanket-excluded below regardless), but a legacy "Other" physical asset
+  // -- paired to an 'other-asset' account, which is ALSO a real, legitimate
+  // standalone account type users can pick directly in the regular Add
+  // Account modal -- can't be blanket-excluded the same way, so it fell
+  // through unmatched and duplicated into this Financial-assets list
+  // alongside its own entry in the Physical assets panel (renderVehicles()).
+  // Same name-based fallback matching deleteVehicle() already uses for the
+  // identical legacy case (~line 6650). Found in the 69th adversarial pass.
+  state.vehicles.filter(v=>v.acctId==null).forEach(v=>{
+    const match=state.accounts.find(a=>(a.type==='vehicle'||a.type==='other-asset')&&a.name===v.name);
+    if(match)vehicleAcctIds.add(match.id);
+  });
   document.getElementById('asset-list').innerHTML=state.accounts.filter(a=>!isLiab(a.type)&&!a.excludeFromNW&&a.type!=='vehicle'&&!vehicleAcctIds.has(a.id)).map(row).join('');
   document.getElementById('liability-list').innerHTML=state.accounts.filter(a=>isLiab(a.type)&&!a.excludeFromNW).map(row).join('');
 }
