@@ -845,7 +845,7 @@ test("computePeriodSpendVsIncome: sums each month's auto-detected income instead
   const ctx = periodIncomeCtx({ "2026-05": 3000, "2026-06": 6000, "2026-07": 3000 });
   const { computePeriodSpendVsIncome, getFilteredMonths, getEffectiveIncome, detectDepositIncome, isRealSpend } =
     loadFunctions(
-      ["computePeriodSpendVsIncome", "getFilteredMonths", "getEffectiveIncome", "detectDepositIncome", "isRealSpend"],
+      ["computePeriodSpendVsIncome", "sumIncomeForMonths", "getFilteredMonths", "getEffectiveIncome", "detectDepositIncome", "isRealSpend"],
       ctx
     );
   const result = computePeriodSpendVsIncome();
@@ -857,7 +857,7 @@ test("computePeriodSpendVsIncome: a single-month period is unaffected (income eq
   const ctx = periodIncomeCtx({ "2026-07": 5000 });
   const { computePeriodSpendVsIncome, getFilteredMonths, getEffectiveIncome, detectDepositIncome, isRealSpend } =
     loadFunctions(
-      ["computePeriodSpendVsIncome", "getFilteredMonths", "getEffectiveIncome", "detectDepositIncome", "isRealSpend"],
+      ["computePeriodSpendVsIncome", "sumIncomeForMonths", "getFilteredMonths", "getEffectiveIncome", "detectDepositIncome", "isRealSpend"],
       ctx
     );
   const result = computePeriodSpendVsIncome();
@@ -892,8 +892,82 @@ test("computePeriodSpendVsIncome: calls detectDepositIncome() at most once per i
     },
     _bizFilter: "all",
   };
-  const { computePeriodSpendVsIncome } = loadFunctions(["computePeriodSpendVsIncome"], ctx);
+  const { computePeriodSpendVsIncome } = loadFunctions(["computePeriodSpendVsIncome", "sumIncomeForMonths"], ctx);
   const result = computePeriodSpendVsIncome();
   assert.equal(calls, 1, "detectDepositIncome() should be called once per computePeriodSpendVsIncome() invocation, not once per filtered month");
   assert.equal(result.totalIncome, 12000);
+});
+
+// ── 67th adversarial pass: renderYearInReview()/copyYirSummary() had each
+// independently hand-rolled the same income*monthCount formula
+// computePeriodSpendVsIncome() used before the 65th pass -- reproducing the
+// exact bug that fix addressed, since it was never ported to the Year in
+// Review feature's own separate month-window calculation. Both now call the
+// shared sumIncomeForMonths() helper directly. ──
+test("sumIncomeForMonths: sums each month's auto-detected income instead of multiplying the latest month's figure by month count", () => {
+  let calls = 0;
+  const ctx = {
+    detectDepositIncome: () => {
+      calls++;
+      return { byMonth: { "2026-05": 3000, "2026-06": 6000, "2026-07": 3000 }, avgMonthly: 4000 };
+    },
+    getEffectiveIncome: () => 0,
+    state: {
+      income: { method: "auto", monthlyAmount: 0 },
+      declaredIncome: 0,
+    },
+  };
+  const { sumIncomeForMonths } = loadFunctions(["sumIncomeForMonths"], ctx);
+  const result = sumIncomeForMonths(["2026-05", "2026-06", "2026-07"]);
+  assert.equal(result, 12000, "should sum $3000 + $6000 + $3000, not multiply July's $3000 by 3 months");
+  assert.equal(calls, 1, "detectDepositIncome() should be called once, not once per month");
+});
+test("sumIncomeForMonths: declared/manual income (constant per month) is unaffected by the per-month sum", () => {
+  const ctx = {
+    detectDepositIncome: () => {
+      throw new Error("should not be called for declared income");
+    },
+    getEffectiveIncome: () => 2500,
+    state: {
+      income: { method: "manual", monthlyAmount: 2500 },
+      declaredIncome: 3000,
+    },
+  };
+  const { sumIncomeForMonths } = loadFunctions(["sumIncomeForMonths"], ctx);
+  const result = sumIncomeForMonths(["2026-05", "2026-06", "2026-07"]);
+  assert.equal(result, 7500, "3 months of the same $2500 getEffectiveIncome() figure");
+});
+
+// ── 67th adversarial pass: openSyncPassphraseReset() (66th pass) opens the
+// same sync-passphrase-modal, and shares Cancel/Escape routing, with
+// promptSyncPassphrase()'s genuine unresolved-sign-in flow -- but
+// cancelSyncPassphrase() unconditionally signed out either way. For an
+// already-signed-in, already-synced session (openSyncPassphraseReset()'s
+// case), backing out of "delete my synced data" via Back+Cancel or double-
+// Escape silently signed the user out, right after being told nothing
+// would happen if they cancelled. window._awaitingCloudMerge distinguishes
+// the two cases: true only for a genuinely unresolved sign-in. ──
+function cancelSyncPassphraseCtx(awaitingCloudMerge) {
+  const signOutCalls = [];
+  return {
+    ctx: {
+      window: { _awaitingCloudMerge: awaitingCloudMerge },
+      closeModals: () => {},
+      doSignOut: () => signOutCalls.push(true),
+      _pendingSyncUid: "some-uid",
+    },
+    signOutCalls,
+  };
+}
+test("cancelSyncPassphrase: signs out for a genuine unresolved sign-in (window._awaitingCloudMerge true)", () => {
+  const { ctx, signOutCalls } = cancelSyncPassphraseCtx(true);
+  const { cancelSyncPassphrase } = loadFunctions(["cancelSyncPassphrase"], ctx);
+  cancelSyncPassphrase();
+  assert.equal(signOutCalls.length, 1, "should sign out when a sign-in was genuinely left unresolved");
+});
+test("cancelSyncPassphrase: does NOT sign out when opened via openSyncPassphraseReset() on an already-synced session (window._awaitingCloudMerge false)", () => {
+  const { ctx, signOutCalls } = cancelSyncPassphraseCtx(false);
+  const { cancelSyncPassphrase } = loadFunctions(["cancelSyncPassphrase"], ctx);
+  cancelSyncPassphrase();
+  assert.equal(signOutCalls.length, 0, "should not silently sign out a device that was already fully signed in and synced");
 });
