@@ -230,7 +230,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
   <div class="hero-eyebrow fu fu1">💸 trak-yo-dolla$</div>
   <p style="font-size:var(--text-xs);color:var(--text-muted);margin-top:.4rem;margin-bottom:1.5rem;letter-spacing:.01em">Every dollar tracked. Nothing shared.</p>
   <h1 class="fu fu2">Your money.<br><em>Your device.</em><br>Your business.</h1>
-  <p class="hero-sub fu fu3">Track spending, budgets, and net worth — without handing your bank login to anyone. No subscriptions. Your data stays local by default. Optional encrypted sync — sign in with Google or a passwordless email link, then protect it with a passphrase only you know.</p>
+  <p class="hero-sub fu fu3">Track spending, budgets, and net worth — without handing your bank login to anyone. No subscriptions. Your data stays local by default, with optional encrypted sync if you want it.</p>
   <div class="hero-ctas fu fu4">
     <a href="/trakyodollas?demo=1" class="btn-hero">Try with demo data</a>
     <a href="/trakyodollas?import=1" class="btn-hero-ghost">⬆ Import CSV</a>
@@ -258,9 +258,6 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
   <div id="screenshot-wrap" style="position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--border-mid);box-shadow:0 4px 32px rgba(0,0,0,.35);cursor:zoom-in">
     <img src="/app-screenshot.png" alt="trak-yo-dolla$ spending dashboard showing monthly insights, category breakdown cards, and spending chart" width="100%" style="display:block;width:100%;height:auto">
     <div style="position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);border-radius:20px;padding:4px 10px;font-size:11px;color:rgba(255,255,255,.7);pointer-events:none;letter-spacing:.02em">⊕ zoom</div>
-  </div>
-  <div style="text-align:center;margin-top:1.1rem">
-    <a href="/trakyodollas?demo=1" class="btn-hero-ghost" style="padding:10px 20px;font-size:13px">Try with demo data →</a>
   </div>
 </section>
 <!-- Screenshot lightbox -->
@@ -291,7 +288,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
     <div class="step opt">
       <div class="step-num">3</div>
       <h3>Sync across devices <span style="font-size:11px;font-weight:400">(optional)</span></h3>
-      <p>Sign in with Google or a passwordless email link, then set a sync passphrase — separate from your sign-in — to encrypt your data before it syncs. Choose something memorable: nobody, not even me, can reset it if you forget it. Everything works without an account.</p>
+      <p>Sign in, then set a separate sync passphrase to encrypt everything before it syncs — <a href="#privacy" style="color:var(--accent-blue-light)">more in Privacy below</a>. Everything works without an account too.</p>
     </div>
   </div>
 </section>
@@ -356,7 +353,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 </section>
 
 <!-- Privacy -->
-<section class="section">
+<section class="section" id="privacy">
   <h2>The privacy-first way to track your money.</h2>
   <div class="pf-desktop" style="overflow-x:auto;margin:1.75rem 0 2.25rem;-webkit-overflow-scrolling:touch">
 <svg id="privacy-flow" viewBox="0 0 680 292" role="img"
@@ -524,7 +521,6 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       <span class="diff-icon">📂</span>
       <h3>Works with your bank or credit union's CSV</h3>
       <p>Chase, Ally, Fidelity, Vanguard, NFCU, BECU, PenFed, TD, RBC, Scotiabank, BMO, CIBC, and most banks and credit unions. Drop the file in — the app auto-detects the format.</p>
-      <p style="font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-light);margin-top:.5rem">Works with banks and credit unions from the US, Canada, UK, Australia, New Zealand, and Singapore. Configure your currency symbol in settings — $ · £ · C$ · A$ · NZ$ · S$ · or any symbol.</p>
       <p style="font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-light);margin-top:.5rem">Migrating from Mint, YNAB, or Monarch Money? Drop in your export and your categories map across automatically.</p>
     </div>
     <div class="diff-card">
@@ -535,7 +531,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
   </div>
   <div style="max-width:680px;margin:1.75rem auto 0;padding:0 2rem">
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.5rem 2rem">
-      <p style="font-size:14px;color:var(--text-secondary);line-height:1.8;font-weight:300;margin:0">Built by one person — Nicholas Garofalo. I made this to make checking my own family's spending easier than what I'd already tried, and the more I built, the more it felt worth sharing. It's open source — <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light)">read the code yourself ↗</a></p>
+      <p style="font-size:14px;color:var(--text-secondary);line-height:1.8;font-weight:300;margin:0">Built by one person — Nick Garofalo. I'd already been tracking my family's finances with a Python notebook and Google Sheets, and it worked fine — but I wanted something more robust and a little smarter. The more I built, the more it felt worth sharing. It's open source — <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light)">read the code yourself ↗</a></p>
     </div>
   </div>
   <div style="margin-top:1rem;text-align:center">
@@ -557,7 +553,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
     </div>
     <div>
       <h3 style="font-size:1rem;font-weight:700;color:var(--text-bright);margin-bottom:.4rem">Where is my data stored?</h3>
-      <p style="font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-light)">In your browser's local storage by default — on your device, not a server. Try it — close the tab, come back, it's all still there. If you sign in, you'll also set a sync passphrase — separate from your Google or email sign-in — and the app uses it to encrypt your data on your device before syncing to Supabase's servers (open source) so you can access it from other devices. That passphrase has no reset: forget it and your synced data is unrecoverable, though your local data on this device stays untouched. Signing in is optional and can be undone at any time. <a href="/privacy" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light)">Full data flow →</a></p>
+      <p style="font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-light)">In your browser's local storage by default — on your device, not a server. Try it — close the tab, come back, it's all still there. Signing in adds optional encrypted sync (see <a href="#privacy" style="color:var(--accent-blue-light)">Privacy above</a> for how the passphrase works) and can be undone at any time. <a href="/privacy" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light)">Full data flow →</a></p>
     </div>
   </div>
 </section>
