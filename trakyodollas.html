@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-/obyrJ3iYydB1uItLiIyPpo4zPa19XVe5SUIzJGl+qI=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-yoPpTxSd+N2ASqeKb2Ap76UZjGst3EYUCOIQ4VAk5Is=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1769,7 +1769,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="clear-data-modal-title" tabindex="-1" style="max-width:380px">
     <h3 id="clear-data-modal-title" style="color:#F87171;margin-bottom:.5rem">Clear all data?</h3>
     <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:1rem">This will permanently delete all your transactions, accounts, budgets, rules, and snapshots on this device. This cannot be undone.</p>
-    <p id="clear-data-cloud-caveat" class="hidden" style="font-size:12px;color:var(--text-muted);line-height:1.5;margin-bottom:1.25rem">Your cloud-synced backup isn't affected by this — signing back in with your sync passphrase will restore it. To delete your synced data too, use "Delete synced data" under "Forgot your passphrase?" in the sync settings.</p>
+    <p id="clear-data-cloud-caveat" class="hidden" style="font-size:12px;color:var(--text-muted);line-height:1.5;margin-bottom:1.25rem">Your cloud-synced backup isn't affected by this — signing back in with your sync passphrase will restore it. To delete your synced data too, <button type="button" data-action="openSyncPassphraseReset" style="background:none;border:none;color:var(--accent-blue-light);font-size:12px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline">delete your synced data</button>.</p>
     <div style="background:#F8717118;border:1px solid #F8717133;border-radius:8px;padding:.6rem .85rem;margin-bottom:1.25rem">
       <div style="font-size:12px;color:#F87171;font-weight:600">To confirm, type <strong>clear</strong> below:</div>
       <input id="clear-confirm-input" type="text" placeholder="type clear" style="margin-top:6px;width:100%;box-sizing:border-box" data-input="validateClearConfirm"/>
@@ -8798,7 +8798,18 @@ function computePeriodSpendVsIncome(){
   // detected deposits as a stand-in for the whole period misrepresented
   // variable income (e.g. a single bonus or lean month at the end of the
   // range skewed the whole period's total). Found in the 65th adversarial pass.
-  const totalIncome=months.length?months.reduce((s,m)=>s+getEffectiveIncome(m),0):getEffectiveIncome(null);
+  //
+  // For the 'auto' method, detectDepositIncome() is called at most once here
+  // and its byMonth map reused across every month in range, rather than
+  // letting getEffectiveIncome() call it fresh per month -- this function
+  // runs on the app's main render path (renderInsights(), called from
+  // renderAll() on essentially every state change), so summing per month
+  // the naive way turned one full state.transactions scan into one per
+  // filtered month. Found in the 66th adversarial pass.
+  const usesAutoDetect=state.declaredIncome<=0&&state.income.method==='auto';
+  const detected=usesAutoDetect?detectDepositIncome():null;
+  const incomeForMonth=m=>usesAutoDetect?(detected.byMonth?.[m]||detected.avgMonthly||0):getEffectiveIncome(m);
+  const totalIncome=months.length?months.reduce((s,m)=>s+incomeForMonth(m),0):getEffectiveIncome(null);
   const income=totalIncome/monthCount;
   let totalSpend=0;
   state.transactions.forEach(t=>{
@@ -10640,11 +10651,29 @@ function cancelSyncPassphrase() {
 }
 
 // ── Forgot-passphrase reset — self-serve version of scripts/one-time-sync-reset.js.
-// Only reachable after a wrong-passphrase attempt on a returning account, and
-// gated behind typing RESET, so it can't delete synced data with a single
-// misclick. Deletes the same three tables the manual script does, scoped to
-// the signed-in uid; RLS would reject touching any other account's rows even
-// if this ran against a different uid. ──
+// Reachable two ways: after a wrong-passphrase attempt on a returning
+// account, or directly via openSyncPassphraseReset() (the clear-data-modal's
+// "delete your synced data" caveat) for an already-signed-in device with a
+// cached passphrase. Gated behind typing RESET, so it can't delete synced
+// data with a single misclick. Deletes the same three tables the manual
+// script does, scoped to the signed-in uid; RLS would reject touching any
+// other account's rows even if this ran against a different uid. ──
+// The clear-data-modal's caveat used to just describe this path in prose
+// ("use 'Delete synced data' under 'Forgot your passphrase?' in the sync
+// settings") -- but promptSyncPassphrase() short-circuits past the whole
+// passphrase modal whenever a passphrase is already cached locally (the
+// normal state for a device that's currently signed in), so the only way to
+// reach "Forgot your passphrase?" as described was to sign out, sign back
+// in, and deliberately submit a WRONG passphrase. This gives the caveat a
+// real, direct entry point instead. Found in the 66th adversarial pass.
+function openSyncPassphraseReset() {
+  if (!window._fbUser) return;
+  closeModals();
+  _pendingSyncUid = window._fbUser.uid;
+  _pendingSyncIsFirstTime = false;
+  document.getElementById('sync-passphrase-modal').classList.remove('hidden');
+  showForgotPassphrase();
+}
 function showForgotPassphrase() {
   const main = document.getElementById('sync-pp-main');
   const panel = document.getElementById('sync-pp-reset-panel');

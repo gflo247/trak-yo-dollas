@@ -864,3 +864,36 @@ test("computePeriodSpendVsIncome: a single-month period is unaffected (income eq
   assert.equal(result.totalIncome, 5000);
   assert.equal(result.income, 5000);
 });
+
+// ── 66th adversarial pass: the 65th pass's per-month sum fix let
+// getEffectiveIncome() call detectDepositIncome() -- an unmemoized full
+// state.transactions scan -- once per filtered month instead of once total.
+// computePeriodSpendVsIncome() runs on the app's main render path
+// (renderInsights(), called from renderAll() on essentially every state
+// change), so a multi-month "All time" view on the auto-detect income
+// method turned one scan per render into dozens. Fixed by calling
+// detectDepositIncome() at most once and reusing its byMonth map. ──
+test("computePeriodSpendVsIncome: calls detectDepositIncome() at most once per invocation, not once per filtered month", () => {
+  let calls = 0;
+  const ctx = {
+    detectDepositIncome: () => {
+      calls++;
+      return { byMonth: { "2026-05": 3000, "2026-06": 6000, "2026-07": 3000 }, avgMonthly: 4000 };
+    },
+    getEffectiveIncome: () => 0,
+    isRealSpend: (t) => !t.excluded && !t.isIncome,
+    getFilteredMonths: () => ["2026-05", "2026-06", "2026-07"],
+    state: {
+      transactions: [],
+      activeSources: new Set(),
+      excludedCats: new Set(),
+      income: { method: "auto", monthlyAmount: 0 },
+      declaredIncome: 0,
+    },
+    _bizFilter: "all",
+  };
+  const { computePeriodSpendVsIncome } = loadFunctions(["computePeriodSpendVsIncome"], ctx);
+  const result = computePeriodSpendVsIncome();
+  assert.equal(calls, 1, "detectDepositIncome() should be called once per computePeriodSpendVsIncome() invocation, not once per filtered month");
+  assert.equal(result.totalIncome, 12000);
+});
