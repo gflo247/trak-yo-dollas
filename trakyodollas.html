@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ftxrppfuSCLrHxPaFdqhiX7LOW2K2Iqx68HlvV4IFy4=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-5WuRzvCj4dQXwnmFUEqimi07T/oI8EtqCKmlRNLbgXs=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -6707,9 +6707,21 @@ function renderAccountLists(){
   // Uses the same isPairedAccount() predicate deleteVehicle() and
   // saveVehicle() share, for the identical legacy case. Found in the 69th
   // adversarial pass; centralized into isPairedAccount() in the 70th.
+  //
+  // claimedThisPass accumulates matched account ids across this loop --
+  // without it, two still-unpaired legacy vehicles sharing the same name
+  // (e.g. two "Boat" entries) both resolved to the SAME first-matching
+  // account via .find(), so only one account id ever made it into
+  // vehicleAcctIds -- the second vehicle's own, distinct paired account
+  // was never excluded and duplicated into this list, the exact bug class
+  // the 69th pass fixed, just not closed at this specific site. saveVehicle()'s
+  // edit path and deleteVehicle() don't need this same accumulation since
+  // each only resolves one vehicle at a time; this is the one call site
+  // that resolves several in a single pass. Found in the 71st adversarial pass.
+  const claimedThisPass=new Set();
   state.vehicles.filter(v=>v.acctId==null).forEach(v=>{
-    const match=state.accounts.find(a=>isPairedAccount(a,v));
-    if(match)vehicleAcctIds.add(match.id);
+    const match=state.accounts.find(a=>isPairedAccount(a,v,claimedThisPass));
+    if(match){vehicleAcctIds.add(match.id);claimedThisPass.add(match.id);}
   });
   document.getElementById('asset-list').innerHTML=state.accounts.filter(a=>!isLiab(a.type)&&!a.excludeFromNW&&a.type!=='vehicle'&&!vehicleAcctIds.has(a.id)).map(row).join('');
   document.getElementById('liability-list').innerHTML=state.accounts.filter(a=>isLiab(a.type)&&!a.excludeFromNW).map(row).join('');
@@ -6875,8 +6887,15 @@ function _refreshBudgetModalContext(cat){
   const ctx=document.getElementById('budget-modal-context');
   if(avg>0){
     const cur=state.budgets[cat];
+    // Divides by avg, not cur -- matches the identical "% above/below avg"
+    // phrasing's convention elsewhere in the file (the Trend chart's
+    // tooltip, ~line 5656: (totals[i]-rolling[i])/rolling[i]). Dividing by
+    // cur instead systematically overstated the percentage whenever the
+    // budget sat below average (e.g. avg=$200, budget=$100 showed "100%
+    // under avg" via the old formula, vs. the correct/consistent "50%
+    // under avg"). Found in the 71st adversarial pass.
     ctx.innerHTML=cur
-      ?`Avg spend: <strong style="color:var(--text-primary)">${fmt(avg)}/mo</strong> · current budget is ${avg>cur?`<span style="color:#F87171">${Math.round((avg-cur)/cur*100)}% under avg</span>`:`<span style="color:#34D399">${Math.round((cur-avg)/cur*100)}% above avg</span>`}`
+      ?`Avg spend: <strong style="color:var(--text-primary)">${fmt(avg)}/mo</strong> · current budget is ${avg>cur?`<span style="color:#F87171">${Math.round((avg-cur)/avg*100)}% under avg</span>`:`<span style="color:#34D399">${Math.round((cur-avg)/avg*100)}% above avg</span>`}`
       :`Avg spend: <strong style="color:var(--text-primary)">${fmt(avg)}/mo</strong>`;
   } else {
     ctx.innerHTML='No spending history yet for this category.';
