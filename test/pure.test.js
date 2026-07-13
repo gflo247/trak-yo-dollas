@@ -971,3 +971,82 @@ test("cancelSyncPassphrase: does NOT sign out when opened via openSyncPassphrase
   cancelSyncPassphrase();
   assert.equal(signOutCalls.length, 0, "should not silently sign out a device that was already fully signed in and synced");
 });
+
+// ── 70th adversarial pass: isPairedAccount() -- the vehicle/physical-asset
+// <-> account pairing predicate extracted from saveVehicle(), deleteVehicle(),
+// and renderAccountLists() after the identical "legacy fallback missing at
+// one more call site" gap recurred across the 35th, 45th, 47th, 58th, and
+// 69th adversarial passes. Prefers the modern acctId link; falls back to
+// the pre-acctId legacy match (type + exact name) for records saved before
+// the 35th pass introduced acctId. ──
+test("isPairedAccount: matches by acctId when set, ignoring type/name entirely", () => {
+  const { isPairedAccount } = loadFunctions(["isPairedAccount"]);
+  const v = { acctId: 42, name: "irrelevant" };
+  assert.equal(isPairedAccount({ id: 42, type: "cash", name: "different" }, v), true);
+  assert.equal(isPairedAccount({ id: 43, type: "vehicle", name: "irrelevant" }, v), false);
+});
+test("isPairedAccount: legacy record (acctId null) falls back to type + exact name match", () => {
+  const { isPairedAccount } = loadFunctions(["isPairedAccount"]);
+  const v = { acctId: null, name: "2021 Honda CR-V" };
+  assert.equal(isPairedAccount({ id: 1, type: "vehicle", name: "2021 Honda CR-V" }, v), true);
+  assert.equal(isPairedAccount({ id: 2, type: "other-asset", name: "2021 Honda CR-V" }, v), true, "other-asset is a valid paired type too, not just vehicle");
+  assert.equal(isPairedAccount({ id: 3, type: "cash", name: "2021 Honda CR-V" }, v), false, "name match alone isn't enough -- type must be vehicle or other-asset");
+  assert.equal(isPairedAccount({ id: 4, type: "vehicle", name: "Different Name" }, v), false);
+});
+test("isPairedAccount: legacy record respects the exclude set, so ambiguous same-named siblings don't both claim the same account", () => {
+  const { isPairedAccount } = loadFunctions(["isPairedAccount"]);
+  const v = { acctId: null, name: "Boat" };
+  const acct = { id: 5, type: "other-asset", name: "Boat" };
+  assert.equal(isPairedAccount(acct, v), true);
+  assert.equal(isPairedAccount(acct, v, new Set([5])), false, "an excluded account id should never match, even with an otherwise-correct type+name");
+  assert.equal(isPairedAccount(acct, v, new Set([6])), true, "excluding an unrelated id shouldn't affect the match");
+});
+
+// ── 70th adversarial pass: deleteVehicle()'s legacy fallback removed EVERY
+// account sharing the deleted vehicle's type+name, not just its own paired
+// one -- surfaced while testing the isPairedAccount() extraction above, not
+// introduced by it (the original inline logic had the identical gap). Two
+// same-named legacy "Boat" assets, one already self-healed an acctId via an
+// earlier edit, one not: deleting the unresolved one used to also delete
+// the OTHER boat's already-correctly-paired account. ──
+function deleteVehicleCtx(vehicles, accounts, editVehicleId) {
+  return {
+    editVehicleId,
+    state: { vehicles, accounts },
+    closeModals: () => {},
+    renderAll: () => {},
+    scheduleSave: () => {},
+  };
+}
+test("deleteVehicle: removing one of two ambiguous same-named legacy assets doesn't touch the OTHER one's already-paired account", () => {
+  const vehicles = [
+    { id: 1, name: "Boat", acctId: 101 }, // already resolved via an earlier edit
+    { id: 2, name: "Boat", acctId: null }, // still unresolved -- this one gets deleted
+  ];
+  const accounts = [
+    { id: 101, type: "other-asset", name: "Boat", balance: 9999 },
+    { id: 102, type: "other-asset", name: "Boat", balance: 2000 },
+  ];
+  const ctx = deleteVehicleCtx(vehicles, accounts, 2);
+  const { deleteVehicle, isPairedAccount } = loadFunctions(["deleteVehicle", "isPairedAccount"], ctx);
+  deleteVehicle();
+  assert.deepEqual(
+    ctx.state.vehicles.map((v) => v.id),
+    [1],
+    "only the deleted vehicle record should be removed"
+  );
+  assert.deepEqual(
+    ctx.state.accounts.map((a) => a.id),
+    [101],
+    "account 102 (the deleted vehicle's own paired account) should be removed; account 101 (the OTHER, already-resolved vehicle's account) must survive"
+  );
+});
+test("deleteVehicle: the common case (acctId already set) removes exactly that one paired account", () => {
+  const vehicles = [{ id: 1, name: "2021 Honda CR-V", acctId: 50 }];
+  const accounts = [{ id: 50, type: "vehicle", name: "2021 Honda CR-V", balance: 22000 }];
+  const ctx = deleteVehicleCtx(vehicles, accounts, 1);
+  const { deleteVehicle, isPairedAccount } = loadFunctions(["deleteVehicle", "isPairedAccount"], ctx);
+  deleteVehicle();
+  assert.deepEqual(ctx.state.vehicles, []);
+  assert.deepEqual(ctx.state.accounts, []);
+});
