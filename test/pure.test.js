@@ -1115,3 +1115,39 @@ test("_refreshBudgetModalContext: '% under/above avg' divides by avg, not the bu
   assert.match(contextHTML, /50% under avg/, "should read 50% under avg (divided by the $200 average), not 100% (divided by the $100 budget)");
   assert.doesNotMatch(contextHTML, /100% under avg/);
 });
+
+// ── 72nd adversarial pass: exportBudgetCSV()'s Status column used to judge
+// "AT RISK" against pct>=warnPct with no isCurrentMonth gate at all -- a
+// fully-completed PAST month (the only one with any spend, e.g. exporting
+// early in a new month before this category has posted a transaction yet)
+// landing in the warn-to-100% band got labeled "AT RISK" even though that
+// risk window had already closed. Now delegates to classifyBudgetStatus(),
+// the same function the live Budget tab uses, which already requires
+// isCurrentMonth for atRisk (see the "not at-risk for a non-current
+// (historical) month" test above). ──
+test("exportBudgetCSV: a completed PAST month landing in the warn-to-100% band reads On track, not AT RISK", () => {
+  const now = new Date();
+  const todayYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const pastDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const pastYM = `${pastDate.getFullYear()}-${String(pastDate.getMonth() + 1).padStart(2, "0")}`;
+
+  let capturedCsv = null;
+  const ctx = {
+    state: { budgets: { Groceries: 100 }, budgetWarnPct: 80 },
+    MONTHLY: { [pastYM]: {} }, // no entry for todayYM -- this category has no spend yet this month
+    getCatMonthSpend: (cat, m) => (m === pastYM ? 85 : 0), // 85% of $100 budget -- inside the warn-to-100% band
+    csvSafeField: (s) => s,
+    showToast: () => {},
+    document: { createElement: () => ({ click: () => {} }) },
+    Blob: function (parts) {
+      capturedCsv = parts[0];
+    },
+    URL: { createObjectURL: () => "blob:fake", revokeObjectURL: () => {} },
+  };
+  const { exportBudgetCSV } = loadFunctions(["exportBudgetCSV", "classifyBudgetStatus"], ctx);
+  exportBudgetCSV();
+  const groceriesRow = capturedCsv.split("\n").find((l) => l.startsWith("Groceries"));
+  assert.ok(groceriesRow, "Groceries row should exist in the exported CSV");
+  assert.match(groceriesRow, /On track$/, "a completed past month at 85% of budget should read On track -- the risk window already closed");
+  assert.doesNotMatch(groceriesRow, /AT RISK/);
+});

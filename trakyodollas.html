@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-5WuRzvCj4dQXwnmFUEqimi07T/oI8EtqCKmlRNLbgXs=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-NOnlSUbrRDhgKfQ8iV7kaL+ewJEkEdVMIGswl6mzoaY=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -8400,16 +8400,31 @@ function exportBudgetCSV(){
     return d.toLocaleString('default',{month:'short',year:'numeric'});
   }),'Total Spent','Avg/Month','Status'];
 
+  // Status uses classifyBudgetStatus() -- the same function the live Budget
+  // tab and Insights pill use -- rather than a third independent
+  // reimplementation. Previously this compared the most recent month with
+  // ANY spend against pct>=warnPct with no isCurrentMonth gate at all, so a
+  // fully-completed past month (e.g. exporting early in a new month before
+  // this category has posted a transaction yet) that finished in the
+  // warn-to-100% band got labeled "AT RISK" even though that risk window
+  // had already closed -- the Budget tab itself never shows "AT RISK" for
+  // a non-current month, since classifyBudgetStatus()'s own atRisk
+  // condition requires isCurrentMonth. Found in the 72nd adversarial pass.
+  const today=new Date();
+  const todayYM=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+  const daysInMonth=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
+  const daysPct=Math.min(today.getDate(),daysInMonth)/daysInMonth;
+  const warnPct=state.budgetWarnPct??80;
+
   const rows=budgeted.map(([cat,budget])=>{
     const monthSpends=months.map(m=>getCatMonthSpend(cat,m));
     const totalSpent=monthSpends.reduce((s,v)=>s+v,0);
     const activeMonths=monthSpends.filter(v=>v>0).length||1;
     const avg=totalSpent/activeMonths;
-    // Status based on most recent month with data
     const latestM=months.filter(m=>getCatMonthSpend(cat,m)>0).slice(-1)[0];
     const latestSpent=latestM?getCatMonthSpend(cat,latestM):0;
-    const pct=Math.round(latestSpent/budget*100);
-    const status=latestSpent>budget?'OVER':pct>=(state.budgetWarnPct??80)?'AT RISK':'On track';
+    const {over,atRisk}=classifyBudgetStatus(latestSpent,budget,latestM===todayYM,daysPct,warnPct);
+    const status=over?'OVER':atRisk?'AT RISK':'On track';
     return [
       csvSafeField(cat),
       budget.toFixed(2),
@@ -8424,7 +8439,6 @@ function exportBudgetCSV(){
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
-  const today=new Date();
   const dateStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
   a.href=url;
   a.download=`trak-yo-dollas-budgets-${dateStr}.csv`;
