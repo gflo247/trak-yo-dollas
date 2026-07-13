@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-+GGncbFTpmglhXeQJrxLxnqnNh0LwOfCrxFyp8WupqI=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ftxrppfuSCLrHxPaFdqhiX7LOW2K2Iqx68HlvV4IFy4=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -6641,6 +6641,27 @@ function deleteAcct(){
   renderAll();
   scheduleSave();
 }
+// True if account `a` is the state.accounts entry paired with vehicle/
+// physical-asset record `v`. Prefers the modern acctId link; falls back to
+// the pre-acctId legacy match (type + exact name) for records saved before
+// the 35th adversarial pass introduced acctId. `exclude`, if given, is a
+// Set of account ids to skip during the legacy match -- a caller resolving
+// several still-unpaired legacy records in the same pass (saveVehicle()'s
+// edit flow) passes in ids already claimed by sibling vehicles this
+// session, so two ambiguous legacy records with the same name can't both
+// resolve to the same account.
+//
+// Shared by saveVehicle(), deleteVehicle(), and renderAccountLists() --
+// this exact "legacy fallback missing at one more call site" gap has
+// recurred across the 35th, 45th, 47th, 58th, and 69th adversarial passes,
+// each time a different call site found without it. Centralizing the
+// predicate here is meant to make that recurrence structurally harder
+// going forward, not just individually patched again at whichever site a
+// future pass happens to check next. Added in the 70th adversarial pass.
+function isPairedAccount(a,v,exclude){
+  if(v.acctId!=null)return a.id===v.acctId;
+  return(a.type==='vehicle'||a.type==='other-asset')&&(!exclude||!exclude.has(a.id))&&a.name===v.name;
+}
 function confirmDeleteVehicle(){const el=document.getElementById('delete-vehicle-confirm');if(el)el.style.display='flex';}
 function cancelDeleteVehicle(){const el=document.getElementById('delete-vehicle-confirm');if(el)el.style.display='none';}
 function deleteVehicle(){
@@ -6648,21 +6669,17 @@ function deleteVehicle(){
   const v=state.vehicles.find(x=>x.id===editVehicleId);
   state.vehicles=state.vehicles.filter(x=>x.id!==editVehicleId);
   if(v){
-    // See saveVehicle() — pairs by acctId so deleting one vehicle/asset never
-    // removes another's account just because they share a name (e.g. two
-    // blank-make vehicles both auto-named "2024 Vehicle"). Falls back to the
-    // old name-match for a record saved before acctId existed and never
-    // since edited.
-    if(v.acctId!=null)state.accounts=state.accounts.filter(a=>a.id!==v.acctId);
-    // (type==='vehicle'||type==='other-asset'), not just 'vehicle' -- matches
-    // saveVehicle()'s own self-heal fallback (~line 10467) for the identical
-    // pre-acctId legacy-record case. A legacy "Other" physical asset
-    // (boat/jewelry/etc., paired to an 'other-asset' account, never edited
-    // since acctId was introduced in the 35th pass) fell through this
-    // filter unmatched, leaving its account behind as an orphaned duplicate
-    // in the Accounts tab and net worth after "deleting" it. Found in the
-    // 45th adversarial pass.
-    else state.accounts=state.accounts.filter(a=>!((a.type==='vehicle'||a.type==='other-asset')&&a.name===v.name));
+    // claimed excludes accounts already paired (via acctId) to a REMAINING
+    // vehicle -- without it, deleting an unresolved legacy sibling (e.g.
+    // two same-named "Boat" assets, one already self-healed an acctId via
+    // an earlier edit, one not) matched every account sharing that legacy
+    // vehicle's type+name and removed all of them, including the OTHER
+    // vehicle's already-correctly-paired account. Same claimed-exclusion
+    // saveVehicle()'s edit path already uses for the identical ambiguity;
+    // found testing the isPairedAccount() extraction, 70th adversarial pass.
+    const claimed=new Set(state.vehicles.filter(o=>o.acctId!=null).map(o=>o.acctId));
+    const match=state.accounts.find(a=>isPairedAccount(a,v,claimed));
+    if(match)state.accounts=state.accounts.filter(a=>a.id!==match.id);
   }
   closeModals();
   renderAll();
@@ -6687,10 +6704,11 @@ function renderAccountLists(){
   // Account modal -- can't be blanket-excluded the same way, so it fell
   // through unmatched and duplicated into this Financial-assets list
   // alongside its own entry in the Physical assets panel (renderVehicles()).
-  // Same name-based fallback matching deleteVehicle() already uses for the
-  // identical legacy case (~line 6650). Found in the 69th adversarial pass.
+  // Uses the same isPairedAccount() predicate deleteVehicle() and
+  // saveVehicle() share, for the identical legacy case. Found in the 69th
+  // adversarial pass; centralized into isPairedAccount() in the 70th.
   state.vehicles.filter(v=>v.acctId==null).forEach(v=>{
-    const match=state.accounts.find(a=>(a.type==='vehicle'||a.type==='other-asset')&&a.name===v.name);
+    const match=state.accounts.find(a=>isPairedAccount(a,v));
     if(match)vehicleAcctIds.add(match.id);
   });
   document.getElementById('asset-list').innerHTML=state.accounts.filter(a=>!isLiab(a.type)&&!a.excludeFromNW&&a.type!=='vehicle'&&!vehicleAcctIds.has(a.id)).map(row).join('');
@@ -11292,7 +11310,7 @@ function saveVehicle(){
       // had more than one. Records saved before acctId existed fall back to
       // a best-effort match once (excluding accounts already claimed by
       // another vehicle this session), then remember the id from here on.
-      let a=v.acctId!=null?state.accounts.find(x=>x.id===v.acctId):null;
+      let a=v.acctId!=null?state.accounts.find(x=>isPairedAccount(x,v)):null;
       if(!a){
         const claimed=new Set(state.vehicles.filter(o=>o.id!==v.id&&o.acctId!=null).map(o=>o.acctId));
         // The claimed-account exclusion above only helps once at least one
@@ -11307,8 +11325,14 @@ function saveVehicle(){
         // first-unclaimed-of-type — oldName captured above, before
         // Object.assign overwrites v.name with this edit's new value, so a
         // same-edit rename doesn't defeat its own match. Found in the 35th
-        // adversarial pass.
-        a=state.accounts.find(x=>(x.type==='vehicle'||x.type==='other-asset')&&!claimed.has(x.id)&&x.name===oldName)
+        // adversarial pass. The name-match tier itself now goes through the
+        // shared isPairedAccount() predicate (70th pass); the final blind
+        // first-unclaimed-of-type fallback stays local to this edit flow --
+        // it's a deliberately more permissive "find *something* to attach
+        // this edit to" guarantee that delete/display shouldn't share,
+        // since grabbing the wrong account there would be a worse mistake
+        // than leaving one unmatched.
+        a=state.accounts.find(x=>isPairedAccount(x,{acctId:null,name:oldName},claimed))
           ||state.accounts.find(x=>(x.type==='vehicle'||x.type==='other-asset')&&!claimed.has(x.id));
       }
       if(a){a.balance=value;a.name=name;a.type=assetType==='other'?'other-asset':'vehicle';v.acctId=a.id;}
