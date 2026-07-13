@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-yoPpTxSd+N2ASqeKb2Ap76UZjGst3EYUCOIQ4VAk5Is=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-0g4THEKePWOnNWca5z7a4s6hnNaaHAsaRHKWDBJskyY=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3244,15 +3244,18 @@ function renderYearInReview(){
   const firstSnap=snapsSorted.find(s=>s.monthKey>=months[0]);
   const lastSnap=snapsSorted.filter(s=>s.monthKey<=months[months.length-1]).slice(-1)[0];
   const nwChange=firstSnap&&lastSnap&&firstSnap!==lastSnap?lastSnap.nw-firstSnap.nw:null;
-  const income=getEffectiveIncome(months[months.length-1]);
   // Income for the actual window, not always x12 -- the window is
   // frequently shorter than 12 months (a user with <1 year of history,
   // or the "Ending" selector set to an early month), and totalSpent above
   // is already summed only over the real window. Comparing a partial-
   // period spend total against a hardcoded full-year income baseline
   // silently overstated the savings rate whenever the window was short.
-  // Found in the 29th adversarial pass.
-  const periodIncome=income*months.length;
+  // Found in the 29th adversarial pass. Was still multiplying a single
+  // month's income by the window length rather than summing each month's
+  // own income -- same bug computePeriodSpendVsIncome() had before the
+  // 65th pass, reproduced here independently. Now uses the shared
+  // sumIncomeForMonths() helper. Found in the 67th adversarial pass.
+  const periodIncome=sumIncomeForMonths(months);
   const savingsRate=periodIncome>0?Math.round((periodIncome-totalSpent)/periodIncome*100):null;
   const dateRange=months.length>1?fmtMonthShort(months[0])+' – '+fmtMonthShort(months[months.length-1]):fmtMonthShort(months[0]);
 
@@ -3409,10 +3412,10 @@ function copyYirSummary(){
     const biggestMonth=byMonth.reduce((a,b)=>b.spent>a.spent?b:a,byMonth[0]);
     const quietestMonth=byMonth.filter(m=>m.spent>0).reduce((a,b)=>b.spent<a.spent?b:a,byMonth[0]);
     const avgMonth=totalSpent/months.length;
-    const income=getEffectiveIncome(months[months.length-1]);
     // Same window-aware fix as renderYearInReview() -- see the 29th
-    // adversarial pass note there.
-    const periodIncome=income*months.length;
+    // adversarial pass note there. Same sumIncomeForMonths() fix too --
+    // see the 67th adversarial pass note there.
+    const periodIncome=sumIncomeForMonths(months);
     const savingsRate=periodIncome>0?Math.round((periodIncome-totalSpent)/periodIncome*100):null;
     const snapsSorted=getSortedSnaps();
     const firstSnap=snapsSorted.find(s=>s.monthKey>=months[0]);
@@ -8788,6 +8791,23 @@ function getEffectiveIncome(monthKey){
   return 0;
 }
 
+// Sums getEffectiveIncome() across an arbitrary list of months, calling
+// detectDepositIncome() (an unmemoized full state.transactions scan) at most
+// once rather than once per month for the "auto-detect from deposits"
+// method. Shared by computePeriodSpendVsIncome() (the global date-range
+// filter's window) and the Year in Review feature's own independent
+// 12-month window (renderYearInReview()/copyYirSummary()) -- those two used
+// to each hand-roll the identical income*monthCount formula, so the 65th
+// pass's fix (sum each month's own income instead of multiplying the latest
+// month by month count) only landed in computePeriodSpendVsIncome(), and
+// Year in Review kept reproducing the exact bug that fix addressed. Found
+// in the 67th adversarial pass.
+function sumIncomeForMonths(months){
+  const usesAutoDetect=state.declaredIncome<=0&&state.income.method==='auto';
+  const detected=usesAutoDetect?detectDepositIncome():null;
+  return months.reduce((s,m)=>s+(usesAutoDetect?(detected.byMonth?.[m]||detected.avgMonthly||0):getEffectiveIncome(m)),0);
+}
+
 // Single source of truth for period-level spend vs income — used by Flow chart AND savings insight
 function computePeriodSpendVsIncome(){
   const months=getFilteredMonths();
@@ -8805,11 +8825,10 @@ function computePeriodSpendVsIncome(){
   // runs on the app's main render path (renderInsights(), called from
   // renderAll() on essentially every state change), so summing per month
   // the naive way turned one full state.transactions scan into one per
-  // filtered month. Found in the 66th adversarial pass.
-  const usesAutoDetect=state.declaredIncome<=0&&state.income.method==='auto';
-  const detected=usesAutoDetect?detectDepositIncome():null;
-  const incomeForMonth=m=>usesAutoDetect?(detected.byMonth?.[m]||detected.avgMonthly||0):getEffectiveIncome(m);
-  const totalIncome=months.length?months.reduce((s,m)=>s+incomeForMonth(m),0):getEffectiveIncome(null);
+  // filtered month. Found in the 66th adversarial pass. Now shared via
+  // sumIncomeForMonths() (see its own comment above) rather than reimplemented
+  // here directly. Found in the 67th adversarial pass.
+  const totalIncome=months.length?sumIncomeForMonths(months):getEffectiveIncome(null);
   const income=totalIncome/monthCount;
   let totalSpend=0;
   state.transactions.forEach(t=>{
@@ -10647,7 +10666,18 @@ async function submitSyncPassphrase() {
 function cancelSyncPassphrase() {
   closeModals();
   _pendingSyncUid = null;
-  doSignOut();
+  // Only sign out for a genuine unresolved sign-in attempt --
+  // window._awaitingCloudMerge stays true (set by promptSyncPassphrase())
+  // until a passphrase actually resolves, which is when staying "signed in"
+  // with sync unusable would otherwise silently block cloud sync forever
+  // (see the Escape-routing comment above this modal's dispatch, ~line 6085).
+  // openSyncPassphraseReset() opens this same modal for an already-signed-in,
+  // already-synced device -- _awaitingCloudMerge is already false there, so
+  // without this check, backing out of "delete my synced data" via Back+
+  // Cancel or double-Escape silently signed the user out, right after being
+  // told nothing would happen if they cancelled. Found in the 67th
+  // adversarial pass (a gap in the 66th pass's own openSyncPassphraseReset()).
+  if (window._awaitingCloudMerge) doSignOut();
 }
 
 // ── Forgot-passphrase reset — self-serve version of scripts/one-time-sync-reset.js.
