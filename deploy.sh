@@ -7,6 +7,17 @@ if [ "$target" != "dev" ] && [ "$target" != "prod" ]; then
   exit 1
 fi
 
+# Hard gate, checked first (fail fast before anything else runs) — this app
+# has no build step or bundler, so nothing else here parses the file as a
+# whole. npm test only compiles the specific functions extracted for a given
+# test, not the full <script> block, so a syntax error anywhere outside a
+# currently-tested function slipped through silently. Nearly shipped once:
+# the 72nd adversarial pass's first attempt at a fix introduced a duplicate
+# const declaration in the same function scope, caught only by manually
+# running `node --check` before it reached a browser.
+echo "=== Checking JavaScript syntax (node --check on every <script> block) ==="
+python3 scripts/check-syntax.py
+
 # Gate the deploy on the test suite and the inline-handler lint — previously
 # this script would ship straight to prod with no verification at all, the
 # only safety net being a developer remembering to run both by hand first.
