@@ -1630,3 +1630,48 @@ test("openAddModal: resets #f-source and #f-type to their default option, not le
     "openAddModal() should reset both #f-source and #f-type to their first <option> (selectedIndex=0), matching editAccount()'s own reset-on-open convention for the other fields"
   );
 });
+
+// ── 88th adversarial pass: openCatModal() reset _confirmingDeleteCatName
+// but never its sibling flag _editingCatName (set by startRenameCat()),
+// and closeModals() (routed to by the modal's own "Done" button) doesn't
+// touch it either. Clicking rename on a category, then "Done" instead of
+// confirming/cancelling, left it set -- reopening "Manage categories"
+// made renderCatManagerList() see the stale flag and silently re-render
+// that row straight into edit mode, unprompted. Same reset-on-open shape
+// as openVehicleModal()'s #v-other-cat (45th pass), openAcctCsvModal()
+// (77th pass), and openAddModal() (87th pass). ──
+test("openCatModal: resets _editingCatName, not just _confirmingDeleteCatName, so a category can't reopen stuck in rename mode", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /function openCatModal\(\)\{\s*_confirmingDeleteCatName=null;[\s\S]{0,1200}?_editingCatName=null;\s*renderCatManagerList\(\);/,
+    "openCatModal() should reset _editingCatName alongside _confirmingDeleteCatName, before rendering the category list"
+  );
+});
+
+// ── 88th adversarial pass: deleteVendorAlias()'s manual entity-decode
+// (`from.replace(/&amp;/g,'&')...`) operated on a value the browser had
+// already decoded once (data-arg="${esc(from)}" round-trips exactly
+// through esc()+HTML-attribute-parsing). For the common case this second
+// decode was a harmless no-op, but for a vendor description that itself
+// literally contains an entity-like substring like "&amp;" as text (real
+// CSV-export messiness some banks/portals produce), the extra decode
+// corrupted the lookup key, so delete state.vendorAliases[...] silently
+// matched nothing and the alias was never actually removed -- no error
+// shown, the "✕" click just appeared to do nothing. Confirmed anomalous:
+// no sibling delete function (deleteCustomCat, etc.) does a second decode
+// pass on an already-decoded data-arg value. ──
+test("deleteVendorAlias: deletes the exact key it's given, without a redundant second entity-decode that can corrupt the lookup", () => {
+  const ctx = {
+    state: { vendorAliases: { "AT&amp;T WIRELESS": "AT&T", Amazon: "Amazon.com" } },
+    renderVendorAliasList: () => {},
+    renderSpending: () => {},
+    scheduleSave: () => {},
+  };
+  const { deleteVendorAlias } = loadFunctions(["deleteVendorAlias"], ctx);
+  deleteVendorAlias("AT&amp;T WIRELESS");
+  assert.ok(!("AT&amp;T WIRELESS" in ctx.state.vendorAliases), "a vendor key that literally contains entity-like text should still be deleted by its exact, real key");
+  assert.ok("Amazon" in ctx.state.vendorAliases, "an unrelated alias should be untouched");
+});

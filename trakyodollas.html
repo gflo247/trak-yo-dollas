@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-WD9JMbkCIYI1i1ZQRHZbjuUl4Dz2A7scx9dvkKc4V7E=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-iBg0EEjrjYb22yvbl7LxrAQBeETH/petig8IcoLgJB8=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -7408,9 +7408,22 @@ function addVendorAlias(){
 function deleteVendorAlias(from){
   if(!state.vendorAliases)return;
   from=String(from);
-  // Decode HTML entities in the from key
-  const decoded=from.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
-  delete state.vendorAliases[decoded];
+  // No manual entity-decode here (there used to be one) -- data-arg="${esc(from)}"
+  // is already correctly decoded by the browser's own HTML attribute
+  // parsing by the time dataset.arg reaches this function (esc()'s
+  // encoding and the browser's decoding are exact inverses, for any
+  // string). The removed manual decode operated on an ALREADY-decoded
+  // value, so for the common case (a vendor name with a plain literal
+  // '&') it was a harmless no-op -- but for a vendor description that
+  // itself literally contains an entity-like substring such as "&amp;"
+  // as text (real, if rare, CSV-export messiness some banks/portals
+  // produce), the extra decode corrupted the lookup key, so
+  // delete state.vendorAliases[...] silently matched nothing and the
+  // alias was never actually removed -- no error, the list just kept
+  // showing it as if the "✕" click had done nothing. Confirmed anomalous:
+  // no sibling delete function (deleteCustomCat, etc.) does this second
+  // decode pass. Found in the 88th adversarial pass.
+  delete state.vendorAliases[from];
   renderVendorAliasList();
   renderSpending();
   scheduleSave();
@@ -9324,6 +9337,19 @@ function saveSnapshot(){
 
 function openCatModal(){
   _confirmingDeleteCatName=null;
+  // _editingCatName was never reset here -- only cancelRenameCat()/
+  // confirmRenameCat() (the row's own X/checkmark) clear it, not the
+  // modal's "Done" button (routed through the generic closeModals(),
+  // which doesn't touch it either). Clicking rename on a category, then
+  // "Done" instead of confirming/cancelling, left it set -- reopening
+  // "Manage categories" made renderCatManagerList() see the stale flag
+  // and re-render that row straight into edit mode, unprompted, with
+  // focus/select auto-applied, before the user touched anything. Same
+  // reset-on-open shape as openVehicleModal()'s #v-other-cat (45th pass),
+  // openAcctCsvModal() (77th pass), and openAddModal() (87th pass) --
+  // each independently missed a sibling field/flag their modal-open
+  // function should have cleared. Found in the 88th adversarial pass.
+  _editingCatName=null;
   renderCatManagerList();
   rebuildCatSelects();
   document.getElementById('cat-modal').classList.remove('hidden');
@@ -10512,7 +10538,6 @@ function confirmTxImport(){
   closeModals();
   renderSpending();
   showToast(`✓ Imported ${newTxs.length} transactions from ${esc(source)}`);
-  try{localStorage.setItem('trakyo_last_import',new Date().toISOString());}catch(e){}
   // Hide demo notices — real data is now loaded
   state.hasRealData=true;
   hideDemoBadge();
