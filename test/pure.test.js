@@ -1574,3 +1574,59 @@ test("renderYearInReview: Top categories bar pct is clamped to [0,100] and guard
   assert.equal(pctOf(250, 1000), 25, "an ordinary in-range case is unaffected");
   assert.equal(pctOf(100, 0), 0, "totalSpent<=0 should fall back to 0% instead of computing amt/0");
 });
+
+// ── 87th adversarial pass: normalizeTxRow()'s date normalization,
+// date=parseImportDate(date,_importDateFmt)||date, reverted to the
+// ORIGINAL raw string whenever parseImportDate() failed to parse it --
+// still truthy for any non-empty garbage cell ("N/A", a corrupted date),
+// so the function's own `if(!date||...)return null;` guard two lines
+// below never caught it, and the row proceeded with a garbage t.date
+// instead of being rejected. normalizeTxRow() itself is a 280+ line
+// function with heavy importFmt-branching and many format-specific
+// dependencies -- not a good extraction-test candidate for a one-line
+// fix, so this checks the source pattern directly and re-derives the
+// exact before/after behavior using the real, already-tested
+// parseImportDate() (see its own test block above) combined with the
+// same guard logic normalizeTxRow() uses. ──
+test("normalizeTxRow: an unparseable date is rejected outright, not silently replaced with the original garbage string", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.doesNotMatch(
+    source,
+    /if\(date\)date=parseImportDate\(date,_importDateFmt\)\|\|date;/,
+    "normalizeTxRow() should not fall back to the original raw date string when parseImportDate() fails -- that defeats the !date rejection guard on the very next line"
+  );
+  assert.match(
+    source,
+    /if\(date\)date=parseImportDate\(date,_importDateFmt\);/,
+    "normalizeTxRow() should let parseImportDate()'s empty-string failure result flow through to the !date guard"
+  );
+  const { parseImportDate } = loadFunctions(["parseImportDate"]);
+  const normalizeDateOld = (raw) => (raw ? parseImportDate(raw, "mdy") || raw : raw);
+  const normalizeDateNew = (raw) => (raw ? parseImportDate(raw, "mdy") : raw);
+  assert.equal(normalizeDateOld("N/A"), "N/A", "demonstrates the old bug: a garbage date cell survived as a truthy, unrejectable garbage string");
+  assert.equal(normalizeDateNew("N/A"), "", "the fixed logic correctly turns a garbage date cell into an empty string, which the !date guard then rejects");
+});
+
+// ── 87th adversarial pass: openAddModal() never reset #f-source/#f-type,
+// only editAccount()'s edit path set them. Editing an account with a
+// non-default Type (e.g. Mortgage), then opening "+ Add Account" fresh,
+// left the Type dropdown showing the stale value -- saveAccount() reads
+// #f-type's current value directly, and isLiab() treats 'mortgage' as a
+// liability, so a stale selection silently subtracted a new account's
+// balance from net worth instead of adding it. Same bug class as
+// openVehicleModal()'s #v-other-cat reset (45th adversarial pass), never
+// mirrored onto this modal. openAddModal() itself is DOM-only (no return
+// value, just element mutation) -- checking the source pattern directly,
+// matching this suite's precedent for DOM-mutation-only functions. ──
+test("openAddModal: resets #f-source and #f-type to their default option, not leaving editAccount()'s stale selection behind", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /function openAddModal\(\)\{[^}]*const fs=document\.getElementById\('f-source'\);if\(fs\)fs\.selectedIndex=0;const ft=document\.getElementById\('f-type'\);if\(ft\)ft\.selectedIndex=0;/,
+    "openAddModal() should reset both #f-source and #f-type to their first <option> (selectedIndex=0), matching editAccount()'s own reset-on-open convention for the other fields"
+  );
+});

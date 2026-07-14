@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-AKf4VRtEjhOkjF4ZQsMGw/v9xmwX+Z+Xt4OponaSPE4=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-WD9JMbkCIYI1i1ZQRHZbjuUl4Dz2A7scx9dvkKc4V7E=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -10116,8 +10116,21 @@ function normalizeTxRow(row, source){
     if(!isIncome&&cat==='Other')cat=row['category']||row['cat']||row['type']||'Other';
   }
 
-  // Normalize date to YYYY-MM-DD using the user's chosen date format
-  if(date)date=parseImportDate(date,_importDateFmt)||date;
+  // Normalize date to YYYY-MM-DD using the user's chosen date format.
+  // parseImportDate(date,_importDateFmt), not ...||date -- the old
+  // fallback reverted to the ORIGINAL raw string whenever parsing failed,
+  // which is still truthy for any non-empty garbage cell (a corrupted
+  // date, "N/A", etc.), so the !date guard two lines below never caught
+  // it and the row proceeded with a garbage t.date instead of being
+  // rejected. rebuildMonthly() then does t.date.slice(0,7) unconditionally
+  // to build MONTHLY/ALL_MONTHS, inserting a fake "month key" that
+  // parseYM() chokes on wherever ALL_MONTHS is iterated -- a single bad
+  // CSV row could corrupt app-wide date-range state, not just hide one
+  // transaction. Same failure class the 83rd pass fixed for the manual
+  // saveTx()/saveEditTx() entry points; this is the CSV bulk-import path,
+  // the app's primary transaction data source, which never got the same
+  // fix. Found in the 87th adversarial pass.
+  if(date)date=parseImportDate(date,_importDateFmt);
   // Number.isFinite, not just !amount — parseFloat('Infinity')/parseFloat('1e400')
   // both return a truthy Infinity, not NaN, so a malformed amount cell would
   // otherwise slip through and poison every downstream sum that touches it.
@@ -11317,7 +11330,23 @@ function closeModals(){
   if(mlSent)mlSent.style.display='none';
   if(mlEmail)mlEmail.value='';
 }
-function openAddModal(){editAcctId=null;document.getElementById('add-modal-title').textContent='Add account';['f-name','f-balance'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-exclude').checked=false;const db=document.getElementById('delete-acct-btn');if(db)db.style.display='none';const dc=document.getElementById('delete-acct-confirm');if(dc)dc.style.display='none';document.getElementById('add-modal').classList.remove('hidden');}
+// f-source/f-type were never reset here (only editAccount()'s edit path
+// sets them) -- editing an account with a non-default institution/type
+// (e.g. Type: Mortgage), closing the modal, then opening it again to add
+// a genuinely new account left both selects showing the previous
+// session's stale values unless the user noticed and changed them
+// manually. For f-type specifically this isn't just cosmetic: saveAccount()
+// reads #f-type's current value directly into the new account's type, and
+// isLiab() treats 'mortgage'/'credit'/'other-liability' as liabilities --
+// a stale 'mortgage' selection silently subtracted the new account's
+// balance from net worth instead of adding it, a full 2x swing with no
+// error shown. Same bug class as openVehicleModal()'s #v-other-cat reset
+// (45th adversarial pass) applied to a different modal that was never
+// given the same fix. Reset both to their own first <option> (matching
+// what a genuinely fresh page load already shows) rather than hardcoding
+// a value that could drift if the option lists ever change. Found in the
+// 87th adversarial pass.
+function openAddModal(){editAcctId=null;document.getElementById('add-modal-title').textContent='Add account';['f-name','f-balance'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-exclude').checked=false;const fs=document.getElementById('f-source');if(fs)fs.selectedIndex=0;const ft=document.getElementById('f-type');if(ft)ft.selectedIndex=0;const db=document.getElementById('delete-acct-btn');if(db)db.style.display='none';const dc=document.getElementById('delete-acct-confirm');if(dc)dc.style.display='none';document.getElementById('add-modal').classList.remove('hidden');}
 function openAcctCsvModal(){
   // Reset stale state from a prior open/cancel, matching openAddModal()'s
   // own reset-on-open convention immediately above -- this modal had no
