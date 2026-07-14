@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Lngc5YOzPHID7jgDAdpu+PMuiQzuzPKefc0jaO7BhVo=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-iwsjJ//kQfPP5NkiEpkwl8x8RCFXoT8aQfKg1frpxMo=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -9544,6 +9544,13 @@ function deleteCustomCat(name){
   // zero results under a stale, oddly-colored filter chip until the user
   // noticed and manually clicked it off.
   state.activeCats.delete(name);
+  // Same stale-reference shape, one layer further out: a Treemap drill
+  // into this exact category (state.treemapDrillCat, 93rd/94th passes)
+  // left renderTreemap() drilling into a name nothing matches anymore
+  // (every transaction was just reassigned to 'Other' above) on the very
+  // next render -- an empty drill view with a breadcrumb naming a
+  // category that no longer exists. Found in the 95th adversarial pass.
+  if(state.treemapDrillCat===name)state.treemapDrillCat=null;
   window._catColorMap=null;
   renderCatManagerList();
   rebuildCatSelects();
@@ -9581,6 +9588,10 @@ function confirmRenameCat(oldName){
   // Same activeCats-goes-stale shape deleteCustomCat() was fixed for in the
   // 26th pass, just for rename instead of delete. Found in the 27th pass.
   if(state.activeCats.has(oldName)){state.activeCats.delete(oldName);state.activeCats.add(newName);}
+  // Same shape, one layer further out -- update rather than clear, since
+  // (unlike a delete) the drilled-into category still exists, just under
+  // a new name. Found in the 95th adversarial pass.
+  if(state.treemapDrillCat===oldName)state.treemapDrillCat=newName;
   window._catColorMap=null;
   _editingCatName=null;
   renderCatManagerList();
@@ -10617,6 +10628,18 @@ function confirmTxImport(){
       state.transactions=[];
       state.activeSources=new Set();
       state.budgets={};
+      // Same wholesale-dataset-replacement gap importBackup() had (95th
+      // adversarial pass) -- a demo session's Business/Personal filter,
+      // Treemap vendor selection/drilled category, or calendar-day filter
+      // left active zero-filters the freshly-imported real data against
+      // demo-session state that has nothing to do with it. Reset before
+      // rebuildMonthly() runs (mutateTransactions() calls it right after
+      // this mutator returns), matching loadDemoProfile()'s own reset set.
+      _bizFilter='all';
+      state.activeCats=new Set();
+      state.dashFilter=null;
+      state.searchQuery='';
+      _clearVendorDayFiltersForDataReplace();
     }
 
     // Remove existing from this source if replace checked
@@ -12253,6 +12276,25 @@ function importBackup(file){
       if(!state.excludedCats.has('Internal Transfer')&&(!exportedAt||exportedAt<=CUTOFF))state.excludedCats.add('Internal Transfer');
       state.transactions=arr(payload.transactions).map(t=>({...t,amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
       _txsDirty=true;
+      // This is a wholesale dataset replacement -- the exact scenario
+      // _clearVendorDayFiltersForDataReplace()'s own comment names "backup
+      // restore" as covering, but this function never actually called it
+      // (nor reset _bizFilter, matching the equivalent reset every other
+      // wholesale-replace path -- cloud-sync restore, loadDemoProfile --
+      // already performs). A Business/Personal filter, a Treemap vendor
+      // selection or drilled category, or a calendar-day filter left active
+      // from the pre-restore session could zero-filter the restored data
+      // against session state that has nothing to do with it, with no UI
+      // control left to reset it if the filter chip row itself is hidden
+      // (e.g. state.includeIncome restoring to false). Matches
+      // loadDemoProfile()'s own reset set for the same "fresh start"
+      // reasoning. Found in the 95th adversarial pass.
+      _bizFilter='all';
+      state.activeCats=new Set();
+      state.dashFilter=null;
+      state.searchQuery='';
+      state.showExcluded=false;
+      _clearVendorDayFiltersForDataReplace();
       rebuildMonthly();
       rebuildCatSelects();
       scheduleSave();
