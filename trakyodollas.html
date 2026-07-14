@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-D4Aro/RFpmLjYDYIMW9xgBDE4PoCjzy03PjFh3m76Ps=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-KLyAU7NoGb8dmli6BrzTYIfbB8q4T25qpWnuy5y1PXk=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -9489,7 +9489,17 @@ let _budgetNudgeShown=false;
 function onImportSuccessClose(){
   if(!_budgetNudgeShown&&Object.keys(state.budgets||{}).length>0){
     _budgetNudgeShown=true;
-    setTimeout(()=>showToast('Your budgets from your last session are still active — review them in the Budget tab.','#FBBF24',5000),400);
+    // tc(), not a bare hardcoded '#FBBF24' -- that's this file's own
+    // dark-theme --amber-text-strong (line 98), computed contrast ~8.76:1
+    // against the dark toast background but only ~1.66:1 against the light
+    // theme's near-white one -- the opposite direction of the 75th/76th
+    // pass's other toast-color fixes (fine on dark, fails on light instead
+    // of fine on light, fails on dark), same underlying "bare hex instead
+    // of tc()" mistake. tc('#FBBF24','#92400E') matches this exact color's
+    // own established light-theme counterpart (line 113). Found while
+    // independently sweeping every showToast() color argument in the
+    // 76th adversarial pass.
+    setTimeout(()=>showToast('Your budgets from your last session are still active — review them in the Budget tab.',tc('#FBBF24','#92400E'),5000),400);
   }
 }
 
@@ -12148,7 +12158,18 @@ document.addEventListener('DOMContentLoaded',function(){
     try{
       if(!localStorage.getItem('trakyo_tips_seen')){
         setTimeout(()=>{
-          showToast('💡 Press <strong style="color:#fff">?</strong> anytime for tips & shortcuts','#334155',5000);
+          // tc(), not a bare hardcoded '#334155' -- #1E293B is dark theme's
+          // --toast-bg, and #334155 text against it computes to ~1.41:1
+          // contrast (rgb(51,65,85) is nearly identical to rgb(30,41,59)) --
+          // effectively invisible, not just under WCAG AA like the 75th
+          // pass's #94A3B8 fixes. Dark theme is this app's default, so
+          // every first-time visitor's one-time "press ? for tips" toast
+          // was silently unreadable. tc('#334155','#CBD5E1') matches this
+          // exact color's established pairing elsewhere in the file (e.g.
+          // ~line 3499, ~line 10414). Found in the 76th adversarial pass,
+          // the same hardcoded-toast-color class the 75th pass fixed for a
+          // narrower grep scope.
+          showToast('💡 Press <strong style="color:#fff">?</strong> anytime for tips & shortcuts',tc('#334155','#CBD5E1'),5000);
           localStorage.setItem('trakyo_tips_seen','1');
         },4000);
       }
