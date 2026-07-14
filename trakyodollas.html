@@ -8918,7 +8918,15 @@ function detectDepositIncome(){
   // deselected source's deposits kept counting as income while its spend
   // was correctly excluded -- silently inflating the displayed savings
   // rate / suppressing the overspend warning.
-  state.transactions.filter(t=>t.excluded&&!t.is_offset&&state.activeSources.has(t.card)).forEach(t=>{
+  //
+  // _bizFilter guard added in the 78th adversarial pass -- same gap as
+  // above but for the Business/Personal filter: computePeriodSpendVsIncome()
+  // already narrows totalSpend by _bizFilter, but this function's income
+  // side ignored it entirely, so filtering to "Business" compared
+  // business-only spend against combined business+personal income --
+  // wildly overstating savings (or masking a real business overspend)
+  // any time deposits were tagged with a mix of biz/personal.
+  state.transactions.filter(t=>t.excluded&&!t.is_offset&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).forEach(t=>{
     const d=t.desc.toUpperCase();
     const isTransfer=EXCLUDE_KEYWORDS.some(k=>d.includes(k));
     if(!isTransfer&&t.amount>0){

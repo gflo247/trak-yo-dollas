@@ -938,6 +938,33 @@ test("sumIncomeForMonths: declared/manual income (constant per month) is unaffec
   assert.equal(result, 7500, "3 months of the same $2500 getEffectiveIncome() figure");
 });
 
+// ── 78th adversarial pass: detectDepositIncome() never checked _bizFilter,
+// unlike every other spend/income total in the file (computePeriodSpendVsIncome()'s
+// own totalSpend, sumIncomeForMonths() callers via getEffectiveIncome(), etc. all
+// gate on it). With income method "auto" and deposits tagged both biz and personal,
+// filtering to "Business" compared business-only spend against combined
+// business+personal income -- wildly overstating savings / masking a real
+// business-side overspend. ──
+test("detectDepositIncome: only counts deposits matching the active _bizFilter", () => {
+  const ctx = {
+    state: {
+      transactions: [
+        { id: "d1", date: "2026-07-15", amount: 4000, card: "chase", desc: "PAYROLL", excluded: true, is_offset: false, biz: false },
+        { id: "d2", date: "2026-07-20", amount: 2000, card: "chase", desc: "CLIENT INVOICE DEPOSIT", excluded: true, is_offset: false, biz: true },
+      ],
+      activeSources: new Set(["chase"]),
+    },
+  };
+  const { detectDepositIncome } = loadFunctions(["detectDepositIncome"], { ...ctx, _bizFilter: "all" });
+  assert.equal(detectDepositIncome().avgMonthly, 6000, "'all' filter should count both the personal and business deposit");
+
+  const bizOnly = loadFunctions(["detectDepositIncome"], { ...ctx, _bizFilter: "biz" });
+  assert.equal(bizOnly.detectDepositIncome().avgMonthly, 2000, "'biz' filter should count only the $2000 tagged-business deposit");
+
+  const personalOnly = loadFunctions(["detectDepositIncome"], { ...ctx, _bizFilter: "personal" });
+  assert.equal(personalOnly.detectDepositIncome().avgMonthly, 4000, "'personal' filter should count only the $4000 untagged deposit");
+});
+
 // ── 67th adversarial pass: openSyncPassphraseReset() (66th pass) opens the
 // same sync-passphrase-modal, and shares Cancel/Escape routing, with
 // promptSyncPassphrase()'s genuine unresolved-sign-in flow -- but
