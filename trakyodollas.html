@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-WjX6FrMikkb46Bfhw4IAaeXByzD3HuIhUjoKBRjiUNQ=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-D4Aro/RFpmLjYDYIMW9xgBDE4PoCjzy03PjFh3m76Ps=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -6398,7 +6398,13 @@ function confirmCatExclusion(cat){
   // button's own override, needed for the same reason (#toast's inline
   // style sets pointer-events:none, inherited by any child button unless
   // overridden -- 53rd adversarial pass). Found in the 74th adversarial pass.
-  showToast(`${esc(cat)} hidden from spending · <button data-action="undoCatExclusion" data-arg="${esc(cat)}" style="background:none;border:none;color:#60A5FA;font-size:12px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit;pointer-events:all" type="button">Undo</button>`,'#94A3B8',4000);
+  // tc('#94A3B8','#4B5563'), not the hardcoded dark-theme value alone --
+  // #94A3B8 is this file's own dark-theme --text-secondary; on the light
+  // theme's near-white --toast-bg (#FFFEFB) it computes to ~2.5:1 contrast,
+  // well under WCAG AA's 4.5:1 minimum. Found in the 75th adversarial pass
+  // (a regression in the 74th pass's own new toast, which introduced this
+  // exact hardcoded value here and in removeBudget() below).
+  showToast(`${esc(cat)} hidden from spending · <button data-action="undoCatExclusion" data-arg="${esc(cat)}" style="background:none;border:none;color:#60A5FA;font-size:12px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit;pointer-events:all" type="button">Undo</button>`,tc('#94A3B8','#4B5563'),4000);
 }
 function undoCatExclusion(cat){
   // Same coercion guard as confirmCatExclusion() above -- this is now a
@@ -7351,7 +7357,11 @@ function openClearDataModal(){
 async function confirmClearAllData(){
   if(window._isDemoPreview){
     closeModals();
-    showToast('Not available while previewing demo data — your real data is untouched here','#94a3b8',9000);
+    // tc(), not a hardcoded value -- see confirmCatExclusion()'s toast note,
+    // ~line 6401 (75th adversarial pass): #94a3b8 is this file's dark-theme
+    // --text-secondary, ~2.5:1 contrast on the light theme's toast
+    // background, well under WCAG AA's 4.5:1.
+    showToast('Not available while previewing demo data — your real data is untouched here',tc('#94A3B8','#4B5563'),9000);
     return;
   }
   // Cancel any pending debounced save outright — belt-and-suspenders on top
@@ -7454,7 +7464,9 @@ function removeBudget(cat){
   // user 1.2s less time to see and click the one-and-only recovery action
   // for an accidental budget deletion. Found in the 74th adversarial pass,
   // while modeling a new Undo-in-toast button on this exact call site.
-  showToast(`Budget removed for ${esc(cat)} · <button data-action="undoBudgetCat" data-arg="${esc(cat)}" data-arg2="${prev}" style="background:none;border:none;color:#60A5FA;font-size:12px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit;pointer-events:all" type="button">Undo</button>`,'#94A3B8',4000);
+  // tc('#94A3B8','#4B5563') -- see the identical note on confirmCatExclusion()'s
+  // toast, ~line 6401. Found in the 75th adversarial pass.
+  showToast(`Budget removed for ${esc(cat)} · <button data-action="undoBudgetCat" data-arg="${esc(cat)}" data-arg2="${prev}" style="background:none;border:none;color:#60A5FA;font-size:12px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit;pointer-events:all" type="button">Undo</button>`,tc('#94A3B8','#4B5563'),4000);
 }
 function buildCondensedDots(months,budgeted,totalBudget,mode,cat,budget){
   const warnPct=state.budgetWarnPct??80;
@@ -11746,7 +11758,15 @@ function loadFromLocalStorage(){
     // Clear only the state blob — preserve transactions separately stored in LS_TXS_KEY
     try{localStorage.removeItem(LS_KEY);}catch(e2){}
     // Show non-alarming notice after DOM is ready
-    setTimeout(()=>showToast('We updated the app — some settings were reset. Your transaction data is safe.',5000),600);
+    // showToast(msg,color,duration) -- this only ever passed 2 arguments
+    // (msg, 5000), so 5000 landed in the `color` slot instead of `duration`,
+    // the same argument-order mistake the 74th pass fixed in removeBudget().
+    // t.style.color=5000 is an invalid CSS value, silently rejected, and
+    // duration fell through to the 2800ms default instead of the clearly-
+    // intended 5000ms -- less time to read a message explaining that some
+    // settings were just silently reset, exactly the kind of notice that
+    // benefits from staying up longer. Found in the 75th adversarial pass.
+    setTimeout(()=>showToast('We updated the app — some settings were reset. Your transaction data is safe.',undefined,5000),600);
     return false;
   }
 }
@@ -12101,11 +12121,11 @@ document.addEventListener('DOMContentLoaded',function(){
     if(hadSavedData){
       showDemoPreviewBanner();
     }else{
-      requestAnimationFrame(()=>showToast('👀 Previewing demo data — nothing will be saved this session','#94a3b8',6000));
+      requestAnimationFrame(()=>showToast('👀 Previewing demo data — nothing will be saved this session',tc('#94A3B8','#4B5563'),6000));
     }
   }else if(!_isDemo&&!window._hadSavedData){
     loadDemoProfile(2, true, true); // silent + skipRender — renderAll fires below
-    requestAnimationFrame(()=>showToast('👋 Showing demo data — tap <span style="color:#D97706;cursor:pointer;text-decoration:underline" data-action="openDemoPicker" data-arg="false">switch profile</span> or import your own CSV','#94a3b8',6000));
+    requestAnimationFrame(()=>showToast('👋 Showing demo data — tap <span style="color:#D97706;cursor:pointer;text-decoration:underline" data-action="openDemoPicker" data-arg="false">switch profile</span> or import your own CSV',tc('#94A3B8','#4B5563'),6000));
   }
 
   // Safety net: if activeSources is empty at this point (e.g. old LS without saved sources),
@@ -12356,6 +12376,18 @@ function loadDemoProfile(n, silent=false, skipRender=false){
   state.rangeTo=p.rangeTo||null;
   state.nwGoal=p.nwGoal;
   state.income={...p.income};
+  // getEffectiveIncome() checks state.declaredIncome first, ahead of
+  // state.income entirely -- without resetting it here, a real user's own
+  // declared income (set via openDeclaredIncomeModal(), which has no
+  // demo-preview awareness of its own) silently overrode both demo
+  // profiles' scripted income.method:'manual' figures, skewing every
+  // demo savings-rate/insight/Sankey number, plus pre-filling the real
+  // figure into the declared-income modal while "in" a demo session --
+  // directly contradicting this feature's own promise that previewing a
+  // demo leaves real data untouched. Reachable via "explore demo" over
+  // real saved data, or switching between demo profiles 1 and 2. Found
+  // in the 75th adversarial pass.
+  state.declaredIncome=0;
   state.hasRealData=false;
   state.hasRealAccounts=false;
   state.hasRealSnapshot=false;

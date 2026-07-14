@@ -1168,6 +1168,7 @@ test("confirmCatExclusion: a numeric-looking category name (coerced to a Number 
     renderTxList: () => {},
     renderActiveChart: () => {},
     esc: (s) => String(s),
+    tc: (dark) => dark,
     showToast: () => {},
   };
   const { confirmCatExclusion } = loadFunctions(["confirmCatExclusion"], ctx);
@@ -1206,6 +1207,12 @@ test("removeBudget: showToast is called with an explicit color and the intended 
     renderBucketGrid: () => {},
     renderBudgetTab: () => {},
     esc: (s) => String(s),
+    // tc(dark,light) -- the 75th pass replaced the hardcoded '#94A3B8'
+    // (this file's dark-theme --text-secondary, ~2.5:1 contrast on the
+    // light theme's toast background) with a real tc() call; mocked here
+    // as identity-on-dark since this test only cares about argument
+    // position, not theme switching itself.
+    tc: (dark) => dark,
     showToast: (...args) => {
       toastArgs = args;
     },
