@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-PvcVknUwYA4TflFbVB5nDVbtzL0lIYLqFcy+EoWJVrk=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-DdFFqiEjGNkba8kAfuqpAbKNbG+/dMIJ+/PUlNPdS90=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -12695,6 +12695,24 @@ function loadDemoProfile(n, silent=false, skipRender=false){
   state.activeSources=new Set(p.activeSources);
   state.rangeFrom=p.rangeFrom||null;
   state.rangeTo=p.rangeTo||null;
+  // getFilteredMonths() applies state.sourceAlignDate unconditionally
+  // (months.filter(m=>m>=state.sourceAlignDate)) -- without resetting it
+  // here, a real user's own multi-source alignment choice (set via
+  // applySourceAlign() when their imported accounts start on different
+  // dates) silently carried into the demo preview. Reachable via the
+  // ?demoPreview=1 marketing-preview URL: loadFromLocalStorage() (which
+  // runs before this) populates state.sourceAlignDate from the real
+  // saved value first, then this function replaces every OTHER piece of
+  // demo-relevant state except this one, so the demo's own months before
+  // that date silently vanish from every getFilteredMonths() consumer
+  // while renderSourceChips() shows a stale "Aligned to [date]" banner
+  // that has nothing to do with the demo data on screen -- directly
+  // contradicting this feature's own promise that previewing a demo
+  // leaves real data (and its effects) out of the picture. Same shape as
+  // the 75th pass's declaredIncome leak, just for this field. Found in
+  // the 90th adversarial pass.
+  state.sourceAlignDate=null;
+  state.sourceAlignSkipped=false;
   state.nwGoal=p.nwGoal;
   state.income={...p.income};
   // getEffectiveIncome() checks state.declaredIncome first, ahead of
