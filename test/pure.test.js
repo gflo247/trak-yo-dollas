@@ -1851,3 +1851,36 @@ test("renderActiveChart: passes null (top-level view) when no drill is in progre
   renderActiveChart();
   assert.equal(calledWith, null, "with no drill in progress, renderTreemap() should still receive the (falsy) state value, rendering the top-level view");
 });
+
+// ── 94th adversarial pass: setChartMode() was the 4th real call site of
+// renderTreemap() -- missed by the 93rd pass's own call-site enumeration,
+// which only covered 3. Leaving Split mode (mode!=='split' branch) reset
+// activeVendors/bucketMode but never state.treemapDrillCat; re-entering
+// Split mode (mode==='split' branch) called renderTreemap() bare (always
+// showing the top-level view) without nulling state.treemapDrillCat to
+// match. Net effect: switch away from a drilled-in Treemap view and back
+// (or just re-click "Split" while already active, which skips the
+// mode!=='split' reset entirely), and the view visually shows top-level
+// categories while state.treemapDrillCat silently still holds the old
+// drilled category -- resurfacing with no warning the next time
+// renderActiveChart() fires (theme toggle, resize, any unrelated filter
+// change), exactly the desync class the 93rd pass fixed everywhere else.
+// setChartMode() itself is a large, heavily DOM-dependent function (many
+// document.getElementById calls, no jsdom in this suite) -- checking the
+// source pattern directly, matching this suite's precedent for similar
+// functions. ──
+test("setChartMode: resets state.treemapDrillCat both when leaving Split mode and when (re-)entering it, keeping it in sync with the always-top-level renderTreemap() call", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /_restoreCatsFromTreemapStash\(\);\s*\/\/ state\.treemapDrillCat \(93rd pass\)[\s\S]{0,200}?state\.treemapDrillCat=null;\s*\}/,
+    "setChartMode()'s mode!=='split' branch (leaving Split mode) should reset state.treemapDrillCat alongside activeVendors/bucketMode"
+  );
+  assert.match(
+    source,
+    /state\.treemapDrillCat=null;\s*renderTreemap\(\);\s*return;/,
+    "setChartMode()'s mode==='split' branch ((re-)entering Split mode) should null state.treemapDrillCat immediately before its always-top-level renderTreemap() call"
+  );
+});
