@@ -1151,3 +1151,67 @@ test("exportBudgetCSV: a completed PAST month landing in the warn-to-100% band r
   assert.match(groceriesRow, /On track$/, "a completed past month at 85% of budget should read On track -- the risk window already closed");
   assert.doesNotMatch(groceriesRow, /AT RISK/);
 });
+
+// ── 74th adversarial pass: confirmCatExclusion()/undoCatExclusion() are both
+// invoked fresh from the dispatcher via a data-arg attribute (the "Hide"
+// confirm popover and the new Undo-in-toast button, respectively), so a
+// numeric-looking category name (e.g. "2024") arrives as a real Number, not
+// a string -- restoreCat()/toggleCatExclusion() already guard against this
+// exact coercion risk with their own String(cat) cast; these two didn't. ──
+test("confirmCatExclusion: a numeric-looking category name (coerced to a Number by the dispatcher) is stored as a string, matching how every consumer checks state.excludedCats.has(t.cat)", () => {
+  const ctx = {
+    state: { excludedCats: new Set(), activeCats: new Set([2024]) },
+    scheduleSave: () => {},
+    renderSourceChips: () => {},
+    renderSpendSummary: () => {},
+    renderBucketGrid: () => {},
+    renderTxList: () => {},
+    renderActiveChart: () => {},
+    esc: (s) => String(s),
+    showToast: () => {},
+  };
+  const { confirmCatExclusion } = loadFunctions(["confirmCatExclusion"], ctx);
+  confirmCatExclusion(2024); // dispatcher would pass the Number 2024, not the string "2024"
+  assert.deepEqual([...ctx.state.excludedCats], ["2024"], "should be stored as a string, not the Number 2024");
+});
+test("undoCatExclusion: a numeric-looking category name (coerced to a Number) correctly removes the string entry confirmCatExclusion() actually stored", () => {
+  const ctx = {
+    state: { excludedCats: new Set(["2024"]) },
+    scheduleSave: () => {},
+    renderSourceChips: () => {},
+    renderSpendSummary: () => {},
+    renderBucketGrid: () => {},
+    renderTxList: () => {},
+    renderActiveChart: () => {},
+    esc: (s) => String(s),
+    showToast: () => {},
+  };
+  const { undoCatExclusion } = loadFunctions(["undoCatExclusion"], ctx);
+  undoCatExclusion(2024); // dispatcher-coerced Number, same as a real click on the new Undo button
+  assert.equal(ctx.state.excludedCats.size, 0, "should remove the string entry, not silently fail to match a Number against it");
+});
+
+// ── 74th adversarial pass: removeBudget()'s Undo toast only ever passed 2
+// arguments to showToast(msg,color,duration) -- (msg, 4000) -- so 4000
+// landed in the `color` slot (an invalid CSS value, silently rejected,
+// leaving the toast's color at whatever the previous toast left it) and
+// `duration` fell through to showToast()'s 2800ms default instead of the
+// clearly-intended 4000ms, the only recovery path for an accidental
+// budget deletion. ──
+test("removeBudget: showToast is called with an explicit color and the intended 4000ms duration, not with 4000 landing in the color slot", () => {
+  let toastArgs = null;
+  const ctx = {
+    state: { budgets: { Groceries: 100 } },
+    scheduleSave: () => {},
+    renderBucketGrid: () => {},
+    renderBudgetTab: () => {},
+    esc: (s) => String(s),
+    showToast: (...args) => {
+      toastArgs = args;
+    },
+  };
+  const { removeBudget } = loadFunctions(["removeBudget"], ctx);
+  removeBudget("Groceries");
+  assert.equal(toastArgs[1], "#94A3B8", "color should be an explicit value, not the number 4000");
+  assert.equal(toastArgs[2], 4000, "duration should be 4000ms in its own argument slot");
+});
