@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-KLyAU7NoGb8dmli6BrzTYIfbB8q4T25qpWnuy5y1PXk=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-lM9r+59Voep+O4SZ5y/Y2BFv8RHlsH+HWP/7Z/FeRiM=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -751,7 +751,19 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   </div>
   <div class="flex-between">
     <span class="page-title">Accounts</span>
-    <button class="btn btn-sm btn-primary" data-action="openAddModal" type="button">+ Add Account</button>
+    <div class="flex-center gap-8">
+      <!-- #acct-csv-modal, openAcctCsvModal(), and the whole
+      parseCsvAccounts()/handleCsv()/importCsvText() chain behind it were
+      fully built (including the 62nd adversarial pass's own net-worth-
+      corrupting-bug fixes to parseCsvAccounts() specifically) but had no
+      trigger anywhere in the UI -- dead since the modal was first written,
+      missed by 76 straight passes since dead-code sweeps check for zero
+      call sites on a *function*, and this one's opener function existed
+      and was itself correctly written, just never invoked by anything.
+      Found in the 77th adversarial pass. -->
+      <button class="btn btn-sm" data-action="openAcctCsvModal" type="button">⬆ Import CSV</button>
+      <button class="btn btn-sm btn-primary" data-action="openAddModal" type="button">+ Add Account</button>
+    </div>
   </div>
   <div class="info-box">
     💡 Balances are manually maintained. Tap <strong style="color:var(--text-secondary)">Edit</strong> on any account to update, then save a snapshot on the <strong style="color:var(--text-secondary)">History</strong> tab to record today's net worth.
@@ -2049,11 +2061,11 @@ const netWorth=()=>totalAssets()-totalLiab();
 // Parse a YYYY-MM monthKey into a local Date (no timezone shift)
 function parseYM(ym){const[y,m]=ym.split('-').map(Number);return new Date(y,m-1,1);}
 
-// Get months diff between two YYYY-MM keys
-function monthsBetween(ymA,ymB){
-  const a=parseYM(ymA),b=parseYM(ymB);
-  return(b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth());
-}
+// monthsBetween(ymA,ymB) -- a months-diff-between-two-YYYY-MM-keys utility
+// -- was dead code (zero call sites anywhere in the file, no "intentional
+// shim" comment the way setHorizon() has for its own legacy-compat
+// unused-ness). Removed rather than left as a landmine. Found in the 77th
+// adversarial pass.
 
 // Get snapshots sorted by monthKey ascending
 function getSortedSnaps(){
@@ -11168,7 +11180,17 @@ function closeModals(){
   if(mlEmail)mlEmail.value='';
 }
 function openAddModal(){editAcctId=null;document.getElementById('add-modal-title').textContent='Add account';['f-name','f-balance'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-exclude').checked=false;const db=document.getElementById('delete-acct-btn');if(db)db.style.display='none';const dc=document.getElementById('delete-acct-confirm');if(dc)dc.style.display='none';document.getElementById('add-modal').classList.remove('hidden');}
-function openAcctCsvModal(){document.getElementById('acct-csv-modal').classList.remove('hidden');}
+function openAcctCsvModal(){
+  // Reset stale state from a prior open/cancel, matching openAddModal()'s
+  // own reset-on-open convention immediately above -- this modal had no
+  // trigger anywhere until the 77th adversarial pass added one, so there
+  // was never a real prior session's leftover text to worry about before.
+  const csvText=document.getElementById('csv-text');
+  const csvFile=document.getElementById('csv-file');
+  if(csvText)csvText.value='';
+  if(csvFile)csvFile.value='';
+  document.getElementById('acct-csv-modal').classList.remove('hidden');
+}
 function openAddTxModal(){
   rebuildCatSelects();
   const cardSel=document.getElementById('t-card');
