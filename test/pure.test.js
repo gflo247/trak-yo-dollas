@@ -1425,14 +1425,23 @@ test("saveEditTx/saveTx: amount validation uses isNaN (0 is a legitimate amount)
   );
   assert.match(
     source,
-    /const dateVal=parseImportDate\(document\.getElementById\('et-date'\)\.value,_importDateFmt\);\s*const amountVal=parseFloat\(document\.getElementById\('et-amount'\)\.value\);\s*if\(!dateVal\)/,
-    "saveEditTx() should validate its date via parseImportDate() (passing _importDateFmt, not omitting it) and its amount via a variable checked with isNaN, not a bare `.value` read"
+    /const dateVal=parseImportDate\(document\.getElementById\('et-date'\)\.value\);\s*const amountVal=parseFloat\(document\.getElementById\('et-amount'\)\.value\);\s*if\(!dateVal\)/,
+    "saveEditTx() should validate its date via parseImportDate() and its amount via a variable checked with isNaN, not a bare `.value` read"
   );
   assert.match(
     source,
-    /function saveTx\(\)\{const dateVal=parseImportDate\(document\.getElementById\('t-date'\)\.value,_importDateFmt\)/,
-    "saveTx() should validate its date via parseImportDate() (passing _importDateFmt) the same way saveEditTx() does"
+    /function saveTx\(\)\{const dateVal=parseImportDate\(document\.getElementById\('t-date'\)\.value\)/,
+    "saveTx() should validate its date via parseImportDate() the same way saveEditTx() does"
   );
+  // 85th adversarial pass: the 84th pass's fix passed _importDateFmt into
+  // both calls, but that module-level flag is only reset when the CSV
+  // Import modal itself opens, not on the generic closeModals() a
+  // cancelled import routes through -- leaking an unrelated modal
+  // session's date-format setting into these two, with no visible
+  // indicator in this modal of which format was silently borrowed.
+  // Reverted to keep both calls self-contained.
+  assert.doesNotMatch(source, /parseImportDate\(document\.getElementById\('et-date'\)\.value,_importDateFmt\)/, "saveEditTx() should not depend on the CSV-import modal's leaked _importDateFmt state");
+  assert.doesNotMatch(source, /parseImportDate\(document\.getElementById\('t-date'\)\.value,_importDateFmt\)/, "saveTx() should not depend on the CSV-import modal's leaked _importDateFmt state");
 });
 
 // ── 84th adversarial pass: renderNwGoalWidget()'s progress-bar fraction,
@@ -1462,4 +1471,67 @@ test("renderNwGoalWidget: progress fraction is clamped to [0,1], not just <=1 --
   assert.equal(clamp(-10000, 100000), 0, "negative net worth should floor the progress fraction at 0, not go negative");
   assert.equal(clamp(50000, 100000), 0.5, "positive, sub-goal net worth is unaffected");
   assert.equal(clamp(150000, 100000), 1, "still clamped at 1 for net worth exceeding the goal");
+});
+
+// ── 85th adversarial pass: two sibling instances of the same missing-floor
+// shape found in ringHTML() (the Budget tab's YTD ring) and barTicksHTML()
+// (the per-category fill bar) -- spendByCat's raw sum has no sign
+// filtering (established by the 82nd pass's fmtH() fix), so a category
+// net-refunded this month produces a negative `spent`/`ytd`. barTicksHTML's
+// fillPct fed a CSS width%, and ringHTML's arcPct fed a conic-gradient
+// stop -- both invalid when negative, silently breaking the visual fill
+// (a "full" bar or a blank ring) instead of correctly showing empty. ──
+test("barTicksHTML: fillPct floors at 0 for a net-refunded (negative spend) category, not a negative CSS width%", () => {
+  const { barTicksHTML } = loadFunctions(["barTicksHTML"], { fmt: (n) => "$" + Math.abs(n).toLocaleString(), COMBO_TICK_PCT: 6 });
+  assert.equal(barTicksHTML(100, 80, -50, true).fillPct, 0, "negative spend should floor fillPct at 0, not produce a negative CSS width%");
+  assert.ok(barTicksHTML(100, 80, 50, true).fillPct > 0, "positive spend below the scale max is unaffected");
+});
+test("ringHTML: arcPct formula floors at 0 for a net-refunded (negative ytd) category, not a negative conic-gradient stop", () => {
+  // ringHTML() takes a destructured `{ytd,ytdPace}` parameter, which the
+  // extraction harness's brace-counter can't handle (it stops at the
+  // destructured param's own closing brace, mistaking it for the function
+  // body's end) -- a pre-existing loadFunctions() limitation unrelated to
+  // this fix, not something to work around by changing shared test
+  // infrastructure mid-pass. Checking the source pattern directly instead,
+  // same approach as the renderNwGoalWidget test above.
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const arcPct=ratio==null\?0:Math\.max\(0,Math\.min\(ratio,1\)\)\*100;/,
+    "ringHTML()'s arcPct should be clamped on both ends, not just Math.min(ratio,1)*100"
+  );
+  const arcPct = (ratio) => (ratio == null ? 0 : Math.max(0, Math.min(ratio, 1)) * 100);
+  assert.equal(arcPct(-0.5), 0, "negative ytd/ytdPace ratio should floor arcPct at 0, not go negative");
+  assert.equal(arcPct(0.5), 50, "a normal in-range ratio is unaffected");
+});
+
+// ── 85th adversarial pass: importBackup()'s 'Internal Transfer' backfill
+// (mirroring runMigrations()'s one-time version-gated equivalent) had no
+// gate at all -- it ran on EVERY restore, silently re-excluding 'Internal
+// Transfer' even for a backup exported after a user deliberately
+// un-excluded it via the ordinary category toggle. Fixed by gating on the
+// backup's own exportedAt timestamp predating the cutoff date the default
+// changed. importBackup() itself is a large, file-upload/confirm()-gated,
+// heavily DOM-dependent function -- not a good extraction-test candidate,
+// so this checks the source pattern and re-derives the exact gate logic
+// against representative payload shapes. ──
+test("importBackup: 'Internal Transfer' backfill is gated on the backup's own exportedAt date, not applied unconditionally", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if\(!state\.excludedCats\.has\('Internal Transfer'\)&&\(!exportedAt\|\|exportedAt<CUTOFF\)\)state\.excludedCats\.add\('Internal Transfer'\);/,
+    "the backfill should be gated on the backup predating the cutoff, not applied to every restore unconditionally"
+  );
+  const CUTOFF = "2026-07-06";
+  const shouldBackfill = (exportedAtISO) => {
+    const exportedAt = typeof exportedAtISO === "string" ? exportedAtISO.slice(0, 10) : null;
+    return !exportedAt || exportedAt < CUTOFF;
+  };
+  assert.equal(shouldBackfill("2026-06-01T00:00:00.000Z"), true, "a backup exported before the cutoff should still get the backfill");
+  assert.equal(shouldBackfill("2026-07-14T00:00:00.000Z"), false, "a backup exported after the cutoff should NOT be backfilled -- the user may have deliberately un-excluded this category");
+  assert.equal(shouldBackfill(undefined), true, "a backup with no exportedAt field at all defaults to needing the backfill (the safe default)");
 });

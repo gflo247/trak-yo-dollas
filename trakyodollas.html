@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-kg8WVgA2ig2IPgfM56yqXzu572m1pKOfIwGbDSro3Oc=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-iBdYPmE/Tl63bhLVRS2SeB6gc2zkrug/YQhYnWZG0EA=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -6692,18 +6692,21 @@ function saveEditTx(){
   // previous `||` fallback which treated it the same as an invalid parse.
   // Found in the 83rd adversarial pass.
   //
-  // _importDateFmt passed explicitly, not omitted -- omitting it silently
-  // always assumed MM/DD (US) for any ambiguous slash-separated date a
-  // user hand-typed, misreading e.g. "05/03/2026" (intended March 5 under
-  // DD/MM) as May 3rd with no error. Passing this module-level format
-  // preference (set by the CSV import format dropdown, defaults to 'mdy')
-  // at least respects whatever the user has already told the app about
-  // their own date convention, matching the CSV import path's own call
-  // (~line 10055) instead of silently ignoring it here. Genuinely
-  // unambiguous dates (e.g. "25/12/2026") are now correctly parseable
-  // regardless of this setting -- see parseImportDate()'s own comment.
-  // Found in the 84th adversarial pass.
-  const dateVal=parseImportDate(document.getElementById('et-date').value,_importDateFmt);
+  // Deliberately NOT passing _importDateFmt (the 84th pass's fix did, and
+  // was reverted here by the 85th) -- that module-level flag is only reset
+  // to 'mdy' when the CSV Import modal itself opens (openTxImportModal()),
+  // never when this modal opens or on the generic closeModals() every
+  // modal (including a cancelled CSV import) routes through. A user who
+  // opens CSV import, gets/sets 'dmy' auto-detected, then closes without
+  // completing the import, left _importDateFmt stuck at 'dmy' for every
+  // later Add/Edit Transaction date -- with nothing in this modal's UI
+  // indicating which format was silently borrowed from an unrelated,
+  // already-closed session. Omitting it keeps this modal fully
+  // self-contained (defaults to 'mdy', same as before the 84th pass, for
+  // genuinely ambiguous input) while still benefiting from
+  // parseImportDate()'s unambiguous-date rescue logic either way. Found
+  // in the 85th adversarial pass.
+  const dateVal=parseImportDate(document.getElementById('et-date').value);
   const amountVal=parseFloat(document.getElementById('et-amount').value);
   if(!dateVal){showToast('⚠ Invalid date — edit not saved','#F87171',4000);return;}
   if(isNaN(amountVal)){showToast('⚠ Invalid amount — edit not saved','#F87171',4000);return;}
@@ -7693,7 +7696,19 @@ function getBudgetRowMetrics(cat,budget,ym,spent,histMonths){
 // YTD budget ring: single ratio = YTD spend / YTD budget (monthly budget x months elapsed)
 function ringHTML({ytd,ytdPace},size='',bg='var(--bg-card)'){
   const ratio=ytdPace>0?ytd/ytdPace:null;
-  const arcPct=ratio==null?0:Math.min(ratio,1)*100;
+  // Math.max(0,...), not just Math.min(...,1) -- ytd (a category's YTD
+  // spend) can be negative when refunds exceed purchases (spendByCat's raw
+  // sum has no sign filtering, same shape pass 82 established for
+  // fmtH()'s callers). A negative arcPct becomes a negative conic-gradient
+  // stop, invalid per the CSS spec -- the whole background declaration on
+  // .ytd-ring falls back to its guaranteed-invalid value, so the arc
+  // silently fails to render entirely while `label` below (left
+  // unclamped -- true negative % is accurate, informative text, not a
+  // rendering constraint) still shows the correct "-40%"-style figure.
+  // Same missing-floor shape as renderNwChart's Y-axis padding (81st
+  // pass) and renderNwGoalWidget's progress fraction (84th pass). Found
+  // in the 85th adversarial pass.
+  const arcPct=ratio==null?0:Math.max(0,Math.min(ratio,1))*100;
   const warnRatio=(state.budgetWarnPct??80)/100;
   const color=ratio==null?'var(--text-muted)':ratio>1?'#F87171':ratio>=warnRatio?'#FBBF24':'#34D399';
   const label=ratio==null?'–':Math.round(ratio*100)+'%';
@@ -7713,7 +7728,14 @@ function ringHTML({ytd,ytdPace},size='',bg='var(--bg-card)'){
 const COMBO_TICK_PCT=6;
 function barTicksHTML(budget,avg12,spent,showAvg){
   const scaleMax=Math.max(budget,showAvg?avg12:0,spent)*1.15;
-  const fillPct=scaleMax>0?Math.min(spent/scaleMax,1)*100:0;
+  // Math.max(0,...), not just Math.min(...,1) -- spent can be negative
+  // (a category net-refunded this month), which produced a negative CSS
+  // width% below (line ~8065/7908) -- invalid, so the browser drops the
+  // declaration and the fill div falls back to width:auto, rendering
+  // completely full instead of empty, the opposite of reality. Same
+  // missing-floor shape as ringHTML()'s arcPct above. Found in the 85th
+  // adversarial pass.
+  const fillPct=scaleMax>0?Math.max(0,Math.min(spent/scaleMax,1))*100:0;
   const budgetTickPct=scaleMax>0?Math.min(budget/scaleMax,1)*100:0;
   let ticksHTML=`<div class="bar-marker budget-tick" style="left:${budgetTickPct}%"></div>`;
   const lbl=(pct,html)=>`<div style="position:absolute;top:calc(100% + 3px);left:${pct}%;transform:translateX(-50%);white-space:nowrap;pointer-events:none">${html}</div>`;
@@ -11578,9 +11600,11 @@ function saveVehicle(){
 // transaction that vanished from every month-scoped view (everything
 // keys off t.date.slice(0,7)) while still existing in the raw list, with
 // no error shown either way. Found in the 83rd adversarial pass.
-// _importDateFmt passed explicitly -- same fix as saveEditTx() above,
-// found in the 84th adversarial pass.
-function saveTx(){const dateVal=parseImportDate(document.getElementById('t-date').value,_importDateFmt),desc=document.getElementById('t-desc').value.trim(),card=document.getElementById('t-card').value,cat=document.getElementById('t-cat').value,amount=parseFloat(document.getElementById('t-amount').value)||0;if(!dateVal){showToast('⚠ Invalid date — transaction not added','#F87171',4000);return;}if(!desc||!amount){showToast('⚠ Description and a non-zero amount are required','#F87171',4000);return;}mutateTransactions(()=>{state.transactions.unshift({id:state.nextId++,date:dateVal,desc,cat,card,amount,excluded:false});if(card)state.activeSources.add(card);});closeModals();renderSpending();}
+// Deliberately NOT passing _importDateFmt -- same reasoning and same
+// revert as saveEditTx() above (the 84th pass's fix leaked unrelated
+// CSV-import-modal state into this modal). Found in the 85th adversarial
+// pass.
+function saveTx(){const dateVal=parseImportDate(document.getElementById('t-date').value),desc=document.getElementById('t-desc').value.trim(),card=document.getElementById('t-card').value,cat=document.getElementById('t-cat').value,amount=parseFloat(document.getElementById('t-amount').value)||0;if(!dateVal){showToast('⚠ Invalid date — transaction not added','#F87171',4000);return;}if(!desc||!amount){showToast('⚠ Description and a non-zero amount are required','#F87171',4000);return;}mutateTransactions(()=>{state.transactions.unshift({id:state.nextId++,date:dateVal,desc,cat,card,amount,excluded:false});if(card)state.activeSources.add(card);});closeModals();renderSpending();}
 function handleCsv(input){
   const file=input.files[0];if(!file)return;
   const r=new FileReader();
@@ -12035,7 +12059,25 @@ function importBackup(file){
       // have the same gap unless it also gets its own line here, or
       // runMigrations() is refactored to run against an arbitrary object
       // instead of reading/writing localStorage directly.
-      if(!state.excludedCats.has('Internal Transfer'))state.excludedCats.add('Internal Transfer');
+      //
+      // Gated on payload.exportedAt predating the cutoff, not applied
+      // unconditionally -- runMigrations()'s equivalent backfill only
+      // fires once per version bump, so a user's later deliberate choice
+      // to un-exclude 'Internal Transfer' (via the ordinary 👁 category
+      // toggle) persists across reloads. This copy had no such gate: it
+      // re-added 'Internal Transfer' to excludedCats on EVERY restore,
+      // silently reverting that customization every time the user
+      // restored a backup exported after they'd already made it -- with
+      // only a generic "Backup restored." toast giving no indication
+      // anything beyond the literal restore happened. Backups predate
+      // exportedAt entirely only if hand-edited/corrupted; treat a
+      // missing/unparseable date as "old enough to need the backfill"
+      // (the safe default -- matches runMigrations()'s own bias toward
+      // applying a backfill rather than silently skipping one). Found in
+      // the 85th adversarial pass.
+      const CUTOFF='2026-07-06';
+      const exportedAt=typeof payload.exportedAt==='string'?payload.exportedAt.slice(0,10):null;
+      if(!state.excludedCats.has('Internal Transfer')&&(!exportedAt||exportedAt<CUTOFF))state.excludedCats.add('Internal Transfer');
       state.transactions=arr(payload.transactions).map(t=>({...t,amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
       _txsDirty=true;
       rebuildMonthly();
