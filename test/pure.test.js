@@ -1373,3 +1373,38 @@ test("fmtC: values in the [999500,999999] band show as $1M, not the malformed $1
   assert.equal(fmtC(1000000), "$1M", "existing >=1e6 case is unaffected");
   assert.equal(fmtC(-999600), "-$1M", "negative sign still repositions correctly in the newly-widened M branch");
 });
+
+// ── 83rd adversarial pass: saveEditTx()'s `t.amount=parseFloat(...)||t.amount`
+// silently reverted an edit to $0 (or a blank field) back to the pre-edit
+// value, with the modal still closing normally and no error shown -- a user
+// correcting a transaction to a fully-waived $0 fee had their edit silently
+// discarded. Both saveEditTx() and saveTx() also accepted the free-text
+// #et-date/#t-date fields with zero format validation, unlike the CSV
+// import path's parseImportDate(). saveTx()/saveEditTx() themselves read
+// directly from document.getElementById(...) with no DOM mock available in
+// this test suite (no jsdom dependency), so per this suite's established
+// precedent for DOM-heavy functions, this checks the source pattern itself
+// rather than driving the functions end-to-end -- a regression back to the
+// old `||t.amount` fallback or a bare unvalidated `.value` read would fail
+// this match. parseImportDate() itself already has full behavioral
+// coverage above (Feb 30, 13/45, missing-year cases). ──
+test("saveEditTx/saveTx: amount validation uses isNaN (0 is a legitimate amount), and date is validated via parseImportDate, not accepted as raw text", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.doesNotMatch(
+    source,
+    /t\.amount=parseFloat\([^)]*\)\|\|t\.amount/,
+    "saveEditTx() should not fall back to the pre-edit amount on a falsy parse -- that treats a deliberate $0 edit as if it never happened"
+  );
+  assert.match(
+    source,
+    /const dateVal=parseImportDate\(document\.getElementById\('et-date'\)\.value\);\s*const amountVal=parseFloat\(document\.getElementById\('et-amount'\)\.value\);\s*if\(!dateVal\)/,
+    "saveEditTx() should validate its date via parseImportDate() and its amount via a variable checked with isNaN, not a bare `.value` read"
+  );
+  assert.match(
+    source,
+    /function saveTx\(\)\{const dateVal=parseImportDate\(document\.getElementById\('t-date'\)\.value\)/,
+    "saveTx() should validate its date via parseImportDate() the same way saveEditTx() does"
+  );
+});

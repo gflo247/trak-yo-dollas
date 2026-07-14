@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-3OVPBDAZsDFtAR6TZev6YM62j3MzE0KYpyHQ4O1/1SQ=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-EpDBeXgFoHmMQ4iRJFZktKqUJRyuz7mjbIfaf9/cLCo=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2062,10 +2062,20 @@ const netWorth=()=>totalAssets()-totalLiab();
 function parseYM(ym){const[y,m]=ym.split('-').map(Number);return new Date(y,m-1,1);}
 
 // monthsBetween(ymA,ymB) -- a months-diff-between-two-YYYY-MM-keys utility
-// -- was dead code (zero call sites anywhere in the file, no "intentional
-// shim" comment the way setHorizon() has for its own legacy-compat
-// unused-ness). Removed rather than left as a landmine. Found in the 77th
-// adversarial pass.
+// -- was dead code (zero call sites anywhere in the file). Removed rather
+// than left as a landmine. Found in the 77th adversarial pass.
+//
+// setHorizon(m), a genuine sibling of the above, was also removed (83rd
+// adversarial pass) -- its own comment called it a deliberate "legacy
+// shim," which made it read as intentionally kept the way monthsBetween()
+// wasn't, but that framing was itself wrong: nothing ever called it.
+// runMigrations()'s activeHorizon migration (which this comment implied
+// setHorizon() served) independently hand-rolls the identical formula
+// directly against raw localStorage JSON instead, since it runs pre-load
+// against saved data rather than live state.* -- setHorizon() was never
+// actually reachable from there or anywhere else. A reminder that a
+// function's own comment claiming intentional retention isn't proof by
+// itself; grep for real call sites regardless.
 
 // Get snapshots sorted by monthKey ascending
 function getSortedSnaps(){
@@ -6588,17 +6598,6 @@ function onRangeToChange(m){
   showTxN=50;
   scheduleSave();renderSpending();pulseAllChip();
 }
-function setHorizon(m){
-  // legacy shim — convert months count to rangeFrom
-  const allN=ALL_MONTHS.length;
-  state.rangeFrom=m>=9999?ALL_MONTHS[0]:(allN>=m?ALL_MONTHS[allN-m]:ALL_MONTHS[0]);
-  state.rangeTo=ALL_MONTHS[allN-1]||null;
-  state.sourceAlignDate=null;
-  state.activeCats=new Set();
-  state.activeDate=null;
-  showTxN=50;
-  scheduleSave();renderSpending();
-}
 function setGrain(g){
   state.chartGrain=g;
   scheduleSave();renderActiveChart();renderBucketGrid();
@@ -6667,8 +6666,25 @@ function saveEditTx(){
   const t=state.transactions.find(x=>x.id===editTxId);if(!t)return;
   const origCat=t.cat,newCat=document.getElementById('et-cat').value;
   const origDesc=t.desc;
+  // Validate date/amount BEFORE mutating -- the old `||t.amount`/`||t.date`
+  // fallbacks silently reverted to the pre-edit value whenever the field
+  // parsed falsy (an amount of exactly 0, or a blank/unparseable date),
+  // with the modal still closing normally and no error shown. A user
+  // correcting a transaction to $0 (a fully-waived fee) had their edit
+  // silently discarded and no way to know it didn't take. parseImportDate()
+  // (the CSV-import date validator, already hardened against JS Date's
+  // silent month/day rollover) is reused here rather than duplicating that
+  // logic -- #et-date is a free-text field with no format enforcement of
+  // its own. isNaN(), not a falsy check, for the amount -- 0 is a
+  // legitimate amount (a fully-discounted transaction), unlike the
+  // previous `||` fallback which treated it the same as an invalid parse.
+  // Found in the 83rd adversarial pass.
+  const dateVal=parseImportDate(document.getElementById('et-date').value);
+  const amountVal=parseFloat(document.getElementById('et-amount').value);
+  if(!dateVal){showToast('⚠ Invalid date — edit not saved','#F87171',4000);return;}
+  if(isNaN(amountVal)){showToast('⚠ Invalid amount — edit not saved','#F87171',4000);return;}
   mutateTransactions(()=>{
-    t.desc=document.getElementById('et-desc').value.trim()||t.desc;t.date=document.getElementById('et-date').value||t.date;t.amount=parseFloat(document.getElementById('et-amount').value)||t.amount;t.cat=newCat;const exclEl=document.getElementById('et-excluded');if(exclEl)t.excluded=exclEl.checked;
+    t.desc=document.getElementById('et-desc').value.trim()||t.desc;t.date=dateVal;t.amount=amountVal;t.cat=newCat;const exclEl=document.getElementById('et-excluded');if(exclEl)t.excluded=exclEl.checked;
     document.querySelectorAll('#rc-list input[type=checkbox]:checked').forEach(cb=>{const s=state.transactions.find(x=>x.id===parseInt(cb.value));if(s)s.cat=newCat;});
     t._edited=true;
     if(!t._origDesc)t._origDesc=origDesc;
@@ -11511,7 +11527,14 @@ function saveVehicle(){
   }
   closeModals();renderAll();
 }
-function saveTx(){const date=document.getElementById('t-date').value,desc=document.getElementById('t-desc').value.trim(),card=document.getElementById('t-card').value,cat=document.getElementById('t-cat').value,amount=parseFloat(document.getElementById('t-amount').value)||0;if(!desc||!amount)return;mutateTransactions(()=>{state.transactions.unshift({id:state.nextId++,date,desc,cat,card,amount,excluded:false});if(card)state.activeSources.add(card);});closeModals();renderSpending();}
+// #t-date is free-text with no format enforcement -- validated through
+// parseImportDate() (the CSV-import date validator) rather than accepted
+// as-is, same fix and same reasoning as saveEditTx()'s date validation
+// above. Previously an invalid/malformed date silently created a
+// transaction that vanished from every month-scoped view (everything
+// keys off t.date.slice(0,7)) while still existing in the raw list, with
+// no error shown either way. Found in the 83rd adversarial pass.
+function saveTx(){const dateVal=parseImportDate(document.getElementById('t-date').value),desc=document.getElementById('t-desc').value.trim(),card=document.getElementById('t-card').value,cat=document.getElementById('t-cat').value,amount=parseFloat(document.getElementById('t-amount').value)||0;if(!dateVal){showToast('⚠ Invalid date — transaction not added','#F87171',4000);return;}if(!desc||!amount){showToast('⚠ Description and a non-zero amount are required','#F87171',4000);return;}mutateTransactions(()=>{state.transactions.unshift({id:state.nextId++,date:dateVal,desc,cat,card,amount,excluded:false});if(card)state.activeSources.add(card);});closeModals();renderSpending();}
 function handleCsv(input){
   const file=input.files[0];if(!file)return;
   const r=new FileReader();
