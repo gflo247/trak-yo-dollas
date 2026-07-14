@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-NOnlSUbrRDhgKfQ8iV7kaL+ewJEkEdVMIGswl6mzoaY=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ALDTc6BYXoW4rMzd1e4HF/SX3NqO/+L6GeFELOwO3nk=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -6026,18 +6026,16 @@ function renderTxList(){
 }
 
 /* ── SEARCH ── */
-let _searchTimer=null;
-function onSearch(){
-  clearTimeout(_searchTimer);
-  _searchTimer=setTimeout(()=>{
-    const q=document.getElementById('tx-search').value;
-    state.searchQuery=q;
-    document.getElementById('search-clear-btn').classList.toggle('hidden',!q);
-    showTxN=50;
-    renderSpendSummary();
-    renderTxList();
-  },120);
-}
+// onSearch()/_searchTimer (a 120ms-debounced version of live search) were
+// dead code: the search input's real data-input handler is onSearchInput()
+// (~line 2251, wired via data-input="onSearchInput" on #tx-search), added
+// later by the event-delegation refactor without ever removing this
+// now-unreachable predecessor. Undebounced, missing renderBucketGrid(), and
+// missing .trim() relative to its live replacement -- exactly the kind of
+// landmine this review cycle has been burned by before (a future pass
+// asked to "fix search debounce" could plausibly edit this function by
+// name/comment match and ship a change with zero actual effect). Deleted
+// rather than left in place. Found in the 73rd adversarial pass.
 function clearSearch(){
   document.getElementById('tx-search').value='';
   state.searchQuery='';
