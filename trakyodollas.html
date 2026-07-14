@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-1m9batCutw/32vkH81FxR0WpG4rBA5+ZEmhTUpMJ2HI=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-3OVPBDAZsDFtAR6TZev6YM62j3MzE0KYpyHQ4O1/1SQ=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2074,7 +2074,7 @@ function getSortedSnaps(){
 
 // Get transactions for a specific YYYY-MM month, excluding excluded ones
 // Missing state.activeSources.has(t.card) until the 35th adversarial pass --
-// this feeds getCatMonthSpend()/getVendorMonthSpend(), which drive most of
+// this feeds getCatMonthSpend(), which drives most of
 // the Budget tab (category history dots, 12-month average, YTD ring,
 // "Unusual" sort). Deselecting a card/source left its spend still counted
 // here, silently disagreeing with the Spending tab's chart, which already
@@ -2086,8 +2086,8 @@ function getTxForMonth(m,extraFilter){
   // relying on excludedCats.has('Income'), since a transaction's category
   // can drift (a bulk-applied rule, or a hand-edit via Edit Transaction)
   // while isIncome stays the durable signal. This helper backs
-  // getCatMonthSpend()/getVendorMonthSpend() -- the Budget tab's 12-month
-  // average/YTD pace/history dots, the Insights "Budget health" pill, and
+  // getCatMonthSpend() -- the Budget tab's 12-month average/YTD pace/
+  // history dots, the Insights "Budget health" pill, and
   // exportBudgetCSV() -- so a recategorized income transaction was
   // silently counted as spend in all of them, contradicting the
   // currently-displayed month's correctly-filtered hero figure. Found in
@@ -2098,11 +2098,6 @@ function getTxForMonth(m,extraFilter){
 // Get spend total for a category in a given month
 function getCatMonthSpend(cat,m){
   return getTxForMonth(m,t=>t.cat===cat).reduce((s,t)=>s+t.amount,0);
-}
-
-// Get spend total for a vendor in a given month (respects aliases)
-function getVendorMonthSpend(vendor,m){
-  return getTxForMonth(m,t=>resolveVendor(t.desc)===vendor).reduce((s,t)=>s+t.amount,0);
 }
 
 // NW goal milestones — single source of truth
@@ -2436,9 +2431,24 @@ function _clearVendorDayFiltersForDataReplace(){
 // exactly the malicious/invalid inputs this fix exists for. Found in the
 // 38th adversarial pass.
 const fmt=n=>esc(state.currency||'$')+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
-const fmtC=n=>{const a=Math.abs(n),s=n<0?'-':'',c=esc(state.currency||'$');return s+(a>=1e6?c+parseFloat((a/1e6).toFixed(2))+'M':a>=1e3?c+Math.round(a/1e3)+'k':c+Math.round(a));};
+// a>=999500, not a>=1e6, picks the 'M' branch -- for a in [999500,999999],
+// the 'k' branch's Math.round(a/1e3) itself rounds up to 1000, producing
+// "$1000k" instead of switching to "$1M" a few hundred dollars early.
+// 999500 is exactly the point where that rounding first occurs. Found in
+// the 82nd adversarial pass.
+const fmtC=n=>{const a=Math.abs(n),s=n<0?'-':'',c=esc(state.currency||'$');return s+(a>=999500?c+parseFloat((a/1e6).toFixed(2))+'M':a>=1e3?c+Math.round(a/1e3)+'k':c+Math.round(a));};
 const fmtD=n=>esc(state.currency||'$')+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtH=n=>esc(state.currency||'$')+(Math.round(n/100)*100).toLocaleString(undefined);
+// s=n<0?'-':'' before the currency symbol, matching fmtC()'s own
+// negative-value convention (used for net worth, a value that can
+// legitimately go negative) -- fmtH() feeds Chart.js tooltips off raw
+// unguarded monthly category/vendor/source accumulators (e.g. line
+// ~2745's mSpent-style sums), which can go negative when a refund in a
+// given month exceeds that month's purchases. Previously fmtH() rounded
+// the signed value directly and let toLocaleString()'s own leading '-'
+// land AFTER the currency symbol ("$-500" instead of "-$500"), the only
+// one of this file's 4 currency formatters with a malformed negative
+// case. Found in the 82nd adversarial pass.
+const fmtH=n=>{const s=n<0?'-':'';return s+esc(state.currency||'$')+(Math.round(Math.abs(n)/100)*100).toLocaleString(undefined);};
 const getIsDark=()=>document.documentElement.getAttribute('data-theme')!=='light';
 // Theme-aware value helper — returns darkVal or lightVal based on current theme
 function themeColor(darkVal,lightVal){return getIsDark()?darkVal:lightVal;}
