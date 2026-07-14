@@ -1884,3 +1884,100 @@ test("setChartMode: resets state.treemapDrillCat both when leaving Split mode an
     "setChartMode()'s mode==='split' branch ((re-)entering Split mode) should null state.treemapDrillCat immediately before its always-top-level renderTreemap() call"
   );
 });
+
+// ── 95th adversarial pass: importBackup() and confirmTxImport()'s
+// first-real-import demo wipe are both wholesale dataset replacements --
+// the exact scenario _clearVendorDayFiltersForDataReplace()'s own comment
+// names "backup restore" as covering -- but neither called it, and
+// neither reset _bizFilter (matching the equivalent reset every other
+// wholesale-replace path, cloud-sync restore and loadDemoProfile(),
+// already performs). A Business/Personal filter, a Treemap vendor
+// selection/drilled category, or a calendar-day filter left active from
+// the pre-replace session could zero-filter the newly-loaded data
+// against session state that has nothing to do with it. Both functions
+// are large, FileReader/DOM-heavy functions -- checking the source
+// pattern directly, matching this suite's established precedent. ──
+test("importBackup: resets _bizFilter and calls _clearVendorDayFiltersForDataReplace(), not leaving stale session filters applied to the restored data", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /state\.transactions=arr\(payload\.transactions\)\.map\(t=>/,
+    "importBackup() should replace state.transactions from the backup payload"
+  );
+  assert.match(
+    source,
+    /_bizFilter='all';\s*state\.activeCats=new Set\(\);\s*state\.dashFilter=null;\s*state\.searchQuery='';\s*state\.showExcluded=false;\s*_clearVendorDayFiltersForDataReplace\(\);\s*rebuildMonthly\(\);\s*rebuildCatSelects\(\);\s*scheduleSave\(\);\s*renderAll\(\);\s*showToast\('Backup restored\.'/,
+    "importBackup() should reset _bizFilter/activeCats/dashFilter/searchQuery/showExcluded and call _clearVendorDayFiltersForDataReplace() before rebuildMonthly(), right before its final 'Backup restored.' toast"
+  );
+});
+test("confirmTxImport: the first-real-import demo wipe also resets _bizFilter and calls _clearVendorDayFiltersForDataReplace()", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if\(!state\.hasRealData\)\{\s*state\.transactions=\[\];\s*state\.activeSources=new Set\(\);\s*state\.budgets=\{\};[\s\S]{0,700}?_bizFilter='all';\s*state\.activeCats=new Set\(\);\s*state\.dashFilter=null;\s*state\.searchQuery='';\s*_clearVendorDayFiltersForDataReplace\(\);\s*\}/,
+    "confirmTxImport()'s !state.hasRealData branch should reset _bizFilter/activeCats/dashFilter/searchQuery and call _clearVendorDayFiltersForDataReplace() alongside its existing transactions/activeSources/budgets wipe"
+  );
+});
+
+// ── 95th adversarial pass: deleteCustomCat()/confirmRenameCat() cascade to
+// budgets/catRules/excludedCats/activeCats (26th/27th passes) but neither
+// touched state.treemapDrillCat -- a Treemap drill into the exact category
+// being deleted/renamed left renderTreemap() drilling into a name nothing
+// matches anymore on the very next render. Delete clears the reference
+// (the category is gone); rename updates it (the category still exists,
+// just under a new name) -- matching how both functions already treat
+// state.activeCats for the identical shape. ──
+test("deleteCustomCat: clears state.treemapDrillCat when the deleted category is the one currently drilled into", () => {
+  const ctx = {
+    state: {
+      customCategories: [{ name: "Groceries", color: null }],
+      transactions: [{ id: 1, cat: "Groceries" }],
+      budgets: {},
+      catRules: [],
+      excludedCats: new Set(),
+      activeCats: new Set(["Groceries"]),
+      treemapDrillCat: "Groceries",
+    },
+    window: { _catColorMap: null },
+    renderCatManagerList: () => {},
+    rebuildCatSelects: () => {},
+    rebuildMonthly: () => {},
+    renderAll: () => {},
+    scheduleSave: () => {},
+    _confirmingDeleteCatName: "Groceries",
+  };
+  const { deleteCustomCat } = loadFunctions(["deleteCustomCat"], ctx);
+  deleteCustomCat("Groceries");
+  assert.equal(ctx.state.treemapDrillCat, null, "deleting the category currently drilled into should clear treemapDrillCat, not leave it pointing at a category that no longer exists");
+});
+test("confirmRenameCat: updates state.treemapDrillCat to the new name when the renamed category is the one currently drilled into", () => {
+  const inputEl = { value: "Food", style: {} };
+  const ctx = {
+    state: {
+      customCategories: [{ name: "Groceries", color: null }],
+      transactions: [{ id: 1, cat: "Groceries" }],
+      budgets: {},
+      catRules: [],
+      excludedCats: new Set(),
+      activeCats: new Set(["Groceries"]),
+      treemapDrillCat: "Groceries",
+    },
+    window: { _catColorMap: null },
+    document: { getElementById: (id) => (id === "rename-cat-input" ? inputEl : null) },
+    isReservedCatName: () => false,
+    getAllCats: () => ["Groceries", "Other"],
+    renderCatManagerList: () => {},
+    rebuildCatSelects: () => {},
+    rebuildMonthly: () => {},
+    renderAll: () => {},
+    scheduleSave: () => {},
+    _editingCatName: "Groceries",
+  };
+  const { confirmRenameCat } = loadFunctions(["confirmRenameCat"], ctx);
+  confirmRenameCat("Groceries");
+  assert.equal(ctx.state.treemapDrillCat, "Food", "renaming the category currently drilled into should update treemapDrillCat to the new name, since the category still exists, just renamed");
+});
