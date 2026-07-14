@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-EpDBeXgFoHmMQ4iRJFZktKqUJRyuz7mjbIfaf9/cLCo=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-kg8WVgA2ig2IPgfM56yqXzu572m1pKOfIwGbDSro3Oc=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3612,7 +3612,19 @@ function renderNwGoalWidget(){
   const timeLabel=monthsToGoal>=12?(mos>0?`${yrs}y ${mos}m`:`${yrs}y`):`${monthsToGoal}mo`;
   const isClose=monthsToGoal<=3;
 
-  const pct=Math.min(nw/goal,1);
+  // Math.max(0,...), not just Math.min(...,1) -- goal is always positive
+  // (sourced from NW_MILESTONES or a user-set custom goal, both >0), but nw
+  // can be negative and still reach this code path: the snapshot-based
+  // growth calc above only requires monthsDiff>0 && nw>oldest.nw, not
+  // nw>0, so someone paying down debt (e.g. nw=-50000 six months ago,
+  // -10000 today) gets a solidly positive monthlyGrowth while nw itself is
+  // still negative. Without this clamp, pct came out negative, producing
+  // an invalid negative SVG rect width for the fill/dot below (silently
+  // fails to render per the SVG spec) and a nonsensical "-10% there" label
+  // -- for exactly the early-career, currently-negative-net-worth audience
+  // this widget's own milestone auto-select (line ~3513) is built around.
+  // Found in the 84th adversarial pass.
+  const pct=Math.max(0,Math.min(nw/goal,1));
   const pctRound=Math.round(pct*100);
   const isDark=getIsDark();
   const barUid='gb'+Math.random().toString(36).slice(2,5);
@@ -6679,7 +6691,19 @@ function saveEditTx(){
   // legitimate amount (a fully-discounted transaction), unlike the
   // previous `||` fallback which treated it the same as an invalid parse.
   // Found in the 83rd adversarial pass.
-  const dateVal=parseImportDate(document.getElementById('et-date').value);
+  //
+  // _importDateFmt passed explicitly, not omitted -- omitting it silently
+  // always assumed MM/DD (US) for any ambiguous slash-separated date a
+  // user hand-typed, misreading e.g. "05/03/2026" (intended March 5 under
+  // DD/MM) as May 3rd with no error. Passing this module-level format
+  // preference (set by the CSV import format dropdown, defaults to 'mdy')
+  // at least respects whatever the user has already told the app about
+  // their own date convention, matching the CSV import path's own call
+  // (~line 10055) instead of silently ignoring it here. Genuinely
+  // unambiguous dates (e.g. "25/12/2026") are now correctly parseable
+  // regardless of this setting -- see parseImportDate()'s own comment.
+  // Found in the 84th adversarial pass.
+  const dateVal=parseImportDate(document.getElementById('et-date').value,_importDateFmt);
   const amountVal=parseFloat(document.getElementById('et-amount').value);
   if(!dateVal){showToast('⚠ Invalid date — edit not saved','#F87171',4000);return;}
   if(isNaN(amountVal)){showToast('⚠ Invalid amount — edit not saved','#F87171',4000);return;}
@@ -9487,12 +9511,32 @@ function parseImportDate(str,fmt){
   if(parts){
     let[,a,b,y]=parts;
     if(y.length===2)y=parseInt(y)<50?'20'+y:'19'+y;
+    const tryMoDy=(mo,dy)=>{
+      const d=new Date(parseInt(y),mo-1,dy,12,0,0);
+      // Same rollover guard as the ISO branch above.
+      if(isNaN(d.getTime())||d.getMonth()!==mo-1||d.getDate()!==dy)return null;
+      // Local-time components -- same fix as the ISO branch above.
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    };
     const[mo,dy]=fmt==='dmy'?[parseInt(b),parseInt(a)]:[parseInt(a),parseInt(b)];
-    const d=new Date(parseInt(y),mo-1,dy,12,0,0);
-    // Same rollover guard as the ISO branch above.
-    if(isNaN(d.getTime())||d.getMonth()!==mo-1||d.getDate()!==dy)return'';
-    // Local-time components -- same fix as the ISO branch above.
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const primary=tryMoDy(mo,dy);
+    if(primary)return primary;
+    // The given fmt's interpretation was invalid (e.g. a month/day >12) --
+    // before rejecting outright, check whether the SWAPPED interpretation is
+    // both valid and unambiguous (only one of the two components can be a
+    // real month, i.e. >12). This never overrides an already-successful
+    // parse under the caller's chosen fmt (only runs after that fails), so
+    // it can't change any currently-correct CSV-import behavior -- it only
+    // rescues genuinely unambiguous dates (e.g. "25/12/2026") that were
+    // previously rejected outright just because they didn't match whichever
+    // fmt happened to be passed (or omitted). Found in the 84th adversarial
+    // pass, after the 83rd pass's new manual-entry date validation started
+    // silently misreading or rejecting hand-typed DD/MM dates -- unlike a
+    // CSV import (one consistent format throughout a file, chosen once via
+    // the format dropdown), a free-text field has no equivalent signal, so
+    // "no other valid reading exists" is the only safe heuristic here.
+    if(dy<=12&&mo>12)return tryMoDy(dy,mo)||'';
+    return'';
   }
   // Fallback: unambiguous strings like "Jan 15, 2025"
   // new Date(locale-string) parses as local midnight; toISOString() converts to UTC and
@@ -11534,7 +11578,9 @@ function saveVehicle(){
 // transaction that vanished from every month-scoped view (everything
 // keys off t.date.slice(0,7)) while still existing in the raw list, with
 // no error shown either way. Found in the 83rd adversarial pass.
-function saveTx(){const dateVal=parseImportDate(document.getElementById('t-date').value),desc=document.getElementById('t-desc').value.trim(),card=document.getElementById('t-card').value,cat=document.getElementById('t-cat').value,amount=parseFloat(document.getElementById('t-amount').value)||0;if(!dateVal){showToast('⚠ Invalid date — transaction not added','#F87171',4000);return;}if(!desc||!amount){showToast('⚠ Description and a non-zero amount are required','#F87171',4000);return;}mutateTransactions(()=>{state.transactions.unshift({id:state.nextId++,date:dateVal,desc,cat,card,amount,excluded:false});if(card)state.activeSources.add(card);});closeModals();renderSpending();}
+// _importDateFmt passed explicitly -- same fix as saveEditTx() above,
+// found in the 84th adversarial pass.
+function saveTx(){const dateVal=parseImportDate(document.getElementById('t-date').value,_importDateFmt),desc=document.getElementById('t-desc').value.trim(),card=document.getElementById('t-card').value,cat=document.getElementById('t-cat').value,amount=parseFloat(document.getElementById('t-amount').value)||0;if(!dateVal){showToast('⚠ Invalid date — transaction not added','#F87171',4000);return;}if(!desc||!amount){showToast('⚠ Description and a non-zero amount are required','#F87171',4000);return;}mutateTransactions(()=>{state.transactions.unshift({id:state.nextId++,date:dateVal,desc,cat,card,amount,excluded:false});if(card)state.activeSources.add(card);});closeModals();renderSpending();}
 function handleCsv(input){
   const file=input.files[0];if(!file)return;
   const r=new FileReader();

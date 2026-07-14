@@ -208,6 +208,32 @@ test("parseImportDate: rejects an incomplete date missing a year (03/10) instead
   assert.equal(parseImportDate("03/10", "mdy"), "");
 });
 
+// ── 84th adversarial pass: the 83rd pass added manual Add/Edit Transaction
+// date validation by calling parseImportDate() with NO fmt argument, which
+// silently always took the MM/DD (US) branch -- unlike a CSV import (one
+// consistent format throughout a file, chosen once via a dropdown), a
+// free-text field has no such signal, so an unambiguously day-first date
+// like "25/12/2026" (day 25 can't be a month) was rejected outright as
+// invalid, even though exactly one valid reading exists. Fixed by having
+// parseImportDate() retry the swapped mo/dy reading whenever the given
+// fmt's interpretation fails AND the swap is unambiguous (only one of the
+// two components could possibly be a month). Genuinely ambiguous dates
+// (both components <=12) are untouched -- there's no safe way to guess
+// those, so they still follow whatever fmt was passed/defaulted. ──
+test("parseImportDate: rescues an unambiguous date even when the given fmt's reading is invalid", () => {
+  const { parseImportDate } = loadFunctions(["parseImportDate"]);
+  // Day 25 can't be a month -- unambiguously Dec 25, regardless of fmt.
+  assert.equal(parseImportDate("25/12/2026"), "2026-12-25", "no fmt (defaults mdy) should still rescue an unambiguous day-first date");
+  assert.equal(parseImportDate("25/12/2026", "mdy"), "2026-12-25", "explicit mdy should still rescue it the same way");
+  assert.equal(parseImportDate("12/25/2026", "dmy"), "2026-12-25", "the mirror case: day 25 makes 12/25 unambiguously Dec 25 even under dmy");
+  // Genuinely ambiguous (both components <=12): no rescue possible, follows
+  // the given/defaulted fmt exactly as before this fix.
+  assert.equal(parseImportDate("05/03/2026"), "2026-05-03", "ambiguous date with no fmt still defaults to mdy (May 3), unchanged");
+  assert.equal(parseImportDate("05/03/2026", "dmy"), "2026-03-05", "same ambiguous date under explicit dmy still reads as March 5, unchanged");
+  // Both components >12: no valid reading either way, still correctly rejected.
+  assert.equal(parseImportDate("13/45/2026"), "", "still rejects a date with no valid interpretation under either reading");
+});
+
 // ── detectGenericSignConvention() — the "generic" CSV format (fallback for any
 // bank/credit union that doesn't match one of the 7 known column signatures) used
 // to treat every positive amount as spend unconditionally, so a majority-negative
@@ -1399,12 +1425,41 @@ test("saveEditTx/saveTx: amount validation uses isNaN (0 is a legitimate amount)
   );
   assert.match(
     source,
-    /const dateVal=parseImportDate\(document\.getElementById\('et-date'\)\.value\);\s*const amountVal=parseFloat\(document\.getElementById\('et-amount'\)\.value\);\s*if\(!dateVal\)/,
-    "saveEditTx() should validate its date via parseImportDate() and its amount via a variable checked with isNaN, not a bare `.value` read"
+    /const dateVal=parseImportDate\(document\.getElementById\('et-date'\)\.value,_importDateFmt\);\s*const amountVal=parseFloat\(document\.getElementById\('et-amount'\)\.value\);\s*if\(!dateVal\)/,
+    "saveEditTx() should validate its date via parseImportDate() (passing _importDateFmt, not omitting it) and its amount via a variable checked with isNaN, not a bare `.value` read"
   );
   assert.match(
     source,
-    /function saveTx\(\)\{const dateVal=parseImportDate\(document\.getElementById\('t-date'\)\.value\)/,
-    "saveTx() should validate its date via parseImportDate() the same way saveEditTx() does"
+    /function saveTx\(\)\{const dateVal=parseImportDate\(document\.getElementById\('t-date'\)\.value,_importDateFmt\)/,
+    "saveTx() should validate its date via parseImportDate() (passing _importDateFmt) the same way saveEditTx() does"
   );
+});
+
+// ── 84th adversarial pass: renderNwGoalWidget()'s progress-bar fraction,
+// pct=Math.min(nw/goal,1), only clamped the upper bound. goal is always
+// positive, but nw (net worth) can be negative while monthlyGrowth is still
+// positive -- the snapshot-based growth calc only requires nw>oldest.nw,
+// not nw>0, so anyone paying down debt over time (e.g. -50000 six months
+// ago, -10000 today) reaches this code with a negative nw. That produced a
+// negative pct, an invalid negative SVG rect width (silently fails to
+// render per spec), and a nonsensical "-10% there" label -- for exactly
+// the early-career, currently-negative-net-worth audience this widget's
+// own milestone auto-select is built around. renderNwGoalWidget() itself
+// is D3/DOM-heavy and not a good extraction-test candidate, so this checks
+// the source pattern directly, matching this suite's established
+// precedent for similar chart-math fixes (e.g. the 81st pass's
+// renderNwChart padding test above). ──
+test("renderNwGoalWidget: progress fraction is clamped to [0,1], not just <=1 -- negative net worth can't produce a negative SVG bar width", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const pct=Math\.max\(0,Math\.min\(nw\/goal,1\)\);/,
+    "pct should be clamped on both ends (Math.max(0,...)), not just Math.min(...,1) -- a negative nw with a positive goal must floor at 0, not go negative"
+  );
+  const clamp = (nw, goal) => Math.max(0, Math.min(nw / goal, 1));
+  assert.equal(clamp(-10000, 100000), 0, "negative net worth should floor the progress fraction at 0, not go negative");
+  assert.equal(clamp(50000, 100000), 0.5, "positive, sub-goal net worth is unaffected");
+  assert.equal(clamp(150000, 100000), 1, "still clamped at 1 for net worth exceeding the goal");
 });
