@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-iBdYPmE/Tl63bhLVRS2SeB6gc2zkrug/YQhYnWZG0EA=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-AKf4VRtEjhOkjF4ZQsMGw/v9xmwX+Z+Xt4OponaSPE4=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3337,7 +3337,18 @@ function renderYearInReview(){
     <div style="margin-bottom:1rem">
       <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Top categories</div>
       ${catSorted.slice(0,5).map(([cat,amt])=>{
-        const pct=Math.round(amt/totalSpent*100);
+        // Clamped to [0,100], and guarded against totalSpent<=0 -- byCat's
+        // sum has no sign filtering (refunds can make a category's own amt
+        // negative, or make totalSpent smaller than a single category's
+        // positive amt if another category nets negative), so an
+        // unclamped amt/totalSpent could go negative (invalid CSS width%,
+        // silently dropped -- the fill div falls back to width:auto,
+        // rendering full instead of empty/negative) or exceed 100% (not
+        // invalid, but visually misleading before overflow:hidden clips
+        // it). Fourth instance this review cycle of the same missing-
+        // clamp shape (renderNwChart §81, renderNwGoalWidget §84,
+        // ringHTML/barTicksHTML §85). Found in the 86th adversarial pass.
+        const pct=totalSpent>0?Math.max(0,Math.min(100,Math.round(amt/totalSpent*100))):0;
         const color=getCatColor(cat);
         return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
           <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></div>
@@ -12075,9 +12086,19 @@ function importBackup(file){
       // (the safe default -- matches runMigrations()'s own bias toward
       // applying a backfill rather than silently skipping one). Found in
       // the 85th adversarial pass.
+      // <=CUTOFF, not <CUTOFF -- the fix that added 'Internal Transfer' to
+      // the default exclusion set landed DURING July 6, not before it, so
+      // exportedAt.slice(0,10)'s date-only precision can't distinguish a
+      // backup exported earlier that same day (still needs the backfill)
+      // from one exported later that day (already fine) -- the two are
+      // textually identical either way. A strict < treated every same-day
+      // backup as already-fixed and permanently skipped the backfill for
+      // it, the opposite of this gate's own stated bias toward applying a
+      // backfill rather than silently skipping one. Found in the 86th
+      // adversarial pass.
       const CUTOFF='2026-07-06';
       const exportedAt=typeof payload.exportedAt==='string'?payload.exportedAt.slice(0,10):null;
-      if(!state.excludedCats.has('Internal Transfer')&&(!exportedAt||exportedAt<CUTOFF))state.excludedCats.add('Internal Transfer');
+      if(!state.excludedCats.has('Internal Transfer')&&(!exportedAt||exportedAt<=CUTOFF))state.excludedCats.add('Internal Transfer');
       state.transactions=arr(payload.transactions).map(t=>({...t,amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
       _txsDirty=true;
       rebuildMonthly();

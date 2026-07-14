@@ -1516,22 +1516,61 @@ test("ringHTML: arcPct formula floors at 0 for a net-refunded (negative ytd) cat
 // changed. importBackup() itself is a large, file-upload/confirm()-gated,
 // heavily DOM-dependent function -- not a good extraction-test candidate,
 // so this checks the source pattern and re-derives the exact gate logic
-// against representative payload shapes. ──
-test("importBackup: 'Internal Transfer' backfill is gated on the backup's own exportedAt date, not applied unconditionally", () => {
+// against representative payload shapes.
+//
+// 86th adversarial pass: the comparison was strict `<CUTOFF`, but the fix
+// that added 'Internal Transfer' to the default exclusion set landed
+// DURING July 6, not before it -- date-only precision can't distinguish a
+// same-day backup exported before that fix (still needs the backfill)
+// from one exported after (already fine), so `<` silently skipped the
+// backfill for every backup dated exactly on the cutoff, the opposite of
+// this gate's own stated safe-default bias. Fixed to `<=CUTOFF`. ──
+test("importBackup: 'Internal Transfer' backfill is gated on the backup's own exportedAt date, inclusive of the cutoff day itself", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /if\(!state\.excludedCats\.has\('Internal Transfer'\)&&\(!exportedAt\|\|exportedAt<CUTOFF\)\)state\.excludedCats\.add\('Internal Transfer'\);/,
-    "the backfill should be gated on the backup predating the cutoff, not applied to every restore unconditionally"
+    /if\(!state\.excludedCats\.has\('Internal Transfer'\)&&\(!exportedAt\|\|exportedAt<=CUTOFF\)\)state\.excludedCats\.add\('Internal Transfer'\);/,
+    "the backfill should be gated on the backup predating (or matching) the cutoff, not applied to every restore unconditionally, and not excluding the cutoff day itself"
   );
   const CUTOFF = "2026-07-06";
   const shouldBackfill = (exportedAtISO) => {
     const exportedAt = typeof exportedAtISO === "string" ? exportedAtISO.slice(0, 10) : null;
-    return !exportedAt || exportedAt < CUTOFF;
+    return !exportedAt || exportedAt <= CUTOFF;
   };
   assert.equal(shouldBackfill("2026-06-01T00:00:00.000Z"), true, "a backup exported before the cutoff should still get the backfill");
-  assert.equal(shouldBackfill("2026-07-14T00:00:00.000Z"), false, "a backup exported after the cutoff should NOT be backfilled -- the user may have deliberately un-excluded this category");
+  assert.equal(shouldBackfill("2026-07-06T23:59:59.000Z"), true, "a backup exported ON the cutoff date itself (date-only precision can't tell if it was before or after that day's fix) should still get the backfill -- the safe default");
+  assert.equal(shouldBackfill("2026-07-14T00:00:00.000Z"), false, "a backup exported well after the cutoff should NOT be backfilled -- the user may have deliberately un-excluded this category");
   assert.equal(shouldBackfill(undefined), true, "a backup with no exportedAt field at all defaults to needing the backfill (the safe default)");
+});
+
+// ── 86th adversarial pass: renderYearInReview()'s "Top categories" bar had
+// no clamp at all (not even a ceiling) -- byCat's sum has no sign
+// filtering, so a category with net refunds exceeding purchases produces
+// a negative amt, OR (more subtly) a positive-amt category can still get
+// a negative pct if a DIFFERENT category in the same period nets negative
+// enough to drag totalSpent itself negative (e.g. Travel=$500,
+// Electronics=-$800 net-refunded -> totalSpent=-$300 -> Travel's
+// pct=round(500/-300*100)=-167). A negative CSS width% is invalid, so the
+// browser drops the declaration and the fill div falls back to
+// width:auto, rendering full width for what should show near-empty --
+// the same "opposite of reality" failure fixed twice already this cycle
+// in ringHTML()/barTicksHTML() (85th pass). Fourth/fifth instance of the
+// same missing-clamp shape (81st, 84th, 85th x2, now 86th). ──
+test("renderYearInReview: Top categories bar pct is clamped to [0,100] and guarded against totalSpent<=0, not just Math.round with no bounds", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const pct=totalSpent>0\?Math\.max\(0,Math\.min\(100,Math\.round\(amt\/totalSpent\*100\)\)\):0;/,
+    "pct should be clamped to [0,100] and guarded against totalSpent<=0, not a bare Math.round with no bounds"
+  );
+  const pctOf = (amt, totalSpent) => (totalSpent > 0 ? Math.max(0, Math.min(100, Math.round((amt / totalSpent) * 100))) : 0);
+  assert.equal(pctOf(500, -300), 0, "a category with positive spend should floor at 0%, not go negative, when another category's refund drags totalSpent negative");
+  assert.equal(pctOf(-800, 500), 0, "a category that's itself net-refunded should floor at 0%, not show a negative fill");
+  assert.equal(pctOf(1000, 500), 100, "a category exceeding totalSpent (due to another category's refund) should cap at 100%, not overflow past it");
+  assert.equal(pctOf(250, 1000), 25, "an ordinary in-range case is unaffected");
+  assert.equal(pctOf(100, 0), 0, "totalSpent<=0 should fall back to 0% instead of computing amt/0");
 });
