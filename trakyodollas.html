@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-iBg0EEjrjYb22yvbl7LxrAQBeETH/petig8IcoLgJB8=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-PvcVknUwYA4TflFbVB5nDVbtzL0lIYLqFcy+EoWJVrk=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -8631,17 +8631,33 @@ function detectSubscriptions(allMonths,latestFullM){
   //
   // !t.is_offset added in the 37th adversarial pass -- isRealSpend() only
   // strips excluded/income transactions, not offset credits (the one
-  // source of a negative t.amount, set by applyVenmoOpt()). A recurring
-  // Venmo-cashout offset isn't a subscription -- it's a recurring credit,
-  // the opposite concept -- but beyond being conceptually wrong to
-  // include, its negative amounts also broke the consistency check below:
-  // when a vendor's entries are all negative, `median` is negative, and
-  // Math.abs(a-median)/median is always <= 0, so amts.every(...<0.20) is
-  // unconditionally true regardless of actual variance -- a wildly
-  // inconsistent set of offset credits could still pass as "consistent"
-  // and get listed as a subscription with a negative monthly cost,
-  // silently subtracting from the displayed recurring-spend total.
-  state.transactions.filter(t=>isRealSpend(t)&&!t.is_offset&&!state.excludedCats.has(t.cat)&&state.activeSources.has(t.card)&&recentMonths.includes(t.date.slice(0,7))&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).forEach(t=>{
+  // source of a negative t.amount the 37th pass considered, set by
+  // applyVenmoOpt()). A recurring Venmo-cashout offset isn't a
+  // subscription -- it's a recurring credit, the opposite concept -- but
+  // beyond being conceptually wrong to include, its negative amounts also
+  // broke the consistency check below: when a vendor's entries are all
+  // negative, `median` is negative, and Math.abs(a-median)/median is
+  // always <= 0, so amts.every(...<0.20) is unconditionally true
+  // regardless of actual variance -- a wildly inconsistent set of offset
+  // credits could still pass as "consistent" and get listed as a
+  // subscription with a negative monthly cost, silently subtracting from
+  // the displayed recurring-spend total.
+  //
+  // t.amount>0 added in the 89th adversarial pass -- !t.is_offset only
+  // covers ONE source of negative amounts. isRealSpend()/!t.is_offset both
+  // let through a manually-typed negative-amount transaction (saveTx()/
+  // saveEditTx() only validate isNaN, never positivity, since 0 and
+  // legitimate negatives are valid elsewhere in this app's data model),
+  // and 3+ months of consistent negative entries for the same vendor hit
+  // the identical median-goes-negative bug the comment above describes,
+  // just via manual entry instead of Venmo offsets. Rather than chase
+  // every individual source of a negative amount, filtering to amount>0
+  // directly (a "subscription" is a recurring CHARGE by definition) fixes
+  // the whole class at once -- this also makes !t.is_offset redundant
+  // (every is_offset entry is definitionally negative), but it's left in
+  // place rather than removed, matching this file's established pattern
+  // of layering guards rather than replacing a working, documented one.
+  state.transactions.filter(t=>isRealSpend(t)&&!t.is_offset&&t.amount>0&&!state.excludedCats.has(t.cat)&&state.activeSources.has(t.card)&&recentMonths.includes(t.date.slice(0,7))&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).forEach(t=>{
     const v=resolveVendor(t.desc);
     if(!vendorMonths[v])vendorMonths[v]=[];
     vendorMonths[v].push({m:t.date.slice(0,7),amt:t.amount,desc:t.desc,cat:t.cat});
@@ -9686,6 +9702,24 @@ function openTxImportModal(){
   importFmt='ally';
   _importDateFmt='mdy';
   _importRawRows=null;
+  // #import-source-label/#import-replace were never reset here -- neither
+  // is touched by closeModals() or onImportSuccessClose() either. The
+  // app's own "Import another CSV" button (importSuccessAndReopen()) is
+  // the designed flow for importing several accounts back-to-back, and it
+  // reopens this exact modal via this function -- so a source label typed
+  // for import #1 (e.g. "Chase Visa"), or the "Replace existing
+  // transactions from this source" checkbox left checked from a
+  // legitimate re-import/correction, silently carried over into import
+  // #2. confirmTxImport() reads both fields straight from the DOM: with
+  // replace still checked, an unrelated second CSV silently DELETES every
+  // transaction under the stale source label before importing under the
+  // wrong one -- no warning, no confirmation, just a toast reporting the
+  // new count. Reset both to their fresh-page-load defaults. Found in the
+  // 89th adversarial pass -- the fifth instance this review cycle of a
+  // modal-open function resetting some fields but not others (45th, 77th,
+  // 87th, 88th passes each found a different one).
+  const isl=document.getElementById('import-source-label');if(isl)isl.value='Checking';
+  const irc=document.getElementById('import-replace');if(irc)irc.checked=false;
   const _dfRow=document.getElementById('import-date-fmt-row');
   if(_dfRow)_dfRow.style.display='none';
   fetchCommunityRules(); // kick off once per session, non-blocking

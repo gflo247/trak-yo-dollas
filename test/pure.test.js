@@ -1675,3 +1675,82 @@ test("deleteVendorAlias: deletes the exact key it's given, without a redundant s
   assert.ok(!("AT&amp;T WIRELESS" in ctx.state.vendorAliases), "a vendor key that literally contains entity-like text should still be deleted by its exact, real key");
   assert.ok("Amazon" in ctx.state.vendorAliases, "an unrelated alias should be untouched");
 });
+
+// ── 89th adversarial pass: detectSubscriptions()'s !t.is_offset guard
+// (37th pass) only covered ONE source of negative t.amount (Venmo-cashout
+// offsets). isRealSpend()/!t.is_offset both still let through a
+// manually-typed negative-amount transaction (saveTx()/saveEditTx() only
+// validate isNaN, never positivity), and the same underlying bug the 37th
+// pass's own comment describes recurs: when a vendor's entries are all
+// negative, `median` is negative, and Math.abs(a-median)/median is always
+// <=0, so a wildly INCONSISTENT set of negative amounts still passes the
+// <0.20 consistency check and gets listed as a "subscription" with a
+// negative monthly cost. Fixed by filtering to amount>0 directly (a
+// subscription is a recurring CHARGE by definition), closing the whole
+// class rather than chasing each individual negative-amount source. ──
+test("detectSubscriptions: a wildly inconsistent negative-amount vendor (e.g. manually-entered refunds) is not listed as a subscription", () => {
+  const txs = [
+    { id: 1, date: "2026-05-01", desc: "REFUND CO", cat: "Shopping", card: "chase", amount: -5, excluded: false, isIncome: false, is_offset: false, biz: false },
+    { id: 2, date: "2026-06-01", desc: "REFUND CO", cat: "Shopping", card: "chase", amount: -50, excluded: false, isIncome: false, is_offset: false, biz: false },
+    { id: 3, date: "2026-07-01", desc: "REFUND CO", cat: "Shopping", card: "chase", amount: -10, excluded: false, isIncome: false, is_offset: false, biz: false },
+  ];
+  const ctx = {
+    MONTHLY: { "2026-05": {}, "2026-06": {}, "2026-07": {} },
+    isRealSpend: (t) => !t.excluded && !t.isIncome,
+    resolveVendor: (d) => d,
+    state: { transactions: txs, excludedCats: new Set(), activeSources: new Set(["chase"]) },
+    _bizFilter: "all",
+  };
+  const { detectSubscriptions } = loadFunctions(["detectSubscriptions"], ctx);
+  const result = detectSubscriptions(["2026-05", "2026-06", "2026-07"], "2026-07");
+  assert.deepEqual(result.subVendors, [], "a vendor with wildly varying (-5,-50,-10) negative amounts should not be listed as a 'consistent' subscription just because dividing by a negative median flips the sign of the variance check");
+  assert.equal(result.subTotal, 0);
+});
+test("detectSubscriptions: still detects an ordinary, genuinely consistent positive-amount subscription", () => {
+  const txs = [1, 2, 3].map((n) => ({
+    id: n,
+    date: `2026-0${4 + n}-01`,
+    desc: "NETFLIX",
+    cat: "Entertainment",
+    card: "chase",
+    amount: 15.99,
+    excluded: false,
+    isIncome: false,
+    is_offset: false,
+    biz: false,
+  }));
+  const ctx = {
+    MONTHLY: { "2026-05": {}, "2026-06": {}, "2026-07": {} },
+    isRealSpend: (t) => !t.excluded && !t.isIncome,
+    resolveVendor: (d) => d,
+    state: { transactions: txs, excludedCats: new Set(), activeSources: new Set(["chase"]) },
+    _bizFilter: "all",
+  };
+  const { detectSubscriptions } = loadFunctions(["detectSubscriptions"], ctx);
+  const result = detectSubscriptions(["2026-05", "2026-06", "2026-07"], "2026-07");
+  assert.equal(result.subVendors.length, 1, "an ordinary consistent positive-amount recurring charge should still be detected");
+  assert.equal(result.subTotal, 15.99);
+});
+
+// ── 89th adversarial pass: openTxImportModal() never reset
+// #import-source-label/#import-replace, unlike importParsed/importFmt/
+// _importDateFmt/etc. The app's own "Import another CSV" button
+// (importSuccessAndReopen()) reopens this exact modal as the designed
+// flow for importing several accounts back-to-back -- a source label
+// typed for import #1, or "Replace existing transactions from this
+// source" left checked from a legitimate re-import, silently carried
+// over. confirmTxImport() reads both straight from the DOM, and with
+// replace still checked, an unrelated second CSV silently DELETES every
+// transaction under the stale source label before importing under the
+// wrong one -- no warning shown. openTxImportModal() itself is DOM-only
+// (no return value) -- checking the source pattern directly. ──
+test("openTxImportModal: resets #import-source-label and #import-replace, not leaving a prior import session's destructive settings behind", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /function openTxImportModal\(\)\{[\s\S]{0,2000}?const isl=document\.getElementById\('import-source-label'\);if\(isl\)isl\.value='Checking';\s*const irc=document\.getElementById\('import-replace'\);if\(irc\)irc\.checked=false;/,
+    "openTxImportModal() should reset #import-source-label to its default value and #import-replace to unchecked"
+  );
+});
