@@ -1781,3 +1781,30 @@ test("loadDemoProfile: resets state.sourceAlignDate/sourceAlignSkipped, not leav
     "loadDemoProfile() should reset both state.sourceAlignDate and state.sourceAlignSkipped, matching its existing reset of rangeFrom/rangeTo/declaredIncome/etc."
   );
 });
+
+// ── 91st adversarial pass: confirmClearAllData() (an explicitly-promised
+// "this cannot be undone" wipe) removed trakyo_state_v2/trakyo_txs_v1/
+// trakyo_state_v1 (data) and trakyo_tab/trakyo_chart (UI-preference keys,
+// included specifically so the post-wipe reload starts from a clean UI
+// state) -- but not trakyo_show_excl, a preference key of the exact same
+// kind. Unlike trakyo_theme/trakyo_tips_seen/trakyo_patterns (genuinely
+// cosmetic, correctly left alone), trakyo_show_excl is a DATA-VISIBILITY
+// toggle: the load-time IIFE reads it back unconditionally on every boot
+// and it bypasses exclusion filters app-wide ((state.showExcluded||!t.
+// excluded), 10+ call sites). A user who'd enabled "show excluded/
+// transfers in totals," then cleared all data, got the stale preference
+// silently reapplied on the very next import -- with zero toggle
+// interaction in the new session and no visual cue anything survived the
+// wipe. confirmClearAllData() itself is a large async function with a
+// network-dependent signOut() race -- not a good extraction-test
+// candidate, so this checks the source pattern directly. ──
+test("confirmClearAllData: removes trakyo_show_excl, not leaving a stale data-visibility preference behind after an explicitly-promised irreversible wipe", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /localStorage\.removeItem\('trakyo_tab'\);\s*localStorage\.removeItem\('trakyo_chart'\);[\s\S]{0,1500}?localStorage\.removeItem\('trakyo_show_excl'\);/,
+    "confirmClearAllData()'s removal list should include trakyo_show_excl alongside its sibling UI-preference keys trakyo_tab/trakyo_chart"
+  );
+});

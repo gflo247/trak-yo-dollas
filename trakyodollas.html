@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-DdFFqiEjGNkba8kAfuqpAbKNbG+/dMIJ+/PUlNPdS90=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-OwiEjYwi3eueIZdWoPBOUguco+raGMUNgvGMGoyQdv0=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -7532,6 +7532,25 @@ async function confirmClearAllData(){
       localStorage.removeItem('trakyo_state_v1');
       localStorage.removeItem('trakyo_tab');
       localStorage.removeItem('trakyo_chart');
+      // trakyo_show_excl was never removed here, unlike its two UI-
+      // preference siblings above (trakyo_tab/trakyo_chart, included
+      // specifically so the post-wipe reload starts from a clean UI
+      // state). Unlike those two, this key isn't cosmetic -- it's a
+      // data-visibility toggle (toggleExcluded(), read back unconditionally
+      // by the load-time IIFE right after boot) that bypasses exclusion
+      // filters app-wide: (state.showExcluded||!t.excluded) and
+      // (state.showExcluded||!state.excludedCats.has(t.cat)) at 10+ call
+      // sites across the dashboard, budget tab, and every spend chart. A
+      // user who'd enabled "show excluded/transfers in totals" at some
+      // point, then clicked "Clear all data" (explicitly promised as
+      // irreversible), got a genuinely empty state.showExcluded=false on
+      // reload -- but the still-present localStorage key immediately
+      // overwrote it back to true, so transfers/excluded-category spend
+      // silently counted toward every total the moment they re-imported
+      // a fresh CSV, with zero toggle interaction in the new session and
+      // no visual cue that a stale display preference survived the wipe.
+      // Found in the 91st adversarial pass.
+      localStorage.removeItem('trakyo_show_excl');
     }catch(e){}
   }finally{
     _clearAllDataInProgress=false;
