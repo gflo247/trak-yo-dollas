@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Eko4mtfvePk6aE6/vcclBY8Eij0AroknxiFL82kUGLk=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-1m9batCutw/32vkH81FxR0WpG4rBA5+ZEmhTUpMJ2HI=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3849,7 +3849,18 @@ function renderNwChart(){
   const iW=W-pad.l-pad.r, iH=H-pad.t-pad.b;
   const data=vals.map((v,i)=>({i,v,m:mKeys[i]}));
   const xScale=d3.scaleLinear().domain([0,mKeys.length-1]).range([0,iW]);
-  const vMin=Math.min(...vals)*0.98, vMax=Math.max(...vals)*1.02;
+  // Pad 2% of the value RANGE, not 2% of each bound's own magnitude --
+  // min*0.98/max*1.02 pads outward correctly only when both are positive.
+  // For a negative net worth series (a real, reachable state for anyone
+  // paying down debt, per getIsDark()'s own annualPct comment above),
+  // multiplying a negative min by 0.98 moves it TOWARD zero (inward, not
+  // outward) and multiplying a negative max by 1.02 moves it AWAY from
+  // zero in the wrong direction -- e.g. vals=[-8000,...,-2000] produced
+  // vMin=-7840 (above the real -8000 minimum) and vMax=-2040 (below the
+  // real -2000 maximum), clipping both series extremes off the chart.
+  // Found in the 81st adversarial pass.
+  const rawMin=Math.min(...vals), rawMax=Math.max(...vals), vPad=(rawMax-rawMin)*0.02;
+  const vMin=rawMin-vPad, vMax=rawMax+vPad;
   const yScale=d3.scaleLinear().domain([vMin,vMax]).range([iH,0]);
 
   const lineColor='#34D399';

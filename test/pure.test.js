@@ -1293,3 +1293,38 @@ test("removeBudget: showToast is called with an explicit color and the intended 
   assert.equal(toastArgs[1], "#94A3B8", "color should be an explicit value, not the number 4000");
   assert.equal(toastArgs[2], 4000, "duration should be 4000ms in its own argument slot");
 });
+
+// ── 81st adversarial pass: renderNwChart()'s Y-axis domain padding,
+// Math.min(...vals)*0.98 / Math.max(...vals)*1.02, pads outward correctly
+// only when both bounds are positive. For a negative net worth series (a
+// real, reachable state for anyone paying down debt -- getIsDark()'s own
+// annualPct comment above this function calls this out explicitly),
+// multiplying a negative min by 0.98 moves it TOWARD zero (inward) and
+// multiplying a negative max by 1.02 moves it AWAY from zero in the wrong
+// direction, clipping both series extremes off the chart. renderNwChart()
+// itself is D3/DOM-heavy and not a good extraction-test candidate, so this
+// re-derives the same range-based padding formula the real fix uses
+// (verified via a source match below) and checks it against both a
+// negative and a positive series directly. ──
+test("renderNwChart Y-axis padding: pads outward correctly for a negative net worth series, not just positive", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const rawMin=Math\.min\(\.\.\.vals\), rawMax=Math\.max\(\.\.\.vals\), vPad=\(rawMax-rawMin\)\*0\.02;\s*const vMin=rawMin-vPad, vMax=rawMax\+vPad;/,
+    "renderNwChart() should pad by a fraction of the value RANGE (rawMax-rawMin), not a fraction of each bound's own magnitude"
+  );
+  const pad = (vals) => {
+    const rawMin = Math.min(...vals),
+      rawMax = Math.max(...vals),
+      vPad = (rawMax - rawMin) * 0.02;
+    return { vMin: rawMin - vPad, vMax: rawMax + vPad };
+  };
+  const neg = pad([-8000, -7000, -6000, -5000, -4000, -2000]);
+  assert.ok(neg.vMin <= -8000, `vMin (${neg.vMin}) must be at or below the real minimum (-8000), not above it`);
+  assert.ok(neg.vMax >= -2000, `vMax (${neg.vMax}) must be at or above the real maximum (-2000), not below it`);
+
+  const pos = pad([1000, 5000]);
+  assert.ok(pos.vMin <= 1000 && pos.vMax >= 5000, "positive series should still pad outward on both ends");
+});
