@@ -806,6 +806,39 @@ test("all budgetWarnPct restore sites (localStorage load, JSON-backup import, cl
   assert.equal(matches.length, 4, `expected 4 uses of the [50,99] clamp (setBudgetWarnPct + 3 restore sites), found ${matches.length}`);
 });
 
+// ── 80th adversarial pass: the 76th pass's own fix for the one-time "press ?
+// for tips" toast, tc('#334155','#CBD5E1'), had tc(dark,light)'s arguments
+// backwards -- dark theme (this app's default) kept the exact same ~1.41:1
+// contrast the fix was supposed to eliminate, and light theme newly
+// regressed to ~1.47:1 (previously ~10.33:1 pre-fix, since the whole toast
+// was a single hardcoded color before). Neither theme was ever actually
+// fixed; light theme was made worse. A plain string-match test wouldn't
+// catch a *different* wrong color choice recurring here later, so this
+// computes real WCAG contrast against both themes' actual --toast-bg. ──
+function relLum(hex) {
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const lin = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+function contrastRatio(hexA, hexB) {
+  const [l1, l2] = [relLum(hexA.replace("#", "")), relLum(hexB.replace("#", ""))].sort((a, b) => b - a);
+  return (l1 + 0.05) / (l2 + 0.05);
+}
+test("tips-toast color: tc('#CBD5E1','#334155') meets WCAG AA (4.5:1) against both themes' --toast-bg", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /Press <strong style="color:#fff">\?<\/strong> anytime for tips & shortcuts',tc\('#CBD5E1','#334155'\)/,
+    "tips toast should call tc('#CBD5E1','#334155') -- dark theme first, matching tc(dark,light)'s signature"
+  );
+  const DARK_TOAST_BG = "#1E293B";
+  const LIGHT_TOAST_BG = "#FFFEFB";
+  assert.ok(contrastRatio("#CBD5E1", DARK_TOAST_BG) >= 4.5, "dark-theme color (#CBD5E1, this app's default theme) must meet AA against the dark toast bg");
+  assert.ok(contrastRatio("#334155", LIGHT_TOAST_BG) >= 4.5, "light-theme color (#334155) must meet AA against the light toast bg");
+});
+
 // ── 65th adversarial pass: computePeriodSpendVsIncome() ("the app's own
 // documented single source of truth for period-level spend vs income") sums
 // each filtered month's own getEffectiveIncome() instead of multiplying the

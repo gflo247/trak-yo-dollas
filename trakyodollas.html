@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-VPcst95TpBOypXznODRiZpaY17V/+bKo9dmGoTB6y64=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Eko4mtfvePk6aE6/vcclBY8Eij0AroknxiFL82kUGLk=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -12210,12 +12210,25 @@ document.addEventListener('DOMContentLoaded',function(){
           // effectively invisible, not just under WCAG AA like the 75th
           // pass's #94A3B8 fixes. Dark theme is this app's default, so
           // every first-time visitor's one-time "press ? for tips" toast
-          // was silently unreadable. tc('#334155','#CBD5E1') matches this
-          // exact color's established pairing elsewhere in the file (e.g.
-          // ~line 3499, ~line 10414). Found in the 76th adversarial pass,
+          // was silently unreadable. Found in the 76th adversarial pass,
           // the same hardcoded-toast-color class the 75th pass fixed for a
           // narrower grep scope.
-          showToast('💡 Press <strong style="color:#fff">?</strong> anytime for tips & shortcuts',tc('#334155','#CBD5E1'),5000);
+          //
+          // tc(dark,light) -- dark theme gets the FIRST argument. The 76th
+          // pass's own original fix, tc('#334155','#CBD5E1'), had this
+          // backwards: it cited #334155/#CBD5E1's pairing elsewhere in the
+          // file (~line 3511, ~line 10460) as precedent, but those are
+          // border colors on de-emphasized UI elements, not body text
+          // needing contrast against a background -- not actually
+          // analogous. The swapped call was a no-op on dark theme (still
+          // ~1.41:1, so every first-time visitor kept seeing the exact
+          // same illegible toast) and a brand-new regression on light
+          // theme (#CBD5E1 on light theme's --toast-bg computes to
+          // ~1.47:1, where the original single hardcoded #334155 had been
+          // fine at ~10.33:1 pre-fix). Corrected to tc('#CBD5E1','#334155')
+          // in the 80th adversarial pass -- now ~9.85:1 dark / ~10.27:1
+          // light, both well over WCAG AA.
+          showToast('💡 Press <strong style="color:#fff">?</strong> anytime for tips & shortcuts',tc('#CBD5E1','#334155'),5000);
           localStorage.setItem('trakyo_tips_seen','1');
         },4000);
       }
