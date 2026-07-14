@@ -1808,3 +1808,46 @@ test("confirmClearAllData: removes trakyo_show_excl, not leaving a stale data-vi
     "confirmClearAllData()'s removal list should include trakyo_show_excl alongside its sibling UI-preference keys trakyo_tab/trakyo_chart"
   );
 });
+
+// ── 93rd adversarial pass: renderActiveChart() called renderTreemap() bare
+// (no argument) whenever chartMode==='split', so the Treemap's own
+// drillCat -- which category the user has drilled into -- existed only as
+// an ephemeral local parameter, never persisted to state. Every OTHER
+// caller of renderActiveChart() besides the Treemap's own category-tile
+// click handler (theme toggle, window resize, category-filter/exclusion
+// actions, date-range changes, grain changes -- 10+ call sites, several
+// extremely common and undeliberate) silently reset an in-progress drill
+// to the top-level view with zero warning. Fixed by adding
+// state.treemapDrillCat, set by the click handler and read as the default
+// argument here, matching the existing persistence pattern already used
+// for state.activeVendors/state.bucketMode. ──
+test("renderActiveChart: passes the persisted state.treemapDrillCat into renderTreemap(), not a bare call that silently discards an in-progress drill", () => {
+  let calledWith = "unset";
+  const ctx = {
+    state: { chartMode: "split", treemapDrillCat: "Groceries" },
+    renderDailyCal: () => {},
+    renderTreemap: (arg) => {
+      calledWith = arg;
+    },
+    renderSankey: () => {},
+    renderSpendChart: () => {},
+  };
+  const { renderActiveChart } = loadFunctions(["renderActiveChart"], ctx);
+  renderActiveChart();
+  assert.equal(calledWith, "Groceries", "renderActiveChart() should pass the persisted drill category through to renderTreemap(), not call it bare");
+});
+test("renderActiveChart: passes null (top-level view) when no drill is in progress", () => {
+  let calledWith = "unset";
+  const ctx = {
+    state: { chartMode: "split", treemapDrillCat: null },
+    renderDailyCal: () => {},
+    renderTreemap: (arg) => {
+      calledWith = arg;
+    },
+    renderSankey: () => {},
+    renderSpendChart: () => {},
+  };
+  const { renderActiveChart } = loadFunctions(["renderActiveChart"], ctx);
+  renderActiveChart();
+  assert.equal(calledWith, null, "with no drill in progress, renderTreemap() should still receive the (falsy) state value, rendering the top-level view");
+});
