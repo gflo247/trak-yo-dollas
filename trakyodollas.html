@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-lM9r+59Voep+O4SZ5y/Y2BFv8RHlsH+HWP/7Z/FeRiM=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-VPcst95TpBOypXznODRiZpaY17V/+bKo9dmGoTB6y64=' 'sha256-sy7tqOxBZM/6ubsdCvIqVISLM8VzT7PkkuYMTtazgkg=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -8902,7 +8902,7 @@ function disableIncome(){
 }
 
 // Detect income from deposits in transaction history
-function detectDepositIncome(){
+function detectDepositIncome(respectBizFilter){
   const EXCLUDE_KEYWORDS=['TRANSFER','PAYMENT','ZELLE','VENMO','REFUND','CASHBACK','CREDIT CRD','INTERNAL'];
   const monthIncome={};
   // Look at raw CSV data — deposits are positive amounts excluded from spending
@@ -8917,16 +8917,23 @@ function detectDepositIncome(){
   // at all. With income method set to "auto" and 2+ linked sources, a
   // deselected source's deposits kept counting as income while its spend
   // was correctly excluded -- silently inflating the displayed savings
-  // rate / suppressing the overspend warning.
+  // rate / suppressing the overspend warning. Unconditional (every caller
+  // wants total deposits scoped to which sources are linked at all).
   //
-  // _bizFilter guard added in the 78th adversarial pass -- same gap as
-  // above but for the Business/Personal filter: computePeriodSpendVsIncome()
-  // already narrows totalSpend by _bizFilter, but this function's income
-  // side ignored it entirely, so filtering to "Business" compared
-  // business-only spend against combined business+personal income --
-  // wildly overstating savings (or masking a real business overspend)
-  // any time deposits were tagged with a mix of biz/personal.
-  state.transactions.filter(t=>t.excluded&&!t.is_offset&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).forEach(t=>{
+  // _bizFilter guard added in the 78th adversarial pass, then made
+  // opt-in via the respectBizFilter param in the 79th adversarial pass --
+  // this function has 5 call sites: computePeriodSpendVsIncome()'s income
+  // side (via getEffectiveIncome()/sumIncomeForMonths()) needs it, since
+  // its spend side already narrows by _bizFilter and the two must agree.
+  // But openIncomeModal()/selectIncomeMethod()/showAutoPreview() -- the
+  // Income Setup modal's own preview, answering "have you imported any
+  // deposits at all" -- do not: the 78th pass's unconditional guard made
+  // those three silently show "No deposit transactions found yet" for a
+  // user with real deposit history, just because an unrelated Business/
+  // Personal chip on the Spending tab happened to be active. Baking the
+  // filter into this function itself couldn't distinguish the two needs;
+  // making it opt-in lets each caller choose.
+  state.transactions.filter(t=>t.excluded&&!t.is_offset&&state.activeSources.has(t.card)&&(!respectBizFilter||_bizFilter!=='biz'||t.biz)&&(!respectBizFilter||_bizFilter!=='personal'||!t.biz)).forEach(t=>{
     const d=t.desc.toUpperCase();
     const isTransfer=EXCLUDE_KEYWORDS.some(k=>d.includes(k));
     if(!isTransfer&&t.amount>0){
@@ -8944,7 +8951,13 @@ function getEffectiveIncome(monthKey){
   if(state.declaredIncome>0)return state.declaredIncome;
   if(state.income.method==='manual') return state.income.monthlyAmount;
   if(state.income.method==='auto'){
-    const detected=detectDepositIncome();
+    // respectBizFilter=true -- every caller of this function pairs the
+    // result against a _bizFilter-scoped spend figure (e.g. line ~2745's
+    // mSpent), so income must be scoped the same way to stay comparable.
+    // See detectDepositIncome()'s own comment (79th adversarial pass) for
+    // why the filter lives here as an opt-in param rather than always-on
+    // inside detectDepositIncome() itself.
+    const detected=detectDepositIncome(true);
     return detected.byMonth?.[monthKey]||detected.avgMonthly||0;
   }
   return 0;
@@ -8963,7 +8976,10 @@ function getEffectiveIncome(monthKey){
 // in the 67th adversarial pass.
 function sumIncomeForMonths(months){
   const usesAutoDetect=state.declaredIncome<=0&&state.income.method==='auto';
-  const detected=usesAutoDetect?detectDepositIncome():null;
+  // respectBizFilter=true -- same reasoning as getEffectiveIncome() above;
+  // this feeds computePeriodSpendVsIncome()'s totalIncome, which must stay
+  // scoped the same way as its already-_bizFilter-scoped totalSpend.
+  const detected=usesAutoDetect?detectDepositIncome(true):null;
   return months.reduce((s,m)=>s+(usesAutoDetect?(detected.byMonth?.[m]||detected.avgMonthly||0):getEffectiveIncome(m)),0);
 }
 

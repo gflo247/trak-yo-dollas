@@ -944,8 +944,18 @@ test("sumIncomeForMonths: declared/manual income (constant per month) is unaffec
 // gate on it). With income method "auto" and deposits tagged both biz and personal,
 // filtering to "Business" compared business-only spend against combined
 // business+personal income -- wildly overstating savings / masking a real
-// business-side overspend. ──
-test("detectDepositIncome: only counts deposits matching the active _bizFilter", () => {
+// business-side overspend.
+//
+// 79th adversarial pass: the 78th pass's unconditional guard reached 3 more
+// call sites it never audited (openIncomeModal(), selectIncomeMethod(),
+// showAutoPreview() -- the Income Setup modal's own "have you imported any
+// deposits at all" preview), which don't want _bizFilter scoping and started
+// showing a false "No deposit transactions found yet" message whenever an
+// unrelated Business/Personal chip was active. Made the filter opt-in via a
+// respectBizFilter param: getEffectiveIncome()/sumIncomeForMonths() (feeding
+// computePeriodSpendVsIncome()) pass true; the 3 modal-preview call sites
+// call it with no argument and get the original always-unfiltered total. ──
+test("detectDepositIncome: respectBizFilter=true scopes to the active _bizFilter; omitted (default) ignores it", () => {
   const ctx = {
     state: {
       transactions: [
@@ -956,13 +966,14 @@ test("detectDepositIncome: only counts deposits matching the active _bizFilter",
     },
   };
   const { detectDepositIncome } = loadFunctions(["detectDepositIncome"], { ...ctx, _bizFilter: "all" });
-  assert.equal(detectDepositIncome().avgMonthly, 6000, "'all' filter should count both the personal and business deposit");
+  assert.equal(detectDepositIncome(true).avgMonthly, 6000, "'all' filter should count both the personal and business deposit");
 
   const bizOnly = loadFunctions(["detectDepositIncome"], { ...ctx, _bizFilter: "biz" });
-  assert.equal(bizOnly.detectDepositIncome().avgMonthly, 2000, "'biz' filter should count only the $2000 tagged-business deposit");
+  assert.equal(bizOnly.detectDepositIncome(true).avgMonthly, 2000, "'biz' filter should count only the $2000 tagged-business deposit");
+  assert.equal(bizOnly.detectDepositIncome().avgMonthly, 6000, "omitting the param should ignore _bizFilter entirely, same as before the 78th pass -- the Income Setup modal's preview needs this");
 
   const personalOnly = loadFunctions(["detectDepositIncome"], { ...ctx, _bizFilter: "personal" });
-  assert.equal(personalOnly.detectDepositIncome().avgMonthly, 4000, "'personal' filter should count only the $4000 untagged deposit");
+  assert.equal(personalOnly.detectDepositIncome(true).avgMonthly, 4000, "'personal' filter should count only the $4000 untagged deposit");
 });
 
 // ── 67th adversarial pass: openSyncPassphraseReset() (66th pass) opens the
