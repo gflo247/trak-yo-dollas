@@ -1754,3 +1754,30 @@ test("openTxImportModal: resets #import-source-label and #import-replace, not le
     "openTxImportModal() should reset #import-source-label to its default value and #import-replace to unchecked"
   );
 });
+
+// ── 90th adversarial pass: loadDemoProfile() resets rangeFrom/rangeTo/
+// nwGoal/declaredIncome/_bizFilter/excludedCats/etc. to the demo profile's
+// own values, but never state.sourceAlignDate/sourceAlignSkipped.
+// getFilteredMonths() applies sourceAlignDate unconditionally
+// (months.filter(m=>m>=state.sourceAlignDate)) -- reachable via the
+// ?demoPreview=1 marketing-preview URL, where loadFromLocalStorage() runs
+// BEFORE this function and populates state.sourceAlignDate from a real
+// user's own saved multi-source-alignment choice, which then silently
+// truncated the demo data's own months while renderSourceChips() showed a
+// stale "Aligned to [date]" banner unrelated to the demo dataset on
+// screen. Same shape as the 75th pass's declaredIncome leak, just for
+// this field. loadDemoProfile() itself is a large, heavily DOM/render-
+// dependent function -- per this suite's established precedent (skip
+// extraction-testing loadDemoProfile()/renderAccountLists()/similar,
+// rely on source-pattern checks + live verification instead), this
+// checks the source pattern directly. ──
+test("loadDemoProfile: resets state.sourceAlignDate/sourceAlignSkipped, not leaving a real user's source-alignment choice bleeding into the demo preview", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /function loadDemoProfile\(n, silent=false, skipRender=false\)\{[\s\S]{0,2500}?state\.sourceAlignDate=null;\s*state\.sourceAlignSkipped=false;/,
+    "loadDemoProfile() should reset both state.sourceAlignDate and state.sourceAlignSkipped, matching its existing reset of rangeFrom/rangeTo/declaredIncome/etc."
+  );
+});
