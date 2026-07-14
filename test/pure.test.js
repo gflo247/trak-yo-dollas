@@ -1328,3 +1328,48 @@ test("renderNwChart Y-axis padding: pads outward correctly for a negative net wo
   const pos = pad([1000, 5000]);
   assert.ok(pos.vMin <= 1000 && pos.vMax >= 5000, "positive series should still pad outward on both ends");
 });
+
+// ── 82nd adversarial pass: fmtC()/fmtH() are declared as `const name=...`
+// arrow functions, not `function name(...)`, so loadFunctions()'s
+// brace-matching extractor (which only anchors on the `function` keyword)
+// can't pull them out directly. Extracting the real one-line source
+// definitions via regex and eval'ing them keeps this test exercising the
+// actual shipped code rather than a hand-derived reimplementation, same
+// intent as loadFunctions() elsewhere in this file. ──
+function loadConstArrowFn(name) {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const re = new RegExp(`^const ${name}=.*;$`, "m");
+  const m = source.match(re);
+  if (!m) throw new Error(`loadConstArrowFn: could not find 'const ${name}=...' in source`);
+  const esc = (s) => String(s);
+  const state = { currency: "$" };
+  // eslint-disable-next-line no-eval
+  return new Function("esc", "state", `${m[0]}\nreturn ${name};`)(esc, state);
+}
+
+// fmtH() rounded the signed value directly and let toLocaleString()'s own
+// leading '-' land AFTER the currency symbol ("$-500"), unlike fmtC() which
+// explicitly repositions the sign before the symbol ("-$500"). fmtH() feeds
+// Chart.js tooltips off raw unguarded monthly accumulators that can go
+// negative when a refund exceeds that month's purchases. ──
+test("fmtH: negative values put the minus sign before the currency symbol, not after (matches fmtC's convention)", () => {
+  const fmtH = loadConstArrowFn("fmtH");
+  assert.equal(fmtH(-500), "-$500", "should read -$500, not the malformed $-500");
+  assert.equal(fmtH(500), "$500", "positive values are unaffected");
+  assert.equal(fmtH(-1234), "-$1,200", "still rounds to the nearest 100 before formatting");
+});
+
+// fmtC()'s 'k' branch rounded a in [999500,999999] up to 1000, producing
+// "$1000k" instead of switching to the 'M' branch a few hundred dollars
+// early -- fmtC() formats live net worth/assets/liabilities/goal figures,
+// so any user near the $1M mark could hit this ~$500-wide band. ──
+test("fmtC: values in the [999500,999999] band show as $1M, not the malformed $1000k", () => {
+  const fmtC = loadConstArrowFn("fmtC");
+  assert.equal(fmtC(999499), "$999k", "just below the band is unaffected");
+  assert.equal(fmtC(999500), "$1M", "the exact point where the old 'k' rounding first hit 1000");
+  assert.equal(fmtC(999999), "$1M");
+  assert.equal(fmtC(1000000), "$1M", "existing >=1e6 case is unaffected");
+  assert.equal(fmtC(-999600), "-$1M", "negative sign still repositions correctly in the newly-widened M branch");
+});
