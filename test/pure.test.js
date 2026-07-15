@@ -1903,7 +1903,7 @@ test("_resetSessionFiltersForDataReplace: resets every session-scoped filter fie
     "_resetSessionFiltersForDataReplace() should reset _bizFilter/activeCats/dashFilter/searchQuery (+ DOM), showExcluded (+ localStorage key), and call _clearVendorDayFiltersForDataReplace()"
   );
 });
-test("importBackup, confirmTxImport, loadUserData, and loadDemoProfile all call the shared _resetSessionFiltersForDataReplace() helper", () => {
+test("importBackup, confirmTxImport, and loadDemoProfile all call the shared _resetSessionFiltersForDataReplace() helper", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
@@ -1916,11 +1916,6 @@ test("importBackup, confirmTxImport, loadUserData, and loadDemoProfile all call 
     source,
     /if\(!state\.hasRealData\)\{\s*state\.transactions=\[\];\s*state\.activeSources=new Set\(\);\s*state\.budgets=\{\};[\s\S]{0,1000}?_resetSessionFiltersForDataReplace\(\);\s*\}/,
     "confirmTxImport()'s !state.hasRealData branch should call _resetSessionFiltersForDataReplace() alongside its existing transactions/activeSources/budgets wipe"
-  );
-  assert.match(
-    source,
-    /if \(Array\.isArray\(prefs\.transactions\)\) \{\s*state\.transactions = prefs\.transactions\.map\(t=>[\s\S]{0,700}?_resetSessionFiltersForDataReplace\(\);\s*rebuildMonthly\(\);/,
-    "loadUserData()'s cloud-sync transactions-replace branch should call _resetSessionFiltersForDataReplace()"
   );
   assert.match(
     source,
@@ -2238,4 +2233,102 @@ test("parseCSV: preserves a field's genuine trailing quote character instead of 
   const rows = parseCSV(csv);
   assert.equal(rows.length, 1);
   assert.equal(rows[0].desc, 'BLINDS 72"', "a field CSV-encoded as a trailing literal quote (doubled inside the enclosing quotes) should round-trip with that quote intact, not silently lose it");
+});
+
+// ── 98th adversarial pass: loadUserData()'s call to
+// _resetSessionFiltersForDataReplace() (added the 96th pass) fires on
+// *every* successful cloud pull, including the silent, no-modal-shown
+// re-pull promptSyncPassphrase() performs on every ordinary page reload for
+// a returning signed-in user with a cached passphrase -- not just a genuine
+// demo-to-real transition (which, per promptSyncPassphrase()'s own guard,
+// this call path can never actually be reached during in the first place).
+// Reverted to this function's pre-96th-pass behavior: only
+// _clearVendorDayFiltersForDataReplace(), whose fields are all
+// session-only view state never persisted by serializeState(), unlike
+// _bizFilter/activeCats/dashFilter/searchQuery/showExcluded. ──
+test("loadUserData: the transactions-replace branch calls only _clearVendorDayFiltersForDataReplace(), not the full session-filter reset", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if \(Array\.isArray\(prefs\.transactions\)\) \{\s*state\.transactions = prefs\.transactions\.map\(t=>[\s\S]{0,2200}?_clearVendorDayFiltersForDataReplace\(\);\s*rebuildMonthly\(\);/,
+    "loadUserData()'s cloud-sync transactions-replace branch should call _clearVendorDayFiltersForDataReplace() (session-only fields, safe on every pull), not _resetSessionFiltersForDataReplace() (which reverts a signed-in user's own persisted showExcluded/_bizFilter on every routine reload)"
+  );
+});
+
+// ── 98th adversarial pass: importBackup() and confirmTxImport() had no
+// demo-preview guard at all, unlike confirmClearAllData() (97th pass) --
+// saveToLocalStorage()/scheduleSave() are hard no-ops during a
+// demo-preview session, so both actions could appear to succeed (a
+// confirm() dialog, a full success toast/modal) while persisting nothing,
+// silently reverting on the next reload. ──
+test("importBackup: refuses to run during a demo-preview session instead of appearing to succeed and persisting nothing", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /function importBackup\(file\)\{\s*if\(!file\)return;[\s\S]{0,600}?if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{\s*showToast\('Not available while previewing demo data/,
+    "importBackup() should early-return with the standard demo-preview toast before ever reading the file"
+  );
+});
+test("confirmTxImport: refuses to run during a demo-preview session instead of appearing to succeed and persisting nothing", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /function confirmTxImport\(\)\{\s*if\(!importParsed\.length\)return;[\s\S]{0,900}?if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{\s*closeModals\(\);\s*showToast\('Not available while previewing demo data/,
+    "confirmTxImport() should early-return with the standard demo-preview toast before touching state.transactions"
+  );
+});
+
+// ── 98th adversarial pass: renderYearInReview()'s "Quietest month" reduce
+// was seeded with the *unfiltered* byMonth[0], even though it only ever
+// iterates the spent>0-filtered array -- if the window's chronologically
+// first month has spent===0 (a deselected source zeroing it, or just a
+// genuinely quiet first month), that $0 seed beats every real candidate in
+// the b.spent<a.spent comparison every time, so "Quietest month" always
+// showed that $0 month instead of the actual lowest nonzero-spend month. ──
+test("Year in Review: quietestMonth is seeded from the filtered (spent>0) array, not the raw unfiltered byMonth[0]", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const matches = source.match(/const _positive\w*=byMonth\.filter\(m=>m\.spent>0\);\s*const quietestMonth=_positive\w*\.length\?_positive\w*\.reduce\(\(a,b\)=>b\.spent<a\.spent\?b:a\):null;/g) || [];
+  assert.equal(matches.length, 2, "both renderYearInReview() and copyYirSummary() should seed quietestMonth's reduce from the filtered array (or null if nothing passed the filter), not raw byMonth[0]");
+});
+
+// ── 98th adversarial pass: renderYearInReview()'s net-worth-change card
+// picked firstSnap as the earliest snapshot AT OR AFTER the window's start,
+// and lastSnap as the latest snapshot AT OR BEFORE the window's end -- if no
+// snapshot falls inside the window but snapshots exist on both sides,
+// firstSnap can land chronologically AFTER lastSnap, inverting both the
+// sign of nwChange and the "firstSnap -> lastSnap" display labels/range. ──
+test("Year in Review: net-worth change requires firstSnap to be chronologically at or before lastSnap", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const matches = source.match(/firstSnap&&lastSnap&&firstSnap!==lastSnap&&firstSnap\.monthKey<=lastSnap\.monthKey\?lastSnap\.nw-firstSnap\.nw:null/g) || [];
+  assert.equal(matches.length, 2, "both renderYearInReview() and copyYirSummary() should require firstSnap.monthKey<=lastSnap.monthKey before computing nwChange, falling back to null (hides the card) rather than showing an inverted result");
+});
+
+// ── 98th adversarial pass: _vendorAliasChainReaches() (added the 97th pass)
+// checked `current` against `from` before attempting each hop, so its
+// <10 loop bound only ever checked nodes at hop-distance 0-9 from `to` (10
+// nodes) -- one short of resolveVendor()'s own walk, which advances up to
+// 10 hops forward (11 reachable nodes, hop-distance 0-10). A 10-alias-deep
+// chain with `from` as the very last node was reachable by resolveVendor()
+// but invisible to this cycle check. ──
+test("_vendorAliasChainReaches: detects `from` at the full 10-hop depth resolveVendor() itself can reach", () => {
+  const vendorAliases = {};
+  let prev = "V0";
+  for (let i = 1; i <= 10; i++) {
+    vendorAliases[prev] = `V${i}`;
+    prev = `V${i}`;
+  }
+  // vendorAliases: V0->V1->V2->...->V9->V10 (a 10-hop chain)
+  const ctx = { state: { vendorAliases } };
+  const { _vendorAliasChainReaches } = loadFunctions(["_vendorAliasChainReaches"], ctx);
+  assert.equal(_vendorAliasChainReaches("V0", "V10"), true, "V10 sits exactly 10 hops from V0 -- the same depth resolveVendor() can walk -- and must be detected, not silently missed by an off-by-one loop bound");
 });
