@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-WfPiQpEPM4E00hM6u96tUgF5NOt7pg8YpwLmOgwDUbE=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ximIJJWVZfQbelFKbS/QzOfBKTA+UWrsfqnm4oa92eU=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2433,7 +2433,18 @@ function _resetSessionFiltersForDataReplace(){
   if(searchEl)searchEl.value='';
   document.getElementById('search-clear-btn')?.classList.add('hidden');
   state.showExcluded=false;
-  try{localStorage.removeItem('trakyo_show_excl');}catch(e){}
+  // Guarded the same way saveToLocalStorage() guards every other write --
+  // "demo-preview sessions never persist" -- found missing here in the 97th
+  // adversarial pass, one pass after this whole helper was introduced: the
+  // 96th pass's own toggleExcluded() fix enforced this exact invariant for
+  // writing this key, but this removeItem() call (one of this same
+  // function's own reset lines) still fired unconditionally, including from
+  // loadDemoProfile() while genuinely previewing a demo over real saved
+  // data -- deleting the real "Show in totals" preference the banner
+  // promised would stay untouched.
+  if(!(window._isDemoPreview||window._viewingDemoOverReal)){
+    try{localStorage.removeItem('trakyo_show_excl');}catch(e){}
+  }
   _clearVendorDayFiltersForDataReplace();
 }
 function _clearVendorDayFiltersForDataReplace(){
@@ -7442,9 +7453,19 @@ function renderVendorAliasList(){
     el.innerHTML=`<div style="text-align:center;padding:1rem;font-size:11px;color:var(--text-muted)">No merges yet. Add your first alias above.</div>`;
     return;
   }
-  // Count how many transactions each alias affects
+  // Count how many transactions each alias affects. Walks each transaction's
+  // full resolution chain (via _vendorAliasChainReaches) rather than
+  // comparing the raw t.desc directly -- a chained alias (merging an
+  // already-merged display name into a further alias, which resolveVendor()
+  // explicitly supports, e.g. "AMAZON.COM"->"Amazon"->"Shopping") has no raw
+  // transaction description that literally equals its `from` value
+  // ("Amazon"), so the raw-desc match always undercounted it as 0 despite it
+  // correctly affecting every transaction upstream in the chain. Can't use
+  // resolveVendor(t.desc) directly either -- that only returns the chain's
+  // *terminal* value ("Shopping"), never an intermediate hop like "Amazon".
+  // Found in the 97th adversarial pass.
   el.innerHTML=aliases.map(([from,to])=>{
-    const count=state.transactions.filter(t=>t.desc.toUpperCase()===from.toUpperCase()).length;
+    const count=state.transactions.filter(t=>_vendorAliasChainReaches(t.desc,from)).length;
     return`<div class="list-row">
       <div style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <span style="font-family:monospace;font-size:11px;color:#F87171;background:#F8717118;padding:1px 7px;border-radius:4px">${esc(from)}</span>
@@ -7457,6 +7478,28 @@ function renderVendorAliasList(){
   }).join('');
 }
 
+// Walks the merge chain starting at `to`, returning true if `from` appears
+// anywhere along it (as an intermediate hop or the terminal node) -- unlike
+// resolveVendor(), which only ever returns the chain's final value. Found
+// necessary in the 97th adversarial pass (see addVendorAlias()'s own note).
+function _vendorAliasChainReaches(to,from){
+  const fromUp=from.toUpperCase();
+  let current=to,hops=0;
+  const seen=new Set();
+  while(hops++<10){
+    const u=current.toUpperCase();
+    if(u===fromUp)return true;
+    if(seen.has(u))return false;
+    seen.add(u);
+    let matched=null;
+    for(const [alias,canonical] of Object.entries(state.vendorAliases||{})){
+      if(u===alias.toUpperCase()){matched=canonical;break;}
+    }
+    if(matched===null)return false;
+    current=matched;
+  }
+  return false;
+}
 function addVendorAlias(){
   const from=document.getElementById('alias-from').value.trim();
   const to=document.getElementById('alias-to').value.trim();
@@ -7469,13 +7512,19 @@ function addVendorAlias(){
   // silently mislabels/recolors as its synthetic "Other" grouping instead
   // of the real merged vendor name. Found in the 33rd adversarial pass.
   if(isReservedCatName(to)){showToast('That target name is reserved — try a different one','#FCD34D');return;}
-  // resolveVendor(to) walks the *existing* chain forward from `to`; if it
-  // already terminates at `from`, adding from->to would close a loop
-  // (A->B, B->A, or a longer multi-hop cycle) that silently neutralizes
-  // both merges — resolveVendor()'s own `seen` cycle-guard makes every
-  // vendor in the loop resolve back to itself, with no error shown and
-  // the alias list still displaying both entries as if active.
-  if(resolveVendor(to).toUpperCase()===from.toUpperCase()){showToast('That would create a merge loop — remove the existing alias first','#FCD34D');return;}
+  // Walks the *existing* chain forward from `to`, checking whether `from`
+  // appears anywhere along it -- not just resolveVendor(to)'s own *terminal*
+  // node. The original version of this guard called resolveVendor(to)
+  // directly, which only ever returns the end of the chain, so it missed the
+  // case where `from` sits mid-chain rather than at the end (e.g. updating
+  // an existing alias's target: AMZN->Amazon, Amazon->Shopping already
+  // exist; re-pointing Amazon->AMZN passes resolveVendor('AMZN')==='Shopping'
+  // !=='Amazon', but AMZN's own chain does pass through 'Amazon' on the way
+  // to 'Shopping') -- silently closing a 2-cycle (AMZN<->Amazon) the moment
+  // the dedup below deletes and re-inserts `from`'s entry, neutralizing both
+  // merges exactly as this guard exists to prevent. Found in the 97th
+  // adversarial pass.
+  if(_vendorAliasChainReaches(to,from)){showToast('That would create a merge loop — remove the existing alias first','#FCD34D');return;}
   if(!state.vendorAliases)state.vendorAliases={};
   // Case-insensitive dedup, matching addCatRule()'s existing precedent —
   // resolveVendor() only ever matches the *first* case-insensitive hit for a
@@ -7543,7 +7592,16 @@ function openClearDataModal(){
   document.getElementById('clear-data-modal').classList.remove('hidden');
 }
 async function confirmClearAllData(){
-  if(window._isDemoPreview){
+  // Also gated on _viewingDemoOverReal, not just _isDemoPreview -- every
+  // other demo-preview check in the file pairs the two (see
+  // toggleExcluded()/loadUserData()/etc.), but this one only checked the
+  // ?demoPreview=1 URL-marker flag. A signed-in user with real saved data
+  // who clicks "try demo" in-app (_viewingDemoOverReal=true, the banner
+  // explicitly says "your saved data is untouched") could still reach
+  // Settings -> Clear all data and irreversibly wipe their real
+  // localStorage, believing they were clearing the demo data on screen.
+  // Found in the 97th adversarial pass.
+  if(window._isDemoPreview||window._viewingDemoOverReal){
     closeModals();
     // tc(), not a hardcoded value -- see confirmCatExclusion()'s toast note,
     // ~line 6401 (75th adversarial pass): #94a3b8 is this file's dark-theme
@@ -8618,6 +8676,15 @@ function csvSafeField(s){
   if(/^[=+\-@\t\r]/.test(s))s="'"+s;
   return `"${s.replace(/"/g,'""')}"`;
 }
+// Reverses the leading ' csvSafeField() inserts, for our own round-trip
+// 'trakyodollas' import format -- without this, re-importing our own export
+// left every description/category that originally started with =/+/-/@ (or
+// tab/CR) permanently prefixed with a literal ' character it never actually
+// had, since nothing on the import side undid the encode-time guard. Only
+// strips the ' when immediately followed by one of the guarded characters,
+// so a value that happens to start with a genuine ' for any other reason is
+// left untouched. Found in the 97th adversarial pass.
+function _stripCsvFormulaGuard(s){return /^'[=+\-@\t\r]/.test(s)?s.slice(1):s;}
 
 function exportTransactionsCSV(){
   const txs=getSortedTxs();
@@ -10004,9 +10071,17 @@ function splitCSVRows(text){
 function parseCSV(text){
   const lines=splitCSVRows(text.trim()).map(l=>l.trim()).filter(Boolean);
   if(lines.length<2)return [];
-  const headers=splitCSVLine(lines[0]).map(h=>h.trim().replace(/^"|"$/g,'').toLowerCase());
+  // No .replace(/^"|"$/g,'') here -- splitCSVLine() already consumes a
+  // field's surrounding quotes and collapses doubled internal quotes ("" ->
+  // ") while parsing, so re-stripping a leading/trailing " afterward doesn't
+  // catch anything it missed; it silently corrupts a field whose real
+  // content legitimately ends or starts with a literal quote character
+  // (e.g. an inch mark: `"BLINDS 72"""` correctly unquotes to `BLINDS 72"`,
+  // then the second strip destroyed that trailing quote). Found in the 97th
+  // adversarial pass.
+  const headers=splitCSVLine(lines[0]).map(h=>h.trim().toLowerCase());
   return lines.slice(1).map(line=>{
-    const vals=splitCSVLine(line).map(v=>v.trim().replace(/^"|"$/g,''));
+    const vals=splitCSVLine(line).map(v=>v.trim());
     const obj={};
     headers.forEach((h,i)=>{obj[h]=vals[i]||'';});
     return obj;
@@ -10269,11 +10344,11 @@ function normalizeTxRow(row, source){
     // credit's sign on re-import, turning a spend-reducing credit into an
     // ordinary expense. Found in the 36th adversarial pass.
     date=row['date']||'';
-    desc=(row['description']||'').trim();
+    desc=_stripCsvFormulaGuard((row['description']||'').trim());
     isOffset=(row['isoffset']||'').trim().toLowerCase()==='yes';
     amount=parseFloat(row['amount']||'0');
     if(!isOffset)amount=Math.abs(amount);
-    cat=row['category']||'Other';
+    cat=_stripCsvFormulaGuard(row['category']||'Other');
     excluded=(row['excluded']||'').trim().toLowerCase()==='yes';
     isIncome=(row['isincome']||'').trim().toLowerCase()==='yes';
     biz=(row['business']||'').trim().toLowerCase()==='yes';
@@ -12844,6 +12919,14 @@ function openDemoPicker(firstVisit=true){
 function loadDemoProfile(n, silent=false, skipRender=false){
   if(silent instanceof Element||silent instanceof EventTarget)silent=false; // delegation passes el as 2nd arg
   const hadRealData=state.hasRealData; // switching profiles must never overwrite real saved data
+  // Set before any state mutation runs (previously set near the end of this
+  // function, after _resetSessionFiltersForDataReplace() already ran) --
+  // that helper's own trakyo_show_excl removal (96th pass) checks this exact
+  // flag to honor "demo-preview sessions never persist," so the flag has to
+  // already be true by the time the helper's localStorage write executes,
+  // not just by the time this function returns. Found in the 97th
+  // adversarial pass.
+  if(!silent&&hadRealData)window._viewingDemoOverReal=true;
   if(!silent){document.getElementById('demo-picker-overlay').style.display='none';window.scrollTo(0,0);}
   const p = n===1 ? DEMO_PROFILE_1 : DEMO_PROFILE_2;
   // Completely replace accounts — deep copy profile's exact account list, no extras
@@ -12949,8 +13032,7 @@ function loadDemoProfile(n, silent=false, skipRender=false){
   }));
   if(!silent&&!hadRealData)scheduleSave();
   if(!silent&&hadRealData){
-    window._viewingDemoOverReal=true;
-    showDemoPreviewBanner();
+    showDemoPreviewBanner(); // window._viewingDemoOverReal is already set, near the top of this function
   }
   showToast(n===1?'🌱 Exploring starter demo':'🌳 Exploring full demo','#34D399',3300);
 }
