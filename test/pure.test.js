@@ -2252,7 +2252,7 @@ test("loadUserData: the transactions-replace branch calls only _clearVendorDayFi
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /if \(Array\.isArray\(prefs\.transactions\)\) \{\s*state\.transactions = prefs\.transactions\.map\(t=>[\s\S]{0,2200}?_clearVendorDayFiltersForDataReplace\(\);\s*rebuildMonthly\(\);/,
+    /if \(Array\.isArray\(prefs\.transactions\)\) \{[\s\S]{0,2600}?_clearVendorDayFiltersForDataReplace\(\);\s*rebuildMonthly\(\);/,
     "loadUserData()'s cloud-sync transactions-replace branch should call _clearVendorDayFiltersForDataReplace() (session-only fields, safe on every pull), not _resetSessionFiltersForDataReplace() (which reverts a signed-in user's own persisted showExcluded/_bizFilter on every routine reload)"
   );
 });
@@ -2687,7 +2687,7 @@ test("importBackup: filters malformed transactions/customCategories/snapshots en
   );
   assert.match(
     source,
-    /state\.customCategories=arr\(saved\.customCategories\)\.filter\(c=>c&&typeof c==='object'\);/,
+    /state\.customCategories=_arrOfObj\(saved\.customCategories\);/,
     "importBackup() should filter out non-object customCategories entries"
   );
   assert.match(
@@ -2702,12 +2702,12 @@ test("loadFromLocalStorage: filters malformed transactions/customCategories/snap
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /state\.transactions=\(txSource\|\|state\.transactions\)\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'\?t\.date:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
+    /state\.transactions=\(Array\.isArray\(txSource\)\?txSource:state\.transactions\)\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'\?t\.date:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
     "loadFromLocalStorage() should filter out non-object transaction entries and coerce a malformed date"
   );
   assert.match(
     source,
-    /state\.customCategories=Array\.isArray\(saved\.customCategories\)\?saved\.customCategories\.filter\(c=>c&&typeof c==='object'\):state\.customCategories;/,
+    /state\.customCategories=Array\.isArray\(saved\.customCategories\)\?_arrOfObj\(saved\.customCategories\):state\.customCategories;/,
     "loadFromLocalStorage() should filter out non-object customCategories entries"
   );
   assert.match(
@@ -2735,4 +2735,81 @@ test("renderMetrics: allSnaps is null-safe and uses the shared snapshot sort com
     /const allSnaps=\[\.\.\.state\.snapshots\]\.filter\(s=>s&&typeof s\.monthKey==='string'\)\.sort\(_snapshotSortCompare\);/,
     "renderMetrics()'s allSnaps should null-check each entry before touching .monthKey, and use the shared comparator -- this was a 6th snapshot sort/filter site missed by the 102nd pass's consolidation because it spreads into a new array rather than matching the literal state.snapshots.sort(...) pattern"
   );
+});
+
+// ── 104th adversarial pass: a dedicated, single-purpose audit of every
+// OTHER field importBackup()/loadFromLocalStorage()/loadUserData() restore
+// from external/untrusted data, following up on 4 consecutive passes
+// (100-103) each finding a crash-on-malformed-entry gap in the previous
+// pass's own fix. Rather than let this keep surfacing one field per pass,
+// audited every remaining field in one sweep: state.accounts,
+// state.vehicles, state.catRules, state.vendorAliases, state.hiddenPills,
+// state.activeSources, state.sourceAlignDate, and two residual gaps in
+// state.transactions/state.customCategories pass 103's own fix didn't
+// reach (loadUserData(), the cloud-sync path, plus a txSource
+// array-check in loadFromLocalStorage()). Two new shared helpers,
+// _arrOfObj() (array of well-formed objects) and _strValueObj() (object
+// with string-only values), consolidate the array/object-shape guards
+// the same way _isValidSnapshot() already did for snapshots. ──
+
+test("_arrOfObj: coerces to an array and drops null/primitive entries", () => {
+  const ctx = {};
+  const { _arrOfObj } = loadFunctions(["_arrOfObj"], ctx);
+  assert.deepEqual(_arrOfObj([{ a: 1 }, null, "x", 5, { b: 2 }]), [{ a: 1 }, { b: 2 }]);
+  assert.deepEqual(_arrOfObj(null), []);
+  assert.deepEqual(_arrOfObj({}), []);
+  assert.deepEqual(_arrOfObj(undefined), []);
+});
+test("_strValueObj: keeps only string-valued keys, coerces non-object input to {}", () => {
+  const ctx = {};
+  const { _strValueObj } = loadFunctions(["_strValueObj"], ctx);
+  assert.deepEqual(_strValueObj({ a: "Amazon", b: 5, c: null, d: "Shopping" }), { a: "Amazon", d: "Shopping" });
+  assert.deepEqual(_strValueObj(null), {});
+  assert.deepEqual(_strValueObj([1, 2]), {}, "an array should not be treated as a valid vendorAliases object");
+  assert.deepEqual(_strValueObj("x"), {});
+});
+test("_normalizeAccountTypes: filters null/non-object entries before dereferencing .type on each one", () => {
+  const ctx = { ACCT_TYPE_ALIASES: { checking: "cash" } };
+  const { _normalizeAccountTypes } = loadFunctions(["_normalizeAccountTypes"], ctx);
+  const result = _normalizeAccountTypes([{ type: "checking" }, null, "garbage", { type: "cash" }]);
+  assert.deepEqual(result, [{ type: "cash" }, { type: "cash" }], "null/non-object entries should be dropped, not crash the forEach, and a real entry's type should still get normalized via ACCT_TYPE_ALIASES");
+});
+test("loadFromLocalStorage: accounts/vehicles/catRules/vendorAliases/hiddenPills/activeSources/sourceAlignDate/nextId are all Array.isArray/type-guarded, and accounts routes through _normalizeAccountTypes", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(source, /state\.accounts=Array\.isArray\(saved\.accounts\)\?_normalizeAccountTypes\(saved\.accounts\):state\.accounts;/, "accounts should be Array.isArray-guarded and routed through _normalizeAccountTypes(), which loadFromLocalStorage() never called before");
+  assert.match(source, /state\.vehicles=Array\.isArray\(saved\.vehicles\)\?_arrOfObj\(saved\.vehicles\):state\.vehicles;/, "vehicles should be Array.isArray-guarded and entry-filtered");
+  assert.match(source, /state\.catRules=_arrOfObj\(saved\.catRules\)\.filter\(r=>typeof r\.keyword==='string'\);/, "catRules should be entry-filtered plus a string-keyword check");
+  assert.match(source, /state\.vendorAliases=_strValueObj\(saved\.vendorAliases\);/, "vendorAliases should be filtered to string-only values");
+  assert.match(source, /state\.hiddenPills=new Set\(Array\.isArray\(saved\.hiddenPills\)\?saved\.hiddenPills:\[\]\);/, "hiddenPills should be Array.isArray-guarded before new Set()");
+  assert.match(source, /if\(Array\.isArray\(saved\.activeSources\)&&saved\.activeSources\.length>0\)\{/, "activeSources should be Array.isArray-guarded, not just checked for a truthy .length");
+  assert.match(source, /state\.sourceAlignDate=typeof saved\.sourceAlignDate==='string'\?saved\.sourceAlignDate:null;/, "sourceAlignDate should be type-checked, not just ??null");
+  assert.match(source, /state\.nextId=Number\(saved\.nextId\)\|\|state\.nextId;/, "nextId should be Number()-coerced");
+  assert.match(source, /const txSource=txRaw\?JSON\.parse\(txRaw\):saved\.transactions;[\s\S]{0,900}?state\.transactions=\(Array\.isArray\(txSource\)\?txSource:state\.transactions\)/, "the transactions txSource should be Array.isArray-checked before .filter()");
+});
+test("importBackup: vehicles/catRules/vendorAliases all route through the new shared helpers", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(source, /state\.vehicles=_arrOfObj\(saved\.vehicles\);/, "vehicles should route through _arrOfObj()");
+  assert.match(source, /state\.catRules=_arrOfObj\(saved\.catRules\)\.filter\(r=>typeof r\.keyword==='string'\);/, "catRules should be entry-filtered plus a string-keyword check");
+  assert.match(source, /state\.vendorAliases=_strValueObj\(saved\.vendorAliases\);/, "vendorAliases should route through _strValueObj()");
+  assert.match(source, /state\.customCategories=_arrOfObj\(saved\.customCategories\);/, "customCategories should route through _arrOfObj() (simplified from the 103rd pass's manual inline filter)");
+});
+test("loadUserData: customCategories/vehicles/catRules/vendorAliases/hiddenPills/transactions/nextId all get the same guards as the other two ingestion paths -- the cloud-sync path was the least-guarded of the three", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(source, /if \(prefs\.customCategories\) state\.customCategories = _arrOfObj\(prefs\.customCategories\);/, "customCategories should route through _arrOfObj() -- this was pass 103's own gap on the cloud-sync path");
+  assert.match(source, /if \(Array\.isArray\(prefs\.vehicles\)\) state\.vehicles = _arrOfObj\(prefs\.vehicles\);/, "vehicles should route through _arrOfObj()");
+  assert.match(source, /if \(prefs\.catRules\) state\.catRules = _arrOfObj\(prefs\.catRules\)\.filter\(r=>typeof r\.keyword==='string'\);/, "catRules should be entry-filtered plus a string-keyword check");
+  assert.match(source, /if \(prefs\.vendorAliases\) state\.vendorAliases = _strValueObj\(prefs\.vendorAliases\);/, "vendorAliases should route through _strValueObj()");
+  assert.match(source, /if \(Array\.isArray\(prefs\.hiddenPills\)\) state\.hiddenPills = new Set\(prefs\.hiddenPills\);/, "hiddenPills should be Array.isArray-guarded, not just truthy-checked");
+  assert.match(
+    source,
+    /state\.transactions = prefs\.transactions\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'\?t\.date:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
+    "transactions should get the same entry-filter and date-coercion pass 103 already applied to importBackup()/loadFromLocalStorage()"
+  );
+  assert.match(source, /if \(prefs\.nextId\) state\.nextId = Number\(prefs\.nextId\)\|\|state\.nextId;/, "nextId should be Number()-coerced");
 });
