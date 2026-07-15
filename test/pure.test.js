@@ -2332,3 +2332,104 @@ test("_vendorAliasChainReaches: detects `from` at the full 10-hop depth resolveV
   const { _vendorAliasChainReaches } = loadFunctions(["_vendorAliasChainReaches"], ctx);
   assert.equal(_vendorAliasChainReaches("V0", "V10"), true, "V10 sits exactly 10 hops from V0 -- the same depth resolveVendor() can walk -- and must be detected, not silently missed by an off-by-one loop bound");
 });
+
+// ── 99th adversarial pass: with the 96th-98th passes' session-filter/
+// demo-preview cluster finally verified clean end-to-end, this pass
+// rebaselined and found 5 fresh bugs elsewhere in the file. ──
+
+// loadUserData()'s Supabase query for snapshots has no ORDER BY (and can't
+// sort server-side -- the row is encrypted), so an edited snapshot (its row
+// physically relocates on UPDATE) could come back out of chronological
+// order. Several consumers (renderInsights()'s NW pill, renderHistory()'s
+// growth banner/deltas) index state.snapshots positionally instead of
+// using the existing getSortedSnaps() helper.
+test("loadUserData: sorts state.snapshots by monthKey after a cloud pull, since the query itself has no ORDER BY", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /state\.snapshots = snaps\.map\(s => \(\{[\s\S]{0,300}?\}\)\);[\s\S]{0,1400}?state\.snapshots\.sort\(\(a,b\)=>a\.monthKey\.localeCompare\(b\.monthKey\)\);/,
+    "loadUserData() should sort state.snapshots by monthKey immediately after building it from the cloud payload"
+  );
+});
+
+// confirmSrcRemove()'s `src` param is coerced to a Number by the
+// event-delegation dispatcher for any numeric-looking source label (e.g.
+// "4783", a card's last-4 digits) -- t.card is always a string, so the
+// comparison silently matched nothing without a String() cast, matching
+// the fix already applied to toggleSource()/etc. in the 13th pass.
+test("confirmSrcRemove: coerces a numeric-looking source label back to a string before filtering transactions", () => {
+  let toastMsg = null;
+  const ctx = {
+    state: {
+      transactions: [{ card: "4783", desc: "A" }, { card: "4783", desc: "B" }, { card: "Chase", desc: "C" }],
+      activeSources: new Set(["4783", "Chase"]),
+    },
+    mutateTransactions: (fn) => fn(),
+    closeSrcRemovePop: () => {},
+    renderSpending: () => {},
+    showToast: (msg) => { toastMsg = msg; },
+    esc: (s) => s,
+  };
+  const { confirmSrcRemove } = loadFunctions(["confirmSrcRemove"], ctx);
+  confirmSrcRemove(4783); // simulates the dispatcher's coerce() turning "4783" into a Number
+  assert.equal(ctx.state.transactions.length, 1, "both '4783'-carded transactions should be removed, not zero of them");
+  assert.equal(ctx.state.activeSources.has("4783"), false, "the numeric-looking source should actually be removed from activeSources");
+  assert.match(toastMsg || "", /Removed 2 transaction/, "the toast should report the real removed count, not 0");
+});
+
+// renderHistory()'s annualized-rate calc parsed first.date/last.date
+// (locale display strings like "Apr 30, 2026", not ISO) with .split('-'),
+// which has no hyphens to split on -- producing Invalid Date and a
+// permanently-null/unreachable "%/yr annualized" figure. Fixed to use
+// parseYM() against monthKey, matching renderInsights()'s NW pill.
+test("renderHistory: computes the annualized-rate window from monthKey via parseYM(), not from the locale-formatted .date string", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.doesNotMatch(
+    source,
+    /const \[_fy2,_fm2,_fd2\]=first\.date\.split\('-'\)/,
+    "renderHistory() should no longer try to ISO-parse first.date/last.date, which are locale display strings with no hyphens"
+  );
+  assert.match(
+    source,
+    /const firstDate=parseYM\(first\.monthKey\),lastDate=parseYM\(last\.monthKey\);/,
+    "renderHistory() should derive firstDate/lastDate from monthKey via parseYM(), the same approach renderInsights()'s NW pill already uses correctly"
+  );
+});
+
+// renderSankey() could throw (fmtMonthShort(undefined) inside periodStr)
+// when totalIncome>0 (declared/manual income configured) but
+// getFilteredMonths() returns an empty array (no transactions in range) --
+// reachable by a new user setting up income before importing any CSV.
+// saveDeclaredIncome()/clearDeclaredIncome() call this function bare
+// (uncaught), so the crash also skipped their own renderInsights() refresh.
+test("renderSankey: shows the income-setup nudge instead of crashing when there's income but no transactions in range", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if\(!totalIncome\|\|!filteredMonths\.length\)\{\s*wrap\.innerHTML=`<div class="sankey-nudge"/,
+    "renderSankey()'s early-return nudge should also fire when filteredMonths is empty, not just when totalIncome is falsy, since periodStr's fmtMonthShort(filteredMonths[0]) throws on an empty array"
+  );
+});
+
+// window._isDemoPreview was only ever set inside the DOMContentLoaded
+// handler, but the later <script> block's _sb.auth.onAuthStateChange()
+// callback resolves asynchronously via a promise chain, not gated on any
+// DOM event -- theoretically able to read the flag as undefined before
+// DOMContentLoaded runs. Computed at parse time instead, closing the race
+// regardless of the exact microtask/macrotask ordering.
+test("window._isDemoPreview is computed at parse time, before the DOMContentLoaded handler", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /window\._isDemoPreview=new URLSearchParams\(window\.location\.search\)\.get\('demoPreview'\)==='1';\s*\n\s*\/\/ Wire up after DOM ready\s*\ndocument\.addEventListener\('DOMContentLoaded'/,
+    "window._isDemoPreview should be assigned at top-level script scope, immediately before the DOMContentLoaded listener registration -- not inside the handler itself"
+  );
+});

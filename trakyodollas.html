@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-e0OjNrVulN60MJ6ueZAtKlUaQbzudZZWYxZll4E17hY=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-9dLX+sXBqu42EHwm2vGkDjxYovWhazaAD/us2ype5jk=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -5139,7 +5139,16 @@ function renderSankey(){
     totalIncome=periodFlow.totalIncome;
   }
 
-  if(!totalIncome){
+  // filteredMonths.length===0, not just !totalIncome -- declared/manual
+  // income (getEffectiveIncome()) can be positive independent of any actual
+  // transaction existing (e.g. a new user configuring income before their
+  // first CSV import, or after removing their only source), and
+  // periodStr's fmtMonthShort(filteredMonths[0]) a few lines below throws
+  // on undefined when the array is empty. saveDeclaredIncome()/
+  // clearDeclaredIncome() call this function bare (uncaught), so the crash
+  // also skipped their own renderInsights() refresh on the next line. Found
+  // in the 99th adversarial pass.
+  if(!totalIncome||!filteredMonths.length){
     wrap.innerHTML=`<div class="sankey-nudge" data-action="openIncomeModal">
       <div class="sankey-nudge-title">💰 Set up income to enable Flow view</div>
       <div class="sankey-nudge-sub">Flow shows how your income moves into spending categories — and what's left over as savings.</div>
@@ -6410,6 +6419,14 @@ function closeSrcRemovePop(){
   document.removeEventListener('click',_srcPopOutside);
 }
 function confirmSrcRemove(src){
+  // A numeric-looking source label (e.g. a card's last-4 digits, "4783") is
+  // coerced to a Number by the event-delegation dispatcher's coerce() --
+  // same pattern fixed for toggleSource()/openBudgetModal()/etc. in the
+  // 13th adversarial pass, missed here. Without this, t.card===src (t.card
+  // is always a string) matched zero transactions, silently making "Remove
+  // source" a no-op for any numeric-looking label. Found in the 99th
+  // adversarial pass.
+  src=String(src);
   const count=state.transactions.filter(t=>t.card===src).length;
   mutateTransactions(()=>{
     state.transactions=state.transactions.filter(t=>t.card!==src);
@@ -7051,10 +7068,18 @@ function renderHistory(){
     const [ly,lm]=last.monthKey.split('-').map(Number);
     const months=(ly-fy)*12+(lm-fm)+1;
     const growthUp=totalGrowth>=0;
-    // Annualized rate — use actual dates for precision
-    const [_fy2,_fm2,_fd2]=first.date.split('-').map(Number);
-    const [_ly2,_lm2,_ld2]=last.date.split('-').map(Number);
-    const firstDate=new Date(_fy2,_fm2-1,_fd2),lastDate=new Date(_ly2,_lm2-1,_ld2);
+    // Annualized rate -- parsed from monthKey (via the existing parseYM()
+    // helper), not first.date/last.date. Every snapshot-save path stores
+    // .date as a locale display string ("Apr 30, 2026" via toLocaleDateString),
+    // not an ISO "YYYY-MM-DD" string -- .split('-') on that produces a
+    // single-element array with no hyphens to split on, so
+    // [_fy2,_fm2,_fd2]=[NaN] every time, cascading through Invalid Date to
+    // days=NaN, permanently failing the days>=60 gate below. The "%/yr
+    // annualized" suffix was unreachable for every user. Matches
+    // renderInsights()'s NW pill (§ Pill 2), which already correctly uses
+    // parseYM(lastSnap.monthKey) for this exact calculation. Found in the
+    // 99th adversarial pass.
+    const firstDate=parseYM(first.monthKey),lastDate=parseYM(last.monthKey);
     const days=Math.max(1,Math.round((lastDate-firstDate)/(1000*60*60*24)));
     const annRate=first.nw>0&&days>=60?Math.min(999,Math.round((Math.pow(last.nw/first.nw,365/days)-1)*100)):null;
     summaryHTML=`<div style="background:${growthUp?'#065F4618':'#7F1D1D18'};border:1px solid ${growthUp?'#059669':'#DC2626'}33;border-radius:10px;padding:.75rem 1rem;margin-bottom:.65rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
@@ -11186,9 +11211,12 @@ function updateAuthUI(user, justSignedIn=false) {
 }
 // Expose for Supabase script block
 window.updateAuthUI = updateAuthUI;
-window.loadUserData = loadUserData;
 window.showPage = showPage;
 window.promptSyncPassphrase = promptSyncPassphrase;
+// window.loadUserData was dead -- the Supabase block only ever calls
+// loadUserData() indirectly, through promptSyncPassphrase()/
+// submitSyncPassphrase() (both exported above/below), never directly.
+// Removed in the 99th adversarial pass.
 
 function openAuthModal(reason) {
   const title = document.getElementById('auth-modal-title');
@@ -11413,6 +11441,23 @@ async function loadUserData(uid) {
         date: s.date, label: s.label, monthKey: s.monthKey,
         nw: s.nw, assets: s.assets, liab: s.liab
       }));
+      // loadSnapshots()'s Supabase query has no .order() clause (and can't
+      // sort server-side -- the row's `data` column is encrypted), so
+      // Postgres returns heap order, not chronological order. Every other
+      // path that mutates state.snapshots keeps it sorted (saveSnapshot()'s
+      // historical-backfill branch explicitly re-sorts after push; a normal
+      // monthly saveSnapshot() append stays sorted because snapshots are
+      // taken in chronological order in practice) -- several consumers
+      // (renderInsights()'s NW-change pill, renderHistory()'s growth banner
+      // and per-row deltas) rely on that invariant by indexing
+      // state.snapshots positionally instead of calling the existing
+      // getSortedSnaps() helper. An UPDATE to any snapshot (editing one via
+      // the pencil icon) relocates that row in Postgres's physical storage,
+      // so a user who edits an older snapshot and reloads could see it
+      // returned last, corrupting the dashboard's "NW change since" figure
+      // (wrong day count and sign) and the History tab's ordering/deltas.
+      // Found in the 99th adversarial pass.
+      state.snapshots.sort((a,b)=>a.monthKey.localeCompare(b.monthKey));
     }
     // Load prefs (full state)
     const prefs = await window._fb.loadPrefs(uid);
@@ -12623,13 +12668,23 @@ window.addEventListener('storage',(e)=>{
   }
 });
 
+// Computed at parse time, not inside DOMContentLoaded below -- the later
+// <script> block registers _sb.auth.onAuthStateChange(), whose
+// INITIAL_SESSION callback resolves via a promise chain, not gated on any
+// DOM event, and could theoretically fire before DOMContentLoaded runs.
+// With window._isDemoPreview still unset at that point, a real signed-in
+// user's cloud pull (loadUserData(), gated on this exact flag) could read
+// it as undefined and proceed to silently overwrite an active
+// ?demoPreview=1 preview with real account data. Found in the 99th
+// adversarial pass.
+window._isDemoPreview=new URLSearchParams(window.location.search).get('demoPreview')==='1';
+
 // Wire up after DOM ready
 document.addEventListener('DOMContentLoaded',function(){
   // Check for demo / demo-preview params early — demo-preview disables all persistence for this session
   const _params=new URLSearchParams(window.location.search);
   const _isDemo=_params.get('demo')==='1';
-  const _isDemoPreview=_params.get('demoPreview')==='1';
-  window._isDemoPreview=_isDemoPreview;
+  const _isDemoPreview=window._isDemoPreview;
   if(_isDemo) window._fromLanding=true;
 
   // Clean up stale localStorage keys from removed features
