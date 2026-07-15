@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-kyMTD2cLTGyLkVU4btJONqqmgxFQixJF4ET9R0I5oHk=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Ulb9S52MaeQDNIDjzOWfrGR+eLn3TxvG0iH48RH3LOk=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3622,6 +3622,31 @@ function renderNwGoalWidget(){
 
   if(!projEl)return;
 
+  // ── No goal available at all (nw already exceeds every milestone,
+  // and no custom goal was ever set) ───────────────────────────────
+  // The auto-select above (`MILESTONES.find(m=>m>nw)`) returns undefined
+  // once nw>=the top milestone ($5M), leaving state.nwGoal (and so `goal`)
+  // undefined -- `nw>=goal` below is then a NaN comparison (always false),
+  // falling straight through into `needed=goal-nw` (NaN), cascading to
+  // "$NaN to go", "Invalid Date" for the ETA, and a NaN-width progress
+  // bar. setNwGoalNextMilestone() (the "Set next milestone" button used
+  // for the ordinary goal-reached case below) also silently no-ops here
+  // for the same reason (its own `MILESTONES.find` call), so that
+  // shouldn't be reused as the way out — point at openCustomNwGoal()
+  // instead, the app's own existing path for a goal beyond the built-in
+  // milestone list. Found in the 101st adversarial pass.
+  if(!goal){
+    projEl.innerHTML=`
+      <div style="background:var(--bg-card);border:1px solid #05996933;border-radius:10px;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#34D399;margin-bottom:2px">You're past every built-in milestone!</div>
+          <div class="text-muted-md">Set a custom goal to keep tracking progress.</div>
+        </div>
+        <button data-action="openCustomNwGoal" style="background:#059669;color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap" type="button">Set custom goal →</button>
+      </div>${hideLink}`;
+    return;
+  }
+
   // ── Goal reached state ─────────────────────────────────────────
   if(nw>=goal){
     projEl.innerHTML=`
@@ -7016,7 +7041,15 @@ function renderAccountLists(){
 // only shape-checks state.vehicles as an array, so a crafted backup file
 // could carry a non-numeric payload straight into these fields, which
 // otherwise interpolate directly into innerHTML. Found in the 100th
-// adversarial pass.
+// adversarial pass. The 100th pass's own sweep missed 3 more sites of the
+// identical gap in this same function, found in the 101st adversarial
+// pass: v.id (both editVehicle data-arg attributes) and v.year (the KBB
+// link's data-arg) both interpolate raw into an HTML attribute; v.model
+// also risked a crash (not just injection) via (v.model||'').split(' ') --
+// a crafted backup storing v.model as a truthy non-string (e.g. a number)
+// bypasses the ||'' fallback and throws on .split, since numbers have no
+// such method. All three now go through esc(String(...)) matching the
+// established pattern.
 function renderVehicles(){
   const el=document.getElementById('vehicle-list');if(!el)return;
   if(!state.vehicles.length){
@@ -7043,7 +7076,7 @@ function renderVehicles(){
         </div>
         <div style="display:flex;align-items:center;gap:10px">
           <div style="font-size:15px;font-weight:800;color:#34D399">${fmt(v.value)}</div>
-          <button class="btn btn-sm" data-action="editVehicle" data-arg="${v.id}" type="button">Edit</button>
+          <button class="btn btn-sm" data-action="editVehicle" data-arg="${esc(String(v.id))}" type="button">Edit</button>
         </div>
       </div>`;
     }
@@ -7059,13 +7092,13 @@ function renderVehicles(){
             <div style="font-size:15px;font-weight:800;color:#34D399">${fmt(v.value)}</div>
             ${v.purchase>0?`<div class="text-muted-sm" style="margin-top:3px">of ${fmt(v.purchase)} orig.</div>`:''}
           </div>
-          <button class="btn btn-sm" data-action="editVehicle" data-arg="${v.id}" type="button">Edit</button>
+          <button class="btn btn-sm" data-action="editVehicle" data-arg="${esc(String(v.id))}" type="button">Edit</button>
         </div>
       </div>
       <div style="padding:0 1rem .6rem 1rem">
         <div class="depn-bg"><div class="depn-fill" style="width:${ret}%"></div></div>
         <div style="margin-top:.5rem">
-          <a href="javascript:void(0)" data-action="openKBB" data-arg="${v.year}" data-arg2="${esc(v.make||'')}" data-arg3="${esc((v.model||'').split(' ')[0])}" style="color:#60A5FA;text-decoration:underline;font-size:11px">🔍 Check value on Kelley Blue Book ↗</a>
+          <a href="javascript:void(0)" data-action="openKBB" data-arg="${esc(String(v.year))}" data-arg2="${esc(v.make||'')}" data-arg3="${esc(String(v.model||'').split(' ')[0])}" style="color:#60A5FA;text-decoration:underline;font-size:11px">🔍 Check value on Kelley Blue Book ↗</a>
           ${v.vin?`<span style="font-size:9px;color:var(--text-muted);font-family:monospace;margin-left:8px">VIN: ${esc(v.vin)}</span>`:''}
         </div>
       </div>
@@ -7397,7 +7430,16 @@ function saveHistoricalSnapshot(){
   // added in chronological order -- a future-dated entry sitting at the
   // array's end breaks that trust the next time a real current-month
   // snapshot is appended after it. Found in the 100th adversarial pass.
-  if(d>new Date()){showToast('That date is in the future — enter a past or current date','#FCD34D');return;}
+  //
+  // Compared as plain YYYY-MM-DD strings, not Date objects -- the 100th
+  // pass's own first version compared `d` (pinned to noon on the selected
+  // date) against `new Date()` (the exact current moment), which rejected
+  // *today's own date* -- the modal's own prefilled default
+  // (openHistoricalSnapshotModal(), a few lines above) -- as "in the
+  // future" any time before noon local. Found in the 101st adversarial
+  // pass.
+  const todayIso=(()=>{const t=new Date();return`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;})();
+  if(date>todayIso){showToast('That date is in the future — enter a past or current date','#FCD34D');return;}
   const monthKey=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
   const displayDate=d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
   // Adding a *new* historical snapshot (not editing one) for a month that
@@ -11968,7 +12010,6 @@ function editVehicle(id){
   document.getElementById('vehicle-modal').classList.remove('hidden');
 }
 
-let _vendorFiltersActive=false;
 if(!state.activeVendors)state.activeVendors=new Set();
 function toggleVendorFilter(vendor){
   if(!state.activeVendors)state.activeVendors=new Set();
@@ -12365,6 +12406,13 @@ function loadFromLocalStorage(){
     }
     state.vehicles=saved.vehicles||state.vehicles;
     state.snapshots=saved.snapshots||state.snapshots;
+    // Defense-in-depth, matching loadUserData()'s cloud-pull fix (99th
+    // adversarial pass): this local cache just trusts whatever order was
+    // last serialized, so any state.snapshots corruption that ever slipped
+    // through (a pre-100th-pass future-dated entry, or any other future
+    // bug) would persist across reloads indefinitely instead of
+    // self-healing. Found in the 101st adversarial pass.
+    state.snapshots.sort((a,b)=>a.monthKey.localeCompare(b.monthKey));
     state.customCategories=saved.customCategories||state.customCategories;
     if(saved.budgets&&Object.keys(saved.budgets).length>0)state.budgets=saved.budgets;
     state.catRules=saved.catRules||[];
@@ -12514,6 +12562,10 @@ function importBackup(file){
       state.accounts=_normalizeAccountTypes(arr(saved.accounts));
       state.vehicles=arr(saved.vehicles);
       state.snapshots=arr(saved.snapshots);
+      // Same reasoning as loadFromLocalStorage()'s equivalent fix (101st
+      // adversarial pass): a hand-edited or otherwise-corrupted backup
+      // file's snapshots array isn't guaranteed to already be sorted.
+      state.snapshots.sort((a,b)=>a.monthKey.localeCompare(b.monthKey));
       state.customCategories=arr(saved.customCategories);
       const savedBudgets=obj(saved.budgets);
       state.budgets=Object.keys(savedBudgets).length>0?savedBudgets:{};
