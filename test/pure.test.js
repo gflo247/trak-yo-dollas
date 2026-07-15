@@ -1777,7 +1777,7 @@ test("loadDemoProfile: resets state.sourceAlignDate/sourceAlignSkipped, not leav
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /function loadDemoProfile\(n, silent=false, skipRender=false\)\{[\s\S]{0,2500}?state\.sourceAlignDate=null;\s*state\.sourceAlignSkipped=false;/,
+    /function loadDemoProfile\(n, silent=false, skipRender=false\)\{[\s\S]{0,2900}?state\.sourceAlignDate=null;\s*state\.sourceAlignSkipped=false;/,
     "loadDemoProfile() should reset both state.sourceAlignDate and state.sourceAlignSkipped, matching its existing reset of rangeFrom/rangeTo/declaredIncome/etc."
   );
 });
@@ -1899,7 +1899,7 @@ test("_resetSessionFiltersForDataReplace: resets every session-scoped filter fie
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /function _resetSessionFiltersForDataReplace\(\)\{\s*_bizFilter='all';\s*state\.activeCats=new Set\(\);\s*state\.dashFilter=null;\s*state\.searchQuery='';\s*const searchEl=document\.getElementById\('tx-search'\);\s*if\(searchEl\)searchEl\.value='';\s*document\.getElementById\('search-clear-btn'\)\?\.classList\.add\('hidden'\);\s*state\.showExcluded=false;\s*try\{localStorage\.removeItem\('trakyo_show_excl'\);\}catch\(e\)\{\}\s*_clearVendorDayFiltersForDataReplace\(\);\s*\}/,
+    /function _resetSessionFiltersForDataReplace\(\)\{\s*_bizFilter='all';\s*state\.activeCats=new Set\(\);\s*state\.dashFilter=null;\s*state\.searchQuery='';\s*const searchEl=document\.getElementById\('tx-search'\);\s*if\(searchEl\)searchEl\.value='';\s*document\.getElementById\('search-clear-btn'\)\?\.classList\.add\('hidden'\);\s*state\.showExcluded=false;[\s\S]{0,700}?if\(!\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\)\{\s*try\{localStorage\.removeItem\('trakyo_show_excl'\);\}catch\(e\)\{\}\s*\}\s*_clearVendorDayFiltersForDataReplace\(\);\s*\}/,
     "_resetSessionFiltersForDataReplace() should reset _bizFilter/activeCats/dashFilter/searchQuery (+ DOM), showExcluded (+ localStorage key), and call _clearVendorDayFiltersForDataReplace()"
   );
 });
@@ -2070,4 +2070,172 @@ test("dashboard net-worth pill: clamps the goal percentage to a minimum of 0", (
     /const goalPct=Math\.max\(0,Math\.round\(nwNow\/state\.nwGoal\*100\)\);/,
     "goalPct should be floored at 0 so a negative net worth doesn't produce a negative percentage label"
   );
+});
+
+// ── 97th adversarial pass: _resetSessionFiltersForDataReplace() (introduced
+// the previous pass) unconditionally removed trakyo_show_excl from
+// localStorage -- including when called from loadDemoProfile() while
+// genuinely previewing a demo over real saved data, silently deleting the
+// real "Show in totals" preference the demo-preview banner promised would
+// stay untouched. Same invariant toggleExcluded() enforces for the write
+// side of this exact key, just missing here for the delete side. ──
+test("_resetSessionFiltersForDataReplace: does NOT remove trakyo_show_excl from localStorage during a demo-preview session", () => {
+  let removed = false;
+  const ctx = {
+    _bizFilter: "business",
+    state: {
+      activeCats: new Set(["Foo"]), dashFilter: "x", searchQuery: "starbucks", showExcluded: true,
+      activeDate: null, activeVendors: new Set(), bucketMode: "category", treemapDrillCat: null,
+    },
+    window: { _viewingDemoOverReal: true },
+    document: { getElementById: () => null },
+    localStorage: { removeItem: () => { removed = true; } },
+    _treemapPrevActiveCats: null,
+  };
+  const { _resetSessionFiltersForDataReplace } = loadFunctions(["_resetSessionFiltersForDataReplace", "_clearVendorDayFiltersForDataReplace"], ctx);
+  _resetSessionFiltersForDataReplace();
+  assert.equal(ctx.state.showExcluded, false, "the in-memory flag should still flip so the current demo-preview session reflects the reset");
+  assert.equal(removed, false, "a demo-preview session (_viewingDemoOverReal) must not remove the real trakyo_show_excl key from localStorage");
+});
+test("_resetSessionFiltersForDataReplace: DOES remove trakyo_show_excl from localStorage during a normal session", () => {
+  let removed = false;
+  const ctx = {
+    _bizFilter: "business",
+    state: {
+      activeCats: new Set(["Foo"]), dashFilter: "x", searchQuery: "starbucks", showExcluded: true,
+      activeDate: null, activeVendors: new Set(), bucketMode: "category", treemapDrillCat: null,
+    },
+    window: {},
+    document: { getElementById: () => null },
+    localStorage: { removeItem: () => { removed = true; } },
+    _treemapPrevActiveCats: null,
+  };
+  const { _resetSessionFiltersForDataReplace } = loadFunctions(["_resetSessionFiltersForDataReplace", "_clearVendorDayFiltersForDataReplace"], ctx);
+  _resetSessionFiltersForDataReplace();
+  assert.equal(removed, true, "a normal (non-demo-preview) wholesale-replace should still remove the stale localStorage key");
+});
+test("loadDemoProfile: sets window._viewingDemoOverReal before calling _resetSessionFiltersForDataReplace(), not after", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const hadRealData=state\.hasRealData;[\s\S]{0,700}?if\(!silent&&hadRealData\)window\._viewingDemoOverReal=true;[\s\S]{0,4500}?_resetSessionFiltersForDataReplace\(\);/,
+    "window._viewingDemoOverReal must be set before _resetSessionFiltersForDataReplace() runs, not near the end of the function, since that helper's own localStorage guard depends on the flag already being current"
+  );
+});
+
+// ── 97th adversarial pass: addVendorAlias()'s merge-loop guard called
+// resolveVendor(to), which only ever returns the chain's *terminal* value --
+// missing the case where `from` sits mid-chain rather than at the end
+// (updating an existing alias's target can walk straight through it).
+// Replaced with _vendorAliasChainReaches(), which checks every hop. ──
+test("_vendorAliasChainReaches: detects `from` as an intermediate hop in the chain, not just the terminal value", () => {
+  const ctx = { state: { vendorAliases: { AMZN: "Amazon", Amazon: "Shopping" } } };
+  const { _vendorAliasChainReaches } = loadFunctions(["_vendorAliasChainReaches"], ctx);
+  assert.equal(_vendorAliasChainReaches("AMZN", "Amazon"), true, "AMZN's chain (AMZN->Amazon->Shopping) passes through 'Amazon' as an intermediate hop, which the old resolveVendor(to)-only check missed");
+  assert.equal(_vendorAliasChainReaches("Shopping", "Amazon"), false, "'Shopping' has no further alias and never reaches 'Amazon'");
+});
+test("addVendorAlias: refuses to re-point an alias in a way that would close a multi-hop merge loop", () => {
+  let toastMsg = null;
+  const ctx = {
+    state: { vendorAliases: { AMZN: "Amazon", Amazon: "Shopping" } },
+    document: {
+      getElementById: (id) => {
+        if (id === "alias-from") return { value: "Amazon" };
+        if (id === "alias-to") return { value: "AMZN" };
+        return null;
+      },
+    },
+    isReservedCatName: () => false,
+    esc: (s) => s,
+    showToast: (msg) => { toastMsg = msg; },
+    renderVendorAliasList: () => {}, renderSpending: () => {}, scheduleSave: () => {},
+  };
+  const { addVendorAlias } = loadFunctions(["addVendorAlias", "_vendorAliasChainReaches"], ctx);
+  addVendorAlias();
+  assert.match(toastMsg || "", /merge loop/i, "re-pointing Amazon->AMZN should be refused as a merge loop, not silently accepted");
+  assert.deepEqual(ctx.state.vendorAliases, { AMZN: "Amazon", Amazon: "Shopping" }, "the alias map should be unchanged after a refused update -- not left as a closed 2-cycle that silently neutralizes both merges");
+});
+
+// ── 97th adversarial pass: renderVendorAliasList()'s per-alias transaction
+// count matched against the raw t.desc, so a chained alias (merging an
+// already-merged display name into a further alias) always showed "(0
+// transactions)" despite correctly affecting every transaction upstream in
+// the chain -- no raw transaction description ever literally equals a
+// synthetic intermediate display name like "Amazon". ──
+test("renderVendorAliasList: counts a chained alias's affected transactions via the full resolution chain, not a raw-desc match", () => {
+  const elStub = { innerHTML: "" };
+  const ctx = {
+    state: {
+      vendorAliases: { "AMAZON.COM": "Amazon", Amazon: "Shopping" },
+      transactions: [{ desc: "AMAZON.COM" }, { desc: "WALMART" }],
+    },
+    document: { getElementById: (id) => (id === "vendor-alias-list" ? elStub : null) },
+    esc: (s) => s,
+  };
+  const { renderVendorAliasList } = loadFunctions(["renderVendorAliasList", "_vendorAliasChainReaches"], ctx);
+  renderVendorAliasList();
+  assert.doesNotMatch(elStub.innerHTML, /\(0 transactions\)/, "neither alias row should show 0 -- both are on the one AMAZON.COM transaction's resolution chain");
+  const oneTxCount = (elStub.innerHTML.match(/\(1 transaction\)/g) || []).length;
+  assert.equal(oneTxCount, 2, "both the AMAZON.COM->Amazon hop and the chained Amazon->Shopping hop should correctly count the same 1 transaction");
+});
+
+// ── 97th adversarial pass: confirmClearAllData() only checked
+// window._isDemoPreview, not window._viewingDemoOverReal, unlike every
+// other demo-preview guard in the file (10+ sites all pair the two). A
+// signed-in user with real saved data who clicks "try demo" in-app could
+// reach Settings -> Clear all data and irreversibly wipe their real
+// localStorage while the banner told them their data was untouched. ──
+test("confirmClearAllData: blocks the wipe during an in-app demo-over-real preview, not just the ?demoPreview=1 URL mode", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /async function confirmClearAllData\(\)\{[\s\S]{0,900}?if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{/,
+    "confirmClearAllData() should early-return for _viewingDemoOverReal the same way it already does for _isDemoPreview"
+  );
+});
+
+// ── 97th adversarial pass: exportTransactionsCSV()'s csvSafeField() prepends
+// a ' to any field starting with =/+/-/@ (formula-injection guard), but
+// re-importing our own export ('trakyodollas' format) never stripped it back
+// off -- a description/category that originally started with one of those
+// characters came back permanently prefixed with a literal ' it never had. ──
+test("_stripCsvFormulaGuard: reverses csvSafeField()'s leading ' only when it guards one of the injection-risk characters", () => {
+  const ctx = {};
+  const { _stripCsvFormulaGuard } = loadFunctions(["_stripCsvFormulaGuard"], ctx);
+  assert.equal(_stripCsvFormulaGuard("'-1-800-FLOWERS"), "-1-800-FLOWERS", "a ' guarding a leading - should be stripped back off");
+  assert.equal(_stripCsvFormulaGuard("'=SUM(A1)"), "=SUM(A1)", "a ' guarding a leading = should be stripped back off");
+  assert.equal(_stripCsvFormulaGuard("'Twas a fine purchase"), "'Twas a fine purchase", "a ' NOT followed by a guarded character is a genuine leading apostrophe and must be left alone");
+  assert.equal(_stripCsvFormulaGuard("Ordinary Store"), "Ordinary Store", "a value with no leading ' at all is untouched");
+});
+test("normalizeTxRow's 'trakyodollas' import branch strips the formula-injection guard from both description and category", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /desc=_stripCsvFormulaGuard\(\(row\['description'\]\|\|''\)\.trim\(\)\);/,
+    "description should be passed through _stripCsvFormulaGuard() on our own round-trip import format"
+  );
+  assert.match(
+    source,
+    /cat=_stripCsvFormulaGuard\(row\['category'\]\|\|'Other'\);/,
+    "category should be passed through _stripCsvFormulaGuard() on our own round-trip import format"
+  );
+});
+
+// ── 97th adversarial pass: parseCSV() applied a redundant second
+// .replace(/^"|"$/g,'') on top of splitCSVLine()'s own quote-consuming
+// parse, silently destroying a field whose real content legitimately ends
+// or starts with a literal quote character (e.g. an inch mark). ──
+test("parseCSV: preserves a field's genuine trailing quote character instead of stripping it", () => {
+  const ctx = {};
+  const { parseCSV } = loadFunctions(["parseCSV", "splitCSVLine", "splitCSVRows"], ctx);
+  const csv = 'Desc,Amount\n"BLINDS 72""",5.00';
+  const rows = parseCSV(csv);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].desc, 'BLINDS 72"', "a field CSV-encoded as a trailing literal quote (doubled inside the enclosing quotes) should round-trip with that quote intact, not silently lose it");
 });
