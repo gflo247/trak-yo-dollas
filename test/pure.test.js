@@ -1909,7 +1909,7 @@ test("importBackup, confirmTxImport, and loadDemoProfile all call the shared _re
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /state\.transactions=arr\(payload\.transactions\)\.map\(t=>[\s\S]{0,1400}?_resetSessionFiltersForDataReplace\(\);\s*rebuildMonthly\(\);\s*rebuildCatSelects\(\);\s*scheduleSave\(\);\s*renderAll\(\);\s*showToast\('Backup restored\.'/,
+    /state\.transactions=arr\(payload\.transactions\)[\s\S]{0,1600}?_resetSessionFiltersForDataReplace\(\);\s*rebuildMonthly\(\);\s*rebuildCatSelects\(\);\s*scheduleSave\(\);\s*renderAll\(\);\s*showToast\('Backup restored\.'/,
     "importBackup() should call _resetSessionFiltersForDataReplace() before rebuildMonthly(), right before its final 'Backup restored.' toast"
   );
   assert.match(
@@ -2349,7 +2349,7 @@ test("loadUserData: sorts state.snapshots by monthKey after a cloud pull, since 
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /state\.snapshots = snaps\.map\(s => \(\{[\s\S]{0,300}?\}\)\);[\s\S]{0,1400}?state\.snapshots\.sort\(_snapshotSortCompare\);/,
+    /state\.snapshots = snaps\.filter\(_isValidSnapshot\)\.map\(s => \(\{[\s\S]{0,300}?\}\)\);[\s\S]{0,1400}?state\.snapshots\.sort\(_snapshotSortCompare\);/,
     "loadUserData() should sort state.snapshots by monthKey immediately after building it from the cloud payload"
   );
 });
@@ -2582,12 +2582,12 @@ test("loadFromLocalStorage and importBackup both sort state.snapshots by monthKe
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /state\.snapshots=saved\.snapshots\|\|state\.snapshots;[\s\S]{0,700}?state\.snapshots\.sort\(_snapshotSortCompare\);/,
+    /state\.snapshots=Array\.isArray\(saved\.snapshots\)\?saved\.snapshots\.filter\(_isValidSnapshot\):state\.snapshots;[\s\S]{0,700}?state\.snapshots\.sort\(_snapshotSortCompare\);/,
     "loadFromLocalStorage() should sort state.snapshots immediately after assigning it from the local cache"
   );
   assert.match(
     source,
-    /state\.snapshots=arr\(saved\.snapshots\);[\s\S]{0,400}?state\.snapshots\.sort\(_snapshotSortCompare\);/,
+    /state\.snapshots=arr\(saved\.snapshots\)\.filter\(_isValidSnapshot\);[\s\S]{0,400}?state\.snapshots\.sort\(_snapshotSortCompare\);/,
     "importBackup() should sort state.snapshots immediately after assigning it from the backup payload"
   );
 });
@@ -2650,5 +2650,89 @@ test("renderNwGoalWidget: the 'Goal reached' banner routes to openCustomNwGoal()
     source,
     /if\(nw>=goal\)\{[\s\S]{0,700}?const hasNextMilestone=MILESTONES\.some\(m=>m>nw\);[\s\S]{0,700}?data-action="\$\{hasNextMilestone\?'setNwGoalNextMilestone':'openCustomNwGoal'\}"/,
     "the goal-reached banner's button should check for a next milestone and fall back to openCustomNwGoal() when none exists"
+  );
+});
+
+// ── 103rd adversarial pass: the crafted-backup-restore threat model this
+// cycle already treats as in-scope (XSS fixes in passes 100/101, the
+// sort-crash fix in pass 102) turned out to apply to plain crashes too --
+// importBackup() could throw mid-restore on a malformed transactions or
+// customCategories entry, landing state in a corrupted hybrid with no
+// rollback (the exact failure mode the surrounding type-guard block's own
+// comment names as what it exists to prevent). A 6th state.snapshots
+// sort/filter site (renderMetrics()) also survived pass 102's
+// consolidation -- missed because it spreads into a new array first
+// rather than matching the literal `state.snapshots.sort(...)` pattern
+// that consolidation was scoped to. Rather than patch each of the ~13
+// places that iterate state.snapshots/transactions/customCategories
+// individually, filtered out malformed entries at the 3 points these
+// arrays are ever populated from external/untrusted data. ──
+test("_isValidSnapshot: rejects null/non-object entries and entries with a non-string monthKey", () => {
+  const ctx = {};
+  const { _isValidSnapshot } = loadFunctions(["_isValidSnapshot"], ctx);
+  assert.equal(_isValidSnapshot({ monthKey: "2026-03" }), true);
+  assert.equal(_isValidSnapshot(null), false);
+  assert.equal(_isValidSnapshot(undefined), false);
+  assert.equal(_isValidSnapshot({}), false, "missing monthKey should be rejected");
+  assert.equal(_isValidSnapshot({ monthKey: 202603 }), false, "a non-string monthKey should be rejected");
+});
+test("importBackup: filters malformed transactions/customCategories/snapshots entries instead of crashing mid-restore", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /state\.transactions=arr\(payload\.transactions\)\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'\?t\.date:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
+    "importBackup() should filter out non-object transaction entries and coerce a malformed date to a safe default before mapping"
+  );
+  assert.match(
+    source,
+    /state\.customCategories=arr\(saved\.customCategories\)\.filter\(c=>c&&typeof c==='object'\);/,
+    "importBackup() should filter out non-object customCategories entries"
+  );
+  assert.match(
+    source,
+    /state\.snapshots=arr\(saved\.snapshots\)\.filter\(_isValidSnapshot\);/,
+    "importBackup() should filter state.snapshots through _isValidSnapshot"
+  );
+});
+test("loadFromLocalStorage: filters malformed transactions/customCategories/snapshots entries from the local cache", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /state\.transactions=\(txSource\|\|state\.transactions\)\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'\?t\.date:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
+    "loadFromLocalStorage() should filter out non-object transaction entries and coerce a malformed date"
+  );
+  assert.match(
+    source,
+    /state\.customCategories=Array\.isArray\(saved\.customCategories\)\?saved\.customCategories\.filter\(c=>c&&typeof c==='object'\):state\.customCategories;/,
+    "loadFromLocalStorage() should filter out non-object customCategories entries"
+  );
+  assert.match(
+    source,
+    /state\.snapshots=Array\.isArray\(saved\.snapshots\)\?saved\.snapshots\.filter\(_isValidSnapshot\):state\.snapshots;/,
+    "loadFromLocalStorage() should filter state.snapshots through _isValidSnapshot"
+  );
+});
+test("loadUserData: filters malformed snapshot rows before mapping, not after", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /state\.snapshots = snaps\.filter\(_isValidSnapshot\)\.map\(s => \(\{/,
+    "loadUserData() should filter snaps through _isValidSnapshot before the .map() that dereferences each entry's fields"
+  );
+});
+test("renderMetrics: allSnaps is null-safe and uses the shared snapshot sort comparator", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const allSnaps=\[\.\.\.state\.snapshots\]\.filter\(s=>s&&typeof s\.monthKey==='string'\)\.sort\(_snapshotSortCompare\);/,
+    "renderMetrics()'s allSnaps should null-check each entry before touching .monthKey, and use the shared comparator -- this was a 6th snapshot sort/filter site missed by the 102nd pass's consolidation because it spreads into a new array rather than matching the literal state.snapshots.sort(...) pattern"
   );
 });
