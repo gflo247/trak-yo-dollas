@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-YC6Tyj9ddme6UyiINg5fXbQs924WdzPwqa8o2KCLdsg=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-tEGEEz+ieZv4ekHzheky5LXatOfu6sgM1w+EdE0iPi4=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2112,6 +2112,26 @@ function _snapshotSortCompare(a,b){
 // entry never enters state.snapshots at all. Found in the 103rd
 // adversarial pass.
 function _isValidSnapshot(s){return !!(s&&typeof s==='object'&&typeof s.monthKey==='string');}
+// Same "filter at the point of ingestion" reasoning as _isValidSnapshot()
+// above, generalized -- shared by every OTHER array field (vehicles,
+// catRules, and any future one) restored from external/untrusted data,
+// so a null/primitive entry can't crash whichever downstream consumer
+// happens to dereference it first. Coerces a non-array input to []
+// rather than throwing, matching importBackup()'s existing arr() helper.
+// Found in the 104th adversarial pass.
+function _arrOfObj(v){return Array.isArray(v)?v.filter(x=>x&&typeof x==='object'):[];}
+// Same reasoning, for an object whose every value must be a string --
+// state.vendorAliases is the one field of this shape. A non-string value
+// (a crafted backup, a corrupted local cache, or a corrupted cloud row)
+// threw in openVendorAliasModal()'s sort and in resolveVendor()'s chain
+// walk, the latter running in hot render paths (tx list, treemap).
+// Found in the 104th adversarial pass.
+function _strValueObj(v){
+  if(!v||typeof v!=='object'||Array.isArray(v))return {};
+  const out={};
+  for(const k of Object.keys(v)){if(typeof v[k]==='string')out[k]=v[k];}
+  return out;
+}
 // Get snapshots sorted by monthKey ascending
 function getSortedSnaps(){
   return state.snapshots.slice().sort(_snapshotSortCompare);
@@ -11613,9 +11633,20 @@ async function loadUserData(uid) {
     // Load prefs (full state)
     const prefs = await window._fb.loadPrefs(uid);
     if (prefs) {
-      if (prefs.customCategories) state.customCategories = prefs.customCategories;
+      // _arrOfObj(...) -- the 103rd pass's fix for a null customCategories
+      // entry (crashing buildCatColorMap()'s c.name) landed in
+      // importBackup()/loadFromLocalStorage() but was never applied here,
+      // leaving the cloud-sync path (a corrupted Supabase row) still
+      // exposed. Found in the 104th adversarial pass.
+      if (prefs.customCategories) state.customCategories = _arrOfObj(prefs.customCategories);
       if (prefs.budgets) state.budgets = prefs.budgets;
-      if (prefs.catRules) state.catRules = prefs.catRules;
+      // _arrOfObj(...) + a string-typed keyword filter -- object-shape
+      // filtering alone isn't enough here, since r.keyword.toUpperCase()
+      // (renderRulesList(), applyRulesToExisting(), the CSV-import
+      // auto-categorizer, addCatRule()) still throws on a rule whose
+      // keyword is a truthy non-string. Found in the 104th adversarial
+      // pass.
+      if (prefs.catRules) state.catRules = _arrOfObj(prefs.catRules).filter(r=>typeof r.keyword==='string');
       if (prefs.income) state.income = prefs.income;
       if (prefs.declaredIncome !== undefined) state.declaredIncome = prefs.declaredIncome;
       if (Array.isArray(prefs.excludedCats)) state.excludedCats = new Set(prefs.excludedCats);
@@ -11630,8 +11661,11 @@ async function loadUserData(uid) {
       // of entry into HTML regardless of which write path set it.
       if (prefs.budgetWarnPct !== undefined) { const n=parseInt(prefs.budgetWarnPct,10); state.budgetWarnPct = isNaN(n)?80:Math.min(99,Math.max(50,n)); }
       if (prefs.currency !== undefined) state.currency = prefs.currency;
-      if (prefs.hiddenPills) state.hiddenPills = new Set(prefs.hiddenPills);
-      if (prefs.vendorAliases) state.vendorAliases = prefs.vendorAliases;
+      // Array.isArray, not just truthiness -- a truthy non-iterable
+      // prefs.hiddenPills (e.g. a corrupted cloud row's {}) threw inside
+      // new Set(). Found in the 104th adversarial pass.
+      if (Array.isArray(prefs.hiddenPills)) state.hiddenPills = new Set(prefs.hiddenPills);
+      if (prefs.vendorAliases) state.vendorAliases = _strValueObj(prefs.vendorAliases);
       // Array.isArray (not truthiness) so a genuinely empty array -- e.g.
       // every account/transaction was deleted on another device -- actually
       // overwrites local state instead of being indistinguishable from the
@@ -11639,10 +11673,20 @@ async function loadUserData(uid) {
       // silently kept stale local data and re-uploaded it, reviving the
       // deletion.
       if (Array.isArray(prefs.accounts)) state.accounts = _normalizeAccountTypes(prefs.accounts);
-      if (Array.isArray(prefs.vehicles)) state.vehicles = prefs.vehicles;
-      if (prefs.nextId) state.nextId = prefs.nextId;
+      if (Array.isArray(prefs.vehicles)) state.vehicles = _arrOfObj(prefs.vehicles);
+      // Number()-coerced, same reasoning as loadFromLocalStorage()'s
+      // equivalent fix (104th adversarial pass).
+      if (prefs.nextId) state.nextId = Number(prefs.nextId)||state.nextId;
       if (Array.isArray(prefs.transactions)) {
-        state.transactions = prefs.transactions.map(t=>({...t,amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
+        // .filter(t=>t&&typeof t==='object') + date coerced to a safe
+        // default -- the 103rd pass's fix for this exact gap landed in
+        // importBackup()/loadFromLocalStorage() but was never applied
+        // here, leaving the cloud-sync path (a corrupted Supabase row)
+        // still exposed to the same t.amount/rebuildMonthly() crash.
+        // Found in the 104th adversarial pass.
+        state.transactions = prefs.transactions
+          .filter(t=>t&&typeof t==='object')
+          .map(t=>({...t,date:typeof t.date==='string'?t.date:'',amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
         _txsDirty=true;
         // Reverted the 96th pass's _resetSessionFiltersForDataReplace() call
         // here, found in the 98th adversarial pass. The 96th pass's reasoning
@@ -12251,6 +12295,15 @@ const ACCT_TYPE_ALIASES={
 // label variant, not outright garbage). Found in the 63rd adversarial
 // pass.
 function _normalizeAccountTypes(accounts){
+  // Filters out non-object entries first -- a null/undefined/primitive
+  // entry in a crafted backup, corrupted local cache, or corrupted cloud
+  // row threw on a.type below. Centralizing the filter here (rather than
+  // at each of this function's 3 call sites individually) closes it for
+  // every caller at once, including loadFromLocalStorage(), which never
+  // called this helper at all before -- a separate, pre-existing
+  // inconsistency where a local blob's legacy account-type aliases never
+  // got normalized on that one path. Found in the 104th adversarial pass.
+  accounts=accounts.filter(a=>a&&typeof a==='object');
   accounts.forEach(a=>{
     const norm=ACCT_TYPE_ALIASES[String(a.type||'').trim().toLowerCase()];
     if(norm)a.type=norm;
@@ -12454,7 +12507,14 @@ function loadFromLocalStorage(){
     const saved=JSON.parse(raw);
     if(!saved||!saved.accounts)return false;
 
-    state.accounts=saved.accounts||state.accounts;
+    // Array.isArray, not just truthiness -- a truthy non-array
+    // saved.accounts (e.g. a corrupted `{}`) passed the guard above and
+    // then threw on .some() below. Also now routes through
+    // _normalizeAccountTypes() (which this path never called before,
+    // unlike importBackup()/loadUserData()) -- both for its legacy
+    // account-type-alias normalization and its own new per-entry
+    // null-filter. Found in the 104th adversarial pass.
+    state.accounts=Array.isArray(saved.accounts)?_normalizeAccountTypes(saved.accounts):state.accounts;
     if(!state.accounts.some(a=>a.excludeFromNW)){
       if(saved.collegeFund){
         state.accounts.push({id:state.nextId++,name:saved.collegeFund.name||'College Fund(s)',source:saved.collegeFund.sub||'Education savings',type:'investment',balance:saved.collegeFund.balance||0,excludeFromNW:true});
@@ -12464,7 +12524,9 @@ function loadFromLocalStorage(){
         }
       }
     }
-    state.vehicles=saved.vehicles||state.vehicles;
+    // Array.isArray + _arrOfObj -- same reasoning as state.accounts just
+    // above. Found in the 104th adversarial pass.
+    state.vehicles=Array.isArray(saved.vehicles)?_arrOfObj(saved.vehicles):state.vehicles;
     // Array.isArray(...), not just a truthy check, and filtered through
     // _isValidSnapshot -- a corrupted/hand-edited localStorage blob could
     // have saved.snapshots be any type at all (a non-array truthy value
@@ -12485,18 +12547,31 @@ function loadFromLocalStorage(){
     // Filtered for the same reason as state.snapshots/state.transactions
     // just above (103rd adversarial pass) -- a null entry throws on
     // c.name inside buildCatColorMap().
-    state.customCategories=Array.isArray(saved.customCategories)?saved.customCategories.filter(c=>c&&typeof c==='object'):state.customCategories;
+    state.customCategories=Array.isArray(saved.customCategories)?_arrOfObj(saved.customCategories):state.customCategories;
     if(saved.budgets&&Object.keys(saved.budgets).length>0)state.budgets=saved.budgets;
-    state.catRules=saved.catRules||[];
+    // Same reasoning as loadUserData()'s equivalent fix (104th adversarial
+    // pass) -- object-shape filtering plus a string-typed keyword check.
+    state.catRules=_arrOfObj(saved.catRules).filter(r=>typeof r.keyword==='string');
     state.income=saved.income||{method:null,monthlyAmount:0};
     state.declaredIncome=saved.declaredIncome??0;
-    state.hiddenPills=new Set(saved.hiddenPills||[]);
-    state.vendorAliases=saved.vendorAliases??{};
-    if(saved.activeSources&&saved.activeSources.length>0){
+    // Array.isArray, not just truthiness -- same reasoning as
+    // loadUserData()'s equivalent fix.
+    state.hiddenPills=new Set(Array.isArray(saved.hiddenPills)?saved.hiddenPills:[]);
+    state.vendorAliases=_strValueObj(saved.vendorAliases);
+    // Array.isArray, not just a truthy value with a .length property --
+    // a non-array object with a .length (e.g. a corrupted {"length":1})
+    // passed the old check and then threw inside new Set(), which
+    // requires a genuinely iterable argument. Found in the 104th
+    // adversarial pass.
+    if(Array.isArray(saved.activeSources)&&saved.activeSources.length>0){
       state.activeSources=new Set(saved.activeSources);
     }
     state.sourceAlignSkipped=saved.sourceAlignSkipped??false;
-    state.sourceAlignDate=saved.sourceAlignDate??null;
+    // typeof-checked, not just ??null -- a truthy non-string (e.g. a
+    // corrupted number) threw in renderSourceChips()'s fmtMonthShort()
+    // call, crashing the Spending tab's render. Found in the 104th
+    // adversarial pass.
+    state.sourceAlignDate=typeof saved.sourceAlignDate==='string'?saved.sourceAlignDate:null;
     state.chartGrain=saved.chartGrain??'month';
     state.rangeFrom=saved.rangeFrom??null;
     state.rangeTo=saved.rangeTo??null;
@@ -12507,7 +12582,12 @@ function loadFromLocalStorage(){
     state.hiddenPills.delete('spending-pill');
     state.nwGoal=saved.nwGoal??null;
     state.hideNwGoal=saved.hideNwGoal??false;
-    state.nextId=saved.nextId||state.nextId;
+    // Number()-coerced, matching importBackup()'s equivalent line -- a
+    // non-numeric saved.nextId isn't a crash (nextId is only ever used
+    // arithmetically), but it does produce NaN ids for every future
+    // add, breaking edit/duplicate-id lookups. Found in the 104th
+    // adversarial pass.
+    state.nextId=Number(saved.nextId)||state.nextId;
     if(saved.hasRealData)state.hasRealData=true;
     if(saved.hasRealAccounts)state.hasRealAccounts=true;
     if(saved.hasRealSnapshot)state.hasRealSnapshot=true;
@@ -12520,8 +12600,12 @@ function loadFromLocalStorage(){
     // same reasoning as importBackup()'s equivalent fix (103rd adversarial
     // pass) -- a corrupted localStorage entry (a null in the array, or a
     // non-string date) previously threw here, on t.amount or later in
-    // rebuildMonthly()'s t.date.slice(0,7).
-    state.transactions=(txSource||state.transactions)
+    // rebuildMonthly()'s t.date.slice(0,7). Array.isArray(txSource) added
+    // in the 104th adversarial pass -- pass 103's own fix never checked
+    // that txSource (which can come from a separately-corrupted
+    // trakyo_txs_v1 key, not just the main state blob) was actually an
+    // array before calling .filter() on it.
+    state.transactions=(Array.isArray(txSource)?txSource:state.transactions)
       .filter(t=>t&&typeof t==='object')
       .map(t=>({...t,date:typeof t.date==='string'?t.date:'',amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
 
@@ -12639,7 +12723,7 @@ function importBackup(file){
       if(!confirm('Replace ALL current data with this backup? This cannot be undone.'))return;
       // Restore state — mirrors loadFromLocalStorage field assignments
       state.accounts=_normalizeAccountTypes(arr(saved.accounts));
-      state.vehicles=arr(saved.vehicles);
+      state.vehicles=_arrOfObj(saved.vehicles);
       // .filter(_isValidSnapshot) -- arr() only guarantees the top-level
       // value is an array, not that every entry in it is a well-formed
       // snapshot object. Filtering here, at the point of ingestion, closes
@@ -12656,18 +12740,22 @@ function importBackup(file){
       // buildCatColorMap() (called from rebuildMonthly()), after this
       // field and everything above it has already replaced live state.
       // Found in the 103rd adversarial pass.
-      state.customCategories=arr(saved.customCategories).filter(c=>c&&typeof c==='object');
+      state.customCategories=_arrOfObj(saved.customCategories);
       const savedBudgets=obj(saved.budgets);
       state.budgets=Object.keys(savedBudgets).length>0?savedBudgets:{};
-      state.catRules=arr(saved.catRules);
+      state.catRules=_arrOfObj(saved.catRules).filter(r=>typeof r.keyword==='string');
       state.income=(saved.income&&typeof saved.income==='object')?saved.income:{method:null,monthlyAmount:0};
       state.declaredIncome=Number(saved.declaredIncome)||0;
       state.hiddenPills=new Set(arr(saved.hiddenPills));
-      state.vendorAliases=obj(saved.vendorAliases);
+      state.vendorAliases=_strValueObj(saved.vendorAliases);
       const savedSources=arr(saved.activeSources);
       state.activeSources=savedSources.length>0?new Set(savedSources):new Set();
       state.sourceAlignSkipped=!!saved.sourceAlignSkipped;
-      state.sourceAlignDate=saved.sourceAlignDate??null;
+      // typeof-checked, not just ??null -- a truthy non-string (e.g. a
+    // corrupted number) threw in renderSourceChips()'s fmtMonthShort()
+    // call, crashing the Spending tab's render. Found in the 104th
+    // adversarial pass.
+    state.sourceAlignDate=typeof saved.sourceAlignDate==='string'?saved.sourceAlignDate:null;
       state.chartGrain=saved.chartGrain??'month';
       state.rangeFrom=saved.rangeFrom??null;
       state.rangeTo=saved.rangeTo??null;
