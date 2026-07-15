@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Ulb9S52MaeQDNIDjzOWfrGR+eLn3TxvG0iH48RH3LOk=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-T9j/eoXRdVkrLzkM9ITPRRXVwUycSKBZbJjKSeozZgk=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2076,9 +2076,28 @@ function parseYM(ym){const[y,m]=ym.split('-').map(Number);return new Date(y,m-1,
 // function's own comment claiming intentional retention isn't proof by
 // itself; grep for real call sites regardless.
 
+// Shared comparator for every place that sorts state.snapshots by
+// monthKey -- treats a missing/non-string monthKey as an empty string
+// (sorts first) rather than crashing. A hand-edited or corrupted backup
+// file's snapshots array isn't guaranteed to have a valid monthKey on
+// every entry (the surrounding importBackup()/loadFromLocalStorage()
+// blocks already treat this exact threat model as in-scope for their own
+// type-guards, e.g. the arr()/obj() helpers a few lines below), and the
+// bare `a.monthKey.localeCompare(b.monthKey)` comparator used at all 5
+// call sites threw on a null/undefined entry or a non-string monthKey --
+// worst case (importBackup()), mid-assignment, after state.accounts/
+// vehicles/snapshots were already replaced but before the rest of the
+// restore completed, leaving state a corrupted hybrid with no rollback
+// (the exact failure mode the surrounding type-guard comment already
+// names). Found in the 102nd adversarial pass.
+function _snapshotSortCompare(a,b){
+  const ak=(a&&typeof a.monthKey==='string')?a.monthKey:'';
+  const bk=(b&&typeof b.monthKey==='string')?b.monthKey:'';
+  return ak.localeCompare(bk);
+}
 // Get snapshots sorted by monthKey ascending
 function getSortedSnaps(){
-  return state.snapshots.slice().sort((a,b)=>a.monthKey.localeCompare(b.monthKey));
+  return state.snapshots.slice().sort(_snapshotSortCompare);
 }
 
 // Get transactions for a specific YYYY-MM month, excluding excluded ones
@@ -3649,13 +3668,22 @@ function renderNwGoalWidget(){
 
   // ── Goal reached state ─────────────────────────────────────────
   if(nw>=goal){
+    // Same MILESTONES.find(m=>m>nw) check setNwGoalNextMilestone() itself
+    // uses -- once nw is at or past the top milestone (whether the reached
+    // goal was that top milestone or a higher custom one), that function's
+    // own `next` comes back undefined and it silently no-ops, exactly the
+    // dead end its own !goal-branch fix (101st adversarial pass) named but
+    // didn't route around here. Point at openCustomNwGoal() instead in
+    // that case, matching the !goal branch above. Found in the 102nd
+    // adversarial pass.
+    const hasNextMilestone=MILESTONES.some(m=>m>nw);
     projEl.innerHTML=`
       <div style="background:var(--bg-card);border:1px solid #05996933;border-radius:10px;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div>
           <div style="font-size:13px;font-weight:700;color:#34D399;margin-bottom:2px">Goal reached!</div>
           <div class="text-muted-md">You hit ${fmtC(goal)}. Time to aim higher.</div>
         </div>
-        <button data-action="setNwGoalNextMilestone" style="background:#059669;color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap" type="button">Set next milestone →</button>
+        <button data-action="${hasNextMilestone?'setNwGoalNextMilestone':'openCustomNwGoal'}" style="background:#059669;color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap" type="button">${hasNextMilestone?'Set next milestone →':'Set custom goal →'}</button>
       </div>${hideLink}`;
     return;
   }
@@ -7467,7 +7495,7 @@ function saveHistoricalSnapshot(){
   const snap={date:displayDate,label:MON3[d.getMonth()],monthKey,nw:Math.round(nw),assets:Math.round(assets),liab:Math.round(liab)};
   const movedFromMonthKey=(_editingSnapshotMonthKey&&_editingSnapshotMonthKey!==monthKey)?_editingSnapshotMonthKey:null;
   if(existingIdx>=0){state.snapshots[existingIdx]=snap;showToast(`📅 Updated snapshot for ${displayDate}`,'#34D399');}
-  else{state.snapshots.push(snap);state.snapshots.sort((a,b)=>a.monthKey.localeCompare(b.monthKey));showToast(`📅 Historical snapshot added for ${displayDate}`,'#34D399');}
+  else{state.snapshots.push(snap);state.snapshots.sort(_snapshotSortCompare);showToast(`📅 Historical snapshot added for ${displayDate}`,'#34D399');}
   _editingSnapshotMonthKey=null;
   closeModals();renderHistory();renderNwChart();scheduleSave();
   // Unlike saveSnapshot()/confirmDeleteSnapshot(), this path never wrote to
@@ -11548,7 +11576,7 @@ async function loadUserData(uid) {
       // returned last, corrupting the dashboard's "NW change since" figure
       // (wrong day count and sign) and the History tab's ordering/deltas.
       // Found in the 99th adversarial pass.
-      state.snapshots.sort((a,b)=>a.monthKey.localeCompare(b.monthKey));
+      state.snapshots.sort(_snapshotSortCompare);
     }
     // Load prefs (full state)
     const prefs = await window._fb.loadPrefs(uid);
@@ -12412,7 +12440,7 @@ function loadFromLocalStorage(){
     // through (a pre-100th-pass future-dated entry, or any other future
     // bug) would persist across reloads indefinitely instead of
     // self-healing. Found in the 101st adversarial pass.
-    state.snapshots.sort((a,b)=>a.monthKey.localeCompare(b.monthKey));
+    state.snapshots.sort(_snapshotSortCompare);
     state.customCategories=saved.customCategories||state.customCategories;
     if(saved.budgets&&Object.keys(saved.budgets).length>0)state.budgets=saved.budgets;
     state.catRules=saved.catRules||[];
@@ -12565,7 +12593,7 @@ function importBackup(file){
       // Same reasoning as loadFromLocalStorage()'s equivalent fix (101st
       // adversarial pass): a hand-edited or otherwise-corrupted backup
       // file's snapshots array isn't guaranteed to already be sorted.
-      state.snapshots.sort((a,b)=>a.monthKey.localeCompare(b.monthKey));
+      state.snapshots.sort(_snapshotSortCompare);
       state.customCategories=arr(saved.customCategories);
       const savedBudgets=obj(saved.budgets);
       state.budgets=Object.keys(savedBudgets).length>0?savedBudgets:{};
