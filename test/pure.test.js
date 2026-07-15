@@ -2433,3 +2433,91 @@ test("window._isDemoPreview is computed at parse time, before the DOMContentLoad
     "window._isDemoPreview should be assigned at top-level script scope, immediately before the DOMContentLoaded listener registration -- not inside the handler itself"
   );
 });
+
+// ── 100th adversarial pass: fresh-territory findings, all outside the
+// just-rebaselined session-filter/demo-preview cluster. ──
+
+// renderDailyCal()'s endDate defaulted to midnight local time (the numeric
+// Date constructor's default), while every transaction parses at noon --
+// a transaction on the range's actual last calendar day (noon) failed
+// d<=endDate (midnight) and was silently excluded from the calendar's
+// totals/cells. Month-end bills (rent, mortgage) are a routine trigger.
+test("renderDailyCal: endDate is anchored to noon, matching how transaction dates are parsed, so the last day of the range isn't silently excluded", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const endDate=new Date\(maxMonth\.slice\(0,4\),parseInt\(maxMonth\.slice\(5,7\)\),0,12\); \/\/ last day of max month/,
+    "endDate's Date constructor should pass 12 as the hours argument, matching new Date(t.date+'T12:00:00')'s noon anchor for every transaction"
+  );
+});
+
+// renderDailyCal() threw (maxMonth.slice() on undefined) when
+// getFilteredMonths() returns [] -- reachable uncaught via
+// setChartMode('daily') for a user with no transactions in range, the
+// same crash shape renderSankey() had before the 99th pass's fix.
+test("renderDailyCal: shows a 'No data' state instead of crashing when there are no transaction months in range", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /function renderDailyCal\(\)\{[\s\S]{0,2500}?const filteredMonths=getFilteredMonths\(\);[\s\S]{0,700}?if\(!filteredMonths\.length\)\{\s*wrap\.innerHTML=`<div style="padding:2rem;color:var\(--text-muted\);font-size:12px;text-align:center">No data for this period<\/div>`;\s*return;\s*\}/,
+    "renderDailyCal() should guard against an empty filteredMonths array before deriving minMonth/maxMonth"
+  );
+});
+
+// importBackup() only shape-checks state.snapshots/state.vehicles as
+// arrays -- a crafted backup file's .date/.purchaseYear/.miles fields flow
+// unescaped into innerHTML in renderHistory()/renderVehicles(), the one
+// unescaped seam in a file that treats crafted-backup-file XSS as in-scope
+// (matches the pass-15 Budget-row and pass-34 community-rules-CSV fixes).
+test("renderHistory and renderVehicles escape snapshot/vehicle fields that could carry an HTML payload from a crafted backup file", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(source, /\$\{esc\(first\.date\)\} – \$\{esc\(last\.date\)\}/, "renderHistory()'s growth banner should esc() first.date/last.date");
+  assert.match(source, /<div class="account-name" style="font-size:12px">\$\{esc\(s\.date\)\}<\/div>/, "renderHistory()'s per-row date should be esc()'d");
+  assert.match(source, /purchased \$\{esc\(String\(v\.purchaseYear\)\)\}/, "renderVehicles() should esc(String(...)) purchaseYear");
+  assert.match(source, /\$\{\(Number\(v\.miles\)\|\|0\)\.toLocaleString\(\)\} mi/, "renderVehicles() should Number()-coerce miles before .toLocaleString(), since a string passes through that method unchanged");
+});
+
+// saveHistoricalSnapshot() accepted a future date with no validation --
+// besides a nonsense growth-window figure, a future-dated entry sitting at
+// the end of state.snapshots (correctly sorted by monthKey, since it's
+// lexicographically greatest) silently breaks saveSnapshot()'s own
+// "always appended in chronological order" assumption the next time a real
+// current-month snapshot is appended after it via plain push() with no
+// re-sort.
+test("saveHistoricalSnapshot: rejects a future date instead of silently accepting it", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const d=new Date\(date\+'T12:00:00'\);\s*\/\/[\s\S]{0,900}?if\(d>new Date\(\)\)\{showToast\('That date is in the future/,
+    "saveHistoricalSnapshot() should reject a future date with a toast, before computing monthKey/checking for an existing snapshot"
+  );
+});
+
+// renderNwBreakdown()'s liability group-header total hardcoded a leading
+// '-' regardless of the group's actual net sign -- fmt() always
+// Math.abs()'s its argument, so a liability group whose accounts net to a
+// credit (raw<0) has net=-raw>0 (a real asset-like contribution) but
+// still displayed with a '-' as if it were still net debt.
+test("renderNwBreakdown: the group-header total's sign is driven by net<0, not hardcoded per group type", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /\$\{net<0\?'-':''\}\$\{fmt\(net\)\}<\/span>/,
+    "the group-header total should show '-' exactly when net<0, matching the per-item isNeg pattern used just above it, not a hardcoded sign tied to g.isLiab"
+  );
+  assert.doesNotMatch(
+    source,
+    /\$\{g\.isLiab\?`-\$\{fmt\(raw\)\}`:fmt\(net\)\}/,
+    "the old hardcoded-per-branch sign logic should be gone"
+  );
+});
