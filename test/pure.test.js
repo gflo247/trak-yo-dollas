@@ -2349,7 +2349,7 @@ test("loadUserData: sorts state.snapshots by monthKey after a cloud pull, since 
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /state\.snapshots = snaps\.map\(s => \(\{[\s\S]{0,300}?\}\)\);[\s\S]{0,1400}?state\.snapshots\.sort\(\(a,b\)=>a\.monthKey\.localeCompare\(b\.monthKey\)\);/,
+    /state\.snapshots = snaps\.map\(s => \(\{[\s\S]{0,300}?\}\)\);[\s\S]{0,1400}?state\.snapshots\.sort\(_snapshotSortCompare\);/,
     "loadUserData() should sort state.snapshots by monthKey immediately after building it from the cloud payload"
   );
 });
@@ -2582,12 +2582,73 @@ test("loadFromLocalStorage and importBackup both sort state.snapshots by monthKe
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /state\.snapshots=saved\.snapshots\|\|state\.snapshots;[\s\S]{0,700}?state\.snapshots\.sort\(\(a,b\)=>a\.monthKey\.localeCompare\(b\.monthKey\)\);/,
+    /state\.snapshots=saved\.snapshots\|\|state\.snapshots;[\s\S]{0,700}?state\.snapshots\.sort\(_snapshotSortCompare\);/,
     "loadFromLocalStorage() should sort state.snapshots immediately after assigning it from the local cache"
   );
   assert.match(
     source,
-    /state\.snapshots=arr\(saved\.snapshots\);[\s\S]{0,400}?state\.snapshots\.sort\(\(a,b\)=>a\.monthKey\.localeCompare\(b\.monthKey\)\);/,
+    /state\.snapshots=arr\(saved\.snapshots\);[\s\S]{0,400}?state\.snapshots\.sort\(_snapshotSortCompare\);/,
     "importBackup() should sort state.snapshots immediately after assigning it from the backup payload"
+  );
+});
+
+// ── 102nd adversarial pass: all 5 places that sort state.snapshots by
+// monthKey (getSortedSnaps(), saveHistoricalSnapshot(), loadUserData(),
+// loadFromLocalStorage(), importBackup()) used a bare
+// `(a,b)=>a.monthKey.localeCompare(b.monthKey)` comparator with no guard
+// against a null/undefined entry or a non-string monthKey. Worst case
+// (importBackup()): a crafted backup with a malformed snapshots entry
+// threw mid-assignment, after state.accounts/vehicles/snapshots were
+// already replaced but before the rest of the restore completed --
+// exactly the corrupted-hybrid-state failure mode the surrounding
+// type-guard block's own comment already names as the thing it exists to
+// prevent. Consolidated into one shared, crash-safe comparator. ──
+test("_snapshotSortCompare: treats a missing or non-string monthKey as an empty string instead of throwing", () => {
+  const ctx = {};
+  const { _snapshotSortCompare } = loadFunctions(["_snapshotSortCompare"], ctx);
+  const arr = [
+    { monthKey: "2026-03" },
+    { monthKey: 202601 }, // non-string -- a crafted/corrupted entry
+    null, // malformed entry entirely
+    { monthKey: "2026-02" },
+    {}, // missing monthKey
+  ];
+  assert.doesNotThrow(() => arr.sort(_snapshotSortCompare), "sorting an array with malformed entries should not throw");
+  // The three malformed/missing-monthKey entries all sort as '' (first),
+  // followed by the two valid entries in chronological order.
+  const validOrder = arr.filter(s => s && typeof s.monthKey === "string").map(s => s.monthKey);
+  assert.deepEqual(validOrder, ["2026-02", "2026-03"], "the genuinely-valid entries should still end up correctly ordered relative to each other");
+});
+test("every state.snapshots sort call site uses the shared _snapshotSortCompare, not a bare inline comparator", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const sortCalls = source.match(/state\.snapshots\.sort\([^)]*\)/g) || [];
+  assert.ok(sortCalls.length >= 4, "expected at least 4 direct state.snapshots.sort(...) call sites");
+  for (const call of sortCalls) {
+    assert.match(call, /_snapshotSortCompare/, `${call} should use the shared safe comparator, not an inline one`);
+  }
+  assert.match(
+    source,
+    /function getSortedSnaps\(\)\{\s*return state\.snapshots\.slice\(\)\.sort\(_snapshotSortCompare\);\s*\}/,
+    "getSortedSnaps() should also use the shared comparator"
+  );
+});
+
+// ── 102nd adversarial pass: renderNwGoalWidget()'s "Goal reached!" banner
+// always pointed its button at setNwGoalNextMilestone() -- but that
+// function's own MILESTONES.find(m=>m>nw) returns undefined once nw is at
+// or past the top $5M milestone (whether the reached goal was that top
+// milestone or a higher custom one), silently no-op'ing on click. The
+// 101st pass's own fix comment named this exact dead end but only routed
+// around it for the separate !goal case, not this one. ──
+test("renderNwGoalWidget: the 'Goal reached' banner routes to openCustomNwGoal() instead of the dead-end setNwGoalNextMilestone() once no next milestone exists", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if\(nw>=goal\)\{[\s\S]{0,700}?const hasNextMilestone=MILESTONES\.some\(m=>m>nw\);[\s\S]{0,700}?data-action="\$\{hasNextMilestone\?'setNwGoalNextMilestone':'openCustomNwGoal'\}"/,
+    "the goal-reached banner's button should check for a next milestone and fall back to openCustomNwGoal() when none exists"
   );
 });
