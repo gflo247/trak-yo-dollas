@@ -2483,23 +2483,6 @@ test("renderHistory and renderVehicles escape snapshot/vehicle fields that could
   assert.match(source, /\$\{\(Number\(v\.miles\)\|\|0\)\.toLocaleString\(\)\} mi/, "renderVehicles() should Number()-coerce miles before .toLocaleString(), since a string passes through that method unchanged");
 });
 
-// saveHistoricalSnapshot() accepted a future date with no validation --
-// besides a nonsense growth-window figure, a future-dated entry sitting at
-// the end of state.snapshots (correctly sorted by monthKey, since it's
-// lexicographically greatest) silently breaks saveSnapshot()'s own
-// "always appended in chronological order" assumption the next time a real
-// current-month snapshot is appended after it via plain push() with no
-// re-sort.
-test("saveHistoricalSnapshot: rejects a future date instead of silently accepting it", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  assert.match(
-    source,
-    /const d=new Date\(date\+'T12:00:00'\);\s*\/\/[\s\S]{0,900}?if\(d>new Date\(\)\)\{showToast\('That date is in the future/,
-    "saveHistoricalSnapshot() should reject a future date with a toast, before computing monthKey/checking for an existing snapshot"
-  );
-});
 
 // renderNwBreakdown()'s liability group-header total hardcoded a leading
 // '-' regardless of the group's actual net sign -- fmt() always
@@ -2519,5 +2502,92 @@ test("renderNwBreakdown: the group-header total's sign is driven by net<0, not h
     source,
     /\$\{g\.isLiab\?`-\$\{fmt\(raw\)\}`:fmt\(net\)\}/,
     "the old hardcoded-per-branch sign logic should be gone"
+  );
+});
+
+// ── 101st adversarial pass: fresh-territory findings, plus a regression
+// re-verification catch in the 100th pass's own future-date fix. ──
+
+// saveHistoricalSnapshot()'s 100th-pass future-date guard compared `d`
+// (the selected date pinned to noon) against `new Date()` (the exact
+// current moment) -- before noon local, today-at-noon > now, so entering
+// TODAY's own date (openHistoricalSnapshotModal()'s own prefilled
+// default) was rejected as "in the future." Fixed with a pure
+// YYYY-MM-DD string comparison, avoiding all time-of-day ambiguity.
+test("saveHistoricalSnapshot: allows today's own date at any time of day, only rejects a date after today", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const todayIso=\(\(\)=>\{const t=new Date\(\);return`\$\{t\.getFullYear\(\)\}-\$\{String\(t\.getMonth\(\)\+1\)\.padStart\(2,'0'\)\}-\$\{String\(t\.getDate\(\)\)\.padStart\(2,'0'\)\}`;\}\)\(\);\s*if\(date>todayIso\)\{showToast\('That date is in the future/,
+    "the future-date check should compare the raw YYYY-MM-DD date string against today's own YYYY-MM-DD string, not a noon-pinned Date object against the exact current moment"
+  );
+  assert.doesNotMatch(
+    source,
+    /if\(d>new Date\(\)\)\{showToast\('That date is in the future/,
+    "the old Date-object comparison (which rejected today's own date before noon) should be gone"
+  );
+});
+
+// renderNwGoalWidget()'s milestone auto-select (`MILESTONES.find(m=>m>nw)`)
+// returns undefined once nw exceeds the top $5M milestone, leaving `goal`
+// undefined -- `needed=goal-nw` is then NaN, cascading to "$NaN to go",
+// an "Invalid Date" ETA, and a NaN-width progress bar. Fixed with an
+// explicit no-goal-available branch pointing at openCustomNwGoal().
+test("renderNwGoalWidget: shows a custom-goal prompt instead of NaN/Invalid Date when net worth exceeds every built-in milestone", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if\(!projEl\)return;[\s\S]{0,1100}?if\(!goal\)\{\s*projEl\.innerHTML=`[\s\S]{0,600}?data-action="openCustomNwGoal"[\s\S]{0,400}?return;\s*\}/,
+    "renderNwGoalWidget() should guard on !goal, before the 'Goal reached' check, and point the user at openCustomNwGoal() rather than the milestone-only setNwGoalNextMilestone() (which also silently no-ops past the top milestone)"
+  );
+});
+
+// The 100th pass's own crafted-backup-XSS sweep of renderVehicles() missed
+// 3 more sites of the identical gap: v.id (both editVehicle data-arg
+// attributes) and v.year (the KBB link's data-arg) interpolate raw into an
+// HTML attribute; v.model also risked a TypeError crash, not just
+// injection, via (v.model||'').split(' ') -- a crafted backup storing
+// v.model as a truthy non-string bypasses the ||'' fallback.
+test("renderVehicles: escapes v.id and v.year in data-arg attributes, and coerces v.model to a string before .split()", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const idMatches = source.match(/data-action="editVehicle" data-arg="\$\{esc\(String\(v\.id\)\)\}"/g) || [];
+  assert.equal(idMatches.length, 2, "both editVehicle buttons (the 'other' asset branch and the regular vehicle branch) should esc(String(v.id))");
+  assert.match(
+    source,
+    /data-action="openKBB" data-arg="\$\{esc\(String\(v\.year\)\)\}"/,
+    "the KBB link's data-arg should esc(String(v.year))"
+  );
+  assert.match(
+    source,
+    /data-arg3="\$\{esc\(String\(v\.model\|\|''\)\.split\(' '\)\[0\]\)\}"/,
+    "v.model should be String()-coerced before .split(' '), so a non-string payload (e.g. a number) can't throw instead of just being escaped"
+  );
+});
+
+// loadFromLocalStorage()/importBackup() both assigned state.snapshots
+// directly from a saved payload with no sort -- the local cache and a
+// hand-edited/corrupted backup file aren't guaranteed to already be
+// chronologically ordered, and every positional consumer of
+// state.snapshots trusts that they are (same invariant loadUserData()'s
+// 99th-pass fix restores for the cloud-pull path).
+test("loadFromLocalStorage and importBackup both sort state.snapshots by monthKey after assigning it", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /state\.snapshots=saved\.snapshots\|\|state\.snapshots;[\s\S]{0,700}?state\.snapshots\.sort\(\(a,b\)=>a\.monthKey\.localeCompare\(b\.monthKey\)\);/,
+    "loadFromLocalStorage() should sort state.snapshots immediately after assigning it from the local cache"
+  );
+  assert.match(
+    source,
+    /state\.snapshots=arr\(saved\.snapshots\);[\s\S]{0,400}?state\.snapshots\.sort\(\(a,b\)=>a\.monthKey\.localeCompare\(b\.monthKey\)\);/,
+    "importBackup() should sort state.snapshots immediately after assigning it from the backup payload"
   );
 });
