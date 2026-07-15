@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-9dLX+sXBqu42EHwm2vGkDjxYovWhazaAD/us2ype5jk=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-kyMTD2cLTGyLkVU4btJONqqmgxFQixJF4ET9R0I5oHk=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3193,8 +3193,6 @@ function renderMetrics(){
   const thisYearKey=new Date().getFullYear()+'-01';
   const yearStart=allSnaps.filter(s=>s.monthKey<thisYearKey).slice(-1)[0];
   const nwChange=yearStart?nw-yearStart.nw:null;
-  // Only say "this year" if the snapshot is actually from last year or earlier
-  const currentYear=new Date().getFullYear().toString();
   // Always show specific month — only show if a prior snapshot exists
   const nwChangeLabel=yearStart?`since ${fmtMonthShort(yearStart.monthKey)}`:null;
   const nwSub=nwChange!==null&&nwChangeLabel
@@ -3245,6 +3243,16 @@ function renderNwBreakdown(){
           <div class="bar-tooltip">${aPct.toFixed(1)}%</div>
         </div>
       </div></div>`;}).join('');
+    // The group-header total's sign is driven by net<0, not a hardcoded
+    // '-' on the liability branch -- fmt() always Math.abs()'s its
+    // argument (matches the per-item rendering above, which derives its
+    // own isNeg separately for the same reason). A liability group whose
+    // accounts net to a credit (raw<0, e.g. a card carrying a refund
+    // credit larger than every other liability balance combined) has
+    // net=-raw>0 -- the old hardcoded '-' still showed it as a debt. The
+    // same gap existed unflagged on the asset branch too (a
+    // negative-balance asset account showed with no sign at all, instead
+    // of a minus). Found in the 100th adversarial pass.
     return`<div class="nw-group">
       <div class="nw-group-header" style="background:${g.hdr}">
         <div style="display:flex;align-items:center;gap:7px">
@@ -3261,7 +3269,7 @@ function renderNwBreakdown(){
             ? `<span style="font-size:10px;font-weight:700;color:#F87171;background:#F8717118;padding:2px 8px;border-radius:10px" title="Total liabilities ÷ total assets">${(assets>0?raw/assets*100:0).toFixed(1)}% debt-to-asset</span>`
             : `<span style="font-size:10px;font-weight:700;color:${g.color};background:${g.color}18;padding:2px 8px;border-radius:10px">${pct.toFixed(1)}% of assets</span>`
           }
-          <span style="font-size:14px;font-weight:800;color:${g.isLiab?'#F87171':'var(--text-primary)'}">${g.isLiab?`-${fmt(raw)}`:fmt(net)}</span>
+          <span style="font-size:14px;font-weight:800;color:${g.isLiab?'#F87171':'var(--text-primary)'}">${net<0?'-':''}${fmt(net)}</span>
         </div>
       </div>${items}</div>`;
   }).join('');
@@ -5435,10 +5443,28 @@ function renderDailyCal(){
 
   // Get date range from horizon
   const filteredMonths=getFilteredMonths();
+  // Guards the same shape of crash renderSankey() had before the 99th
+  // adversarial pass's fix -- with no transaction months at all (a new
+  // user before their first import, or after removing their only source),
+  // minMonth/maxMonth below are undefined and maxMonth.slice() throws.
+  // Reachable uncaught: setChartMode('daily') calls this function bare,
+  // with no try/catch anywhere in its click-dispatch chain (only
+  // renderActiveChart()'s own dispatch path is wrapped). Found in the
+  // 100th adversarial pass.
+  if(!filteredMonths.length){
+    wrap.innerHTML=`<div style="padding:2rem;color:var(--text-muted);font-size:12px;text-align:center">No data for this period</div>`;
+    return;
+  }
   const minMonth=filteredMonths[0];
   const maxMonth=filteredMonths[filteredMonths.length-1];
   const startDate=new Date(minMonth+'-01T12:00:00');
-  const endDate=new Date(maxMonth.slice(0,4),parseInt(maxMonth.slice(5,7)),0); // last day of max month
+  // Hour arg 12, matching every transaction's own noon-anchored parse
+  // (`new Date(t.date+'T12:00:00')` below) -- without it, this defaulted to
+  // midnight local time, so a transaction dated on the range's actual last
+  // day (noon) failed d<=endDate (midnight) and was silently excluded from
+  // byDay/byDayCats/byDayCount. Month-end bills (rent, mortgage) are a
+  // routine, not edge-case, trigger. Found in the 100th adversarial pass.
+  const endDate=new Date(maxMonth.slice(0,4),parseInt(maxMonth.slice(5,7)),0,12); // last day of max month
 
   const byDay={};
   const byDayCats={};
@@ -5473,7 +5499,6 @@ function renderDailyCal(){
   const wkndAvg=wkndSet.size?wkndTotal/wkndSet.size:0;
   const wkdayAvg=wkdaySet.size?wkdayTotal/wkdaySet.size:0;
   const wkndPct=wkdayAvg>0?Math.round((wkndAvg-wkdayAvg)/wkdayAvg*100):0;
-  const wkndStr=wkndPct===0?'Even':(wkndPct>0?'+':'')+wkndPct+'% wknd vs weekday';
 
   // Build months between start and end
   const months=[];
@@ -6986,6 +7011,12 @@ function renderAccountLists(){
   document.getElementById('liability-list').innerHTML=state.accounts.filter(a=>isLiab(a.type)&&!a.excludeFromNW).map(row).join('');
 }
 
+// purchaseYear is esc(String(...))'d and miles is Number()-coerced below,
+// same reasoning as renderHistory()'s snapshot .date fix -- importBackup()
+// only shape-checks state.vehicles as an array, so a crafted backup file
+// could carry a non-numeric payload straight into these fields, which
+// otherwise interpolate directly into innerHTML. Found in the 100th
+// adversarial pass.
 function renderVehicles(){
   const el=document.getElementById('vehicle-list');if(!el)return;
   if(!state.vehicles.length){
@@ -7008,7 +7039,7 @@ function renderVehicles(){
       return`<div style="border:1px solid var(--border-mid);border-radius:10px;padding:.7rem 1rem;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px">
         <div>
           <div style="font-size:13px;font-weight:800;color:var(--text-primary)">${esc(v.name)}</div>
-          <div style="font-size:10px;color:#2DD4BF;margin-top:1px">${esc(v.make)}${v.purchaseYear?` · purchased ${v.purchaseYear}`:''}${v.purchase>0?` · ${ret}% value retained`:''}</div>
+          <div style="font-size:10px;color:#2DD4BF;margin-top:1px">${esc(v.make)}${v.purchaseYear?` · purchased ${esc(String(v.purchaseYear))}`:''}${v.purchase>0?` · ${ret}% value retained`:''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
           <div style="font-size:15px;font-weight:800;color:#34D399">${fmt(v.value)}</div>
@@ -7021,7 +7052,7 @@ function renderVehicles(){
       <div style="padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:12px">
         <div>
           <div style="font-size:13px;font-weight:800;color:var(--text-primary)">${esc(String(v.year))} ${esc(v.make||'')} ${esc(v.model||'')}</div>
-          <div style="font-size:10px;color:#2DD4BF;margin-top:1px">${esc(v.condition)} · ${(v.miles||0).toLocaleString()} mi${v.purchase>0?` · ${ret}% value retained · ~${fmt(avgDep)}/yr ${depLabel}`:''}</div>
+          <div style="font-size:10px;color:#2DD4BF;margin-top:1px">${esc(v.condition)} · ${(Number(v.miles)||0).toLocaleString()} mi${v.purchase>0?` · ${ret}% value retained · ~${fmt(avgDep)}/yr ${depLabel}`:''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
           <div style="text-align:right">
@@ -7058,6 +7089,14 @@ function renderHistory(){
     <div style="font-size:11px;color:var(--text-muted);line-height:1.5">Update your balances on the <strong style="color:#475569">Accounts</strong> tab, then hit <strong style="color:#475569">Save snapshot</strong> to begin. Each snapshot anchors a real data point on your Dashboard trend line.</div>
   </div>`;return;}
 
+  // s.date/first.date/last.date are esc()'d below (unlike the numeric
+  // fields around them) -- every legitimate write path sets .date to an
+  // app-generated toLocaleDateString() string, but importBackup() only
+  // shape-checks state.snapshots as an array with no per-field
+  // sanitization, so a hand-edited/crafted backup file could carry an
+  // HTML payload straight into this innerHTML sink. Found in the 100th
+  // adversarial pass, same shape as the pass-15 Budget-row and pass-34
+  // community-rules-CSV XSS findings.
   // Growth summary banner (2+ snapshots)
   let summaryHTML='';
   if(state.snapshots.length>=2){
@@ -7090,7 +7129,7 @@ function renderHistory(){
       </div>
       <div style="text-align:right">
         <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:4px">${state.snapshots.length} snapshots</div>
-        <div class="text-muted-sm">${first.date} – ${last.date}</div>
+        <div class="text-muted-sm">${esc(first.date)} – ${esc(last.date)}</div>
       </div>
     </div>`;
   }
@@ -7115,7 +7154,7 @@ function renderHistory(){
     const trophies=(milestoneBySnap[i]||[]).map(m=>`<span style="display:inline-flex;align-items:center;gap:3px;background:${tc('#78350F22','#FEF3C7')};border:1px solid ${tc('#D9770644','#D97706')};border-radius:5px;padding:1px 6px;font-size:9px;font-weight:800;color:${tc('#FCD34D','#B45309')};margin-left:5px">🏆 ${fmtC(m)}</span>`).join('');
     return`<div class="account-row">
       <div style="display:flex;align-items:center;gap:4px">
-        <div class="account-name" style="font-size:12px">${s.date}</div>
+        <div class="account-name" style="font-size:12px">${esc(s.date)}</div>
         ${trophies}
       </div>
       <div style="display:flex;align-items:center;gap:6px">
@@ -7349,6 +7388,16 @@ function saveHistoricalSnapshot(){
   const liab=parseFloat(document.getElementById('hist-snap-liab').value)||0;
   if(!date||isNaN(nw)){showToast('Please enter a date and net worth','#FCD34D');return;}
   const d=new Date(date+'T12:00:00');
+  // A typo'd future year (e.g. 2027 for 2026) saved cleanly with no check
+  // -- besides producing a nonsense "growth over N months" figure spanning
+  // months that haven't happened, it also re-breaks the sorted-snapshots
+  // invariant loadUserData()'s cloud-load fix (99th adversarial pass)
+  // relies on: saveSnapshot() (the regular monthly save) appends via a
+  // plain push() with no re-sort, trusting that snapshots are always
+  // added in chronological order -- a future-dated entry sitting at the
+  // array's end breaks that trust the next time a real current-month
+  // snapshot is appended after it. Found in the 100th adversarial pass.
+  if(d>new Date()){showToast('That date is in the future — enter a past or current date','#FCD34D');return;}
   const monthKey=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
   const displayDate=d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
   // Adding a *new* historical snapshot (not editing one) for a month that
