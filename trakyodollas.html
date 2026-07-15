@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-iwsjJ//kQfPP5NkiEpkwl8x8RCFXoT8aQfKg1frpxMo=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-WfPiQpEPM4E00hM6u96tUgF5NOt7pg8YpwLmOgwDUbE=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2416,6 +2416,26 @@ function _restoreCatsFromTreemapStash(){
 // OLD dataset, same reasoning resetTreemapToCategories()/Escape already use
 // for their own "deliberate reset" exit paths. Found in the 55th
 // adversarial pass.
+// Consolidates the session-filter reset every wholesale-dataset-replacement
+// path needs (backup restore, first real CSV import over a demo session,
+// cloud-sync pull, demo-profile switch) into one place -- found in the 96th
+// adversarial pass that the reset set had already drifted independently out
+// of sync across 3 separate hand-written copies (loadUserData() was missing
+// it entirely; confirmTxImport() and importBackup() each had a slightly
+// different subset), the same "one call site forgets to update" shape this
+// file already extracted _clearVendorDayFiltersForDataReplace() to prevent.
+function _resetSessionFiltersForDataReplace(){
+  _bizFilter='all';
+  state.activeCats=new Set();
+  state.dashFilter=null;
+  state.searchQuery='';
+  const searchEl=document.getElementById('tx-search');
+  if(searchEl)searchEl.value='';
+  document.getElementById('search-clear-btn')?.classList.add('hidden');
+  state.showExcluded=false;
+  try{localStorage.removeItem('trakyo_show_excl');}catch(e){}
+  _clearVendorDayFiltersForDataReplace();
+}
 function _clearVendorDayFiltersForDataReplace(){
   if(state.activeDate){
     state.activeDate=null;
@@ -2829,7 +2849,13 @@ function renderInsights(){
       nwSubLine=`<span style="color:#34D399">🎯 Goal reached! ${fmtC(state.nwGoal)}</span>`;
     } else if(state.nwGoal&&state.nwGoal>nwNow&&!state.hideNwGoal){
       const goalNeeded=state.nwGoal-nwNow;
-      const goalPct=Math.round(nwNow/state.nwGoal*100);
+      // Math.max(0,...) -- state.nwGoal is always positive, but nwNow can be
+      // negative (someone paying down debt), which this branch is already
+      // guaranteed to reach whenever nwGoal>nwNow, negative or not. Same
+      // unclamped-fraction shape as the 84th/85th/86th passes' chart-width
+      // fixes, just for this dashboard pill's percentage label instead of a
+      // CSS width. Found in the 96th adversarial pass.
+      const goalPct=Math.max(0,Math.round(nwNow/state.nwGoal*100));
       const monthsLeft=monthlyGrowthForGoal>0?Math.ceil(goalNeeded/monthlyGrowthForGoal):null;
       const etaStr=monthsLeft&&monthsLeft<120
         ?(monthsLeft<=3?' · almost there!':(()=>{const yrs=Math.round(monthsLeft/12*10)/10;return ` · ~${yrs}yr${yrs>=1?'s':''} at this pace`;})())
@@ -3623,7 +3649,15 @@ function renderNwGoalWidget(){
 
   // ── ETA calculation ────────────────────────────────────────────
   const monthsToGoal=Math.ceil(needed/monthlyGrowth);
+  // Set the day to 1 before adding months -- eta only ever displays
+  // month/year below, but Date.setMonth() overflows into the *next* month
+  // whenever today's day-of-month doesn't exist in the target month (e.g.
+  // Jan 31 + 1 month lands on Mar 2/3, since Feb has no 31st), silently
+  // mislabeling the ETA a month later than the real one on the 29th-31st of
+  // any month whenever the target month is shorter. Found in the 96th
+  // adversarial pass.
   const eta=new Date();
+  eta.setDate(1);
   eta.setMonth(eta.getMonth()+monthsToGoal);
   const etaStr=eta.toLocaleDateString(undefined,{month:'short',year:'numeric'});
   const yrs=Math.floor(monthsToGoal/12);
@@ -4945,7 +4979,7 @@ function renderTreemap(drillCat){
   const svg=d3.select(svgEl);
   const cell=svg.selectAll('g').data(root.leaves()).join('g')
     .attr('transform',d=>`translate(${d.x0},${d.y0})`)
-    .style('cursor',drillCat?'pointer':'pointer')
+    .style('cursor','pointer')
     .on('click',(_,d)=>{
       if(drillCat){
         // Vendor tile — toggle filter
@@ -6621,7 +6655,16 @@ function restoreCat(cat){
 }
 function toggleExcluded(){
   state.showExcluded=!state.showExcluded;
-  try{localStorage.setItem('trakyo_show_excl',state.showExcluded?'1':'0');}catch(e){}
+  // saveToLocalStorage() guards demo-preview sessions from persisting
+  // ("demo-preview sessions never persist"), but this write bypassed that
+  // guard entirely -- toggling "Show in totals" while previewing a demo
+  // (over real saved data, or via the marketing ?demoPreview=1 link) leaked
+  // a demo-only preference into the visitor's next real session, silently
+  // counting excluded/transfer spend in every total from then on with zero
+  // toggle interaction on the real data. Found in the 96th adversarial pass.
+  if(!(window._isDemoPreview||window._viewingDemoOverReal)){
+    try{localStorage.setItem('trakyo_show_excl',state.showExcluded?'1':'0');}catch(e){}
+  }
   showTxN=50;renderSourceChips();renderSpendSummary();renderBucketGrid();renderTxList();
   renderActiveChart();
   // Refresh popover if still open
@@ -9551,6 +9594,16 @@ function deleteCustomCat(name){
   // next render -- an empty drill view with a breadcrumb naming a
   // category that no longer exists. Found in the 95th adversarial pass.
   if(state.treemapDrillCat===name)state.treemapDrillCat=null;
+  // Same stale-reference shape, a third holder of category names the 95th
+  // pass's cascade missed: _treemapPrevActiveCats (a snapshot copy of
+  // activeCats stashed when drilling into a Treemap vendor tile) isn't the
+  // live state.activeCats the delete above already cleaned, so deleting a
+  // category that was active *before* that drill left the stale name
+  // sitting in the stash, ready to resurrect as a live filter for a
+  // category that no longer exists the next time anything restores it
+  // (deselecting the vendor tile, switching chart mode, or merely changing
+  // tabs). Found in the 96th adversarial pass.
+  _treemapPrevActiveCats?.delete(name);
   window._catColorMap=null;
   renderCatManagerList();
   rebuildCatSelects();
@@ -9592,6 +9645,10 @@ function confirmRenameCat(oldName){
   // (unlike a delete) the drilled-into category still exists, just under
   // a new name. Found in the 95th adversarial pass.
   if(state.treemapDrillCat===oldName)state.treemapDrillCat=newName;
+  // Third holder of category names, same "update not clear" reasoning as
+  // treemapDrillCat just above -- see deleteCustomCat()'s equivalent fix.
+  // Found in the 96th adversarial pass.
+  if(_treemapPrevActiveCats?.has(oldName)){_treemapPrevActiveCats.delete(oldName);_treemapPrevActiveCats.add(newName);}
   window._catColorMap=null;
   _editingCatName=null;
   renderCatManagerList();
@@ -10634,12 +10691,11 @@ function confirmTxImport(){
       // left active zero-filters the freshly-imported real data against
       // demo-session state that has nothing to do with it. Reset before
       // rebuildMonthly() runs (mutateTransactions() calls it right after
-      // this mutator returns), matching loadDemoProfile()'s own reset set.
-      _bizFilter='all';
-      state.activeCats=new Set();
-      state.dashFilter=null;
-      state.searchQuery='';
-      _clearVendorDayFiltersForDataReplace();
+      // this mutator returns). The 95th pass's own copy of this reset was
+      // missing showExcluded and the search-input DOM clear despite its
+      // comment claiming to match loadDemoProfile() exactly -- consolidated
+      // into a shared helper in the 96th pass so this can't drift again.
+      _resetSessionFiltersForDataReplace();
     }
 
     // Remove existing from this source if replace checked
@@ -11274,7 +11330,13 @@ async function loadUserData(uid) {
       if (Array.isArray(prefs.transactions)) {
         state.transactions = prefs.transactions.map(t=>({...t,amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
         _txsDirty=true;
-        _clearVendorDayFiltersForDataReplace();
+        // A wholesale dataset replacement like every other one of these paths --
+        // was only clearing Treemap/vendor/day filters, not the Business/Personal
+        // filter, category filter, search, or "show in totals" toggle, so a demo
+        // session's leftover session state could zero-filter real cloud data on
+        // sign-in with no UI control left to reset it. Found in the 96th
+        // adversarial pass.
+        _resetSessionFiltersForDataReplace();
         rebuildMonthly();
       } else if (prefs.txEdits) {
         // Legacy: apply edits to existing transactions
@@ -12279,22 +12341,17 @@ function importBackup(file){
       // This is a wholesale dataset replacement -- the exact scenario
       // _clearVendorDayFiltersForDataReplace()'s own comment names "backup
       // restore" as covering, but this function never actually called it
-      // (nor reset _bizFilter, matching the equivalent reset every other
-      // wholesale-replace path -- cloud-sync restore, loadDemoProfile --
-      // already performs). A Business/Personal filter, a Treemap vendor
+      // (nor reset _bizFilter). A Business/Personal filter, a Treemap vendor
       // selection or drilled category, or a calendar-day filter left active
       // from the pre-restore session could zero-filter the restored data
       // against session state that has nothing to do with it, with no UI
       // control left to reset it if the filter chip row itself is hidden
-      // (e.g. state.includeIncome restoring to false). Matches
-      // loadDemoProfile()'s own reset set for the same "fresh start"
-      // reasoning. Found in the 95th adversarial pass.
-      _bizFilter='all';
-      state.activeCats=new Set();
-      state.dashFilter=null;
-      state.searchQuery='';
-      state.showExcluded=false;
-      _clearVendorDayFiltersForDataReplace();
+      // (e.g. state.includeIncome restoring to false). Found in the 95th
+      // adversarial pass; consolidated into a shared helper in the 96th after
+      // the 95th pass's own manual copy of this reset set turned out to be
+      // one of three that had already drifted out of sync with each other
+      // (this one was actually the most complete of the three).
+      _resetSessionFiltersForDataReplace();
       rebuildMonthly();
       rebuildCatSelects();
       scheduleSave();
@@ -12844,7 +12901,8 @@ function loadDemoProfile(n, silent=false, skipRender=false){
   // no matching .biz-tagged transactions (or income tracking is off here,
   // which hides the filter chip row entirely), every spend-aggregating
   // view matches zero transactions with no UI control left to reset it.
-  _bizFilter='all';
+  // (Reset below via _resetSessionFiltersForDataReplace(), alongside the
+  // rest of this function's session-filter cleanup.)
   state.excludedCats=new Set(TRANSFER_LIKE_CATS);
   if(state.includeIncome)state.excludedCats.add('Income');
   state.catRules=[...(p.catRules||[])];
@@ -12852,11 +12910,12 @@ function loadDemoProfile(n, silent=false, skipRender=false){
   state.hiddenPills=new Set();
   state.vendorAliases={...(p.vendorAliases||{})};
   state.nextId=5000;
-  state.activeCats=new Set();
-  state.dashFilter=null;
-  state.searchQuery='';
-  state.showExcluded=false;
-  _clearVendorDayFiltersForDataReplace();
+  // Consolidated into the shared helper in the 96th adversarial pass -- this
+  // was the reset set every other wholesale-replace path was modeled on, but
+  // it never cleared the #tx-search DOM input to match state.searchQuery, or
+  // removed the persisted trakyo_show_excl localStorage key to match
+  // state.showExcluded, so both could silently reappear on the next reload.
+  _resetSessionFiltersForDataReplace();
   rebuildMonthly();
   rebuildCatSelects();
   if(skipRender)return; // caller handles rendering

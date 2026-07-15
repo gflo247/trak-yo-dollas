@@ -1885,41 +1885,47 @@ test("setChartMode: resets state.treemapDrillCat both when leaving Split mode an
   );
 });
 
-// ── 95th adversarial pass: importBackup() and confirmTxImport()'s
-// first-real-import demo wipe are both wholesale dataset replacements --
-// the exact scenario _clearVendorDayFiltersForDataReplace()'s own comment
-// names "backup restore" as covering -- but neither called it, and
-// neither reset _bizFilter (matching the equivalent reset every other
-// wholesale-replace path, cloud-sync restore and loadDemoProfile(),
-// already performs). A Business/Personal filter, a Treemap vendor
-// selection/drilled category, or a calendar-day filter left active from
-// the pre-replace session could zero-filter the newly-loaded data
-// against session state that has nothing to do with it. Both functions
-// are large, FileReader/DOM-heavy functions -- checking the source
-// pattern directly, matching this suite's established precedent. ──
-test("importBackup: resets _bizFilter and calls _clearVendorDayFiltersForDataReplace(), not leaving stale session filters applied to the restored data", () => {
+// ── 96th adversarial pass: the 95th pass's own hand-written reset blocks in
+// importBackup()/confirmTxImport() had already drifted out of sync with
+// loadDemoProfile()'s (missing showExcluded/the #tx-search DOM clear in one
+// case, missing showExcluded in the other), and loadUserData() (cloud-sync
+// restore) was missing the reset entirely despite a comment elsewhere
+// claiming it already had it. Consolidated into one shared helper,
+// _resetSessionFiltersForDataReplace(), so every wholesale-dataset-replace
+// path calls the exact same reset set instead of four independent copies. ──
+test("_resetSessionFiltersForDataReplace: resets every session-scoped filter field, clears the search DOM, and un-persists showExcluded", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /state\.transactions=arr\(payload\.transactions\)\.map\(t=>/,
-    "importBackup() should replace state.transactions from the backup payload"
-  );
-  assert.match(
-    source,
-    /_bizFilter='all';\s*state\.activeCats=new Set\(\);\s*state\.dashFilter=null;\s*state\.searchQuery='';\s*state\.showExcluded=false;\s*_clearVendorDayFiltersForDataReplace\(\);\s*rebuildMonthly\(\);\s*rebuildCatSelects\(\);\s*scheduleSave\(\);\s*renderAll\(\);\s*showToast\('Backup restored\.'/,
-    "importBackup() should reset _bizFilter/activeCats/dashFilter/searchQuery/showExcluded and call _clearVendorDayFiltersForDataReplace() before rebuildMonthly(), right before its final 'Backup restored.' toast"
+    /function _resetSessionFiltersForDataReplace\(\)\{\s*_bizFilter='all';\s*state\.activeCats=new Set\(\);\s*state\.dashFilter=null;\s*state\.searchQuery='';\s*const searchEl=document\.getElementById\('tx-search'\);\s*if\(searchEl\)searchEl\.value='';\s*document\.getElementById\('search-clear-btn'\)\?\.classList\.add\('hidden'\);\s*state\.showExcluded=false;\s*try\{localStorage\.removeItem\('trakyo_show_excl'\);\}catch\(e\)\{\}\s*_clearVendorDayFiltersForDataReplace\(\);\s*\}/,
+    "_resetSessionFiltersForDataReplace() should reset _bizFilter/activeCats/dashFilter/searchQuery (+ DOM), showExcluded (+ localStorage key), and call _clearVendorDayFiltersForDataReplace()"
   );
 });
-test("confirmTxImport: the first-real-import demo wipe also resets _bizFilter and calls _clearVendorDayFiltersForDataReplace()", () => {
+test("importBackup, confirmTxImport, loadUserData, and loadDemoProfile all call the shared _resetSessionFiltersForDataReplace() helper", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /if\(!state\.hasRealData\)\{\s*state\.transactions=\[\];\s*state\.activeSources=new Set\(\);\s*state\.budgets=\{\};[\s\S]{0,700}?_bizFilter='all';\s*state\.activeCats=new Set\(\);\s*state\.dashFilter=null;\s*state\.searchQuery='';\s*_clearVendorDayFiltersForDataReplace\(\);\s*\}/,
-    "confirmTxImport()'s !state.hasRealData branch should reset _bizFilter/activeCats/dashFilter/searchQuery and call _clearVendorDayFiltersForDataReplace() alongside its existing transactions/activeSources/budgets wipe"
+    /state\.transactions=arr\(payload\.transactions\)\.map\(t=>[\s\S]{0,1400}?_resetSessionFiltersForDataReplace\(\);\s*rebuildMonthly\(\);\s*rebuildCatSelects\(\);\s*scheduleSave\(\);\s*renderAll\(\);\s*showToast\('Backup restored\.'/,
+    "importBackup() should call _resetSessionFiltersForDataReplace() before rebuildMonthly(), right before its final 'Backup restored.' toast"
+  );
+  assert.match(
+    source,
+    /if\(!state\.hasRealData\)\{\s*state\.transactions=\[\];\s*state\.activeSources=new Set\(\);\s*state\.budgets=\{\};[\s\S]{0,1000}?_resetSessionFiltersForDataReplace\(\);\s*\}/,
+    "confirmTxImport()'s !state.hasRealData branch should call _resetSessionFiltersForDataReplace() alongside its existing transactions/activeSources/budgets wipe"
+  );
+  assert.match(
+    source,
+    /if \(Array\.isArray\(prefs\.transactions\)\) \{\s*state\.transactions = prefs\.transactions\.map\(t=>[\s\S]{0,700}?_resetSessionFiltersForDataReplace\(\);\s*rebuildMonthly\(\);/,
+    "loadUserData()'s cloud-sync transactions-replace branch should call _resetSessionFiltersForDataReplace()"
+  );
+  assert.match(
+    source,
+    /state\.nextId=5000;[\s\S]{0,600}?_resetSessionFiltersForDataReplace\(\);\s*rebuildMonthly\(\);\s*rebuildCatSelects\(\);\s*if\(skipRender\)return;/,
+    "loadDemoProfile() should call _resetSessionFiltersForDataReplace()"
   );
 });
 
@@ -1930,8 +1936,14 @@ test("confirmTxImport: the first-real-import demo wipe also resets _bizFilter an
 // matches anymore on the very next render. Delete clears the reference
 // (the category is gone); rename updates it (the category still exists,
 // just under a new name) -- matching how both functions already treat
-// state.activeCats for the identical shape. ──
-test("deleteCustomCat: clears state.treemapDrillCat when the deleted category is the one currently drilled into", () => {
+// state.activeCats for the identical shape.
+//
+// 96th adversarial pass: a third holder of category names, missed by the
+// 95th pass's own cascade -- _treemapPrevActiveCats, a snapshot Set stashed
+// when drilling into a Treemap vendor tile, restored back onto
+// state.activeCats later (deselecting the vendor, changing chart mode, or
+// switching tabs). Same delete-clears/rename-updates treatment. ──
+test("deleteCustomCat: clears state.treemapDrillCat and the _treemapPrevActiveCats stash when the deleted category is the one currently drilled into / stashed", () => {
   const ctx = {
     state: {
       customCategories: [{ name: "Groceries", color: null }],
@@ -1939,7 +1951,7 @@ test("deleteCustomCat: clears state.treemapDrillCat when the deleted category is
       budgets: {},
       catRules: [],
       excludedCats: new Set(),
-      activeCats: new Set(["Groceries"]),
+      activeCats: new Set(),
       treemapDrillCat: "Groceries",
     },
     window: { _catColorMap: null },
@@ -1949,12 +1961,15 @@ test("deleteCustomCat: clears state.treemapDrillCat when the deleted category is
     renderAll: () => {},
     scheduleSave: () => {},
     _confirmingDeleteCatName: "Groceries",
+    _treemapPrevActiveCats: new Set(["Groceries", "Other"]),
   };
   const { deleteCustomCat } = loadFunctions(["deleteCustomCat"], ctx);
   deleteCustomCat("Groceries");
   assert.equal(ctx.state.treemapDrillCat, null, "deleting the category currently drilled into should clear treemapDrillCat, not leave it pointing at a category that no longer exists");
+  assert.equal(ctx._treemapPrevActiveCats.has("Groceries"), false, "deleting a category stashed in _treemapPrevActiveCats should remove it from the stash too, not just from the live activeCats set");
+  assert.equal(ctx._treemapPrevActiveCats.has("Other"), true, "the stash's unrelated entries should survive untouched");
 });
-test("confirmRenameCat: updates state.treemapDrillCat to the new name when the renamed category is the one currently drilled into", () => {
+test("confirmRenameCat: updates state.treemapDrillCat and the _treemapPrevActiveCats stash to the new name when the renamed category is the one currently drilled into / stashed", () => {
   const inputEl = { value: "Food", style: {} };
   const ctx = {
     state: {
@@ -1963,7 +1978,7 @@ test("confirmRenameCat: updates state.treemapDrillCat to the new name when the r
       budgets: {},
       catRules: [],
       excludedCats: new Set(),
-      activeCats: new Set(["Groceries"]),
+      activeCats: new Set(),
       treemapDrillCat: "Groceries",
     },
     window: { _catColorMap: null },
@@ -1976,8 +1991,83 @@ test("confirmRenameCat: updates state.treemapDrillCat to the new name when the r
     renderAll: () => {},
     scheduleSave: () => {},
     _editingCatName: "Groceries",
+    _treemapPrevActiveCats: new Set(["Groceries", "Other"]),
   };
   const { confirmRenameCat } = loadFunctions(["confirmRenameCat"], ctx);
   confirmRenameCat("Groceries");
   assert.equal(ctx.state.treemapDrillCat, "Food", "renaming the category currently drilled into should update treemapDrillCat to the new name, since the category still exists, just renamed");
+  assert.equal(ctx._treemapPrevActiveCats.has("Groceries"), false, "the old name should no longer be present in the stash after rename");
+  assert.equal(ctx._treemapPrevActiveCats.has("Food"), true, "the stash should hold the new name after rename, matching the live activeCats treatment");
+  assert.equal(ctx._treemapPrevActiveCats.has("Other"), true, "the stash's unrelated entries should survive untouched");
+});
+
+// ── 96th adversarial pass: saveToLocalStorage() guards demo-preview sessions
+// from persisting anything ("demo-preview sessions never persist"), but
+// toggleExcluded()'s direct localStorage write bypassed that guard entirely
+// -- toggling "Show in totals" while previewing a demo (over real saved
+// data, or via the marketing ?demoPreview=1 link) leaked a demo-only
+// preference into the visitor's next real session. ──
+test("toggleExcluded: persists trakyo_show_excl to localStorage during a normal session", () => {
+  let stored = null;
+  const ctx = {
+    state: { showExcluded: false },
+    window: {},
+    localStorage: { setItem: (k, v) => { stored = [k, v]; } },
+    document: { getElementById: () => null },
+    renderSourceChips: () => {}, renderSpendSummary: () => {}, renderBucketGrid: () => {}, renderTxList: () => {}, renderActiveChart: () => {},
+    showTxN: 50,
+  };
+  const { toggleExcluded } = loadFunctions(["toggleExcluded"], ctx);
+  toggleExcluded();
+  assert.equal(ctx.state.showExcluded, true, "toggleExcluded() should flip state.showExcluded");
+  assert.deepEqual(stored, ["trakyo_show_excl", "1"], "a normal session should persist the toggle to localStorage");
+});
+test("toggleExcluded: does NOT persist trakyo_show_excl to localStorage during a demo-preview session", () => {
+  let stored = null;
+  const ctx = {
+    state: { showExcluded: false },
+    window: { _viewingDemoOverReal: true },
+    localStorage: { setItem: (k, v) => { stored = [k, v]; } },
+    document: { getElementById: () => null },
+    renderSourceChips: () => {}, renderSpendSummary: () => {}, renderBucketGrid: () => {}, renderTxList: () => {}, renderActiveChart: () => {},
+    showTxN: 50,
+  };
+  const { toggleExcluded } = loadFunctions(["toggleExcluded"], ctx);
+  toggleExcluded();
+  assert.equal(ctx.state.showExcluded, true, "toggleExcluded() should still flip the in-memory flag so the current demo-preview session reflects the toggle");
+  assert.equal(stored, null, "a demo-preview session (_viewingDemoOverReal) must not leak the toggle into localStorage for the next real session to pick up");
+});
+
+// ── 96th adversarial pass: renderNwGoalWidget()'s ETA calculation called
+// Date.setMonth() on a Date still holding today's day-of-month -- on the
+// 29th/30th/31st, adding N months overflows into the month after the
+// intended one whenever that target month is shorter (e.g. Jan 31 + 1
+// month lands on Mar 2/3, since Feb has no 31st), even though only the
+// month/year are ever displayed. Fixed by clamping the day to 1 first. ──
+test("renderNwGoalWidget: clamps the ETA date to day 1 before adding months, avoiding month-end overflow", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const eta=new Date\(\);\s*eta\.setDate\(1\);\s*eta\.setMonth\(eta\.getMonth\(\)\+monthsToGoal\);/,
+    "the ETA date should be clamped to day 1 before setMonth() is called, so adding months can't overflow into the following month on the 29th-31st"
+  );
+});
+
+// ── 96th adversarial pass: the dashboard net-worth pill's goal-percentage
+// label had the same unclamped-fraction shape the 84th/85th/86th passes
+// fixed for chart widths -- state.nwGoal is always positive, but nwNow can
+// be negative (someone paying down debt), producing a negative percentage
+// label ("-15% of the way to $100k") with nothing rendering-breaking about
+// it, just visibly wrong. ──
+test("dashboard net-worth pill: clamps the goal percentage to a minimum of 0", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const goalPct=Math\.max\(0,Math\.round\(nwNow\/state\.nwGoal\*100\)\);/,
+    "goalPct should be floored at 0 so a negative net worth doesn't produce a negative percentage label"
+  );
 });
