@@ -1392,7 +1392,12 @@ test("fmtH: negative values put the minus sign before the currency symbol, not a
 // early -- fmtC() formats live net worth/assets/liabilities/goal figures,
 // so any user near the $1M mark could hit this ~$500-wide band. ──
 test("fmtC: values in the [999500,999999] band show as $1M, not the malformed $1000k", () => {
-  const fmtC = loadConstArrowFn("fmtC");
+  // fmtC() was converted from a const arrow fn to a function declaration in
+  // the 105th adversarial pass (to make it real-extractable via the
+  // standard loadFunctions() path, needed for its new raw=true parameter's
+  // own test) -- loadConstArrowFn() is no longer needed for this one.
+  const ctx = { state: { currency: "$" }, esc: (s) => String(s) };
+  const { fmtC } = loadFunctions(["fmtC"], ctx);
   assert.equal(fmtC(999499), "$999k", "just below the band is unaffected");
   assert.equal(fmtC(999500), "$1M", "the exact point where the old 'k' rounding first hit 1000");
   assert.equal(fmtC(999999), "$1M");
@@ -2252,7 +2257,7 @@ test("loadUserData: the transactions-replace branch calls only _clearVendorDayFi
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /if \(Array\.isArray\(prefs\.transactions\)\) \{[\s\S]{0,2600}?_clearVendorDayFiltersForDataReplace\(\);\s*rebuildMonthly\(\);/,
+    /if \(Array\.isArray\(prefs\.transactions\)\) \{[\s\S]{0,4200}?_clearVendorDayFiltersForDataReplace\(\);\s*rebuildMonthly\(\);/,
     "loadUserData()'s cloud-sync transactions-replace branch should call _clearVendorDayFiltersForDataReplace() (session-only fields, safe on every pull), not _resetSessionFiltersForDataReplace() (which reverts a signed-in user's own persisted showExcluded/_bizFilter on every routine reload)"
   );
 });
@@ -2682,7 +2687,7 @@ test("importBackup: filters malformed transactions/customCategories/snapshots en
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /state\.transactions=arr\(payload\.transactions\)\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'\?t\.date:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
+    /state\.transactions=arr\(payload\.transactions\)\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'\?t\.date:'',desc:typeof t\.desc==='string'\?t\.desc:'',cat:typeof t\.cat==='string'\?t\.cat:'Other',card:typeof t\.card==='string'\?t\.card:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
     "importBackup() should filter out non-object transaction entries and coerce a malformed date to a safe default before mapping"
   );
   assert.match(
@@ -2702,7 +2707,7 @@ test("loadFromLocalStorage: filters malformed transactions/customCategories/snap
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /state\.transactions=\(Array\.isArray\(txSource\)\?txSource:state\.transactions\)\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'\?t\.date:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
+    /state\.transactions=\(Array\.isArray\(txSource\)\?txSource:state\.transactions\)\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'\?t\.date:'',desc:typeof t\.desc==='string'\?t\.desc:'',cat:typeof t\.cat==='string'\?t\.cat:'Other',card:typeof t\.card==='string'\?t\.card:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
     "loadFromLocalStorage() should filter out non-object transaction entries and coerce a malformed date"
   );
   assert.match(
@@ -2808,8 +2813,68 @@ test("loadUserData: customCategories/vehicles/catRules/vendorAliases/hiddenPills
   assert.match(source, /if \(Array\.isArray\(prefs\.hiddenPills\)\) state\.hiddenPills = new Set\(prefs\.hiddenPills\);/, "hiddenPills should be Array.isArray-guarded, not just truthy-checked");
   assert.match(
     source,
-    /state\.transactions = prefs\.transactions\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'\?t\.date:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
+    /state\.transactions = prefs\.transactions\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'\?t\.date:'',desc:typeof t\.desc==='string'\?t\.desc:'',cat:typeof t\.cat==='string'\?t\.cat:'Other',card:typeof t\.card==='string'\?t\.card:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
     "transactions should get the same entry-filter and date-coercion pass 103 already applied to importBackup()/loadFromLocalStorage()"
   );
   assert.match(source, /if \(prefs\.nextId\) state\.nextId = Number\(prefs\.nextId\)\|\|state\.nextId;/, "nextId should be Number()-coerced");
+});
+
+// ── 105th adversarial pass: fresh findings after re-verifying pass 104's
+// systematic audit held up (it did, in full) -- a genuine 10th gap the
+// audit's own field-level scoping didn't cover (transaction desc/cat/card
+// subfields, not the entry/date-level guards already fixed), plus two
+// unrelated fresh-territory findings. ──
+
+test("transaction ingestion: desc/cat/card are string-coerced (with cat defaulting to 'Other') at all 3 ingestion points, not just date/amount", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const pattern = /date:typeof t\.date==='string'\?t\.date:'',desc:typeof t\.desc==='string'\?t\.desc:'',cat:typeof t\.cat==='string'\?t\.cat:'Other',card:typeof t\.card==='string'\?t\.card:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset/g;
+  const matches = source.match(pattern) || [];
+  assert.equal(matches.length, 3, "all 3 ingestion points (loadUserData, loadFromLocalStorage, importBackup) should coerce desc/cat/card the same way -- a truthy non-string desc previously threw in resolveVendor()/displayVendor(), reachable from the Treemap, Spending tab, and the Dashboard's own 'largest charge' card");
+});
+test("resolveVendor and displayVendor only guard against falsy input, not a truthy non-string, confirming the transaction-ingestion fix is necessary", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(source, /const resolveVendor=desc=>\{\s*if\(!desc\)return desc;/, "resolveVendor()'s guard is falsy-only");
+  assert.match(source, /const displayVendor=name=>\{\s*if\(!name\)return name;/, "displayVendor()'s guard is falsy-only");
+});
+
+test("loadUserData and loadFromLocalStorage object-shape-guard state.budgets/state.income, matching importBackup()'s existing obj()-based guard", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(source, /if \(prefs\.budgets && typeof prefs\.budgets === 'object' && !Array\.isArray\(prefs\.budgets\)\) state\.budgets = prefs\.budgets;/, "loadUserData() should object-shape-guard budgets");
+  assert.match(source, /if \(prefs\.income && typeof prefs\.income === 'object' && !Array\.isArray\(prefs\.income\)\) state\.income = prefs\.income;/, "loadUserData() should object-shape-guard income");
+  assert.match(source, /if\(saved\.budgets&&typeof saved\.budgets==='object'&&!Array\.isArray\(saved\.budgets\)&&Object\.keys\(saved\.budgets\)\.length>0\)state\.budgets=saved\.budgets;/, "loadFromLocalStorage() should object-shape-guard budgets (Object.keys().length>0 alone is true for a non-empty string too)");
+  assert.match(source, /state\.income=\(saved\.income&&typeof saved\.income==='object'&&!Array\.isArray\(saved\.income\)\)\?saved\.income:\{method:null,monthlyAmount:0\};/, "loadFromLocalStorage() should object-shape-guard income");
+});
+
+test("fmtC: raw=true skips esc(), for D3 .text() SVG contexts that would otherwise double-escape a custom currency symbol", () => {
+  const ctx = { state: { currency: "A&B" }, esc: (s) => String(s).replace(/&/g, "&amp;") };
+  const { fmtC } = loadFunctions(["fmtC"], ctx);
+  assert.equal(fmtC(1000), "A&amp;B1k", "default (raw=false) should still esc() the currency symbol, matching every existing innerHTML-based caller");
+  assert.equal(fmtC(1000, true), "A&B1k", "raw=true should skip esc(), so a D3 .text() node doesn't render a literal '&amp;' instead of '&'");
+});
+test("fmtC(...,true) is used at every D3 .text() call site that renders a currency figure", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(source, /\.text\(d=>fmtC\(d,true\)\);/, "the NW chart's axis-tick labels should use raw fmtC");
+  assert.match(source, /\.text\(goalInRange\?`Goal \$\{fmtC\(state\.nwGoal,true\)\}`:`Goal \$\{fmtC\(state\.nwGoal,true\)\} ↑`\);/, "the NW goal chart label should use raw fmtC");
+  assert.match(source, /\.text\(fmtC\(d\.data\.value,true\)\+\(drillCat\?'':' · '\+pct\+'%'\)\);/, "the Treemap tile's large-label variant should use raw fmtC");
+  assert.match(source, /\.text\(fmtC\(d\.data\.value,true\)\);/, "the Treemap tile's small-label variant should use raw fmtC");
+  assert.match(source, /return`\$\{d\.name\} \$\{fmtC\(d\.value,true\)\} · \$\{pct\}%`;/, "the Sankey node label should use raw fmtC");
+});
+
+test("Sankey link tooltip: the third (real-category) branch has a space after </strong>, matching its two sibling branches", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /:`<strong>\$\{esc\(d\.target\.name\)\}<\/strong> \$\{fmtC\(d\.value\)\} · \$\{Math\.round\(d\.value\/totalIncome\*100\)\}% of income`;/,
+    "the real-category tooltip branch should have a space between </strong> and the currency figure, matching the __other__/__filtered_out__ branches above it"
+  );
 });
