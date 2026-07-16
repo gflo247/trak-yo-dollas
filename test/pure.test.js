@@ -2878,3 +2878,186 @@ test("Sankey link tooltip: the third (real-category) branch has a space after </
     "the real-category tooltip branch should have a space between </strong> and the currency figure, matching the __other__/__filtered_out__ branches above it"
   );
 });
+
+// ── 106th adversarial pass ──────────────────────────────────────────────
+
+// Finding 1 (HIGH): openEditTxModal() always calls buildRcList(t,t.cat,t.cat)
+// on every open (origCat===newCat is always true then), so buildRcList()'s
+// early-return branch (no similar txs, or origCat===newCat) runs on
+// essentially every ordinary modal open. That branch hid #recategorize-
+// section but never cleared #rc-list's innerHTML, and closeModals() never
+// touched it either -- any checkboxes left checked from an earlier,
+// unrelated "similar transactions" list (shown while editing a DIFFERENT
+// transaction's category, then cancelled instead of saved) stayed checked
+// in the hidden DOM. saveEditTx()'s '#rc-list input:checked' query has no
+// visibility or origin check, so saving ANY later, unrelated transaction
+// edit silently recategorized those stale sibling transactions to the new
+// edit's category. buildRcList()/closeModals() are DOM-heavy (not real-
+// extraction candidates per this suite's established precedent for
+// document.getElementById-driven functions), so this checks the source
+// pattern directly. ──
+test("buildRcList: the early-return branch clears #rc-list's innerHTML, not just hides #recategorize-section", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function buildRcList\(tx,origCat,newCat\)\{[\s\S]{0,2000}?\n\}/);
+  assert.ok(fnMatch, "buildRcList() should exist");
+  assert.match(
+    fnMatch[0],
+    /if\(!similar\.length\|\|origCat===newCat\)\{\s*sec\.classList\.add\('hidden'\);[\s\S]{0,1200}?document\.getElementById\('rc-list'\)\.innerHTML='';\s*return;\s*\}/,
+    "buildRcList()'s early-return branch should clear #rc-list's innerHTML before returning, so stale checked checkboxes from an earlier call can't survive into a later, unrelated saveEditTx()"
+  );
+});
+
+// Finding 2 (MEDIUM): the chase and debitcredit import branches fell back to
+// the RAW bank category string (row['category']) when their own guess
+// returned 'Other', unlike mint/ynab/monarch which route through
+// mapImportedCategory() as their primary strategy (guaranteeing the result
+// is always one of getAllCats()'s registered categories). An unrecognized
+// raw string isn't in that list, so rebuildCatSelects()'s
+// `if(cur)el.value=cur` silently fails to select it in the edit-tx modal's
+// <select> the next time the transaction is opened for editing, leaving the
+// category field blank with no error. normalizeTxRow() is a 280+ line DOM/
+// state-heavy function with established source-pattern-only test precedent
+// in this suite (see the 87th pass's date-validation test above). ──
+test("normalizeTxRow: chase/debitcredit branches route their raw-category fallback through mapImportedCategory(), not the unvalidated bank string", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const chaseMatch = source.match(/\}\s*else if\(importFmt==='chase'\)\{[\s\S]{0,1400}?\n\n  \} else if\(importFmt==='debitcredit'\)/);
+  assert.ok(chaseMatch, "the chase import branch should exist");
+  assert.match(
+    chaseMatch[0],
+    /if\(cat==='Other'\)cat=mapImportedCategory\(row\['category'\]\)\|\|'Other';/,
+    "chase's 'Other' fallback should route through mapImportedCategory(), landing on a registered category or the safe 'Other' default -- not an arbitrary unregistered bank string"
+  );
+  const debitcreditMatch = source.match(/\}\s*else if\(importFmt==='debitcredit'\)\{[\s\S]{0,1300}?\n\n  \} else if\(importFmt==='bofa'\)/);
+  assert.ok(debitcreditMatch, "the debitcredit import branch should exist");
+  assert.match(
+    debitcreditMatch[0],
+    /if\(cat==='Other'\)cat=mapImportedCategory\(row\['category'\]\)\|\|'Other';/,
+    "debitcredit's 'Other' fallback should route through mapImportedCategory(), same as the chase branch"
+  );
+});
+
+// Finding 3 (MEDIUM): openOtherVendorsModal()'s "Avg: $X/mo" divided by
+// Object.keys(MONTHLY).length -- the entire dataset's all-time month count,
+// ignoring the active time-window filter -- while every topVendors tile's
+// own average (renderVendorBuckets(), the sibling surface one click away)
+// already divides by allPeriods (grainedPeriods.length, which DOES respect
+// the active filter). Both functions are D3/DOM-heavy; source-pattern only,
+// matching this suite's established precedent. ──
+test("openOtherVendorsModal: the per-vendor average divides by the active time window's period count, not the all-time month count", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /window\._otherVendorsAvgDenom=allPeriods;/,
+    "the vendor-bucket render should stash the same allPeriods used for topVendors tiles' own averages"
+  );
+  assert.match(
+    source,
+    /Avg: \$\{fmt\(Math\.round\(d\.total\/\(window\._otherVendorsAvgDenom\|\|1\)\)\)\}\/mo/,
+    "openOtherVendorsModal() should divide by window._otherVendorsAvgDenom, not Object.keys(MONTHLY).length"
+  );
+  assert.doesNotMatch(
+    source,
+    /d\.total\/\(Object\.keys\(MONTHLY\)\.length\|\|1\)/,
+    "the old all-time-month-count denominator should be fully gone"
+  );
+});
+
+// Finding 4 (LOW): the Treemap tooltip was missing a space after </strong>
+// (rendering e.g. "Groceries$1,234" with no separator) and, in the non-drill
+// branch specifically, a second missing space before its leading '·' --
+// mirroring the exact two gaps the 105th pass fixed in the Sankey tooltip.
+test("Treemap tooltip: has a space after </strong>, and the non-drill branch's leading '·' has a space before it too", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /tip\.innerHTML=`<strong>\$\{esc\(tmDisplayName\(d\.data\.name\)\)\}<\/strong> \$\{fmtC\(d\.data\.value\)\}\$\{drillCat\?` · \$\{pct\}% of \$\{esc\(drillCat\)\}`:` · \$\{pct\}% of spend`\}`;/,
+    "the Treemap tooltip should have a space after </strong> and a leading space before '·' in both the drillCat and non-drillCat branches"
+  );
+});
+
+// Finding 5 (LOW): fmtC()'s raw=true param (105th pass) only reached D3
+// .text() SVG sinks. fmt()/fmtD()/fmtH() had no raw param at all, and all
+// three are also used at .textContent assignments and Chart.js canvas
+// tooltip/tick callbacks -- neither sink interprets HTML entities, so
+// esc()'ing a custom '&' currency symbol there rendered a literal "&amp;"
+// on screen instead of "&". Extended the same raw=true pattern to all
+// three formatters and applied it at every non-innerHTML call site found
+// by an exhaustive grep of .textContent=/fillText/Chart.js tooltip and
+// tick callbacks. ──
+test("fmt/fmtD/fmtH: raw=true skips esc(), matching fmtC's existing convention", () => {
+  // loadConstArrowFn() above hardcodes state.currency='$' and a passthrough
+  // esc(), which can't demonstrate the '&'-double-escaping bug this raw
+  // param exists to fix -- a local variant with an injectable esc()/state
+  // is needed here instead, same single-line `const NAME=...;` extraction
+  // approach.
+  const loadWithCtx = (name, state, esc) => {
+    const fs = require("fs");
+    const path = require("path");
+    const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+    const re = new RegExp(`^const ${name}=.*;$`, "m");
+    const m = source.match(re);
+    if (!m) throw new Error(`loadWithCtx: could not find 'const ${name}=...' in source`);
+    return new Function("esc", "state", `${m[0]}\nreturn ${name};`)(esc, state);
+  };
+  const state = { currency: "A&B" };
+  const esc = (s) => String(s).replace(/&/g, "&amp;");
+  const fmtFn = loadWithCtx("fmt", state, esc);
+  assert.equal(fmtFn(1000), "A&amp;B1,000", "fmt() default should still esc()");
+  assert.equal(fmtFn(1000, true), "A&B1,000", "fmt(...,true) should skip esc()");
+  const fmtDFn = loadWithCtx("fmtD", state, esc);
+  assert.equal(fmtDFn(1000), "A&amp;B1,000.00", "fmtD() default should still esc()");
+  assert.equal(fmtDFn(1000, true), "A&B1,000.00", "fmtD(...,true) should skip esc()");
+  const fmtHFn = loadWithCtx("fmtH", state, esc);
+  assert.equal(fmtHFn(1000), "A&amp;B1,000", "fmtH() default should still esc()");
+  assert.equal(fmtHFn(1000, true), "A&B1,000", "fmtH(...,true) should skip esc()");
+});
+test("fmt/fmtD/fmtH raw param is applied at every non-D3, non-innerHTML sink: .textContent assignments and Chart.js canvas callbacks", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  // Chart.js tooltip callbacks (canvas-rendered, no entity decoding)
+  assert.doesNotMatch(source, /fmtH\(ctx\.raw\)(?!,true\))/, "every fmtH(ctx.raw) Chart.js tooltip callback should pass raw=true");
+  assert.match(source, /\.map\(x=>`\$\{x\.v\}: \$\{fmtC\(x\.val,true\)\}`\)/, "the vendor chart's _otherBreakdown tooltip lines should use raw fmtC");
+  assert.match(source, /\.map\(x=>`\$\{x\.c\}: \$\{fmtH\(x\.v,true\)\}`\)/, "the category chart's _otherBreakdown tooltip lines should use raw fmtH");
+  assert.match(source, /callback:v=>fmtC\(v,true\),font:\{size:9\}/, "the vendor/category stacked chart's y-axis tick callback should use raw fmtC");
+  // .textContent assignments
+  assert.match(source, /hint\.textContent=current\?`Current goal: \$\{fmtC\(current,true\)\}`/, "openCustomNwGoal()'s hint should use raw fmtC");
+  assert.match(source, /try something higher than \$\{fmtC\(netWorth\(\),true\)\}/, "confirmCustomGoal()'s already-met hint should use raw fmtC");
+  assert.match(source, /tip\.textContent=`\$\{fmtMonthShort\(d\.m\)\} · \$\{fmtC\(d\.v,true\)\}/, "the NW chart hover tooltip should use raw fmtC");
+  assert.match(source, /spend-total-val'\)\.textContent=fmtC\(displayTotal,true\)/, "the Spending tab's total should use raw fmtC");
+  assert.match(source, /incSumEl\.textContent=incomeTotal>0\?`\+ \$\{fmtC\(incomeTotal,true\)\} income · \$\{fmt\(incomeTotal\/incMonths,true\)\}\/mo avg`/, "the income-summary line should use raw fmtC and raw fmt");
+  assert.match(source, /bfn\.textContent=`\$\{drillCat\} · \$\{fmtC\(catTotal,true\)\}/, "the Treemap drill-down footnote should use raw fmtC");
+  assert.match(source, /income-manual-hint'\)\.textContent=`Current: \$\{fmt\(state\.income\.monthlyAmount,true\)\}\/mo take-home`/, "the manual-income hint (detected) should use raw fmt");
+  assert.match(source, /income-manual-hint'\)\.textContent=`Saved: \$\{fmt\(val,true\)\}\/mo take-home`/, "the manual-income hint (saved) should use raw fmt");
+  assert.match(source, /desc\.textContent=`This will permanently delete the snapshot for \$\{s\.date\} — net worth \$\{fmtC\(s\.nw,true\)\}\.`/, "the delete-snapshot confirm text should use raw fmtC");
+  assert.match(source, /totalEl\.textContent=fmtD\(total,true\)/, "the Venmo cashout total should use raw fmtD");
+});
+
+// Finding 6 (LOW): the event-delegation dispatcher's coerce() turns a
+// data-arg string of "0" into the JS Number 0 -- falsy. openBudgetModal(cat)
+// checked `if(!cat)` (to pick a default category when none was specified)
+// BEFORE `cat=String(cat)`, so a category literally named "0" hit the
+// "no cat specified" branch and silently opened the wrong category's budget
+// modal. toggleCatExclusion()/confirmSrcRemove() both coerce to a string
+// first, before any conditional, for the same reason (99th adversarial
+// pass). openBudgetModal() itself is DOM-heavy; source-pattern only. ──
+test("openBudgetModal: coerces cat to a string before checking falsiness, so a category literally named \"0\" isn't mistaken for \"no cat specified\"", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function openBudgetModal\(cat\)\{[\s\S]{0,1600}?\n\}/);
+  assert.ok(fnMatch, "openBudgetModal() should exist");
+  const coerceIdx = fnMatch[0].search(/if\(cat!==undefined\)cat=String\(cat\);/);
+  const falsyCheckIdx = fnMatch[0].search(/if\(!cat\)\{/);
+  assert.ok(coerceIdx >= 0, "openBudgetModal() should coerce cat to a string, guarded on undefined so the 'no cat' default path still works when nothing was passed");
+  assert.ok(falsyCheckIdx >= 0, "openBudgetModal() should still have its 'no cat specified' default-picking branch");
+  assert.ok(coerceIdx < falsyCheckIdx, "the String(cat) coercion must run BEFORE the !cat falsy check -- otherwise coerce()'s Number(\"0\")===0 is indistinguishable from 'no cat specified'");
+});
