@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-dxsV2aFeQQ4vqT3qJIR4m4XaNUWwyYixxFjKL7DbpBA=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Hy3lYblvd2ImonFdeXxwg8SkJ+DghLwIiwuxxTywxVE=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2535,7 +2535,12 @@ function _clearVendorDayFiltersForDataReplace(){
 // multi-character ones like "CHF"/"kr"/"C$") and only neutralizes
 // exactly the malicious/invalid inputs this fix exists for. Found in the
 // 38th adversarial pass.
-const fmt=n=>esc(state.currency||'$')+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
+// raw=true skips esc(), same rationale/default as fmtC()'s own raw param
+// below -- for .textContent assignments and Chart.js canvas callbacks,
+// neither of which interpret HTML entities, so esc()'ing a custom '&'
+// currency symbol there renders a literal "&amp;" on screen instead of
+// "&". Found in the 106th adversarial pass.
+const fmt=(n,raw)=>(raw?(state.currency||'$'):esc(state.currency||'$'))+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
 // a>=999500, not a>=1e6, picks the 'M' branch -- for a in [999500,999999],
 // the 'k' branch's Math.round(a/1e3) itself rounds up to 1000, producing
 // "$1000k" instead of switching to "$1M" a few hundred dollars early.
@@ -2549,7 +2554,9 @@ const fmt=n=>esc(state.currency||'$')+Math.abs(n).toLocaleString(undefined,{mini
 // escaped (false) so every existing innerHTML-based caller is unaffected.
 // Found in the 105th adversarial pass.
 function fmtC(n,raw){const a=Math.abs(n),s=n<0?'-':'',c=raw?(state.currency||'$'):esc(state.currency||'$');return s+(a>=999500?c+parseFloat((a/1e6).toFixed(2))+'M':a>=1e3?c+Math.round(a/1e3)+'k':c+Math.round(a));}
-const fmtD=n=>esc(state.currency||'$')+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+// raw=true skips esc() -- see fmt()'s comment above. Found in the 106th
+// adversarial pass.
+const fmtD=(n,raw)=>(raw?(state.currency||'$'):esc(state.currency||'$'))+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 // s=n<0?'-':'' before the currency symbol, matching fmtC()'s own
 // negative-value convention (used for net worth, a value that can
 // legitimately go negative) -- fmtH() feeds Chart.js tooltips off raw
@@ -2560,7 +2567,12 @@ const fmtD=n=>esc(state.currency||'$')+Math.abs(n).toLocaleString(undefined,{min
 // land AFTER the currency symbol ("$-500" instead of "-$500"), the only
 // one of this file's 4 currency formatters with a malformed negative
 // case. Found in the 82nd adversarial pass.
-const fmtH=n=>{const s=n<0?'-':'';return s+esc(state.currency||'$')+(Math.round(Math.abs(n)/100)*100).toLocaleString(undefined);};
+// raw=true skips esc() -- see fmt()'s comment above. fmtH() specifically
+// already fed Chart.js tooltip callbacks (canvas-rendered, no entity
+// decoding) before this param existed, so it was double-escaping '&' in
+// a custom currency symbol on every such tooltip. Found in the 106th
+// adversarial pass.
+const fmtH=(n,raw)=>{const s=n<0?'-':'';return s+(raw?(state.currency||'$'):esc(state.currency||'$'))+(Math.round(Math.abs(n)/100)*100).toLocaleString(undefined);};
 const getIsDark=()=>document.documentElement.getAttribute('data-theme')!=='light';
 // Theme-aware value helper — returns darkVal or lightVal based on current theme
 function themeColor(darkVal,lightVal){return getIsDark()?darkVal:lightVal;}
@@ -3953,7 +3965,7 @@ function openCustomNwGoal(){
   const input=document.getElementById('custom-goal-input');
   const hint=document.getElementById('custom-goal-hint');
   if(input){input.value=current||'';input.select();}
-  if(hint){hint.textContent=current?`Current goal: ${fmtC(current)}`:'';hint.style.color='var(--text-muted)';}
+  if(hint){hint.textContent=current?`Current goal: ${fmtC(current,true)}`:'';hint.style.color='var(--text-muted)';}
   document.getElementById('custom-goal-modal').classList.remove('hidden');
   setTimeout(()=>{if(input)input.focus();},80);
 }
@@ -3979,7 +3991,7 @@ function confirmCustomGoal(){
     // That auto-swap-on-reach behavior no longer exists, but this guard is
     // still the right UX call on its own merits.)
     const hint=document.getElementById('custom-goal-hint');
-    if(hint){hint.textContent=`Already at or above that — try something higher than ${fmtC(netWorth())}.`;hint.style.color='#F87171';}
+    if(hint){hint.textContent=`Already at or above that — try something higher than ${fmtC(netWorth(),true)}.`;hint.style.color='#F87171';}
     return;
   }
   state.nwGoal=Math.round(parsed);
@@ -4192,7 +4204,7 @@ function renderNwChart(){
     hoverLine.style('display',null).attr('x1',xScale(d.i)).attr('x2',xScale(d.i));
     hoverDot.style('display',null).attr('cx',xScale(d.i)).attr('cy',yScale(d.v));
     if(tip){
-      tip.textContent=`${fmtMonthShort(d.m)} · ${fmtC(d.v)}${realSnaps[d.m]?' · snapshot':' · estimated'}`;
+      tip.textContent=`${fmtMonthShort(d.m)} · ${fmtC(d.v,true)}${realSnaps[d.m]?' · snapshot':' · estimated'}`;
       tip.style.display='block';
       const wrapRect=svgEl.parentElement.getBoundingClientRect();
       const tipX=e.clientX-wrapRect.left;
@@ -4535,7 +4547,7 @@ function renderSpendSummary(){
   }
 
   document.getElementById('spend-period-label').textContent=label;
-  document.getElementById('spend-total-val').textContent=fmtC(displayTotal);
+  document.getElementById('spend-total-val').textContent=fmtC(displayTotal,true);
   const avgEl=document.getElementById('spend-avg-val');
   if(avgEl){
     avgEl.textContent=avgLabel;
@@ -4547,7 +4559,7 @@ function renderSpendSummary(){
       const incomeTotal=baseTxs.filter(t=>t.isIncome).reduce((s,t)=>s+t.amount,0);
       const incMonths=new Set(baseTxs.filter(t=>t.isIncome).map(t=>t.date.slice(0,7))).size||1;
       incSumEl.style.display=incomeTotal>0?'':'none';
-      incSumEl.textContent=incomeTotal>0?`+ ${fmtC(incomeTotal)} income · ${fmt(incomeTotal/incMonths)}/mo avg`:'';
+      incSumEl.textContent=incomeTotal>0?`+ ${fmtC(incomeTotal,true)} income · ${fmt(incomeTotal/incMonths,true)}/mo avg`:'';
     } else {
       incSumEl.style.display='none';
     }
@@ -4798,6 +4810,13 @@ function renderBucketGrid(){
 
     window._otherVendors=otherVendors;
     window._topVendorsTotal=topVendors.reduce((s,[,d])=>s+d.total,0);
+    // openOtherVendorsModal()'s "Avg: $X/mo" used Object.keys(MONTHLY).length
+    // -- the entire dataset's all-time month count, ignoring the active time
+    // window -- while every topVendors tile's own avg (above, allPeriods)
+    // already respects it, so "Other vendors" reported a lower average than
+    // the real one whenever a filter narrower than all-time was applied.
+    // Found in the 106th adversarial pass.
+    window._otherVendorsAvgDenom=allPeriods;
     el.innerHTML=topTiles+otherTile;
     const bfn=document.getElementById('bucket-footnote');
     const topSpend=topVendors.reduce((s,[,d])=>s+d.total,0);
@@ -5108,7 +5127,7 @@ function renderTreemap(drillCat){
       const catTotal=Object.values(catVendors[drillCat]||{}).reduce((a,b)=>a+b,0);
       const allCatTotal=Object.values(catTotals).reduce((a,b)=>a+b,0);
       const catPct=allCatTotal>0?Math.round(catTotal/allCatTotal*100):0;
-      bfn.textContent=`${drillCat} · ${fmtC(catTotal)} · ${catPct}% of total spend · percentages show share within category`;
+      bfn.textContent=`${drillCat} · ${fmtC(catTotal,true)} · ${catPct}% of total spend · percentages show share within category`;
     } else {
       const allTotal=Object.values(catTotals).reduce((a,b)=>a+b,0);
       const topTotal=data.filter(d=>d.name!==OTHER_KEY).reduce((s,d)=>s+d.value,0);
@@ -5197,7 +5216,11 @@ function renderTreemap(drillCat){
       if(x+180>W)x=e.clientX-rect.left-194;
       if(y<0)y=4;
       tip.style.cssText=`display:block;left:${x}px;top:${y}px;position:absolute`;
-      tip.innerHTML=`<strong>${esc(tmDisplayName(d.data.name))}</strong>${fmtC(d.data.value)}${drillCat?` · ${pct}% of ${esc(drillCat)}`:`· ${pct}% of spend`}`;
+      // Missing space after </strong> (rendering e.g. "Groceries$1,234"
+      // with no separator) and before the non-drill branch's leading "·"
+      // mirror the same two gaps the 105th pass fixed in the Sankey
+      // tooltip. Found in the 106th adversarial pass.
+      tip.innerHTML=`<strong>${esc(tmDisplayName(d.data.name))}</strong> ${fmtC(d.data.value)}${drillCat?` · ${pct}% of ${esc(drillCat)}`:` · ${pct}% of spend`}`;
     })
     .on('mouseleave',()=>{tip.style.display='none';});
 
@@ -5865,7 +5888,7 @@ function renderSpendChart(){
     const pct=Math.round((data[i]-data[i-1])/data[i-1]*100);
     return pct>=0?` · ↑${pct}% MoM`:` · ↓${Math.abs(pct)}% MoM`;
   };
-  const commonOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10,padding:8,color:tc('#475569','#64748B')}}},scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:9},color:tc('#334155','#6B7280'),maxRotation:0}},y:{stacked:true,ticks:{callback:v=>fmtC(v),font:{size:9},color:tc('#334155','#94A3B8')},grid:{color:tc('#1E293B','#E2E8F0')},border:{color:tc('#1E293B','#E2E8F0')}}}};
+  const commonOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10,padding:8,color:tc('#475569','#64748B')}}},scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:9},color:tc('#334155','#6B7280'),maxRotation:0}},y:{stacked:true,ticks:{callback:v=>fmtC(v,true),font:{size:9},color:tc('#334155','#94A3B8')},grid:{color:tc('#1E293B','#E2E8F0')},border:{color:tc('#1E293B','#E2E8F0')}}}};
 
   if(state.chartMode==='source'){
     const smRow=document.getElementById('chart-show-more-row');
@@ -5899,7 +5922,7 @@ function renderSpendChart(){
     const sourceOpts=JSON.parse(JSON.stringify(commonOpts));
     sourceOpts.plugins.tooltip={callbacks:{label:function(ctx){
       const delta=momDelta(ctx.dataset.data,ctx.dataIndex);
-      return`${ctx.dataset.label}: ${fmtH(ctx.raw)}${delta}`;
+      return`${ctx.dataset.label}: ${fmtH(ctx.raw,true)}${delta}`;
     }}};
     spendChart=new Chart(ctx,{type:'bar',data:{labels,datasets},options:sourceOpts,plugins:[peakPlugin]});
 
@@ -5963,13 +5986,13 @@ function renderSpendChart(){
     };
     const trendTooltipOpts={...trendOpts,scales:{...trendOpts.scales,x:{...trendOpts.scales.x,stacked:false},y:{...trendOpts.scales.y,stacked:false}}};
     trendTooltipOpts.plugins={...trendTooltipOpts.plugins,tooltip:{callbacks:{label:function(ctx){
-      if(ctx.dataset.label==='3-mo avg')return`3-mo avg: ${fmtH(ctx.raw)}`;
+      if(ctx.dataset.label==='3-mo avg')return`3-mo avg: ${fmtH(ctx.raw,true)}`;
       const i=ctx.dataIndex;
       const mom=i>0&&totals[i-1]>0?Math.round((totals[i]-totals[i-1])/totals[i-1]*100):null;
       const momStr=mom!==null?(mom>=0?` · ↑${mom}% MoM`:` · ↓${Math.abs(mom)}% MoM`):'';
       const vsAvg=rolling[i]>0?Math.round((totals[i]-rolling[i])/rolling[i]*100):0;
       const avgStr=vsAvg>=0?` · ${vsAvg}% above avg`:` · ${Math.abs(vsAvg)}% below avg`;
-      return`${ctx.dataset.label}: ${fmtH(ctx.raw)}${momStr}${avgStr}`;
+      return`${ctx.dataset.label}: ${fmtH(ctx.raw,true)}${momStr}${avgStr}`;
     }}}};
     spendChart=new Chart(ctx,{type:'bar',data:{labels,datasets:[
       {type:'bar',label:catLabel,data:totals,backgroundColor:_patternsEnabled?makePattern('#3B82F6','diagonal',10):'#3B82F644',borderColor:'#3B82F6',borderWidth:1,borderRadius:3},
@@ -6038,7 +6061,7 @@ function renderSpendChart(){
           .filter(x=>x.val>0)
           .sort((a,b)=>b.val-a.val)
           .slice(0,8)
-          .map(x=>`${x.v}: ${fmtC(x.val)}`)
+          .map(x=>`${x.v}: ${fmtC(x.val,true)}`)
       )
     };
 
@@ -6053,7 +6076,7 @@ function renderSpendChart(){
         return formatOtherTooltip(ctx, otherVData, monthTotal, 'Other');
       }
       const delta=momDelta(ctx.dataset.data,ctx.dataIndex);
-      return `${ctx.dataset.label}: ${fmtH(ctx.raw)} · ${pct}% of month${delta}`;
+      return `${ctx.dataset.label}: ${fmtH(ctx.raw,true)} · ${pct}% of month${delta}`;
     }}};
 
     if(fn)fn.textContent=otherVendorCount>0?`Top ${CHART_VENDOR_CAP} of ${vendorTotals.length} vendors · ${100-otherVendorPct}% of spend`:`All ${top5Vendors.length} vendors shown`;
@@ -6148,7 +6171,7 @@ function renderSpendChart(){
           .map(c=>({c,v:sumForPeriod(catMonthMap,c,p)}))
           .filter(x=>x.v>0)
           .sort((a,b)=>b.v-a.v)
-          .map(x=>`${x.c}: ${fmtH(x.v)}`)
+          .map(x=>`${x.c}: ${fmtH(x.v,true)}`)
       )
     };
 
@@ -6172,7 +6195,7 @@ function renderSpendChart(){
           if(ctx.dataset.label==='Other'){
             return formatOtherTooltip(ctx, otherData, monthTotal, 'Other');
           }
-          return `${ctx.dataset.label}: ${fmtH(ctx.raw)} · ${pct}% of month`;
+          return `${ctx.dataset.label}: ${fmtH(ctx.raw,true)} · ${pct}% of month`;
         }
       }
     };
@@ -6197,7 +6220,7 @@ function renderSpendChart(){
       const pctDelta=(i>0&&prev>0)?Math.round((ctx.raw-prev)/prev*100):null;
       const momStr=pctDelta!==null?(pctDelta>=0?` ↑${pctDelta}%`:` ↓${Math.abs(pctDelta)}%`):' (first period)';
       const peakStr=ctx.dataIndex===peakIdx?' 🔺 Peak month':'';
-      return`${cat}: ${fmtH(ctx.raw)} · ${pct}% of month${momStr}${peakStr}`;
+      return`${cat}: ${fmtH(ctx.raw,true)} · ${pct}% of month${momStr}${peakStr}`;
     };
 
 
@@ -6948,7 +6971,24 @@ function buildRcList(tx,origCat,newCat){
   const sec=document.getElementById('recategorize-section');
   const kw=tx.desc.split(/[\s*]+/)[0].toUpperCase();
   const similar=state.transactions.filter(t=>t.id!==tx.id&&t.cat===origCat&&t.desc.toUpperCase().startsWith(kw));
-  if(!similar.length||origCat===newCat){sec.classList.add('hidden');return;}
+  if(!similar.length||origCat===newCat){
+    sec.classList.add('hidden');
+    // Clear #rc-list, not just hide the section -- openEditTxModal() calls
+    // buildRcList(t,t.cat,t.cat) on every open (origCat===newCat is always
+    // true then), always hitting this branch, and closeModals() never
+    // touches #rc-list either. Without clearing it, checked boxes from an
+    // earlier "similar transactions" list (from editing a DIFFERENT
+    // transaction's category, then cancelling instead of saving) stayed
+    // checked in the hidden DOM -- saveEditTx()'s
+    // #rc-list input:checked query has no visibility or origin check, so
+    // saving ANY later, unrelated transaction edit silently recategorized
+    // those stale sibling transactions to the new edit's category, with
+    // the whole time no visible indication anything beyond the one
+    // transaction being edited was touched. Found in the 106th adversarial
+    // pass.
+    document.getElementById('rc-list').innerHTML='';
+    return;
+  }
   sec.classList.remove('hidden');
   document.getElementById('rc-desc-text').textContent=`${similar.length} other "${origCat}" transaction${similar.length>1?'s':''} match "${kw}…". Apply "${newCat}" to selected?`;
   document.getElementById('rc-list').innerHTML=similar.map(t=>`<div class="rc-item"><input type="checkbox" id="rc-${t.id}" checked value="${t.id}"><label for="rc-${t.id}" style="flex:1"><span style="color:var(--text-primary)">${esc(displayVendor(t.desc))}</span><span style="color:var(--text-muted);margin-left:6px">${fmtDate(t.date)}</span></label><span class="rc-count">${fmtD(t.amount)}</span></div>`).join('');
@@ -7290,12 +7330,19 @@ function renderHistory(){
 }
 function openBudgetModal(cat){
   const allCats=getAllCats();
+  // Coerce before the !cat check, not after -- a category literally named
+  // "0" gets turned into the JS Number 0 by the dispatcher's coerce(),
+  // which is falsy, so checking !cat first (before String()'ing it) took
+  // the "no cat specified" branch below and silently opened the wrong
+  // category's budget modal instead of "0"'s. toggleCatExclusion() and
+  // confirmSrcRemove() both coerce first for the same reason. Found in
+  // the 106th adversarial pass.
+  if(cat!==undefined)cat=String(cat);
   // If no cat specified, pick the first unbudgeted category with spend, or first category
   if(!cat){
     const withSpend=allCats.filter(c=>!state.budgets[c]&&Object.keys(MONTHLY).some(m=>getCatMonthSpend(c,m)>0));
     cat=withSpend[0]||allCats.find(c=>!state.budgets[c])||allCats[0]||'Other';
   }
-  cat=String(cat); // dispatcher coerces a bare-numeric category name (e.g. "2024") to a Number
   // Populate category select
   const sel=document.getElementById('budget-cat-select');
   sel.innerHTML=allCats.map(c=>`<option value="${esc(c)}"${c===cat?' selected':''}>${esc(c)}${state.budgets[c]?' ('+fmt(state.budgets[c])+'/mo)':''}</option>`).join('');
@@ -7425,7 +7472,7 @@ function openOtherVendorsModal(){
     return`<div class="list-row" style="cursor:pointer" data-action="closeModalsSetVendorSearch" data-arg="${esc(v)}">
       <div style="flex:1;min-width:0">
         <div style="font-size:12px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(displayVendor(v))}</div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:1px">${d.count} transaction${d.count===1?'':'s'} · Avg: ${fmt(Math.round(d.total/(Object.keys(MONTHLY).length||1)))}/mo</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:1px">${d.count} transaction${d.count===1?'':'s'} · Avg: ${fmt(Math.round(d.total/(window._otherVendorsAvgDenom||1)))}/mo</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div style="font-size:13px;font-weight:700;color:var(--text-primary)">${fmt(d.total)}</div>
@@ -8700,7 +8747,7 @@ function openIncomeModal(){
   _latestSpendForPreview=fullMonths.length?(()=>{const row=MONTHLY[fullMonths[fullMonths.length-1]]||{};return[...state.activeSources].reduce((s,src)=>s+(row[src]||0),0);})():0;
   if(m==='manual'&&state.income.monthlyAmount){
     document.getElementById('income-amount').value=state.income.monthlyAmount;
-    document.getElementById('income-manual-hint').textContent=`Current: ${fmt(state.income.monthlyAmount)}/mo take-home`;
+    document.getElementById('income-manual-hint').textContent=`Current: ${fmt(state.income.monthlyAmount,true)}/mo take-home`;
     updateIncomePreview(state.income.monthlyAmount);
   }
   if(m==='auto'){
@@ -8817,7 +8864,7 @@ function saveManualIncome(){
   const val=parseFloat(document.getElementById('income-amount').value);
   if(!val||val<=0){showToast('Please enter a valid monthly income','#FCD34D');return;}
   state.income={method:'manual',monthlyAmount:Math.round(val)};
-  document.getElementById('income-manual-hint').textContent=`Saved: ${fmt(val)}/mo take-home`;
+  document.getElementById('income-manual-hint').textContent=`Saved: ${fmt(val,true)}/mo take-home`;
   scheduleSave();
   renderInsights();
   showToast('💰 Income saved — savings rate now tracking','#34D399');
@@ -9380,7 +9427,7 @@ function formatOtherTooltip(ctx, dataset, monthTotal, displayLabel){
   if(!breakdown || !breakdown.length) return null;
   const pct = monthTotal > 0 ? Math.round(ctx.raw / monthTotal * 100) : 0;
   return [
-    `${displayLabel}: ${fmtH(ctx.raw)} · ${pct}% of month`,
+    `${displayLabel}: ${fmtH(ctx.raw,true)} · ${pct}% of month`,
     ...breakdown.map(l => `  ${l}`)
   ];
 }
@@ -9710,7 +9757,7 @@ function deleteSnapshot(i){
   if(!s)return;
   _pendingDeleteSnapMonthKey=s.monthKey;
   const desc=document.getElementById('delete-snap-desc');
-  if(desc)desc.textContent=`This will permanently delete the snapshot for ${s.date} — net worth ${fmtC(s.nw)}.`;
+  if(desc)desc.textContent=`This will permanently delete the snapshot for ${s.date} — net worth ${fmtC(s.nw,true)}.`;
   document.getElementById('delete-snap-modal').classList.remove('hidden');
 }
 function confirmDeleteSnapshot(){
@@ -10456,7 +10503,14 @@ function normalizeTxRow(row, source){
     if(!amount)return null;
     mcc=row['mcc']||row['MCC']||'';
     if(!isIncome)cat=guessCatChase(desc);
-    if(cat==='Other')cat=row['category']||'Other';
+    // The raw bank category string, unlike every other import format's
+    // fallback (mint/ynab/monarch all route through mapImportedCategory()
+    // as their primary strategy), isn't guaranteed to be one of
+    // getAllCats()'s registered categories -- rebuildCatSelects() silently
+    // fails to select an unmatched value in the edit-tx modal's <select>,
+    // blanking the category the next time this transaction is opened for
+    // editing. Found in the 106th adversarial pass.
+    if(cat==='Other')cat=mapImportedCategory(row['category'])||'Other';
 
   } else if(importFmt==='debitcredit'){
     // Banks with separate Debit and Credit columns (e.g. some credit unions, USAA)
@@ -10477,7 +10531,9 @@ function normalizeTxRow(row, source){
     if(!amount)return null;
     mcc=row['mcc']||row['MCC']||'';
     if(!isIncome)cat=guessCatFromDesc(desc);
-    if(cat==='Other')cat=row['category']||'Other';
+    // Same unregistered-category gap as the chase branch above -- see its
+    // comment. Found in the 106th adversarial pass.
+    if(cat==='Other')cat=mapImportedCategory(row['category'])||'Other';
 
   } else if(importFmt==='bofa'){
     // Bank of America checking/savings: Date, Description, Amount, Running Bal.
@@ -11227,7 +11283,7 @@ function checkForVenmoCashouts(txs){
   // same 39th-pass sweep. fmtD() itself is esc()-wrapped, but that's
   // moot for a .textContent assignment (never an XSS vector here either
   // way) -- fixed purely for currency-symbol consistency.
-  if(totalEl)totalEl.textContent=fmtD(total);
+  if(totalEl)totalEl.textContent=fmtD(total,true);
   // Pre-select all radio highlight
   selectVenmoOpt({value:'shopping'});
   document.getElementById('venmo-cashout-modal').classList.remove('hidden');
