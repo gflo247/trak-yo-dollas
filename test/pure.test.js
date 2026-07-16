@@ -2900,7 +2900,7 @@ test("buildRcList: the early-return branch clears #rc-list's innerHTML, not just
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function buildRcList\(tx,origCat,newCat\)\{[\s\S]{0,2000}?\n\}/);
+  const fnMatch = source.match(/function buildRcList\(tx,origCat,newCat\)\{[\s\S]{0,3000}?\n\}/);
   assert.ok(fnMatch, "buildRcList() should exist");
   assert.match(
     fnMatch[0],
@@ -2958,8 +2958,8 @@ test("openOtherVendorsModal: the per-vendor average divides by the active time w
   );
   assert.match(
     source,
-    /Avg: \$\{fmt\(Math\.round\(d\.total\/\(window\._otherVendorsAvgDenom\|\|1\)\)\)\}\/mo/,
-    "openOtherVendorsModal() should divide by window._otherVendorsAvgDenom, not Object.keys(MONTHLY).length"
+    /Avg: \$\{fmt\(Math\.round\(d\.total\/\(window\._otherVendorsAvgDenom\|\|1\)\)\)\}\$\{window\._otherVendorsAvgGrainLabel\|\|'\/mo'\}/,
+    "openOtherVendorsModal() should divide by window._otherVendorsAvgDenom, not Object.keys(MONTHLY).length (unit label updated by the 107th pass to be grain-aware too, see below)"
   );
   assert.doesNotMatch(
     source,
@@ -3060,4 +3060,119 @@ test("openBudgetModal: coerces cat to a string before checking falsiness, so a c
   assert.ok(coerceIdx >= 0, "openBudgetModal() should coerce cat to a string, guarded on undefined so the 'no cat' default path still works when nothing was passed");
   assert.ok(falsyCheckIdx >= 0, "openBudgetModal() should still have its 'no cat specified' default-picking branch");
   assert.ok(coerceIdx < falsyCheckIdx, "the String(cat) coercion must run BEFORE the !cat falsy check -- otherwise coerce()'s Number(\"0\")===0 is indistinguishable from 'no cat specified'");
+});
+
+// ── 107th adversarial pass ──────────────────────────────────────────────
+
+// Finding 1 (MEDIUM): the 106th pass fixed chase/debitcredit's raw-bank-
+// category fallback to route through mapImportedCategory(), but missed the
+// generic branch -- the fallback format for every unsupported bank, so the
+// single most common path for a new user's own CSV. It was worse than the
+// two fixed branches: it also fell back to row['type'], which in many bank
+// exports holds raw jargon ("Debit"/"POS"/"Withdrawal"), not a category at
+// all. normalizeTxRow() is DOM/state-heavy with established source-
+// pattern-only precedent in this suite. ──
+test("normalizeTxRow: the generic import branch also routes its raw-category fallback through mapImportedCategory(), matching chase/debitcredit", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if\(!isIncome&&cat==='Other'\)cat=mapImportedCategory\(row\['category'\]\|\|row\['cat'\]\|\|row\['type'\]\)\|\|'Other';/,
+    "the generic branch's 'Other' fallback should route the same 3 candidate columns through mapImportedCategory(), not assign whichever one is truthy directly"
+  );
+  assert.doesNotMatch(
+    source,
+    /cat=row\['category'\]\|\|row\['cat'\]\|\|row\['type'\]\|\|'Other';/,
+    "the old unvalidated fallback should be fully gone"
+  );
+});
+
+// Finding 2 (MEDIUM): the 106th pass's window._otherVendorsAvgDenom fix
+// used allPeriods (a count of GRAINED periods -- quarters/years at that
+// chart grain, not always months) but openOtherVendorsModal() hardcoded
+// the '/mo' unit label regardless, while the sibling topVendors tiles use
+// the grain-aware grainLabel ('/qtr'/'/yr'/'/mo'). At Quarterly/Yearly
+// grain the modal showed a per-quarter/per-year figure mislabeled as
+// monthly (3x/12x too high to read as "/mo"). Both render functions are
+// D3/DOM-heavy; source-pattern only. ──
+test("openOtherVendorsModal: the per-vendor average's unit label matches the grain the denominator was computed at (not hardcoded '/mo')", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /window\._otherVendorsAvgGrainLabel=grainLabel;/,
+    "the vendor-bucket render should stash the same grain-aware label used for topVendors tiles"
+  );
+  assert.match(
+    source,
+    /Avg: \$\{fmt\(Math\.round\(d\.total\/\(window\._otherVendorsAvgDenom\|\|1\)\)\)\}\$\{window\._otherVendorsAvgGrainLabel\|\|'\/mo'\}<\/div>/,
+    "openOtherVendorsModal() should use window._otherVendorsAvgGrainLabel, not a hardcoded '/mo'"
+  );
+});
+
+// Finding 3 (LOW): the Sankey income-node label was the one D3 .text() call
+// site the 105th/106th passes' raw-fmtC sweep missed -- it's an SVG text
+// node like the category-node labels 30 lines above it (which DO use
+// raw=true), so an esc()'d custom '&' currency symbol rendered as a
+// literal "&amp;" here specifically. ──
+test("Sankey income-node label uses raw fmtC, matching the category-node labels above it", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /\.text\(isOverspend\s*\?`⚠ Spending exceeds income · \$\{fmtC\(totalIncome,true\)\} · \$\{monthCount\}mo\$\{editMark\}`\s*:`Income · \$\{fmtC\(totalIncome,true\)\} · \$\{monthCount\}mo\$\{editMark\}`\);/,
+    "the Sankey income-node label's D3 .text() call should use raw fmtC in both branches"
+  );
+});
+
+// Finding 4 (LOW): renderSpendChart()'s state.activeCats.size>0 branch (the
+// category-drilldown mode) was the only one of this function's 5 Chart.js
+// branches with no tooltip.callbacks.label customization at all -- hovering
+// showed Chart.js's bare default tooltip (raw unformatted number, no
+// currency symbol, no %-of-month/MoM/peak context), unlike every sibling
+// branch. renderSpendChart() is D3/Chart.js-heavy; source-pattern only. ──
+test("renderSpendChart: the category-filtered (activeCats) branch has its own tooltip label callback, not Chart.js's bare default", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const branchMatch = source.match(/if\(state\.activeCats\.size>0\)\{\n      const catsToShow[\s\S]{0,1900}?\n    \}/);
+  assert.ok(branchMatch, "the activeCats>0 branch should exist");
+  assert.match(
+    branchMatch[0],
+    /filteredOpts\.plugins\.tooltip=\{callbacks:\{label:function\(ctx\)\{/,
+    "the activeCats branch should build its own tooltip.callbacks.label, not pass commonOpts through unmodified"
+  );
+  assert.match(
+    branchMatch[0],
+    /return`\$\{ctx\.dataset\.label\}: \$\{fmtH\(ctx\.raw,true\)\} · \$\{pct\}% of month\$\{momStr\}\$\{peakStr\}`;/,
+    "the new callback should format currency (raw fmtH), show % of month, MoM delta, and the peak marker, matching the sibling top5+Other branch's convention"
+  );
+  assert.match(
+    branchMatch[0],
+    /spendChart=new Chart\(ctx,\{type:'bar',data:\{labels,datasets\},options:filteredOpts\}\);/,
+    "the branch should pass its own filteredOpts (not the bare commonOpts) into the Chart constructor"
+  );
+});
+
+// Finding 5 (LOW, cosmetic): buildRcList()'s populate branch always rebuilds
+// every row checked, but never synced #rc-select-all's own checked state to
+// match -- unchecking "Select all" (which unchecks every row), then
+// changing the category dropdown again to a different value, rebuilt the
+// list all-checked while "Select all" stayed visually unchecked. Cosmetic
+// only (saveEditTx() reads the row checkboxes directly), but a real
+// mismatch. buildRcList() is DOM-heavy; source-pattern only. ──
+test("buildRcList: the populate branch syncs #rc-select-all's checked state to match the freshly-rebuilt (all-checked) row list", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function buildRcList\(tx,origCat,newCat\)\{[\s\S]{0,3000}?\n\}/);
+  assert.ok(fnMatch, "buildRcList() should exist");
+  assert.match(
+    fnMatch[0],
+    /document\.getElementById\('rc-list'\)\.innerHTML=similar\.map\([\s\S]{0,500}?\.join\(''\);\s*[\s\S]{0,700}?const selectAll=document\.getElementById\('rc-select-all'\);\s*if\(selectAll\)selectAll\.checked=true;\s*updateRcCount\(\);/,
+    "buildRcList()'s populate branch should set #rc-select-all's checked=true right alongside rebuilding #rc-list, before updateRcCount()"
+  );
 });
