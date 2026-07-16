@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-tEGEEz+ieZv4ekHzheky5LXatOfu6sgM1w+EdE0iPi4=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-dxsV2aFeQQ4vqT3qJIR4m4XaNUWwyYixxFjKL7DbpBA=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2541,7 +2541,14 @@ const fmt=n=>esc(state.currency||'$')+Math.abs(n).toLocaleString(undefined,{mini
 // "$1000k" instead of switching to "$1M" a few hundred dollars early.
 // 999500 is exactly the point where that rounding first occurs. Found in
 // the 82nd adversarial pass.
-const fmtC=n=>{const a=Math.abs(n),s=n<0?'-':'',c=esc(state.currency||'$');return s+(a>=999500?c+parseFloat((a/1e6).toFixed(2))+'M':a>=1e3?c+Math.round(a/1e3)+'k':c+Math.round(a));};
+// raw=true skips esc() -- for D3 .text() calls, which set an SVG text
+// node's textContent (not innerHTML): that context never needs HTML
+// escaping and, worse, double-escapes a custom currency symbol containing
+// '&' (a free-text field, setCurrency()) into a literal visible "&amp;"
+// on screen, since .text() doesn't interpret entities. Defaults to
+// escaped (false) so every existing innerHTML-based caller is unaffected.
+// Found in the 105th adversarial pass.
+function fmtC(n,raw){const a=Math.abs(n),s=n<0?'-':'',c=raw?(state.currency||'$'):esc(state.currency||'$');return s+(a>=999500?c+parseFloat((a/1e6).toFixed(2))+'M':a>=1e3?c+Math.round(a/1e3)+'k':c+Math.round(a));}
 const fmtD=n=>esc(state.currency||'$')+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 // s=n<0?'-':'' before the currency symbol, matching fmtC()'s own
 // negative-value convention (used for net worth, a value that can
@@ -4111,7 +4118,7 @@ function renderNwChart(){
 
   g.selectAll('.nw-ytick').data(yScale.ticks(4)).join('text').attr('class','nw-ytick')
     .attr('x',-6).attr('y',d=>yScale(d)).attr('text-anchor','end').attr('dominant-baseline','middle')
-    .attr('font-size',9).attr('fill',textColor).text(d=>fmtC(d));
+    .attr('font-size',9).attr('fill',textColor).text(d=>fmtC(d,true));
 
   const today=new Date();
   const currentMonthKey=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
@@ -4139,7 +4146,7 @@ function renderNwChart(){
       .attr('stroke',goalColor).attr('stroke-width',1).attr('stroke-dasharray','4,3').attr('opacity',.7);
     g.append('text').attr('x',iW-2).attr('y',gy-5).attr('text-anchor','end')
       .attr('font-size',11).attr('font-weight',700).attr('fill',goalColor).attr('opacity',1)
-      .text(goalInRange?`Goal ${fmtC(state.nwGoal)}`:`Goal ${fmtC(state.nwGoal)} ↑`);
+      .text(goalInRange?`Goal ${fmtC(state.nwGoal,true)}`:`Goal ${fmtC(state.nwGoal,true)} ↑`);
     // Pulsing dot at goal crossing
     const cross=data.find((d,i)=>i>0&&vals[i-1]<state.nwGoal&&d.v>=state.nwGoal);
     if(cross&&goalInRange){
@@ -5215,10 +5222,10 @@ function renderTreemap(drillCat){
     const label=dispName.length>16&&w<120?dispName.slice(0,14)+'…':dispName;
     if(h>44&&w>70){
       g.append('text').attr('x',7).attr('y',19).attr('font-size',w>140?13:10).attr('font-weight','600').attr('fill',tileColor).text(label);
-      g.append('text').attr('x',7).attr('y',33).attr('font-size',10).attr('fill',tileColor).attr('opacity',.85).text(fmtC(d.data.value)+(drillCat?'':' · '+pct+'%'));
+      g.append('text').attr('x',7).attr('y',33).attr('font-size',10).attr('fill',tileColor).attr('opacity',.85).text(fmtC(d.data.value,true)+(drillCat?'':' · '+pct+'%'));
     } else if(h>24&&w>50){
       g.append('text').attr('x',5).attr('y',15).attr('font-size',9).attr('font-weight','600').attr('fill',tileColor).text(dispName.split(' ')[0]);
-      g.append('text').attr('x',5).attr('y',26).attr('font-size',9).attr('fill',tileColor).attr('opacity',.85).text(fmtC(d.data.value));
+      g.append('text').attr('x',5).attr('y',26).attr('font-size',9).attr('fill',tileColor).attr('opacity',.85).text(fmtC(d.data.value,true));
     }
   });
   restoreActiveVendor();
@@ -5377,7 +5384,10 @@ function renderSankey(){
         ?`<strong>${otherNodeLabel}</strong> ${fmtC(d.value)} · ${Math.round(d.value/totalIncome*100)}% of income<br><span style="opacity:.7;font-size:10px">${otherTipBody}</span>`
         :d.target.id==='__filtered_out__'
         ?`<strong>${filteredOutNodeLabel}</strong> ${fmtC(d.value)} · ${Math.round(d.value/totalIncome*100)}% of income<br><span style="opacity:.7;font-size:10px">${filteredOutTipBody}</span>`
-        :`<strong>${esc(d.target.name)}</strong>${fmtC(d.value)} · ${Math.round(d.value/totalIncome*100)}% of income`;
+        // Missing space after </strong>, unlike the two sibling branches
+        // above -- rendered e.g. "Groceries$1,234" with no separator.
+        // Found in the 105th adversarial pass.
+        :`<strong>${esc(d.target.name)}</strong> ${fmtC(d.value)} · ${Math.round(d.value/totalIncome*100)}% of income`;
       tip.show(e,body);
       linkSel.attr('stroke-opacity',l=>l===d?.75:.15);
     })
@@ -5458,7 +5468,7 @@ function renderSankey(){
       if(d.y1-d.y0<12)return'';
       const pct=Math.round((d.value||0)/totalIncome*100);
       if(d.id==='__income__')return'';
-      return`${d.name} ${fmtC(d.value)} · ${pct}%`;
+      return`${d.name} ${fmtC(d.value,true)} · ${pct}%`;
     });
 
   // Footnote
@@ -11639,7 +11649,15 @@ async function loadUserData(uid) {
       // leaving the cloud-sync path (a corrupted Supabase row) still
       // exposed. Found in the 104th adversarial pass.
       if (prefs.customCategories) state.customCategories = _arrOfObj(prefs.customCategories);
-      if (prefs.budgets) state.budgets = prefs.budgets;
+      // Object-shape-guarded, matching importBackup()'s own obj()-based
+      // fix for the same two fields -- a truthy non-object (or, for
+      // budgets, an array -- .length>0 above is truthy for a non-empty
+      // array too) previously passed straight through. Not a crash (every
+      // consumer only reads properties/compares), but setBudget()/
+      // selectIncomeMethod() would then silently no-op: the user "saves" a
+      // budget or income method, sees success UI, and nothing persists.
+      // Found in the 105th adversarial pass.
+      if (prefs.budgets && typeof prefs.budgets === 'object' && !Array.isArray(prefs.budgets)) state.budgets = prefs.budgets;
       // _arrOfObj(...) + a string-typed keyword filter -- object-shape
       // filtering alone isn't enough here, since r.keyword.toUpperCase()
       // (renderRulesList(), applyRulesToExisting(), the CSV-import
@@ -11647,7 +11665,7 @@ async function loadUserData(uid) {
       // keyword is a truthy non-string. Found in the 104th adversarial
       // pass.
       if (prefs.catRules) state.catRules = _arrOfObj(prefs.catRules).filter(r=>typeof r.keyword==='string');
-      if (prefs.income) state.income = prefs.income;
+      if (prefs.income && typeof prefs.income === 'object' && !Array.isArray(prefs.income)) state.income = prefs.income;
       if (prefs.declaredIncome !== undefined) state.declaredIncome = prefs.declaredIncome;
       if (Array.isArray(prefs.excludedCats)) state.excludedCats = new Set(prefs.excludedCats);
       if (prefs.includeIncome !== undefined) { state.includeIncome = prefs.includeIncome; _bizFilter='all'; }
@@ -11684,9 +11702,27 @@ async function loadUserData(uid) {
         // here, leaving the cloud-sync path (a corrupted Supabase row)
         // still exposed to the same t.amount/rebuildMonthly() crash.
         // Found in the 104th adversarial pass.
+        //
+        // desc/cat/card also coerced here, found in the 105th adversarial
+        // pass -- the 103rd/104th passes' fixes only ever coerced date and
+        // the numeric/boolean fields, leaving a truthy non-string desc/cat/
+        // card to pass straight through the {...t} spread untouched. A
+        // non-string desc throws in resolveVendor() (its `if(!desc)return
+        // desc` guard only catches *falsy* values, not e.g. a number) --
+        // reachable from the Treemap, the Spending tab's top-5-vendors
+        // card, the vendor chart, and every tx-list filter -- and in
+        // displayVendor() (same shape), which renders inside
+        // renderInsights()'s "largest charge" card on the Dashboard
+        // itself. Because ingestion re-accepts the bad value on every load
+        // and scheduleSave() re-persists it right back, the crash survives
+        // a reload -- this isn't a one-time glitch, it's a permanently
+        // broken app until the user manually clears their data. cat
+        // defaults to 'Other', matching this file's own established
+        // fallback category (see normalizeTxRow()'s local variable
+        // default) rather than an empty string.
         state.transactions = prefs.transactions
           .filter(t=>t&&typeof t==='object')
-          .map(t=>({...t,date:typeof t.date==='string'?t.date:'',amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
+          .map(t=>({...t,date:typeof t.date==='string'?t.date:'',desc:typeof t.desc==='string'?t.desc:'',cat:typeof t.cat==='string'?t.cat:'Other',card:typeof t.card==='string'?t.card:'',amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
         _txsDirty=true;
         // Reverted the 96th pass's _resetSessionFiltersForDataReplace() call
         // here, found in the 98th adversarial pass. The 96th pass's reasoning
@@ -12548,11 +12584,20 @@ function loadFromLocalStorage(){
     // just above (103rd adversarial pass) -- a null entry throws on
     // c.name inside buildCatColorMap().
     state.customCategories=Array.isArray(saved.customCategories)?_arrOfObj(saved.customCategories):state.customCategories;
-    if(saved.budgets&&Object.keys(saved.budgets).length>0)state.budgets=saved.budgets;
+    // Object-shape-guarded, not just Object.keys(...).length>0 -- that
+    // check is true for a non-empty *string* too (Object.keys("abc")
+    // returns index keys), so a corrupted string value for saved.budgets
+    // previously passed straight through. Found in the 105th adversarial
+    // pass -- see loadUserData()'s equivalent fix for the full reasoning
+    // (setBudget() would then silently no-op).
+    if(saved.budgets&&typeof saved.budgets==='object'&&!Array.isArray(saved.budgets)&&Object.keys(saved.budgets).length>0)state.budgets=saved.budgets;
     // Same reasoning as loadUserData()'s equivalent fix (104th adversarial
     // pass) -- object-shape filtering plus a string-typed keyword check.
     state.catRules=_arrOfObj(saved.catRules).filter(r=>typeof r.keyword==='string');
-    state.income=saved.income||{method:null,monthlyAmount:0};
+    // Object-shape-guarded -- any truthy saved.income (a string, array,
+    // number) previously passed straight through the ||. Found in the
+    // 105th adversarial pass.
+    state.income=(saved.income&&typeof saved.income==='object'&&!Array.isArray(saved.income))?saved.income:{method:null,monthlyAmount:0};
     state.declaredIncome=saved.declaredIncome??0;
     // Array.isArray, not just truthiness -- same reasoning as
     // loadUserData()'s equivalent fix.
@@ -12604,10 +12649,13 @@ function loadFromLocalStorage(){
     // in the 104th adversarial pass -- pass 103's own fix never checked
     // that txSource (which can come from a separately-corrupted
     // trakyo_txs_v1 key, not just the main state blob) was actually an
-    // array before calling .filter() on it.
+    // array before calling .filter() on it. desc/cat/card also coerced,
+    // found in the 105th adversarial pass -- see loadUserData()'s own copy
+    // of this fix for the full reasoning (resolveVendor()/displayVendor()
+    // crash on a truthy non-string value).
     state.transactions=(Array.isArray(txSource)?txSource:state.transactions)
       .filter(t=>t&&typeof t==='object')
-      .map(t=>({...t,date:typeof t.date==='string'?t.date:'',amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
+      .map(t=>({...t,date:typeof t.date==='string'?t.date:'',desc:typeof t.desc==='string'?t.desc:'',cat:typeof t.cat==='string'?t.cat:'Other',card:typeof t.card==='string'?t.card:'',amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
 
     rebuildMonthly();
     rebuildCatSelects();
@@ -12822,10 +12870,12 @@ function importBackup(file){
       // coercing a malformed date to '' preserves the rest of that row's
       // data rather than dropping it, at the cost of that one row sorting
       // into an empty-string MONTHLY bucket instead of crashing. Found in
-      // the 103rd adversarial pass.
+      // the 103rd adversarial pass. desc/cat/card also coerced, found in
+      // the 105th adversarial pass -- see loadUserData()'s own copy of
+      // this fix for the full reasoning.
       state.transactions=arr(payload.transactions)
         .filter(t=>t&&typeof t==='object')
-        .map(t=>({...t,date:typeof t.date==='string'?t.date:'',amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
+        .map(t=>({...t,date:typeof t.date==='string'?t.date:'',desc:typeof t.desc==='string'?t.desc:'',cat:typeof t.cat==='string'?t.cat:'Other',card:typeof t.card==='string'?t.card:'',amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
       _txsDirty=true;
       // This is a wholesale dataset replacement -- the exact scenario
       // _clearVendorDayFiltersForDataReplace()'s own comment names "backup
