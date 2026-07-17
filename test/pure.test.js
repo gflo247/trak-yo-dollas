@@ -3988,7 +3988,7 @@ test("detectSubscriptions: sums ALL of a vendor's entries in the latest month, n
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function detectSubscriptions\(allMonths,latestFullM\)\{[\s\S]{0,4300}?return\{subVendors,subTotal\};/);
+  const fnMatch = source.match(/function detectSubscriptions\(allMonths,latestFullM\)\{[\s\S]{0,4700}?return\{subVendors,subTotal\};/);
   assert.ok(fnMatch, "detectSubscriptions() should exist");
   assert.match(
     fnMatch[0],
@@ -4071,4 +4071,54 @@ test("loadFromLocalStorage: the legacy College-Fund migration uses a locally-com
     /const safeId=Math\.max\(0,\.\.\.state\.accounts\.map\(a=>a\.id\|\|0\)\)\+1;\s*state\.accounts\.push\(\{id:safeId,name:'College Fund\(s\)'/,
     "the migration should compute a safe id from the current max id in state.accounts, not push a hardcoded id:12"
   );
+});
+
+// ── 115th adversarial pass ──────────────────────────────────────────────
+// Part 1 (re-verification of the 114th pass's 8 fixes) came back clean --
+// no gaps found, all held up. The 2 new findings below are both LOW,
+// from fresh-territory review of the theme toggle and a dead-code sweep
+// of detectSubscriptions() (110-114 passes had already hardened the
+// highest-traffic surfaces heavily; both findings here are cosmetic/
+// edge-case, not data-safety issues). ──
+
+// Finding 1 (LOW): <meta name="theme-color"> was static (always the dark
+// theme's #111720) -- neither the boot-time theme-restore script nor
+// toggleTheme() ever updated it, so the mobile browser chrome/iOS Safari
+// address bar/an installed PWA's status bar stayed dark blue even when
+// a returning user's saved preference (or a live toggle) was light. ──
+test("theme-color meta tag updates on both initial load and toggleTheme(), matching the active theme's --bg-page color", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const bootMatch = source.match(/\/\/ Restore theme before CSS renders to prevent flash[\s\S]{0,1100}?\}\)\(\);/);
+  assert.ok(bootMatch, "the boot-time theme-restore IIFE should exist");
+  assert.match(
+    bootMatch[0],
+    /const tc=document\.querySelector\('meta\[name="theme-color"\]'\);\s*if\(tc\)tc\.setAttribute\('content',t==='light'\?'#F8FAFC':'#111720'\);/,
+    "the boot-time restore should also set theme-color to match the restored theme"
+  );
+  const toggleMatch = source.match(/function toggleTheme\(\)\{[\s\S]{0,1200}/);
+  assert.ok(toggleMatch, "toggleTheme() should exist");
+  assert.match(
+    toggleMatch[0],
+    /const tc=document\.querySelector\('meta\[name="theme-color"\]'\);\s*if\(tc\)tc\.setAttribute\('content',isLight\?'#111720':'#F8FAFC'\);/,
+    "toggleTheme() should also update theme-color when live-toggling"
+  );
+});
+
+// Dead-code finding (Part 3): detectSubscriptions() pushed a `median`
+// field into subVendors that nothing (neither the pill nor the modal)
+// ever read -- the local variable is still needed for the consistency
+// check earlier in the same function, just wasn't a field any consumer
+// used once summed into the object. ──
+test("detectSubscriptions: no longer pushes an unused median field into subVendors", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /subVendors\.push\(\{vendor,amt:curAmt,cat:curEntries\[0\]\.cat,months:uniqueMonths\.size\}\);/,
+    "subVendors.push() should no longer include the unused median field"
+  );
+  assert.match(source, /const median=amts\[Math\.floor\(amts\.length\/2\)\];/, "the local median variable itself should still exist -- it's still needed for the consistency check");
 });
