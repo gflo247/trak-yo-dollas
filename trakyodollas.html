@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-+KQC0Q5i06uUWptZtBzAyW6+y4XDfxVBWsomWPtx5fA=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-MhLuko4qs12Ego1VdM0RaWhK+AngxKPyRVjqabZiQKc=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -7709,6 +7709,17 @@ function editSnapshot(i){
 }
 
 function saveHistoricalSnapshot(){
+  // Matches saveAccount()/saveSnapshot()/saveTx()/saveVehicle()'s existing
+  // guard (111th/112th adversarial passes) -- without it, backfilling
+  // historical net worth while previewing a demo over real saved data ran
+  // a normal-looking success UI, but scheduleSave()/cloud sync are hard
+  // no-ops during a demo preview -- everything silently reverts on the
+  // next reload with no warning. Found in the 112th adversarial pass.
+  if(window._isDemoPreview||window._viewingDemoOverReal){
+    closeModals();
+    showToast('Not available while previewing demo data — your real data is untouched here',tc('#94A3B8','#4B5563'),9000);
+    return;
+  }
   const date=document.getElementById('hist-snap-date').value;
   const nw=parseFloat(document.getElementById('hist-snap-nw').value);
   const assets=parseFloat(document.getElementById('hist-snap-assets').value)||nw;
@@ -7736,6 +7747,23 @@ function saveHistoricalSnapshot(){
   if(date>todayIso){showToast('That date is in the future — enter a past or current date','#FCD34D');return;}
   const monthKey=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
   const displayDate=d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+  // Wipes every demo-scripted field (including state.snapshots itself)
+  // BEFORE the duplicate-month checks below -- otherwise a demo-scripted
+  // monthKey coinciding with the real month being backfilled would
+  // false-positive "Already have a snapshot," the same ordering bug the
+  // 110th pass fixed for saveSnapshot(). This is the 7th "first real
+  // save" entry point -- saveHistoricalSnapshot() pushes real, user-typed
+  // net-worth history, the same class of data saveSnapshot() already
+  // guards, but was missed when that guard (and 5 siblings) were added
+  // (110th/111th/112th passes). Without it, real backfilled history was
+  // silently DELETED the moment any other covered first-real-save action
+  // ran its own wipe. A no-op if hasRealData is already true. Also clears
+  // _editingSnapshotMonthKey -- it may have referenced a demo snapshot
+  // the wipe just cleared, and after the wipe state.snapshots is empty
+  // regardless, so this save should behave as an add, not an edit. Found
+  // in the 112th adversarial pass.
+  _replaceDemoDataWithReal();
+  _editingSnapshotMonthKey=null;
   // Adding a *new* historical snapshot (not editing one) for a month that
   // already has a snapshot used to silently overwrite it — openHistoricalSnapshotModal()
   // always blanks the assets/liab fields, so a user who only fills in Net
@@ -7762,6 +7790,17 @@ function saveHistoricalSnapshot(){
   const movedFromMonthKey=(_editingSnapshotMonthKey&&_editingSnapshotMonthKey!==monthKey)?_editingSnapshotMonthKey:null;
   if(existingIdx>=0){state.snapshots[existingIdx]=snap;showToast(`📅 Updated snapshot for ${displayDate}`,'#34D399');}
   else{state.snapshots.push(snap);state.snapshots.sort(_snapshotSortCompare);showToast(`📅 Historical snapshot added for ${displayDate}`,'#34D399');}
+  // hasRealSnapshot was only ever set by saveSnapshot() (the "current
+  // month" flow) -- a user whose first snapshot comes from THIS flow
+  // instead (a natural first move: backfill history before saving the
+  // current month) kept it false, leaving the "Demo snapshots" notice
+  // visible directly above their now-fully-real snapshot list
+  // indefinitely. Found in the 112th adversarial pass.
+  state.hasRealData=true;
+  state.hasRealSnapshot=true;
+  hideDemoBadge();
+  const sdn=document.getElementById('snap-demo-notice');if(sdn)sdn.style.display='none';
+  const hn=document.getElementById('demo-notice-history');if(hn)hn.style.display='none';
   _editingSnapshotMonthKey=null;
   closeModals();renderHistory();renderNwChart();scheduleSave();
   // Unlike saveSnapshot()/confirmDeleteSnapshot(), this path never wrote to
@@ -12494,6 +12533,17 @@ function toggleVendorFilter(vendor){
   showTxN=50;renderBucketGrid();renderSpendSummary();renderTxList();renderSpendChart();
 }
 function saveVehicle(){
+  // Matches saveAccount()/saveSnapshot()/saveTx()'s existing guard (111th
+  // adversarial pass) -- without it, adding/editing a vehicle while
+  // previewing a demo over real saved data ran a normal-looking success
+  // UI, but saveToLocalStorage()/cloud sync are hard no-ops during a demo
+  // preview -- everything silently reverts on the next reload with no
+  // warning. Found in the 112th adversarial pass.
+  if(window._isDemoPreview||window._viewingDemoOverReal){
+    closeModals();
+    showToast('Not available while previewing demo data — your real data is untouched here',tc('#94A3B8','#4B5563'),9000);
+    return;
+  }
   const value=parseFloat(document.getElementById('v-value').value)||0;
   const purchase=parseFloat(document.getElementById('v-purchase').value)||0;
   const purchaseYear=parseInt(document.getElementById('v-purchase-year').value)||new Date().getFullYear();
@@ -12525,6 +12575,24 @@ function saveVehicle(){
     condition=document.getElementById('v-condition').value;miles=parseInt(document.getElementById('v-miles').value)||0;
     name=make?`${year} ${make} ${model.split(' ')[0]}`.trim():`${year} Vehicle`.trim();assetType='vehicle';
   }
+  // Wipes every demo-scripted field (including state.vehicles/
+  // state.accounts themselves) once validation above has already passed
+  // (so a rejected save never leaves demo data wiped with nothing saved)
+  // -- saveVehicle() pushes a real vehicle AND its paired balance-carrying
+  // account, the same class of net-worth data saveAccount() already
+  // guards, but this 6th "first real save" entry point was missed when
+  // that guard was added (110th/111th passes). Without it, a real vehicle
+  // added during a demo session was silently DELETED the moment any other
+  // covered first-real-save action ran its own wipe. A no-op if
+  // hasRealData is already true. Found in the 112th adversarial pass.
+  _replaceDemoDataWithReal();
+  state.hasRealAccounts=true;
+  state.hasRealData=true;
+  hideDemoBadge();
+  // editVehicleId may reference a demo vehicle the wipe just cleared --
+  // fall back to adding as new rather than silently dropping the edit,
+  // matching saveAccount()'s equivalent fallback.
+  if(editVehicleId&&!state.vehicles.find(x=>x.id===editVehicleId))editVehicleId=null;
   if(editVehicleId){
     const v=state.vehicles.find(x=>x.id===editVehicleId);
     if(v){
@@ -13980,7 +14048,16 @@ _sb.auth.onAuthStateChange((event, session) => {
     // then fire later under whatever session happens to be signed in when
     // this device next completes a passphrase flow.
     window._awaitingCloudMerge = false;
-    if (window._demoPicked) {
+    // !state.hasRealData -- without it, a user who picked a demo profile
+    // then transitioned to real data (any of the covered first-real-save
+    // actions correctly hide this nudge via hideDemoBadge()) and later
+    // signed out had this branch unconditionally re-show the "this is
+    // demo data" nudge over what is now entirely real data, since
+    // _demoPicked itself is never reset by the demo-to-real transition
+    // (it's a one-time "did they ever open the demo picker this session"
+    // flag, not a "are they currently viewing demo data" one). Found in
+    // the 112th adversarial pass.
+    if (window._demoPicked && !state.hasRealData) {
       const nudge = document.getElementById('demo-nudge');
       if (nudge) nudge.style.display = 'block';
       const _savedTab = localStorage.getItem('trakyo_tab');

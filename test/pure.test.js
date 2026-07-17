@@ -3753,3 +3753,81 @@ test("confirmTxImport: the dead write-only SOURCES global and its guard are remo
   assert.doesNotMatch(source, /\bconst SOURCES=/, "the dead SOURCES const should be removed");
   assert.doesNotMatch(source, /SOURCES\.push\(source\)/, "the dead write-only guard should be removed");
 });
+
+// ── 112th adversarial pass ──────────────────────────────────────────────
+// Pass 112 was scoped to exhaustively re-verify the demo-to-real
+// transition area (passes 108-111) rather than review fresh territory --
+// its verdict was that this area needed a dedicated systematic-audit
+// pass, since it found 2 MORE missed "first real save" entry points
+// (saveVehicle(), saveHistoricalSnapshot()) with the identical bug shape
+// as saveAccount()/saveSnapshot()/saveTx() (110th/111th passes): they add
+// real, user-entered balance-sheet data during a demo session without
+// wiping demo data, without setting hasRealData/hasRealAccounts/
+// hasRealSnapshot, and without the demo-preview-over-real guard. ──
+
+// Finding 1 (HIGH): saveVehicle() pushes a vehicle AND its paired
+// balance-carrying account -- the same class of net-worth data
+// saveAccount() already guards -- but was missed as a 6th "first real
+// save" entry point. A real vehicle added during a demo session was
+// silently DELETED the moment any other covered first-real-save action
+// ran its own wipe. Fixed with the same guard/wipe/fallback pattern as
+// saveAccount(). saveVehicle() is DOM-heavy; source-pattern only,
+// matching this suite's established precedent. ──
+test("saveVehicle: has the demo-preview guard, calls _replaceDemoDataWithReal() after validation, and falls back editVehicleId to null if it no longer resolves post-wipe", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function saveVehicle\(\)\{[\s\S]{0,7400}?closeModals\(\);renderAll\(\);\n\}/);
+  assert.ok(fnMatch, "saveVehicle() should exist");
+  const guardIdx = fnMatch[0].search(/if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{/);
+  const valueGuardIdx = fnMatch[0].search(/if\(value<0\)return;/);
+  const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
+  const fallbackIdx = fnMatch[0].search(/if\(editVehicleId&&!state\.vehicles\.find\(x=>x\.id===editVehicleId\)\)editVehicleId=null;/);
+  const editCheckIdx = fnMatch[0].search(/if\(editVehicleId\)\{/);
+  assert.ok(guardIdx >= 0, "saveVehicle() should have the demo-preview guard");
+  assert.ok(guardIdx < valueGuardIdx, "the demo-preview guard should be the first check in the function");
+  assert.ok(wipeIdx >= 0, "saveVehicle() should call _replaceDemoDataWithReal()");
+  assert.ok(valueGuardIdx < wipeIdx, "value/name validation must run before the wipe, so a rejected save doesn't leave demo data wiped with nothing saved");
+  assert.ok(fallbackIdx >= 0 && fallbackIdx < editCheckIdx, "editVehicleId should be nulled out before the edit/add branch if it no longer resolves post-wipe, falling back to add-as-new");
+});
+
+// Finding 2 (HIGH) & Finding 3 (MEDIUM): saveHistoricalSnapshot() pushes
+// real, user-typed net-worth history -- the same class of data
+// saveSnapshot() already guards -- but was missed as a 7th "first real
+// save" entry point, AND never set hasRealSnapshot at all (only
+// saveSnapshot()'s "current month" flow did), leaving the "Demo
+// snapshots" notice visible over fully real history for anyone whose
+// first snapshot came from this "+ Add historical" flow instead. ──
+test("saveHistoricalSnapshot: has the demo-preview guard, wipes demo data before the duplicate-month checks, and sets hasRealData/hasRealSnapshot", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,6500}?_editingSnapshotMonthKey=null;\n  closeModals\(\);renderHistory\(\);renderNwChart\(\);scheduleSave\(\);/);
+  assert.ok(fnMatch, "saveHistoricalSnapshot() should exist");
+  const guardIdx = fnMatch[0].search(/if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{/);
+  const dateGuardIdx = fnMatch[0].search(/if\(!date\|\|isNaN\(nw\)\)/);
+  const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
+  const dupCheckIdx = fnMatch[0].search(/if\(!_editingSnapshotMonthKey&&state\.snapshots\.some/);
+  const hasRealSnapIdx = fnMatch[0].search(/state\.hasRealSnapshot=true;/);
+  assert.ok(guardIdx >= 0 && guardIdx < dateGuardIdx, "the demo-preview guard should be the first check");
+  assert.ok(wipeIdx >= 0, "should call _replaceDemoDataWithReal()");
+  assert.ok(dateGuardIdx < wipeIdx, "date/net-worth validation must run before the wipe");
+  assert.ok(wipeIdx < dupCheckIdx, "the wipe must run BEFORE the duplicate-month check, so a demo-scripted monthKey can't false-positive against the real month being backfilled");
+  assert.ok(hasRealSnapIdx >= 0, "should set state.hasRealSnapshot=true, matching saveSnapshot()'s own flag -- previously only that function set it");
+});
+
+// Finding 5 (LOW): the sign-out handler re-showed the "this is demo data"
+// nudge whenever window._demoPicked was true, with no check for whether
+// the user had since transitioned to real data -- _demoPicked is a
+// one-time "did they ever open the demo picker this session" flag, never
+// reset by the demo-to-real transition. ──
+test("Sign-out handler: only re-shows the demo nudge if the user hasn't transitioned to real data (state.hasRealData is false)", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if \(window\._demoPicked && !state\.hasRealData\) \{/,
+    "the sign-out handler should check !state.hasRealData before re-showing the demo nudge"
+  );
+});
