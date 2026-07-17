@@ -1923,7 +1923,7 @@ test("importBackup, confirmTxImport, and loadDemoProfile all call the shared _re
   );
   assert.match(
     source,
-    /function _replaceDemoDataWithReal\(\)\{\s*if\(state\.hasRealData\)return;[\s\S]{0,900}?_resetSessionFiltersForDataReplace\(\);\s*\}/,
+    /function _replaceDemoDataWithReal\(\)\{\s*if\(state\.hasRealData\)return;[\s\S]{0,1700}?_resetSessionFiltersForDataReplace\(\);\s*\}/,
     "_replaceDemoDataWithReal() (110th pass; confirmTxImport()'s first-real-import wipe is now one call to this shared helper instead of its own hand-rolled reset list) should call _resetSessionFiltersForDataReplace() as part of its reset"
   );
   assert.match(
@@ -3474,7 +3474,7 @@ test("_replaceDemoDataWithReal: resets every field loadDemoProfile() seeds to th
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function _replaceDemoDataWithReal\(\)\{[\s\S]{0,900}?\n\}/);
+  const fnMatch = source.match(/function _replaceDemoDataWithReal\(\)\{[\s\S]{0,1700}?\n\}/);
   assert.ok(fnMatch, "_replaceDemoDataWithReal() should exist");
   assert.match(fnMatch[0], /if\(state\.hasRealData\)return;/, "should no-op once real data already exists, never wiping real data");
   for (const line of [
