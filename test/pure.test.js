@@ -3831,3 +3831,110 @@ test("Sign-out handler: only re-shows the demo nudge if the user hasn't transiti
     "the sign-out handler should check !state.hasRealData before re-showing the demo nudge"
   );
 });
+
+// ── 113th adversarial pass (dedicated systematic audit) ───────────────────
+// Pass 112's explicit verdict was that the demo-to-real transition area
+// needed a dedicated audit rather than continued reactive per-site
+// patching (5 consecutive passes, 108-112, had each found real gaps). The
+// 113th pass exhaustively enumerated every writer to the 4 wiped arrays
+// and every _replaceDemoDataWithReal()-reset field, and found: the
+// incremental-add side (7 "first real save" entry points) was fully
+// closed -- no 8th uncovered site exists -- but the LOAD direction had
+// the same bug shape in a more severe form. ──
+
+// CRITICAL finding: loadUserData() (the cloud-sync restore path) never
+// set hasRealData/hasRealAccounts/hasRealSnapshot at all --
+// check-cloudsync-coverage.py's own docstring incorrectly claimed these
+// were "re-derived flags," but nothing anywhere actually derived them. A
+// signed-in user restoring real data on a fresh device/browser stayed
+// permanently "demo-armed": every covered first-real-save entry point's
+// own _replaceDemoDataWithReal() guard treated their entire real,
+// cloud-synced dataset as safe to wipe on their very next ordinary
+// action, and since that action re-syncs to the cloud, the destruction
+// propagated to every other device too. loadUserData() is async/
+// Supabase-heavy; source-pattern only, matching this suite's established
+// precedent. ──
+test("loadUserData: derives hasRealAccounts/hasRealSnapshot/hasRealData from what was actually restored", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/\/\/ Ensure activeSources is populated after cloud restore[\s\S]{0,2500}?renderAll\(\);/);
+  assert.ok(fnMatch, "the post-restore block in loadUserData() should exist");
+  assert.match(fnMatch[0], /if\(state\.accounts\.length>0\)state\.hasRealAccounts=true;/, "should set hasRealAccounts when real accounts were restored");
+  assert.match(fnMatch[0], /if\(state\.snapshots\.length>0\)state\.hasRealSnapshot=true;/, "should set hasRealSnapshot when real snapshots were restored");
+  assert.match(
+    fnMatch[0],
+    /if\(state\.hasRealAccounts\|\|state\.hasRealSnapshot\|\|state\.transactions\.length>0\)state\.hasRealData=true;/,
+    "should set hasRealData if any real data (accounts, snapshots, or transactions) was restored"
+  );
+  assert.doesNotMatch(
+    fnMatch[0],
+    /const chip=document\.getElementById\('demo-chip'\);if\(chip\)chip\.style\.display='none';/,
+    "the old direct-DOM-hiding block should be removed -- renderAll()'s own hideDemoBadge() call now correctly covers this once the flags are set"
+  );
+});
+
+// MEDIUM finding: deleteAcct()/deleteVehicle() never reset hasRealAccounts
+// when the account list emptied, unlike confirmDeleteSnapshot()'s existing
+// !state.snapshots.length pattern for hasRealSnapshot -- a stale-flag
+// ghost state that re-armed the exact fabricated-$0-snapshot bug the
+// 111th pass fixed (saveSnapshot()'s guard checks the flag, not the
+// account list itself). ──
+test("deleteAcct and deleteVehicle: reset hasRealAccounts=false when state.accounts becomes empty, matching confirmDeleteSnapshot()'s existing pattern", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const daMatch = source.match(/function deleteAcct\(\)\{[\s\S]{0,1000}?\n\}/);
+  assert.ok(daMatch, "deleteAcct() should exist");
+  assert.match(daMatch[0], /if\(!state\.accounts\.length\)state\.hasRealAccounts=false;/, "deleteAcct() should reset hasRealAccounts when the last account is deleted");
+  const dvMatch = source.match(/function deleteVehicle\(\)\{[\s\S]{0,1500}?\n\}/);
+  assert.ok(dvMatch, "deleteVehicle() should exist");
+  assert.match(dvMatch[0], /if\(!state\.accounts\.length\)state\.hasRealAccounts=false;/, "deleteVehicle() should reset hasRealAccounts when its paired-account removal leaves state.accounts empty");
+});
+
+// LOW finding (confirmed, with a correction): post-transition demo
+// notices could describe rows that no longer exist -- a transactions-only
+// first save (saveTx()/confirmTxImport()) correctly empties
+// state.accounts/state.snapshots too (the wipe clears every field, not
+// just the one the triggering action populated), but hasRealAccounts/
+// hasRealSnapshot stayed false, so their notices kept showing "add your
+// real balances to replace these" over a genuinely empty (not demo)
+// list. Fixed by also hiding each notice once state.hasRealData is true,
+// since no demo rows survive in ANY field past that point. Also removed
+// 2 dead-code references to a #demo-notice-history element that doesn't
+// exist anywhere in the DOM. ──
+test("renderAll: per-tab demo notices also hide once state.hasRealData is true, not just their own more-specific flag", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function renderAll\(\)\{[\s\S]{0,2400}?\n\}/);
+  assert.ok(fnMatch, "renderAll() should exist");
+  assert.match(fnMatch[0], /if\(da\)da\.style\.display=\(state\.hasRealAccounts\|\|state\.hasRealData\)\?'none':'';/, "the accounts notice should hide once hasRealData is true too");
+  assert.match(fnMatch[0], /if\(sdn\)sdn\.style\.display=\(state\.hasRealSnapshot\|\|state\.hasRealData\)\?'none':'';/, "the snapshot notice should hide once hasRealData is true too");
+  assert.match(
+    fnMatch[0],
+    /if\(dn\)dn\.style\.display=\(\(state\.hasRealAccounts&&state\.hasRealSnapshot\)\|\|state\.hasRealData\)\?'none':'';/,
+    "the dashboard notice should hide once hasRealData is true too"
+  );
+});
+test("The dead #demo-notice-history DOM references are removed (the element doesn't exist anywhere in the DOM)", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.doesNotMatch(source, /demo-notice-history/, "no reference to the nonexistent #demo-notice-history element should remain");
+});
+
+// Structural fix: a new permanent scanner, check-demo-transition-coverage.py,
+// flags any function that pushes onto state.accounts/vehicles/snapshots/
+// transactions without referencing _replaceDemoDataWithReal() -- so a
+// future 8th "first real save" entry point can't be written without the
+// treatment and silently reopen this whole bug class again. ──
+test("check-demo-transition-coverage.py exists and reports 0 candidates against the current, fully-covered set of entry points", () => {
+  const { execFileSync } = require("child_process");
+  const path = require("path");
+  const scriptPath = path.join(__dirname, "..", "scripts", "check-demo-transition-coverage.py");
+  const fs = require("fs");
+  assert.ok(fs.existsSync(scriptPath), "scripts/check-demo-transition-coverage.py should exist");
+  const output = execFileSync("python3", [scriptPath], { cwd: path.join(__dirname, ".."), encoding: "utf8" });
+  assert.match(output, /^0 candidate site\(s\)/m, "the scanner should report 0 candidates now that all known entry points call _replaceDemoDataWithReal()");
+});

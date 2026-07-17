@@ -36,8 +36,17 @@ This is a heuristic, not a JS parser -- it WILL have false positives:
   key; snapshots sync via their own saveSnapshot()/loadSnapshots() calls,
   not through prefs) -- these show up as "in syncToCloud but not
   serializeState" or vice versa and are expected, not bugs.
-- hasRealData/hasRealAccounts/hasRealSnapshot are re-derived flags, not
-  really "data" -- plausible to intentionally exclude from cloud sync.
+- hasRealData/hasRealAccounts/hasRealSnapshot are intentionally excluded
+  from cloud sync -- loadUserData() derives them itself from what it just
+  restored (state.accounts.length>0, etc.), rather than trusting a synced
+  copy, so they self-heal on every pull regardless of what an older
+  client version persisted. This docstring previously claimed they were
+  "re-derived" when nothing anywhere actually did that -- loadUserData()
+  never set them at all, so a signed-in user restoring real data on a
+  fresh device stayed permanently "demo-armed" and had their real dataset
+  silently wiped by their own next action. Fixed in the 113th adversarial
+  pass (dedicated demo-to-real-transition systematic audit) by adding the
+  derivation this comment always assumed already existed.
 - state.activeSources -- confirmed genuinely device-local, not a bug, by
   the 38th adversarial pass: loadUserData() has its own "Ensure
   activeSources is populated after cloud restore" logic that *derives*
