@@ -1439,7 +1439,7 @@ test("saveEditTx/saveTx: amount validation uses isNaN (0 is a legitimate amount)
   );
   assert.match(
     source,
-    /function saveTx\(\)\{\s*const dateVal=parseImportDate\(document\.getElementById\('t-date'\)\.value\)/,
+    /function saveTx\(\)\{[\s\S]{0,900}?const dateVal=parseImportDate\(document\.getElementById\('t-date'\)\.value\)/,
     "saveTx() should validate its date via parseImportDate() the same way saveEditTx() does"
   );
   // 85th adversarial pass: the 84th pass's fix passed _importDateFmt into
@@ -1923,7 +1923,7 @@ test("importBackup, confirmTxImport, and loadDemoProfile all call the shared _re
   );
   assert.match(
     source,
-    /function _replaceDemoDataWithReal\(\)\{\s*if\(state\.hasRealData\)return;[\s\S]{0,1700}?_resetSessionFiltersForDataReplace\(\);\s*\}/,
+    /function _replaceDemoDataWithReal\(\)\{\s*if\(state\.hasRealData\)return;[\s\S]{0,1700}?_resetSessionFiltersForDataReplace\(\);/,
     "_replaceDemoDataWithReal() (110th pass; confirmTxImport()'s first-real-import wipe is now one call to this shared helper instead of its own hand-rolled reset list) should call _resetSessionFiltersForDataReplace() as part of its reset"
   );
   assert.match(
@@ -3474,7 +3474,7 @@ test("_replaceDemoDataWithReal: resets every field loadDemoProfile() seeds to th
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function _replaceDemoDataWithReal\(\)\{[\s\S]{0,1700}?\n\}/);
+  const fnMatch = source.match(/function _replaceDemoDataWithReal\(\)\{[\s\S]{0,2300}?\n\}/);
   assert.ok(fnMatch, "_replaceDemoDataWithReal() should exist");
   assert.match(fnMatch[0], /if\(state\.hasRealData\)return;/, "should no-op once real data already exists, never wiping real data");
   for (const line of [
@@ -3493,7 +3493,7 @@ test("saveAccount: calls _replaceDemoDataWithReal() before adding the account, a
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveAccount\(\)\{[\s\S]{0,2400}?closeModals\(\);renderAll\(\);\}/);
+  const fnMatch = source.match(/function saveAccount\(\)\{[\s\S]{0,3100}?closeModals\(\);renderAll\(\);\}/);
   assert.ok(fnMatch, "saveAccount() should exist");
   const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
   const pushIdx = fnMatch[0].search(/state\.accounts\.push\(/);
@@ -3509,7 +3509,7 @@ test("saveSnapshot: calls _replaceDemoDataWithReal() before the duplicate-month 
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveSnapshot\(\)\{[\s\S]{0,2100}?\n\}/);
+  const fnMatch = source.match(/function saveSnapshot\(\)\{[\s\S]{0,3800}?\n\}/);
   assert.ok(fnMatch, "saveSnapshot() should exist");
   const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
   const dupCheckIdx = fnMatch[0].search(/state\.snapshots\.find\(s=>s\.monthKey===ym\)/);
@@ -3536,7 +3536,7 @@ test("saveTx: sets state.hasRealData and calls _replaceDemoDataWithReal(), unlik
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveTx\(\)\{[\s\S]{0,1500}?\n\}/);
+  const fnMatch = source.match(/function saveTx\(\)\{[\s\S]{0,3100}?\n\}/);
   assert.ok(fnMatch, "saveTx() should exist");
   assert.match(fnMatch[0], /_replaceDemoDataWithReal\(\);/, "saveTx() should call the shared wipe helper");
   assert.match(fnMatch[0], /state\.hasRealData=true;/, "saveTx() should now set state.hasRealData -- previously it never did, so a manual-entry-only user's transactions stayed misclassified as demo data and were silently deleted by confirmTxImport()'s own !state.hasRealData wipe on their first later CSV import");
@@ -3577,12 +3577,179 @@ test("renderSpendChart: the shared peakIdx is computed from getBaseTxs() (respec
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /const _peakBaseTxs=getBaseTxs\(\);\s*const monthSumsFn=m=>_peakBaseTxs\.reduce\(\(s,t\)=>t\.date\.slice\(0,7\)===m\?s\+t\.amount:s,0\);/,
-    "monthSumsFn should be built from getBaseTxs(), not from MONTHLY"
+    /const _peakBaseTxs=getBaseTxs\(\)\.filter\(t=>!t\.isIncome&&\(state\.activeCats\.size===0\|\|state\.activeCats\.has\(t\.cat\)\)\);\s*const monthSumsFn=m=>_peakBaseTxs\.reduce\(\(s,t\)=>t\.date\.slice\(0,7\)===m\?s\+t\.amount:s,0\);/,
+    "monthSumsFn should be built from getBaseTxs() (filtered per the 111th pass's fixes), not from MONTHLY"
   );
   assert.match(
     source,
     /const periodSums=useAgg\?getAggregatedPeriods\(\)\.map\(p=>p\.months\.reduce\(\(s,m\)=>s\+monthSumsFn\(m\),0\)\):allMonthSums;/,
     "the Quarterly/Yearly-grain branch (useAgg) should also route through monthSumsFn (getAggregatedPeriods() for grouping only, no MONTHLY-based totals), not the old MONTHLY-based getAggregatedData()"
   );
+});
+
+// ── 111th adversarial pass ──────────────────────────────────────────────
+// (re-verification of the 110th pass's new _replaceDemoDataWithReal()
+// infrastructure found 4 gaps in it, plus 3 more findings from fresh-
+// territory review and a dead-code sweep)
+
+// Finding 1 (HIGH): saveSnapshot() called _replaceDemoDataWithReal()
+// (wiping state.accounts) BEFORE computing netWorth()/totalAssets()/
+// totalLiab() -- since a demo session guarantees hasRealData===false and
+// no real accounts can exist yet, this always produced a fabricated
+// $0/$0/$0 snapshot the instant a user clicked any of the app's 3 "Save
+// snapshot" CTAs while still viewing demo data, toasted as a normal
+// success ("✓ Snapshot saved · net worth $0.00"), and permanently
+// persisted as the anchor of the user's real net-worth history. Fixed by
+// requiring state.hasRealAccounts BEFORE the wipe runs at all -- by
+// construction, every account-adding path already sets hasRealAccounts
+// and hasRealData together, so this guard also means the wipe below it is
+// always already a no-op by the time it's reached. ──
+test("saveSnapshot: requires state.hasRealAccounts before wiping demo data or computing netWorth()/totalAssets()/totalLiab()", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function saveSnapshot\(\)\{[\s\S]{0,3800}?\n\}/);
+  assert.ok(fnMatch, "saveSnapshot() should exist");
+  const guardIdx = fnMatch[0].search(/if\(!state\.hasRealAccounts\)\{/);
+  const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
+  const nwIdx = fnMatch[0].search(/nw:netWorth\(\)/);
+  assert.ok(guardIdx >= 0, "saveSnapshot() should check state.hasRealAccounts");
+  assert.ok(wipeIdx >= 0 && nwIdx >= 0, "the wipe call and netWorth() computation should both exist");
+  assert.ok(guardIdx < wipeIdx, "the hasRealAccounts guard must run BEFORE the wipe");
+  assert.ok(wipeIdx < nwIdx, "the wipe must still run before netWorth() is computed (for defense-in-depth), but only after the guard above has already ensured real accounts exist");
+});
+test("saveSnapshot: the now-unreachable demo-preview branch after the new top-of-function guard was removed", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function saveSnapshot\(\)\{[\s\S]{0,3800}?\n\}/);
+  assert.ok(fnMatch, "saveSnapshot() should exist");
+  assert.doesNotMatch(
+    fnMatch[0],
+    /if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{\s*showToast\(`✓ Snapshot saved/,
+    "the old mid-function demo-preview toast branch should be gone -- the new top-of-function guard already returns before this point during any demo preview"
+  );
+});
+
+// Finding 2 (MEDIUM): the 110th pass's new shared peak computation
+// (_peakBaseTxs/monthSumsFn) summed getBaseTxs() with no !t.isIncome
+// filter, while every one of this function's OWN getBaseTxs() consumers
+// (source/vendor/trend/category modes) add that filter on top of
+// getBaseTxs() -- a regression from the pre-110 MONTHLY-based sums, which
+// rebuildMonthly() itself always excluded income from. With income
+// tracking on and month-to-month income variation, the peak sum could
+// include a paycheck that none of the actually-plotted bars do. ──
+test("renderSpendChart: the shared peak computation excludes income transactions, matching every one of its own getBaseTxs() consumers", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const _peakBaseTxs=getBaseTxs\(\)\.filter\(t=>!t\.isIncome&&\(state\.activeCats\.size===0\|\|state\.activeCats\.has\(t\.cat\)\)\);/,
+    "_peakBaseTxs should filter out income transactions (and respect an active category filter, finding 6 below)"
+  );
+});
+
+// Finding 3 (MEDIUM): saveTx()'s #t-cat <select> is populated from
+// demo-scripted customCategories while the demo is still loaded -- picking
+// one (e.g. profile 1's 'Rent', or profile 2's 'Income') and saving meant
+// the captured cat value no longer existed in getAllCats() the instant
+// _replaceDemoDataWithReal() wiped state.customCategories a few lines
+// later, silently blanking the category on the transaction's next edit
+// (the same unmatched-<select> mechanism the 32nd/108th passes already
+// fixed elsewhere). confirmTxImport() already auto-registers unknown
+// imported categories (108th pass); saveTx(), the 5th "first real save"
+// entry point the 110th pass added, never got the equivalent. ──
+test("saveTx: auto-registers the selected category as a real custom category if it isn't already registered (matching confirmTxImport()'s equivalent fix)", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function saveTx\(\)\{[\s\S]{0,3100}?\n\}/);
+  assert.ok(fnMatch, "saveTx() should exist");
+  const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
+  const registerIdx = fnMatch[0].search(/if\(cat&&!getAllCats\(\)\.some\(c=>c\.toLowerCase\(\)===cat\.toLowerCase\(\)\)\)\{/);
+  const mutateIdx = fnMatch[0].search(/mutateTransactions\(\(\)=>\{state\.transactions\.unshift/);
+  assert.ok(wipeIdx >= 0, "saveTx() should call the wipe helper");
+  assert.ok(registerIdx >= 0, "saveTx() should auto-register the category if it's not already registered");
+  assert.ok(mutateIdx >= 0, "saveTx() should still add the transaction");
+  assert.ok(wipeIdx < registerIdx, "the auto-register check must run AFTER the wipe (which cleared customCategories), so it can correctly detect the category is now missing");
+  assert.ok(registerIdx < mutateIdx, "the category should be registered before the transaction referencing it is added");
+});
+
+// Finding 4 (MEDIUM): _replaceDemoDataWithReal() never rebuilt MONTHLY/
+// ALL_MONTHS or the category <select>s, unlike loadDemoProfile() -- the
+// wholesale-replace function this one otherwise mirrors -- which always
+// calls rebuildMonthly()/rebuildCatSelects() right after its own reset.
+// saveAccount()/saveSnapshot()/parseCsvAccounts() don't separately
+// trigger an equivalent rebuild the way mutateTransactions() does for
+// saveTx()/confirmTxImport(), so those 3 call sites rendered against
+// caches describing data that no longer existed. ──
+test("_replaceDemoDataWithReal: calls rebuildMonthly() and rebuildCatSelects(), matching loadDemoProfile()'s own wholesale-replace pattern", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function _replaceDemoDataWithReal\(\)\{[\s\S]{0,2200}?\n\}/);
+  assert.ok(fnMatch, "_replaceDemoDataWithReal() should exist");
+  assert.match(fnMatch[0], /rebuildMonthly\(\);/, "should call rebuildMonthly()");
+  assert.match(fnMatch[0], /rebuildCatSelects\(\);/, "should call rebuildCatSelects()");
+  const resetIdx = fnMatch[0].search(/_resetSessionFiltersForDataReplace\(\);/);
+  const rebuildIdx = fnMatch[0].search(/rebuildMonthly\(\);/);
+  assert.ok(resetIdx >= 0 && rebuildIdx >= 0 && resetIdx < rebuildIdx, "the rebuilds should come after the session-filter reset, matching loadDemoProfile()'s own ordering");
+});
+
+// Finding 5 (MEDIUM): confirmTxImport()/importBackup() already refuse to
+// run during a demo-preview-over-real session (98th pass), but the other
+// entry points that can trigger _replaceDemoDataWithReal() -- saveAccount,
+// saveSnapshot, saveTx, and the two callers of parseCsvAccounts
+// (handleCsv, importCsvText) -- had no such guard. Since
+// saveToLocalStorage()/cloud sync are hard no-ops during a demo preview,
+// each of these ran the full wipe-and-save UI (demo data visibly
+// disappears, a normal success toast fires) that silently reverted on
+// the next reload with no warning it was never actually saved. ──
+test("saveAccount, saveSnapshot, saveTx, handleCsv, and importCsvText all refuse to run during a demo-preview-over-real session", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const guardPattern = /if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{\s*closeModals\(\);\s*showToast\('Not available while previewing demo data — your real data is untouched here',tc\('#94A3B8','#4B5563'\),9000\);\s*return;\s*\}/;
+  const fns = [
+    ["saveAccount", /function saveAccount\(\)\{[\s\S]{0,900}/],
+    ["saveSnapshot", /function saveSnapshot\(\)\{[\s\S]{0,900}/],
+    ["saveTx", /function saveTx\(\)\{[\s\S]{0,900}/],
+    ["handleCsv", /function handleCsv\(input\)\{[\s\S]{0,900}/],
+    ["importCsvText", /function importCsvText\(\)\{[\s\S]{0,900}/],
+  ];
+  for (const [name, fnRe] of fns) {
+    const fnMatch = source.match(fnRe);
+    assert.ok(fnMatch, `${name}() should exist`);
+    assert.match(fnMatch[0], guardPattern, `${name}() should have the demo-preview guard`);
+  }
+});
+
+// Finding 6 (LOW, pre-existing): Source and Trend chart modes both plot
+// data filtered by state.activeCats when a category chip is active (see
+// their own getBaseTxs().filter(...) calls), but the shared peak
+// computation had no equivalent filter -- predates the 110th pass (the
+// old MONTHLY-based sums had the same gap), not a regression, but the
+// 110th pass's own comment claimed this computation now matches "the same
+// base data … all plot below," which wasn't quite true until this fix. ──
+test("renderSpendChart: the shared peak computation respects state.activeCats, matching Source/Trend mode's own plotted-data filter", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const _peakBaseTxs=getBaseTxs\(\)\.filter\(t=>!t\.isIncome&&\(state\.activeCats\.size===0\|\|state\.activeCats\.has\(t\.cat\)\)\);/,
+    "_peakBaseTxs should filter by activeCats the same way Source/Trend mode's own plotted data does"
+  );
+});
+
+// Finding 7 (LOW, dead code): the SOURCES global was write-only -- pushed
+// to inside confirmTxImport()'s own guard, but never read anywhere else
+// in the file. Removed along with the dead guard. ──
+test("confirmTxImport: the dead write-only SOURCES global and its guard are removed", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.doesNotMatch(source, /\bconst SOURCES=/, "the dead SOURCES const should be removed");
+  assert.doesNotMatch(source, /SOURCES\.push\(source\)/, "the dead write-only guard should be removed");
 });
