@@ -1919,7 +1919,7 @@ test("importBackup, confirmTxImport, and loadDemoProfile all call the shared _re
   );
   assert.match(
     source,
-    /if\(!state\.hasRealData\)\{\s*state\.transactions=\[\];\s*state\.activeSources=new Set\(\);\s*state\.budgets=\{\};[\s\S]{0,1000}?_resetSessionFiltersForDataReplace\(\);\s*\}/,
+    /if\(!state\.hasRealData\)\{\s*state\.transactions=\[\];\s*state\.activeSources=new Set\(\);\s*state\.budgets=\{\};[\s\S]{0,2200}?_resetSessionFiltersForDataReplace\(\);\s*\}/,
     "confirmTxImport()'s !state.hasRealData branch should call _resetSessionFiltersForDataReplace() alongside its existing transactions/activeSources/budgets wipe"
   );
   assert.match(
@@ -2222,8 +2222,8 @@ test("normalizeTxRow's 'trakyodollas' import branch strips the formula-injection
   );
   assert.match(
     source,
-    /cat=_stripCsvFormulaGuard\(row\['category'\]\|\|'Other'\);/,
-    "category should be passed through _stripCsvFormulaGuard() on our own round-trip import format"
+    /cat=_stripCsvFormulaGuard\(\(row\['category'\]\|\|'Other'\)\.trim\(\)\)\|\|'Other';/,
+    "category should be passed through _stripCsvFormulaGuard() on our own round-trip import format (trimmed as of the 109th adversarial pass, matching desc's own treatment)"
   );
 });
 
@@ -3233,12 +3233,12 @@ test("confirmTxImport: auto-registers any imported transaction's category that i
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/newTxs=importParsed\.map[\s\S]{0,1700}?\n  \}\);/);
+  const fnMatch = source.match(/newTxs=importParsed\.map[\s\S]{0,2200}?\n  \}\);/);
   assert.ok(fnMatch, "confirmTxImport()'s mutateTransactions block should exist");
   assert.match(
     fnMatch[0],
-    /const knownCats=new Set\(getAllCats\(\)\);\s*newTxs\.forEach\(t=>\{\s*if\(t\.cat&&!knownCats\.has\(t\.cat\)\)\{\s*state\.customCategories\.push\(\{name:t\.cat,color:null\}\);\s*knownCats\.add\(t\.cat\);\s*\}\s*\}\);/,
-    "confirmTxImport() should push {name,color:null} (addCustomCat()'s own shape) for every newly-imported category not already in getAllCats(), deduping via a local Set so a repeated new category isn't pushed twice"
+    /const knownCats=new Set\(getAllCats\(\)\.map\(c=>c\.toLowerCase\(\)\)\);\s*newTxs\.forEach\(t=>\{\s*if\(t\.cat&&!knownCats\.has\(t\.cat\.toLowerCase\(\)\)\)\{\s*state\.customCategories\.push\(\{name:t\.cat,color:null\}\);\s*knownCats\.add\(t\.cat\.toLowerCase\(\)\);\s*\}\s*\}\);/,
+    "confirmTxImport() should push {name,color:null} (addCustomCat()'s own shape) for every newly-imported category not already in getAllCats(), deduping case-insensitively (109th pass) via a local Set so a repeated new category isn't pushed twice"
   );
 });
 
@@ -3304,5 +3304,141 @@ test("renderSpendChart: the top5+Other branch's tooltip label callback is assign
     source,
     /customOpts\.plugins\.tooltip=\{callbacks:\{label:function\(ctx\)\{/,
     "the single surviving assignment should be the full-featured callback (pct/Other/MoM/peak)"
+  );
+});
+
+// ── 109th adversarial pass ──────────────────────────────────────────────
+
+// Finding 1 (MEDIUM): the 108th pass's own comment justified reusing the
+// shared, all-category peakIdx in renderSpendChart()'s top5+Other branch
+// by claiming that branch "plots every category, so the overall peak IS
+// the displayed peak" -- true only when no vendor filter is active. With
+// one (state.bucketMode==='vendor' && state.activeVendors.size>0),
+// catMonthMap is filtered to the selected vendors, so this branch plots a
+// SUBSET, but peakIdx still indexed the unfiltered MONTHLY totals -- both
+// the tooltip's "Peak month" text and peakPlugin's canvas highlight
+// pointed at the wrong period. Fixed by reassigning the shared peakIdx
+// (declared let for this reason) from monthTotalsForChart -- already
+// vendor-filter-aware -- right before this branch's own Chart()
+// construction, which correctly propagates to both sinks via the shared
+// closure since only one branch executes per render call.
+// renderSpendChart() is D3/Chart.js-heavy; source-pattern only, matching
+// this suite's established precedent. ──
+test("renderSpendChart: peakIdx is declared let and reassigned from the vendor-filtered monthTotalsForChart when a vendor filter is active", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /let peakIdx=periodSums\.indexOf\(Math\.max\(\.\.\.periodSums\)\);/,
+    "peakIdx should be declared with let (not const), so it can be reassigned by the category branch"
+  );
+  assert.match(
+    source,
+    /if\(vendorFilter\)peakIdx=monthTotalsForChart\.indexOf\(Math\.max\(\.\.\.monthTotalsForChart\)\);/,
+    "the category branch should reassign peakIdx from monthTotalsForChart (the vendor-filtered plotted totals) when a vendor filter is active"
+  );
+});
+
+// Finding 2 (MEDIUM): confirmTxImport()'s "first real import on a demo
+// session" branch (state.hasRealData was false, meaning every field is
+// still the scripted DEMO_PROFILE_1/2 value) wiped transactions/
+// activeSources/budgets but left income/catRules/vendorAliases/nwGoal/
+// customCategories untouched -- state.hasRealData=true plus scheduleSave()
+// afterward then permanently persisted all 5 as if the user had entered
+// them themselves (a fabricated manual income, demo cat-rules silently
+// recategorizing the user's own first real transactions, demo vendor
+// aliases renaming real vendors). Fixed by resetting all 5 to the same
+// fresh-state defaults the initial state object literal uses.
+// confirmTxImport() is DOM-heavy; source-pattern only. ──
+test("confirmTxImport: the demo-session-wipe branch also resets income/catRules/vendorAliases/nwGoal/customCategories, not just transactions/activeSources/budgets", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const branchMatch = source.match(/if\(!state\.hasRealData\)\{[\s\S]{0,2100}?_resetSessionFiltersForDataReplace\(\);/);
+  assert.ok(branchMatch, "the !state.hasRealData branch should exist");
+  assert.match(branchMatch[0], /state\.income=\{method:null,monthlyAmount:0\};/, "income should reset to the fresh-state default");
+  assert.match(branchMatch[0], /state\.catRules=\[\];/, "catRules should reset to empty");
+  assert.match(branchMatch[0], /state\.vendorAliases=\{\};/, "vendorAliases should reset to empty");
+  assert.match(branchMatch[0], /state\.nwGoal=null;/, "nwGoal should reset to null");
+  assert.match(branchMatch[0], /state\.customCategories=\[\];/, "customCategories should reset to empty (the auto-register fix, 108th pass, re-populates only what the real import actually needs, later in the same mutator)");
+});
+
+// Finding 3 (LOW): the trakyodollas re-import branch's category assignment
+// wasn't .trim()'d, unlike desc two lines above it -- a hand-edited or
+// foreign-profile CSV's " Groceries" (leading/trailing whitespace)
+// registered, via confirmTxImport()'s auto-register (108th pass), as a
+// visually-duplicate category that addCustomCat()'s own case-insensitive
+// collision guard would then refuse to ever merge back onto the real one.
+// Also, confirmTxImport()'s own knownCats dedup Set used exact-match
+// comparison instead of matching addCustomCat()'s established case-
+// insensitive convention, so a category differing only in case
+// ("groceries" vs "Groceries") could register as a second duplicate too. ──
+test("normalizeTxRow: the trakyodollas branch trims its category (matching desc), and confirmTxImport()'s category auto-register is case-insensitive (matching addCustomCat())", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /cat=_stripCsvFormulaGuard\(\(row\['category'\]\|\|'Other'\)\.trim\(\)\)\|\|'Other';/,
+    "the trakyodollas branch's category should be trimmed before the formula guard, with an 'Other' fallback if trimming leaves it empty"
+  );
+  assert.match(
+    source,
+    /const knownCats=new Set\(getAllCats\(\)\.map\(c=>c\.toLowerCase\(\)\)\);/,
+    "confirmTxImport()'s knownCats Set should be built from lowercased category names"
+  );
+  assert.match(
+    source,
+    /if\(t\.cat&&!knownCats\.has\(t\.cat\.toLowerCase\(\)\)\)\{/,
+    "the auto-register check should compare against the lowercased imported category"
+  );
+});
+
+// Finding 4 (LOW): the service-worker registration's hadController flag
+// was captured once at page load and never updated -- on a genuine first-
+// ever visit it starts false (correctly skipping the reload for that first
+// install), but if that same tab stayed open across the NEXT deploy, the
+// resulting controllerchange event still read the stale, page-load-time
+// false and skipped the reload again -- the exact "tab silently running
+// old in-memory JS indefinitely" failure this mechanism exists to
+// prevent, one deploy cycle later than intended. ──
+test("Service worker registration: hadController is updated on every controllerchange event, not just read once at page load", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /let hadController=!!navigator\.serviceWorker\.controller;/,
+    "hadController should be declared with let (not const), so it can be updated"
+  );
+  assert.match(
+    source,
+    /if\(_swRefreshing\|\|!hadController\)\{hadController=true;return;\}/,
+    "the controllerchange handler should set hadController=true before returning on the skip path, so a LATER controllerchange (a real subsequent deploy) is no longer treated as the first-ever install"
+  );
+});
+
+// Dead code (Part 3): loadDemoProfile()'s state.accounts filter
+// (`state.accounts=state.accounts.filter(a=>p.accounts.some(pa=>pa.id===a.id))`)
+// ran immediately after state.accounts had just been wholly reassigned
+// FROM p.accounts.map(...) on the line above -- every element trivially
+// passed the filter (state.accounts WAS p.accounts's ids at that point),
+// making it a guaranteed no-op. The "strip accounts that crept in from
+// localStorage migration" comment described something that couldn't
+// happen given the reassignment immediately above it. Removed. ──
+test("loadDemoProfile: the dead no-op accounts filter (immediately after a full state.accounts reassignment) is removed", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.doesNotMatch(
+    source,
+    /state\.accounts = state\.accounts\.filter\(a=>p\.accounts\.some\(pa=>pa\.id===a\.id\)\);/,
+    "the dead no-op filter should be gone"
+  );
+  assert.match(
+    source,
+    /state\.accounts = p\.accounts\.map\(a=>\(\{\.\.\.a\}\)\);/,
+    "the actual deep-copy assignment should still be present"
   );
 });
