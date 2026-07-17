@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-1TINXHRutvt7ilM2ME0Y+32W54zL/sYf+2XS8hNsI8Y=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-J506QAgIulpYOrnEwo+fj3nLYoskObS0Ff/UOUNhH3k=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -9520,8 +9520,10 @@ let _patternsEnabled = (()=>{try{return localStorage.getItem('trakyo_patterns')=
 // Apply saved theme and preferences on load
 (function(){
   try{
+    // data-theme itself is already set by the head IIFE above (which also
+    // handles the localStorage-throws fallback to 'dark') -- this only
+    // needs the button label. Found in the 116th adversarial pass.
     const saved=localStorage.getItem('trakyo_theme')||'dark';
-    document.documentElement.setAttribute('data-theme',saved);
     const btn=document.getElementById('theme-toggle-btn');
     if(btn)btn.textContent=saved==='light'?'☀️':'🌙';
   }catch(e){}
