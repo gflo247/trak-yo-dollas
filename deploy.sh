@@ -73,6 +73,17 @@ python3 scripts/check-activesources-coverage.py || true
 echo "=== Scanning for state mutations missing a save trigger (advisory) ==="
 python3 scripts/check-persistence-coverage.py || true
 
+# Advisory only, same posture as the scanners above — added after 5
+# consecutive adversarial passes (108-112) each found a "first real save"
+# entry point (a function that adds real data to state.accounts/vehicles/
+# snapshots/transactions) missing _replaceDemoDataWithReal(), the shared
+# helper that wipes demo-scripted data on a user's first genuinely real
+# action. Written by the 113th pass's dedicated systematic audit, which
+# also confirmed this scanner reports 0 candidates against the 7 sites
+# fixed so far — its value is catching the 8th one a future pass writes.
+echo "=== Scanning for demo-to-real 'first real save' entry points missing _replaceDemoDataWithReal() (advisory) ==="
+python3 scripts/check-demo-transition-coverage.py || true
+
 # Advisory only, same posture as the scanners above — added after the
 # 21st pass found saveTx()/saveEditTx()/deleteTx() mutated transactions
 # without calling rebuildMonthly(), leaving the MONTHLY/ALL_MONTHS caches
@@ -95,9 +106,13 @@ python3 scripts/check-rebuild-coverage.py || true
 # on one device silently disagreed with another. Known false positives:
 # transactions/snapshots (deliberately separate sync paths, not part of
 # the prefs payload at all), hasRealData/hasRealAccounts/hasRealSnapshot
-# (re-derived flags), activeSources (confirmed device-local by design —
-# loadUserData() derives it fresh from restored transactions, never
-# reads a synced value).
+# (loadUserData() derives them itself from what it just restored, rather
+# than trusting a synced copy — this comment previously claimed they were
+# already "re-derived" when nothing anywhere actually did that; fixed in
+# the 113th adversarial pass after that exact gap let a signed-in user's
+# real cloud-restored dataset get silently wiped by their own next
+# action), activeSources (confirmed device-local by design — loadUserData()
+# derives it fresh from restored transactions, never reads a synced value).
 echo "=== Scanning for fields persisted locally but missing from cloud sync (advisory) ==="
 python3 scripts/check-cloudsync-coverage.py || true
 

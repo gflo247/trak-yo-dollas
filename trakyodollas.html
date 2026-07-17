@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-MhLuko4qs12Ego1VdM0RaWhK+AngxKPyRVjqabZiQKc=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-+rnakzWbj3zBRa6v+2LmC8njhTYiuOEhX3MSF8vYYuE=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3302,13 +3302,23 @@ function renderInsights(){
 function renderAll(){
   if(state.hasRealData)hideDemoBadge();
   else showDemoNudge();
-  // Per-tab demo notices
+  // Per-tab demo notices. Also hidden once state.hasRealData is true, not
+  // just their own more-specific hasRealAccounts/hasRealSnapshot flag --
+  // any covered "first real save" action's own _replaceDemoDataWithReal()
+  // wipes EVERY demo-scripted field, not just the one that action itself
+  // populated (a transactions-only first save, e.g. saveTx(), correctly
+  // empties state.accounts/state.snapshots too), so once hasRealData is
+  // true there are no more fake rows in ANY field for this notice's "add
+  // your real balances to replace these" framing to describe -- it was
+  // otherwise stuck showing indefinitely over a genuinely empty (not
+  // demo) list. Found in the 113th adversarial pass (dedicated demo-to-
+  // real-transition systematic audit).
   const da=document.getElementById('demo-notice-accounts');
-  if(da)da.style.display=state.hasRealAccounts?'none':'';
+  if(da)da.style.display=(state.hasRealAccounts||state.hasRealData)?'none':'';
   const sdn=document.getElementById('snap-demo-notice');
-  if(sdn)sdn.style.display=state.hasRealSnapshot?'none':'';
+  if(sdn)sdn.style.display=(state.hasRealSnapshot||state.hasRealData)?'none':'';
   const dn=document.getElementById('demo-notice-dash');
-  if(dn)dn.style.display=(state.hasRealAccounts&&state.hasRealSnapshot)?'none':'';
+  if(dn)dn.style.display=((state.hasRealAccounts&&state.hasRealSnapshot)||state.hasRealData)?'none':'';
   const toolbarImport=document.getElementById('toolbar-import-btn');
   if(toolbarImport)toolbarImport.style.display='';
   try{renderNwGoalWidget();}catch(e){console.error('renderNwGoalWidget failed:',e);}
@@ -7233,6 +7243,16 @@ function cancelDeleteAcct(){const el=document.getElementById('delete-acct-confir
 function deleteAcct(){
   if(!editAcctId)return;
   state.accounts=state.accounts.filter(a=>a.id!==editAcctId);
+  // Matches confirmDeleteSnapshot()'s existing !state.snapshots.length
+  // pattern -- without it, deleting the last real account left
+  // hasRealAccounts=true forever (a stale-flag ghost state), re-arming
+  // the exact fabricated-$0-snapshot bug the 111th pass fixed:
+  // saveSnapshot()'s "Add a real account first" guard checks
+  // hasRealAccounts, not the account list itself, so it would pass with
+  // zero accounts and mint a nw:0/assets:0/liab:0 snapshot as real
+  // history. Found in the 113th adversarial pass (dedicated demo-to-
+  // real-transition systematic audit).
+  if(!state.accounts.length)state.hasRealAccounts=false;
   closeModals();
   renderAll();
   scheduleSave();
@@ -7277,6 +7297,10 @@ function deleteVehicle(){
     const match=state.accounts.find(a=>isPairedAccount(a,v,claimed));
     if(match)state.accounts=state.accounts.filter(a=>a.id!==match.id);
   }
+  // Same ghost-flag fix as deleteAcct() -- a vehicle's paired account is
+  // still a state.accounts entry, so deleting the last one via this path
+  // needs the identical reset. Found in the 113th adversarial pass.
+  if(!state.accounts.length)state.hasRealAccounts=false;
   closeModals();
   renderAll();
   scheduleSave();
@@ -7800,7 +7824,6 @@ function saveHistoricalSnapshot(){
   state.hasRealSnapshot=true;
   hideDemoBadge();
   const sdn=document.getElementById('snap-demo-notice');if(sdn)sdn.style.display='none';
-  const hn=document.getElementById('demo-notice-history');if(hn)hn.style.display='none';
   _editingSnapshotMonthKey=null;
   closeModals();renderHistory();renderNwChart();scheduleSave();
   // Unlike saveSnapshot()/confirmDeleteSnapshot(), this path never wrote to
@@ -10035,7 +10058,6 @@ function saveSnapshot(){
   hideDemoBadge();
   const sdn=document.getElementById('snap-demo-notice');if(sdn)sdn.style.display='none';
   renderHistory();renderNwChart();
-  const hn=document.getElementById('demo-notice-history');if(hn)hn.style.display='none';
   // Sync to Supabase if signed in. The demo-preview branch this used to
   // have here is unreachable now -- the guard at the top of this function
   // (111th adversarial pass) already returns before this point during any
@@ -12111,13 +12133,32 @@ async function loadUserData(uid) {
       const allCards=[...new Set(state.transactions.map(t=>t.card).filter(Boolean))];
       state.activeSources=new Set(allCards);
     }
+    // Derives hasRealAccounts/hasRealSnapshot/hasRealData from what was
+    // just restored -- neither this function nor syncToCloud()'s prefs
+    // payload ever actually persisted these 3 flags at all
+    // (check-cloudsync-coverage.py's own docstring incorrectly claimed
+    // they were "re-derived," but nothing anywhere did that). A signed-in
+    // user restoring real data on a fresh device/browser stayed
+    // permanently "demo-armed": hasRealData stayed false even with a
+    // screen full of real accounts, so every covered "first real save"
+    // entry point's own _replaceDemoDataWithReal() guard treated their
+    // entire real, cloud-synced dataset as safe to wipe on their very
+    // next ordinary action (most plausibly a CSV import, the app's own
+    // most-nudged action) -- and since that action then re-syncs to the
+    // cloud, the destruction propagated back to every other device too.
+    // The block this replaces only ever hid the demo chip/badge DOM
+    // elements directly, papering over the visible symptom without fixing
+    // the underlying flag; setting the real flags here makes that
+    // redundant, since renderAll() below already calls hideDemoBadge()
+    // (which additionally covers 2 more elements -- #demo-nudge and
+    // #spending-start-here -- the old block never touched) whenever
+    // hasRealData is true. Found in the 113th adversarial pass (dedicated
+    // demo-to-real-transition systematic audit).
+    if(state.accounts.length>0)state.hasRealAccounts=true;
+    if(state.snapshots.length>0)state.hasRealSnapshot=true;
+    if(state.hasRealAccounts||state.hasRealSnapshot||state.transactions.length>0)state.hasRealData=true;
     // Also save to localStorage so it's available offline
     saveToLocalStorage();
-    // Hide demo UI if real data loaded
-    if(state.transactions.some(t=>t.id>=5000)||prefs?.accounts?.length){
-      const chip=document.getElementById('demo-chip');if(chip)chip.style.display='none';
-      const badge=document.getElementById('demo-nav-badge');if(badge)badge.style.display='none';
-    }
     renderAll();
     requestAnimationFrame(()=>requestAnimationFrame(()=>renderNwChart()));
     showToast('✓ Data loaded from your account');
