@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-+rnakzWbj3zBRa6v+2LmC8njhTYiuOEhX3MSF8vYYuE=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Kz9f7RQrLbS1FXJ8Kc2eWYUFbWxdHml3JJq6ZjbJL90=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2368,7 +2368,15 @@ function closeModalsOpenIncome(){closeModals();setTimeout(()=>openIncomeModal(),
 function expandInsightPills(){state.insightsPillsExpanded=true;renderInsights();scheduleSave();}
 function collapseInsightPills(){state.insightsPillsExpanded=false;renderInsights();scheduleSave();}
 function resumeSourceAlign(){state.sourceAlignSkipped=false;checkSourceAlignment();}
-function resetSourceAlign(){state.sourceAlignDate=null;state.rangeFrom=null;scheduleSave();renderSpending();}
+// state.rangeTo=null too, not just sourceAlignDate/rangeFrom -- every
+// sibling range-changing handler resets rangeTo when it moves rangeFrom
+// (setQuickRange, onRangeFromChange), but this one never did, so a user
+// who'd narrowed the "to" month with the range dropdown after aligning
+// sources, then clicked the "show all" link this function is bound to,
+// kept every month after that stale "to" bound silently hidden --
+// directly contradicting the link's own label. Found in the 114th
+// adversarial pass.
+function resetSourceAlign(){state.sourceAlignDate=null;state.rangeFrom=null;state.rangeTo=null;scheduleSave();renderSpending();}
 // _treemapPrevActiveCats is discarded, not restored, here -- "All
 // categories" (this breadcrumb link's own label) is an explicit request to
 // see every category, so silently reintroducing a stashed single-category
@@ -2903,7 +2911,17 @@ function renderInsights(){
     ?Math.round(allMonths.filter(m=>m!==currentM).reduce((s,m)=>s+sumMonth(m),0)/allMonths.filter(m=>m!==currentM).length)
     :latestSpend;
   let spendSub='';
-  if(currentSpendSoFar>0&&dayOfMonth<daysInCurrentM){
+  // dayOfMonth>=3 -- projectedCurrentSpend extrapolates linearly from
+  // whatever's been spent so far (currentSpendSoFar/dayOfMonth*
+  // daysInCurrentM), which is wildly noisy with only 1-2 days of data: a
+  // single normal-sized early-month charge can extrapolate to several
+  // times a typical month's total, false-alarming "would be your
+  // highest" off essentially no signal. Falls back to the stable
+  // completed-month-vs-average comparison (the else branch already
+  // handles "nothing spent yet"/"month essentially over") until there's
+  // enough of the month elapsed to make a projection meaningful. Found
+  // in the 114th adversarial pass.
+  if(currentSpendSoFar>0&&dayOfMonth>=3&&dayOfMonth<daysInCurrentM){
     if(onPaceForPeak){
       spendSub=`📍 On pace for ${fmtH(projectedCurrentSpend)} — would be your highest`;
     } else {
@@ -8871,8 +8889,10 @@ function openPillCustomizer(){
 
 function showAllPills(){
   state.hiddenPills.clear();
+  // openPillCustomizer() already un-hides #pill-customizer-modal itself --
+  // the repeated classList.remove('hidden') here was redundant. Found in
+  // the 114th adversarial pass.
   openPillCustomizer();
-  document.getElementById('pill-customizer-modal').classList.remove('hidden');
   renderInsights();
   scheduleSave();
 }
@@ -8880,12 +8900,13 @@ function showAllPills(){
 function togglePill(key,visible){
   if(visible) state.hiddenPills.delete(key);
   else state.hiddenPills.add(key);
-  // Update the label text inline
-  const labels=document.querySelectorAll('#pill-toggle-list label span');
-  // Re-render the list to reflect state changes
+  // Re-render the list to reflect state changes -- openPillCustomizer()
+  // already un-hides #pill-customizer-modal itself, so the repeated
+  // classList.remove('hidden') this used to have (plus an unused DOM
+  // query into the pill-toggle list, left over from an earlier inline-
+  // update approach the full re-render replaced) were both dead. Found
+  // in the 114th adversarial pass.
   openPillCustomizer();
-  // Keep modal open, re-render insights
-  document.getElementById('pill-customizer-modal').classList.remove('hidden');
   renderInsights();
   scheduleSave();
 }
@@ -9353,10 +9374,18 @@ function detectSubscriptions(allMonths,latestFullM){
       const median=amts[Math.floor(amts.length/2)];
       const consistent=amts.every(a=>Math.abs(a-median)/median<0.20);
       if(consistent){
-        const curEntry=entries.find(e=>e.m===latestM);
-        if(curEntry){
-          subTotal+=curEntry.amt;
-          subVendors.push({vendor,amt:curEntry.amt,cat:curEntry.cat,months:uniqueMonths.size,median});
+        // .filter()+sum, not .find() -- a vendor charged more than once in
+        // the latest month (e.g. a mid-cycle price change's proration
+        // charge alongside the regular one, or two distinct subscriptions
+        // from the same vendor resolving to the same resolveVendor() key)
+        // only had its FIRST same-month entry counted, undercounting both
+        // this vendor's own displayed amount and the aggregate subTotal
+        // pill. Found in the 114th adversarial pass.
+        const curEntries=entries.filter(e=>e.m===latestM);
+        if(curEntries.length){
+          const curAmt=curEntries.reduce((s,e)=>s+e.amt,0);
+          subTotal+=curAmt;
+          subVendors.push({vendor,amt:curAmt,cat:curEntries[0].cat,months:uniqueMonths.size,median});
         }
       }
     }
@@ -11497,8 +11526,20 @@ function checkSourceAlignment(){
   const shortSources=sources.filter(s=>earliest[s]===newestStart);
   const longSources=sources.filter(s=>earliest[s]!==newestStart);
   const shortFmt=fmtMonthShort(newestStart.slice(0,7));
-  const longMonths=Math.round((new Date(newestStart)-new Date(oldestStart))/(1000*60*60*24*30.5));
+  // Same value as monthDiff above (identical formula, re-parsing the same
+  // two date strings) -- reused instead of recomputed. Found in the
+  // 114th adversarial pass.
+  const longMonths=monthDiff;
 
+  // Remove any existing instance first -- this function creates a fresh
+  // element with a fixed id and no check for one already present, so
+  // calling it twice without a dismissal in between (e.g. resumeSourceAlign()
+  // via the "↔ Align sources" link while a prior modal is still up) stacked
+  // duplicate overlays sharing the same id; applySourceAlign()/
+  // skipSourceAlign() only ever remove the first one found. Found in the
+  // 114th adversarial pass.
+  const existing=document.getElementById('source-align-modal');
+  if(existing)existing.remove();
   const modal=document.createElement('div');
   modal.className='modal-overlay';
   modal.id='source-align-modal';
@@ -12156,7 +12197,13 @@ async function loadUserData(uid) {
     // demo-to-real-transition systematic audit).
     if(state.accounts.length>0)state.hasRealAccounts=true;
     if(state.snapshots.length>0)state.hasRealSnapshot=true;
-    if(state.hasRealAccounts||state.hasRealSnapshot||state.transactions.length>0)state.hasRealData=true;
+    // state.vehicles.length>0 included defensively -- not reachable today
+    // (saveVehicle() always pushes a paired state.accounts entry, so
+    // hasRealAccounts already covers every vehicle the UI can create),
+    // but a hand-crafted/legacy cloud row breaking that pairing invariant
+    // would otherwise leave a user with real vehicles but zero accounts
+    // stuck demo-armed. Found in the 114th adversarial pass.
+    if(state.hasRealAccounts||state.hasRealSnapshot||state.vehicles.length>0||state.transactions.length>0)state.hasRealData=true;
     // Also save to localStorage so it's available offline
     saveToLocalStorage();
     renderAll();
@@ -13064,7 +13111,17 @@ function loadFromLocalStorage(){
         state.accounts.push({id:state.nextId++,name:saved.collegeFund.name||'College Fund(s)',source:saved.collegeFund.sub||'Education savings',type:'investment',balance:saved.collegeFund.balance||0,excludeFromNW:true});
       } else if(!saved.hasRealData&&state.accounts.length>=10){
         if(!state.accounts.find(a=>a.name==='College Fund(s)')){
-          state.accounts.push({id:12,name:'College Fund(s)',source:'Education savings',type:'investment',balance:34000,excludeFromNW:true});
+          // A locally-computed safe id, not the hardcoded id:12 this used
+          // to push -- state.nextId isn't restored from saved.nextId until
+          // later in this same function (below), so at this point it still
+          // holds its pre-load default, and a hardcoded literal id risked
+          // colliding with an existing legacy account that already had
+          // id===12 (ids are never reused once assigned, but this
+          // migration path predates that convention and can't assume it
+          // held for whatever data it's patching). Found in the 114th
+          // adversarial pass.
+          const safeId=Math.max(0,...state.accounts.map(a=>a.id||0))+1;
+          state.accounts.push({id:safeId,name:'College Fund(s)',source:'Education savings',type:'investment',balance:34000,excludeFromNW:true});
         }
       }
     }

@@ -3864,8 +3864,8 @@ test("loadUserData: derives hasRealAccounts/hasRealSnapshot/hasRealData from wha
   assert.match(fnMatch[0], /if\(state\.snapshots\.length>0\)state\.hasRealSnapshot=true;/, "should set hasRealSnapshot when real snapshots were restored");
   assert.match(
     fnMatch[0],
-    /if\(state\.hasRealAccounts\|\|state\.hasRealSnapshot\|\|state\.transactions\.length>0\)state\.hasRealData=true;/,
-    "should set hasRealData if any real data (accounts, snapshots, or transactions) was restored"
+    /if\(state\.hasRealAccounts\|\|state\.hasRealSnapshot\|\|state\.vehicles\.length>0\|\|state\.transactions\.length>0\)state\.hasRealData=true;/,
+    "should set hasRealData if any real data (accounts, snapshots, vehicles, or transactions) was restored (vehicles.length added defensively, 114th pass)"
   );
   assert.doesNotMatch(
     fnMatch[0],
@@ -3937,4 +3937,138 @@ test("check-demo-transition-coverage.py exists and reports 0 candidates against 
   assert.ok(fs.existsSync(scriptPath), "scripts/check-demo-transition-coverage.py should exist");
   const output = execFileSync("python3", [scriptPath], { cwd: path.join(__dirname, ".."), encoding: "utf8" });
   assert.match(output, /^0 candidate site\(s\)/m, "the scanner should report 0 candidates now that all known entry points call _replaceDemoDataWithReal()");
+});
+
+// ── 114th adversarial pass (first pass run with model: opus) ──────────────
+
+// Finding 1 (MEDIUM): resetSourceAlign() -- bound to the "show all" link
+// next to the "✓ Aligned to X" indicator -- only cleared sourceAlignDate
+// and rangeFrom, never rangeTo. Every sibling range-changing handler
+// (setQuickRange, onRangeFromChange) resets rangeTo when it moves
+// rangeFrom; this one didn't, so a user who'd narrowed the "to" month
+// after aligning sources, then clicked "show all", kept every month after
+// that stale bound silently hidden -- directly contradicting the link's
+// own label. ──
+test("resetSourceAlign: also clears state.rangeTo, not just sourceAlignDate/rangeFrom", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /function resetSourceAlign\(\)\{state\.sourceAlignDate=null;state\.rangeFrom=null;state\.rangeTo=null;scheduleSave\(\);renderSpending\(\);\}/,
+    "resetSourceAlign() should reset state.rangeTo=null alongside sourceAlignDate/rangeFrom, so 'show all' actually shows all months"
+  );
+});
+
+// Finding 2 (LOW): checkSourceAlignment() created a fresh #source-align-modal
+// element with a fixed id and no check for an existing one, so calling it
+// twice without a dismissal in between stacked duplicate overlays sharing
+// the same id -- applySourceAlign()/skipSourceAlign() only ever remove the
+// first one found. checkSourceAlignment() is DOM-heavy; source-pattern
+// only, matching this suite's established precedent. ──
+test("checkSourceAlignment: removes any existing #source-align-modal before creating a new one", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function checkSourceAlignment\(\)\{[\s\S]{0,3600}?document\.body\.appendChild\(modal\);/);
+  assert.ok(fnMatch, "checkSourceAlignment() should exist");
+  const removeIdx = fnMatch[0].search(/const existing=document\.getElementById\('source-align-modal'\);\s*if\(existing\)existing\.remove\(\);/);
+  const createIdx = fnMatch[0].search(/const modal=document\.createElement\('div'\);/);
+  assert.ok(removeIdx >= 0, "should remove any existing #source-align-modal");
+  assert.ok(removeIdx < createIdx, "the removal should happen before the new element is created");
+});
+
+// Finding 3 (LOW): detectSubscriptions()'s latest-month figure used
+// entries.find(e=>e.m===latestM) -- only the FIRST matching entry -- so a
+// vendor charged more than once in the latest month (a mid-cycle price
+// change's proration alongside the regular charge, or two distinct
+// subscriptions resolving to the same vendor key) undercounted both its
+// own displayed amount and the aggregate subTotal pill. ──
+test("detectSubscriptions: sums ALL of a vendor's entries in the latest month, not just the first match", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function detectSubscriptions\(allMonths,latestFullM\)\{[\s\S]{0,4300}?return\{subVendors,subTotal\};/);
+  assert.ok(fnMatch, "detectSubscriptions() should exist");
+  assert.match(
+    fnMatch[0],
+    /const curEntries=entries\.filter\(e=>e\.m===latestM\);\s*if\(curEntries\.length\)\{\s*const curAmt=curEntries\.reduce\(\(s,e\)=>s\+e\.amt,0\);/,
+    "should filter+sum all of the vendor's latest-month entries, not .find() the first one"
+  );
+  assert.doesNotMatch(fnMatch[0], /entries\.find\(e=>e\.m===latestM\)/, "the old .find()-based single-entry lookup should be gone");
+});
+
+// Finding 4 (LOW): the Dashboard's "on pace for..." spend projection
+// extrapolated linearly from however much had been spent so far this
+// month (currentSpendSoFar/dayOfMonth*daysInCurrentM) with no minimum
+// day-of-month guard -- on day 1-2, a single normal-sized charge
+// extrapolates to several times a typical month's total, false-alarming
+// "would be your highest" off essentially no signal. ──
+test("renderInsights: the spend-pace projection requires at least 3 days elapsed before showing (falls back to the stable last-month comparison otherwise)", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if\(currentSpendSoFar>0&&dayOfMonth>=3&&dayOfMonth<daysInCurrentM\)\{/,
+    "the pace-projection branch should require dayOfMonth>=3 before showing a projection"
+  );
+});
+
+// Finding 5 (LOW, defensive): loadUserData()'s hasRealData derivation
+// (113th pass) didn't account for state.vehicles.length -- not reachable
+// today (saveVehicle() always pushes a paired state.accounts entry, so
+// hasRealAccounts already covers every UI-created vehicle), but a hand-
+// crafted/legacy cloud row breaking that pairing invariant would
+// otherwise leave a user with real vehicles but zero accounts stuck
+// demo-armed. ──
+test("loadUserData: hasRealData derivation also includes state.vehicles.length as a defensive fallback", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if\(state\.hasRealAccounts\|\|state\.hasRealSnapshot\|\|state\.vehicles\.length>0\|\|state\.transactions\.length>0\)state\.hasRealData=true;/,
+    "hasRealData should also be set true if real vehicles were restored, even without a paired account"
+  );
+});
+
+// Part 3 dead-code findings: showAllPills()/togglePill() both repeated
+// classList.remove('hidden') on #pill-customizer-modal right after
+// openPillCustomizer() already does the same thing internally; togglePill()
+// additionally had an unused querySelectorAll() left over from an earlier
+// inline-update approach the full re-render replaced. checkSourceAlignment()
+// had monthDiff and longMonths computed via the identical formula twice.
+// The legacy College-Fund migration in loadFromLocalStorage() pushed a
+// hardcoded id:12, which could collide with an existing legacy account
+// already holding that id (state.nextId isn't restored from saved.nextId
+// until later in the same function, so it can't be trusted safe at this
+// point either) -- replaced with a locally-computed collision-safe id. ──
+test("showAllPills and togglePill: no longer repeat classList.remove('hidden') after openPillCustomizer() already does it, and the unused labels query is removed", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const saMatch = source.match(/function showAllPills\(\)\{[\s\S]{0,400}?\n\}/);
+  assert.ok(saMatch, "showAllPills() should exist");
+  assert.doesNotMatch(saMatch[0], /document\.getElementById\('pill-customizer-modal'\)\.classList\.remove\('hidden'\);/, "showAllPills() should not repeat the redundant classList.remove('hidden')");
+  const tpMatch = source.match(/function togglePill\(key,visible\)\{[\s\S]{0,600}?\n\}/);
+  assert.ok(tpMatch, "togglePill() should exist");
+  assert.doesNotMatch(tpMatch[0], /document\.getElementById\('pill-customizer-modal'\)\.classList\.remove\('hidden'\);/, "togglePill() should not repeat the redundant classList.remove('hidden')");
+  assert.doesNotMatch(tpMatch[0], /querySelectorAll\('#pill-toggle-list label span'\)/, "the unused labels query should be removed");
+});
+test("checkSourceAlignment: longMonths reuses monthDiff instead of recomputing the identical formula", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(source, /const longMonths=monthDiff;/, "longMonths should reuse monthDiff, not recompute the same date-diff formula a second time");
+});
+test("loadFromLocalStorage: the legacy College-Fund migration uses a locally-computed collision-safe id, not a hardcoded literal", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const safeId=Math\.max\(0,\.\.\.state\.accounts\.map\(a=>a\.id\|\|0\)\)\+1;\s*state\.accounts\.push\(\{id:safeId,name:'College Fund\(s\)'/,
+    "the migration should compute a safe id from the current max id in state.accounts, not push a hardcoded id:12"
+  );
 });
