@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Kz9f7RQrLbS1FXJ8Kc2eWYUFbWxdHml3JJq6ZjbJL90=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-1TINXHRutvt7ilM2ME0Y+32W54zL/sYf+2XS8hNsI8Y=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -33,9 +33,18 @@
 // Restore theme before CSS renders to prevent flash
 // Wrapped in try/catch — localStorage throws SecurityError in some private browsing modes
 (function(){
+  // Also updates <meta name="theme-color">, which this used to leave at
+  // its static dark-theme default -- mobile browser chrome/the iOS Safari
+  // address bar/an installed PWA's status bar stayed dark blue even when
+  // a returning user's saved preference was light, since nothing anywhere
+  // (this restore script, toggleTheme() below) ever touched it. Colors
+  // match --bg-page's own dark/light values. Found in the 115th
+  // adversarial pass.
   try{
     const t=localStorage.getItem('trakyo_theme')||'dark';
     document.documentElement.setAttribute('data-theme',t);
+    const tc=document.querySelector('meta[name="theme-color"]');
+    if(tc)tc.setAttribute('content',t==='light'?'#F8FAFC':'#111720');
   }catch(e){document.documentElement.setAttribute('data-theme','dark');}
 })();
 </script>
@@ -9385,7 +9394,11 @@ function detectSubscriptions(allMonths,latestFullM){
         if(curEntries.length){
           const curAmt=curEntries.reduce((s,e)=>s+e.amt,0);
           subTotal+=curAmt;
-          subVendors.push({vendor,amt:curAmt,cat:curEntries[0].cat,months:uniqueMonths.size,median});
+          // median itself (line above) is still needed for the consistency
+          // check just above, but was also being pushed into subVendors as
+          // a field nothing ever reads (neither the pill nor the modal
+          // reference it) -- dropped. Found in the 115th adversarial pass.
+          subVendors.push({vendor,amt:curAmt,cat:curEntries[0].cat,months:uniqueMonths.size});
         }
       }
     }
@@ -9484,6 +9497,12 @@ function toggleTheme(){
   const isLight=html.getAttribute('data-theme')==='light';
   html.setAttribute('data-theme',isLight?'dark':'light');
   try{localStorage.setItem('trakyo_theme',isLight?'dark':'light');}catch(e){}
+  // Matches the boot-time restore script's own theme-color update -- see
+  // its comment. Without this, tapping the toggle switched the page
+  // itself but left the mobile browser chrome/PWA status bar on whichever
+  // color the page loaded with. Found in the 115th adversarial pass.
+  const tc=document.querySelector('meta[name="theme-color"]');
+  if(tc)tc.setAttribute('content',isLight?'#111720':'#F8FAFC');
   const btn=document.getElementById('theme-toggle-btn');
   if(btn)btn.textContent=isLight?'🌙':'☀️';
   if(typeof resetPatternCache==='function')resetPatternCache();
