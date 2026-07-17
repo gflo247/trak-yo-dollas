@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-4LLOL4xoOEH5dGcEfipBKeqZvC3EtSYXYcj2rvuWJ/k=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-+KQC0Q5i06uUWptZtBzAyW6+y4XDfxVBWsomWPtx5fA=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2032,7 +2032,6 @@ function esc(s){
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-const SOURCES=['Checking','Visa Rewards','Gold Card'];
 const CHIP_COLORS=['chip-ally','chip-cfu','chip-cpv','chip-grn','chip-rose','chip-ora','chip-sky'];
 const _srcColorCache={};
 function getSrcChipClass(src){
@@ -2575,6 +2574,18 @@ function _replaceDemoDataWithReal(){
   state.hiddenPills=new Set();
   state.vendorAliases={};
   _resetSessionFiltersForDataReplace();
+  // loadDemoProfile() -- the wholesale-replace this function otherwise
+  // mirrors -- always follows its own reset with these two calls, but
+  // this one didn't: MONTHLY/ALL_MONTHS and the category <select>s stayed
+  // stale (still the demo's months/categories) until the next unrelated
+  // rebuild, so saveAccount()/saveSnapshot()/parseCsvAccounts() (which
+  // don't separately trigger a rebuild the way mutateTransactions() does
+  // for saveTx()/confirmTxImport()) rendered against caches describing
+  // data that no longer existed. Redundant-but-harmless at the two
+  // mutateTransactions() call sites, which rebuild again themselves right
+  // after. Found in the 111th adversarial pass.
+  rebuildMonthly();
+  rebuildCatSelects();
 }
 
 // ── Format / theme / tooltip helpers ─────────────────────────────
@@ -5941,7 +5952,25 @@ function renderSpendChart(){
   // fixed in this same spot. Computing directly off getBaseTxs() once,
   // here, closes the whole class instead of adding a third branch-local
   // patch. Found in the 110th adversarial pass.
-  const _peakBaseTxs=getBaseTxs();
+  // !t.isIncome, matching every one of this function's own getBaseTxs()
+  // consumers below (source/vendor/trend/category modes all add this same
+  // filter on top of getBaseTxs(), since it lets income through whenever
+  // state.includeIncome is on) -- missed here, so with income tracking on
+  // and month-to-month income variation, the peak sum could include a
+  // paycheck that none of the actually-plotted bars do, marking the wrong
+  // bar as peak. Found in the 111th adversarial pass.
+  // The (state.activeCats.size===0||state.activeCats.has(t.cat)) half is
+  // a no-op for category/vendor mode (activeCats is always empty by the
+  // time those branches' own plotted data is built -- the category
+  // branch's own activeCats>0 case returns early into its own separate,
+  // already-filtered peakIdxFiltered above), but Source and Trend mode
+  // both plot data through this exact filter (see their own comments
+  // below) and previously had no equivalent here, so a category filter
+  // active in either of those modes could point the peak marker at a bar
+  // that filter had emptied out. Pre-existing (predates the 110th pass's
+  // getBaseTxs() switch), not a regression -- found in the 111th
+  // adversarial pass.
+  const _peakBaseTxs=getBaseTxs().filter(t=>!t.isIncome&&(state.activeCats.size===0||state.activeCats.has(t.cat)));
   const monthSumsFn=m=>_peakBaseTxs.reduce((s,t)=>t.date.slice(0,7)===m?s+t.amount:s,0);
   const allMonthSums=allFilteredMonths.map(m=>monthSumsFn(m));
   const periodSums=useAgg?getAggregatedPeriods().map(p=>p.months.reduce((s,m)=>s+monthSumsFn(m),0)):allMonthSums;
@@ -9916,7 +9945,37 @@ function confirmDeleteSnapshot(){
   showToast('Snapshot deleted','#F87171');
 }
 function saveSnapshot(){
+  // Matches confirmTxImport()/importBackup()/saveAccount()'s existing
+  // guard (98th, then 111th adversarial pass) -- without it, saving a
+  // snapshot while previewing a demo over real saved data ran the full
+  // _replaceDemoDataWithReal() wipe and toasted a normal-looking
+  // "✓ Snapshot saved," but saveToLocalStorage()/cloud sync are hard
+  // no-ops during a demo preview -- the "saved" snapshot silently
+  // reverts on the next reload with no warning. Found in the 111th
+  // adversarial pass.
+  if(window._isDemoPreview||window._viewingDemoOverReal){
+    closeModals();
+    showToast('Not available while previewing demo data — your real data is untouched here',tc('#94A3B8','#4B5563'),9000);
+    return;
+  }
   const d=new Date(),ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  // A snapshot saved before any real account exists would just record
+  // netWorth()=0 -- meaningless as net-worth history, and (before this
+  // fix) minted as the user's actual FIRST "real" snapshot the instant
+  // they clicked "Save snapshot" while still viewing demo data, with the
+  // toast itself reading "net worth $0.00" right after they'd been
+  // looking at the demo's own $391k. Rejected BEFORE
+  // _replaceDemoDataWithReal() runs below, so a rejected save doesn't
+  // leave the user in a "demo data wiped but nothing saved" limbo --
+  // every account-adding path (saveAccount()/parseCsvAccounts()) already
+  // sets hasRealAccounts and hasRealData together, so by the time this
+  // guard passes, the wipe below is always already a no-op (kept anyway,
+  // for defense-in-depth matching every other "first real save" site).
+  // Found in the 111th adversarial pass.
+  if(!state.hasRealAccounts){
+    showToast('Add a real account first, then save a snapshot','#FCD34D');
+    return;
+  }
   // Wipes every demo-scripted field (including state.accounts/state.
   // snapshots themselves) BEFORE the duplicate-month check and the
   // netWorth()/totalAssets()/totalLiab() figures below are computed --
@@ -9938,10 +9997,11 @@ function saveSnapshot(){
   const sdn=document.getElementById('snap-demo-notice');if(sdn)sdn.style.display='none';
   renderHistory();renderNwChart();
   const hn=document.getElementById('demo-notice-history');if(hn)hn.style.display='none';
-  // Sync to Supabase if signed in (never during a demo preview, even over real signed-in data)
-  if(window._isDemoPreview||window._viewingDemoOverReal){
-    showToast(`✓ Snapshot saved · net worth ${fmtC(netWorth())}`);
-  } else if(window._fbUser&&window._fb){
+  // Sync to Supabase if signed in. The demo-preview branch this used to
+  // have here is unreachable now -- the guard at the top of this function
+  // (111th adversarial pass) already returns before this point during any
+  // demo preview.
+  if(window._fbUser&&window._fb){
     _fbCallAfterMerge(()=>window._fb.saveSnapshot(window._fbUser.uid,snap)
       .then(()=>showToast(`✓ Snapshot saved · net worth ${fmtC(netWorth())}`))
       .catch(()=>showToast(`✓ Snapshot saved locally (sync failed)`,'#FCD34D')));
@@ -11212,11 +11272,6 @@ function confirmTxImport(){
   const source=document.getElementById('import-source-label').value.trim()||'Imported';
   const replace=document.getElementById('import-replace').checked;
 
-  // Add source to SOURCES list if new
-  if(!state.activeSources.has(source)&&!SOURCES.includes(source)){
-    SOURCES.push(source);
-  }
-
   let newTxs;
   mutateTransactions(()=>{
     // If this is the first real import on a demo session, wipe all demo
@@ -12358,6 +12413,19 @@ function openVehicleModal(){
 }
 function editAccount(id){const a=state.accounts.find(x=>x.id===id);if(!a)return;editAcctId=id;document.getElementById('add-modal-title').textContent='Edit account';document.getElementById('f-name').value=a.name;document.getElementById('f-source').value=a.source;document.getElementById('f-type').value=a.type;document.getElementById('f-balance').value=a.balance;document.getElementById('f-exclude').checked=!!a.excludeFromNW;const db=document.getElementById('delete-acct-btn');if(db)db.style.display='';const dc=document.getElementById('delete-acct-confirm');if(dc)dc.style.display='none';document.getElementById('add-modal').classList.remove('hidden');}
 function saveAccount(){
+  // Matches confirmTxImport()/importBackup()'s existing guard (98th
+  // adversarial pass) -- without it, adding an account while previewing a
+  // demo over real saved data ran the full _replaceDemoDataWithReal()
+  // wipe (demo data visibly disappears, exactly as a real transition
+  // looks) and showed a normal success UI, but saveToLocalStorage()/cloud
+  // sync are hard no-ops during a demo preview -- everything silently
+  // reverts on the next reload with no warning it was never saved. Found
+  // in the 111th adversarial pass.
+  if(window._isDemoPreview||window._viewingDemoOverReal){
+    closeModals();
+    showToast('Not available while previewing demo data — your real data is untouched here',tc('#94A3B8','#4B5563'),9000);
+    return;
+  }
   const name=document.getElementById('f-name').value.trim(),
         source=document.getElementById('f-source').value,
         type=document.getElementById('f-type').value,
@@ -12520,6 +12588,18 @@ function saveVehicle(){
 // CSV-import-modal state into this modal). Found in the 85th adversarial
 // pass.
 function saveTx(){
+  // Matches confirmTxImport()/importBackup()/saveAccount()/
+  // saveSnapshot()'s existing guard (98th, then 111th adversarial pass)
+  // -- without it, adding a transaction while previewing a demo over
+  // real saved data ran the full _replaceDemoDataWithReal() wipe and
+  // showed a normal success UI, but saveToLocalStorage()/cloud sync are
+  // hard no-ops during a demo preview -- everything silently reverts on
+  // the next reload with no warning. Found in the 111th adversarial pass.
+  if(window._isDemoPreview||window._viewingDemoOverReal){
+    closeModals();
+    showToast('Not available while previewing demo data — your real data is untouched here',tc('#94A3B8','#4B5563'),9000);
+    return;
+  }
   const dateVal=parseImportDate(document.getElementById('t-date').value),desc=document.getElementById('t-desc').value.trim(),card=document.getElementById('t-card').value,cat=document.getElementById('t-cat').value,amount=parseFloat(document.getElementById('t-amount').value)||0;
   if(!dateVal){showToast('⚠ Invalid date — transaction not added','#F87171',4000);return;}
   if(!desc||!amount){showToast('⚠ Description and a non-zero amount are required','#F87171',4000);return;}
@@ -12536,10 +12616,33 @@ function saveTx(){
   _replaceDemoDataWithReal();
   state.hasRealData=true;
   hideDemoBadge();
+  // cat was captured above, before the wipe just cleared
+  // state.customCategories -- the #t-cat <select> was populated from
+  // demo-scripted customCategories while the demo was still loaded, so a
+  // category picked from it (e.g. profile 1's 'Rent'/'Transportation', or
+  // profile 2's 'Income'/'Software & Tools') no longer exists in
+  // getAllCats() once the wipe runs, silently blanking the category on
+  // the transaction's next edit (same unmatched-<select> mechanism the
+  // 32nd/108th passes already fixed elsewhere). Same auto-register shape
+  // as confirmTxImport()'s equivalent fix (108th pass); closeModals()
+  // below already calls rebuildCatSelects(), picking this up. Found in
+  // the 111th adversarial pass.
+  if(cat&&!getAllCats().some(c=>c.toLowerCase()===cat.toLowerCase())){
+    state.customCategories.push({name:cat,color:null});
+  }
   mutateTransactions(()=>{state.transactions.unshift({id:state.nextId++,date:dateVal,desc,cat,card,amount,excluded:false});if(card)state.activeSources.add(card);});
   closeModals();renderSpending();
 }
 function handleCsv(input){
+  // Same demo-preview guard as saveAccount()/saveTx()/saveSnapshot()
+  // (111th adversarial pass) -- parseCsvAccounts() is the same class of
+  // "first real save" entry point (calls _replaceDemoDataWithReal()),
+  // reachable here via the bulk-account-CSV upload.
+  if(window._isDemoPreview||window._viewingDemoOverReal){
+    closeModals();
+    showToast('Not available while previewing demo data — your real data is untouched here',tc('#94A3B8','#4B5563'),9000);
+    return;
+  }
   const file=input.files[0];if(!file)return;
   const r=new FileReader();
   r.onload=e=>{
@@ -12551,6 +12654,14 @@ function handleCsv(input){
   r.readAsText(file);
 }
 function importCsvText(){
+  // Same demo-preview guard as handleCsv() above -- the pasted-text
+  // variant of the same bulk-account-CSV entry point. Found in the 111th
+  // adversarial pass.
+  if(window._isDemoPreview||window._viewingDemoOverReal){
+    closeModals();
+    showToast('Not available while previewing demo data — your real data is untouched here',tc('#94A3B8','#4B5563'),9000);
+    return;
+  }
   const el=document.getElementById('csv-text');
   const t=el.value.trim();
   if(!t){closeModals();renderAll();return;}
