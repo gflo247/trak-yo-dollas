@@ -608,6 +608,7 @@ test("parseCsvAccounts: a zero balance is imported, not silently dropped", () =>
   const ctx = {
     state: { accounts: [], nextId: 1, hasRealAccounts: false, hasRealData: false },
     hideDemoBadge: () => {},
+    _replaceDemoDataWithReal: () => {},
     document: { getElementById: () => null },
     ACCT_TYPE_ALIASES: {
       cash: "cash", "cash/savings": "cash", checking: "cash", savings: "cash",
@@ -630,6 +631,7 @@ test("parseCsvAccounts: a quoted name containing a comma doesn't shift the balan
   const ctx = {
     state: { accounts: [], nextId: 1, hasRealAccounts: false, hasRealData: false },
     hideDemoBadge: () => {},
+    _replaceDemoDataWithReal: () => {},
     document: { getElementById: () => null },
     ACCT_TYPE_ALIASES: {
       cash: "cash", "cash/savings": "cash", checking: "cash", savings: "cash",
@@ -652,6 +654,7 @@ test("parseCsvAccounts: a successful import sets hasRealAccounts/hasRealData, ma
   const ctx = {
     state: { accounts: [], nextId: 1, hasRealAccounts: false, hasRealData: false },
     hideDemoBadge: () => {},
+    _replaceDemoDataWithReal: () => {},
     document: { getElementById: () => null },
     ACCT_TYPE_ALIASES: {
       cash: "cash", "cash/savings": "cash", checking: "cash", savings: "cash",
@@ -685,6 +688,7 @@ function acctAliasCtx() {
   return {
     state: { accounts: [], nextId: 1, hasRealAccounts: false, hasRealData: false },
     hideDemoBadge: () => {},
+    _replaceDemoDataWithReal: () => {},
     document: { getElementById: () => null },
     ACCT_TYPE_ALIASES: {
       cash: "cash", "cash/savings": "cash", checking: "cash", savings: "cash",
@@ -1435,7 +1439,7 @@ test("saveEditTx/saveTx: amount validation uses isNaN (0 is a legitimate amount)
   );
   assert.match(
     source,
-    /function saveTx\(\)\{const dateVal=parseImportDate\(document\.getElementById\('t-date'\)\.value\)/,
+    /function saveTx\(\)\{\s*const dateVal=parseImportDate\(document\.getElementById\('t-date'\)\.value\)/,
     "saveTx() should validate its date via parseImportDate() the same way saveEditTx() does"
   );
   // 85th adversarial pass: the 84th pass's fix passed _importDateFmt into
@@ -1919,8 +1923,8 @@ test("importBackup, confirmTxImport, and loadDemoProfile all call the shared _re
   );
   assert.match(
     source,
-    /if\(!state\.hasRealData\)\{\s*state\.transactions=\[\];\s*state\.activeSources=new Set\(\);\s*state\.budgets=\{\};[\s\S]{0,2200}?_resetSessionFiltersForDataReplace\(\);\s*\}/,
-    "confirmTxImport()'s !state.hasRealData branch should call _resetSessionFiltersForDataReplace() alongside its existing transactions/activeSources/budgets wipe"
+    /function _replaceDemoDataWithReal\(\)\{\s*if\(state\.hasRealData\)return;[\s\S]{0,900}?_resetSessionFiltersForDataReplace\(\);\s*\}/,
+    "_replaceDemoDataWithReal() (110th pass; confirmTxImport()'s first-real-import wipe is now one call to this shared helper instead of its own hand-rolled reset list) should call _resetSessionFiltersForDataReplace() as part of its reset"
   );
   assert.match(
     source,
@@ -3351,17 +3355,23 @@ test("renderSpendChart: peakIdx is declared let and reassigned from the vendor-f
 // aliases renaming real vendors). Fixed by resetting all 5 to the same
 // fresh-state defaults the initial state object literal uses.
 // confirmTxImport() is DOM-heavy; source-pattern only. ──
-test("confirmTxImport: the demo-session-wipe branch also resets income/catRules/vendorAliases/nwGoal/customCategories, not just transactions/activeSources/budgets", () => {
+// Superseded by the 110th pass's _replaceDemoDataWithReal() consolidation
+// (confirmTxImport()'s own hand-rolled reset list, including this fix, was
+// replaced by one call to that shared helper -- see the dedicated
+// _replaceDemoDataWithReal() test below for full field coverage). Kept as
+// a historical marker that confirmTxImport() itself no longer hand-rolls
+// this reset.
+test("confirmTxImport: the demo-session-wipe branch delegates to the shared _replaceDemoDataWithReal() helper, not its own hand-rolled reset list", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const branchMatch = source.match(/if\(!state\.hasRealData\)\{[\s\S]{0,2100}?_resetSessionFiltersForDataReplace\(\);/);
-  assert.ok(branchMatch, "the !state.hasRealData branch should exist");
-  assert.match(branchMatch[0], /state\.income=\{method:null,monthlyAmount:0\};/, "income should reset to the fresh-state default");
-  assert.match(branchMatch[0], /state\.catRules=\[\];/, "catRules should reset to empty");
-  assert.match(branchMatch[0], /state\.vendorAliases=\{\};/, "vendorAliases should reset to empty");
-  assert.match(branchMatch[0], /state\.nwGoal=null;/, "nwGoal should reset to null");
-  assert.match(branchMatch[0], /state\.customCategories=\[\];/, "customCategories should reset to empty (the auto-register fix, 108th pass, re-populates only what the real import actually needs, later in the same mutator)");
+  const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,2500}?_replaceDemoDataWithReal\(\);/);
+  assert.ok(fnMatch, "confirmTxImport() should call _replaceDemoDataWithReal()");
+  assert.doesNotMatch(
+    source.match(/function confirmTxImport\(\)\{[\s\S]{0,4900}?\n  closeModals\(\);/)[0],
+    /state\.income=\{method:null,monthlyAmount:0\};/,
+    "confirmTxImport() itself should no longer hand-roll the income reset -- it's now inside the shared helper"
+  );
 });
 
 // Finding 3 (LOW): the trakyodollas re-import branch's category assignment
@@ -3440,5 +3450,139 @@ test("loadDemoProfile: the dead no-op accounts filter (immediately after a full 
     source,
     /state\.accounts = p\.accounts\.map\(a=>\(\{\.\.\.a\}\)\);/,
     "the actual deep-copy assignment should still be present"
+  );
+});
+
+// ── 110th adversarial pass ──────────────────────────────────────────────
+
+// Findings 1 & 2 (HIGH): the Accounts/Net Worth demo notices promised "add
+// your real balances to replace these," but nothing ever did --
+// saveAccount()/saveSnapshot()/parseCsvAccounts() each added ONE real
+// entry alongside the demo's ~12 fake accounts/6 fake snapshots, which
+// stayed permanently mixed into net worth and persisted history with no
+// way to tell them apart once the demo notice hid itself. Separately,
+// saveTx() never set state.hasRealData at all, so a manual-entry-only
+// user's real transactions were misclassified as demo data and silently
+// DELETED the moment they later used confirmTxImport() (whose own
+// !state.hasRealData branch treats "not yet real" as license to wipe).
+// Fixed with one shared helper, _replaceDemoDataWithReal() -- wipes every
+// field loadDemoProfile() seeds back to the same fresh-state defaults,
+// consolidating what was 3 missing call sites plus confirmTxImport()'s own
+// hand-rolled (and twice-incomplete: 98th, then 109th pass) version of the
+// same reset. A no-op once state.hasRealData is already true. ──
+test("_replaceDemoDataWithReal: resets every field loadDemoProfile() seeds to the same fresh-state defaults, and no-ops once hasRealData is true", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function _replaceDemoDataWithReal\(\)\{[\s\S]{0,900}?\n\}/);
+  assert.ok(fnMatch, "_replaceDemoDataWithReal() should exist");
+  assert.match(fnMatch[0], /if\(state\.hasRealData\)return;/, "should no-op once real data already exists, never wiping real data");
+  for (const line of [
+    "state.accounts=[];", "state.vehicles=[];", "state.snapshots=[];", "state.transactions=[];",
+    "state.activeSources=new Set();", "state.budgets={};", "state.rangeFrom=null;", "state.rangeTo=null;",
+    "state.sourceAlignDate=null;", "state.sourceAlignSkipped=false;", "state.nwGoal=null;",
+    "state.income={method:null,monthlyAmount:0};", "state.declaredIncome=0;", "state.includeIncome=false;",
+    "state.excludedCats=new Set(TRANSFER_LIKE_CATS);", "state.catRules=[];", "state.customCategories=[];",
+    "state.hiddenPills=new Set();", "state.vendorAliases={};",
+  ]) {
+    assert.ok(fnMatch[0].includes(line), `_replaceDemoDataWithReal() should include: ${line}`);
+  }
+  assert.match(fnMatch[0], /_resetSessionFiltersForDataReplace\(\);/, "should also reset session-scoped filters, matching every other wholesale-replace path");
+});
+test("saveAccount: calls _replaceDemoDataWithReal() before adding the account, and falls back to adding as new if editAcctId no longer resolves after the wipe", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function saveAccount\(\)\{[\s\S]{0,2400}?closeModals\(\);renderAll\(\);\}/);
+  assert.ok(fnMatch, "saveAccount() should exist");
+  const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
+  const pushIdx = fnMatch[0].search(/state\.accounts\.push\(/);
+  assert.ok(wipeIdx >= 0, "saveAccount() should call _replaceDemoDataWithReal()");
+  assert.ok(wipeIdx < pushIdx, "the wipe must run BEFORE the account is added, or the new account would be wiped along with the demo data");
+  assert.match(
+    fnMatch[0],
+    /if\(editAcctId\)\{const a=state\.accounts\.find\(x=>x\.id===editAcctId\);if\(a\)\{[^}]*\}else state\.accounts\.push\(/,
+    "if editAcctId no longer resolves after the wipe (it pointed at a demo account that just got cleared), saveAccount() should fall back to adding as new rather than silently dropping the save"
+  );
+});
+test("saveSnapshot: calls _replaceDemoDataWithReal() before the duplicate-month check and before computing netWorth()/totalAssets()/totalLiab()", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function saveSnapshot\(\)\{[\s\S]{0,2100}?\n\}/);
+  assert.ok(fnMatch, "saveSnapshot() should exist");
+  const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
+  const dupCheckIdx = fnMatch[0].search(/state\.snapshots\.find\(s=>s\.monthKey===ym\)/);
+  const netWorthIdx = fnMatch[0].search(/nw:netWorth\(\)/);
+  assert.ok(wipeIdx >= 0, "saveSnapshot() should call _replaceDemoDataWithReal()");
+  assert.ok(wipeIdx < dupCheckIdx, "the wipe must run before the duplicate-month check, so a demo-scripted monthKey can't false-positive against the real current month");
+  assert.ok(wipeIdx < netWorthIdx, "the wipe must run before netWorth()/totalAssets()/totalLiab() are computed, so the snapshot reflects real (possibly zero) account data, not fake demo balances");
+});
+test("parseCsvAccounts: only calls _replaceDemoDataWithReal() once at least one row parses successfully, not unconditionally", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function parseCsvAccounts\(text\)\{[\s\S]{0,1900}?\n\}/);
+  assert.ok(fnMatch, "parseCsvAccounts() should exist");
+  const ifImportedIdx = fnMatch[0].search(/if\(imported>0\)\{/);
+  const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
+  assert.ok(ifImportedIdx >= 0 && wipeIdx >= 0, "both the imported>0 guard and the wipe call should exist");
+  assert.ok(
+    ifImportedIdx < wipeIdx,
+    "the wipe must be gated inside if(imported>0), not run unconditionally -- otherwise a CSV where every row is invalid would wipe the demo's accounts and leave the user with neither the demo nor any real data"
+  );
+});
+test("saveTx: sets state.hasRealData and calls _replaceDemoDataWithReal(), unlike before when it never set hasRealData at all", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function saveTx\(\)\{[\s\S]{0,1500}?\n\}/);
+  assert.ok(fnMatch, "saveTx() should exist");
+  assert.match(fnMatch[0], /_replaceDemoDataWithReal\(\);/, "saveTx() should call the shared wipe helper");
+  assert.match(fnMatch[0], /state\.hasRealData=true;/, "saveTx() should now set state.hasRealData -- previously it never did, so a manual-entry-only user's transactions stayed misclassified as demo data and were silently deleted by confirmTxImport()'s own !state.hasRealData wipe on their first later CSV import");
+});
+
+// Finding 4 (LOW): applyCurrency()/applyCustomCurrency() only called
+// renderSpending(), but a currency symbol appears on every tab (Dashboard
+// metrics/NW breakdown, Accounts, Vehicles, History, Budget) -- every
+// other tab kept showing the old symbol until an unrelated renderAll() or
+// a reload. ──
+test("applyCurrency and applyCustomCurrency both call renderAll(), not just renderSpending()", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const acMatch = source.match(/function applyCurrency\(sym,btn\)\{[\s\S]{0,900}?\n\}/);
+  assert.ok(acMatch, "applyCurrency() should exist");
+  assert.match(acMatch[0], /renderAll\(\);/, "applyCurrency() should call renderAll()");
+  const accMatch = source.match(/function applyCustomCurrency\(val\)\{[\s\S]{0,500}?\n\}/);
+  assert.ok(accMatch, "applyCustomCurrency() should exist");
+  assert.match(accMatch[0], /renderAll\(\);/, "applyCustomCurrency() should call renderAll()");
+});
+
+// Finding 5 (LOW): the shared peakIdx (renderSpendChart()'s "Peak month"
+// tooltip/canvas highlight, used by all 3 chart branches) was computed
+// from MONTHLY (rebuildMonthly()'s own comment: "used by chart when
+// showExcluded=false") and getAggregatedData() (also MONTHLY-based) --
+// neither respects state.showExcluded ("Show in totals"), while every
+// branch's own plotted data (built from getBaseTxs(), which DOES respect
+// it) does. With the toggle on and excluded spend large enough to shift
+// which period is highest, the peak marker pointed at the wrong bar --
+// the showExcluded sibling of the vendor-filter mismatch the 109th pass
+// fixed in this same spot. Fixed by computing monthSumsFn/periodSums
+// directly off getBaseTxs() once, rather than adding a third branch-local
+// patch. ──
+test("renderSpendChart: the shared peakIdx is computed from getBaseTxs() (respects state.showExcluded), not from MONTHLY/getAggregatedData() (which never did)", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const _peakBaseTxs=getBaseTxs\(\);\s*const monthSumsFn=m=>_peakBaseTxs\.reduce\(\(s,t\)=>t\.date\.slice\(0,7\)===m\?s\+t\.amount:s,0\);/,
+    "monthSumsFn should be built from getBaseTxs(), not from MONTHLY"
+  );
+  assert.match(
+    source,
+    /const periodSums=useAgg\?getAggregatedPeriods\(\)\.map\(p=>p\.months\.reduce\(\(s,m\)=>s\+monthSumsFn\(m\),0\)\):allMonthSums;/,
+    "the Quarterly/Yearly-grain branch (useAgg) should also route through monthSumsFn (getAggregatedPeriods() for grouping only, no MONTHLY-based totals), not the old MONTHLY-based getAggregatedData()"
   );
 });

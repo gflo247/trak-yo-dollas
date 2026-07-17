@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-nb5RoMs8mg3rkfjFLc/jjtruBj9LPAuS35xvNaQEpdA=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-4LLOL4xoOEH5dGcEfipBKeqZvC3EtSYXYcj2rvuWJ/k=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2518,6 +2518,63 @@ function _clearVendorDayFiltersForDataReplace(){
   // reasoning as activeVendors/bucketMode just above. Found in the 93rd
   // adversarial pass.
   state.treemapDrillCat=null;
+}
+// Shared by every "first real save" entry point (saveAccount, saveSnapshot,
+// parseCsvAccounts, saveTx, confirmTxImport) -- wipes every field
+// loadDemoProfile() seeds back to the same fresh-state defaults, the
+// instant a user's first genuinely real action lands, so demo-scripted
+// accounts/vehicles/snapshots/transactions/income/catRules/vendorAliases/
+// range filters can never survive into what becomes real, persisted data.
+// A no-op once state.hasRealData is already true -- never wipes real data.
+// Before this, saveAccount()/saveSnapshot()/parseCsvAccounts() each added
+// one real entry alongside the demo's ~12 fake accounts/6 fake snapshots/1
+// fake vehicle rather than replacing them, permanently mixing fabricated
+// net-worth history into what the app then presented as the user's own
+// data (the Accounts/Dashboard demo notices explicitly promised "add your
+// real balances to replace these" -- nothing ever did). saveTx() never set
+// state.hasRealData at all, so a manual-entry-only user's real transactions
+// stayed misclassified as demo data, silently deleted by confirmTxImport()'s
+// own !state.hasRealData wipe branch the moment they later imported a CSV
+// (the same wipe this helper now performs, just never triggered for them).
+// confirmTxImport()'s own transactions-only version of this reset (added
+// piecemeal across the 98th, then the 109th pass) is consolidated into
+// this one shared helper too, rather than left to keep drifting against
+// these other four call sites the same way it already had. Found in the
+// 110th adversarial pass.
+function _replaceDemoDataWithReal(){
+  if(state.hasRealData)return;
+  // saveToLocalStorage()'s transactions-key rewrite is gated specifically
+  // on _txsDirty, not on "a save happened" -- confirmTxImport()/saveTx()
+  // already set it via their own mutateTransactions() wrapper, but
+  // saveAccount()/saveSnapshot()/parseCsvAccounts() call this helper
+  // directly, outside that wrapper. Without setting it here too, this
+  // function's own state.transactions=[] wipe would clear the demo's fake
+  // transactions from memory but never actually flush that to the
+  // separate transactions localStorage key -- the exact "missing
+  // _txsDirty=true" bug shape this file has hit 6+ independent times
+  // (§7.7's own note on saveTx()/applyVenmoOpt()/etc.), just via a new
+  // call site. Found in the 110th adversarial pass.
+  _txsDirty=true;
+  state.accounts=[];
+  state.vehicles=[];
+  state.snapshots=[];
+  state.transactions=[];
+  state.activeSources=new Set();
+  state.budgets={};
+  state.rangeFrom=null;
+  state.rangeTo=null;
+  state.sourceAlignDate=null;
+  state.sourceAlignSkipped=false;
+  state.nwGoal=null;
+  state.income={method:null,monthlyAmount:0};
+  state.declaredIncome=0;
+  state.includeIncome=false;
+  state.excludedCats=new Set(TRANSFER_LIKE_CATS);
+  state.catRules=[];
+  state.customCategories=[];
+  state.hiddenPills=new Set();
+  state.vendorAliases={};
+  _resetSessionFiltersForDataReplace();
 }
 
 // ── Format / theme / tooltip helpers ─────────────────────────────
@@ -5872,12 +5929,22 @@ function renderSpendChart(){
   // since it was previously always computed over calendar months
   // regardless of chartGrain. Found in the 26th pass (peakPlugin) and
   // 27th pass (the tooltip had the identical bug, missed by the 26th
-  // pass's fix). getAggregatedData()'s p.total already sums across
-  // state.activeSources the same way monthSumsFn does, so this stays a
-  // like-for-like swap.
-  const monthSumsFn=m=>{const row=MONTHLY[m]||{};return [...state.activeSources].reduce((s,src)=>s+(row[src]||0),0);};
+  // pass's fix).
+  // Built from getBaseTxs() -- the same base data source/vendor/category
+  // mode all plot below -- rather than MONTHLY (rebuildMonthly()'s own
+  // comment: "used by chart when showExcluded=false") or
+  // getAggregatedData() (also MONTHLY-based). Neither MONTHLY nor
+  // getAggregatedData() respect state.showExcluded ("Show in totals"),
+  // so with it on and excluded spend large enough to shift which period
+  // is highest, the peak marker/tooltip pointed at the wrong bar -- the
+  // showExcluded sibling of the vendor-filter mismatch the 109th pass
+  // fixed in this same spot. Computing directly off getBaseTxs() once,
+  // here, closes the whole class instead of adding a third branch-local
+  // patch. Found in the 110th adversarial pass.
+  const _peakBaseTxs=getBaseTxs();
+  const monthSumsFn=m=>_peakBaseTxs.reduce((s,t)=>t.date.slice(0,7)===m?s+t.amount:s,0);
   const allMonthSums=allFilteredMonths.map(m=>monthSumsFn(m));
-  const periodSums=useAgg?aggPeriods.map(p=>p.total):allMonthSums;
+  const periodSums=useAgg?getAggregatedPeriods().map(p=>p.months.reduce((s,m)=>s+monthSumsFn(m),0)):allMonthSums;
   // let, not const -- the category-mode branch below reassigns this when a
   // vendor filter is active (see its own comment). Every other branch
   // reads it unmodified.
@@ -8788,14 +8855,22 @@ function applyCurrency(sym,btn){
     b.style.borderColor=on?'#2563EB':'';
   });
   const ci=document.getElementById('currency-custom-input');if(ci)ci.value='';
-  renderSpending();
+  // renderAll(), not just renderSpending() -- a currency symbol appears on
+  // every tab (Dashboard metrics/NW breakdown, Accounts lists, Vehicles,
+  // History/snapshots, Budget tab), not just Spending. Previously only
+  // Spending updated immediately; every other tab kept showing the old
+  // symbol until an unrelated renderAll() or a reload. Found in the 110th
+  // adversarial pass.
+  renderAll();
 }
 function applyCustomCurrency(val){
   if(!val.trim())return;
   state.currency=val.trim();
   scheduleSave();
   document.querySelectorAll('.currency-preset').forEach(b=>{b.style.background='';b.style.color='';b.style.borderColor='';});
-  renderSpending();
+  // renderAll(), not just renderSpending() -- see applyCurrency()'s
+  // comment above. Found in the 110th adversarial pass.
+  renderAll();
 }
 function openIncomeModal(){
   const m=state.income.method;
@@ -9842,6 +9917,16 @@ function confirmDeleteSnapshot(){
 }
 function saveSnapshot(){
   const d=new Date(),ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  // Wipes every demo-scripted field (including state.accounts/state.
+  // snapshots themselves) BEFORE the duplicate-month check and the
+  // netWorth()/totalAssets()/totalLiab() figures below are computed --
+  // previously this appended a real snapshot after the demo's 6 fabricated
+  // ones (permanently mixing a fake net-worth trend into real history),
+  // and the duplicate-month check itself could false-positive against a
+  // demo-scripted monthKey coinciding with the real current month. A
+  // no-op if hasRealData is already true. Found in the 110th adversarial
+  // pass.
+  _replaceDemoDataWithReal();
   if(state.snapshots.find(s=>s.monthKey===ym)){
     showToast('Already have a snapshot for this month','#FCD34D');return;
   }
@@ -11134,41 +11219,20 @@ function confirmTxImport(){
 
   let newTxs;
   mutateTransactions(()=>{
-    // If this is the first real import on a demo session, wipe all demo data first
-    if(!state.hasRealData){
-      state.transactions=[];
-      state.activeSources=new Set();
-      state.budgets={};
-      // This branch wiped transactions/activeSources/budgets but left
-      // income/catRules/vendorAliases/nwGoal/customCategories untouched --
-      // all 5 are scripted DEMO_PROFILE_1/2 values at this point (a demo
-      // session, by construction, has state.hasRealData===false), and
-      // state.hasRealData=true plus scheduleSave() below then permanently
-      // persists them as if the user had entered them: a fabricated
-      // $4,800/mo manual income skewing every savings-rate/insight/Sankey
-      // figure with no indication it isn't real, demo catRules (checked
-      // "highest priority -- always win" ahead of every other categorizer)
-      // silently overriding how the user's own first real transactions
-      // categorize, and demo vendor aliases silently renaming real
-      // vendors. Reset to the same fresh-state defaults the initial state
-      // object literal uses. Found in the 109th adversarial pass.
-      state.income={method:null,monthlyAmount:0};
-      state.catRules=[];
-      state.vendorAliases={};
-      state.nwGoal=null;
-      state.customCategories=[];
-      // Same wholesale-dataset-replacement gap importBackup() had (95th
-      // adversarial pass) -- a demo session's Business/Personal filter,
-      // Treemap vendor selection/drilled category, or calendar-day filter
-      // left active zero-filters the freshly-imported real data against
-      // demo-session state that has nothing to do with it. Reset before
-      // rebuildMonthly() runs (mutateTransactions() calls it right after
-      // this mutator returns). The 95th pass's own copy of this reset was
-      // missing showExcluded and the search-input DOM clear despite its
-      // comment claiming to match loadDemoProfile() exactly -- consolidated
-      // into a shared helper in the 96th pass so this can't drift again.
-      _resetSessionFiltersForDataReplace();
-    }
+    // If this is the first real import on a demo session, wipe all demo
+    // data first -- previously this hand-rolled its own reset list here
+    // (transactions/activeSources/budgets, then income/catRules/
+    // vendorAliases/nwGoal/customCategories added at the 109th pass), which
+    // had already drifted twice (missing 5 fields, found 98th->109th pass)
+    // and still didn't cover accounts/vehicles/snapshots (found 110th
+    // pass, alongside the same gap in saveAccount()/saveSnapshot()/
+    // parseCsvAccounts()/saveTx()). Now uses the one shared helper every
+    // "first real save" entry point calls, so this can't drift again the
+    // same way _resetSessionFiltersForDataReplace() stopped the session-
+    // filter version of this exact problem at the 96th pass. A no-op if
+    // hasRealData is already true (matches the old !state.hasRealData
+    // guard this replaces). Found in the 110th adversarial pass.
+    _replaceDemoDataWithReal();
 
     // Remove existing from this source if replace checked
     if(replace){
@@ -12311,10 +12375,20 @@ function saveAccount(){
   // Dismiss dashboard notice on first real edit
   const dn=document.getElementById('demo-notice-dash');if(dn)dn.style.display='none';
   const da=document.getElementById('demo-notice-accounts');if(da)da.style.display='none';
+  // Wipes every demo-scripted field (including state.accounts itself)
+  // BEFORE this account is added -- previously this just pushed/edited one
+  // account alongside the demo's ~12 fake ones, which stayed permanently
+  // mixed into net worth with no way to tell them apart once the demo
+  // notice hid itself. A no-op if hasRealData is already true. Found in
+  // the 110th adversarial pass.
+  _replaceDemoDataWithReal();
   state.hasRealAccounts=true;
   state.hasRealData=true;
   hideDemoBadge();
-  if(editAcctId){const a=state.accounts.find(x=>x.id===editAcctId);if(a){a.name=name;a.source=source;a.type=type;a.balance=balance;a.excludeFromNW=excludeFromNW;}}else state.accounts.push({id:state.nextId++,name,source,type,balance,excludeFromNW:excludeFromNW||undefined});closeModals();renderAll();}
+  // editAcctId may reference a demo account _replaceDemoDataWithReal() just
+  // wiped -- fall back to adding as new rather than silently dropping the
+  // edit if it no longer resolves.
+  if(editAcctId){const a=state.accounts.find(x=>x.id===editAcctId);if(a){a.name=name;a.source=source;a.type=type;a.balance=balance;a.excludeFromNW=excludeFromNW;}else state.accounts.push({id:state.nextId++,name,source,type,balance,excludeFromNW:excludeFromNW||undefined});}else state.accounts.push({id:state.nextId++,name,source,type,balance,excludeFromNW:excludeFromNW||undefined});closeModals();renderAll();}
 function editVehicle(id){
   const v=state.vehicles.find(x=>x.id===id);if(!v)return;editVehicleId=id;
   _vehicleModalGen++;
@@ -12445,7 +12519,26 @@ function saveVehicle(){
 // revert as saveEditTx() above (the 84th pass's fix leaked unrelated
 // CSV-import-modal state into this modal). Found in the 85th adversarial
 // pass.
-function saveTx(){const dateVal=parseImportDate(document.getElementById('t-date').value),desc=document.getElementById('t-desc').value.trim(),card=document.getElementById('t-card').value,cat=document.getElementById('t-cat').value,amount=parseFloat(document.getElementById('t-amount').value)||0;if(!dateVal){showToast('⚠ Invalid date — transaction not added','#F87171',4000);return;}if(!desc||!amount){showToast('⚠ Description and a non-zero amount are required','#F87171',4000);return;}mutateTransactions(()=>{state.transactions.unshift({id:state.nextId++,date:dateVal,desc,cat,card,amount,excluded:false});if(card)state.activeSources.add(card);});closeModals();renderSpending();}
+function saveTx(){
+  const dateVal=parseImportDate(document.getElementById('t-date').value),desc=document.getElementById('t-desc').value.trim(),card=document.getElementById('t-card').value,cat=document.getElementById('t-cat').value,amount=parseFloat(document.getElementById('t-amount').value)||0;
+  if(!dateVal){showToast('⚠ Invalid date — transaction not added','#F87171',4000);return;}
+  if(!desc||!amount){showToast('⚠ Description and a non-zero amount are required','#F87171',4000);return;}
+  // Wipes every demo-scripted field (including state.transactions itself)
+  // before this transaction is added, and -- distinct from that wipe --
+  // sets state.hasRealData, which this function never did at all before.
+  // Without it, a manual-entry-only user (no CSV import) had their real
+  // transactions permanently misclassified as demo data: hidden behind the
+  // demo badge/notices forever, and silently DELETED the moment they later
+  // used confirmTxImport() (the app's own persistent nudge toward CSV
+  // import), since that function's own !state.hasRealData branch treats
+  // "not yet real" as license to wipe. Found in the 110th adversarial
+  // pass.
+  _replaceDemoDataWithReal();
+  state.hasRealData=true;
+  hideDemoBadge();
+  mutateTransactions(()=>{state.transactions.unshift({id:state.nextId++,date:dateVal,desc,cat,card,amount,excluded:false});if(card)state.activeSources.add(card);});
+  closeModals();renderSpending();
+}
 function handleCsv(input){
   const file=input.files[0];if(!file)return;
   const r=new FileReader();
@@ -12538,7 +12631,13 @@ function _normalizeAccountTypes(accounts){
 function parseCsvAccounts(text){
   const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
   const start=lines[0].toLowerCase().startsWith('name')?1:0;
-  let imported=0,skipped=0;
+  let skipped=0;
+  // Parsed into a scratch array first, not pushed to state.accounts
+  // directly -- _replaceDemoDataWithReal() (below) must only run once we
+  // know at least one row actually parsed, so a CSV with every row
+  // invalid doesn't wipe the demo's accounts and leave the user with
+  // neither the demo nor any real data.
+  const parsed=[];
   lines.slice(start).forEach(line=>{
     const p=splitCSVLine(line);
     if(p.length<4){skipped++;return;}
@@ -12546,10 +12645,17 @@ function parseCsvAccounts(text){
     const balance=parseFloat(bal);
     const normType=ACCT_TYPE_ALIASES[type.trim().toLowerCase()];
     if(!name.trim()||!normType||isNaN(balance)){skipped++;return;}
-    state.accounts.push({id:state.nextId++,name:name.trim(),source:source.trim(),type:normType,balance});
-    imported++;
+    parsed.push({name:name.trim(),source:source.trim(),type:normType,balance});
   });
+  const imported=parsed.length;
   if(imported>0){
+    // Wipes every demo-scripted field (including state.accounts itself)
+    // before committing the parsed rows -- previously this pushed real
+    // accounts alongside the demo's fake ones, permanently mixing them
+    // into net worth. A no-op if hasRealData is already true. Found in
+    // the 110th adversarial pass.
+    _replaceDemoDataWithReal();
+    parsed.forEach(a=>state.accounts.push({id:state.nextId++,...a}));
     state.hasRealAccounts=true;
     state.hasRealData=true;
     hideDemoBadge();
