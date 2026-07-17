@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-y6BBUON5z+s1CplrYx6/wzlkSZoci8vzLl/aN4f4Va8=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-xXjay2aaszudvKCmp4loNtnuZy1SKGqxE2srY9avLM4=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3624,17 +3624,24 @@ function copyYirSummary(){
     // Same fix as renderYearInReview() above (98th adversarial pass).
     const nwChange=firstSnap&&lastSnap&&firstSnap!==lastSnap&&firstSnap.monthKey<=lastSnap.monthKey?lastSnap.nw-firstSnap.nw:null;
     const dateRange=months.length>1?`${fmtMonthShort(months[0])} – ${fmtMonthShort(months[months.length-1])}`:fmtMonthShort(months[0]);
+    // raw=true on every currency formatter call below -- navigator.clipboard.writeText()
+    // is a plain-text sink, like .textContent/D3 .text()/canvas, and never
+    // decodes HTML entities, so the default esc()'d currency symbol
+    // rendered a literal "&amp;" for a custom '&'-containing symbol once
+    // pasted. The one clipboard call site in the file; missed by all 3
+    // prior raw-fmt sweeps (105-107) since they only enumerated DOM sinks.
+    // Found in the 108th adversarial pass.
     const lines=[
       `📅 ${months.length}-month spending summary (${dateRange})`,
-      `Total spent: ${fmt(totalSpent)}`,
-      `Avg/month: ${fmt(Math.round(avgMonth))}`,
-      topCat?`Top category: ${topCat[0]} (${fmt(topCat[1])})`:null,
-      catSorted.length>1?`Top categories: ${catSorted.slice(0,5).map(([c,a])=>`${c} ${fmt(a)}`).join(', ')}`:null,
-      vendorSorted.length?`Top vendors: ${vendorSorted.map(([v,a])=>`${v} ${fmt(a)}`).join(', ')}`:null,
-      biggestMonth?`Biggest month: ${fmtMonthShort(biggestMonth.m)} (${fmt(biggestMonth.spent)})`:null,
-      quietestMonth&&quietestMonth.m!==biggestMonth?.m?`Quietest month: ${fmtMonthShort(quietestMonth.m)} (${fmt(quietestMonth.spent)})`:null,
+      `Total spent: ${fmt(totalSpent,true)}`,
+      `Avg/month: ${fmt(Math.round(avgMonth),true)}`,
+      topCat?`Top category: ${topCat[0]} (${fmt(topCat[1],true)})`:null,
+      catSorted.length>1?`Top categories: ${catSorted.slice(0,5).map(([c,a])=>`${c} ${fmt(a,true)}`).join(', ')}`:null,
+      vendorSorted.length?`Top vendors: ${vendorSorted.map(([v,a])=>`${v} ${fmt(a,true)}`).join(', ')}`:null,
+      biggestMonth?`Biggest month: ${fmtMonthShort(biggestMonth.m)} (${fmt(biggestMonth.spent,true)})`:null,
+      quietestMonth&&quietestMonth.m!==biggestMonth?.m?`Quietest month: ${fmtMonthShort(quietestMonth.m)} (${fmt(quietestMonth.spent,true)})`:null,
       savingsRate!=null?`Savings rate: ${savingsRate}%`:null,
-      nwChange!=null?`Net worth change: ${nwChange>=0?'+':''}${fmt(nwChange)}`:null,
+      nwChange!=null?`Net worth change: ${nwChange>=0?'+':''}${fmt(nwChange,true)}`:null,
       '(Transfers, CC payments & investments excluded from categories/vendors)',
     ].filter(Boolean).join('\n');
     navigator.clipboard.writeText(lines).then(()=>showToast('📋 Copied to clipboard','#34D399'));
@@ -6152,6 +6159,15 @@ function renderSpendChart(){
       // 107th adversarial pass.
       const filteredOpts=JSON.parse(JSON.stringify(commonOpts));
       const periodTotalsFiltered=periods.map((p,mi)=>datasets.reduce((s,ds)=>s+(ds.data[mi]||0),0));
+      // The shared peakIdx above is documented as "peak period across ALL
+      // chart modes" -- correct for the top5+Other branch below (which
+      // plots every category, so the overall peak IS the displayed peak),
+      // but wrong here: this branch only plots the selected categories, so
+      // comparing against the all-category peakIdx flagged "🔺 Peak month"
+      // on whichever period had the highest TOTAL spend, not the highest
+      // spend among the categories actually shown -- a factually wrong
+      // claim on an arbitrary bar. Found in the 108th adversarial pass.
+      const peakIdxFiltered=periodTotalsFiltered.indexOf(Math.max(...periodTotalsFiltered));
       filteredOpts.plugins.tooltip={callbacks:{label:function(ctx){
         const monthTotal=periodTotalsFiltered[ctx.dataIndex]||0;
         const pct=monthTotal>0?Math.round(ctx.raw/monthTotal*100):0;
@@ -6159,7 +6175,7 @@ function renderSpendChart(){
         const prev=i>0?ctx.dataset.data[i-1]:0;
         const pctDelta=(i>0&&prev>0)?Math.round((ctx.raw-prev)/prev*100):null;
         const momStr=pctDelta!==null?(pctDelta>=0?` ↑${pctDelta}%`:` ↓${Math.abs(pctDelta)}%`):' (first period)';
-        const peakStr=ctx.dataIndex===peakIdx?' 🔺 Peak month':'';
+        const peakStr=ctx.dataIndex===peakIdxFiltered?' 🔺 Peak month':'';
         return`${ctx.dataset.label}: ${fmtH(ctx.raw,true)} · ${pct}% of month${momStr}${peakStr}`;
       }}};
       spendChart=new Chart(ctx,{type:'bar',data:{labels,datasets},options:filteredOpts});
@@ -6218,18 +6234,6 @@ function renderSpendChart(){
     });
 
     const customOpts=JSON.parse(JSON.stringify(commonOpts));
-    customOpts.plugins.tooltip={
-      callbacks:{
-        label:function(ctx){
-          const monthTotal=monthTotalsForChart[ctx.dataIndex]||0;
-          const pct=monthTotal>0?Math.round(ctx.raw/monthTotal*100):0;
-          if(ctx.dataset.label==='Other'){
-            return formatOtherTooltip(ctx, otherData, monthTotal, 'Other');
-          }
-          return `${ctx.dataset.label}: ${fmtH(ctx.raw,true)} · ${pct}% of month`;
-        }
-      }
-    };
 
     // Feature 1: Find peak month, highlight in chart title
     // Feature 2: Enhanced tooltip — MoM (or per-period) delta per category.
@@ -6239,7 +6243,11 @@ function renderSpendChart(){
     // reads directly from the dataset's own already-period-grouped data
     // array instead, same source `ctx.raw` itself comes from, so it's
     // correct at every grain by construction and needs no separate map.
-    customOpts.plugins.tooltip.callbacks.label=function(ctx){
+    // (A simpler, pct-only version of this callback used to be assigned
+    // here first and immediately overwritten below -- fully dead code,
+    // a trap for a future fix landing in the wrong block. Removed; this
+    // is now the only assignment. Found in the 108th adversarial pass.)
+    customOpts.plugins.tooltip={callbacks:{label:function(ctx){
       const monthTotal=monthTotalsForChart[ctx.dataIndex]||0;
       const pct=monthTotal>0?Math.round(ctx.raw/monthTotal*100):0;
       const cat=ctx.dataset.label;
@@ -6252,8 +6260,7 @@ function renderSpendChart(){
       const momStr=pctDelta!==null?(pctDelta>=0?` ↑${pctDelta}%`:` ↓${Math.abs(pctDelta)}%`):' (first period)';
       const peakStr=ctx.dataIndex===peakIdx?' 🔺 Peak month':'';
       return`${cat}: ${fmtH(ctx.raw,true)} · ${pct}% of month${momStr}${peakStr}`;
-    };
-
+    }}};
 
 
     if(!vendorFilter){
@@ -11133,6 +11140,30 @@ function confirmTxImport(){
     newTxs=importParsed.map(t=>({...t,card:source,id:state.nextId++}));
     state.transactions=[...state.transactions,...newTxs];
     state.transactions.sort((a,b)=>b.date.localeCompare(a.date));
+    // The trakyodollas re-import format's normalizeTxRow() branch
+    // deliberately trusts row['category'] verbatim (unlike every other
+    // format, which routes through mapImportedCategory()/guessCatFromDesc())
+    // so a custom category survives an export/re-import round-trip. But if
+    // that custom category was never actually registered on THIS profile
+    // (e.g. deleted after export, or the CSV came from a different
+    // device/profile), it isn't in getAllCats(), rebuildCatSelects() can't
+    // select it in the edit-tx modal's <select>, and saveEditTx() reads the
+    // unmatched <select>'s value back as '' -- silently blanking the
+    // category the moment the user next edits ANY field of that
+    // transaction, not just its category. Auto-registering any unknown
+    // imported category as a real custom category (same shape addCustomCat()
+    // uses) closes the gap at its source, mirroring the 32nd pass's
+    // identical fix for the demo profile's own 'Rent'/'Transportation'
+    // categories. normalizeTxRow() already routes reserved names (e.g.
+    // '__income__') to 'Other' before this point, so isReservedCatName()
+    // can't fire here. Found in the 108th adversarial pass.
+    const knownCats=new Set(getAllCats());
+    newTxs.forEach(t=>{
+      if(t.cat&&!knownCats.has(t.cat)){
+        state.customCategories.push({name:t.cat,color:null});
+        knownCats.add(t.cat);
+      }
+    });
   });
 
   closeModals();
@@ -13510,10 +13541,22 @@ function loadDemoProfile(n, silent=false, skipRender=false){
   state.accounts = p.accounts.map(a=>({...a}));
   // Strip any accounts that crept in from localStorage migration
   state.accounts = state.accounts.filter(a=>p.accounts.some(pa=>pa.id===a.id));
-  state.vehicles=[...(p.vehicles||[])];
-  state.snapshots=[...p.snapshots];
+  // Per-object copies, not just a fresh array shell -- state.accounts above
+  // already gets this treatment, but vehicles/snapshots/transactions/
+  // catRules/customCategories didn't, so every in-place mutator this app
+  // has (saveEditTx()'s t.cat=/t.desc=/t.date=, recategorized siblings,
+  // editVehicle()'s Object.assign(v,...), rule edits, category renames...)
+  // wrote straight through into the DEMO_PROFILE_1/DEMO_PROFILE_2 module
+  // constants themselves, not just state. A user's edits during one demo
+  // session survived into the "fresh" scripted demo on the next profile
+  // switch or reload-free re-entry -- directly contradicting this
+  // function's own promise (repeatedly fixed at passes 75/90/96/97) that a
+  // demo session leaves nothing behind. Found in the 108th adversarial
+  // pass.
+  state.vehicles=(p.vehicles||[]).map(v=>({...v}));
+  state.snapshots=p.snapshots.map(s=>({...s}));
   _txsDirty=true;
-  state.transactions=[...p.transactions];
+  state.transactions=p.transactions.map(t=>({...t}));
   state.budgets={...p.budgets};
   state.activeSources=new Set(p.activeSources);
   state.rangeFrom=p.rangeFrom||null;
@@ -13565,8 +13608,8 @@ function loadDemoProfile(n, silent=false, skipRender=false){
   // rest of this function's session-filter cleanup.)
   state.excludedCats=new Set(TRANSFER_LIKE_CATS);
   if(state.includeIncome)state.excludedCats.add('Income');
-  state.catRules=[...(p.catRules||[])];
-  state.customCategories=[...(p.customCategories||[])];
+  state.catRules=(p.catRules||[]).map(r=>({...r}));
+  state.customCategories=(p.customCategories||[]).map(c=>({...c}));
   state.hiddenPills=new Set();
   state.vendorAliases={...(p.vendorAliases||{})};
   state.nextId=5000;

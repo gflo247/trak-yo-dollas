@@ -1782,7 +1782,7 @@ test("loadDemoProfile: resets state.sourceAlignDate/sourceAlignSkipped, not leav
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /function loadDemoProfile\(n, silent=false, skipRender=false\)\{[\s\S]{0,2900}?state\.sourceAlignDate=null;\s*state\.sourceAlignSkipped=false;/,
+    /function loadDemoProfile\(n, silent=false, skipRender=false\)\{[\s\S]{0,3700}?state\.sourceAlignDate=null;\s*state\.sourceAlignSkipped=false;/,
     "loadDemoProfile() should reset both state.sourceAlignDate and state.sourceAlignSkipped, matching its existing reset of rangeFrom/rangeTo/declaredIncome/etc."
   );
 });
@@ -2120,7 +2120,7 @@ test("loadDemoProfile: sets window._viewingDemoOverReal before calling _resetSes
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /const hadRealData=state\.hasRealData;[\s\S]{0,700}?if\(!silent&&hadRealData\)window\._viewingDemoOverReal=true;[\s\S]{0,4500}?_resetSessionFiltersForDataReplace\(\);/,
+    /const hadRealData=state\.hasRealData;[\s\S]{0,700}?if\(!silent&&hadRealData\)window\._viewingDemoOverReal=true;[\s\S]{0,6000}?_resetSessionFiltersForDataReplace\(\);/,
     "window._viewingDemoOverReal must be set before _resetSessionFiltersForDataReplace() runs, not near the end of the function, since that helper's own localStorage guard depends on the flag already being current"
   );
 });
@@ -3138,7 +3138,7 @@ test("renderSpendChart: the category-filtered (activeCats) branch has its own to
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const branchMatch = source.match(/if\(state\.activeCats\.size>0\)\{\n      const catsToShow[\s\S]{0,1900}?\n    \}/);
+  const branchMatch = source.match(/if\(state\.activeCats\.size>0\)\{\n      const catsToShow[\s\S]{0,2700}?\n    \}/);
   assert.ok(branchMatch, "the activeCats>0 branch should exist");
   assert.match(
     branchMatch[0],
@@ -3174,5 +3174,135 @@ test("buildRcList: the populate branch syncs #rc-select-all's checked state to m
     fnMatch[0],
     /document\.getElementById\('rc-list'\)\.innerHTML=similar\.map\([\s\S]{0,500}?\.join\(''\);\s*[\s\S]{0,700}?const selectAll=document\.getElementById\('rc-select-all'\);\s*if\(selectAll\)selectAll\.checked=true;\s*updateRcCount\(\);/,
     "buildRcList()'s populate branch should set #rc-select-all's checked=true right alongside rebuilding #rc-list, before updateRcCount()"
+  );
+});
+
+// ── 108th adversarial pass ──────────────────────────────────────────────
+
+// Finding 1 (MEDIUM): the 107th pass's new activeCats tooltip callback
+// compared ctx.dataIndex against the shared, function-scoped peakIdx --
+// documented as "peak period across ALL chart modes," i.e. computed from
+// TOTAL spend across every category/source, correct for the sibling
+// top5+Other branch (which plots every category) but wrong here, since
+// this branch only plots the user-selected subset. The tooltip flagged
+// "🔺 Peak month" on whichever period had the highest OVERALL spend, not
+// the highest spend among the categories actually shown -- a factually
+// wrong claim, and this branch never registers peakPlugin either, so
+// there's no visual bar highlight to (mis)match it against. renderSpendChart()
+// is D3/Chart.js-heavy; source-pattern only, matching this suite's
+// established precedent. ──
+test("renderSpendChart: the activeCats branch's 'Peak month' tooltip flag uses a branch-local peak (only the selected categories), not the shared all-category peakIdx", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const branchMatch = source.match(/if\(state\.activeCats\.size>0\)\{\n      const catsToShow[\s\S]{0,2700}?\n    \}/);
+  assert.ok(branchMatch, "the activeCats>0 branch should exist");
+  assert.match(
+    branchMatch[0],
+    /const peakIdxFiltered=periodTotalsFiltered\.indexOf\(Math\.max\(\.\.\.periodTotalsFiltered\)\);/,
+    "the branch should compute its own peak index from periodTotalsFiltered (the selected categories' own totals), not reuse the shared all-category peakIdx"
+  );
+  assert.match(
+    branchMatch[0],
+    /const peakStr=ctx\.dataIndex===peakIdxFiltered\?' 🔺 Peak month':'';/,
+    "the tooltip's peakStr should compare against peakIdxFiltered"
+  );
+  assert.doesNotMatch(
+    branchMatch[0],
+    /ctx\.dataIndex===peakIdx\?/,
+    "the branch should no longer compare against the shared all-category peakIdx"
+  );
+});
+
+// Finding 2 (MEDIUM): normalizeTxRow()'s trakyodollas re-import branch
+// deliberately trusts row['category'] verbatim (unlike every other format,
+// which routes through mapImportedCategory()/guessCatFromDesc()) so a
+// custom category round-trips through export/re-import intact -- this is
+// correct by design, not a gap to route through mapImportedCategory() like
+// the 106th/107th passes' fixes (that WOULD destroy legitimate custom
+// categories). But if the custom category was never actually registered on
+// the importing profile (deleted after export, or imported on a different
+// device), it isn't in getAllCats(), so rebuildCatSelects() can't select it
+// in the edit-tx modal, and saveEditTx() reads the unmatched <select> back
+// as '' -- silently blanking the category on the next edit of ANY field.
+// Fixed by auto-registering unknown imported categories as real custom
+// categories in confirmTxImport(), mirroring the 32nd pass's identical fix
+// for the demo profile's own categories. confirmTxImport() is DOM-heavy;
+// source-pattern only. ──
+test("confirmTxImport: auto-registers any imported transaction's category that isn't already in getAllCats() as a new custom category", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/newTxs=importParsed\.map[\s\S]{0,1700}?\n  \}\);/);
+  assert.ok(fnMatch, "confirmTxImport()'s mutateTransactions block should exist");
+  assert.match(
+    fnMatch[0],
+    /const knownCats=new Set\(getAllCats\(\)\);\s*newTxs\.forEach\(t=>\{\s*if\(t\.cat&&!knownCats\.has\(t\.cat\)\)\{\s*state\.customCategories\.push\(\{name:t\.cat,color:null\}\);\s*knownCats\.add\(t\.cat\);\s*\}\s*\}\);/,
+    "confirmTxImport() should push {name,color:null} (addCustomCat()'s own shape) for every newly-imported category not already in getAllCats(), deduping via a local Set so a repeated new category isn't pushed twice"
+  );
+});
+
+// Finding 3 (MEDIUM-LOW): loadDemoProfile() deep-copies state.accounts
+// (p.accounts.map(a=>({...a}))) but only shallow-copied the ARRAY shell for
+// vehicles/snapshots/transactions/catRules/customCategories -- the objects
+// INSIDE those arrays stayed the exact same references as the module-level
+// DEMO_PROFILE_1/DEMO_PROFILE_2 constants. Every in-place mutator this app
+// has (saveEditTx()'s t.cat=/t.desc=, editVehicle()'s Object.assign(v,...),
+// rule edits, category renames) wrote straight through into the "pristine"
+// demo constants, so a user's edits during one demo session survived into
+// the next profile switch or re-entry -- contradicting this function's own
+// repeatedly-fixed promise (passes 75/90/96/97) that demo sessions leave
+// nothing behind. loadDemoProfile() is DOM/state-heavy; source-pattern
+// only. ──
+test("loadDemoProfile: vehicles/snapshots/transactions/catRules/customCategories all get per-object copies, matching state.accounts' existing pattern", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(source, /state\.vehicles=\(p\.vehicles\|\|\[\]\)\.map\(v=>\(\{\.\.\.v\}\)\);/, "vehicles should be per-object copied");
+  assert.match(source, /state\.snapshots=p\.snapshots\.map\(s=>\(\{\.\.\.s\}\)\);/, "snapshots should be per-object copied");
+  assert.match(source, /state\.transactions=p\.transactions\.map\(t=>\(\{\.\.\.t\}\)\);/, "transactions should be per-object copied");
+  assert.match(source, /state\.catRules=\(p\.catRules\|\|\[\]\)\.map\(r=>\(\{\.\.\.r\}\)\);/, "catRules should be per-object copied");
+  assert.match(source, /state\.customCategories=\(p\.customCategories\|\|\[\]\)\.map\(c=>\(\{\.\.\.c\}\)\);/, "customCategories should be per-object copied");
+  assert.doesNotMatch(source, /state\.vehicles=\[\.\.\.\(p\.vehicles\|\|\[\]\)\];/, "the old array-shell-only copy should be gone for vehicles");
+  assert.doesNotMatch(source, /state\.snapshots=\[\.\.\.p\.snapshots\];/, "the old array-shell-only copy should be gone for snapshots");
+  assert.doesNotMatch(source, /state\.transactions=\[\.\.\.p\.transactions\];/, "the old array-shell-only copy should be gone for transactions");
+});
+
+// Finding 4 (LOW): copyYirSummary()'s clipboard sink (navigator.clipboard.
+// writeText()) is a plain-text sink like .textContent/D3 .text()/canvas --
+// never decodes HTML entities -- but all 8 of its fmt() calls used the
+// default esc()'d form, so a custom '&'-containing currency symbol copied
+// as a literal "&amp;". The only clipboard call site in the file; missed
+// by all 3 prior raw-fmt sweeps (105-107) since those only enumerated DOM
+// sinks. ──
+test("copyYirSummary: every fmt() call feeding the clipboard uses raw=true, not the default esc()'d form", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function copyYirSummary\(\)\{[\s\S]{0,4300}?\n\}/);
+  assert.ok(fnMatch, "copyYirSummary() should exist");
+  const fmtCalls = fnMatch[0].match(/fmt\((?:[^()]|\([^()]*\))*\)/g) || [];
+  const nonRawCalls = fmtCalls.filter(c => !c.endsWith(",true)") && !c.startsWith("fmtMonthShort"));
+  assert.equal(nonRawCalls.length, 0, `every fmt(...) call in copyYirSummary() should pass raw=true; found non-raw calls: ${JSON.stringify(nonRawCalls)}`);
+  assert.match(fnMatch[0], /navigator\.clipboard\.writeText\(lines\)/, "should still write to the clipboard");
+});
+
+// Finding 5 (LOW, dead code): renderSpendChart()'s top5+Other branch used
+// to assign customOpts.plugins.tooltip.callbacks.label TWICE -- a simple
+// pct-only version first, then immediately overwritten 10 lines later by a
+// superset version (same pct/Other handling plus MoM delta and peak
+// marker). The first assignment could never execute; harmless today but a
+// trap for a future fix landing in the shadowed block. Removed, folding
+// into a single assignment. ──
+test("renderSpendChart: the top5+Other branch's tooltip label callback is assigned exactly once, not shadowed by a second assignment", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const assignmentCount = (source.match(/customOpts\.plugins\.tooltip[.=]/g) || []).length;
+  assert.equal(assignmentCount, 1, "customOpts.plugins.tooltip should be referenced exactly once (a single assignment), not assigned then immediately reassigned");
+  assert.match(
+    source,
+    /customOpts\.plugins\.tooltip=\{callbacks:\{label:function\(ctx\)\{/,
+    "the single surviving assignment should be the full-featured callback (pct/Other/MoM/peak)"
   );
 });
