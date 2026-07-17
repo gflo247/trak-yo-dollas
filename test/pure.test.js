@@ -4122,3 +4122,29 @@ test("detectSubscriptions: no longer pushes an unused median field into subVendo
   );
   assert.match(source, /const median=amts\[Math\.floor\(amts\.length\/2\)\];/, "the local median variable itself should still exist -- it's still needed for the consistency check");
 });
+
+// ── 116th adversarial pass ──────────────────────────────────────────────
+// Part 1 (re-verification of all 10 fixes from the 114th and 115th passes)
+// came back completely clean -- no gaps found, first fully clean pass in
+// this window, breaking a ~12-pass streak. The one item below is dead
+// code, not a bug: the body-script "apply saved theme" IIFE re-set
+// data-theme via a fresh localStorage read even though the head IIFE
+// (which runs first, before CSS renders) already set it correctly,
+// including its own localStorage-throws fallback. ──
+test("body-script theme IIFE no longer redundantly re-sets data-theme (the head IIFE already did)", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const match = source.match(/\/\/ Apply saved theme and preferences on load\n\(function\(\)\{[\s\S]{0,500}/);
+  assert.ok(match, "the body-script theme-apply IIFE should exist");
+  assert.doesNotMatch(
+    match[0],
+    /document\.documentElement\.setAttribute\('data-theme',saved\);/,
+    "should no longer redundantly re-set data-theme -- the head IIFE already did"
+  );
+  assert.match(
+    match[0],
+    /if\(btn\)btn\.textContent=saved==='light'\?'☀️':'🌙';/,
+    "should still set the toggle button's label from the saved theme"
+  );
+});
