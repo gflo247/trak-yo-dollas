@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-xXjay2aaszudvKCmp4loNtnuZy1SKGqxE2srY9avLM4=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Nk2cVa0C6Yjym4ZxND6BDnShCUbZmIDPkmN8K/yn7i4=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-mJF+avS3nWRpShrIy7GODtrBFx2hdGAkLQ2+7NSgEJY=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-nb5RoMs8mg3rkfjFLc/jjtruBj9LPAuS35xvNaQEpdA=' 'sha256-I4MRNMVZ7poqXpAbI5xbFRg2bSEs+SN9T6YCisUYTus=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -5878,7 +5878,10 @@ function renderSpendChart(){
   const monthSumsFn=m=>{const row=MONTHLY[m]||{};return [...state.activeSources].reduce((s,src)=>s+(row[src]||0),0);};
   const allMonthSums=allFilteredMonths.map(m=>monthSumsFn(m));
   const periodSums=useAgg?aggPeriods.map(p=>p.total):allMonthSums;
-  const peakIdx=periodSums.indexOf(Math.max(...periodSums));
+  // let, not const -- the category-mode branch below reassigns this when a
+  // vendor filter is active (see its own comment). Every other branch
+  // reads it unmodified.
+  let peakIdx=periodSums.indexOf(Math.max(...periodSums));
 
   const peakPlugin={
     id:'peakHighlight',
@@ -6232,6 +6235,21 @@ function renderSpendChart(){
       const otherTotal=otherData.data[mi]||0;
       return top5Total+otherTotal;
     });
+    // The 108th pass's own comment justifying peakIdx's reuse here claimed
+    // this branch "plots every category, so the overall peak IS the
+    // displayed peak" -- true only when no vendor filter is active. With
+    // one (catMonthMap above is filtered to state.activeVendors when
+    // vendorFilter is true), this branch plots a SUBSET, but peakIdx still
+    // indexed the unfiltered MONTHLY totals -- both the tooltip's "🔺 Peak
+    // month" and peakPlugin's canvas "▲ PEAK" highlight (below) pointed at
+    // whichever period had the highest OVERALL spend, not the highest
+    // spend among the filtered vendors actually shown. Reassigning peakIdx
+    // itself (declared let for this reason) from monthTotalsForChart --
+    // already correctly vendor-filtered, since it's built from the same
+    // catMonthMap -- fixes both sinks at once via the shared closure, since
+    // this only runs once per render and no other branch executes in the
+    // same call. Found in the 109th adversarial pass.
+    if(vendorFilter)peakIdx=monthTotalsForChart.indexOf(Math.max(...monthTotalsForChart));
 
     const customOpts=JSON.parse(JSON.stringify(commonOpts));
 
@@ -10680,7 +10698,13 @@ function normalizeTxRow(row, source){
     isOffset=(row['isoffset']||'').trim().toLowerCase()==='yes';
     amount=parseFloat(row['amount']||'0');
     if(!isOffset)amount=Math.abs(amount);
-    cat=_stripCsvFormulaGuard(row['category']||'Other');
+    // .trim(), matching desc two lines above -- unlike desc, this was left
+    // untrimmed, so a hand-edited or foreign-profile CSV's " Groceries"
+    // registered (via confirmTxImport()'s auto-register, 108th pass) as a
+    // visually-duplicate category the case-insensitive rename guard
+    // (addCustomCat()) then refuses to ever merge back onto the real one.
+    // Found in the 109th adversarial pass.
+    cat=_stripCsvFormulaGuard((row['category']||'Other').trim())||'Other';
     excluded=(row['excluded']||'').trim().toLowerCase()==='yes';
     isIncome=(row['isincome']||'').trim().toLowerCase()==='yes';
     biz=(row['business']||'').trim().toLowerCase()==='yes';
@@ -11115,6 +11139,24 @@ function confirmTxImport(){
       state.transactions=[];
       state.activeSources=new Set();
       state.budgets={};
+      // This branch wiped transactions/activeSources/budgets but left
+      // income/catRules/vendorAliases/nwGoal/customCategories untouched --
+      // all 5 are scripted DEMO_PROFILE_1/2 values at this point (a demo
+      // session, by construction, has state.hasRealData===false), and
+      // state.hasRealData=true plus scheduleSave() below then permanently
+      // persists them as if the user had entered them: a fabricated
+      // $4,800/mo manual income skewing every savings-rate/insight/Sankey
+      // figure with no indication it isn't real, demo catRules (checked
+      // "highest priority -- always win" ahead of every other categorizer)
+      // silently overriding how the user's own first real transactions
+      // categorize, and demo vendor aliases silently renaming real
+      // vendors. Reset to the same fresh-state defaults the initial state
+      // object literal uses. Found in the 109th adversarial pass.
+      state.income={method:null,monthlyAmount:0};
+      state.catRules=[];
+      state.vendorAliases={};
+      state.nwGoal=null;
+      state.customCategories=[];
       // Same wholesale-dataset-replacement gap importBackup() had (95th
       // adversarial pass) -- a demo session's Business/Personal filter,
       // Treemap vendor selection/drilled category, or calendar-day filter
@@ -11157,11 +11199,17 @@ function confirmTxImport(){
     // categories. normalizeTxRow() already routes reserved names (e.g.
     // '__income__') to 'Other' before this point, so isReservedCatName()
     // can't fire here. Found in the 108th adversarial pass.
-    const knownCats=new Set(getAllCats());
+    // Lowercased, matching addCustomCat()'s own case-insensitive collision
+    // check -- an exact-match Set let a foreign-profile category differing
+    // only in case ("groceries" vs "Groceries") register as a second,
+    // visually-duplicate category that same guard would then refuse to
+    // ever merge back onto the real one. Found in the 109th adversarial
+    // pass.
+    const knownCats=new Set(getAllCats().map(c=>c.toLowerCase()));
     newTxs.forEach(t=>{
-      if(t.cat&&!knownCats.has(t.cat)){
+      if(t.cat&&!knownCats.has(t.cat.toLowerCase())){
         state.customCategories.push({name:t.cat,color:null});
-        knownCats.add(t.cat);
+        knownCats.add(t.cat.toLowerCase());
       }
     });
   });
@@ -13539,8 +13587,6 @@ function loadDemoProfile(n, silent=false, skipRender=false){
   const p = n===1 ? DEMO_PROFILE_1 : DEMO_PROFILE_2;
   // Completely replace accounts — deep copy profile's exact account list, no extras
   state.accounts = p.accounts.map(a=>({...a}));
-  // Strip any accounts that crept in from localStorage migration
-  state.accounts = state.accounts.filter(a=>p.accounts.some(pa=>pa.id===a.id));
   // Per-object copies, not just a fresh array shell -- state.accounts above
   // already gets this treatment, but vehicles/snapshots/transactions/
   // catRules/customCategories didn't, so every in-place mutator this app
@@ -13952,11 +13998,19 @@ window.d3Sankey = (typeof d3 !== 'undefined' && typeof d3.sankey === 'function')
   // silently running old in-memory JS indefinitely with no way to know a
   // fix had shipped. location.reload() safely flushes any pending debounced
   // save via the existing pagehide handler before the page actually unloads.
-  const hadController=!!navigator.serviceWorker.controller;
+  // let, not const -- on a genuine first-ever visit hadController starts
+  // false, correctly skipping the reload for that first install. But it
+  // was never updated afterward, so if that SAME tab stays open across the
+  // NEXT deploy, the resulting controllerchange event still read the
+  // stale, page-load-time false and skipped the reload again -- the exact
+  // "tab silently running old in-memory JS indefinitely" failure this
+  // whole mechanism exists to prevent, just one deploy cycle later than
+  // the comment above anticipates. Found in the 109th adversarial pass.
+  let hadController=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.register('/sw.js');
   let _swRefreshing=false;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
-    if(_swRefreshing||!hadController)return;
+    if(_swRefreshing||!hadController){hadController=true;return;}
     _swRefreshing=true;
     location.reload();
   });
