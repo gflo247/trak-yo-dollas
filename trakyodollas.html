@@ -551,7 +551,16 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 .cal-legend-wrap{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--text-secondary)}
 .cal-tip{position:fixed;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:8px;padding:6px 10px;font-size:11px;pointer-events:none;z-index:9999;display:none;min-width:120px}
 .demo-picker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.25rem;-webkit-overflow-scrolling:touch}
-.demo-picker{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:16px;padding:1.75rem;width:min(420px,100%);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+/* max-height/overflow-y, matching .modal's own treatment -- this overlay
+   centers its child with align-items:center like .modal-overlay does, but
+   .demo-picker itself had no scroll/height cap, so on a short viewport
+   (a landscape phone, a small split-screen/PWA window) the box overflowed
+   symmetrically past both the top and bottom edges with nothing to
+   scroll. The mandatory first-visit picker is deliberately non-
+   dismissible (no Escape, no cancel button), so a user whose profile
+   buttons clipped below the fold had no way to reach them and no way to
+   enter the app at all. Found in the 136th adversarial pass. */
+.demo-picker{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:16px;padding:1.75rem;width:min(420px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)}
 .demo-picker h2{font-size:1.15rem;font-weight:800;color:var(--text-bright);margin-bottom:.35rem;letter-spacing:-.01em}
 .demo-picker p{font-size:13px;color:var(--text-secondary);margin-bottom:1.25rem;line-height:1.5}
 .demo-profile-btn{width:100%;display:flex;align-items:center;gap:14px;padding:.85rem 1rem;background:var(--bg-deep);border:1.5px solid var(--border-mid);border-radius:12px;cursor:pointer;text-align:left;transition:border-color .15s,background .15s;margin-bottom:.65rem;font-family:inherit}

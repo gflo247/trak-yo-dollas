@@ -4762,3 +4762,25 @@ test("copyYirSummary: footer note reflects that transfer-like categories are exc
     "the footer note should say 'excluded throughout', not the stale 'excluded from categories/vendors'"
   );
 });
+
+// ── 136th adversarial pass ──────────────────────────────────────────────
+// LOW: .demo-picker-overlay centers its child the same way .modal-overlay
+// does (align-items:center), but unlike .modal (which caps at
+// max-height:90vh;overflow-y:auto), .demo-picker had no scroll/height
+// cap -- on a short viewport (a landscape phone, a small split-screen/PWA
+// window) the box overflowed symmetrically past both the top and bottom
+// edges with nothing to scroll. The mandatory first-visit picker is
+// deliberately non-dismissible (no Escape, no cancel button), so a user
+// whose profile buttons clipped below the fold had no way to reach them
+// and no way to enter the app at all. Found in the 136th adversarial
+// pass. ──
+test(".demo-picker carries the same max-height/overflow-y scroll cap as .modal, so it can't clip unreachable content on a short viewport", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /\.demo-picker\{background:var\(--bg-card\);border:1px solid var\(--border-mid\);border-radius:16px;padding:1\.75rem;width:min\(420px,100%\);max-height:90vh;overflow-y:auto;box-shadow:/,
+    "the .demo-picker rule should include max-height:90vh and overflow-y:auto, matching .modal's own treatment"
+  );
+});
