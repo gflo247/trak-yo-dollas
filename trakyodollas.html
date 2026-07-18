@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-cwFWuhdyy+wtnfX+jtzxH+b0hAj3VlgK+ITN7MEKok8=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-qAFjwDnxFGYLuxGtHG4YnqSk6jhqwXIYd/s9XNCRGN0=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -7230,7 +7230,13 @@ function saveEditTx(){
   const dateVal=parseImportDate(document.getElementById('et-date').value);
   const amountVal=parseFloat(document.getElementById('et-amount').value);
   if(!dateVal){showToast('⚠ Invalid date — edit not saved','#F87171',4000);return;}
-  if(isNaN(amountVal)){showToast('⚠ Invalid amount — edit not saved','#F87171',4000);return;}
+  // !Number.isFinite, not just isNaN -- parseFloat('Infinity')/
+  // parseFloat('1e400') are truthy Infinity, not NaN, and would otherwise
+  // slip past this guard and poison every downstream sum that touches
+  // this transaction. Same class of gap the 87th pass closed for CSV
+  // import; Number.isFinite(NaN) is also false, so this subsumes the
+  // original isNaN check too. Found in the 119th adversarial pass.
+  if(!Number.isFinite(amountVal)){showToast('⚠ Invalid amount — edit not saved','#F87171',4000);return;}
   mutateTransactions(()=>{
     t.desc=document.getElementById('et-desc').value.trim()||t.desc;t.date=dateVal;t.amount=amountVal;t.cat=newCat;const exclEl=document.getElementById('et-excluded');if(exclEl)t.excluded=exclEl.checked;
     document.querySelectorAll('#rc-list input[type=checkbox]:checked').forEach(cb=>{const s=state.transactions.find(x=>x.id===parseInt(cb.value));if(s)s.cat=newCat;});
@@ -7588,7 +7594,12 @@ function _refreshBudgetModalContext(cat){
 function saveBudget(){
   const cat=window._budgetCat;if(!cat)return;
   const val=parseFloat(document.getElementById('budget-amount').value);
-  if(val>0)state.budgets[cat]=Math.round(val);
+  // Number.isFinite guard -- val>0 alone is true for Infinity too
+  // (parseFloat('Infinity')/parseFloat('1e400')), which would otherwise
+  // poison every budget-bar/pace calculation that divides by this
+  // category's budget. Same class of gap the 87th pass closed for CSV
+  // import. Found in the 119th adversarial pass.
+  if(val>0&&Number.isFinite(val))state.budgets[cat]=Math.round(val);
   else delete state.budgets[cat];
   closeModals();
   renderBucketGrid();
@@ -7773,9 +7784,17 @@ function saveHistoricalSnapshot(){
   }
   const date=document.getElementById('hist-snap-date').value;
   const nw=parseFloat(document.getElementById('hist-snap-nw').value);
-  const assets=parseFloat(document.getElementById('hist-snap-assets').value)||nw;
-  const liab=parseFloat(document.getElementById('hist-snap-liab').value)||0;
-  if(!date||isNaN(nw)){showToast('Please enter a date and net worth','#FCD34D');return;}
+  // Number.isFinite, not the `||nw`/`||0` fallback alone -- parseFloat
+  // returns a truthy Infinity for 'Infinity'/'1e400', which `||` never
+  // catches (only a falsy NaN/''/0 triggers the fallback), and would
+  // otherwise persist into this permanent net-worth history record. Same
+  // class of gap the 87th pass closed for CSV import. Found in the 119th
+  // adversarial pass.
+  const assetsRaw=parseFloat(document.getElementById('hist-snap-assets').value);
+  const assets=Number.isFinite(assetsRaw)?assetsRaw:nw;
+  const liabRaw=parseFloat(document.getElementById('hist-snap-liab').value);
+  const liab=Number.isFinite(liabRaw)?liabRaw:0;
+  if(!date||!Number.isFinite(nw)){showToast('Please enter a date and net worth','#FCD34D');return;}
   const d=new Date(date+'T12:00:00');
   // A typo'd future year (e.g. 2027 for 2026) saved cleanly with no check
   // -- besides producing a nonsense "growth over N months" figure spanning
@@ -8936,7 +8955,11 @@ function openDeclaredIncomeModal(){
 }
 function saveDeclaredIncome(){
   const val=parseFloat(document.getElementById('declared-income-input').value);
-  if(!isNaN(val)&&val>0){
+  // Number.isFinite, not just !isNaN -- Infinity/1e400 both pass !isNaN
+  // and would otherwise poison every savings-rate/income-vs-spend
+  // calculation that divides by this figure. Same class of gap the 87th
+  // pass closed for CSV import. Found in the 119th adversarial pass.
+  if(Number.isFinite(val)&&val>0){
     state.declaredIncome=Math.round(val);
     scheduleSave();
     closeModals();
@@ -9129,7 +9152,12 @@ function selectIncomeMethodUI(method){
 
 function saveManualIncome(){
   const val=parseFloat(document.getElementById('income-amount').value);
-  if(!val||val<=0){showToast('Please enter a valid monthly income','#FCD34D');return;}
+  // !Number.isFinite(val), not just !val||val<=0 -- Infinity/1e400 are
+  // truthy and >0, so they'd otherwise pass straight through and poison
+  // every savings-rate/income-vs-spend calculation that divides by this
+  // figure. Same class of gap the 87th pass closed for CSV import. Found
+  // in the 119th adversarial pass.
+  if(!val||val<=0||!Number.isFinite(val)){showToast('Please enter a valid monthly income','#FCD34D');return;}
   state.income={method:'manual',monthlyAmount:Math.round(val)};
   document.getElementById('income-manual-hint').textContent=`Saved: ${fmt(val,true)}/mo take-home`;
   scheduleSave();
@@ -12583,7 +12611,14 @@ function saveAccount(){
   const name=document.getElementById('f-name').value.trim(),
         source=document.getElementById('f-source').value,
         type=document.getElementById('f-type').value,
-        balance=parseFloat(document.getElementById('f-balance').value)||0,
+        // Number.isFinite guard, not just the `||0` fallback -- parseFloat
+        // returns a truthy Infinity for 'Infinity'/'1e400', which `||0`
+        // never catches (only a falsy NaN/''/0 does), and would otherwise
+        // poison netWorth()/totalAssets() for every render that sums this
+        // account. Same class of gap the 87th pass closed for CSV import.
+        // Found in the 119th adversarial pass.
+        _balanceRaw=parseFloat(document.getElementById('f-balance').value),
+        balance=Number.isFinite(_balanceRaw)?_balanceRaw:0,
         excludeFromNW=document.getElementById('f-exclude').checked;
   // type is a <select>; if a stored account's type doesn't match any of
   // its <option>s (e.g. a legacy/foreign type value), assigning .value in
@@ -12678,7 +12713,13 @@ function saveVehicle(){
   // vehicle has no way to be recorded as $0 without this fix -- the modal
   // just silently sits there with no save, no toast, no error. Found in
   // the 58th adversarial pass.
-  if(value<0)return;
+  // !Number.isFinite(value/purchase), not just value<0 -- parseFloat
+  // returns a truthy Infinity for 'Infinity'/'1e400', which is not <0 and
+  // so passed the existing guard straight through into the paired
+  // account's balance, poisoning totalAssets() for every render. Same
+  // class of gap the 87th pass closed for CSV import. Found in the 119th
+  // adversarial pass.
+  if(value<0||!Number.isFinite(value)||!Number.isFinite(purchase))return;
   let name,make,model,year,condition,miles,assetType,vin='';
   if(currentAssetType==='other'){
     const oName=(document.getElementById('v-other-name')||{}).value||'';const oCat=(document.getElementById('v-other-cat')||{}).value||'Other';
@@ -12785,7 +12826,13 @@ function saveTx(){
   }
   const dateVal=parseImportDate(document.getElementById('t-date').value),desc=document.getElementById('t-desc').value.trim(),card=document.getElementById('t-card').value,cat=document.getElementById('t-cat').value,amount=parseFloat(document.getElementById('t-amount').value)||0;
   if(!dateVal){showToast('⚠ Invalid date — transaction not added','#F87171',4000);return;}
-  if(!desc||!amount){showToast('⚠ Description and a non-zero amount are required','#F87171',4000);return;}
+  // !Number.isFinite(amount), not just !amount -- parseFloat('Infinity')/
+  // parseFloat('1e400') both return a truthy Infinity, which would
+  // otherwise slip through and poison every downstream sum that touches
+  // it (the same class of gap the 87th pass already closed for CSV
+  // import, never propagated to manual entry). Found in the 119th
+  // adversarial pass.
+  if(!desc||!amount||!Number.isFinite(amount)){showToast('⚠ Description and a non-zero amount are required','#F87171',4000);return;}
   // Wipes every demo-scripted field (including state.transactions itself)
   // before this transaction is added, and -- distinct from that wipe --
   // sets state.hasRealData, which this function never did at all before.
