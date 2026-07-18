@@ -3470,7 +3470,7 @@ test("copyYirSummary: every fmt() call feeding the clipboard uses raw=true, not 
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function copyYirSummary\(\)\{[\s\S]{0,4700}?\n\}/);
+  const fnMatch = source.match(/function copyYirSummary\(\)\{[\s\S]{0,5300}?\n\}/);
   assert.ok(fnMatch, "copyYirSummary() should exist");
   const fmtCalls = fnMatch[0].match(/fmt\((?:[^()]|\([^()]*\))*\)/g) || [];
   const nonRawCalls = fmtCalls.filter(c => !c.endsWith(",true)") && !c.startsWith("fmtMonthShort"));
@@ -5022,5 +5022,27 @@ test("cross-tab storage warning also fires for LS_TXS_KEY, not just LS_KEY -- tr
     source,
     /if\(\(e\.key===LS_KEY\|\|e\.key===LS_TXS_KEY\)&&!window\._isDemoPreview&&!window\._viewingDemoOverReal\)\{/,
     "the storage listener should react to both LS_KEY and LS_TXS_KEY"
+  );
+});
+
+// ── 146th adversarial pass ──────────────────────────────────────────────
+// LOW: copyYirSummary()'s navigator.clipboard.writeText(lines).then(...)
+// had no .catch(). writeText() rejects ASYNCHRONOUSLY on permission-denied/
+// document-not-focused/sandboxed-webview, which the surrounding synchronous
+// try/catch can't see -- so a rejection was totally silent: no success
+// toast, no failure toast, nothing. This is the one .then() in the whole
+// file that broke the established convention of every other async chain
+// catching and surfacing a toast. Especially relevant for users opening the
+// app inside Reddit/Instagram/Facebook in-app browsers, which commonly
+// expose navigator.clipboard but deny writes. Found in the 146th
+// adversarial pass. ──
+test("copyYirSummary()'s clipboard write has a .catch() so a permission-denied rejection surfaces a toast instead of failing silently", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /navigator\.clipboard\.writeText\(lines\)\.then\(\(\)=>showToast\('📋 Copied to clipboard','#34D399'\)\)\.catch\(\(\)=>showToast\('Could not copy','#FCD34D'\)\);/,
+    "the clipboard writeText() call should have a .catch() showing the same 'Could not copy' toast used by the surrounding sync try/catch"
   );
 });

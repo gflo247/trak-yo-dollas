@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-m8o027F3GSAidf7V/llpdcLHHZqN9/G3HlvyYNnSdhs=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ol0NFe+oJC+wazQ78Wwb6GmyT0+U4srY93/OxkHv4Hw=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3816,7 +3816,15 @@ function copyYirSummary(){
       // in the 128th adversarial pass.
       '(Transfers, CC payments & investments excluded throughout)',
     ].filter(Boolean).join('\n');
-    navigator.clipboard.writeText(lines).then(()=>showToast('📋 Copied to clipboard','#34D399'));
+    // .catch() added -- writeText() rejects asynchronously (permission denied,
+    // document not focused, sandboxed webview), which the surrounding
+    // synchronous try/catch can't see, so this promise had no error path at
+    // all -- no success toast, no failure toast, total silence. Every other
+    // async chain in the file already catches and surfaces a toast; this was
+    // the one exception. Especially relevant for Reddit/social in-app
+    // browsers, where navigator.clipboard often exists but denies writes.
+    // Found in the 146th adversarial pass.
+    navigator.clipboard.writeText(lines).then(()=>showToast('📋 Copied to clipboard','#34D399')).catch(()=>showToast('Could not copy','#FCD34D'));
   }catch(e){showToast('Could not copy','#FCD34D');}
 }
 
