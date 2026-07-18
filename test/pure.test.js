@@ -4322,3 +4322,30 @@ test("confirmCustomGoal: rejects a non-finite (Infinity/1e400) goal amount, not 
     "should reject a non-finite parsed value alongside the existing parsed<=0 check"
   );
 });
+
+// ── 121st adversarial pass ──────────────────────────────────────────────
+// MEDIUM: exportTransactionsCSV() writes a per-row Source column (t.card),
+// and the trakyodollas re-import branch's whole design is "trust every
+// field directly instead of re-guessing" -- but it never read row['source']
+// back, so every re-imported row silently collapsed onto the single
+// file-level source label instead (the #import-source-label input,
+// default "Checking"), losing per-source attribution wholesale on a plain
+// export/reimport round-trip. Fixed by reading row['source'] (through the
+// same _stripCsvFormulaGuard() treatment desc/cat already get) and
+// falling back to the file-level label only when the column is absent or
+// blank. Found in the 121st adversarial pass. ──
+test("normalizeTxRow's 'trakyodollas' import branch reads the per-row Source column back, instead of collapsing every row onto the file-level source label", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /card=_stripCsvFormulaGuard\(\(row\['source'\]\|\|''\)\.trim\(\)\)\|\|undefined;/,
+    "the trakyodollas branch should read row['source'] through the same formula-guard treatment as desc/cat"
+  );
+  assert.match(
+    source,
+    /return \{date,desc:desc\.slice\(0,50\),cat,card:card\|\|source,amount:Math\.round\(amount\*100\)\/100,excluded,is_offset:isOffset,isIncome:isIncome\|\|false,biz:biz\|\|false\};/,
+    "the return statement should prefer the per-row card over the file-level source label when one was parsed"
+  );
+});

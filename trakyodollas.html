@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-soP+UyuV5ProKgFrJgAt25r/YH2JYPuTDpMFLmMhJwU=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-JxHWHLX1yEZ6F3jyi463/XEaOEYaIvXKn8b4c9c8IsQ=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -10822,7 +10822,7 @@ function _creditDepositCat(desc){
 }
 
 function normalizeTxRow(row, source){
-  let date, desc, amount, cat='Other', excluded=false, mcc='', isIncome=false, biz, isOffset=false;
+  let date, desc, amount, cat='Other', excluded=false, mcc='', isIncome=false, biz, isOffset=false, card;
 
   if(importFmt==='ally'){
     date=row['date']||row['date ']||'';
@@ -11007,6 +11007,15 @@ function normalizeTxRow(row, source){
     isIncome=(row['isincome']||'').trim().toLowerCase()==='yes';
     biz=(row['business']||'').trim().toLowerCase()==='yes';
     if(isIncome&&!state.includeIncome)return null; // same Include Income gate every other format applies
+    // exportTransactionsCSV() writes a per-row Source column (t.card), but
+    // this branch never read it back -- every re-imported row silently
+    // collapsed onto the single file-level source label instead (the
+    // #import-source-label input, default "Checking"), losing per-source
+    // attribution wholesale on a plain export/reimport round-trip. Same
+    // "trust every field directly" reasoning, and the same
+    // _stripCsvFormulaGuard() treatment desc/cat already get above. Found
+    // in the 121st adversarial pass.
+    card=_stripCsvFormulaGuard((row['source']||'').trim())||undefined;
 
   } else {
     // Generic — sign convention auto-detected from the whole file's majority polarity
@@ -11127,7 +11136,7 @@ function normalizeTxRow(row, source){
   // pass -- just via an entry point that guard was never wired into.
   // Found in the 34th adversarial pass.
   if(isReservedCatName(cat))cat='Other';
-  return {date,desc:desc.slice(0,50),cat,card:source,amount:Math.round(amount*100)/100,excluded,is_offset:isOffset,isIncome:isIncome||false,biz:biz||false};
+  return {date,desc:desc.slice(0,50),cat,card:card||source,amount:Math.round(amount*100)/100,excluded,is_offset:isOffset,isIncome:isIncome||false,biz:biz||false};
 }
 
 // Shared keyword → category map, used by all import formats
