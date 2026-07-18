@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-3r2CWSHHOIDRyjN7mSoTPk21xXIamtklGzdiEperUWM=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-m8o027F3GSAidf7V/llpdcLHHZqN9/G3HlvyYNnSdhs=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -13943,8 +13943,21 @@ window.addEventListener('pagehide',_flushPendingSave);
 // merge is a much bigger, riskier change) — just a clear warning instead of
 // the previous silent behavior, where whichever tab's 800ms debounce fired
 // last would overwrite the other's edits with zero indication anything was lost.
+// e.key===LS_TXS_KEY too, not just LS_KEY -- state and transactions live in
+// two separate localStorage keys (see saveToLocalStorage()'s own comment).
+// Editing or deleting a transaction (mutateTransactions() -> saveEditTx()/
+// deleteTx()) touches no serializeState() field, so saveToLocalStorage()
+// writes an UNCHANGED value to LS_KEY -- per the storage-event spec,
+// setItem() with an unchanged value never fires a storage event, so this
+// listener saw nothing at all for the two most common transaction
+// operations, silently reintroducing exactly the "whichever tab saves
+// last wins, zero indication" failure mode this listener exists to warn
+// about, just for LS_TXS_KEY instead of LS_KEY. Adding a transaction is
+// unaffected (saveTx() bumps state.nextId, which IS serialized, so LS_KEY
+// changes too) -- only edits/deletes were silently uncovered. Found in the
+// 143rd adversarial pass.
 window.addEventListener('storage',(e)=>{
-  if(e.key===LS_KEY&&!window._isDemoPreview&&!window._viewingDemoOverReal){
+  if((e.key===LS_KEY||e.key===LS_TXS_KEY)&&!window._isDemoPreview&&!window._viewingDemoOverReal){
     showToast('⚠ This app is open in another tab — reload to avoid overwriting changes made there','#FCD34D',10000);
   }
 });
