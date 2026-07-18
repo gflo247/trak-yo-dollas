@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-bxob+xgzQvlJ4uko6+iigLkd06ZohGxJqj+mXJTZx3M=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-elbkcvOdrWsKQWZ5EjpssnWZAdfm0TgUbP+JgRSDAxg=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -91,8 +91,16 @@
 
   /* Semantic component tokens */
   --pill-info-bg:#1E293B;
-  --pill-info-border:#334155;
-  --pill-info-color:#475569;
+  /* border/color both #8595A8 (was #334155/#475569, ~1.4:1/~1.9:1 against
+     this bg) -- the (i) info-pill trigger is the ONLY affordance
+     signaling an inline explanation exists (see its use at the label-row
+     ⓘ button), and dark is the app's default theme most users see, so
+     this failed WCAG AA (3:1 UI-component / 4.5:1 text) for the audience
+     that hits it most. #8595A8 reaches ~4.8:1, matching this file's own
+     --text-muted token and comfortably exceeding the light theme's own
+     equivalent (~4.2:1). Found in the 138th adversarial pass. */
+  --pill-info-border:#8595A8;
+  --pill-info-color:#8595A8;
   --card-nudge-bg:#1E293B;
   --card-nudge-border:#334155;
   --info-box-bg:#1E293B22;
@@ -6667,6 +6675,17 @@ document.addEventListener('keydown',function(e){
   if(e.key==='Escape'){
     // Close cat hide confirm popover first
     if(document.getElementById('cat-hide-confirm-pop')){closeCatHideConfirm();return;}
+    // showPillTip()'s overlay is styled exactly like a modal (full-screen,
+    // dark backdrop, centered box) but was dismissible only via its own
+    // onclick handler -- never wired into this Escape handler, unlike
+    // every other dismissible surface it walks. The (i) trigger at the
+    // spending/analytics label rows is a real <button>, so a keyboard
+    // user can focus and open it with Enter, then has no keyboard route
+    // to close it (re-pressing Enter just re-renders the same overlay).
+    // Removed the same way its own onclick does. Found in the 138th
+    // adversarial pass.
+    const pillTip=document.getElementById('pill-tip-overlay');
+    if(pillTip){pillTip.remove();return;}
     // Close community rules modal
     const crModal=document.getElementById('community-rules-modal');
     if(crModal&&!crModal.classList.contains('hidden')){crModal.classList.add('hidden');return;}
