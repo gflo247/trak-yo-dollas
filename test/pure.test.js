@@ -4862,3 +4862,38 @@ test("Escape key handler dismisses the pill-tip overlay, matching every other di
     "the Escape handler should remove #pill-tip-overlay if present, matching its own onclick dismiss behavior"
   );
 });
+
+// ── 139th adversarial pass ──────────────────────────────────────────────
+// LOW-MEDIUM: --text-dim (dark theme) was #475569 -- the exact color the
+// 138th pass already flagged as too dark when it was --pill-info-color
+// (~1.9:1 against --bg-card, ~2.4:1 against --bg-input), but it survived
+// here as --text-dim, driving .form-label (32 uses, including the sync-
+// passphrase modal's "Passphrase"/"Confirm passphrase" labels),
+// .modal-sub, .fmt-btn, and the search placeholder. Failed WCAG AA in
+// dark theme, the app's default -- light theme's own #6B7280 (~4.8:1)
+// was already fine. Found in the 139th adversarial pass. ──
+test("dark theme's --text-dim reaches at least WCAG AA contrast against --bg-card, matching --text-muted's already-verified-safe value", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /--text-dim:#8595A8;/,
+    "dark theme's --text-dim should be #8595A8 (matching --text-muted, ~4.8:1 against --bg-card), not the old #475569 (~1.9:1)"
+  );
+});
+
+// LOW (dead code): --text-faint had zero var(--text-faint) consumers
+// anywhere in the file, and its light-theme declaration was duplicated
+// within the same rule (a genuinely dead, silently-overridden value on
+// top of being entirely unread). Found in the 139th adversarial pass. ──
+test("--text-faint is removed (was fully dead -- zero consumers, and duplicated within the light-theme rule)", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.doesNotMatch(
+    source,
+    /--text-faint:#(334155|9CA3AF|6B7280);/,
+    "none of the 3 dead --text-faint declarations should remain"
+  );
+});

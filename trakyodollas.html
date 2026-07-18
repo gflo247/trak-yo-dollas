@@ -72,8 +72,21 @@
   --text-primary:#D1DCE8;
   --text-secondary:#94A3B8;
   --text-muted:#8595A8;
-  --text-dim:#475569;
-  --text-faint:#334155;
+  /* Was #475569 (~1.9:1 against --bg-card, ~2.4:1 against --bg-input) --
+     the exact color pass 138 already flagged as too dark when it was
+     --pill-info-color, still in use here as --text-dim, which drives
+     .form-label (32 uses, including the sync-passphrase modal's
+     "Passphrase"/"Confirm passphrase" labels), .modal-sub, .fmt-btn, and
+     the search placeholder. Failed WCAG AA (4.5:1 for this size of text)
+     in dark theme, the app's default -- light theme's own #6B7280
+     (~4.8:1) was already fine. Matches --text-muted's already-verified-
+     safe value (~4.8:1). Found in the 139th adversarial pass. */
+  --text-dim:#8595A8;
+  /* --text-faint removed here (was #334155) -- had zero
+     var(--text-faint) consumers anywhere in the file, and its light-
+     theme counterpart was declared twice in the same rule (a genuinely
+     dead, silently-overridden duplicate on top of being entirely
+     unread). Found in the 139th adversarial pass. */
 
   /* Accents — same in both themes */
   --accent-blue:#2563EB;
@@ -154,7 +167,6 @@
   --text-secondary:#4B5563;
   --text-muted:#374151;
   --text-dim:#6B7280;
-  --text-faint:#9CA3AF;
 
   /* Charts */
   --chart-bg:#F8FAFC;
@@ -180,7 +192,6 @@
   --accent-red:#DC2626;
   --accent-amber:#B45309;
   --accent-purple:#7C3AED;
-  --text-faint:#6B7280;
   --bar-marker-halo:rgba(255,255,255,.65);
 }
 
