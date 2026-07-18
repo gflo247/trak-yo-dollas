@@ -2781,7 +2781,37 @@ test("_normalizeAccountTypes: filters null/non-object entries before dereferenci
   const ctx = { ACCT_TYPE_ALIASES: { checking: "cash" } };
   const { _normalizeAccountTypes } = loadFunctions(["_normalizeAccountTypes"], ctx);
   const result = _normalizeAccountTypes([{ type: "checking" }, null, "garbage", { type: "cash" }]);
-  assert.deepEqual(result, [{ type: "cash" }, { type: "cash" }], "null/non-object entries should be dropped, not crash the forEach, and a real entry's type should still get normalized via ACCT_TYPE_ALIASES");
+  assert.deepEqual(result, [{ type: "cash", balance: 0 }, { type: "cash", balance: 0 }], "null/non-object entries should be dropped, not crash the forEach, and a real entry's type should still get normalized via ACCT_TYPE_ALIASES");
+});
+
+// ── 130th adversarial pass ──────────────────────────────────────────────
+// LOW/MEDIUM: unlike every other numeric ingestion path (transaction
+// amount, manual-entry balance, CSV account import), account balance
+// restored through _normalizeAccountTypes() (all 3 callers: cloud sync,
+// local storage, backup restore) was taken verbatim from whatever a
+// hand-edited or corrupted payload contained -- a comma-formatted string,
+// a plain numeric string, or Infinity/NaN. totalAssets()/totalLiab() do
+// `s+a.balance` in a reduce, so a string balance produces string
+// concatenation instead of a sum, poisoning netWorth() into NaN, and the
+// corrupted value then persists straight back to localStorage/cloud sync
+// on the next save. Found in the 130th adversarial pass. ──
+test("_normalizeAccountTypes: coerces balance to a finite number, stripping commas and falling back to 0 for non-finite input", () => {
+  const ctx = { ACCT_TYPE_ALIASES: {} };
+  const { _normalizeAccountTypes } = loadFunctions(["_normalizeAccountTypes"], ctx);
+  const result = _normalizeAccountTypes([
+    { type: "checking", balance: 1000 },
+    { type: "checking", balance: "1,234.56" },
+    { type: "checking", balance: "500" },
+    { type: "checking", balance: "Infinity" },
+    { type: "checking", balance: "garbage" },
+    { type: "checking" },
+    { type: "credit", balance: -2500 },
+  ]);
+  assert.deepEqual(
+    result.map(a => a.balance),
+    [1000, 1234.56, 500, 0, 0, 0, -2500],
+    "a plain number should be untouched, a comma-formatted string should be parsed correctly (not truncated at the comma), a plain numeric string should parse, Infinity/garbage/missing should fall back to 0, and a negative liability balance should be preserved"
+  );
 });
 test("loadFromLocalStorage: accounts/vehicles/catRules/vendorAliases/hiddenPills/activeSources/sourceAlignDate/nextId are all Array.isArray/type-guarded, and accounts routes through _normalizeAccountTypes", () => {
   const fs = require("fs");
