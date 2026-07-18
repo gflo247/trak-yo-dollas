@@ -4897,3 +4897,33 @@ test("--text-faint is removed (was fully dead -- zero consumers, and duplicated 
     "none of the 3 dead --text-faint declarations should remain"
   );
 });
+
+// ── 140th adversarial pass ──────────────────────────────────────────────
+// LOW (dead code): an exhaustive dark-theme contrast sweep (checking
+// every text/icon token against every real surface it's used on) found
+// the dark-theme contrast angle itself had converged after the 138th/
+// 139th passes -- every remaining token clears WCAG AA. But the sweep's
+// own "grep every var() usage to find the real background" methodology
+// surfaced a cluster of 9 more fully-dead custom properties (defined in
+// both theme blocks, zero var() consumers anywhere, and the app has no
+// getComputedStyle()/getPropertyValue() call so nothing reads them from
+// JS either) -- the same class pass 139 only partially cleaned up when
+// it removed --text-faint. Found in the 140th adversarial pass. ──
+test("dead CSS custom properties from the 140th pass's sweep are removed from both theme blocks", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const deadTokens = [
+    "--bg-elevated", "--chart-bg", "--chart-grid", "--chart-tick",
+    "--card-nudge-border", "--info-box-bg", "--info-box-border",
+    "--tab-strip-bg", "--analytics-title",
+  ];
+  deadTokens.forEach(token => {
+    const re = new RegExp(`${token.replace(/[-/\\^$*+?.()|[\\]{}]/g, "\\$&")}:`);
+    assert.doesNotMatch(source, re, `${token} should have no remaining declaration (dark or light theme)`);
+  });
+  // --card-nudge-bg is the live sibling of the removed --card-nudge-border
+  // -- confirm it's untouched, not accidentally swept up in the cleanup.
+  assert.match(source, /--card-nudge-bg:#1E293B;/, "the live --card-nudge-bg token should still be defined in dark theme");
+  assert.match(source, /--card-nudge-bg:#F8FAFC;/, "the live --card-nudge-bg token should still be defined in light theme");
+});

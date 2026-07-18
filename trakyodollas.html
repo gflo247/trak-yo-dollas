@@ -58,7 +58,6 @@
   --bg-deep:#111720;
   --bg-input:#111720;
   --bg-hover:#1E293B;
-  --bg-elevated:#1E293B;
   --bg-sunken:#0D1419;
 
   /* Borders */
@@ -97,11 +96,6 @@
   --accent-purple:#A78BFA;
   --bar-marker-halo:rgba(0,0,0,.45);
 
-  /* Charts */
-  --chart-bg:#111827;
-  --chart-grid:#1E293B;
-  --chart-tick:#334155;
-
   /* Semantic component tokens */
   --pill-info-bg:#1E293B;
   /* border/color both #8595A8 (was #334155/#475569, ~1.4:1/~1.9:1 against
@@ -115,14 +109,20 @@
   --pill-info-border:#8595A8;
   --pill-info-color:#8595A8;
   --card-nudge-bg:#1E293B;
-  --card-nudge-border:#334155;
-  --info-box-bg:#1E293B22;
-  --info-box-border:#1E293B;
-  --tab-strip-bg:#1E293B;
+  /* --card-nudge-border/--info-box-bg/--info-box-border/--tab-strip-bg/
+     --analytics-title/--bg-elevated/--chart-bg/--chart-grid/--chart-tick
+     removed here and from the light-theme override block below -- the
+     same class of fully-dead token pass 139 already removed
+     --text-faint for (zero var() consumers anywhere in the file; the
+     app has no getComputedStyle()/getPropertyValue() call, so nothing
+     reads these from JS either). --card-nudge-bg itself is a live token
+     (used at the savings-rate income-setup nudge card) and was kept;
+     its own -border sibling was the dead one -- that element hardcodes
+     border:1.5px dashed var(--border-mid) instead. Found in the 140th
+     adversarial pass. */
   --modal-overlay-bg:rgba(0,0,0,.75);
   --toast-bg:#1E293B;
   --toast-border:#334155;
-  --analytics-title:#FCD34D;
   /* 529 / College Fund amber tokens */
   --amber-text:#FCD34D;
   --amber-text-strong:#FBBF24;
@@ -152,7 +152,6 @@
   --bg-deep:#EDF0F4;
   --bg-input:#FFFEFB;
   --bg-hover:#EDF0F4;
-  --bg-elevated:#FFFEFB;
   --bg-sunken:#EDF0F4;
 
   /* Borders */
@@ -168,20 +167,11 @@
   --text-muted:#374151;
   --text-dim:#6B7280;
 
-  /* Charts */
-  --chart-bg:#F8FAFC;
-  --chart-grid:#D1D9E0;
-  --chart-tick:#94A3B8;
-
   /* Semantic component tokens */
   --pill-info-bg:#EDF0F4;
   --pill-info-border:#CBD5E1;
   --pill-info-color:#64748B;
   --card-nudge-bg:#F8FAFC;
-  --card-nudge-border:#CBD5E1;
-  --info-box-bg:#EDF0F422;
-  --info-box-border:#D1D9E0;
-  --tab-strip-bg:#EDF0F4;
   --modal-overlay-bg:rgba(15,23,42,.5);
   --toast-bg:#FFFEFB;
   --toast-border:#D1D9E0;
