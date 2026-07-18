@@ -82,6 +82,30 @@ test("classifyBudgetStatus: not at-risk for a non-current (historical) month", (
   const result = classifyBudgetStatus(85, 100, false, 0.5, 80);
   assert.equal(result.atRisk, false);
 });
+
+// ── 141st adversarial pass ──────────────────────────────────────────────
+// LOW: spendByCat accumulates raw floats across every transaction in a
+// category with no re-rounding to cents (spendByCat[t.cat]=(spendByCat
+// [t.cat]||0)+t.amount), so a month whose spend totals exactly the
+// budget can land a hair above it purely from float noise (the classic
+// 0.1+0.2 shape). The old bare spend>budget comparison flipped `over`
+// true with no real overspend, showing a red "OVER" badge and a
+// nonsensical "$0.00 over budget" label (fmt() rounds the sub-cent
+// difference to $0.00). Found in the 141st adversarial pass. ──
+test("classifyBudgetStatus: a sub-cent float-accumulation overshoot doesn't flip a category to OVER", () => {
+  const { classifyBudgetStatus } = loadFunctions(["classifyBudgetStatus"]);
+  // The classic 0.1+0.2 float-noise shape: spend lands a hair above
+  // budget purely from accumulated floating-point error, not a real
+  // overspend.
+  const noisySpend = 0.1 + 0.2 + 299.7; // === 300.00000000000006, not exactly 300
+  const result = classifyBudgetStatus(noisySpend, 300, true, 0.9, 80);
+  assert.equal(result.over, false, "a sub-cent float overshoot should not be classified as over budget");
+});
+test("classifyBudgetStatus: a genuine overspend (well beyond the epsilon) is still correctly flagged as over", () => {
+  const { classifyBudgetStatus } = loadFunctions(["classifyBudgetStatus"]);
+  const result = classifyBudgetStatus(300.5, 300, true, 0.9, 80);
+  assert.equal(result.over, true, "a real 50-cent overspend should still be classified as over budget");
+});
 test("classifyBudgetStatus: comfortably under budget is on-track", () => {
   const { classifyBudgetStatus } = loadFunctions(["classifyBudgetStatus"]);
   const result = classifyBudgetStatus(50, 100, true, 0.5, 80);
