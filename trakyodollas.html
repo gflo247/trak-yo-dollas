@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-KJ9voSG4WAUsohvk3tDErL9b0ujjwosRjNZ84+iXSio=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-yaQpCXj64aVgZeq3AwvaP4ctQflvbpJ+DyYKi0PaZ3U=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2277,6 +2277,21 @@ let state={
     const f=window[el.dataset.input];
     if(typeof f==='function')f(el.value,el);
   });
+  // Chrome (and some other browsers) silently increments/decrements a
+  // FOCUSED <input type="number">'s value when the mouse wheel scrolls
+  // over it -- there's no confirmation, no visual distinction from an
+  // intentional edit, and the resulting change fires like any other
+  // (data-change handlers, live previews). #budget-warn-input sits inline
+  // in the scrollable Budget tab (not a modal), so a user scrolling the
+  // page with that field still focused from a prior edit gets their
+  // near-limit warning threshold silently altered with zero intent.
+  // {passive:true} -- this only blurs, never preventDefault()s, so the
+  // page still scrolls normally; blurring before the wheel event's own
+  // value-mutation step is what stops the value from changing. Found in
+  // the 124th adversarial pass.
+  document.addEventListener('wheel',function(e){
+    if(e.target.tagName==='INPUT'&&e.target.type==='number'&&document.activeElement===e.target)e.target.blur();
+  },{passive:true});
   ['dragover','dragleave','drop'].forEach(evt=>{
     document.addEventListener(evt,e=>dispatch(e,'data-'+evt,true));
   });
@@ -11661,10 +11676,25 @@ function checkSourceAlignment(){
       </div>
     </div>`;
   document.body.appendChild(modal);
+  // This is the one modal built at runtime rather than existing in static
+  // markup, so it's never in the DOM when _a11yModalObserver's one-time
+  // querySelectorAll('.modal-overlay') sets up its watch list (chunk 1/5,
+  // below) -- it never gets focus moved in on open or returned on close,
+  // and since it's dismissed via .remove() rather than toggling the
+  // .hidden class, no class-attribute mutation ever exists for the
+  // observer to detect even if it WERE registered. The 123rd pass's
+  // aria-modal="true" addition asserted dialog semantics this modal
+  // couldn't actually back up. Registering here and calling
+  // _a11yHandleOpen()/_a11yHandleClose() directly (bypassing the
+  // mutation-observer route entirely, since it doesn't apply to a
+  // create/remove lifecycle) instead of the 27 static modals' toggle-based
+  // one. Found in the 124th adversarial pass.
+  _a11yModalObserver.observe(modal,{attributes:true,attributeFilter:['class']});
+  if(_a11yOpenModalEl!==modal)_a11yHandleOpen(modal);
 }
 function applySourceAlign(fromDate){
   const modal=document.getElementById('source-align-modal');
-  if(modal)modal.remove();
+  if(modal){if(_a11yOpenModalEl===modal)_a11yHandleClose();modal.remove();}
   // Store the alignment date — used to filter months in getFilteredMonths
   state.sourceAlignDate=fromDate.slice(0,7);
   state.rangeFrom=fromDate.slice(0,7);
@@ -11674,13 +11704,13 @@ function applySourceAlign(fromDate){
 }
 function skipSourceAlign(){
   const modal=document.getElementById('source-align-modal');
-  if(modal)modal.remove();
+  if(modal){if(_a11yOpenModalEl===modal)_a11yHandleClose();modal.remove();}
 }
 function skipSourceAlignPermanent(){
   state.sourceAlignSkipped=true;
   scheduleSave();
   const modal=document.getElementById('source-align-modal');
-  if(modal)modal.remove();
+  if(modal){if(_a11yOpenModalEl===modal)_a11yHandleClose();modal.remove();}
 }
 
 // Set of t.id from the exact batch checkForVenmoCashouts() detected and
