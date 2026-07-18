@@ -4999,3 +4999,28 @@ test("dead CSS custom properties from the 140th pass's sweep are removed from bo
   assert.match(source, /--card-nudge-bg:#1E293B;/, "the live --card-nudge-bg token should still be defined in dark theme");
   assert.match(source, /--card-nudge-bg:#F8FAFC;/, "the live --card-nudge-bg token should still be defined in light theme");
 });
+
+// ── 143rd adversarial pass ──────────────────────────────────────────────
+// MEDIUM: the cross-tab "another tab is open" warning only reacted to
+// e.key===LS_KEY -- but state and transactions live in two separate
+// localStorage keys (LS_KEY/LS_TXS_KEY), and editing or deleting a
+// transaction (mutateTransactions() -> saveEditTx()/deleteTx()) touches
+// no serializeState() field, so saveToLocalStorage() writes an UNCHANGED
+// value to LS_KEY. Per the storage-event spec, setItem() with an
+// unchanged value never fires a storage event, so the listener saw
+// nothing at all for the two most common transaction operations --
+// silently reintroducing the exact "whichever tab saves last wins, zero
+// indication" failure mode this listener exists to warn about, just for
+// LS_TXS_KEY instead of LS_KEY. Adding a transaction is unaffected
+// (saveTx() bumps state.nextId, which IS serialized). Found in the 143rd
+// adversarial pass. ──
+test("cross-tab storage warning also fires for LS_TXS_KEY, not just LS_KEY -- transaction edits/deletes wouldn't otherwise trigger a storage event at all", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if\(\(e\.key===LS_KEY\|\|e\.key===LS_TXS_KEY\)&&!window\._isDemoPreview&&!window\._viewingDemoOverReal\)\{/,
+    "the storage listener should react to both LS_KEY and LS_TXS_KEY"
+  );
+});
