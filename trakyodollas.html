@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-KvaaBleoAMIbS0+HbkZj92KqICJApiJyspSOH46xjV4=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-KJ9voSG4WAUsohvk3tDErL9b0ujjwosRjNZ84+iXSio=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -640,7 +640,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 <script defer src="https://cloud.umami.is/script.js" data-website-id="e7ab8f18-2279-4b07-a0b4-cd497a4766ff"></script>
 </head><body>
 
-<div id="toast" style="position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--toast-bg);border:1px solid var(--toast-border);color:#34D399;font-size:12px;font-weight:600;padding:.5rem 1.2rem;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.5);transition:transform .3s,opacity .3s;opacity:0;pointer-events:none;z-index:300;white-space:nowrap"></div>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true" style="position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--toast-bg);border:1px solid var(--toast-border);color:#34D399;font-size:12px;font-weight:600;padding:.5rem 1.2rem;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.5);transition:transform .3s,opacity .3s;opacity:0;pointer-events:none;z-index:300;white-space:nowrap"></div>
 <div id="demo-chip" style="display:none"></div>
 
 <div id="cal-tip" class="cal-tip"></div>
@@ -10048,6 +10048,12 @@ function confirmSaveRule(){
   _pendingRule=null;
   closeModals();
 }
+// #toast carries role="status"/aria-live="polite" -- it's the app's single
+// universal feedback channel (save confirmations, import results,
+// validation errors, cloud-sync-failure warnings) and had no live-region
+// markup at all, so a screen-reader user got zero announcement of any
+// toast, including the error toasts that are the only signal a save/
+// import was rejected. Found in the 123rd adversarial pass.
 function showToast(msg,color,duration){
   const t=document.getElementById('toast');if(!t)return;
   t.innerHTML=msg;t.style.color=color||'#34D399';
@@ -11632,10 +11638,16 @@ function checkSourceAlignment(){
   const modal=document.createElement('div');
   modal.className='modal-overlay';
   modal.id='source-align-modal';
+  // role="dialog"/aria-modal/aria-labelledby/tabindex, matching every
+  // static .modal in the file -- this is the one modal built at runtime
+  // via createElement() rather than markup, so it had none of that
+  // dialog semantics even though the existing focus-trap logic (keyed off
+  // .modal-overlay:not(.hidden)) already traps Tab inside it. Found in
+  // the 123rd adversarial pass.
   modal.innerHTML=`
-    <div class="modal-box" style="max-width:420px">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="source-align-title" tabindex="-1" style="max-width:420px">
       <div style="font-size:13px;font-weight:700;color:var(--accent-blue-light);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">Data coverage</div>
-      <div class="modal-title" style="font-size:17px;margin-bottom:.75rem">Your sources cover different time periods</div>
+      <div id="source-align-title" class="modal-title" style="font-size:17px;margin-bottom:.75rem">Your sources cover different time periods</div>
       <p style="font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:1rem">
         <strong style="color:var(--text-secondary)">${esc(longSources.join(', '))}</strong> goes back ${longMonths} months farther than <strong style="color:var(--text-secondary)">${esc(shortSources.join(', '))}</strong>.
         Align all sources to <strong style="color:var(--text-bright)">${shortFmt}</strong> for fair comparisons and consistent coverage? You can change the time range anytime using the buttons above the chart.

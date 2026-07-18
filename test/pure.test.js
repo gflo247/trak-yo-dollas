@@ -3970,7 +3970,7 @@ test("checkSourceAlignment: removes any existing #source-align-modal before crea
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function checkSourceAlignment\(\)\{[\s\S]{0,3600}?document\.body\.appendChild\(modal\);/);
+  const fnMatch = source.match(/function checkSourceAlignment\(\)\{[\s\S]{0,4300}?document\.body\.appendChild\(modal\);/);
   assert.ok(fnMatch, "checkSourceAlignment() should exist");
   const removeIdx = fnMatch[0].search(/const existing=document\.getElementById\('source-align-modal'\);\s*if\(existing\)existing\.remove\(\);/);
   const createIdx = fnMatch[0].search(/const modal=document\.createElement\('div'\);/);
@@ -4375,4 +4375,44 @@ test("_checkSrpKeywordConflict: also warns when the new keyword would shadow (no
   const exactIdx = fnMatch[0].search(/const conflict=state\.catRules\.find\(r=>r\.keyword\.toUpperCase\(\)===kw\);/);
   const shadowIdx = fnMatch[0].search(/const shadowed=state\.catRules\.find/);
   assert.ok(exactIdx >= 0 && exactIdx < shadowIdx, "the exact-match check should still run first (its own more specific, more actionable warning)");
+});
+
+// ── 123rd adversarial pass ──────────────────────────────────────────────
+// MEDIUM: #toast is the app's single universal feedback channel (save
+// confirmations, import results, validation errors, cloud-sync-failure
+// warnings) but had no aria-live/role markup at all, so a screen-reader
+// user got zero announcement of any toast -- including error toasts that
+// are the only signal a save/import was rejected. Found in the 123rd
+// adversarial pass. ──
+test("#toast carries role=\"status\" and aria-live=\"polite\" so its messages are announced to screen readers", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<div id="toast" role="status" aria-live="polite" aria-atomic="true" style=/,
+    "the #toast element should carry role=status, aria-live=polite, and aria-atomic=true"
+  );
+});
+
+// LOW: checkSourceAlignment() builds its modal at runtime via
+// createElement() rather than static markup, so it never got the
+// role="dialog"/aria-modal/aria-labelledby/tabindex every static .modal
+// in the file carries -- the existing focus-trap logic already traps Tab
+// inside it, but assistive tech didn't recognize it as a dialog. Found in
+// the 123rd adversarial pass. ──
+test("checkSourceAlignment's dynamically-built modal carries the same dialog semantics as every static modal", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="source-align-title" tabindex="-1" style="max-width:420px">/,
+    "the modal-box should carry role=dialog, aria-modal=true, aria-labelledby, and tabindex=-1"
+  );
+  assert.match(
+    source,
+    /<div id="source-align-title" class="modal-title" style="font-size:17px;margin-bottom:\.75rem">Your sources cover different time periods<\/div>/,
+    "the title element should carry the id the aria-labelledby resolves to"
+  );
 });
