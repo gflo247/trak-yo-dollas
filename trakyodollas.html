@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-qAFjwDnxFGYLuxGtHG4YnqSk6jhqwXIYd/s9XNCRGN0=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-soP+UyuV5ProKgFrJgAt25r/YH2JYPuTDpMFLmMhJwU=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -4086,7 +4086,15 @@ function confirmCustomGoal(){
   const input=document.getElementById('custom-goal-input');
   if(!input)return;
   const parsed=parseFloat(String(input.value).replace(/[$,]/g,''));
-  if(isNaN(parsed)||parsed<=0){
+  // !Number.isFinite, not just isNaN -- #custom-goal-input is type="number",
+  // which accepts scientific notation like '1e400', and parseFloat()
+  // returns a truthy Infinity for that, not NaN. Without this, every guard
+  // below (parsed<=0, parsed<=netWorth()) passes, and state.nwGoal is set
+  // to Infinity -- poisoning renderNwGoalWidget()'s progress-fraction math
+  // for the rest of the session. Same class of gap the 87th pass closed
+  // for CSV import and the 119th/120th passes closed for other
+  // manual-entry fields. Found in the 120th adversarial pass.
+  if(!Number.isFinite(parsed)||parsed<=0){
     const hint=document.getElementById('custom-goal-hint');
     if(hint){hint.textContent='Please enter a valid amount.';hint.style.color='#F87171';}
     return;
@@ -12985,7 +12993,14 @@ function parseCsvAccounts(text){
     const[name,source,type,bal]=p;
     const balance=parseFloat(bal);
     const normType=ACCT_TYPE_ALIASES[type.trim().toLowerCase()];
-    if(!name.trim()||!normType||isNaN(balance)){skipped++;return;}
+    // !Number.isFinite, not just isNaN -- parseFloat('Infinity')/
+    // parseFloat('1e400') are truthy Infinity, not NaN, and would
+    // otherwise poison netWorth()/totalAssets() for the rest of the
+    // session. Same class of gap the 87th pass closed for transaction
+    // CSV import and the 119th pass closed for manual entry -- this is
+    // the one CSV import path (accounts, not transactions) neither had
+    // touched. Found in the 120th adversarial pass.
+    if(!name.trim()||!normType||!Number.isFinite(balance)){skipped++;return;}
     parsed.push({name:name.trim(),source:source.trim(),type:normType,balance});
   });
   const imported=parsed.length;
