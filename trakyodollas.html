@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Mjz1n8XmEE+iPVH8OoccxlhXHbQX/jJ7ToopEO+bB68=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-eDj7vP2MdqWe0c3Sy8OveqVyZbYFMDPTtz1If3HOoMI=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3777,7 +3777,11 @@ function copyYirSummary(){
       quietestMonth&&quietestMonth.m!==biggestMonth?.m?`Quietest month: ${fmtMonthShort(quietestMonth.m)} (${fmt(quietestMonth.spent,true)})`:null,
       savingsRate!=null?`Savings rate: ${savingsRate}%`:null,
       nwChange!=null?`Net worth change: ${nwChange>=0?'+':''}${fmt(nwChange,true)}`:null,
-      '(Transfers, CC payments & investments excluded from categories/vendors)',
+      // Was "...excluded from categories/vendors" -- understated after the
+      // 127th pass's fix, which extended the same exclusion to the total/
+      // savings rate/month rankings above, not just the breakdown. Found
+      // in the 128th adversarial pass.
+      '(Transfers, CC payments & investments excluded throughout)',
     ].filter(Boolean).join('\n');
     navigator.clipboard.writeText(lines).then(()=>showToast('📋 Copied to clipboard','#34D399'));
   }catch(e){showToast('Could not copy','#FCD34D');}
