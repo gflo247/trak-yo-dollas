@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-yRUrGBRqcMKk5OhaP5RhfX14qkl5do2KzhqJVsxG5UA=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-3gA5EiUNE34Ju1xPSC2+akdtcut0ZcSp5HIFaUg8eiI=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -13333,7 +13333,16 @@ function loadFromLocalStorage(){
     state.accounts=Array.isArray(saved.accounts)?_normalizeAccountTypes(saved.accounts):state.accounts;
     if(!state.accounts.some(a=>a.excludeFromNW)){
       if(saved.collegeFund){
-        state.accounts.push({id:state.nextId++,name:saved.collegeFund.name||'College Fund(s)',source:saved.collegeFund.sub||'Education savings',type:'investment',balance:saved.collegeFund.balance||0,excludeFromNW:true});
+        // Locally-computed safe id, not state.nextId++ -- state.nextId
+        // isn't restored from saved.nextId until later in this same
+        // function (below), so at push time it still holds its pre-load
+        // default (5000), risking a collision with an existing restored
+        // account already holding that id. Same reasoning as the sibling
+        // >=10-accounts branch just below (114th pass), just missed here
+        // since that fix only touched the one branch it was investigating.
+        // Found in the 132nd adversarial pass.
+        const collegeFundSafeId=Math.max(0,...state.accounts.map(a=>a.id||0))+1;
+        state.accounts.push({id:collegeFundSafeId,name:saved.collegeFund.name||'College Fund(s)',source:saved.collegeFund.sub||'Education savings',type:'investment',balance:saved.collegeFund.balance||0,excludeFromNW:true});
       } else if(!saved.hasRealData&&state.accounts.length>=10){
         if(!state.accounts.find(a=>a.name==='College Fund(s)')){
           // A locally-computed safe id, not the hardcoded id:12 this used
