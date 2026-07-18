@@ -4536,3 +4536,21 @@ test("Year in Review: Total spent/month figures/savings rate exclude transfer-li
   const matches = source.match(/state\.transactions\.filter\(t=>months\.includes\(t\.date\.slice\(0,7\)\)&&isRealSpend\(t\)&&!YIR_EXCLUDE_CATS\.has\(t\.cat\)&&state\.activeSources\.has\(t\.card\)&&\(_bizFilter!=='biz'\|\|t\.biz\)&&\(_bizFilter!=='personal'\|\|!t\.biz\)\);/g) || [];
   assert.equal(matches.length, 2, "both renderYearInReview() and copyYirSummary() should apply YIR_EXCLUDE_CATS directly to the txs filter, not only to the separate txsFiltered used for the category/vendor breakdown");
 });
+
+// ── 128th adversarial pass ──────────────────────────────────────────────
+// LOW (cosmetic): copyYirSummary()'s footer note still read "...excluded
+// from categories/vendors" after the 127th pass's fix, which extended the
+// same exclusion to the total/savings rate/month rankings above it too --
+// understating what the copied summary actually reflects. Found in the
+// 128th adversarial pass, a fresh-territory re-verification of the 127th
+// pass's fix. ──
+test("copyYirSummary: footer note reflects that transfer-like categories are excluded throughout, not just from categories/vendors", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /'\(Transfers, CC payments & investments excluded throughout\)',/,
+    "the footer note should say 'excluded throughout', not the stale 'excluded from categories/vendors'"
+  );
+});
