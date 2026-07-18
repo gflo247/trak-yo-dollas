@@ -3522,7 +3522,7 @@ test("parseCsvAccounts: only calls _replaceDemoDataWithReal() once at least one 
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function parseCsvAccounts\(text\)\{[\s\S]{0,1900}?\n\}/);
+  const fnMatch = source.match(/function parseCsvAccounts\(text\)\{[\s\S]{0,2400}?\n\}/);
   assert.ok(fnMatch, "parseCsvAccounts() should exist");
   const ifImportedIdx = fnMatch[0].search(/if\(imported>0\)\{/);
   const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
@@ -4289,5 +4289,36 @@ test("saveManualIncome: rejects a non-finite value alongside the existing falsy/
     source,
     /if\(!val\|\|val<=0\|\|!Number\.isFinite\(val\)\)\{showToast\('Please enter a valid monthly income'/,
     "should reject a non-finite value alongside the existing checks"
+  );
+});
+
+// ── 120th adversarial pass ──────────────────────────────────────────────
+// LOW: extending the 119th pass's Number.isFinite sweep -- its search was
+// scoped to manual-entry save functions and trusted an over-broad reading
+// of the 87th pass's fix ("CSV import" actually meant transaction CSV
+// import only). Two more reachable sites of the identical Infinity/1e400
+// class survived: the account CSV import path (never touched by either
+// the 87th or 119th pass), and the custom net-worth-goal input (whose
+// type="number" field accepts scientific notation like '1e400'). Found
+// in the 120th adversarial pass. ──
+test("parseCsvAccounts: rejects a non-finite (Infinity/1e400) balance, not just NaN", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if\(!name\.trim\(\)\|\|!normType\|\|!Number\.isFinite\(balance\)\)\{skipped\+\+;return;\}/,
+    "should reject a non-finite balance alongside the existing name/type checks"
+  );
+});
+
+test("confirmCustomGoal: rejects a non-finite (Infinity/1e400) goal amount, not just NaN", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if\(!Number\.isFinite\(parsed\)\|\|parsed<=0\)\{/,
+    "should reject a non-finite parsed value alongside the existing parsed<=0 check"
   );
 });
