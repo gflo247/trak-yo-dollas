@@ -3283,7 +3283,7 @@ test("copyYirSummary: every fmt() call feeding the clipboard uses raw=true, not 
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function copyYirSummary\(\)\{[\s\S]{0,4300}?\n\}/);
+  const fnMatch = source.match(/function copyYirSummary\(\)\{[\s\S]{0,4700}?\n\}/);
   assert.ok(fnMatch, "copyYirSummary() should exist");
   const fmtCalls = fnMatch[0].match(/fmt\((?:[^()]|\([^()]*\))*\)/g) || [];
   const nonRawCalls = fmtCalls.filter(c => !c.endsWith(",true)") && !c.startsWith("fmtMonthShort"));
@@ -4513,4 +4513,26 @@ test("service-worker controllerchange defers location.reload() while a modal is 
     /const reloadWhenIdle=\(\)=>\{\s*if\(document\.querySelector\('\.modal-overlay:not\(\.hidden\)'\)\)setTimeout\(reloadWhenIdle,1000\);\s*else location\.reload\(\);\s*\};\s*reloadWhenIdle\(\);/,
     "should poll for an open modal and defer the reload until none is open, rather than reloading unconditionally"
   );
+});
+
+// ── 127th adversarial pass ──────────────────────────────────────────────
+// MEDIUM: renderYearInReview()/copyYirSummary()'s "Total spent" hero,
+// month-by-month figures (biggest/quietest/average), and savings rate all
+// derived from `txs`, which only excluded state.excludedCats-independent
+// isRealSpend() (!excluded && !isIncome) -- NOT YIR_EXCLUDE_CATS
+// (Transfers/Investment Contributions/Internal Transfer/CC Payment/
+// Checks), which only ever gated the category/vendor breakdown below via
+// a separate `txsFiltered`. A 401k/brokerage contribution or a transfer
+// into savings inflated "Total spent" and pushed the savings rate DOWN --
+// the app penalized saving as if it were spending -- and the category
+// breakdown never summed to the hero total as a direct symptom. Fixed by
+// applying YIR_EXCLUDE_CATS to `txs` itself, so every downstream figure
+// (not just the breakdown) is consistent. Found in the 127th adversarial
+// pass. ──
+test("Year in Review: Total spent/month figures/savings rate exclude transfer-like categories, not just the category breakdown", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const matches = source.match(/state\.transactions\.filter\(t=>months\.includes\(t\.date\.slice\(0,7\)\)&&isRealSpend\(t\)&&!YIR_EXCLUDE_CATS\.has\(t\.cat\)&&state\.activeSources\.has\(t\.card\)&&\(_bizFilter!=='biz'\|\|t\.biz\)&&\(_bizFilter!=='personal'\|\|!t\.biz\)\);/g) || [];
+  assert.equal(matches.length, 2, "both renderYearInReview() and copyYirSummary() should apply YIR_EXCLUDE_CATS directly to the txs filter, not only to the separate txsFiltered used for the category/vendor breakdown");
 });
