@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-J506QAgIulpYOrnEwo+fj3nLYoskObS0Ff/UOUNhH3k=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-cwFWuhdyy+wtnfX+jtzxH+b0hAj3VlgK+ITN7MEKok8=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -7808,13 +7808,19 @@ function saveHistoricalSnapshot(){
   // guards, but was missed when that guard (and 5 siblings) were added
   // (110th/111th/112th passes). Without it, real backfilled history was
   // silently DELETED the moment any other covered first-real-save action
-  // ran its own wipe. A no-op if hasRealData is already true. Also clears
-  // _editingSnapshotMonthKey -- it may have referenced a demo snapshot
-  // the wipe just cleared, and after the wipe state.snapshots is empty
-  // regardless, so this save should behave as an add, not an edit. Found
-  // in the 112th adversarial pass.
+  // ran its own wipe. A no-op if hasRealData is already true -- in that
+  // (the ordinary, real-user) case _editingSnapshotMonthKey must NOT be
+  // cleared here, since every edit-detection check below reads it; a
+  // real user editing an existing snapshot always has hasRealData
+  // already true, so an unconditional clear silently broke snapshot
+  // editing entirely. Only clear it when the wipe actually ran -- it may
+  // have referenced a demo snapshot the wipe just cleared, and after a
+  // real wipe state.snapshots is empty regardless, so that save should
+  // behave as an add, not an edit. Found in the 112th adversarial pass;
+  // the unconditional-clear regression found and fixed in the 117th.
+  const _wasDemoData=!state.hasRealData;
   _replaceDemoDataWithReal();
-  _editingSnapshotMonthKey=null;
+  if(_wasDemoData)_editingSnapshotMonthKey=null;
   // Adding a *new* historical snapshot (not editing one) for a month that
   // already has a snapshot used to silently overwrite it — openHistoricalSnapshotModal()
   // always blanks the assets/liab fields, so a user who only fills in Net

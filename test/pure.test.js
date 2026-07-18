@@ -3802,7 +3802,7 @@ test("saveHistoricalSnapshot: has the demo-preview guard, wipes demo data before
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,6500}?_editingSnapshotMonthKey=null;\n  closeModals\(\);renderHistory\(\);renderNwChart\(\);scheduleSave\(\);/);
+  const fnMatch = source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,7000}?_editingSnapshotMonthKey=null;\n  closeModals\(\);renderHistory\(\);renderNwChart\(\);scheduleSave\(\);/);
   assert.ok(fnMatch, "saveHistoricalSnapshot() should exist");
   const guardIdx = fnMatch[0].search(/if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{/);
   const dateGuardIdx = fnMatch[0].search(/if\(!date\|\|isNaN\(nw\)\)/);
@@ -4146,5 +4146,36 @@ test("body-script theme IIFE no longer redundantly re-sets data-theme (the head 
     match[0],
     /if\(btn\)btn\.textContent=saved==='light'\?'☀️':'🌙';/,
     "should still set the toggle button's label from the saved theme"
+  );
+});
+
+// ── 117th adversarial pass ──────────────────────────────────────────────
+// HIGH: saveHistoricalSnapshot() unconditionally nulled
+// _editingSnapshotMonthKey right after calling _replaceDemoDataWithReal(),
+// which is a no-op whenever state.hasRealData is already true -- the
+// ordinary case for any real user editing an existing snapshot. Every
+// edit-detection check below (the "already have a snapshot" guard, the
+// moved-to-a-different-month guard, movedFromMonthKey) reads that flag,
+// so the unconditional clear silently broke snapshot editing entirely:
+// an in-place value edit was rejected as "already have a snapshot for
+// that month," and an edit that also moved the month created a stale
+// duplicate instead of moving the entry (both locally and in Supabase).
+// Found in the 117th adversarial pass, a regression escaped from the
+// 112th pass's own demo-transition fix. ──
+test("saveHistoricalSnapshot: only clears _editingSnapshotMonthKey when the demo-data wipe actually ran, not unconditionally", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,4300}?if\(_wasDemoData\)_editingSnapshotMonthKey=null;/);
+  assert.ok(fnMatch, "saveHistoricalSnapshot() should exist and reach the fixed clear site");
+  assert.match(
+    fnMatch[0],
+    /const _wasDemoData=!state\.hasRealData;\s*_replaceDemoDataWithReal\(\);\s*if\(_wasDemoData\)_editingSnapshotMonthKey=null;/,
+    "should capture whether real data existed before the wipe, and only clear the editing flag when the wipe actually ran"
+  );
+  assert.doesNotMatch(
+    fnMatch[0],
+    /_replaceDemoDataWithReal\(\);\s*_editingSnapshotMonthKey=null;/,
+    "should no longer unconditionally clear _editingSnapshotMonthKey right after the wipe call"
   );
 });
