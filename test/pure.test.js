@@ -90,8 +90,9 @@ test("classifyBudgetStatus: not at-risk for a non-current (historical) month", (
 // budget can land a hair above it purely from float noise (the classic
 // 0.1+0.2 shape). The old bare spend>budget comparison flipped `over`
 // true with no real overspend, showing a red "OVER" badge and a
-// nonsensical "$0.00 over budget" label (fmt() rounds the sub-cent
-// difference to $0.00). Found in the 141st adversarial pass. ──
+// nonsensical "$0 over budget" label (fmt() rounds to whole dollars,
+// so the sub-cent difference renders as $0). Found in the 141st
+// adversarial pass. ──
 test("classifyBudgetStatus: a sub-cent float-accumulation overshoot doesn't flip a category to OVER", () => {
   const { classifyBudgetStatus } = loadFunctions(["classifyBudgetStatus"]);
   // The classic 0.1+0.2 float-noise shape: spend lands a hair above
@@ -105,6 +106,53 @@ test("classifyBudgetStatus: a genuine overspend (well beyond the epsilon) is sti
   const { classifyBudgetStatus } = loadFunctions(["classifyBudgetStatus"]);
   const result = classifyBudgetStatus(300.5, 300, true, 0.9, 80);
   assert.equal(result.over, true, "a real 50-cent overspend should still be classified as over budget");
+});
+
+// ── 142nd adversarial pass ──────────────────────────────────────────────
+// LOW: the 141st pass added the float-noise epsilon only INSIDE
+// classifyBudgetStatus() -- 5 sibling sites (the compact budget badge,
+// buildCondensedDots(), buildPctDots(), the hero 12-month history dots,
+// and the inline per-cat condensed dots) all read the identical
+// unrounded getCatMonthSpend()/spendByCat-style float sums via their own
+// bare > comparisons, so a category exactly at budget could now show
+// green in classifyBudgetStatus()'s own callers but red in every one of
+// these -- the exact cross-UI inconsistency classifyBudgetStatus() was
+// extracted to eliminate (see its own header comment and the 44th
+// pass's near-identical fix for the warnPct boundary). Found in the
+// 142nd adversarial pass, re-verifying the 141st pass's own fix. ──
+test("compact budget badge dot/pct color use the same float-noise epsilon as classifyBudgetStatus()", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const matches = source.match(/curAmt>budget\+0\.005\?'#F87171':curAmt\/budget>0\.8\?'#FBBF24':'#34D399'/g) || [];
+  assert.equal(matches.length, 2, "both the dot and the % text color should use the same epsilon-tolerant comparison");
+});
+test("buildCondensedDots()/buildPctDots() use the same float-noise epsilon as classifyBudgetStatus()", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const matches = source.match(/ms>limit\+0\.005\?'#F87171':mp>=warnPct\?'#FBBF24':'#34D399'/g) || [];
+  assert.equal(matches.length, 2, "both buildCondensedDots() and buildPctDots() should use the same epsilon-tolerant comparison");
+});
+test("the hero 12-month history dots use the same float-noise epsilon as classifyBudgetStatus()", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /mSpent>totalBudget\+0\.005\?'#F87171':mPct>=warnPct\?'#FBBF24':'#34D399'/,
+    "the hero history dots should use the same epsilon-tolerant comparison"
+  );
+});
+test("the inline per-cat condensed dots use the same float-noise epsilon as classifyBudgetStatus()", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /ms>budget\+0\.005\?'#F87171':mp>=warnPct\?'#FBBF24':'#34D399'/,
+    "the inline per-cat condensed dots should use the same epsilon-tolerant comparison"
+  );
 });
 test("classifyBudgetStatus: comfortably under budget is on-track", () => {
   const { classifyBudgetStatus } = loadFunctions(["classifyBudgetStatus"]);

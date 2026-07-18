@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-3BZtAT+nZebh1iOLYzQ2HYR6TJ/B/fIIft0hoWXQQ1g=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-3r2CWSHHOIDRyjN7mSoTPk21xXIamtklGzdiEperUWM=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2807,10 +2807,10 @@ function classifyBudgetStatus(spend,budget,isCurrentMonth,daysPct,warnPct){
   // to cents), so a month whose spend totals exactly the budget can land
   // a hair above it purely from float noise (the classic 0.1+0.2
   // shape). Without this, that flipped `over` true with no real
-  // overspend, showing a red "OVER" badge and a nonsensical "$0.00 over
-  // budget" label (fmt() rounds the sub-cent difference to $0.00) for a
-  // category that's actually exactly on budget. Found in the 141st
-  // adversarial pass.
+  // overspend, showing a red "OVER" badge and a nonsensical "$0 over
+  // budget" label (fmt() rounds to whole dollars, so the sub-cent
+  // difference renders as $0) for a category that's actually exactly on
+  // budget. Found in the 141st adversarial pass.
   const over=spend>budget+0.005;
   const atRisk=!over&&pct>=warnPct&&isCurrentMonth&&daysPct<=0.6;
   return{over,atRisk,pct};
@@ -5097,10 +5097,17 @@ function renderBucketGrid(){
     const vsAvg=periodAvg>0?Math.round((curAmt-periodAvg)/periodAvg*100):0;
     const signal=curAmt>0?(vsAvg>=20?`<span class="text-danger">↑${vsAvg}%</span>`:vsAvg<=-20?`<span class="text-success">↓${Math.abs(vsAvg)}%</span>`:(Math.abs(vsAvg)>=5?`<span style="color:#64748B">${vsAvg>=0?'+':''}${vsAvg}%</span>`:'')):'';
     // Compact budget badge — replaces progress bar
+    // curAmt>budget+0.005, not a bare >, matching classifyBudgetStatus()'s
+    // own epsilon -- this dot/badge reads the identical unrounded
+    // spendByCat-style float sum, so without the same tolerance a
+    // category exactly at budget could show green here but red in
+    // classifyBudgetStatus()'s own callers, the exact cross-UI
+    // inconsistency that function exists to prevent. Found in the 142nd
+    // adversarial pass.
     const budgetBadge=budget?`<div data-action="openBudgetModal" data-arg="${sc}" data-stop="1" title="Budget: ${fmt(budget)}/mo — click to edit · See Budget tab for full tracking" style="margin-top:5px;display:flex;align-items:center;gap:5px;cursor:pointer">
-      <div style="width:10px;height:6px;border-radius:3px;background:${curAmt>budget?'#F87171':curAmt/budget>0.8?'#FBBF24':'#34D399'};flex-shrink:0"></div>
+      <div style="width:10px;height:6px;border-radius:3px;background:${curAmt>budget+0.005?'#F87171':curAmt/budget>0.8?'#FBBF24':'#34D399'};flex-shrink:0"></div>
       <span style="font-size:9px;color:var(--text-muted)">${fmt(curAmt)} of ${fmt(budget)} budget</span>
-      <span style="font-size:10px;font-weight:700;color:${curAmt>budget?'#F87171':curAmt/budget>0.8?'#FBBF24':'#34D399'}">${Math.round(curAmt/budget*100)}%</span>
+      <span style="font-size:10px;font-weight:700;color:${curAmt>budget+0.005?'#F87171':curAmt/budget>0.8?'#FBBF24':'#34D399'}">${Math.round(curAmt/budget*100)}%</span>
     </div>`
     :`<button data-action="openBudgetModal" data-arg="${sc}" data-stop="1" style="margin-top:5px;width:100%;background:none;border:1px solid var(--border-mid);border-radius:5px;padding:2px 6px;font-size:9px;font-weight:600;color:var(--text-muted);cursor:pointer;text-align:center" title="Set a monthly budget for ${sc}" type="button">+ Set budget</button>`;
     return`<div class="bucket-card ${isActive?'active-bucket':''}" style="${dashed?'opacity:.75':''};border-color:${isActive?color:tc('#1E293B','#E2E8F0')};background:${isActive?color+'18':tc('#0F172A','#F8FAFC')};color:${color}" data-action="toggleCatFilter" data-arg="${sc}">
@@ -8388,7 +8395,16 @@ function buildCondensedDots(months,budgeted,totalBudget,mode,cat,budget){
     // "AT RISK" in the row badge/CSV export while these history dots, the
     // YTD ring, and the tab's top summary color simultaneously showed
     // green "on track" for the same number.
-    const mc=ms>limit?'#F87171':mp>=warnPct?'#FBBF24':'#34D399';
+    // limit+0.005, not a bare >, matching classifyBudgetStatus()'s own
+    // float-noise epsilon (142nd adversarial pass) -- ms is the same
+    // unrounded getCatMonthSpend()/spendByCat-style float sum, so without
+    // the identical tolerance a category exactly at budget could show red
+    // here while classifyBudgetStatus()'s own callers show green, the
+    // exact cross-UI inconsistency this dot's own comment above already
+    // documents fixing once (for the >= warnPct boundary) but which
+    // reopened for the > limit boundary when the 141st pass added the
+    // epsilon only inside classifyBudgetStatus() itself.
+    const mc=ms>limit+0.005?'#F87171':mp>=warnPct?'#FBBF24':'#34D399';
     const ml=fmtMonthShort(m);
     return '<div style="flex:1;height:9px;border-radius:4px;background:'+(ms>0?mc:'#1E293B')+';min-width:0" title="'+ml+': '+fmtC(ms)+' ('+mp+'%)"></div>';
   }).join('');
@@ -8400,7 +8416,9 @@ function buildPctDots(months,getSpend,limit){
   return months.map((m,i)=>{
     const ms=getSpend(m);
     const mp=limit>0?Math.round(ms/limit*100):0;
-    const mc=ms>limit?'#F87171':mp>=warnPct?'#FBBF24':'#34D399';
+    // limit+0.005 -- same epsilon fix as buildCondensedDots() just above,
+    // for the same reason. Found in the 142nd adversarial pass.
+    const mc=ms>limit+0.005?'#F87171':mp>=warnPct?'#FBBF24':'#34D399';
     const ml=fmtMonthShort(m);
     const topLabel=_labelIdxs.has(i)?(ml.slice(0,3)+' \''+m.slice(2,4)):'';
     const bottomText=ms>0?mp+'%':'–';
@@ -8715,7 +8733,10 @@ function renderBudgetTab(){
     const histDots=histMonths.map((m,i)=>{
       const mSpent=budgeted.reduce((s,[c])=>s+getCatMonthSpend(c,m),0);
       const mPct=totalBudget>0?Math.round(mSpent/totalBudget*100):0;
-      const mColor=mSpent>totalBudget?'#F87171':mPct>=warnPct?'#FBBF24':'#34D399';
+      // totalBudget+0.005 -- same epsilon fix as buildCondensedDots()/
+      // buildPctDots() above, same reason. Found in the 142nd
+      // adversarial pass.
+      const mColor=mSpent>totalBudget+0.005?'#F87171':mPct>=warnPct?'#FBBF24':'#34D399';
       const mLabel=fmtMonthShort(m);
       const topLabel=_labelIdxs.has(i)?(mLabel.slice(0,3)+' \''+m.slice(2,4)):'';
       const mBottomText=mSpent>0?mPct+'%':'–';
@@ -8842,7 +8863,10 @@ function renderBudgetTab(){
       const{over,atRisk}=getRowFlags(cat,budget);
       const accentColor=over?'#F87171':atRisk?'#FBBF24':null;
 
-      const condensedDots=histMonths.map(mo=>{const ms=getCatMonthSpend(cat,mo);const mp=budget>0?Math.round(ms/budget*100):0;const mc=ms>budget?'#F87171':mp>=warnPct?'#FBBF24':'#34D399';const ml=fmtMonthShort(mo);return`<div style="flex:1;height:9px;border-radius:4px;background:${ms>0?mc:tc('#1E293B','#E2E8F0')};min-width:0" title="${ml}: ${fmt(ms)} (${mp}%)"></div>`;}).join('');
+      // budget+0.005 -- same epsilon fix as buildCondensedDots()/
+      // buildPctDots() above, same reason. Found in the 142nd adversarial
+      // pass.
+      const condensedDots=histMonths.map(mo=>{const ms=getCatMonthSpend(cat,mo);const mp=budget>0?Math.round(ms/budget*100):0;const mc=ms>budget+0.005?'#F87171':mp>=warnPct?'#FBBF24':'#34D399';const ml=fmtMonthShort(mo);return`<div style="flex:1;height:9px;border-radius:4px;background:${ms>0?mc:tc('#1E293B','#E2E8F0')};min-width:0" title="${ml}: ${fmt(ms)} (${mp}%)"></div>`;}).join('');
       const pctDots=buildRowPctDots(histMonths,cat,budget);
       const uid=esc(`hist-${cat.replace(/\s+/g,'_')}`);
       const histHTML=histMonths.length
