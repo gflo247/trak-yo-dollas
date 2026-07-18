@@ -3493,7 +3493,7 @@ test("saveAccount: calls _replaceDemoDataWithReal() before adding the account, a
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveAccount\(\)\{[\s\S]{0,3100}?closeModals\(\);renderAll\(\);\}/);
+  const fnMatch = source.match(/function saveAccount\(\)\{[\s\S]{0,3700}?closeModals\(\);renderAll\(\);\}/);
   assert.ok(fnMatch, "saveAccount() should exist");
   const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
   const pushIdx = fnMatch[0].search(/state\.accounts\.push\(/);
@@ -3536,7 +3536,7 @@ test("saveTx: sets state.hasRealData and calls _replaceDemoDataWithReal(), unlik
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveTx\(\)\{[\s\S]{0,3100}?\n\}/);
+  const fnMatch = source.match(/function saveTx\(\)\{[\s\S]{0,3600}?\n\}/);
   assert.ok(fnMatch, "saveTx() should exist");
   assert.match(fnMatch[0], /_replaceDemoDataWithReal\(\);/, "saveTx() should call the shared wipe helper");
   assert.match(fnMatch[0], /state\.hasRealData=true;/, "saveTx() should now set state.hasRealData -- previously it never did, so a manual-entry-only user's transactions stayed misclassified as demo data and were silently deleted by confirmTxImport()'s own !state.hasRealData wipe on their first later CSV import");
@@ -3664,7 +3664,7 @@ test("saveTx: auto-registers the selected category as a real custom category if 
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveTx\(\)\{[\s\S]{0,3100}?\n\}/);
+  const fnMatch = source.match(/function saveTx\(\)\{[\s\S]{0,3600}?\n\}/);
   assert.ok(fnMatch, "saveTx() should exist");
   const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
   const registerIdx = fnMatch[0].search(/if\(cat&&!getAllCats\(\)\.some\(c=>c\.toLowerCase\(\)===cat\.toLowerCase\(\)\)\)\{/);
@@ -3777,10 +3777,10 @@ test("saveVehicle: has the demo-preview guard, calls _replaceDemoDataWithReal() 
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveVehicle\(\)\{[\s\S]{0,7400}?closeModals\(\);renderAll\(\);\n\}/);
+  const fnMatch = source.match(/function saveVehicle\(\)\{[\s\S]{0,7900}?closeModals\(\);renderAll\(\);\n\}/);
   assert.ok(fnMatch, "saveVehicle() should exist");
   const guardIdx = fnMatch[0].search(/if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{/);
-  const valueGuardIdx = fnMatch[0].search(/if\(value<0\)return;/);
+  const valueGuardIdx = fnMatch[0].search(/if\(value<0\|\|!Number\.isFinite\(value\)\|\|!Number\.isFinite\(purchase\)\)return;/);
   const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
   const fallbackIdx = fnMatch[0].search(/if\(editVehicleId&&!state\.vehicles\.find\(x=>x\.id===editVehicleId\)\)editVehicleId=null;/);
   const editCheckIdx = fnMatch[0].search(/if\(editVehicleId\)\{/);
@@ -3802,10 +3802,10 @@ test("saveHistoricalSnapshot: has the demo-preview guard, wipes demo data before
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,7000}?_editingSnapshotMonthKey=null;\n  closeModals\(\);renderHistory\(\);renderNwChart\(\);scheduleSave\(\);/);
+  const fnMatch = source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,7500}?_editingSnapshotMonthKey=null;\n  closeModals\(\);renderHistory\(\);renderNwChart\(\);scheduleSave\(\);/);
   assert.ok(fnMatch, "saveHistoricalSnapshot() should exist");
   const guardIdx = fnMatch[0].search(/if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{/);
-  const dateGuardIdx = fnMatch[0].search(/if\(!date\|\|isNaN\(nw\)\)/);
+  const dateGuardIdx = fnMatch[0].search(/if\(!date\|\|!Number\.isFinite\(nw\)\)/);
   const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
   const dupCheckIdx = fnMatch[0].search(/if\(!_editingSnapshotMonthKey&&state\.snapshots\.some/);
   const hasRealSnapIdx = fnMatch[0].search(/state\.hasRealSnapshot=true;/);
@@ -4166,7 +4166,7 @@ test("saveHistoricalSnapshot: only clears _editingSnapshotMonthKey when the demo
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,4300}?if\(_wasDemoData\)_editingSnapshotMonthKey=null;/);
+  const fnMatch = source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,5000}?if\(_wasDemoData\)_editingSnapshotMonthKey=null;/);
   assert.ok(fnMatch, "saveHistoricalSnapshot() should exist and reach the fixed clear site");
   assert.match(
     fnMatch[0],
@@ -4177,5 +4177,117 @@ test("saveHistoricalSnapshot: only clears _editingSnapshotMonthKey when the demo
     fnMatch[0],
     /_replaceDemoDataWithReal\(\);\s*_editingSnapshotMonthKey=null;/,
     "should no longer unconditionally clear _editingSnapshotMonthKey right after the wipe call"
+  );
+});
+
+// ── 119th adversarial pass ──────────────────────────────────────────────
+// LOW: the 87th pass added a Number.isFinite guard to CSV import
+// specifically because parseFloat('Infinity')/parseFloat('1e400') both
+// return a truthy Infinity, not NaN -- so a bare !amount/isNaN/>0 check
+// lets it straight through. That guard was never propagated to the
+// app's ~8 manual-entry numeric fields (transactions, accounts,
+// vehicles, budgets, historical snapshots, income). An accepted
+// Infinity poisons every live aggregate that reads it for the rest of
+// the session, then silently collapses to 0 on the next save+reload
+// (JSON.stringify(Infinity)==="null", and every loader's `||0`
+// coercion turns null back into 0) -- so not a crash, but a real
+// silent-data-corruption path. Found in the 119th adversarial pass. ──
+test("saveTx: rejects a non-finite (Infinity/1e400) amount, not just a falsy one", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function saveTx\(\)\{[\s\S]{0,1600}/);
+  assert.ok(fnMatch, "saveTx() should exist");
+  assert.match(
+    fnMatch[0],
+    /if\(!desc\|\|!amount\|\|!Number\.isFinite\(amount\)\)\{/,
+    "should reject a non-finite amount alongside the existing falsy check"
+  );
+});
+
+test("saveEditTx: rejects a non-finite amount, not just NaN", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if\(!Number\.isFinite\(amountVal\)\)\{showToast\('⚠ Invalid amount — edit not saved'/,
+    "should use !Number.isFinite instead of isNaN, so Infinity is also rejected"
+  );
+});
+
+test("saveAccount: a non-finite balance falls back to 0 instead of poisoning net worth", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /_balanceRaw=parseFloat\(document\.getElementById\('f-balance'\)\.value\),\s*balance=Number\.isFinite\(_balanceRaw\)\?_balanceRaw:0,/,
+    "balance should be derived via a Number.isFinite check, not a bare `||0` fallback that Infinity survives"
+  );
+});
+
+test("saveVehicle: rejects non-finite value/purchase, not just a negative value", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if\(value<0\|\|!Number\.isFinite\(value\)\|\|!Number\.isFinite\(purchase\)\)return;/,
+    "should reject non-finite value or purchase alongside the existing negative-value guard"
+  );
+});
+
+test("saveBudget: a non-finite budget amount is treated as absent, not saved", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if\(val>0&&Number\.isFinite\(val\)\)state\.budgets\[cat\]=Math\.round\(val\);/,
+    "should require Number.isFinite alongside val>0 before saving the budget"
+  );
+});
+
+test("saveHistoricalSnapshot: net worth/assets/liabilities are all Number.isFinite-guarded", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const assetsRaw=parseFloat\(document\.getElementById\('hist-snap-assets'\)\.value\);\s*const assets=Number\.isFinite\(assetsRaw\)\?assetsRaw:nw;/,
+    "assets should fall back to nw only via a Number.isFinite check, not a bare `||nw` that Infinity survives"
+  );
+  assert.match(
+    source,
+    /const liabRaw=parseFloat\(document\.getElementById\('hist-snap-liab'\)\.value\);\s*const liab=Number\.isFinite\(liabRaw\)\?liabRaw:0;/,
+    "liab should fall back to 0 only via a Number.isFinite check"
+  );
+  assert.match(
+    source,
+    /if\(!date\|\|!Number\.isFinite\(nw\)\)\{showToast\('Please enter a date and net worth'/,
+    "nw should be rejected via !Number.isFinite, not just isNaN"
+  );
+});
+
+test("saveDeclaredIncome: rejects a non-finite value, not just NaN", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if\(Number\.isFinite\(val\)&&val>0\)\{/,
+    "should use Number.isFinite instead of !isNaN, so Infinity is also rejected"
+  );
+});
+
+test("saveManualIncome: rejects a non-finite value alongside the existing falsy/negative checks", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if\(!val\|\|val<=0\|\|!Number\.isFinite\(val\)\)\{showToast\('Please enter a valid monthly income'/,
+    "should reject a non-finite value alongside the existing checks"
   );
 });
