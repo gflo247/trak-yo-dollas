@@ -4416,3 +4416,52 @@ test("checkSourceAlignment's dynamically-built modal carries the same dialog sem
     "the title element should carry the id the aria-labelledby resolves to"
   );
 });
+
+// ── 124th adversarial pass ──────────────────────────────────────────────
+// MEDIUM: #source-align-modal is the one modal built at runtime rather
+// than existing in static markup, so it was never in the DOM when
+// _a11yModalObserver's one-time querySelectorAll('.modal-overlay') set up
+// its watch list -- it never got focus moved in on open or returned on
+// close, and since it's dismissed via .remove() rather than toggling the
+// .hidden class, no class-attribute mutation ever exists for the observer
+// to detect even if it WERE registered. The 123rd pass's aria-modal="true"
+// addition asserted dialog semantics this modal couldn't actually back
+// up. Found in the 124th adversarial pass (re-verifying the 123rd pass's
+// own fix). ──
+test("checkSourceAlignment's modal is wired into the shared a11y focus-management system (registered with the observer, opens/closes via the same handlers as static modals)", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /_a11yModalObserver\.observe\(modal,\{attributes:true,attributeFilter:\['class'\]\}\);\s*if\(_a11yOpenModalEl!==modal\)_a11yHandleOpen\(modal\);/,
+    "checkSourceAlignment() should register the modal with the observer and directly call _a11yHandleOpen(), since no class-attribute mutation occurs for the observer to detect on its own"
+  );
+  const closers = ["applySourceAlign", "skipSourceAlign", "skipSourceAlignPermanent"];
+  closers.forEach(fnName => {
+    const fnMatch = source.match(new RegExp(`function ${fnName}\\([^)]*\\)\\{[\\s\\S]{0,400}`));
+    assert.ok(fnMatch, `${fnName}() should exist`);
+    assert.match(
+      fnMatch[0],
+      /if\(modal\)\{if\(_a11yOpenModalEl===modal\)_a11yHandleClose\(\);modal\.remove\(\);\}/,
+      `${fnName}() should call _a11yHandleClose() before removing the modal, so focus returns to the trigger`
+    );
+  });
+});
+
+// LOW: Chrome (and some other browsers) silently increments/decrements a
+// focused <input type="number">'s value when the mouse wheel scrolls over
+// it. #budget-warn-input sits inline in the scrollable Budget tab (not a
+// modal), so a user scrolling the page with that field still focused from
+// a prior edit gets their near-limit warning threshold silently altered
+// with zero intent. Found in the 124th adversarial pass. ──
+test("a focused <input type=number> is blurred on wheel scroll, preventing the browser's native scroll-to-change behavior", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /document\.addEventListener\('wheel',function\(e\)\{\s*if\(e\.target\.tagName==='INPUT'&&e\.target\.type==='number'&&document\.activeElement===e\.target\)e\.target\.blur\(\);\s*\},\{passive:true\}\);/,
+    "should blur a focused number input on wheel, with {passive:true} so page scrolling itself is unaffected"
+  );
+});
