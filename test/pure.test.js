@@ -2813,6 +2813,37 @@ test("_normalizeAccountTypes: coerces balance to a finite number, stripping comm
     "a plain number should be untouched, a comma-formatted string should be parsed correctly (not truncated at the comma), a plain numeric string should parse, Infinity/garbage/missing should fall back to 0, and a negative liability balance should be preserved"
   );
 });
+
+// ── 131st adversarial pass ──────────────────────────────────────────────
+// LOW: restored nextId (a hand-edited/corrupted backup, or a legacy/
+// malformed cloud row) was never reconciled against the ids actually
+// present in state.accounts/state.vehicles, which share the same id
+// namespace. A duplicate id (e.g. from copy-pasting an account block
+// while hand-editing a backup -- the same editing scenario the 130th
+// pass's balance fix targets) or a stale/too-low saved.nextId causes
+// editAccount()'s .find() to silently edit the wrong record,
+// deleteAcct()'s .filter() to delete BOTH colliding accounts at once,
+// isPairedAccount() to misattribute a vehicle's value, and the very next
+// in-app "Add account" to mint a new id that collides with an existing
+// one. Found in the 131st adversarial pass. ──
+test("_reconcileNextId: bumps nextId past the max id actually present in accounts/vehicles, closing a duplicate/stale-id gap on restore", () => {
+  const state = { accounts: [{ id: 5000 }, { id: 5003 }], vehicles: [{ id: 5010 }], nextId: 3 };
+  const { _reconcileNextId } = loadFunctions(["_reconcileNextId"], { state });
+  _reconcileNextId();
+  assert.equal(state.nextId, 5011, "nextId should be bumped to 1 past the max id found across accounts and vehicles, since the restored nextId (3) was stale/too-low");
+});
+test("_reconcileNextId: leaves nextId untouched when it's already safely ahead of every existing id", () => {
+  const state = { accounts: [{ id: 5000 }], vehicles: [{ id: 5001 }], nextId: 6000 };
+  const { _reconcileNextId } = loadFunctions(["_reconcileNextId"], { state });
+  _reconcileNextId();
+  assert.equal(state.nextId, 6000, "nextId should stay unchanged when the restored value already exceeds every existing id");
+});
+test("_reconcileNextId: a non-finite/missing id is treated as 0, not NaN, so it can't poison the Math.max computation", () => {
+  const state = { accounts: [{ id: "garbage" }, {}], vehicles: [], nextId: 1 };
+  const { _reconcileNextId } = loadFunctions(["_reconcileNextId"], { state });
+  _reconcileNextId();
+  assert.equal(state.nextId, 1, "with no valid ids present, nextId should stay at its own already-safe value, not become NaN");
+});
 test("loadFromLocalStorage: accounts/vehicles/catRules/vendorAliases/hiddenPills/activeSources/sourceAlignDate/nextId are all Array.isArray/type-guarded, and accounts routes through _normalizeAccountTypes", () => {
   const fs = require("fs");
   const path = require("path");
@@ -2825,7 +2856,15 @@ test("loadFromLocalStorage: accounts/vehicles/catRules/vendorAliases/hiddenPills
   assert.match(source, /if\(Array\.isArray\(saved\.activeSources\)&&saved\.activeSources\.length>0\)\{/, "activeSources should be Array.isArray-guarded, not just checked for a truthy .length");
   assert.match(source, /state\.sourceAlignDate=typeof saved\.sourceAlignDate==='string'\?saved\.sourceAlignDate:null;/, "sourceAlignDate should be type-checked, not just ??null");
   assert.match(source, /state\.nextId=Number\(saved\.nextId\)\|\|state\.nextId;/, "nextId should be Number()-coerced");
+  assert.match(source, /state\.nextId=Number\(saved\.nextId\)\|\|state\.nextId;\s*\/\/ Reconciled against the ids actually restored above[\s\S]{0,200}?_reconcileNextId\(\);/, "nextId should be reconciled against the actually-restored accounts/vehicles ids (131st adversarial pass), not just Number()-coerced");
   assert.match(source, /const txSource=txRaw\?JSON\.parse\(txRaw\):saved\.transactions;[\s\S]{0,900}?state\.transactions=\(Array\.isArray\(txSource\)\?txSource:state\.transactions\)/, "the transactions txSource should be Array.isArray-checked before .filter()");
+});
+test("importBackup/loadUserData: both also call _reconcileNextId() after restoring nextId, matching loadFromLocalStorage()", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const matches = source.match(/_reconcileNextId\(\);/g) || [];
+  assert.equal(matches.length, 3, "all 3 restore paths (cloud sync, local storage, backup restore) should call _reconcileNextId() once each");
 });
 test("importBackup: vehicles/catRules/vendorAliases all route through the new shared helpers", () => {
   const fs = require("fs");
