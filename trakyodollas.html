@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-67uLX7iZ0EHmXNXzpJu5nt6l6zIo1Kre0pjtjFpEZVE=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-UJosOMYE0sZiVPyaJ3G6DYkT3YOJdcfj2wgBJifZHRw=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -13064,6 +13064,21 @@ function _normalizeAccountTypes(accounts){
   accounts.forEach(a=>{
     const norm=ACCT_TYPE_ALIASES[String(a.type||'').trim().toLowerCase()];
     if(norm)a.type=norm;
+    // Coerce balance to a finite number -- unlike every other ingestion
+    // path (transaction amount, manual-entry balance, CSV account
+    // import), balance restored through this function was taken verbatim
+    // from whatever a hand-edited or corrupted backup/cloud-sync payload
+    // contained: a comma-formatted string ("1,234.56", stripped here the
+    // same way confirmCustomGoal() strips $/,), a plain numeric string,
+    // or Infinity/NaN. totalAssets()/totalLiab() do `s+a.balance` in a
+    // reduce -- a string balance produces string concatenation instead of
+    // a sum, poisoning netWorth() into NaN, and the corrupted value then
+    // gets written straight back to localStorage/cloud sync on the very
+    // next save, outliving the session. Every one of this function's 3
+    // callers (cloud sync, local storage, backup restore) shares this one
+    // fix. Found in the 130th adversarial pass.
+    const parsedBalance=parseFloat(String(a.balance).replace(/,/g,''));
+    a.balance=Number.isFinite(parsedBalance)?parsedBalance:0;
   });
   return accounts;
 }
