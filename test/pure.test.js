@@ -4784,3 +4784,41 @@ test(".demo-picker carries the same max-height/overflow-y scroll cap as .modal, 
     "the .demo-picker rule should include max-height:90vh and overflow-y:auto, matching .modal's own treatment"
   );
 });
+
+// ── 137th adversarial pass ──────────────────────────────────────────────
+// LOW: #toast (position:fixed, centered, white-space:nowrap, no
+// max-width) had no way to wrap or cap its own width. Several real toast
+// messages run 60-80+ characters (the demo-preview-guard message, cloud-
+// sync-failure messages), so on a narrow phone a long message rendered
+// wider than the viewport and overflowed past both edges with nothing to
+// scroll (html/body both have overflow-x:hidden) -- the same class of
+// unreachable-content gap the 136th pass fixed for the demo picker, just
+// horizontal instead of vertical. Found in the 137th adversarial pass. ──
+test("#toast carries a max-width and wraps long messages, instead of overflowing past both edges of a narrow viewport", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<div id="toast" role="status" aria-live="polite" aria-atomic="true" style="[^"]*max-width:92vw;white-space:normal;text-align:center"><\/div>/,
+    "#toast should have max-width:92vw and white-space:normal (not nowrap), so long messages wrap inside the viewport instead of clipping"
+  );
+});
+
+// LOW (marginal -- fully dismissible, not a trap): #pill-tip-overlay's
+// content box had no max-height/overflow-y, unlike .modal's own
+// max-height:90vh;overflow-y:auto cap for the identical centered-overlay
+// pattern. A long insight-pill tip could overflow top and bottom on a
+// very short viewport with nothing to scroll -- lower urgency than the
+// demo-picker fix since tapping anywhere (including the clipped area)
+// dismisses this overlay. Found in the 137th adversarial pass. ──
+test("showPillTip: the tip content box carries max-height/overflow-y, matching .modal's own scroll cap", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /max-width:320px;width:100%;max-height:80vh;overflow-y:auto;font-size:12px;color:#94A3B8;line-height:1\.6;white-space:pre-line/,
+    "the pill-tip content box should include max-height:80vh and overflow-y:auto"
+  );
+});

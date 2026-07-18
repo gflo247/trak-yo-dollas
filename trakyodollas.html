@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-zUV68dGC0rWnIfbR9fNeocanf/qWpA1l20u/kfTERsY=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-bxob+xgzQvlJ4uko6+iigLkd06ZohGxJqj+mXJTZx3M=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -649,7 +649,16 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 <script defer src="https://cloud.umami.is/script.js" data-website-id="e7ab8f18-2279-4b07-a0b4-cd497a4766ff"></script>
 </head><body>
 
-<div id="toast" role="status" aria-live="polite" aria-atomic="true" style="position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--toast-bg);border:1px solid var(--toast-border);color:#34D399;font-size:12px;font-weight:600;padding:.5rem 1.2rem;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.5);transition:transform .3s,opacity .3s;opacity:0;pointer-events:none;z-index:300;white-space:nowrap"></div>
+<!-- max-width:92vw + white-space:normal (was nowrap, no width cap) --
+     several real toast messages run 60-80+ characters (e.g. the demo-
+     preview-guard message, cloud-sync-failure messages), and this
+     centered fixed-position pill had no way to wrap or cap its own
+     width, so a long message on a narrow phone rendered wider than the
+     viewport and overflowed past both edges with nothing to scroll --
+     the same class of unreachable-content gap the 136th pass fixed for
+     the demo picker, just horizontal instead of vertical. Found in the
+     137th adversarial pass. -->
+<div id="toast" role="status" aria-live="polite" aria-atomic="true" style="position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--toast-bg);border:1px solid var(--toast-border);color:#34D399;font-size:12px;font-weight:600;padding:.5rem 1.2rem;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.5);transition:transform .3s,opacity .3s;opacity:0;pointer-events:none;z-index:300;max-width:92vw;white-space:normal;text-align:center"></div>
 <div id="demo-chip" style="display:none"></div>
 
 <div id="cal-tip" class="cal-tip"></div>
@@ -9574,7 +9583,13 @@ function showPillTip(_,el){
   // context) is what actually makes it safe; #pill-tip-overlay's
   // white-space:pre-line already renders the real newline characters
   // &#10; decodes to, so no manual \n conversion is needed either.
-  overlay.innerHTML=`<div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:1rem 1.2rem;max-width:320px;width:100%;font-size:12px;color:#94A3B8;line-height:1.6;white-space:pre-line">${esc(tip)}</div>`;
+  // max-height:80vh;overflow-y:auto -- matches .modal's own scroll cap
+  // (this overlay centers its child with align-items:center the same
+  // way .modal-overlay does). Lower urgency than the 136th pass's demo-
+  // picker fix, since tapping anywhere here (including a clipped area)
+  // dismisses it -- not a trap, just a readability gap on a very short
+  // viewport with a long tip. Found in the 137th adversarial pass.
+  overlay.innerHTML=`<div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:1rem 1.2rem;max-width:320px;width:100%;max-height:80vh;overflow-y:auto;font-size:12px;color:#94A3B8;line-height:1.6;white-space:pre-line">${esc(tip)}</div>`;
   overlay.style.display='flex';
 }
 
