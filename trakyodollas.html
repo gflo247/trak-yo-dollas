@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-JxHWHLX1yEZ6F3jyi463/XEaOEYaIvXKn8b4c9c8IsQ=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-KvaaBleoAMIbS0+HbkZj92KqICJApiJyspSOH46xjV4=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -10003,13 +10003,30 @@ let _pendingRule=null;
 // existing "NETFLIX" rule with zero indication anything was overwritten.
 function _checkSrpKeywordConflict(keyword){
   const warn=document.getElementById('srp-existing-warning');
-  const conflict=state.catRules.find(r=>r.keyword.toUpperCase()===keyword.toUpperCase());
+  const kw=keyword.toUpperCase();
+  const conflict=state.catRules.find(r=>r.keyword.toUpperCase()===kw);
   if(conflict){
     warn.textContent=`⚠️ A rule for "${keyword}" already exists (→ ${conflict.cat}). Saving will replace it.`;
     warn.classList.remove('hidden');
-  } else {
-    warn.classList.add('hidden');
+    return;
   }
+  // Rule matching (applyRulesToExisting()/normalizeTxRow()) is first-match-
+  // wins over descUpper.includes(rule.keyword), and addCatRule() unshifts
+  // new rules to the front -- so a new keyword that's a SUBSTRING of an
+  // existing rule's keyword matches every description that existing rule
+  // would have, and (sitting in front) always wins the tie. The existing
+  // rule becomes permanently unreachable with no warning and nothing
+  // deleted -- silent dead weight the user has no way to notice, the same
+  // "the label invites an edit that hides the conflict" shape the 60th
+  // pass fixed for the exact-match case, just one level broader. Found in
+  // the 122nd adversarial pass.
+  const shadowed=state.catRules.find(r=>r.keyword.toUpperCase().includes(kw));
+  if(shadowed){
+    warn.textContent=`⚠️ This would also match every transaction the existing "${shadowed.keyword}" rule (→ ${shadowed.cat}) currently catches — that rule will stop firing.`;
+    warn.classList.remove('hidden');
+    return;
+  }
+  warn.classList.add('hidden');
 }
 function validateSrpKeyword(val){
   _checkSrpKeywordConflict((val||'').trim());

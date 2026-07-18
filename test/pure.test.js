@@ -4349,3 +4349,30 @@ test("normalizeTxRow's 'trakyodollas' import branch reads the per-row Source col
     "the return statement should prefer the per-row card over the file-level source label when one was parsed"
   );
 });
+
+// ── 122nd adversarial pass ──────────────────────────────────────────────
+// LOW: rule matching (applyRulesToExisting()/normalizeTxRow()) is
+// first-match-wins over descUpper.includes(rule.keyword), and
+// addCatRule() unshifts new rules to the front -- so a new keyword that's
+// a SUBSTRING of an existing rule's keyword matches every description
+// that existing rule would have, and (sitting in front) always wins the
+// tie. The existing rule becomes permanently unreachable with no warning
+// and nothing deleted -- the same "the label invites an edit that hides
+// the conflict" shape the 60th pass fixed for the exact-match case, just
+// one level broader (a substring conflict, not just an exact one). Found
+// in the 122nd adversarial pass. ──
+test("_checkSrpKeywordConflict: also warns when the new keyword would shadow (not just exactly duplicate) an existing rule", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function _checkSrpKeywordConflict\(keyword\)\{[\s\S]{0,1600}?\n\}/);
+  assert.ok(fnMatch, "_checkSrpKeywordConflict() should exist");
+  assert.match(
+    fnMatch[0],
+    /const shadowed=state\.catRules\.find\(r=>r\.keyword\.toUpperCase\(\)\.includes\(kw\)\);/,
+    "should also check for an existing rule whose keyword contains the new (shorter) keyword as a substring"
+  );
+  const exactIdx = fnMatch[0].search(/const conflict=state\.catRules\.find\(r=>r\.keyword\.toUpperCase\(\)===kw\);/);
+  const shadowIdx = fnMatch[0].search(/const shadowed=state\.catRules\.find/);
+  assert.ok(exactIdx >= 0 && exactIdx < shadowIdx, "the exact-match check should still run first (its own more specific, more actionable warning)");
+});
