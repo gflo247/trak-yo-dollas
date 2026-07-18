@@ -4159,8 +4159,79 @@ test("loadFromLocalStorage: the legacy College-Fund migration's saved.collegeFun
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /const collegeFundSafeId=Math\.max\(0,\.\.\.state\.accounts\.map\(a=>a\.id\|\|0\)\)\+1;\s*state\.accounts\.push\(\{id:collegeFundSafeId,name:saved\.collegeFund\.name/,
+    /const collegeFundSafeId=Math\.max\(0,\.\.\.state\.accounts\.map\(a=>a\.id\|\|0\)\)\+1;/,
     "the saved.collegeFund branch should compute a safe id from the current max id in state.accounts, not push state.nextId++ before nextId is restored from the payload"
+  );
+  assert.match(
+    source,
+    /state\.accounts\.push\(\{id:collegeFundSafeId,name:saved\.collegeFund\.name/,
+    "the safe id should actually be used in the push"
+  );
+});
+
+// ── 133rd adversarial pass ──────────────────────────────────────────────
+// Applying the 132nd pass's own "fixed in one restore branch, missed in a
+// sibling" methodology across the 3 account-restore paths themselves
+// (cloud sync, local storage, backup restore) surfaced 3 more instances
+// of the exact same shape, all in income-related fields:
+//
+// MEDIUM: declaredIncome was only Number()-coerced in importBackup() --
+// loadFromLocalStorage() used `??0` (only catches null/undefined, not a
+// numeric string) and loadUserData() didn't coerce at all. A numeric
+// string from a corrupted cloud row or hand-edited localStorage passes
+// state.declaredIncome>0 checks and then poisons sumIncomeForMonths()'s
+// reduce into string concatenation -- corrupting the savings-rate
+// insight, the Flow chart, and Year in Review -- and both save paths
+// write declaredIncome back verbatim, so the corruption persists across
+// reloads instead of self-healing.
+//
+// LOW: importBackup()'s income restore was missing the !Array.isArray()
+// guard the 105th pass already added to the other two paths.
+//
+// LOW: the College-Fund migration's balance:saved.collegeFund.balance||0
+// bypassed the 130th pass's balance coercion entirely, since this
+// account is pushed directly rather than passed through
+// _normalizeAccountTypes() -- the exact same hand-edited-legacy-blob
+// threat model pass 130 was built around.
+//
+// Found in the 133rd adversarial pass. ──
+test("loadUserData/loadFromLocalStorage: declaredIncome is Number()-coerced on restore, matching importBackup()'s existing coercion", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if \(prefs\.declaredIncome !== undefined\) state\.declaredIncome = Number\(prefs\.declaredIncome\)\|\|0;/,
+    "loadUserData() should Number()-coerce prefs.declaredIncome, not assign it verbatim"
+  );
+  assert.match(
+    source,
+    /state\.declaredIncome=Number\(saved\.declaredIncome\)\|\|0;/g,
+    "loadFromLocalStorage() (and importBackup(), which already had this) should Number()-coerce saved.declaredIncome, not just ??0"
+  );
+  const matches = source.match(/state\.declaredIncome=Number\(saved\.declaredIncome\)\|\|0;/g) || [];
+  assert.equal(matches.length, 2, "both loadFromLocalStorage() and importBackup() should share the identical Number()-coerced declaredIncome line");
+});
+test("importBackup: income restore is array-guarded, matching loadFromLocalStorage()/loadUserData()", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const matches = source.match(/\(saved\.income&&typeof saved\.income==='object'&&!Array\.isArray\(saved\.income\)\)\?saved\.income:\{method:null,monthlyAmount:0\}/g) || [];
+  assert.equal(matches.length, 2, "both loadFromLocalStorage() and importBackup() should share the identical array-guarded income restore expression");
+});
+test("loadFromLocalStorage: the College-Fund migration's balance is coerced the same way _normalizeAccountTypes() coerces every other account's balance", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const collegeFundParsedBalance=parseFloat\(String\(saved\.collegeFund\.balance\)\.replace\(\/,\/g,''\)\);\s*const collegeFundBalance=Number\.isFinite\(collegeFundParsedBalance\)\?collegeFundParsedBalance:0;/,
+    "the College-Fund migration should coerce balance via the same comma-strip + Number.isFinite pattern as _normalizeAccountTypes()"
+  );
+  assert.match(
+    source,
+    /balance:collegeFundBalance,excludeFromNW:true\}\);/,
+    "the coerced balance should actually be used in the push, not the raw saved.collegeFund.balance||0"
   );
 });
 
