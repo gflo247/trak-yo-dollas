@@ -2862,6 +2862,23 @@ test("_reconcileNextId: bumps nextId past the max id present in transactions too
   _reconcileNextId();
   assert.equal(state.nextId, 5009, "nextId should be bumped past the max transaction id (5008), which exceeds every account/vehicle id -- confirms transactions are actually folded into the max computation, not silently ignored");
 });
+
+// ── 135th adversarial pass ──────────────────────────────────────────────
+// LOW: the 134th pass's own extension of _reconcileNextId() to include
+// state.transactions turned it into an argument-spread over a
+// potentially unbounded array (Math.max(0,...arr)) -- accounts/vehicles
+// are always small, but a heavy multi-year user's transaction history
+// isn't, and argument-spread has an engine-dependent stack/arg-count
+// ceiling Math.max(...bigArray) can exceed, throwing a RangeError and
+// aborting the restore path entirely. Found in the 135th adversarial
+// pass, re-verifying the 134th pass's own fix. ──
+test("_reconcileNextId: doesn't throw on a very large transactions array (no unbounded argument-spread into Math.max)", () => {
+  const bigTransactions = Array.from({ length: 200000 }, (_, i) => ({ id: i }));
+  const state = { accounts: [{ id: 1 }], vehicles: [], transactions: bigTransactions, nextId: 2 };
+  const { _reconcileNextId } = loadFunctions(["_reconcileNextId"], { state });
+  assert.doesNotThrow(() => _reconcileNextId(), "should not throw a RangeError on a large transactions array");
+  assert.equal(state.nextId, 200000, "should still correctly compute the max id (199999) + 1 across a large array");
+});
 test("loadFromLocalStorage/loadUserData/importBackup: _reconcileNextId() is called after state.transactions is restored, not before", () => {
   const fs = require("fs");
   const path = require("path");

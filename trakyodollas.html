@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-7te8uu8vnQXLbmTQVQ/IHr2OaIvKFopXvhX33vcMBDM=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-zUV68dGC0rWnIfbR9fNeocanf/qWpA1l20u/kfTERsY=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -13124,7 +13124,16 @@ function _normalizeAccountTypes(accounts){
 // of those functions than accounts/vehicles do, so this call was moved
 // to after that point too, not just extended to include them.
 function _reconcileNextId(){
-  const maxId=Math.max(0,...state.accounts.map(a=>Number(a.id)||0),...state.vehicles.map(v=>Number(v.id)||0),...state.transactions.map(t=>Number(t.id)||0));
+  // .reduce(), not Math.max(0,...arr) -- the 134th pass's own extension to
+  // include state.transactions turned this into a spread over a
+  // potentially unbounded array (accounts/vehicles are always small, but
+  // a heavy multi-year user's transaction history isn't), and
+  // argument-spread has an engine-dependent stack/arg-count ceiling
+  // Math.max(...bigArray) can exceed, throwing a RangeError and aborting
+  // the restore path entirely. A reduce has no such limit. Found in the
+  // 135th adversarial pass.
+  let maxId=0;
+  [state.accounts,state.vehicles,state.transactions].forEach(arr=>arr.forEach(x=>{const id=Number(x.id)||0;if(id>maxId)maxId=id;}));
   if(maxId>=state.nextId)state.nextId=maxId+1;
 }
 // name,source,type,balance -- balance of exactly 0 (a paid-off card, a
