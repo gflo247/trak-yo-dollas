@@ -4142,6 +4142,28 @@ test("loadFromLocalStorage: the legacy College-Fund migration uses a locally-com
   );
 });
 
+// ── 132nd adversarial pass ──────────────────────────────────────────────
+// LOW: the legacy College-Fund migration's sibling branch (saved.
+// collegeFund present, vs. the >=10-accounts branch just below it, which
+// the 114th pass already fixed) still pushed id:state.nextId++ -- at push
+// time state.nextId still holds its pre-load default (5000), since
+// saved.nextId isn't restored until later in this same function, risking
+// a collision with an existing restored account already holding that id.
+// The 114th pass's fix only touched the branch it was investigating and
+// missed this identical-shaped sibling. Found in the 132nd adversarial
+// pass, confirming the account/vehicle restore-path area otherwise
+// converged after the 130th/131st passes. ──
+test("loadFromLocalStorage: the legacy College-Fund migration's saved.collegeFund branch also uses a locally-computed collision-safe id, matching its sibling branch", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const collegeFundSafeId=Math\.max\(0,\.\.\.state\.accounts\.map\(a=>a\.id\|\|0\)\)\+1;\s*state\.accounts\.push\(\{id:collegeFundSafeId,name:saved\.collegeFund\.name/,
+    "the saved.collegeFund branch should compute a safe id from the current max id in state.accounts, not push state.nextId++ before nextId is restored from the payload"
+  );
+});
+
 // ── 115th adversarial pass ──────────────────────────────────────────────
 // Part 1 (re-verification of the 114th pass's 8 fixes) came back clean --
 // no gaps found, all held up. The 2 new findings below are both LOW,
