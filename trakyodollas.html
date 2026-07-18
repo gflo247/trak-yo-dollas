@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-URj2pse+BXJaY0ycutQrSqh++AKfy+FdjzwSZjTiKH4=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Mjz1n8XmEE+iPVH8OoccxlhXHbQX/jJ7ToopEO+bB68=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3519,7 +3519,19 @@ function renderYearInReview(){
   // Aggregate — transfers/investments always excluded from cats/vendors.
   // state.activeSources check added in the 35th adversarial pass -- was
   // silently including deselected sources' spend in every YIR total.
-  const txs=state.transactions.filter(t=>months.includes(t.date.slice(0,7))&&isRealSpend(t)&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz));
+  // YIR_EXCLUDE_CATS is applied HERE, not just below on txsFiltered -- it
+  // used to only gate the category/vendor breakdown, so "Total spent," the
+  // month-by-month figures (biggest/quietest/average), and the savings
+  // rate all still counted transfers/CC payments/investment contributions
+  // as real spend even though every other total in the app (and this same
+  // modal's own category breakdown) excludes them. Concretely: a 401k/
+  // brokerage contribution or a transfer into savings inflated "Total
+  // spent" and pushed the savings rate DOWN -- the app penalized saving as
+  // if it were spending -- and a month with a large one-off check or
+  // transfer could wrongly win "Biggest month." The category breakdown
+  // right below never matched the hero total as a direct symptom. Found
+  // in the 127th adversarial pass.
+  const txs=state.transactions.filter(t=>months.includes(t.date.slice(0,7))&&isRealSpend(t)&&!YIR_EXCLUDE_CATS.has(t.cat)&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz));
   const totalSpent=txs.reduce((s,t)=>s+t.amount,0);
   const byMonth=months.map(m=>({m,label:fmtMonthShort(m),spent:txs.filter(t=>t.date.slice(0,7)===m).reduce((s,t)=>s+t.amount,0)}));
   const biggestMonth=byMonth.reduce((a,b)=>b.spent>a.spent?b:a,byMonth[0]);
@@ -3534,7 +3546,7 @@ function renderYearInReview(){
   const _positiveMonths=byMonth.filter(m=>m.spent>0);
   const quietestMonth=_positiveMonths.length?_positiveMonths.reduce((a,b)=>b.spent<a.spent?b:a):null;
   const avgMonth=totalSpent/months.length;
-  const txsFiltered=txs.filter(t=>!YIR_EXCLUDE_CATS.has(t.cat));
+  const txsFiltered=txs;
   const byCat={};txsFiltered.forEach(t=>{byCat[t.cat]=(byCat[t.cat]||0)+t.amount;});
   const catSorted=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
   const topCat=catSorted[0];
@@ -3717,10 +3729,13 @@ function copyYirSummary(){
     const endIdx=_yirEndMonth?Math.max(0,allMonths.indexOf(_yirEndMonth)):allMonths.length-1;
     const months=allMonths.slice(Math.max(0,endIdx-11),endIdx+1);
     if(!months.length){showToast('No data to copy','#FCD34D');return;}
-    // Same state.activeSources fix as renderYearInReview() above.
-    const txs=state.transactions.filter(t=>months.includes(t.date.slice(0,7))&&isRealSpend(t)&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz));
+    // Same state.activeSources fix as renderYearInReview() above, and same
+    // YIR_EXCLUDE_CATS-on-txs fix (127th adversarial pass) -- this
+    // function hand-rolls the identical aggregation independently, so it
+    // had the identical totalSpent/byMonth-counts-transfers bug.
+    const txs=state.transactions.filter(t=>months.includes(t.date.slice(0,7))&&isRealSpend(t)&&!YIR_EXCLUDE_CATS.has(t.cat)&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz));
     const totalSpent=txs.reduce((s,t)=>s+t.amount,0);
-    const txsFiltered=txs.filter(t=>!YIR_EXCLUDE_CATS.has(t.cat));
+    const txsFiltered=txs;
     const byCat={};txsFiltered.forEach(t=>{byCat[t.cat]=(byCat[t.cat]||0)+t.amount;});
     const catSorted=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
     const topCat=catSorted[0];
