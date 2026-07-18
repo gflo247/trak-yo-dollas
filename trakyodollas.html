@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-yaQpCXj64aVgZeq3AwvaP4ctQflvbpJ+DyYKi0PaZ3U=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-PxoyQ5Xjxge2XLU87e4sBQ6IAfxzLxQx2YZ0ZcpkDKE=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-URj2pse+BXJaY0ycutQrSqh++AKfy+FdjzwSZjTiKH4=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -11649,6 +11649,14 @@ function checkSourceAlignment(){
   // skipSourceAlign() only ever remove the first one found. Found in the
   // 114th adversarial pass.
   const existing=document.getElementById('source-align-modal');
+  // Preserve the ORIGINAL pre-modal focus target across this re-open case,
+  // rather than letting the fresh _a11yHandleOpen() call below recompute
+  // it from document.activeElement -- removing `existing` collapses
+  // activeElement to <body> (its own tabindex="-1" focus is gone the
+  // instant it's detached), which would otherwise silently discard the
+  // real trigger element and return focus to <body> instead, on the new
+  // modal's eventual close. Found in the 125th adversarial pass.
+  const _priorReturnFocusEl=(_a11yOpenModalEl===existing)?_a11yReturnFocusEl:null;
   if(existing)existing.remove();
   const modal=document.createElement('div');
   modal.className='modal-overlay';
@@ -11691,6 +11699,7 @@ function checkSourceAlignment(){
   // one. Found in the 124th adversarial pass.
   _a11yModalObserver.observe(modal,{attributes:true,attributeFilter:['class']});
   if(_a11yOpenModalEl!==modal)_a11yHandleOpen(modal);
+  if(_priorReturnFocusEl)_a11yReturnFocusEl=_priorReturnFocusEl;
 }
 function applySourceAlign(fromDate){
   const modal=document.getElementById('source-align-modal');
@@ -14561,7 +14570,19 @@ window.d3Sankey = (typeof d3 !== 'undefined' && typeof d3.sankey === 'function')
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
     if(_swRefreshing||!hadController){hadController=true;return;}
     _swRefreshing=true;
-    location.reload();
+    // Don't force-reload out from under a user with an open modal --
+    // location.reload()'s own pagehide handler only flushes committed
+    // state, not typed-but-not-yet-saved DOM input (a half-entered
+    // transaction, a passphrase mid-entry), which would otherwise be
+    // silently destroyed by a deploy-triggered reload the user never
+    // asked for. Poll rather than block indefinitely -- a tab left open
+    // with a modal open in the background still eventually picks up the
+    // new version once it's closed. Found in the 125th adversarial pass.
+    const reloadWhenIdle=()=>{
+      if(document.querySelector('.modal-overlay:not(.hidden)'))setTimeout(reloadWhenIdle,1000);
+      else location.reload();
+    };
+    reloadWhenIdle();
   });
 }</script>
 </body></html>

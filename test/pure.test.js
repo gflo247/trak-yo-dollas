@@ -3970,9 +3970,9 @@ test("checkSourceAlignment: removes any existing #source-align-modal before crea
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function checkSourceAlignment\(\)\{[\s\S]{0,4300}?document\.body\.appendChild\(modal\);/);
+  const fnMatch = source.match(/function checkSourceAlignment\(\)\{[\s\S]{0,5000}?document\.body\.appendChild\(modal\);/);
   assert.ok(fnMatch, "checkSourceAlignment() should exist");
-  const removeIdx = fnMatch[0].search(/const existing=document\.getElementById\('source-align-modal'\);\s*if\(existing\)existing\.remove\(\);/);
+  const removeIdx = fnMatch[0].search(/const existing=document\.getElementById\('source-align-modal'\);[\s\S]{0,800}?if\(existing\)existing\.remove\(\);/);
   const createIdx = fnMatch[0].search(/const modal=document\.createElement\('div'\);/);
   assert.ok(removeIdx >= 0, "should remove any existing #source-align-modal");
   assert.ok(removeIdx < createIdx, "the removal should happen before the new element is created");
@@ -4463,5 +4463,54 @@ test("a focused <input type=number> is blurred on wheel scroll, preventing the b
     source,
     /document\.addEventListener\('wheel',function\(e\)\{\s*if\(e\.target\.tagName==='INPUT'&&e\.target\.type==='number'&&document\.activeElement===e\.target\)e\.target\.blur\(\);\s*\},\{passive:true\}\);/,
     "should blur a focused number input on wheel, with {passive:true} so page scrolling itself is unaffected"
+  );
+});
+
+// ── 125th adversarial pass ──────────────────────────────────────────────
+// LOW: re-verifying the 124th pass's own a11y-wiring fix, checkSourceAlignment()
+// calling itself again while a source-align modal is ALREADY the tracked-
+// open modal (e.g. resumeSourceAlign() firing while a prior instance is
+// still up, the exact double-call case the 114th pass's own "remove any
+// existing instance" comment documents as reachable) removed the existing
+// modal WITHOUT calling _a11yHandleClose() first -- so by the time the new
+// modal's _a11yHandleOpen() ran, document.activeElement had already
+// collapsed to <body> (removing a focused tabindex="-1" element does
+// that), silently discarding the real pre-modal focus target and
+// returning focus to <body> instead of the trigger on the new modal's
+// eventual close. Found in the 125th adversarial pass. ──
+test("checkSourceAlignment: re-opening while a prior instance is already tracked-open preserves the ORIGINAL pre-modal return-focus target", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function checkSourceAlignment\(\)\{[\s\S]{0,5000}?document\.body\.appendChild\(modal\);/);
+  assert.ok(fnMatch, "checkSourceAlignment() should exist");
+  assert.match(
+    fnMatch[0],
+    /const _priorReturnFocusEl=\(_a11yOpenModalEl===existing\)\?_a11yReturnFocusEl:null;\s*if\(existing\)existing\.remove\(\);/,
+    "should capture the prior modal's own already-correct return-focus target before removing it"
+  );
+  const afterMatch = source.match(/document\.body\.appendChild\(modal\);[\s\S]{0,1300}?\n\}/);
+  assert.ok(afterMatch, "should find the code after appendChild through the function's closing brace");
+  assert.match(
+    afterMatch[0],
+    /if\(_a11yOpenModalEl!==modal\)_a11yHandleOpen\(modal\);\s*if\(_priorReturnFocusEl\)_a11yReturnFocusEl=_priorReturnFocusEl;/,
+    "should restore the preserved return-focus target after _a11yHandleOpen() runs, overriding its own (now-wrong) document.activeElement capture"
+  );
+});
+
+// MEDIUM: a deploy-triggered service-worker controllerchange forced an
+// immediate location.reload() on any already-open tab with no guard --
+// location.reload()'s own pagehide handler only flushes committed state,
+// not typed-but-not-yet-saved DOM input (a half-entered transaction, a
+// passphrase mid-entry), which was silently destroyed by a reload the
+// user never asked for. Found in the 125th adversarial pass. ──
+test("service-worker controllerchange defers location.reload() while a modal is open, instead of forcing it immediately", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const reloadWhenIdle=\(\)=>\{\s*if\(document\.querySelector\('\.modal-overlay:not\(\.hidden\)'\)\)setTimeout\(reloadWhenIdle,1000\);\s*else location\.reload\(\);\s*\};\s*reloadWhenIdle\(\);/,
+    "should poll for an open modal and defer the reload until none is open, rather than reloading unconditionally"
   );
 });
