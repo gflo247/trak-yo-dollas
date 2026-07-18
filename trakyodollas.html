@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-3gA5EiUNE34Ju1xPSC2+akdtcut0ZcSp5HIFaUg8eiI=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ovfhlkY0IZYMl3jRbzfgyOhxMoYOOxNkBNNnpTwCLUk=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -12229,7 +12229,17 @@ async function loadUserData(uid) {
       // pass.
       if (prefs.catRules) state.catRules = _arrOfObj(prefs.catRules).filter(r=>typeof r.keyword==='string');
       if (prefs.income && typeof prefs.income === 'object' && !Array.isArray(prefs.income)) state.income = prefs.income;
-      if (prefs.declaredIncome !== undefined) state.declaredIncome = prefs.declaredIncome;
+      // Number()-coerced -- importBackup() already does this (its own
+      // declaredIncome line), but this path (and loadFromLocalStorage()'s
+      // equivalent) assigned the raw restored value verbatim. A numeric
+      // *string* from a corrupted cloud row passes state.declaredIncome>0
+      // checks (getEffectiveIncome()) and then poisons sumIncomeForMonths()'s
+      // reduce into string concatenation -- corrupting the savings-rate
+      // insight, the Flow chart, and Year in Review -- and both save paths
+      // write declaredIncome back verbatim, so the corrupted value
+      // persists across reloads rather than self-healing. Found in the
+      // 133rd adversarial pass.
+      if (prefs.declaredIncome !== undefined) state.declaredIncome = Number(prefs.declaredIncome)||0;
       if (Array.isArray(prefs.excludedCats)) state.excludedCats = new Set(prefs.excludedCats);
       if (prefs.includeIncome !== undefined) { state.includeIncome = prefs.includeIncome; _bizFilter='all'; }
       if (prefs.nwGoal !== undefined) state.nwGoal = prefs.nwGoal;
@@ -13342,7 +13352,15 @@ function loadFromLocalStorage(){
         // since that fix only touched the one branch it was investigating.
         // Found in the 132nd adversarial pass.
         const collegeFundSafeId=Math.max(0,...state.accounts.map(a=>a.id||0))+1;
-        state.accounts.push({id:collegeFundSafeId,name:saved.collegeFund.name||'College Fund(s)',source:saved.collegeFund.sub||'Education savings',type:'investment',balance:saved.collegeFund.balance||0,excludeFromNW:true});
+        // Comma-stripped + Number.isFinite-guarded, matching
+        // _normalizeAccountTypes()'s own balance coercion (130th pass) --
+        // this account is pushed directly rather than passed through that
+        // helper, so it bypassed the fix even though it's the exact same
+        // hand-edited-legacy-blob threat model. Found in the 133rd
+        // adversarial pass.
+        const collegeFundParsedBalance=parseFloat(String(saved.collegeFund.balance).replace(/,/g,''));
+        const collegeFundBalance=Number.isFinite(collegeFundParsedBalance)?collegeFundParsedBalance:0;
+        state.accounts.push({id:collegeFundSafeId,name:saved.collegeFund.name||'College Fund(s)',source:saved.collegeFund.sub||'Education savings',type:'investment',balance:collegeFundBalance,excludeFromNW:true});
       } else if(!saved.hasRealData&&state.accounts.length>=10){
         if(!state.accounts.find(a=>a.name==='College Fund(s)')){
           // A locally-computed safe id, not the hardcoded id:12 this used
@@ -13397,7 +13415,12 @@ function loadFromLocalStorage(){
     // number) previously passed straight through the ||. Found in the
     // 105th adversarial pass.
     state.income=(saved.income&&typeof saved.income==='object'&&!Array.isArray(saved.income))?saved.income:{method:null,monthlyAmount:0};
-    state.declaredIncome=saved.declaredIncome??0;
+    // Number()-coerced, not just ??0 -- ?? only catches null/undefined, so
+    // a numeric string survived and later poisoned sumIncomeForMonths()'s
+    // reduce into string concatenation. Same reasoning and same fix as
+    // importBackup()'s equivalent line, which already had this. Found in
+    // the 133rd adversarial pass.
+    state.declaredIncome=Number(saved.declaredIncome)||0;
     // Array.isArray, not just truthiness -- same reasoning as
     // loadUserData()'s equivalent fix.
     state.hiddenPills=new Set(Array.isArray(saved.hiddenPills)?saved.hiddenPills:[]);
@@ -13595,7 +13618,13 @@ function importBackup(file){
       const savedBudgets=obj(saved.budgets);
       state.budgets=Object.keys(savedBudgets).length>0?savedBudgets:{};
       state.catRules=_arrOfObj(saved.catRules).filter(r=>typeof r.keyword==='string');
-      state.income=(saved.income&&typeof saved.income==='object')?saved.income:{method:null,monthlyAmount:0};
+      // !Array.isArray(saved.income) too -- loadFromLocalStorage()/
+      // loadUserData() both already have this guard (105th pass), just
+      // missed here. An array-typed saved.income degrades harmlessly on
+      // its own (state.income.method reads undefined off an array,
+      // treated as "no income method"), but the gap is worth closing to
+      // match its siblings. Found in the 133rd adversarial pass.
+      state.income=(saved.income&&typeof saved.income==='object'&&!Array.isArray(saved.income))?saved.income:{method:null,monthlyAmount:0};
       state.declaredIncome=Number(saved.declaredIncome)||0;
       state.hiddenPills=new Set(arr(saved.hiddenPills));
       state.vendorAliases=_strValueObj(saved.vendorAliases);
