@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ovfhlkY0IZYMl3jRbzfgyOhxMoYOOxNkBNNnpTwCLUk=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-7te8uu8vnQXLbmTQVQ/IHr2OaIvKFopXvhX33vcMBDM=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -12268,10 +12268,6 @@ async function loadUserData(uid) {
       // Number()-coerced, same reasoning as loadFromLocalStorage()'s
       // equivalent fix (104th adversarial pass).
       if (prefs.nextId) state.nextId = Number(prefs.nextId)||state.nextId;
-      // Reconciled against the ids actually restored above -- see
-      // _reconcileNextId()'s own comment. Found in the 131st adversarial
-      // pass.
-      _reconcileNextId();
       if (Array.isArray(prefs.transactions)) {
         // .filter(t=>t&&typeof t==='object') + date coerced to a safe
         // default -- the 103rd pass's fix for this exact gap landed in
@@ -12341,6 +12337,13 @@ async function loadUserData(uid) {
         _clearVendorDayFiltersForDataReplace();
         rebuildMonthly();
       }
+      // Reconciled against the ids actually restored above -- see
+      // _reconcileNextId()'s own comment. Moved to after state.transactions
+      // is restored (134th adversarial pass) -- it used to run before this
+      // whole block, so a restored transaction's id was never folded into
+      // the max even though transactions mint from the same nextId counter
+      // as accounts/vehicles.
+      _reconcileNextId();
       rebuildCatSelects();
     }
     // Ensure activeSources is populated after cloud restore
@@ -13098,22 +13101,30 @@ function _normalizeAccountTypes(accounts){
 }
 // Restored nextId (a hand-edited/corrupted backup, or a legacy/malformed
 // cloud row) is never reconciled against the ids actually present in
-// state.accounts/state.vehicles -- both share the same id namespace
-// (saveAccount()/saveVehicle() both mint ids via nextId++). A duplicate
-// id (e.g. from copy-pasting an account block while hand-editing a
-// backup, the exact same editing scenario the 130th pass's balance fix
-// targets) or a saved.nextId that's simply stale/too-low causes
-// editAccount()'s .find(x=>x.id===id) to silently edit the wrong (first-
-// matching) record, deleteAcct()'s .filter(a=>a.id!==id) to delete BOTH
-// colliding accounts at once, isPairedAccount() to attribute a vehicle's
-// value to the wrong account, and the very next in-app "Add account"
-// after the restore to mint a NEW id that collides with an existing one
-// (since nextId was never advanced past the max restored id). Called
-// after both state.accounts and state.vehicles are set, on all 3 restore
-// paths (cloud sync, local storage, backup restore). Found in the 131st
-// adversarial pass.
+// state.accounts/state.vehicles/state.transactions -- all three share the
+// same id namespace (saveAccount()/saveVehicle()/saveTx()/CSV import all
+// mint ids via nextId++). A duplicate id (e.g. from copy-pasting an
+// account block while hand-editing a backup, the exact same editing
+// scenario the 130th pass's balance fix targets) or a saved.nextId that's
+// simply stale/too-low causes editAccount()'s .find(x=>x.id===id) to
+// silently edit the wrong (first-matching) record, deleteAcct()'s
+// .filter(a=>a.id!==id) to delete BOTH colliding accounts at once,
+// isPairedAccount() to attribute a vehicle's value to the wrong account,
+// and the very next in-app "Add account"/"Add transaction" after the
+// restore to mint a NEW id that collides with an existing one (since
+// nextId was never advanced past the max restored id). Transactions were
+// missed when this helper was first written (131st pass) even though
+// they mint from the identical counter and are by far the most numerous
+// id-looked-up record -- openEditTxModal()'s .find()/deleteTx()'s
+// .filter() have the exact same wrong-record-edit/double-delete failure
+// modes as their account counterparts. Found in the 134th adversarial
+// pass. Called after state.accounts, state.vehicles, AND
+// state.transactions are all set, on all 3 restore paths (cloud sync,
+// local storage, backup restore) -- transactions restore later in each
+// of those functions than accounts/vehicles do, so this call was moved
+// to after that point too, not just extended to include them.
 function _reconcileNextId(){
-  const maxId=Math.max(0,...state.accounts.map(a=>Number(a.id)||0),...state.vehicles.map(v=>Number(v.id)||0));
+  const maxId=Math.max(0,...state.accounts.map(a=>Number(a.id)||0),...state.vehicles.map(v=>Number(v.id)||0),...state.transactions.map(t=>Number(t.id)||0));
   if(maxId>=state.nextId)state.nextId=maxId+1;
 }
 // name,source,type,balance -- balance of exactly 0 (a paid-off card, a
@@ -13455,10 +13466,6 @@ function loadFromLocalStorage(){
     // add, breaking edit/duplicate-id lookups. Found in the 104th
     // adversarial pass.
     state.nextId=Number(saved.nextId)||state.nextId;
-    // Reconciled against the ids actually restored above -- see
-    // _reconcileNextId()'s own comment. Found in the 131st adversarial
-    // pass.
-    _reconcileNextId();
     if(saved.hasRealData)state.hasRealData=true;
     if(saved.hasRealAccounts)state.hasRealAccounts=true;
     if(saved.hasRealSnapshot)state.hasRealSnapshot=true;
@@ -13483,6 +13490,13 @@ function loadFromLocalStorage(){
       .filter(t=>t&&typeof t==='object')
       .map(t=>({...t,date:typeof t.date==='string'?t.date:'',desc:typeof t.desc==='string'?t.desc:'',cat:typeof t.cat==='string'?t.cat:'Other',card:typeof t.card==='string'?t.card:'',amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
 
+    // Reconciled against the ids actually restored above -- see
+    // _reconcileNextId()'s own comment. Moved to after state.transactions
+    // is restored (134th adversarial pass) -- it used to run before this
+    // point, so a restored transaction's id was never folded into the max
+    // even though transactions mint from the same nextId counter as
+    // accounts/vehicles.
+    _reconcileNextId();
     rebuildMonthly();
     rebuildCatSelects();
     return true;
@@ -13645,10 +13659,6 @@ function importBackup(file){
       state.nwGoal=saved.nwGoal??null;
       state.hideNwGoal=!!saved.hideNwGoal;
       state.nextId=Number(saved.nextId)||1;
-      // Reconciled against the ids actually restored above -- see
-      // _reconcileNextId()'s own comment. Found in the 131st adversarial
-      // pass.
-      _reconcileNextId();
       state.hasRealData=!!saved.hasRealData;
       state.hasRealAccounts=!!saved.hasRealAccounts;
       state.hasRealSnapshot=!!saved.hasRealSnapshot;
@@ -13713,6 +13723,13 @@ function importBackup(file){
         .filter(t=>t&&typeof t==='object')
         .map(t=>({...t,date:typeof t.date==='string'?t.date:'',desc:typeof t.desc==='string'?t.desc:'',cat:typeof t.cat==='string'?t.cat:'Other',card:typeof t.card==='string'?t.card:'',amount:parseFloat(t.amount)||0,excluded:!!t.excluded,is_offset:!!t.is_offset}));
       _txsDirty=true;
+      // Reconciled against the ids actually restored above -- see
+      // _reconcileNextId()'s own comment. Moved to after state.transactions
+      // is restored (134th adversarial pass) -- it used to run before this
+      // point, so a restored transaction's id was never folded into the
+      // max even though transactions mint from the same nextId counter as
+      // accounts/vehicles.
+      _reconcileNextId();
       // This is a wholesale dataset replacement -- the exact scenario
       // _clearVendorDayFiltersForDataReplace()'s own comment names "backup
       // restore" as covering, but this function never actually called it

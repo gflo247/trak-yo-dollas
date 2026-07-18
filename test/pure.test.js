@@ -1918,7 +1918,7 @@ test("importBackup, confirmTxImport, and loadDemoProfile all call the shared _re
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /state\.transactions=arr\(payload\.transactions\)[\s\S]{0,1600}?_resetSessionFiltersForDataReplace\(\);\s*rebuildMonthly\(\);\s*rebuildCatSelects\(\);\s*scheduleSave\(\);\s*renderAll\(\);\s*showToast\('Backup restored\.'/,
+    /state\.transactions=arr\(payload\.transactions\)[\s\S]{0,2100}?_resetSessionFiltersForDataReplace\(\);\s*rebuildMonthly\(\);\s*rebuildCatSelects\(\);\s*scheduleSave\(\);\s*renderAll\(\);\s*showToast\('Backup restored\.'/,
     "importBackup() should call _resetSessionFiltersForDataReplace() before rebuildMonthly(), right before its final 'Backup restored.' toast"
   );
   assert.match(
@@ -2827,22 +2827,51 @@ test("_normalizeAccountTypes: coerces balance to a finite number, stripping comm
 // in-app "Add account" to mint a new id that collides with an existing
 // one. Found in the 131st adversarial pass. ──
 test("_reconcileNextId: bumps nextId past the max id actually present in accounts/vehicles, closing a duplicate/stale-id gap on restore", () => {
-  const state = { accounts: [{ id: 5000 }, { id: 5003 }], vehicles: [{ id: 5010 }], nextId: 3 };
+  const state = { accounts: [{ id: 5000 }, { id: 5003 }], vehicles: [{ id: 5010 }], transactions: [], nextId: 3 };
   const { _reconcileNextId } = loadFunctions(["_reconcileNextId"], { state });
   _reconcileNextId();
   assert.equal(state.nextId, 5011, "nextId should be bumped to 1 past the max id found across accounts and vehicles, since the restored nextId (3) was stale/too-low");
 });
 test("_reconcileNextId: leaves nextId untouched when it's already safely ahead of every existing id", () => {
-  const state = { accounts: [{ id: 5000 }], vehicles: [{ id: 5001 }], nextId: 6000 };
+  const state = { accounts: [{ id: 5000 }], vehicles: [{ id: 5001 }], transactions: [], nextId: 6000 };
   const { _reconcileNextId } = loadFunctions(["_reconcileNextId"], { state });
   _reconcileNextId();
   assert.equal(state.nextId, 6000, "nextId should stay unchanged when the restored value already exceeds every existing id");
 });
 test("_reconcileNextId: a non-finite/missing id is treated as 0, not NaN, so it can't poison the Math.max computation", () => {
-  const state = { accounts: [{ id: "garbage" }, {}], vehicles: [], nextId: 1 };
+  const state = { accounts: [{ id: "garbage" }, {}], vehicles: [], transactions: [], nextId: 1 };
   const { _reconcileNextId } = loadFunctions(["_reconcileNextId"], { state });
   _reconcileNextId();
   assert.equal(state.nextId, 1, "with no valid ids present, nextId should stay at its own already-safe value, not become NaN");
+});
+
+// ── 134th adversarial pass ──────────────────────────────────────────────
+// MEDIUM: _reconcileNextId() ignored the transaction id namespace even
+// though transactions mint from the identical state.nextId++ counter as
+// accounts/vehicles (saveTx()/CSV import both do id:state.nextId++) --
+// and are by far the most numerous, id-looked-up record type
+// (openEditTxModal()'s .find()/deleteTx()'s .filter() have the exact same
+// wrong-record-edit/double-delete failure modes the 131st pass fixed for
+// accounts). Worse, all 3 restore paths called _reconcileNextId() BEFORE
+// state.transactions was even populated, so even the transactions being
+// restored in the very same load were never folded into the max. Found
+// in the 134th adversarial pass. ──
+test("_reconcileNextId: bumps nextId past the max id present in transactions too, not just accounts/vehicles", () => {
+  const state = { accounts: [{ id: 5000 }], vehicles: [{ id: 5001 }], transactions: [{ id: 5002 }, { id: 5008 }, { id: 5004 }], nextId: 2 };
+  const { _reconcileNextId } = loadFunctions(["_reconcileNextId"], { state });
+  _reconcileNextId();
+  assert.equal(state.nextId, 5009, "nextId should be bumped past the max transaction id (5008), which exceeds every account/vehicle id -- confirms transactions are actually folded into the max computation, not silently ignored");
+});
+test("loadFromLocalStorage/loadUserData/importBackup: _reconcileNextId() is called after state.transactions is restored, not before", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const localIdx = source.search(/state\.transactions=\(Array\.isArray\(txSource\)\?txSource:state\.transactions\)/);
+  const localReconcileIdx = source.indexOf("_reconcileNextId();", localIdx);
+  assert.ok(localIdx >= 0 && localReconcileIdx > localIdx && localReconcileIdx - localIdx < 1200, "loadFromLocalStorage() should call _reconcileNextId() shortly after restoring state.transactions, not before");
+  const backupIdx = source.search(/state\.transactions=arr\(payload\.transactions\)/);
+  const backupReconcileIdx = source.indexOf("_reconcileNextId();", backupIdx);
+  assert.ok(backupIdx >= 0 && backupReconcileIdx > backupIdx && backupReconcileIdx - backupIdx < 1200, "importBackup() should call _reconcileNextId() shortly after restoring state.transactions, not before");
 });
 test("loadFromLocalStorage: accounts/vehicles/catRules/vendorAliases/hiddenPills/activeSources/sourceAlignDate/nextId are all Array.isArray/type-guarded, and accounts routes through _normalizeAccountTypes", () => {
   const fs = require("fs");
@@ -2856,7 +2885,7 @@ test("loadFromLocalStorage: accounts/vehicles/catRules/vendorAliases/hiddenPills
   assert.match(source, /if\(Array\.isArray\(saved\.activeSources\)&&saved\.activeSources\.length>0\)\{/, "activeSources should be Array.isArray-guarded, not just checked for a truthy .length");
   assert.match(source, /state\.sourceAlignDate=typeof saved\.sourceAlignDate==='string'\?saved\.sourceAlignDate:null;/, "sourceAlignDate should be type-checked, not just ??null");
   assert.match(source, /state\.nextId=Number\(saved\.nextId\)\|\|state\.nextId;/, "nextId should be Number()-coerced");
-  assert.match(source, /state\.nextId=Number\(saved\.nextId\)\|\|state\.nextId;\s*\/\/ Reconciled against the ids actually restored above[\s\S]{0,200}?_reconcileNextId\(\);/, "nextId should be reconciled against the actually-restored accounts/vehicles ids (131st adversarial pass), not just Number()-coerced");
+  assert.match(source, /state\.transactions=\(Array\.isArray\(txSource\)\?txSource:state\.transactions\)[\s\S]{0,900}?_reconcileNextId\(\);/, "nextId should be reconciled against the actually-restored accounts/vehicles/transactions ids (131st/134th adversarial passes) AFTER transactions are restored, not just Number()-coerced");
   assert.match(source, /const txSource=txRaw\?JSON\.parse\(txRaw\):saved\.transactions;[\s\S]{0,900}?state\.transactions=\(Array\.isArray\(txSource\)\?txSource:state\.transactions\)/, "the transactions txSource should be Array.isArray-checked before .filter()");
 });
 test("importBackup/loadUserData: both also call _reconcileNextId() after restoring nextId, matching loadFromLocalStorage()", () => {
