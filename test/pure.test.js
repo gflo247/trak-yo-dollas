@@ -5046,3 +5046,58 @@ test("copyYirSummary()'s clipboard write has a .catch() so a permission-denied r
     "the clipboard writeText() call should have a .catch() showing the same 'Could not copy' toast used by the surrounding sync try/catch"
   );
 });
+
+// ── 148th adversarial pass ──────────────────────────────────────────────
+// MEDIUM: the category/vendor filter tiles (renderBucketGrid()'s
+// .bucket-card elements) and the active-filter-pill "✕" chips were
+// <div>/<span> with data-action + cursor:pointer, activated only via the
+// global click-delegation listener -- no tabindex, no role="button", no
+// keydown handling. A keyboard-only or switch-access user could not focus
+// or activate them at all, meaning the app's single most prominent,
+// explicitly-advertised interaction ("Click any category tile to filter")
+// was entirely unreachable without a mouse -- a WCAG 2.1.1 (Keyboard,
+// Level A) failure. Every sibling control (sort buttons, mode toggles,
+// chart-view toggles, the per-tile hide button) was already a real
+// <button>, so this was an inconsistent gap, not a deliberate no-keyboard
+// stance. Fixed by adding tabindex="0"/role="button" (plus aria-pressed on
+// the two toggle tiles, aria-label on the filter pills) to the 5 affected
+// elements, and a new document-level keydown listener that treats Enter/
+// Space on any non-native-control data-action element with tabindex="0"
+// the same as a click -- gated on tagName so it can't double-fire on
+// actual <button>/<a> elements, which already get Enter/Space for free.
+// Found in the 148th adversarial pass. ──
+test("category/vendor bucket-card tiles and active-filter pills are keyboard-focusable and keyboard-activatable", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /data-action="toggleVendorFilterByIdx" data-arg="\$\{vi\}" tabindex="0" role="button" aria-pressed="\$\{isActive\}"/,
+    "vendor bucket-card tile should be focusable and expose its toggle state"
+  );
+  assert.match(
+    source,
+    /data-action="openOtherVendorsModal" style="[^"]*" data-tip="Click to see all \$\{otherVendors\.length\} vendors" tabindex="0" role="button"/,
+    "'other vendors' tile should be focusable"
+  );
+  assert.match(
+    source,
+    /data-action="showPillTip" data-tip="\$\{hiddenCount\} categories:&#10;\$\{otherCatBreakdown\}" tabindex="0" role="button"/,
+    "'other categories' tile should be focusable"
+  );
+  assert.match(
+    source,
+    /data-action="toggleCatFilter" data-arg="\$\{sc\}" tabindex="0" role="button" aria-pressed="\$\{isActive\}"/,
+    "category bucket-card tile should be focusable and expose its toggle state"
+  );
+  assert.match(
+    source,
+    /data-action="toggleCatFilter" data-arg="\$\{esc\(c\)\}" tabindex="0" role="button" aria-label="Remove \$\{esc\(c\)\} filter"/,
+    "active-filter pills should be focusable with a descriptive label"
+  );
+  assert.match(
+    source,
+    /document\.addEventListener\('keydown',function\(e\)\{\s*if\(e\.key!=='Enter'&&e\.key!==' '\)return;\s*const tag=e\.target\.tagName;\s*if\(tag==='BUTTON'\|\|tag==='A'\|\|tag==='INPUT'\|\|tag==='SELECT'\|\|tag==='TEXTAREA'\)return;\s*if\(!e\.target\.hasAttribute\('data-action'\)\|\|e\.target\.getAttribute\('tabindex'\)!=='0'\)return;\s*e\.preventDefault\(\);\s*dispatch\(e,'data-action',false\);\s*\}\);/,
+    "a keydown listener should activate Enter/Space on focusable non-native data-action elements"
+  );
+});

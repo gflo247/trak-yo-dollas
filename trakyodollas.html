@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ol0NFe+oJC+wazQ78Wwb6GmyT0+U4srY93/OxkHv4Hw=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-rpXRZX4GengaOEX2k6W+MjdZdjiA7kC9cocOiad1Y+c=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2285,6 +2285,25 @@ let state={
     });
   }
   document.addEventListener('click',e=>dispatch(e,'data-action',false));
+  // Enter/Space activation for click-delegated elements that aren't native
+  // interactive controls -- the category/vendor filter tiles and active-
+  // filter pills are <div>/<span> with data-action + cursor:pointer, so
+  // they were previously mouse/touch-only despite being the app's most
+  // prominent, explicitly-advertised interaction ("Click any category tile
+  // to filter"). Native <button>/<a> already get Enter/Space activation for
+  // free via their own click event; gating on tagName avoids double-firing
+  // on those. Only fires for elements that also carry a manually-added
+  // tabindex="0" (never added to native controls), so this can't
+  // accidentally intercept a native control's own key handling. Found in
+  // the 148th adversarial pass.
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='Enter'&&e.key!==' ')return;
+    const tag=e.target.tagName;
+    if(tag==='BUTTON'||tag==='A'||tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA')return;
+    if(!e.target.hasAttribute('data-action')||e.target.getAttribute('tabindex')!=='0')return;
+    e.preventDefault();
+    dispatch(e,'data-action',false);
+  });
   document.addEventListener('change',function(e){
     const el=e.target.closest('[data-change]');
     if(!el)return;
@@ -4782,7 +4801,7 @@ function renderSpendSummary(){
   const badge=document.getElementById('cat-filter-badge');
   if(state.activeCats.size>0){
     badge.classList.remove('hidden');
-    const pills=[...state.activeCats].map(c=>`<span data-action="toggleCatFilter" data-arg="${esc(c)}"  style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:${getCatColor(c)}22;color:${getCatColor(c)};border:1px solid ${getCatColor(c)}44;border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700">${esc(c)} <span style="opacity:.6">✕</span></span>`).join('');
+    const pills=[...state.activeCats].map(c=>`<span data-action="toggleCatFilter" data-arg="${esc(c)}" tabindex="0" role="button" aria-label="Remove ${esc(c)} filter" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:${getCatColor(c)}22;color:${getCatColor(c)};border:1px solid ${getCatColor(c)}44;border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700">${esc(c)} <span style="opacity:.6">✕</span></span>`).join('');
     badge.innerHTML=`<div class="cat-badge" style="flex-wrap:wrap;gap:5px"><span class="text-muted-xs">Filtering:</span>${pills}<button data-action="clearCatFilter" style="font-size:10px;background:none;border:none;color:var(--text-muted);cursor:pointer;margin-left:2px" type="button">clear all</button></div>`;
   } else {
     badge.classList.add('hidden');
@@ -4969,7 +4988,7 @@ function renderBucketGrid(){
       const avg=Math.round(data.total/allPeriods);
       window._vendorTiles[vi]=vendor;
       const sparkline=vendorSparkline(vendor,color);
-      return`<div class="bucket-card ${isActive?'active-bucket':''}" style="border-color:${isActive?color:tc('#1E293B','#E2E8F0')};background:${isActive?color+'18':tc('#0F172A','#F8FAFC')};color:${color}" data-action="toggleVendorFilterByIdx" data-arg="${vi}">
+      return`<div class="bucket-card ${isActive?'active-bucket':''}" style="border-color:${isActive?color:tc('#1E293B','#E2E8F0')};background:${isActive?color+'18':tc('#0F172A','#F8FAFC')};color:${color}" data-action="toggleVendorFilterByIdx" data-arg="${vi}" tabindex="0" role="button" aria-pressed="${isActive}">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
           <div class="bucket-name" title="${esc(vendor)}" style="color:${color};margin:0">${esc(displayVendor(vendor))}${data.isCollapsed?` <span data-tip="Individual check numbers collapsed — categorize a check to split it out" style="font-size:14px;opacity:.5;cursor:pointer;line-height:1;vertical-align:middle" data-action="showPillTip" data-stop="1">ⓘ</span>`:''}</div>
           ${sparkline}
@@ -4997,7 +5016,7 @@ function renderBucketGrid(){
 
     const otherPct=grandTotal>0?Math.round(otherTotal/grandTotal*100):0;
     const otherBreakdown=otherVendors.map(([v,d])=>`${esc(v)}: ${fmt(d.total)} (${d.count} txn)`).join('&#10;');
-    const otherTile=otherVendors.length>0?`<div class="bucket-card" data-action="openOtherVendorsModal" style="border-color:var(--border-mid);background:var(--bg-deep);cursor:pointer;opacity:.85" data-tip="Click to see all ${otherVendors.length} vendors">
+    const otherTile=otherVendors.length>0?`<div class="bucket-card" data-action="openOtherVendorsModal" style="border-color:var(--border-mid);background:var(--bg-deep);cursor:pointer;opacity:.85" data-tip="Click to see all ${otherVendors.length} vendors" tabindex="0" role="button">
         <div class="bucket-name" style="color:var(--text-muted)">+ ${otherVendors.length} other vendors</div>
         <div class="bucket-total" style="color:var(--text-muted)">${fmt(otherTotal)}</div>
         <div class="bucket-meta">${otherCount} transactions · ${otherPct}% of spend · <span style="color:#60A5FA;font-weight:600">view all →</span></div>
@@ -5076,7 +5095,7 @@ function renderBucketGrid(){
     'Transfers':'Venmo/Zelle outgoing payments',
   };
   const otherCatBreakdown=hiddenCats.slice(0,10).map(([c,d])=>`${esc(c)}: ${fmt(d.total)}`).join('&#10;');
-  const otherCatTile=hiddenCount>0&&!showAllBucketCats?`<div class="bucket-card" style="border-color:var(--border-mid);background:var(--bg-deep);cursor:pointer;opacity:.75" data-action="showPillTip" data-tip="${hiddenCount} categories:&#10;${otherCatBreakdown}">
+  const otherCatTile=hiddenCount>0&&!showAllBucketCats?`<div class="bucket-card" style="border-color:var(--border-mid);background:var(--bg-deep);cursor:pointer;opacity:.75" data-action="showPillTip" data-tip="${hiddenCount} categories:&#10;${otherCatBreakdown}" tabindex="0" role="button">
     <div class="bucket-name" style="color:var(--text-muted)">+ ${hiddenCount} other categories</div>
     <div class="bucket-total" style="color:var(--text-muted)">${fmt(hiddenTotal)}</div>
     <div class="bucket-meta">${grandCatTotal>0?Math.round(hiddenTotal/grandCatTotal*100):0}% of spend · tap for list</div>
@@ -5118,7 +5137,7 @@ function renderBucketGrid(){
       <span style="font-size:10px;font-weight:700;color:${curAmt>budget+0.005?'#F87171':curAmt/budget>0.8?'#FBBF24':'#34D399'}">${Math.round(curAmt/budget*100)}%</span>
     </div>`
     :`<button data-action="openBudgetModal" data-arg="${sc}" data-stop="1" style="margin-top:5px;width:100%;background:none;border:1px solid var(--border-mid);border-radius:5px;padding:2px 6px;font-size:9px;font-weight:600;color:var(--text-muted);cursor:pointer;text-align:center" title="Set a monthly budget for ${sc}" type="button">+ Set budget</button>`;
-    return`<div class="bucket-card ${isActive?'active-bucket':''}" style="${dashed?'opacity:.75':''};border-color:${isActive?color:tc('#1E293B','#E2E8F0')};background:${isActive?color+'18':tc('#0F172A','#F8FAFC')};color:${color}" data-action="toggleCatFilter" data-arg="${sc}">
+    return`<div class="bucket-card ${isActive?'active-bucket':''}" style="${dashed?'opacity:.75':''};border-color:${isActive?color:tc('#1E293B','#E2E8F0')};background:${isActive?color+'18':tc('#0F172A','#F8FAFC')};color:${color}" data-action="toggleCatFilter" data-arg="${sc}" tabindex="0" role="button" aria-pressed="${isActive}">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
         <div class="bucket-name" title="${sc}" style="color:${color};margin:0">${sc}${state.includeIncome&&_BIZ_CATS.includes(cat)?'<span style="font-size:8px;background:#2563EB22;color:#60A5FA;padding:1px 4px;border-radius:3px;font-weight:700;margin-left:4px;vertical-align:middle">BIZ</span>':''}${hint?` <span data-tip="${hint}" style="font-size:15px;opacity:.4;cursor:pointer;line-height:1;vertical-align:middle" data-action="showPillTip" data-stop="1">ⓘ</span>`:''}</div>
         <div style="display:flex;align-items:center;gap:4px">
