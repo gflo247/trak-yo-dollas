@@ -5260,3 +5260,25 @@ test("renderTreemap and renderSankey drop non-positive-net categories/vendors im
     "renderSankey() should drop non-positive-net categories from both catTotals and filteredOutCatTotals right after aggregation"
   );
 });
+
+// ── 158th adversarial pass ──────────────────────────────────────────────
+// LOW: renderHistory()'s annualized-growth-rate formula guarded only
+// first.nw>0, not last.nw>0. Math.pow() of a negative base to a non-
+// integer exponent is NaN, and the render check is annRate!==null, which
+// NaN satisfies -- so a net worth that goes positive-to-negative between
+// two snapshots (a real, reachable state through normal use, e.g. taking
+// on a large loan) rendered the literal text "NaN%/yr annualized" in the
+// History growth banner. renderInsights()'s NW pill has the identical
+// formula and already guards both first.nw>0 AND last.nw>0 (99th
+// adversarial pass) -- this sibling in renderHistory() never got the
+// matching guard. Found in the 158th adversarial pass. ──
+test("renderHistory()'s annualized growth-rate guard checks both first.nw>0 and last.nw>0, matching renderInsights()'s already-correct sibling formula", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const annRate=first\.nw>0&&last\.nw>0&&days>=60\?Math\.min\(999,Math\.round\(\(Math\.pow\(last\.nw\/first\.nw,365\/days\)-1\)\*100\)\):null;/,
+    "renderHistory()'s annRate calculation should guard against last.nw going negative, not just first.nw"
+  );
+});
