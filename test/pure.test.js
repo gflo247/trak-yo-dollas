@@ -5130,3 +5130,46 @@ test("bucket-card tiles have an explicit :focus-visible outline that isn't silen
     "active bucket-card tiles should have a focus-visible outline distinct from the plain active-only outline"
   );
 });
+
+// ── 151st adversarial pass ──────────────────────────────────────────────
+// MEDIUM: extends the pass-148 keyboard-accessibility pattern (tabindex=
+// "0"/role="button" + the shared Enter/Space keydown handler) to the
+// transaction row (tx-row, data-action="openEditTxModal") -- the primary
+// way to edit/recategorize/exclude a transaction, and the highest-impact
+// item remaining from the pass-123 click-only-elements finding. Also
+// covers its nested BIZ/PERS toggle pill (data-action="toggleTxBiz"), the
+// only path to flip a transaction's business/personal flag -- saveEditTx()
+// has no biz control of its own, so this pill was the sole way to change
+// it, and was itself click-only inside an already-click-only row. Both now
+// carry tabindex="0"/role="button"/a descriptive aria-label, plus explicit
+// :focus-visible outlines (matching the app's existing #2563EB input-focus
+// color). data-stop="1" on the pill (pre-existing) keeps the two controls'
+// keyboard activation independent, same as their click behavior. Found and
+// fixed in the 151st adversarial pass; live-verified in a local browser
+// (Tab reaches the row, Enter opens the edit modal; Tab reaches the pill,
+// Enter/Space toggles biz/personal without opening the modal). ──
+test("transaction rows and their nested BIZ/PERS toggle pill are keyboard-focusable and keyboard-activatable", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /data-action="openEditTxModal" data-arg="\$\{t\.id\}" tabindex="0" role="button" aria-label="Edit transaction:/,
+    "the transaction row should be focusable with a descriptive label"
+  );
+  assert.match(
+    source,
+    /data-action="toggleTxBiz" data-arg="\$\{t\.id\}" data-stop="1" tabindex="0" role="button" aria-label="Toggle business or personal/,
+    "the nested BIZ\/PERS pill should be independently focusable, isolated from the row's own action by data-stop"
+  );
+  assert.match(
+    source,
+    /\.tx-row:focus-visible\{outline:2px solid #2563EB;outline-offset:1px\}/,
+    "the transaction row should have an explicit focus-visible outline"
+  );
+  assert.match(
+    source,
+    /\.tx-row \.pill\[role="button"\]:focus-visible\{outline:2px solid #2563EB;outline-offset:2px\}/,
+    "the nested BIZ/PERS pill should have its own explicit focus-visible outline"
+  );
+});
