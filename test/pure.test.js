@@ -5101,3 +5101,32 @@ test("category/vendor bucket-card tiles and active-filter pills are keyboard-foc
     "a keydown listener should activate Enter/Space on focusable non-native data-action elements"
   );
 });
+
+// ── 149th adversarial pass ──────────────────────────────────────────────
+// LOW: .bucket-card.active-bucket{outline:1.5px solid currentColor} is an
+// unconditional author-origin rule, so it beats the UA default
+// :focus-visible outline on the same property outright (author normal
+// always wins over UA normal, regardless of specificity) -- an already-
+// active tile showed no visual change at all when it received keyboard
+// focus, so a keyboard user tabbing through the grid couldn't tell which
+// active tile was focused. Only reachable once these tiles gained
+// tabindex="0" in the 148th adversarial pass. Fixed by adding an explicit
+// .bucket-card:focus-visible rule and a higher-specificity
+// .bucket-card.active-bucket:focus-visible rule (dashed, to stay visually
+// distinct from the plain active-only solid outline). Found in the 149th
+// adversarial pass. ──
+test("bucket-card tiles have an explicit :focus-visible outline that isn't silently overridden by the unconditional .active-bucket outline", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /\.bucket-card:focus-visible\{outline:2px solid currentColor;outline-offset:2px\}/,
+    "non-active bucket-card tiles should have an explicit focus-visible outline"
+  );
+  assert.match(
+    source,
+    /\.bucket-card\.active-bucket:focus-visible\{outline:2\.5px dashed currentColor;outline-offset:2px\}/,
+    "active bucket-card tiles should have a focus-visible outline distinct from the plain active-only outline"
+  );
+});
