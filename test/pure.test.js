@@ -2757,6 +2757,31 @@ test("_isValidSnapshot: rejects null/non-object entries and entries with a non-s
   assert.equal(_isValidSnapshot({}), false, "missing monthKey should be rejected");
   assert.equal(_isValidSnapshot({ monthKey: 202603 }), false, "a non-string monthKey should be rejected");
 });
+
+// ── 154th adversarial pass ──────────────────────────────────────────────
+// LOW: fmtMonthShort() only sanitizes the month segment (via a MON3[]
+// lookup) -- the same "field skips the escaping convention" shape fixed
+// for transaction date in the 153rd adversarial pass. Its input,
+// snapshot.monthKey, was only type-guarded by _isValidSnapshot() (a
+// string, not a YYYY-MM shape), and its unescaped output is interpolated
+// directly into innerHTML at multiple sinks (the Year-in-Review growth
+// banner, the Insights nwSub line, the net-worth pill subtitle/tooltip) --
+// so a hand-edited backup/cloud snapshot with e.g.
+// monthKey:"20<img src=x>-07" would pass the old type-only guard and
+// inject raw HTML on render. Every real snapshot already derives monthKey
+// as YYYY-MM (saveSnapshot()/saveHistoricalSnapshot() both zero-pad it),
+// so tightening the shared ingestion filter to /^\d{4}-\d{2}$/ rejects
+// nothing legitimate while closing the gap at all 3 restore paths at
+// once (they all already filter through this one shared predicate).
+// Found in the 154th adversarial pass. ──
+test("_isValidSnapshot: rejects a monthKey that isn't YYYY-MM shaped, not just non-string ones", () => {
+  const ctx = {};
+  const { _isValidSnapshot } = loadFunctions(["_isValidSnapshot"], ctx);
+  assert.equal(_isValidSnapshot({ monthKey: "2026-03" }), true);
+  assert.equal(_isValidSnapshot({ monthKey: "20<img src=x>-07" }), false, "a monthKey with embedded HTML should be rejected, since fmtMonthShort() renders it unescaped");
+  assert.equal(_isValidSnapshot({ monthKey: "2026-3" }), false, "a non-zero-padded month should be rejected (no legitimate snapshot ever produces one)");
+  assert.equal(_isValidSnapshot({ monthKey: "2026/03" }), false, "a wrong-separator monthKey should be rejected");
+});
 test("importBackup: filters malformed transactions/customCategories/snapshots entries instead of crashing mid-restore", () => {
   const fs = require("fs");
   const path = require("path");
