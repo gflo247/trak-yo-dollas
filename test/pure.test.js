@@ -5227,3 +5227,36 @@ test("transaction date is format-validated (not just type-guarded) at all 3 rest
   const matches = source.match(/date:typeof t\.date==='string'&&\/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\$\/\.test\(t\.date\)\?t\.date:''/g) || [];
   assert.equal(matches.length, 3, "all 3 transaction restore paths (importBackup/loadUserData/loadFromLocalStorage) should format-validate date, not just type-guard it");
 });
+
+// ── 156th adversarial pass ──────────────────────────────────────────────
+// MEDIUM: renderTreemap()/renderSankey() summed raw (possibly negative)
+// transaction amounts per category/vendor with no positivity guard, then
+// fed those totals into a geometry-based layout (d3.hierarchy().sum() ->
+// d3.treemap(); d3Sankey.sankey()) and computed %-share as
+// Math.round(value/total*100) -- so a category/vendor whose refunds/
+// offsets exceed its spend within the filtered window (net <=0) produced
+// negative-area tiles, a broken/invisible Sankey link, and nonsensical
+// percentages like "-150% of Shopping" or "Infinity%" (0/0).
+// detectSubscriptions() already guards against exactly this shape with an
+// explicit amount>0 filter; these two chart functions didn't. Fixed by
+// deleting non-positive entries from catTotals/catVendors (treemap) and
+// catTotals/filteredOutCatTotals (sankey) immediately after aggregation,
+// so total/percentages/the drill-in data are all automatically consistent
+// downstream -- sankey's totalSpendAll (which feeds the correctly-signed
+// "Remaining/saved" calc, where a refund SHOULD increase savings) is
+// deliberately left untouched. Found in the 156th adversarial pass. ──
+test("renderTreemap and renderSankey drop non-positive-net categories/vendors immediately after aggregation, before any total/percentage math reads them", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /Object\.keys\(catTotals\)\.forEach\(cat=>\{if\(catTotals\[cat\]<=0\)delete catTotals\[cat\];\}\);\s*Object\.keys\(catVendors\)\.forEach\(cat=>\{\s*Object\.keys\(catVendors\[cat\]\)\.forEach\(v=>\{if\(catVendors\[cat\]\[v\]<=0\)delete catVendors\[cat\]\[v\];\}\);\s*\}\);/,
+    "renderTreemap() should drop non-positive-net categories and vendors right after building catTotals/catVendors"
+  );
+  assert.match(
+    source,
+    /Object\.keys\(catTotals\)\.forEach\(cat=>\{if\(catTotals\[cat\]<=0\)delete catTotals\[cat\];\}\);\s*Object\.keys\(filteredOutCatTotals\)\.forEach\(cat=>\{if\(filteredOutCatTotals\[cat\]<=0\)delete filteredOutCatTotals\[cat\];\}\);/,
+    "renderSankey() should drop non-positive-net categories from both catTotals and filteredOutCatTotals right after aggregation"
+  );
+});

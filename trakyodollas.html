@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-WcjMF5iuoGYGlkaFQQ+sN9VYb1y57IBUAs5rXyrv11U=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-SPpCs3A18DwANAi2OS52ZuiHbqWkQw0IPQNM43DVHbs=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -5312,6 +5312,20 @@ function renderTreemap(drillCat){
     const v=resolveVendor(t.desc);
     catVendors[t.cat][v]=(catVendors[t.cat][v]||0)+t.amount;
   });
+  // A treemap tile's area (and every %-share computed from it) can't
+  // represent a negative quantity -- a category/vendor whose refunds/
+  // offsets exceed its spend within the filtered window nets to <=0,
+  // which previously still fed into total/percentages, producing
+  // negative-area tiles and nonsensical tooltips like "-150% of Shopping"
+  // or "Infinity%" (0/0). Dropped here, immediately after aggregation, so
+  // every downstream read (total, allCatEntries, the drill-in data, and
+  // the footnote's own percentage math) is automatically consistent --
+  // mirrors detectSubscriptions()'s own established amount>0 guard for
+  // the same reason. Found in the 156th adversarial pass.
+  Object.keys(catTotals).forEach(cat=>{if(catTotals[cat]<=0)delete catTotals[cat];});
+  Object.keys(catVendors).forEach(cat=>{
+    Object.keys(catVendors[cat]).forEach(v=>{if(catVendors[cat][v]<=0)delete catVendors[cat][v];});
+  });
 
   const W=wrap.getBoundingClientRect().width||640;
   const H=280;
@@ -5575,6 +5589,17 @@ function renderSankey(){
     if(state.activeCats.size===0||state.activeCats.has(t.cat))catTotals[t.cat]=(catTotals[t.cat]||0)+t.amount;
     else filteredOutCatTotals[t.cat]=(filteredOutCatTotals[t.cat]||0)+t.amount;
   });
+  // A Sankey link's width is proportional to its value -- a category whose
+  // refunds/offsets exceed its spend within the filtered window nets to
+  // <=0, which previously still got passed straight into d3Sankey as a
+  // negative link value, producing a broken/invisible link. Dropped here,
+  // mirroring the identical fix in renderTreemap() just above (same root
+  // cause). totalSpendAll deliberately keeps its true signed sum --
+  // untouched -- since it feeds the "Remaining/saved" calculation below,
+  // where a refund correctly SHOULD increase what's left over. Found in
+  // the 156th adversarial pass.
+  Object.keys(catTotals).forEach(cat=>{if(catTotals[cat]<=0)delete catTotals[cat];});
+  Object.keys(filteredOutCatTotals).forEach(cat=>{if(filteredOutCatTotals[cat]<=0)delete filteredOutCatTotals[cat];});
 
   const totalSpend=Object.values(catTotals).reduce((a,b)=>a+b,0);
   const filteredOutSpend=Object.values(filteredOutCatTotals).reduce((a,b)=>a+b,0);
