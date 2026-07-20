@@ -355,6 +355,16 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .bucket-card{border:1px solid var(--border);border-radius:9px;padding:.55rem .75rem;cursor:pointer;transition:all .12s;background:var(--bg-page)}
 .bucket-card:hover{background:var(--bg-card)}
 .bucket-card.active-bucket{outline:1.5px solid currentColor}
+/* .active-bucket's own unconditional outline is an author-origin rule, so it
+   beats the UA default :focus-visible outline on the same property outright
+   (author normal always wins over UA normal, regardless of specificity) --
+   an already-active tile showed literally no visual change when it received
+   keyboard focus, so a keyboard user tabbing through the grid couldn't tell
+   which active tile (the ones they'd most want to un-toggle) was focused.
+   Only became reachable once these tiles gained tabindex="0" in the 148th
+   adversarial pass. Found in the 149th adversarial pass. */
+.bucket-card:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.bucket-card.active-bucket:focus-visible{outline:2.5px dashed currentColor;outline-offset:2px}
 .bucket-name{font-size:11px;font-weight:700;margin-bottom:.3rem;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .bucket-total{font-size:15px;font-weight:800;line-height:1}
 .bucket-meta{font-size:10px;color:var(--text-muted);margin-top:3px;line-height:1.4}
