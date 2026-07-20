@@ -2763,7 +2763,7 @@ test("importBackup: filters malformed transactions/customCategories/snapshots en
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /state\.transactions=arr\(payload\.transactions\)\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'\?t\.date:'',desc:typeof t\.desc==='string'\?t\.desc:'',cat:typeof t\.cat==='string'\?t\.cat:'Other',card:typeof t\.card==='string'\?t\.card:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
+    /state\.transactions=arr\(payload\.transactions\)\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'&&\/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\$\/\.test\(t\.date\)\?t\.date:'',desc:typeof t\.desc==='string'\?t\.desc:'',cat:typeof t\.cat==='string'\?t\.cat:'Other',card:typeof t\.card==='string'\?t\.card:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
     "importBackup() should filter out non-object transaction entries and coerce a malformed date to a safe default before mapping"
   );
   assert.match(
@@ -2783,7 +2783,7 @@ test("loadFromLocalStorage: filters malformed transactions/customCategories/snap
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /state\.transactions=\(Array\.isArray\(txSource\)\?txSource:state\.transactions\)\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'\?t\.date:'',desc:typeof t\.desc==='string'\?t\.desc:'',cat:typeof t\.cat==='string'\?t\.cat:'Other',card:typeof t\.card==='string'\?t\.card:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
+    /state\.transactions=\(Array\.isArray\(txSource\)\?txSource:state\.transactions\)\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'&&\/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\$\/\.test\(t\.date\)\?t\.date:'',desc:typeof t\.desc==='string'\?t\.desc:'',cat:typeof t\.cat==='string'\?t\.cat:'Other',card:typeof t\.card==='string'\?t\.card:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
     "loadFromLocalStorage() should filter out non-object transaction entries and coerce a malformed date"
   );
   assert.match(
@@ -3004,7 +3004,7 @@ test("loadUserData: customCategories/vehicles/catRules/vendorAliases/hiddenPills
   assert.match(source, /if \(Array\.isArray\(prefs\.hiddenPills\)\) state\.hiddenPills = new Set\(prefs\.hiddenPills\);/, "hiddenPills should be Array.isArray-guarded, not just truthy-checked");
   assert.match(
     source,
-    /state\.transactions = prefs\.transactions\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'\?t\.date:'',desc:typeof t\.desc==='string'\?t\.desc:'',cat:typeof t\.cat==='string'\?t\.cat:'Other',card:typeof t\.card==='string'\?t\.card:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
+    /state\.transactions = prefs\.transactions\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'&&\/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\$\/\.test\(t\.date\)\?t\.date:'',desc:typeof t\.desc==='string'\?t\.desc:'',cat:typeof t\.cat==='string'\?t\.cat:'Other',card:typeof t\.card==='string'\?t\.card:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
     "transactions should get the same entry-filter and date-coercion pass 103 already applied to importBackup()/loadFromLocalStorage()"
   );
   assert.match(source, /if \(prefs\.nextId\) state\.nextId = Number\(prefs\.nextId\)\|\|state\.nextId;/, "nextId should be Number()-coerced");
@@ -3020,7 +3020,7 @@ test("transaction ingestion: desc/cat/card are string-coerced (with cat defaulti
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const pattern = /date:typeof t\.date==='string'\?t\.date:'',desc:typeof t\.desc==='string'\?t\.desc:'',cat:typeof t\.cat==='string'\?t\.cat:'Other',card:typeof t\.card==='string'\?t\.card:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset/g;
+  const pattern = /date:typeof t\.date==='string'&&\/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\$\/\.test\(t\.date\)\?t\.date:'',desc:typeof t\.desc==='string'\?t\.desc:'',cat:typeof t\.cat==='string'\?t\.cat:'Other',card:typeof t\.card==='string'\?t\.card:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset/g;
   const matches = source.match(pattern) || [];
   assert.equal(matches.length, 3, "all 3 ingestion points (loadUserData, loadFromLocalStorage, importBackup) should coerce desc/cat/card the same way -- a truthy non-string desc previously threw in resolveVendor()/displayVendor(), reachable from the Treemap, Spending tab, and the Dashboard's own 'largest charge' card");
 });
@@ -5172,4 +5172,33 @@ test("transaction rows and their nested BIZ/PERS toggle pill are keyboard-focusa
     /\.tx-row \.pill\[role="button"\]:focus-visible\{outline:2px solid #2563EB;outline-offset:2px\}/,
     "the nested BIZ/PERS pill should have its own explicit focus-visible outline"
   );
+});
+
+// ── 153rd adversarial pass ──────────────────────────────────────────────
+// LOW: fmtDate(d) only sanitizes the month segment (via a MON3[] array
+// lookup) -- the year and day segments were interpolated verbatim into
+// three unescaped render sinks (the tx-row's own aria-label attribute, the
+// visible .tx-date cell, and the recategorize-confirm list), unlike every
+// sibling transaction field (desc/cat/card), which all go through esc()/
+// highlight(). All 3 transaction-ingestion sites (importBackup(),
+// loadUserData(), loadFromLocalStorage()) only type-guarded t.date as a
+// string, never format-validated it -- so a hand-edited backup/cloud row
+// with e.g. a date of '</div><img src=x> -01-01' would inject raw HTML/
+// break out of the aria-label attribute on render. The CSP has no
+// 'unsafe-inline' in script-src, so this can't execute a <script>/onerror
+// handler -- confined to benign HTML/attribute injection, not full XSS --
+// but it's a genuine escaping/validation inconsistency the file's own
+// established pattern (validate shape once at ingestion, not per-render-
+// sink) already exists to prevent for every other field. Fixed by
+// requiring t.date to match /^\d{4}-\d{2}-\d{2}$/ at all 3 ingestion
+// sites, falling back to '' (the same fallback already used for a
+// non-string date) otherwise -- reusing the exact date-shape regex already
+// established elsewhere in the file (editSnapshot()'s _normDateToISO()).
+// Found in the 153rd adversarial pass. ──
+test("transaction date is format-validated (not just type-guarded) at all 3 restore paths, closing the one unescaped tx render sink", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const matches = source.match(/date:typeof t\.date==='string'&&\/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\$\/\.test\(t\.date\)\?t\.date:''/g) || [];
+  assert.equal(matches.length, 3, "all 3 transaction restore paths (importBackup/loadUserData/loadFromLocalStorage) should format-validate date, not just type-guard it");
 });
