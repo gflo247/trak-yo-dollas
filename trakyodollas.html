@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-rpXRZX4GengaOEX2k6W+MjdZdjiA7kC9cocOiad1Y+c=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-jNWYmEPAK8Ecz35lZ2KFBkis6JzVqA9t1FfSQ620VF4=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -371,6 +371,8 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 /* tx */
 .tx-row{display:flex;align-items:center;gap:7px;padding:.4rem .75rem;border:1px solid var(--border);border-radius:8px;margin-bottom:3px;background:var(--bg-page);cursor:pointer}
 .tx-row:hover{background:var(--bg-card)}
+.tx-row:focus-visible{outline:2px solid #2563EB;outline-offset:1px}
+.tx-row .pill[role="button"]:focus-visible{outline:2px solid #2563EB;outline-offset:2px}
 .tx-date{font-size:10px;color:var(--text-muted);min-width:70px;font-variant-numeric:tabular-nums}
 .tx-desc{font-size:11px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-primary)}
 .pill{font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;white-space:nowrap}
@@ -6635,13 +6637,13 @@ function renderTxList(){
     const monthTotal=monthTotals[monthKey]||0;
     const monthCatTotal=activeCatMonthTotals?(activeCatMonthTotals[monthKey]||0):monthTotal;
     const pctOfMonth=monthCatTotal>0&&isRealSpend(t)?Math.round(t.amount/monthCatTotal*100):null;
-    return`<div class="tx-row ${t.excluded?'tx-excluded':''}" data-action="openEditTxModal" data-arg="${t.id}">
+    return`<div class="tx-row ${t.excluded?'tx-excluded':''}" data-action="openEditTxModal" data-arg="${t.id}" tabindex="0" role="button" aria-label="Edit transaction: ${esc(displayVendor(t.desc))}, ${fmtDate(t.date)}, ${t.isIncome||t.is_offset?'+':'-'}${esc(fmtD(Math.abs(t.amount)))}">
       <div class="tx-date">${fmtDate(t.date)}</div>
       <div class="tx-desc" title="${esc(t.desc)}">${highlight(displayVendor(t.desc))}</div>
       ${t.excluded?'<span class="excl-pill" title="Hidden from spending — click to edit">hidden</span>':''}
       <span class="pill" style="background:${color}22;color:${color}">${highlight(t.cat)}</span>
       <span class="pill" style="background:${cc.bg};color:${cc.fg}">${highlight(t.card.replace('Chase ','').replace(' Unlimited','Unlim').replace('Ally ',''))}</span>
-      ${state.includeIncome?`<span class="pill" style="background:${t.biz?'#2563EB22':'var(--bg-deep)'};color:${t.biz?'#60A5FA':'var(--text-muted)'};font-size:9px;cursor:pointer" data-action="toggleTxBiz" data-arg="${t.id}" data-stop="1" title="Toggle business/personal">${t.biz?'BIZ':'PERS'}</span>`:''}
+      ${state.includeIncome?`<span class="pill" style="background:${t.biz?'#2563EB22':'var(--bg-deep)'};color:${t.biz?'#60A5FA':'var(--text-muted)'};font-size:9px;cursor:pointer" data-action="toggleTxBiz" data-arg="${t.id}" data-stop="1" tabindex="0" role="button" aria-label="Toggle business or personal — currently ${t.biz?'business':'personal'}" title="Toggle business/personal">${t.biz?'BIZ':'PERS'}</span>`:''}
       <div class="tx-pct">${pctOfMonth!==null&&!t.is_offset?pctOfMonth+'%':''}</div>
       <div class="tx-amount" style="color:${t.isIncome?'#34D399':t.is_offset?'#34D399':'#F87171'}">${t.isIncome?'+':t.is_offset?'+':'-'}${fmtD(Math.abs(t.amount))}</div>
     </div>`;
