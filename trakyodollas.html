@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-QClVwbhS6l7T/D64pvBMMyjXIYqQro1f3pyzEZnVUzk=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-WcjMF5iuoGYGlkaFQQ+sN9VYb1y57IBUAs5rXyrv11U=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2154,7 +2154,17 @@ function _snapshotSortCompare(a,b){
 // local cache read, and importBackup()'s backup restore -- so a malformed
 // entry never enters state.snapshots at all. Found in the 103rd
 // adversarial pass.
-function _isValidSnapshot(s){return !!(s&&typeof s==='object'&&typeof s.monthKey==='string');}
+// monthKey must match YYYY-MM, not just be a string -- fmtMonthShort() only
+// sanitizes the month segment (via a MON3[] lookup); the year segment passes
+// through verbatim, the same "field skips the escaping convention" shape
+// fixed for transaction date in the 153rd adversarial pass. A hand-edited
+// backup/cloud snapshot with e.g. monthKey:"20<img src=x>-07" would pass the
+// old type-only guard and inject raw HTML into Year-in-Review/Insights/the
+// net-worth pill, all of which interpolate fmtMonthShort()'s output
+// unescaped into innerHTML. Every real snapshot already derives monthKey as
+// YYYY-MM, so this rejects nothing legitimate. Found in the 154th
+// adversarial pass.
+function _isValidSnapshot(s){return !!(s&&typeof s==='object'&&typeof s.monthKey==='string'&&/^\d{4}-\d{2}$/.test(s.monthKey));}
 // Same "filter at the point of ingestion" reasoning as _isValidSnapshot()
 // above, generalized -- shared by every OTHER array field (vehicles,
 // catRules, and any future one) restored from external/untrusted data,
