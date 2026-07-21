@@ -5312,3 +5312,35 @@ test("confirmTxImport() writes trakyo_last_import to localStorage, which index.h
     "index.html's landing-page nudge should still read the same key this test just confirmed is written"
   );
 });
+
+// ── 166th adversarial pass ──────────────────────────────────────────────
+// LOW: the Year-in-Review modal's "Top categories"/"Top vendors" rows were
+// the one place in the file that rendered a vendor/category name with no
+// overflow handling -- every sibling render site (.tx-desc, the spending-
+// tab top-5-vendors list) uses overflow:hidden;text-overflow:ellipsis;
+// white-space:nowrap (plus a title tooltip for the full text). A long
+// unbreakable vendor descriptor (common in real bank CSV exports, e.g.
+// "SQ*..."/"AMZNMKTP...") or a custom category name (no maxlength exists
+// on either the add-category input or addCustomCat()) could force the row
+// past the modal's content width at a narrow viewport, since flex items
+// default to min-width:auto (min-content) without an explicit min-width:0.
+// Live-verified in a local browser (forced the modal to its true 375px-
+// viewport width and injected a long synthetic name): before the fix the
+// modal's scrollWidth exceeded its clientWidth by 75px; after, it's
+// contained with a truncated, hover-titled name matching every sibling
+// site's convention. Found in the 166th adversarial pass. ──
+test("Year-in-Review's top-categories/top-vendors rows truncate long names with ellipsis + a title tooltip, matching every sibling vendor/category render site", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<div style="flex:1;min-width:0;font-size:12px;color:var\(--text-primary\);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="\$\{esc\(cat\)\}">\$\{esc\(cat\)\}<\/div>/,
+    "the YIR top-categories row should truncate the category name with ellipsis and a title tooltip"
+  );
+  assert.match(
+    source,
+    /<span style="flex:1;min-width:0;font-size:12px;color:var\(--text-primary\);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="\$\{esc\(displayVendor\(v\)\)\}">\$\{esc\(displayVendor\(v\)\)\}<\/span>/,
+    "the YIR top-vendors row should truncate the vendor name with ellipsis and a title tooltip"
+  );
+});
