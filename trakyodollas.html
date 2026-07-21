@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-QtZDFvy5Z1xWuGSNLC8KROTquwF76Q7QKhz5Vo8IXJ4=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-7CwXv/j5DFs6I6KSJXvbhb9QSFN58wRTutf3OQpO0HI=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -11712,6 +11712,15 @@ function confirmTxImport(){
   closeModals();
   renderSpending();
   showToast(`✓ Imported ${newTxs.length} transactions from ${esc(source)}`);
+  // Restored -- the 88th adversarial pass removed this as "dead code" after
+  // grepping trakyodollas.html and finding zero read sites in THIS file,
+  // but index.html's "Time for a refresh" landing-page nudge (same origin,
+  // shares localStorage) reads this exact key to show "Last import: N days
+  // ago" once 25+ days have passed -- that pass's repo-wide scope gap
+  // silently broke a real, working feature rather than actually removing
+  // dead code. Confirmed via `git log -S` that this write existed and was
+  // removed in commit cb67285. Found in the 163rd adversarial pass.
+  try{localStorage.setItem('trakyo_last_import',new Date().toISOString());}catch(e){}
   // Hide demo notices — real data is now loaded
   state.hasRealData=true;
   hideDemoBadge();

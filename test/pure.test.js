@@ -5282,3 +5282,33 @@ test("renderHistory()'s annualized growth-rate guard checks both first.nw>0 and 
     "renderHistory()'s annRate calculation should guard against last.nw going negative, not just first.nw"
   );
 });
+
+// ── 163rd adversarial pass ──────────────────────────────────────────────
+// LOW: index.html's "Time for a refresh" landing-page nudge reads
+// localStorage's 'trakyo_last_import' key (same origin, shared storage) to
+// show "Last import: N days ago" once 25+ days have passed since a CSV
+// import -- but the 88th adversarial pass removed the ONLY write to that
+// key from confirmTxImport(), having grepped trakyodollas.html and found
+// zero read sites *in that file* (index.html is a separate file the 88th
+// pass's search never checked). That "dead code removal" silently broke a
+// real, working landing-page feature rather than actually removing dead
+// code -- the nudge could never appear for any user afterward. Restored
+// the write, exactly matching its original form (confirmed via
+// `git log -S 'trakyo_last_import'`, commit cb67285's removal diff).
+// Found in the 163rd adversarial pass. ──
+test("confirmTxImport() writes trakyo_last_import to localStorage, which index.html's landing-page nudge depends on", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /try\{localStorage\.setItem\('trakyo_last_import',new Date\(\)\.toISOString\(\)\);\}catch\(e\)\{\}/,
+    "confirmTxImport() should write trakyo_last_import on every successful import"
+  );
+  const indexSource = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+  assert.match(
+    indexSource,
+    /localStorage\.getItem\('trakyo_last_import'\)/,
+    "index.html's landing-page nudge should still read the same key this test just confirmed is written"
+  );
+});
