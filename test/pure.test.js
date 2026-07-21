@@ -5391,3 +5391,55 @@ test("nw-item-name and account-name CSS classes truncate overlong text, and thei
     "the net-worth breakdown's flex chain should have min-width:0 at both levels so the name can actually shrink/truncate"
   );
 });
+
+// ── 168th adversarial pass ──────────────────────────────────────────────
+// LOW: a systematic search (following the 166th/167th passes finding this
+// same shape 4 times already) found the overflow/truncation gap recurs at
+// 6 more sites, the clearest a direct twin of the 167th pass's own edit
+// in the SAME function (renderExcludedAccounts()'s NW-tab excluded-
+// account block, ~20 lines from its now-fixed Accounts-tab twin). Rather
+// than continuing to patch one site per pass, consolidated into a shared
+// .truncate utility class (overflow:hidden;text-overflow:ellipsis;
+// white-space:nowrap;min-width:0) and applied it to all 5 clearly-real
+// sites at once: the NW-tab excluded-account name, the CSV "similar
+// transactions" recategorize list's vendor name, the budget row's
+// category label, the category manager list's category name, and the
+// vehicle "other asset" card's name. Found in the 168th adversarial
+// pass. ──
+test("the .truncate utility class exists and is applied to the 5 sites the 168th pass's systematic search found sharing the overflow/ellipsis gap", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /\.truncate\{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0\}/,
+    "the shared .truncate utility class should be defined"
+  );
+  const truncateUsages = source.match(/class="truncate"/g) || [];
+  assert.equal(truncateUsages.length, 5, "the .truncate class should be applied at exactly the 5 sites this pass fixed");
+  assert.match(
+    source,
+    /<div class="truncate" style="font-size:12px;font-weight:700;color:var\(--amber-text\)" title="\$\{esc\(a\.name\)\}">\$\{esc\(a\.name\)\}<\/div>/,
+    "the NW-tab excluded-account block should truncate the account name, matching its already-fixed Accounts-tab twin"
+  );
+  assert.match(
+    source,
+    /<span class="truncate" style="color:var\(--text-primary\)" title="\$\{esc\(displayVendor\(t\.desc\)\)\}">\$\{esc\(displayVendor\(t\.desc\)\)\}<\/span>/,
+    "the recategorize list should truncate the vendor name"
+  );
+  assert.match(
+    source,
+    /<span class="truncate" style="font-size:13px;font-weight:700;color:var\(--text-primary\)" title="\$\{esc\(cat\)\}">\$\{esc\(cat\)\}<\/span>/,
+    "the budget row should truncate the category label"
+  );
+  assert.match(
+    source,
+    /<span class="truncate" style="flex:1;font-size:12px;color:\$\{c\.custom\?'var\(--text-primary\)':'var\(--text-muted\)'\}" title="\$\{esc\(c\.name\)\}">/,
+    "the category manager list should truncate the category name"
+  );
+  assert.match(
+    source,
+    /<div class="truncate" style="font-size:13px;font-weight:800;color:var\(--text-primary\)" title="\$\{esc\(v\.name\)\}">\$\{esc\(v\.name\)\}<\/div>/,
+    "the vehicle 'other asset' card should truncate the vehicle name"
+  );
+});
