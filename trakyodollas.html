@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-huBfwahh6zLRoMfaPU3GjlwagF8elIn/3BVtx7Glhrs=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-NdmPPWf6ISV1xoIApXR3+oouC4RcUve+Ch6EOqSXWMQ=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -441,6 +441,20 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 /* Flex helpers */
 .flex-center{display:flex;align-items:center}
+/* Shared truncation treatment for a name/label/description flex-item that
+   might be an unusually long unbreakable token (a raw bank descriptor, a
+   user-typed account/category/vehicle name -- none of which have a
+   maxlength anywhere in the app). min-width:0 overrides the flex-item
+   default of min-width:auto, which otherwise blocks text-overflow:ellipsis
+   from ever taking effect no matter what the element's own CSS says.
+   Consolidated here after the 166th/167th/168th adversarial passes each
+   found more sites with this identical gap (a flex row rendering
+   unbounded text with no truncation, capable of pushing its row/card past
+   its container's width) -- the same "stop hand-copying a fix, share the
+   helper" lesson this file has already applied to several JS-side
+   patterns (_replaceDemoDataWithReal(), _reconcileNextId(), etc.). Found
+   in the 168th adversarial pass. */
+.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .flex-between{display:flex;align-items:center;justify-content:space-between}
 .flex-col{display:flex;flex-direction:column}
 .gap-4{gap:4px}.gap-6{gap:6px}.gap-8{gap:8px}.gap-10{gap:10px}.gap-12{gap:12px}
@@ -7347,7 +7361,7 @@ function buildRcList(tx,origCat,newCat){
   }
   sec.classList.remove('hidden');
   document.getElementById('rc-desc-text').textContent=`${similar.length} other "${origCat}" transaction${similar.length>1?'s':''} match "${kw}…". Apply "${newCat}" to selected?`;
-  document.getElementById('rc-list').innerHTML=similar.map(t=>`<div class="rc-item"><input type="checkbox" id="rc-${t.id}" checked value="${t.id}"><label for="rc-${t.id}" style="flex:1"><span style="color:var(--text-primary)">${esc(displayVendor(t.desc))}</span><span style="color:var(--text-muted);margin-left:6px">${fmtDate(t.date)}</span></label><span class="rc-count">${fmtD(t.amount)}</span></div>`).join('');
+  document.getElementById('rc-list').innerHTML=similar.map(t=>`<div class="rc-item"><input type="checkbox" id="rc-${t.id}" checked value="${t.id}"><label for="rc-${t.id}" style="flex:1;min-width:0;display:flex;align-items:center"><span class="truncate" style="color:var(--text-primary)" title="${esc(displayVendor(t.desc))}">${esc(displayVendor(t.desc))}</span><span style="color:var(--text-muted);margin-left:6px;flex-shrink:0">${fmtDate(t.date)}</span></label><span class="rc-count">${fmtD(t.amount)}</span></div>`).join('');
   // Every row above is rebuilt checked, but #rc-select-all's own checked
   // state was never synced to match -- if a user unchecked "Select all"
   // (unchecking every row) then changed the category dropdown again to a
@@ -7581,8 +7595,8 @@ function renderVehicles(){
 
     if(isOther){
       return`<div style="border:1px solid var(--border-mid);border-radius:10px;padding:.7rem 1rem;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px">
-        <div>
-          <div style="font-size:13px;font-weight:800;color:var(--text-primary)">${esc(v.name)}</div>
+        <div style="min-width:0">
+          <div class="truncate" style="font-size:13px;font-weight:800;color:var(--text-primary)" title="${esc(v.name)}">${esc(v.name)}</div>
           <div style="font-size:10px;color:#2DD4BF;margin-top:1px">${esc(v.make)}${v.purchaseYear?` · purchased ${esc(String(v.purchaseYear))}`:''}${v.purchase>0?` · ${ret}% value retained`:''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
@@ -9000,9 +9014,9 @@ function renderBudgetTab(){
         ${accentDiv}
         <div style="flex:1;padding:.75rem 1rem;min-width:0;cursor:pointer" data-action="cycleBudgetRowHist">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:.4rem" data-stop="1">
-            <div class="flex-center gap-8">
+            <div class="flex-center gap-8" style="min-width:0">
               <div style="width:10px;height:10px;border-radius:2px;background:${catColor};flex-shrink:0"></div>
-              <span style="font-size:13px;font-weight:700;color:var(--text-primary)">${esc(cat)}</span>
+              <span class="truncate" style="font-size:13px;font-weight:700;color:var(--text-primary)" title="${esc(cat)}">${esc(cat)}</span>
               ${badgeHTML}
               ${avgBadgeHTML}
             </div>
@@ -10442,7 +10456,7 @@ function renderCatManagerList(){
     }
     return `<div style="display:flex;align-items:center;gap:8px;padding:.35rem .65rem;border-bottom:1px solid var(--border-mid)">
       ${dot}
-      <span style="flex:1;font-size:12px;color:${c.custom?'var(--text-primary)':'var(--text-muted)'}">${esc(c.name)}${c.custom?'':' <span style="font-size:9px;color:var(--text-muted)">(built-in)</span>'}</span>
+      <span class="truncate" style="flex:1;font-size:12px;color:${c.custom?'var(--text-primary)':'var(--text-muted)'}" title="${esc(c.name)}">${esc(c.name)}${c.custom?'':' <span style="font-size:9px;color:var(--text-muted)">(built-in)</span>'}</span>
       ${c.custom?`
         <button data-action="startRenameCat" data-arg="${esc(c.name)}" style="font-size:10px;background:none;border:none;color:#475569;cursor:pointer;padding:2px 6px" title="Rename" type="button">✏</button>
         <button data-action="startDeleteCat" data-arg="${esc(c.name)}" style="font-size:10px;background:none;border:none;color:#475569;cursor:pointer;padding:2px 6px" title="Delete" type="button">✕</button>
@@ -12016,10 +12030,10 @@ function renderExcludedAccounts(){
     nwEl.innerHTML=excluded.map(a=>`
       <div class="nw-group" style="border:1.5px solid var(--amber-border);border-radius:10px;overflow:hidden;margin-bottom:4px">
         <div class="nw-group-header" style="cursor:pointer;padding:.6rem .85rem" data-action="editAccount" data-arg="${a.id}">
-          <div class="flex-center gap-8">
+          <div class="flex-center gap-8" style="min-width:0">
             <div style="width:18px;height:9px;border-radius:4px;background:${colorHex};flex-shrink:0"></div>
-            <div>
-              <div style="font-size:12px;font-weight:700;color:var(--amber-text)">${esc(a.name)}</div>
+            <div style="min-width:0">
+              <div class="truncate" style="font-size:12px;font-weight:700;color:var(--amber-text)" title="${esc(a.name)}">${esc(a.name)}</div>
               <div style="font-size:10px;color:var(--amber-text-strong);margin-top:1px">${esc(a.source)}</div>
             </div>
           </div>
