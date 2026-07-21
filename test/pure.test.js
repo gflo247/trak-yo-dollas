@@ -5344,3 +5344,50 @@ test("Year-in-Review's top-categories/top-vendors rows truncate long names with 
     "the YIR top-vendors row should truncate the vendor name with ellipsis and a title tooltip"
   );
 });
+
+// ── 167th adversarial pass ──────────────────────────────────────────────
+// LOW: the 166th pass's "the one place in the file" characterization was
+// inaccurate -- its own directly-adjacent sibling (the Spending tab's
+// top-5 CATEGORIES inline panel, 12 lines above its already-fixed top-5
+// VENDORS twin) had the identical no-overflow-handling gap, plus two more
+// structurally identical sites: the dashboard net-worth breakdown's
+// account name (.nw-item-name) and the Accounts tab's account name
+// (.account-name, 2 call sites sharing one CSS class). All three render
+// user-controlled, unbounded-length text (category/account names have no
+// maxlength anywhere) inside a flex row with no min-width:0/ellipsis
+// treatment, the same shape pass 166 just fixed for Year-in-Review. Fixed
+// by matching the same established pattern at all 4 sites (the category
+// panel span, the 2-level flex-center+wrapper min-width:0 chain for both
+// .nw-item-name and .account-name, plus their shared CSS classes gaining
+// overflow:hidden;text-overflow:ellipsis;white-space:nowrap and a title
+// tooltip on each name element). Found in the 167th adversarial pass. ──
+test("the top-5-categories inline panel truncates long category names, matching its already-fixed top-5-vendors sibling 12 lines below", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<span style="opacity:\$\{state\.activeCats\.has\(cat\)\?1:\.55\};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px" title="\$\{esc\(cat\)\}">\$\{esc\(cat\)\}<\/span>/,
+    "the top-5-categories panel's category span should truncate with ellipsis and a title tooltip"
+  );
+});
+test("nw-item-name and account-name CSS classes truncate overlong text, and their render sites give the flex chain min-width:0 so the truncation can actually take effect", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /\.nw-item-name\{font-size:13px;font-weight:500;color:var\(--text-primary\);overflow:hidden;text-overflow:ellipsis;white-space:nowrap\}/,
+    "the .nw-item-name class should truncate overlong account names"
+  );
+  assert.match(
+    source,
+    /\.account-name\{font-size:13px;font-weight:600;color:var\(--text-primary\);overflow:hidden;text-overflow:ellipsis;white-space:nowrap\}/,
+    "the .account-name class should truncate overlong account names"
+  );
+  assert.match(
+    source,
+    /<div class="flex-center gap-8" style="min-width:0">\s*<div style="width:8px;height:8px;border-radius:50%;background:\$\{g\.color\}88;flex-shrink:0"><\/div>\s*<div style="min-width:0"><div class="nw-item-name" title="\$\{esc\(a\.name\)\}">\$\{esc\(a\.name\)\}<\/div>/,
+    "the net-worth breakdown's flex chain should have min-width:0 at both levels so the name can actually shrink/truncate"
+  );
+});
