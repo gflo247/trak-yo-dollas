@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-7CwXv/j5DFs6I6KSJXvbhb9QSFN58wRTutf3OQpO0HI=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-enzbT+sHrs6CTuvOWdXaL4RP9kEX3KWZrgM2dYbjhgQ=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3713,7 +3713,7 @@ function renderYearInReview(){
         const color=getCatColor(cat);
         return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
           <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></div>
-          <div style="flex:1;font-size:12px;color:var(--text-primary)">${esc(cat)}</div>
+          <div style="flex:1;min-width:0;font-size:12px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(cat)}">${esc(cat)}</div>
           <div style="background:var(--bg-card);border-radius:3px;height:6px;flex:2;overflow:hidden">
             <div style="height:100%;width:${pct}%;background:${color};border-radius:3px"></div>
           </div>
@@ -3728,9 +3728,9 @@ function renderYearInReview(){
       <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Top vendors</div>
       ${vendorSorted.map(([v,amt],i)=>`
         <div class="list-row" style="padding:.45rem .85rem;margin-bottom:5px">
-          <div class="flex-center gap-8">
-            <span style="font-size:10px;font-weight:700;color:var(--text-muted);width:14px">${i+1}</span>
-            <span style="font-size:12px;color:var(--text-primary)">${esc(displayVendor(v))}</span>
+          <div class="flex-center gap-8" style="min-width:0">
+            <span style="font-size:10px;font-weight:700;color:var(--text-muted);width:14px;flex-shrink:0">${i+1}</span>
+            <span style="flex:1;min-width:0;font-size:12px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(displayVendor(v))}">${esc(displayVendor(v))}</span>
           </div>
           <span style="font-size:12px;font-weight:700;color:var(--text-primary)">${fmt(amt)}</span>
         </div>`).join('')}
