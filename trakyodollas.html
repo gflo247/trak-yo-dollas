@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-enzbT+sHrs6CTuvOWdXaL4RP9kEX3KWZrgM2dYbjhgQ=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-huBfwahh6zLRoMfaPU3GjlwagF8elIn/3BVtx7Glhrs=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -232,7 +232,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .nw-group{border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .nw-group-header{display:flex;justify-content:space-between;align-items:center;padding:.5rem .85rem}
 .nw-item{display:flex;align-items:center;justify-content:space-between;padding:.38rem .85rem .38rem 1.1rem;border-top:1px solid var(--border)}
-.nw-item-name{font-size:13px;font-weight:500;color:var(--text-primary)}
+.nw-item-name{font-size:13px;font-weight:500;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nw-item-sub{font-size:11px;color:var(--text-secondary)}
 .nw-bar-row{padding:.22rem .85rem .45rem 1.1rem;border-top:1px solid var(--border)}
 .nw-bar-bg{height:6px;background:var(--border-mid);border-radius:3px;position:relative}
@@ -248,7 +248,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .account-row-529{border-color:var(--amber-border-strong);background:var(--amber-bg)}
 .account-row-529:hover{background:var(--amber-bg-mid)}
 .acct-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
-.account-name{font-size:13px;font-weight:600;color:var(--text-primary)}
+.account-name{font-size:13px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .account-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
 /* buttons */
 .btn{background:none;border:1px solid var(--border-mid);border-radius:7px;padding:6px 12px;font-size:12px;font-weight:500;color:var(--text-secondary);cursor:pointer}
@@ -3511,9 +3511,9 @@ function renderNwBreakdown(){
       const aPct=raw!==0?Math.abs(a.balance/raw)*100:0;
       const isNeg=(g.isLiab?-a.balance:a.balance)<0;
       return`<div class="nw-item">
-        <div class="flex-center gap-8">
+        <div class="flex-center gap-8" style="min-width:0">
           <div style="width:8px;height:8px;border-radius:50%;background:${g.color}88;flex-shrink:0"></div>
-          <div><div class="nw-item-name">${esc(a.name)}</div><div class="nw-item-sub">${esc(a.source)} · ${esc(TL[a.type]||a.type)}</div></div>
+          <div style="min-width:0"><div class="nw-item-name" title="${esc(a.name)}">${esc(a.name)}</div><div class="nw-item-sub">${esc(a.source)} · ${esc(TL[a.type]||a.type)}</div></div>
         </div>
         <div style="font-size:12px;font-weight:700;color:${isNeg?'#F87171':g.color}">${isNeg?'-':''}${fmt(a.balance)}</div>
       </div>
@@ -4806,7 +4806,7 @@ function renderSpendSummary(){
   const top5=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,5);
   document.getElementById('spend-top5-inline').innerHTML=top5.map(([cat,amt])=>
     `<div style="font-size:10px;font-weight:600;color:rgba(255,255,255,.75);margin-bottom:2px;display:flex;justify-content:space-between;gap:14px">
-      <span style="opacity:${state.activeCats.has(cat)?1:.55}">${esc(cat)}</span><span style="opacity:.35">${fmt(amt)}</span></div>`).join('');
+      <span style="opacity:${state.activeCats.has(cat)?1:.55};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px" title="${esc(cat)}">${esc(cat)}</span><span style="opacity:.35">${fmt(amt)}</span></div>`).join('');
 
   // Top 5 vendors — respect category filter
   const vendorTotals5={};
@@ -7513,7 +7513,7 @@ const SC_M={Ally:{bg:tc('#1E3A5F','#EFF6FF'),fg:'#60A5FA'},Amex:{bg:tc('#1E3A5F'
 const SA_M={Ally:'AL',Amex:'AX',Vanguard:'VG',Fidelity:'FD',Chase:'CH',Barclays:'BC','Old National':'ON',Zillow:'ZL',Redfin:'RF','Bank of America':'BA','Capital One':'CO',Discover:'DV','E*TRADE':'ET',Marcus:'MC',Alliant:'AT',BMO:'BM',BECU:'BU',CIBC:'CB','Navy Federal':'NV',RBC:'RB',PenFed:'PF',Scotiabank:'SK',Schwab:'SC',SoFi:'SF',Tangerine:'TN','TD Bank':'TD',Truist:'TR',USAA:'UA','Wells Fargo':'WF',Other:'OT'};
 function renderAccountLists(){
   const row=a=>{const sc=SC_M[a.source]||SC_M.Other,tc=TC_M[a.type]||'var(--text-muted)';
-    return`<div class="account-row"><div style="display:flex;align-items:center;gap:10px"><div class="acct-icon" style="background:${sc.bg};color:${sc.fg}">${SA_M[a.source]||'??'}</div><div><div class="account-name">${esc(a.name)}</div><div class="account-sub">${esc(a.source)} · ${esc(TL_M[a.type]||a.type)}</div></div></div>
+    return`<div class="account-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="acct-icon" style="background:${sc.bg};color:${sc.fg};flex-shrink:0">${SA_M[a.source]||'??'}</div><div style="min-width:0"><div class="account-name" title="${esc(a.name)}">${esc(a.name)}</div><div class="account-sub">${esc(a.source)} · ${esc(TL_M[a.type]||a.type)}</div></div></div>
       <div class="flex-center gap-8"><div style="font-size:13px;font-weight:700;color:${(isLiab(a.type)?-a.balance:a.balance)<0?'#F87171':tc}">${(isLiab(a.type)?-a.balance:a.balance)<0?'-':''}${fmt(a.balance)}</div><button class="btn btn-sm" data-action="editAccount" data-arg="${a.id}" type="button">Edit</button></div></div>`;};
   const vehicleAcctIds=new Set(state.vehicles.filter(v=>v.acctId!=null).map(v=>v.acctId));
   // Legacy vehicles/physical assets saved before acctId existed (35th pass)
@@ -12042,10 +12042,10 @@ function renderExcludedAccounts(){
     if(acctHdr)acctHdr.style.display='';
     acctEl.innerHTML=excluded.map(a=>`
       <div class="account-row account-row-529">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div class="acct-icon" style="background:var(--amber-bg);color:var(--amber-text-strong);border:1.5px solid var(--amber-border)">${esc(a.source.slice(0,3).toUpperCase())}</div>
-          <div>
-            <div class="account-name" style="color:var(--amber-text)">${esc(a.name)}</div>
+        <div style="display:flex;align-items:center;gap:10px;min-width:0">
+          <div class="acct-icon" style="background:var(--amber-bg);color:var(--amber-text-strong);border:1.5px solid var(--amber-border);flex-shrink:0">${esc(a.source.slice(0,3).toUpperCase())}</div>
+          <div style="min-width:0">
+            <div class="account-name" style="color:var(--amber-text)" title="${esc(a.name)}">${esc(a.name)}</div>
             <div class="account-sub">${esc(a.source)}</div>
           </div>
         </div>
