@@ -5179,8 +5179,8 @@ test("transaction rows and their nested BIZ/PERS toggle pill are keyboard-focusa
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /data-action="openEditTxModal" data-arg="\$\{t\.id\}" tabindex="0" role="button" aria-label="Edit transaction:/,
-    "the transaction row should be focusable with a descriptive label"
+    /data-action="openEditTxModal" data-arg="\$\{t\.id\}" tabindex="0" role="button" aria-label="\$\{fmtDate\(t\.date\)\}/,
+    "the transaction row should be focusable with a descriptive label that leads with the same visible text order as the row itself (date first), not a generic 'Edit transaction:' prefix that fails the label-content-name-mismatch a11y rule"
   );
   assert.match(
     source,
