@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-NdmPPWf6ISV1xoIApXR3+oouC4RcUve+Ch6EOqSXWMQ=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-LS5v5wYQJr9SpR07LCdv+bvkynCBSLPsPBIGKMjbr5o=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -752,6 +752,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <button id="auth-sign-out-btn" class="btn btn-sm hidden" data-action="doSignOut" style="font-size:10px;padding:3px 10px;color:var(--text-muted)" type="button">Sign out</button>
 </div>
 </nav>
+<main>
 <div class="page" id="page-dashboard">
   <div id="demo-notice-dash" style="background:transparent;border:1px solid var(--border-dim);border-radius:8px;padding:.3rem .75rem;margin-bottom:.75rem;opacity:.6">
     <div style="font-size:10px;color:var(--text-muted);line-height:1.5">Demo data — add your real balances in <button data-action="navToAccounts" style="background:none;border:none;color:var(--text-muted);font-size:10px;cursor:pointer;text-decoration:underline;padding:0" type="button">Accounts</button>, then <strong style="color:var(--text-secondary)">+ Save snapshot</strong> at the bottom of this tab to start tracking your net worth over time.</div>
@@ -4725,7 +4726,7 @@ function renderDateRange(){
   const fromOpts=ALL_MONTHS.map(m=>`<option value="${m}"${m===from?' selected':''}>${fmtMonthShort(m)}</option>`).join('');
   const toOpts=ALL_MONTHS.filter(m=>m>=from).map(m=>`<option value="${m}"${m===to?' selected':''}>${fmtMonthShort(m)}</option>`).join('');
   if(dropsWrap){
-    dropsWrap.innerHTML=`<div class="range-dropdowns"><select class="range-select" id="range-from" data-change="onRangeFromChange">${fromOpts}</select><span class="range-sep">→</span><select class="range-select" id="range-to" data-change="onRangeToChange">${toOpts}</select></div>`;
+    dropsWrap.innerHTML=`<div class="range-dropdowns"><select class="range-select" id="range-from" data-change="onRangeFromChange" aria-label="Range start month">${fromOpts}</select><span class="range-sep">→</span><select class="range-select" id="range-to" data-change="onRangeToChange" aria-label="Range end month">${toOpts}</select></div>`;
   }
   const ytdStart=latestM.slice(0,4)+'-01';
   const ytdM=ALL_MONTHS.find(m=>m>=ytdStart)||ALL_MONTHS[0];
@@ -5172,13 +5173,13 @@ function renderBucketGrid(){
       <span style="font-size:9px;color:var(--text-muted)">${fmt(curAmt)} of ${fmt(budget)} budget</span>
       <span style="font-size:10px;font-weight:700;color:${curAmt>budget+0.005?'#F87171':curAmt/budget>0.8?'#FBBF24':'#34D399'}">${Math.round(curAmt/budget*100)}%</span>
     </div>`
-    :`<button data-action="openBudgetModal" data-arg="${sc}" data-stop="1" style="margin-top:5px;width:100%;background:none;border:1px solid var(--border-mid);border-radius:5px;padding:2px 6px;font-size:9px;font-weight:600;color:var(--text-muted);cursor:pointer;text-align:center" title="Set a monthly budget for ${sc}" type="button">+ Set budget</button>`;
+    :`<button data-action="openBudgetModal" data-arg="${sc}" data-stop="1" style="margin-top:5px;width:100%;background:none;border:1px solid var(--border-mid);border-radius:5px;padding:8px 6px;font-size:9px;font-weight:600;color:var(--text-muted);cursor:pointer;text-align:center" title="Set a monthly budget for ${sc}" type="button">+ Set budget</button>`;
     return`<div class="bucket-card ${isActive?'active-bucket':''}" style="${dashed?'opacity:.75':''};border-color:${isActive?color:tc('#1E293B','#E2E8F0')};background:${isActive?color+'18':tc('#0F172A','#F8FAFC')};color:${color}" data-action="toggleCatFilter" data-arg="${sc}" tabindex="0" role="button" aria-pressed="${isActive}">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
         <div class="bucket-name" title="${sc}" style="color:${color};margin:0">${sc}${state.includeIncome&&_BIZ_CATS.includes(cat)?'<span style="font-size:8px;background:#2563EB22;color:#60A5FA;padding:1px 4px;border-radius:3px;font-weight:700;margin-left:4px;vertical-align:middle">BIZ</span>':''}${hint?` <span data-tip="${hint}" style="font-size:15px;opacity:.4;cursor:pointer;line-height:1;vertical-align:middle" data-action="showPillTip" data-stop="1">ⓘ</span>`:''}</div>
         <div style="display:flex;align-items:center;gap:4px">
           ${catSparkline(cat,color,dashed)}
-          <button data-action="toggleCatExclusion" data-arg="${sc}" data-stop="1" data-hide-cat="${sc}" style="background:none;border:none;cursor:pointer;font-size:11px;opacity:.35;padding:0 2px;color:currentColor;line-height:1;transition:opacity .1s" type="button">${state.excludedCats.has(cat)?'👁':'···'}</button>
+          <button data-action="toggleCatExclusion" data-arg="${sc}" data-stop="1" data-hide-cat="${sc}" style="background:none;border:none;cursor:pointer;font-size:11px;opacity:.35;padding:7px 8px;margin:-7px -8px;color:currentColor;line-height:1;transition:opacity .1s" type="button">${state.excludedCats.has(cat)?'👁':'···'}</button>
         </div>
       </div>
       <div class="bucket-total" style="color:${color}">${fmt(s.total)}</div>
@@ -6686,7 +6687,7 @@ function renderTxList(){
     const monthTotal=monthTotals[monthKey]||0;
     const monthCatTotal=activeCatMonthTotals?(activeCatMonthTotals[monthKey]||0):monthTotal;
     const pctOfMonth=monthCatTotal>0&&isRealSpend(t)?Math.round(t.amount/monthCatTotal*100):null;
-    return`<div class="tx-row ${t.excluded?'tx-excluded':''}" data-action="openEditTxModal" data-arg="${t.id}" tabindex="0" role="button" aria-label="Edit transaction: ${esc(displayVendor(t.desc))}, ${fmtDate(t.date)}, ${t.isIncome||t.is_offset?'+':'-'}${esc(fmtD(Math.abs(t.amount)))}">
+    return`<div class="tx-row ${t.excluded?'tx-excluded':''}" data-action="openEditTxModal" data-arg="${t.id}" tabindex="0" role="button" aria-label="${fmtDate(t.date)}, ${esc(displayVendor(t.desc))}, ${t.isIncome||t.is_offset?'+':'-'}${esc(fmtD(Math.abs(t.amount)))}">
       <div class="tx-date">${fmtDate(t.date)}</div>
       <div class="tx-desc" title="${esc(t.desc)}">${highlight(displayVendor(t.desc))}</div>
       ${t.excluded?'<span class="excl-pill" title="Hidden from spending — click to edit">hidden</span>':''}
@@ -14857,6 +14858,7 @@ window.d3Sankey = (typeof d3 !== 'undefined' && typeof d3.sankey === 'function')
      Structure: footer > .footer-left (logo + ♥ Support) | .footer-nav or .footer-links (page-specific links + GitHub + Report a bug + Email me).
      CSS lives in each file's <style> block — keep .footer-left, .footer-logo, .footer-support, and link font-size/gap in sync.
      If adding pages: copy this block, adjust the page-specific links, do NOT put the footer inside any max-width content wrapper. -->
+</main>
 <footer class="app-footer">
   <div class="footer-left">
     <a href="/" class="footer-logo">trak-yo-dolla<span>$</span></a>
