@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-0ss7MDJSnBq93WoQxm1LwW+yyomlWK31TH3X7jVSePU=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-dkU+HdF/Yopg0a1kXWW0dilQHfMnmhU6DMBS4N0gcdU=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -10338,9 +10338,27 @@ function confirmSaveRule(){
 // markup at all, so a screen-reader user got zero announcement of any
 // toast, including the error toasts that are the only signal a save/
 // import was rejected. Found in the 123rd adversarial pass.
+// The ~76 showToast() call sites overwhelmingly pass one of these 3
+// hardcoded, dark-theme-tuned semantic colors -- none had a light-theme
+// equivalent, so all 3 failed WCAG AA against the light theme's
+// near-white --toast-bg (1.91:1 / 1.43:1 / 2.74:1 measured, need 4.5:1).
+// Rather than touch ~76 call sites individually (real regression risk
+// swapping dozens of string literals for a helper call, one at a time),
+// remapped here, in the single place they all funnel through --
+// matches this file's established "consolidate once it recurs 3+
+// times" convention. Values reused from this app's own already-defined
+// light-theme design tokens, not invented: '#047857'/'#DC2626' are the
+// exact light-theme --accent-green/--accent-red values (line ~177-178);
+// '#B45309' matches --accent-amber's light value (the toast's own
+// warning amber, #FCD34D, doesn't have its own paired token, but this
+// is the same amber family and independently verified AA-passing).
+// Raised July 13, 2026 (76th adversarial pass), fixed July 23, 2026.
+const TOAST_LIGHT_OVERRIDES={'#34D399':'#047857','#F87171':'#DC2626','#FCD34D':'#B45309'};
 function showToast(msg,color,duration){
   const t=document.getElementById('toast');if(!t)return;
-  t.innerHTML=msg;t.style.color=color||'#34D399';
+  t.innerHTML=msg;
+  const c=color||'#34D399';
+  t.style.color=(!getIsDark()&&TOAST_LIGHT_OVERRIDES[c])||c;
   t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';
   clearTimeout(t._timer);
   t._timer=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(-50%) translateY(80px)';},duration||2800);
