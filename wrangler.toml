@@ -4,3 +4,23 @@ compatibility_date = "2025-01-01"
 
 [assets]
 directory = "_cf_deploy"
+
+# --- dev.trakyodollas.com (prepped 2026-07-23, not yet attached) ---
+# The dev worker (deployed via `./deploy.sh dev` -> `wrangler deploy --name
+# trak-yo-dollas-dev`, see deploy.sh) currently only has the default
+# trak-yo-dollas-dev.workers.dev URL. Cloudflare Workers' Custom Domains
+# feature is entirely dashboard/API-managed (it provisions its own DNS
+# record + SSL cert) -- nothing belongs in this file for it to work, so
+# there's no wrangler.toml route/env block to add. When ready to actually
+# attach dev.trakyodollas.com, the remaining steps are all outside this
+# repo:
+#   1. Cloudflare dashboard -> Workers & Pages -> trak-yo-dollas-dev ->
+#      Settings -> Domains & Routes -> Add Custom Domain -> dev.trakyodollas.com
+#   2. Firebase console -> Authentication -> Settings -> Authorized domains
+#      -> add dev.trakyodollas.com (keep the existing workers.dev entry too,
+#      don't remove it -- it's still a valid fallback test URL)
+#   3. GCP console -> APIs & Services -> Credentials -> the API key used by
+#      this app -> Application restrictions -> HTTP referrers -> add
+#      https://dev.trakyodollas.com/*
+# Once all 3 are done, deploy.sh needs no changes -- it already deploys the
+# same worker this domain would point at.
