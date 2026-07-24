@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-LS5v5wYQJr9SpR07LCdv+bvkynCBSLPsPBIGKMjbr5o=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Qz3/H3Vnsobzwr4GOGfV6IMifkZjXDfYGpYS3Eeat/s=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -281,7 +281,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .chip-sky{background:#0C252622;color:#38BDF8;border-color:#0284C744}
 .chip-sky.on{background:#0C2526;color:#38BDF8;border-color:#0284C7}
 .src-x-btn{margin-left:5px;font-size:10px;opacity:0;color:inherit;line-height:1;vertical-align:middle;transition:opacity .12s;background:none;border:none;cursor:pointer;padding:0;font-family:inherit}
-.chip:hover .src-x-btn,.src-x-btn:hover{opacity:.75}
+.chip:hover .src-x-btn,.src-x-btn:hover,.src-x-btn:focus-visible{opacity:.75}
 @media(max-width:600px){.src-x-btn{opacity:.55}}
 .src-remove-pop{position:absolute;top:calc(100% + 6px);left:0;z-index:300;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.6rem .75rem;min-width:210px;box-shadow:0 8px 24px #00000055;white-space:nowrap}
 /* excluded toggle */
@@ -739,7 +739,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <button data-action="toggleTheme" id="theme-toggle-btn" title="Toggle light/dark theme" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer;color:var(--text-muted)" type="button">🌙</button>
   <div id="auth-user-info" class="hidden" style="display:flex;align-items:center;gap:6px">
     <div style="position:relative">
-      <div id="auth-avatar" data-action="toggleAvatarPop" style="width:24px;height:24px;border-radius:50%;background:#2563EB;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer"></div>
+      <div id="auth-avatar" data-action="toggleAvatarPop" tabindex="0" role="button" aria-label="Account menu" style="width:24px;height:24px;border-radius:50%;background:#2563EB;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer"></div>
       <div id="auth-avatar-pop" class="hidden" style="position:absolute;top:calc(100% + 8px);right:0;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.6rem .85rem;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:200;white-space:nowrap">
         <div id="auth-pop-name" style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:2px"></div>
         <div id="auth-pop-email" style="font-size:11px;color:var(--text-muted)"></div>
@@ -859,7 +859,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div id="budget-view-gate" style="display:none;background:var(--bg-card);border:1px solid var(--border-mid);border-left:3px solid #FBBF24;border-radius:6px;padding:.5rem .75rem;margin-bottom:.5rem;font-size:11px;color:var(--text-secondary);line-height:1.5"></div>
 
   <!-- Summary bar -->
-  <div id="budget-summary-bar" style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:.85rem 1rem;margin-bottom:.4rem;cursor:pointer" data-action="cycleBudgetHeroHist"></div>
+  <div id="budget-summary-bar" data-action="cycleBudgetHeroHist" tabindex="0" role="button" aria-label="Expand or collapse 12-month history" style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:.85rem 1rem;margin-bottom:.4rem;cursor:pointer"></div>
 
   <!-- Dot legend -->
   <div id="budget-dot-legend" style="display:flex;gap:12px;padding:0 2px;margin-bottom:.6rem;flex-wrap:wrap"></div>
@@ -929,8 +929,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div class="chip-row" id="source-chips" style="flex:1;margin-bottom:0;min-width:0"></div>
     <div id="range-dropdowns-inline"></div>
   </div>
-  <span id="source-align-link" style="display:none;font-size:11px;color:var(--accent-blue-light);cursor:pointer;margin-left:4px" data-action="resumeSourceAlign">↔ Align sources</span>
-  <span id="source-align-active" style="display:none;font-size:11px;color:#34D399;margin-left:4px">✓ Aligned to <span id="source-align-date-label"></span> · <span style="cursor:pointer;color:var(--accent-blue-light)" data-action="resetSourceAlign">show all</span></span>
+  <span id="source-align-link" data-action="resumeSourceAlign" tabindex="0" role="button" style="display:none;font-size:11px;color:var(--accent-blue-light);cursor:pointer;margin-left:4px">↔ Align sources</span>
+  <span id="source-align-active" style="display:none;font-size:11px;color:#34D399;margin-left:4px">✓ Aligned to <span id="source-align-date-label"></span> · <span data-action="resetSourceAlign" tabindex="0" role="button" style="cursor:pointer;color:var(--accent-blue-light)">show all</span></span>
   <div class="date-range-wrap" id="date-range-wrap"></div>
 
   <!-- Search -->
@@ -1445,7 +1445,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="acct-csv-modal-title" tabindex="-1">
     <h3 id="acct-csv-modal-title">Import CSV</h3>
     <p class="modal-sub">Columns: <strong style="color:var(--text-secondary)">name, source, type, balance</strong> — type must be one of: cash, investment, home, vehicle, mortgage, credit, other-asset, other-liability</p>
-    <div class="csv-zone" data-action="triggerCsvFileInput">Click to select CSV
+    <div class="csv-zone" data-action="triggerCsvFileInput" tabindex="0" role="button">Click to select CSV
       <input type="file" id="csv-file" accept=".csv,.CSV" style="display:none" data-change="handleCsvDelegated"/></div>
     <textarea id="csv-text" rows="3" style="margin-top:.6rem;font-family:monospace;font-size:11px" placeholder="name,source,type,balance"></textarea>
     <div class="row" style="justify-content:flex-end;gap:8px;margin-top:.75rem">
@@ -1653,7 +1653,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <p style="font-size:11px;color:var(--text-muted);background:var(--bg-card);border-radius:8px;padding:.5rem .75rem;margin-bottom:1rem;line-height:1.5">Once saved, your savings rate will appear as a pill in the <strong style="color:#94A3B8">'26 Apr at a glance</strong> card on the Net Worth tab.</p>
 
     <!-- Method A: Manual -->
-    <div id="income-method-a" style="border:1.5px solid var(--border-mid);border-radius:10px;padding:.85rem 1rem;margin-bottom:.75rem;cursor:pointer" data-action="selectIncomeMethod" data-arg="manual">
+    <div id="income-method-a" data-action="selectIncomeMethod" data-arg="manual" tabindex="0" role="button" aria-pressed="false" style="border:1.5px solid var(--border-mid);border-radius:10px;padding:.85rem 1rem;margin-bottom:.75rem;cursor:pointer">
       <div style="display:flex;align-items:flex-start;gap:10px">
         <div id="income-method-a-dot" style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border-mid);flex-shrink:0;margin-top:2px;transition:all .15s"></div>
         <div style="flex:1">
@@ -1672,7 +1672,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
 
     <!-- Method B: Auto-detect -->
-    <div id="income-method-b" style="border:1.5px solid var(--border-mid);border-radius:10px;padding:.85rem 1rem;margin-bottom:.75rem;cursor:pointer" data-action="selectIncomeMethod" data-arg="auto">
+    <div id="income-method-b" data-action="selectIncomeMethod" data-arg="auto" tabindex="0" role="button" aria-pressed="false" style="border:1.5px solid var(--border-mid);border-radius:10px;padding:.85rem 1rem;margin-bottom:.75rem;cursor:pointer">
       <div style="display:flex;align-items:flex-start;gap:10px">
         <div id="income-method-b-dot" style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border-mid);flex-shrink:0;margin-top:2px;transition:all .15s"></div>
         <div style="flex:1">
@@ -3090,7 +3090,7 @@ function renderInsights(){
     addPill('savings','Savings rate',pillWithTip(savingsRate>=20?'🟢':savingsRate>=10?'🟡':'🔴',`Savings rate`,`${savingsRate}%`,rateColor,savingsSub,savingsTooltip,savingsRate<10?{label:'Set income',action:'openIncomeModal'}:''),savingsRate<10?100:savingsRate<20?50:10);
     } // end else (not overspend)
   } else if(!state.hiddenPills.has('savings')){
-    pillsArr.push({key:'savings-nudge',label:'Savings rate',score:0,html:`<div style="display:flex;flex-direction:column;justify-content:center;background:var(--card-nudge-bg);border:1.5px dashed var(--border-mid);border-radius:12px;padding:.75rem .9rem;gap:.4rem;cursor:pointer;position:relative" data-action="openIncomeModal">
+    pillsArr.push({key:'savings-nudge',label:'Savings rate',score:0,html:`<div data-action="openIncomeModal" tabindex="0" role="button" style="display:flex;flex-direction:column;justify-content:center;background:var(--card-nudge-bg);border:1.5px dashed var(--border-mid);border-radius:12px;padding:.75rem .9rem;gap:.4rem;cursor:pointer;position:relative">
       <button data-action="dismissSavingsNudge" data-stop="1" data-prevent="1" style="position:absolute;top:6px;right:8px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:4px 6px;z-index:10;pointer-events:all" title="" type="button">✕</button>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-right:20px">
         <div style="display:flex;align-items:center;gap:7px">
@@ -3164,7 +3164,7 @@ function renderInsights(){
     const subList=subVendors.slice(0,8).map(s=>`${esc(displayVendor(s.vendor))}: ${fmtC(s.amt)}`).join('&#10;');
     const tooltip=`Vendors charged in 3+ of last 6 months with consistent amounts.&#10;&#10;Detected (${subCount}):&#10;${subList}${subCount>8?`&#10;...and ${subCount-8} more`:''}`;
     const topSub=subVendors[0];
-    addPill('subscriptions','Subscriptions',`<div style="display:flex;flex-direction:column;justify-content:center;background:#A78BFA15;border:1.5px solid #A78BFA55;border-radius:12px;padding:.75rem .9rem;gap:.4rem;cursor:pointer" data-action="openSubscriptionsModal">
+    addPill('subscriptions','Subscriptions',`<div data-action="openSubscriptionsModal" tabindex="0" role="button" style="display:flex;flex-direction:column;justify-content:center;background:#A78BFA15;border:1.5px solid #A78BFA55;border-radius:12px;padding:.75rem .9rem;gap:.4rem;cursor:pointer">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
         <div style="display:flex;align-items:center;gap:7px;flex-shrink:1;min-width:0">
           <span style="font-size:16px;flex-shrink:0">🔄</span>
@@ -3343,7 +3343,7 @@ function renderInsights(){
     if(sentences.length>0){
       const preview=sentences[0].length>95?sentences[0].slice(0,92)+'…':sentences[0];
       const full=sentences.join(' ');
-      _narHtml=`<div style="grid-column:1/-1;background:#60A5FA0D;border:1.5px solid #60A5FA33;border-radius:12px;padding:.75rem .9rem;cursor:pointer" data-action="toggleNarrative">
+      _narHtml=`<div data-action="toggleNarrative" tabindex="0" role="button" aria-expanded="${_narrativeExpanded?'true':'false'}" style="grid-column:1/-1;background:#60A5FA0D;border:1.5px solid #60A5FA33;border-radius:12px;padding:.75rem .9rem;cursor:pointer">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${_narrativeExpanded?'.45rem':'.25rem'}">
           <div style="display:flex;align-items:center;gap:6px">
             <span style="font-size:15px;line-height:1">📋</span>
@@ -3411,12 +3411,12 @@ function renderInsights(){
 
     if(!state.insightsPillsExpanded&&hiddenPills.length>0){
       const hiddenLabels=hiddenPills.map(p=>p.label).filter(Boolean).join(', ');
-      html+=`<div style="display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--bg-card);border:1px dashed var(--border-mid);border-radius:12px;padding:.75rem .9rem;cursor:pointer;min-height:80px;gap:4px" data-action="expandInsightPills">
+      html+=`<div data-action="expandInsightPills" tabindex="0" role="button" style="display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--bg-card);border:1px dashed var(--border-mid);border-radius:12px;padding:.75rem .9rem;cursor:pointer;min-height:80px;gap:4px">
         <div style="font-size:12px;font-weight:700;color:var(--accent-blue-light)">+${hiddenPills.length} more insight${hiddenPills.length>1?'s':''}</div>
         <div style="font-size:10px;color:var(--text-muted);text-align:center">${hiddenLabels}</div>
       </div>`;
     } else if(state.insightsPillsExpanded&&regularPills.length>SHOW-1){
-      html+=`<div style="display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--bg-card);border:1px dashed var(--border-mid);border-radius:12px;padding:.75rem .9rem;cursor:pointer;min-height:80px" data-action="collapseInsightPills">
+      html+=`<div data-action="collapseInsightPills" tabindex="0" role="button" style="display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--bg-card);border:1px dashed var(--border-mid);border-radius:12px;padding:.75rem .9rem;cursor:pointer;min-height:80px">
         <div style="font-size:12px;font-weight:700;color:var(--text-muted)">Show less ↑</div>
       </div>`;
     }
@@ -3499,7 +3499,7 @@ function renderMetrics(){
     {v:fmtC(liab),l:'Liabilities',c:'m-red',key:'liabilities',sub:`<span style="color:var(--text-muted)">${liabTypes}</span>`}
   ];
   document.getElementById('summary-metrics').innerHTML=cards.map(({v,l,c,key,sub},i)=>`
-    <div class="metric ${c} ${key?'clickable':''} ${f===key&&key?'active-card':''}" data-action="${key?'toggleDashFilterDynamic':''}" data-arg="${key||''}" style="cursor:${key?'pointer':'default'}${i===0?';padding:1rem 1rem':''}">
+    <div class="metric ${c} ${key?'clickable':''} ${f===key&&key?'active-card':''}" data-action="${key?'toggleDashFilterDynamic':''}" data-arg="${key||''}"${key?` tabindex="0" role="button" aria-pressed="${f===key}"`:''} style="cursor:${key?'pointer':'default'}${i===0?';padding:1rem 1rem':''}">
       <div class="metric-label" style="${i===0?'font-size:10px;opacity:.55':''}">${l}</div>
       <div class="metric-value" style="${i===0?'font-size:48px;font-weight:900;letter-spacing:-.03em;line-height:1':'font-size:15px;opacity:.75'}">${v}</div>
       ${sub?`<div style="font-size:10px;margin-top:3px;line-height:1.4">${sub}</div>`:''}
@@ -4709,7 +4709,7 @@ function renderSourceChips(){
     sources.map(s=>{
       const cls=getSrcChipClass(s);
       const safe=esc(s);
-      return `<div class="src-chip-wrap" style="position:relative;display:inline-block"><button class="chip ${cls} ${state.activeSources.has(s)?'on':''}" data-action="toggleSource" data-arg="${safe}" type="button">${safe}<span class="src-x-btn" data-action="openSrcRemovePop" data-stop="1" data-src="${safe}" title="Remove this source">×</span></button><div class="src-remove-pop" style="display:none"></div></div>`;
+      return `<div class="src-chip-wrap" style="position:relative;display:inline-block"><button class="chip ${cls} ${state.activeSources.has(s)?'on':''}" data-action="toggleSource" data-arg="${safe}" type="button">${safe}<span class="src-x-btn" data-action="openSrcRemovePop" data-stop="1" data-src="${safe}" tabindex="0" role="button" aria-label="Remove source ${safe}" title="Remove this source">×</span></button><div class="src-remove-pop" style="display:none"></div></div>`;
     }).join('')+
     (noneSelected?`<span style="font-size:11px;color:#F87171;align-self:center;margin-left:2px">← select a source to show spending</span>`:'')
     +hiddenChip;
@@ -5027,7 +5027,7 @@ function renderBucketGrid(){
       const sparkline=vendorSparkline(vendor,color);
       return`<div class="bucket-card ${isActive?'active-bucket':''}" style="border-color:${isActive?color:tc('#1E293B','#E2E8F0')};background:${isActive?color+'18':tc('#0F172A','#F8FAFC')};color:${color}" data-action="toggleVendorFilterByIdx" data-arg="${vi}" tabindex="0" role="button" aria-pressed="${isActive}">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
-          <div class="bucket-name" title="${esc(vendor)}" style="color:${color};margin:0">${esc(displayVendor(vendor))}${data.isCollapsed?` <span data-tip="Individual check numbers collapsed — categorize a check to split it out" style="font-size:14px;opacity:.5;cursor:pointer;line-height:1;vertical-align:middle" data-action="showPillTip" data-stop="1">ⓘ</span>`:''}</div>
+          <div class="bucket-name" title="${esc(vendor)}" style="color:${color};margin:0">${esc(displayVendor(vendor))}${data.isCollapsed?` <span data-tip="Individual check numbers collapsed — categorize a check to split it out" data-action="showPillTip" data-stop="1" tabindex="0" role="button" aria-label="Info: individual check numbers collapsed" style="font-size:14px;opacity:.5;cursor:pointer;line-height:1;vertical-align:middle">ⓘ</span>`:''}</div>
           ${sparkline}
         </div>
         <div class="bucket-total" style="color:${color}">${fmt(data.total)}</div>
@@ -5168,7 +5168,7 @@ function renderBucketGrid(){
     // classifyBudgetStatus()'s own callers, the exact cross-UI
     // inconsistency that function exists to prevent. Found in the 142nd
     // adversarial pass.
-    const budgetBadge=budget?`<div data-action="openBudgetModal" data-arg="${sc}" data-stop="1" title="Budget: ${fmt(budget)}/mo — click to edit · See Budget tab for full tracking" style="margin-top:5px;display:flex;align-items:center;gap:5px;cursor:pointer">
+    const budgetBadge=budget?`<div data-action="openBudgetModal" data-arg="${sc}" data-stop="1" tabindex="0" role="button" title="Budget: ${fmt(budget)}/mo — click to edit · See Budget tab for full tracking" style="margin-top:5px;display:flex;align-items:center;gap:5px;cursor:pointer">
       <div style="width:10px;height:6px;border-radius:3px;background:${curAmt>budget+0.005?'#F87171':curAmt/budget>0.8?'#FBBF24':'#34D399'};flex-shrink:0"></div>
       <span style="font-size:9px;color:var(--text-muted)">${fmt(curAmt)} of ${fmt(budget)} budget</span>
       <span style="font-size:10px;font-weight:700;color:${curAmt>budget+0.005?'#F87171':curAmt/budget>0.8?'#FBBF24':'#34D399'}">${Math.round(curAmt/budget*100)}%</span>
@@ -5176,7 +5176,7 @@ function renderBucketGrid(){
     :`<button data-action="openBudgetModal" data-arg="${sc}" data-stop="1" style="margin-top:5px;width:100%;background:none;border:1px solid var(--border-mid);border-radius:5px;padding:8px 6px;font-size:9px;font-weight:600;color:var(--text-muted);cursor:pointer;text-align:center" title="Set a monthly budget for ${sc}" type="button">+ Set budget</button>`;
     return`<div class="bucket-card ${isActive?'active-bucket':''}" style="${dashed?'opacity:.75':''};border-color:${isActive?color:tc('#1E293B','#E2E8F0')};background:${isActive?color+'18':tc('#0F172A','#F8FAFC')};color:${color}" data-action="toggleCatFilter" data-arg="${sc}" tabindex="0" role="button" aria-pressed="${isActive}">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
-        <div class="bucket-name" title="${sc}" style="color:${color};margin:0">${sc}${state.includeIncome&&_BIZ_CATS.includes(cat)?'<span style="font-size:8px;background:#2563EB22;color:#60A5FA;padding:1px 4px;border-radius:3px;font-weight:700;margin-left:4px;vertical-align:middle">BIZ</span>':''}${hint?` <span data-tip="${hint}" style="font-size:15px;opacity:.4;cursor:pointer;line-height:1;vertical-align:middle" data-action="showPillTip" data-stop="1">ⓘ</span>`:''}</div>
+        <div class="bucket-name" title="${sc}" style="color:${color};margin:0">${sc}${state.includeIncome&&_BIZ_CATS.includes(cat)?'<span style="font-size:8px;background:#2563EB22;color:#60A5FA;padding:1px 4px;border-radius:3px;font-weight:700;margin-left:4px;vertical-align:middle">BIZ</span>':''}${hint?` <span data-tip="${hint}" data-action="showPillTip" data-stop="1" tabindex="0" role="button" aria-label="More info" style="font-size:15px;opacity:.4;cursor:pointer;line-height:1;vertical-align:middle">ⓘ</span>`:''}</div>
         <div style="display:flex;align-items:center;gap:4px">
           ${catSparkline(cat,color,dashed)}
           <button data-action="toggleCatExclusion" data-arg="${sc}" data-stop="1" data-hide-cat="${sc}" style="background:none;border:none;cursor:pointer;font-size:11px;opacity:.35;padding:7px 8px;margin:-7px -8px;color:currentColor;line-height:1;transition:opacity .1s" type="button">${state.excludedCats.has(cat)?'👁':'···'}</button>
@@ -5348,7 +5348,7 @@ function renderTreemap(drillCat){
 
   wrap.innerHTML=`
     <div class="tm-breadcrumb" id="tm-bc">${drillCat?
-      `<span class="tm-breadcrumb-link" data-action="resetTreemapToCategories">All categories</span> › <span style="color:var(--text-primary)">${esc(drillCat)}</span>`
+      `<span class="tm-breadcrumb-link" data-action="resetTreemapToCategories" tabindex="0" role="button">All categories</span> › <span style="color:var(--text-primary)">${esc(drillCat)}</span>`
       :'<span style="color:var(--text-muted)">All categories</span>'}
     </div>
     <div style="position:relative">
@@ -5567,7 +5567,7 @@ function renderSankey(){
   // also skipped their own renderInsights() refresh on the next line. Found
   // in the 99th adversarial pass.
   if(!totalIncome||!filteredMonths.length){
-    wrap.innerHTML=`<div class="sankey-nudge" data-action="openIncomeModal">
+    wrap.innerHTML=`<div class="sankey-nudge" data-action="openIncomeModal" tabindex="0" role="button">
       <div class="sankey-nudge-title">💰 Set up income to enable Flow view</div>
       <div class="sankey-nudge-sub">Flow shows how your income moves into spending categories — and what's left over as savings.</div>
       <button class="btn btn-primary btn-sm" data-action="openIncomeModal" data-stop="1" type="button">Set up income →</button>
@@ -5937,9 +5937,9 @@ function renderDailyCal(){
   const tip=document.getElementById('cal-tip');
   wrap.innerHTML=`
     <div class="cal-stats">
-      <div class="cal-stat"><div class="cal-stat-label">Total</div><div class="cal-stat-val">${fmtC(total)}</div><div class="cal-stat-sub">${activeDays} days with spend${state.activeCats.size===0&&!state.showTransfersInCal?' · <span style="color:#60A5FA;cursor:pointer;text-decoration:underline" data-action="toggleCalTransfers">excluding transfers</span>':''}</div></div>
+      <div class="cal-stat"><div class="cal-stat-label">Total</div><div class="cal-stat-val">${fmtC(total)}</div><div class="cal-stat-sub">${activeDays} days with spend${state.activeCats.size===0&&!state.showTransfersInCal?' · <span data-action="toggleCalTransfers" tabindex="0" role="button" style="color:#60A5FA;cursor:pointer;text-decoration:underline">excluding transfers</span>':''}</div></div>
       <div class="cal-stat"><div class="cal-stat-label">Average/day</div><div class="cal-stat-val">${fmtC(avgActive)}</div><div class="cal-stat-sub">active days only</div></div>
-      <div class="cal-stat${peakEntry?' cal-stat-clickable':''}" data-action="${peakEntry?'filterToDateDynamic':''}" data-arg="${peakEntry?peakEntry[0]:''}" title="${peakEntry?'Click to filter transactions to this day':''}"><div class="cal-stat-label">Peak day</div><div class="cal-stat-val">${peakEntry?fmt(peakEntry[1]):'—'}</div><div class="cal-stat-sub">${peakEntry?new Date(peakEntry[0]+'T12:00:00').toLocaleDateString('default',{month:'short',day:'numeric',year:'numeric'}):'—'}</div></div>
+      <div class="cal-stat${peakEntry?' cal-stat-clickable':''}" data-action="${peakEntry?'filterToDateDynamic':''}" data-arg="${peakEntry?peakEntry[0]:''}"${peakEntry?' tabindex="0" role="button"':''} title="${peakEntry?'Click to filter transactions to this day':''}"><div class="cal-stat-label">Peak day</div><div class="cal-stat-val">${peakEntry?fmt(peakEntry[1]):'—'}</div><div class="cal-stat-sub">${peakEntry?new Date(peakEntry[0]+'T12:00:00').toLocaleDateString('default',{month:'short',day:'numeric',year:'numeric'}):'—'}</div></div>
       <div class="cal-stat"><div class="cal-stat-label">Weekends</div><div class="cal-stat-val">${wkndPct===0?'Even':(wkndPct>0?'+':'')+wkndPct+'%'}</div><div class="cal-stat-sub">vs weekday avg/day</div></div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
@@ -7883,7 +7883,7 @@ function openOtherVendorsModal(){
     (window._topVendorsTotal||0);
   list.innerHTML=vendors.map(([v,d])=>{
     const pct=grandTotal>0?Math.round(d.total/grandTotal*100):0;
-    return`<div class="list-row" style="cursor:pointer" data-action="closeModalsSetVendorSearch" data-arg="${esc(v)}">
+    return`<div class="list-row" data-action="closeModalsSetVendorSearch" data-arg="${esc(v)}" tabindex="0" role="button" style="cursor:pointer">
       <div style="flex:1;min-width:0">
         <div style="font-size:12px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(displayVendor(v))}</div>
         <div style="font-size:10px;color:var(--text-muted);margin-top:1px">${d.count} transaction${d.count===1?'':'s'} · Avg: ${fmt(Math.round(d.total/(window._otherVendorsAvgDenom||1)))}${window._otherVendorsAvgGrainLabel||'/mo'}</div>
@@ -9013,7 +9013,7 @@ function renderBudgetTab(){
 
       return`<div data-card style="background:${tc('#0F172A','#FFFFFF')};border:1px solid ${borderColor};border-radius:10px;display:flex">
         ${accentDiv}
-        <div style="flex:1;padding:.75rem 1rem;min-width:0;cursor:pointer" data-action="cycleBudgetRowHist">
+        <div data-action="cycleBudgetRowHist" tabindex="0" role="button" aria-label="${esc(cat)}, expand or collapse 12-month history" style="flex:1;padding:.75rem 1rem;min-width:0;cursor:pointer">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:.4rem" data-stop="1">
             <div class="flex-center gap-8" style="min-width:0">
               <div style="width:10px;height:10px;border-radius:2px;background:${catColor};flex-shrink:0"></div>
@@ -9343,16 +9343,18 @@ function selectIncomeMethodUI(method){
   const cardB=document.getElementById('income-method-b');
   // Reset
   [dotA,dotB].forEach(d=>{d.style.background='transparent';d.style.borderColor=tc('#334155','#CBD5E1');});
-  [cardA,cardB].forEach(c=>c.style.borderColor=tc('#1E293B','#E2E8F0'));
+  [cardA,cardB].forEach(c=>{c.style.borderColor=tc('#1E293B','#E2E8F0');c.setAttribute('aria-pressed','false');});
   inputA.classList.add('hidden');
   previewB.classList.add('hidden');
   if(method==='manual'){
     dotA.style.background='#2563EB';dotA.style.borderColor='#2563EB';
     cardA.style.borderColor='#2563EB44';
+    cardA.setAttribute('aria-pressed','true');
     inputA.classList.remove('hidden');
     setTimeout(()=>document.getElementById('income-amount').focus(),80);
   } else if(method==='auto'){
     dotB.style.background='#2563EB';dotB.style.borderColor='#2563EB';
+    cardB.setAttribute('aria-pressed','true');
     cardB.style.borderColor='#2563EB44';
     previewB.classList.remove('hidden');
   }
@@ -12030,7 +12032,7 @@ function renderExcludedAccounts(){
     else { if(nwHdr)nwHdr.style.display='';
     nwEl.innerHTML=excluded.map(a=>`
       <div class="nw-group" style="border:1.5px solid var(--amber-border);border-radius:10px;overflow:hidden;margin-bottom:4px">
-        <div class="nw-group-header" style="cursor:pointer;padding:.6rem .85rem" data-action="editAccount" data-arg="${a.id}">
+        <div class="nw-group-header" data-action="editAccount" data-arg="${a.id}" tabindex="0" role="button" style="cursor:pointer;padding:.6rem .85rem">
           <div class="flex-center gap-8" style="min-width:0">
             <div style="width:18px;height:9px;border-radius:4px;background:${colorHex};flex-shrink:0"></div>
             <div style="min-width:0">
@@ -14189,7 +14191,7 @@ document.addEventListener('DOMContentLoaded',function(){
     }
   }else if(!_isDemo&&!window._hadSavedData){
     loadDemoProfile(2, true, true); // silent + skipRender — renderAll fires below
-    requestAnimationFrame(()=>showToast('👋 Showing demo data — tap <span style="color:#D97706;cursor:pointer;text-decoration:underline" data-action="openDemoPicker" data-arg="false">switch profile</span> or import your own CSV',tc('#94A3B8','#4B5563'),6000));
+    requestAnimationFrame(()=>showToast('👋 Showing demo data — tap <span data-action="openDemoPicker" data-arg="false" tabindex="0" role="button" style="color:#D97706;cursor:pointer;text-decoration:underline">switch profile</span> or import your own CSV',tc('#94A3B8','#4B5563'),6000));
   }
 
   // Safety net: if activeSources is empty at this point (e.g. old LS without saved sources),
