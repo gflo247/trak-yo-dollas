@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Qz3/H3Vnsobzwr4GOGfV6IMifkZjXDfYGpYS3Eeat/s=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-0ss7MDJSnBq93WoQxm1LwW+yyomlWK31TH3X7jVSePU=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -455,6 +455,10 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
    patterns (_replaceDemoDataWithReal(), _reconcileNextId(), etc.). Found
    in the 168th adversarial pass. */
 .truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+/* Visually hidden but still reachable by screen readers -- unlike
+   display:none/visibility:hidden, which remove content from the
+   accessibility tree too. Standard clip-based pattern. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .flex-between{display:flex;align-items:center;justify-content:space-between}
 .flex-col{display:flex;flex-direction:column}
 .gap-4{gap:4px}.gap-6{gap:6px}.gap-8{gap:8px}.gap-10{gap:10px}.gap-12{gap:12px}
@@ -5680,7 +5684,37 @@ function renderSankey(){
   const periodStr=filteredMonths.length===1
     ?fmtMonthShort(filteredMonths[0]).toUpperCase()
     :`${fmtMonthShort(filteredMonths[0]).toUpperCase()} – ${fmtMonthShort(filteredMonths[filteredMonths.length-1]).toUpperCase()}`;
-  wrap.innerHTML=`<div style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5rem;padding:0 2px">${periodStr} · INCOME → SPENDING FLOW</div><div style="position:relative"><svg id="sk-svg" width="${W}" height="${H}" style="display:block"></svg></div>`;
+
+  // Non-visual equivalents -- the SVG had no role/aria-label on the
+  // container, and its only accessible content was the visible <text>
+  // labels, which are conditionally suppressed for thin nodes (see the
+  // nodeG text .text() callback below) and never present at all for the
+  // income node (its label is a separate sibling <text>, appended to
+  // <svg> directly rather than into the node's own <g>). A screen reader
+  // got nothing, and every interaction (hover tooltips, click-to-drill,
+  // the income bar) was mouse-only. Fixed with three independent pieces
+  // below: a plain-text aria-label per node (so keyboard/screen-reader
+  // navigation announces each node without relying on visible SVG text
+  // at all), a real sr-only <table> with the identical numbers for a
+  // linear read-through with no interaction needed, and tabindex+keydown
+  // on each node so Tab/Enter/Space can reach and trigger the same
+  // drilldown a click does. Found in the 124th adversarial pass.
+  const otherTipPlain=smallCats.map(([c,v])=>`${c}: ${fmtC(v)} (${Math.round(v/totalIncome*100)}%)`).join(', ');
+  const filteredOutTipPlain=filteredOutCatEntries.map(([c,v])=>`${c}: ${fmtC(v)} (${Math.round(v/totalIncome*100)}%)`).join(', ');
+  const incomeAriaLabel=(isOverspend
+    ?`Warning: spending exceeds income. Income ${fmtC(totalIncome,true)} for ${monthCount} month${monthCount===1?'':'s'}`
+    :`Income ${fmtC(totalIncome,true)} for ${monthCount} month${monthCount===1?'':'s'}`)
+    +(usingImportedIncome?' (from imported transactions).':'.')
+    +(usingImportedIncome?'':' Press Enter to edit your income.');
+  const svgAriaLabel=`${periodStr} income to spending flow diagram. ${fmtC(totalIncome)} total income across ${cats.length} ${cats.length===1?'group':'groups'}. Full numbers are in the table below this chart; each item in the diagram is also keyboard-focusable.`;
+  const flowTableRows=cats.map(([cat,val])=>{
+    const label=cat==='__other__'?otherNodeLabel:cat==='__filtered_out__'?filteredOutNodeLabel:cat==='__remaining__'?'Remaining (saved)':cat;
+    const pct=Math.round(val/totalIncome*100);
+    return`<tr><td>${esc(label)}</td><td>${esc(fmtC(val))}</td><td>${pct}%</td></tr>`;
+  }).join('');
+  const overspendNote=isOverspend?` Spending (${fmtC(totalSpendAll)}) exceeds income by ${fmtC(totalSpendAll-totalIncome)}.`:'';
+  const flowTableHtml=`<table class="sr-only"><caption>${esc(periodStr)} income to spending flow — detailed breakdown.${esc(overspendNote)}</caption><thead><tr><th scope="col">Category</th><th scope="col">Amount</th><th scope="col">% of income</th></tr></thead><tbody><tr><td>Income</td><td>${esc(fmtC(totalIncome))}</td><td>100%</td></tr>${flowTableRows}</tbody></table>`;
+  wrap.innerHTML=`<div style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5rem;padding:0 2px">${periodStr} · INCOME → SPENDING FLOW</div><div style="position:relative"><svg id="sk-svg" width="${W}" height="${H}" style="display:block" aria-label="${esc(svgAriaLabel)}"></svg></div>${flowTableHtml}`;
   const wrapEl=wrap.querySelector('div');
   const tip=makeTip(wrapEl);
   const svg=d3.select('#sk-svg');
@@ -5691,6 +5725,13 @@ function renderSankey(){
     .attr('stroke',d=>d.target.color)
     .attr('stroke-width',d=>Math.max(1,d.width))
     .attr('stroke-opacity',.4)
+    // Not independently keyboard-reachable -- every link ends at a node
+    // that's now itself focusable (see activateSankeyNode below) with an
+    // aria-label covering the identical amount/percent, so a link is
+    // purely a redundant visual echo of its target node to AT, not a
+    // second source of information a screen reader's browse-mode cursor
+    // should stop on.
+    .attr('aria-hidden','true')
     .style('cursor','pointer')
     .on('mousemove',(e,d)=>{
       const body=d.target.id==='__other__'
@@ -5734,11 +5775,50 @@ function renderSankey(){
       });
     });
 
+  // Shared by the rect's click and keydown handlers below (previously
+  // inline in .on('click',...) only) -- keyboard activation needs the
+  // exact same logic, not a second hand-copied version that could drift.
+  function activateSankeyNode(d){
+    if(d.id==='__income__'){
+      // usingImportedIncome guard was already present on the separate
+      // income-label <text>'s own click handler below (added because
+      // there's nothing to edit -- imported-income mode derives the
+      // figure from transactions, not a typed value) but was missing
+      // here, so clicking the bar itself always opened the edit modal
+      // regardless, while clicking its text label correctly no-op'd.
+      // incomeAriaLabel above already promises "not editable" in that
+      // case; this makes the actual behavior match what it says. Found
+      // while adding keyboard support, 124th adversarial pass.
+      if(!usingImportedIncome)openDeclaredIncomeModal();
+      return;
+    }
+    // See the matching comment on the link click handler above --
+    // __other__/__filtered_out__/__remaining__ are synthetic buckets,
+    // none are real categories to filter by.
+    if(d.id==='__other__'||d.id==='__filtered_out__'||d.id==='__remaining__')return;
+    const wasActive=state.activeCats.has(d.name);
+    toggleCatFilter(d.name);
+    if(!wasActive)requestAnimationFrame(()=>{
+      const txEl=document.getElementById('tx-count-label');
+      if(txEl)txEl.scrollIntoView({behavior:'smooth',block:'start'});
+    });
+  }
+
   const nodeG=svg.selectAll('.sk-node').data(graph.nodes).join('g').attr('class','sk-node');
   nodeG.append('rect')
     .attr('x',d=>d.x0).attr('y',d=>d.y0)
     .attr('width',d=>d.x1-d.x0).attr('height',d=>Math.max(1,d.y1-d.y0))
     .attr('rx',3).attr('fill',d=>d.color).attr('opacity',.9)
+    .attr('tabindex',0)
+    .attr('role',d=>(d.id==='__other__'||d.id==='__filtered_out__'||d.id==='__remaining__')?null:'button')
+    .attr('aria-label',d=>{
+      if(d.id==='__income__')return incomeAriaLabel;
+      const pct=Math.round((d.value||0)/totalIncome*100);
+      if(d.id==='__other__')return`${otherNodeLabel}: ${fmtC(d.value||0)}, ${pct}% of income. Includes ${otherTipPlain}`;
+      if(d.id==='__filtered_out__')return`${filteredOutNodeLabel}: ${fmtC(d.value||0)}, ${pct}% of income. Includes ${filteredOutTipPlain}`;
+      if(d.id==='__remaining__')return`Remaining (saved): ${fmtC(d.value||0)}, ${pct}% of income`;
+      return`${d.name}: ${fmtC(d.value||0)}, ${pct}% of income. Press Enter to filter transactions to this category.`;
+    })
     .style('cursor','pointer')
     .on('mouseover',(e,d)=>{
       if(d.id==='__income__')return;
@@ -5753,21 +5833,11 @@ function renderSankey(){
       if(d.id==='__other__'||d.id==='__filtered_out__')tip.hide();
       linkSel.attr('stroke-opacity',.4);
     })
-    .on('click',(_,d)=>{
-      if(d.id==='__income__'){
-        openDeclaredIncomeModal();
-        return;
-      }
-      // See the matching comment on the link click handler above --
-      // __other__/__filtered_out__/__remaining__ are synthetic buckets,
-      // none are real categories to filter by.
-      if(d.id==='__other__'||d.id==='__filtered_out__'||d.id==='__remaining__')return;
-      const wasActive=state.activeCats.has(d.name);
-      toggleCatFilter(d.name);
-      if(!wasActive)requestAnimationFrame(()=>{
-        const txEl=document.getElementById('tx-count-label');
-        if(txEl)txEl.scrollIntoView({behavior:'smooth',block:'start'});
-      });
+    .on('click',(_,d)=>activateSankeyNode(d))
+    .on('keydown',(e,d)=>{
+      if(e.key!=='Enter'&&e.key!==' ')return;
+      e.preventDefault();
+      activateSankeyNode(d);
     });
 
   nodeG.append('text')
@@ -5777,6 +5847,7 @@ function renderSankey(){
     .attr('dominant-baseline','middle')
     .attr('font-size',10).attr('font-weight','600')
     .attr('fill',d=>d.color)
+    .attr('aria-hidden','true')
     .text(d=>{
       if(d.y1-d.y0<12)return'';
       const pct=Math.round((d.value||0)/totalIncome*100);
@@ -5810,6 +5881,11 @@ function renderSankey(){
       .attr('y',incomeNode.y0-6)
       .attr('font-size',10).attr('font-weight','700')
       .attr('fill',incomeColor)
+      // Purely a visual echo of the income node's own rect, which already
+      // carries the identical info + action via incomeAriaLabel/role=
+      // button/keydown above -- hidden so a screen reader's browse-mode
+      // cursor doesn't announce the same thing twice.
+      .attr('aria-hidden','true')
       .style('cursor',usingImportedIncome?'default':'pointer')
       .on('click',()=>{if(!usingImportedIncome)openDeclaredIncomeModal();})
       // Missed by the 105th/106th passes' D3 .text() raw-fmtC sweep -- this
