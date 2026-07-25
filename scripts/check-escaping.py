@@ -45,6 +45,27 @@ FIELD_RE = re.compile(r'\.(' + '|'.join(RISKY_FIELDS) + r')\b')
 BARE_RE = re.compile(r'(?<![\w.$])(' + '|'.join(RISKY_BARE_NAMES) + r')(?![\w$])')
 
 
+def _blank_full_line_comments(text):
+    """Replaces every line whose trimmed content starts with '//' with
+    equal-length whitespace, so a documentation comment that happens to
+    quote example code (e.g. `${c.color}` inside a sentence explaining a
+    past bug) doesn't get scanned as if it were real, executable code --
+    found via the 170th adversarial pass, where exactly that shape let a
+    single suppression-allowlist key silently stand in for two different
+    sites (one real, one just prose) with only one of the two actually
+    justified. Deliberately conservative: only lines that are ENTIRELY a
+    // comment (nothing but whitespace precedes it) are blanked, not
+    inline `code(); // trailing comment` -- an inline `//` could appear
+    inside a string or URL, and this scanner has no real JS tokenizer to
+    tell that apart safely. Preserves total length and every line number
+    exactly (same-length whitespace, nothing deleted), so line_of() below
+    stays accurate for every genuine finding."""
+    return '\n'.join(
+        ' ' * len(line) if line.strip().startswith('//') else line
+        for line in text.split('\n')
+    )
+
+
 def extract_template_exprs(text):
     """Yields (start, end, expr_text) for every ${...} in the source,
     handling nested braces so an expression containing an object literal
@@ -101,8 +122,14 @@ def is_covered(pos_start, pos_end, spans):
 # Scoped per-file (see TRAKYODOLLAS_KNOWN_FALSE_POSITIVES usage in main())
 # since these snippets were only traced for this one file.
 TRAKYODOLLAS_KNOWN_FALSE_POSITIVES = {
-    # Comment text, not code -- the regex matched inside a documentation
-    # comment describing the historical bug and its fix.
+    # renderCatManagerList()'s color dot: c.color comes from getCatColor(),
+    # same validated-color path as the ('getCatColor(t.cat)','.cat') entry
+    # below. (A second, textually-identical `${c.color}` used to also
+    # appear inside a documentation comment a few hundred lines above this
+    # site -- that one is no longer a candidate at all now that scan_file()
+    # blanks out full-line `//` comments before extraction, rather than
+    # being silenced by this same key standing in for two different
+    # justifications at once.)
     ('c.color', '.color'),
 
     # pillWithTip()'s `tip` param: the .replace(/"/g,...) here only
@@ -127,7 +154,10 @@ TRAKYODOLLAS_KNOWN_FALSE_POSITIVES = {
     ("isNeg?'#F87171':g.color", '.color'),
     ("g.isLiab?'#F87171':g.color", '.color'),
     ('g.label', '.label'),
-    ("g.isLiab\n            // assets>0 guard, matching pct's own guard above -- a user with\n            // only liability-type", '.color'),
+    # Whitespace mid-key is real -- this expression's middle line was a
+    # full-line comment, now blanked by _blank_full_line_comments() before
+    # scanning reaches this point, so the key must match the blanked form.
+    ("g.isLiab\n" + " " * 76 + "\n" + " " * 34, '.color'),
 
     # fmtMonthShort(m) date-formatter output, not free text.
     ("biggestMonth?.label||'—'", '.label'),
@@ -142,7 +172,8 @@ TRAKYODOLLAS_KNOWN_FALSE_POSITIVES = {
 
     # t.desc used only inside resolveVendor(t.desc)===vendor, a boolean
     # filter predicate -- never rendered as text.
-    ('(()=>{\n          // state.activeSources check added in the 35th adversarial pass to\n          // all 3 filters below -- ', '.desc'),
+    # Whitespace mid-key is real -- see the g.isLiab entry above for why.
+    ('(()=>{\n' + " " * 76 + "\n" + " " * 36, '.desc'),
 
     # Sankey chart d.name: set via D3's .attr()/.text(), which use
     # setAttribute/textContent under the hood -- no HTML parsing regardless
@@ -196,7 +227,7 @@ def line_of(text, pos):
 
 
 def scan_file(path):
-    text = path.read_text(encoding='utf-8')
+    text = _blank_full_line_comments(path.read_text(encoding='utf-8'))
     findings = []
     for start, end, expr in extract_template_exprs(text):
         esc_spans = esc_wrapped_spans(expr)
