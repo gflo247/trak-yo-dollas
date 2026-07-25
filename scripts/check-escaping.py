@@ -92,6 +92,105 @@ def is_covered(pos_start, pos_end, spans):
     return any(s <= pos_start and pos_end <= e for s, e in spans)
 
 
+# Known false positives for trakyodollas.html, confirmed by a dedicated
+# data-provenance trace of every candidate this scanner reported (not
+# waved through on shape alone -- see the specific reason on each group
+# below). Keyed by (expr, matched_field) so a suppression naturally
+# expires the moment the underlying expression's text actually changes --
+# this silences already-reviewed sites, not a blanket line-number pin.
+# Scoped per-file (see TRAKYODOLLAS_KNOWN_FALSE_POSITIVES usage in main())
+# since these snippets were only traced for this one file.
+TRAKYODOLLAS_KNOWN_FALSE_POSITIVES = {
+    # Comment text, not code -- the regex matched inside a documentation
+    # comment describing the historical bug and its fix.
+    ('c.color', '.color'),
+
+    # pillWithTip()'s `tip` param: the .replace(/"/g,...) here only
+    # neutralizes attribute-breakout; the actual render sink,
+    # showPillTip(), re-escapes with a real esc(tip) call before its own
+    # innerHTML write. Deliberate double-escoping, not a gap.
+    ('tip.replace(/"/g,\'&quot;\')', 'tip'),
+    ('hint?` <span data-tip="${hint}" data-action="showPillTip" data-stop="1" tabindex="0" role="button" aria-label="More info', 'tip'),
+    # False match: the regex matched the literal substring "tip" inside
+    # the HTML attribute name `data-tip=` in an otherwise fully hardcoded
+    # string (no interpolated risky field at all).
+    ('data.isCollapsed?` <span data-tip="Individual check numbers collapsed — categorize a check to split it out" data-action=', 'tip'),
+
+    # cta.label: every pillWithTip() caller passes either a hardcoded
+    # string or (the one variable case) a value already esc()-wrapped at
+    # construction (biggestCat.cat via `See ${esc(biggestCat.cat)}...`).
+    ('(sub||cta)?`<div style="font-size:10px;color:var(--text-muted);line-height:1.35">${sub}${cta?` · <button data-action="${', '.label'),
+
+    # renderNwBreakdown()'s GROUPS array is a hardcoded literal
+    # ({label:'Investments',color:'#34D399',...}), never user-settable.
+    ('g.color', '.color'),
+    ("isNeg?'#F87171':g.color", '.color'),
+    ("g.isLiab?'#F87171':g.color", '.color'),
+    ('g.label', '.label'),
+    ("g.isLiab\n            // assets>0 guard, matching pct's own guard above -- a user with\n            // only liability-type", '.color'),
+
+    # fmtMonthShort(m) date-formatter output, not free text.
+    ("biggestMonth?.label||'—'", '.label'),
+    ("quietestMonth?.label||'—'", '.label'),
+
+    # Math.ceil(mo/3), a numeric quarter index -- not a search-query
+    # string despite the bare `q` name.
+    ('q', 'q'),
+
+    # Hardcoded `chips` array literal ({label:'3mo',...} etc.).
+    ('chips.map(c=>`<button class="h-btn${chipActive(c)?\' active\':\'\'}"${c.id?` id="${c.id}"`:\'\'}  data-action="setQuickRange" ', '.label'),
+
+    # t.desc used only inside resolveVendor(t.desc)===vendor, a boolean
+    # filter predicate -- never rendered as text.
+    ('(()=>{\n          // state.activeSources check added in the 35th adversarial pass to\n          // all 3 filters below -- ', '.desc'),
+
+    # Sankey chart d.name: set via D3's .attr()/.text(), which use
+    # setAttribute/textContent under the hood -- no HTML parsing regardless
+    # of content.
+    ('d.name', '.name'),
+
+    # Chart.js tooltip callbacks.label return values -- none of the 5
+    # tooltip configs use an `external` HTML renderer, so Chart.js draws
+    # these via canvas fillText, immune to HTML/script injection.
+    ('ctx.dataset.label', '.label'),
+
+    # Routed through the local highlight(text) helper, which wraps every
+    # return path in esc(...) internally -- the scanner can't see through
+    # a helper function's own escaping.
+    ('highlight(displayVendor(t.desc))', '.desc'),
+    ('highlight(t.cat)', '.cat'),
+    ("highlight(t.card.replace('Chase ','').replace(' Unlimited','Unlim').replace('Ally ',''))", '.card'),
+
+    # a.source used only as an object key into the hardcoded SA_M lookup
+    # map -- the map's value (or a literal '??') is what's rendered.
+    ("SA_M[a.source]||'??'", '.source'),
+    # a.type used only via isLiab(a.type) (boolean) and as a key into a
+    # hardcoded map -- never rendered as text.
+    ("(isLiab(a.type)?-a.balance:a.balance)<0?'#F87171':tc", '.type'),
+    ("(isLiab(a.type)?-a.balance:a.balance)<0?'-':''", '.type'),
+
+    # Already esc(v.vin)-wrapped at the actual render point; the flagged
+    # match is just the preceding `v.vin?` existence check.
+    ('v.vin?`<span style="font-size:9px;color:var(--text-muted);font-family:monospace;margin-left:8px">VIN: ${esc(v.vin)}</spa', '.vin'),
+
+    # Hardcoded literal object (sortDirLabels.unusual = {desc:...,asc:...}
+    # is a sort-direction key, not a transaction description field).
+    ('sortDirLabels.unusual.desc', '.desc'),
+
+    # Assigned via `warn.textContent = ...`, not innerHTML -- a plain-text
+    # sink, immune regardless of content.
+    ('conflict.cat', '.cat'),
+    ('shadowed.cat', '.cat'),
+    ('shadowed.keyword', '.keyword'),
+
+    # getCatColor()/assignColors() both gate every custom-category color
+    # through isValidHexColor() before ever returning it, falling back to
+    # a deterministic stringToColor() hash otherwise -- genuinely
+    # validated in both code paths, not just documented as such.
+    ('getCatColor(t.cat)', '.cat'),
+}
+
+
 def line_of(text, pos):
     return text.count('\n', 0, pos) + 1
 
@@ -127,8 +226,12 @@ def main():
         if not path.exists():
             print(f"skip {name}: not found")
             continue
-        findings = scan_file(path)
-        print(f"\n=== {name} ({len(findings)} candidate site{'s' if len(findings)!=1 else ''}) ===")
+        all_findings = scan_file(path)
+        allowlist = TRAKYODOLLAS_KNOWN_FALSE_POSITIVES if name == 'trakyodollas.html' else set()
+        findings = [f for f in all_findings if (f[1], f[2]) not in allowlist]
+        suppressed = len(all_findings) - len(findings)
+        print(f"\n=== {name} ({len(findings)} candidate site{'s' if len(findings)!=1 else ''}"
+              f"{f', {suppressed} already-reviewed suppressed' if suppressed else ''}) ===")
         for line, expr, matched in findings:
             print(f"  line {line}: matched '{matched}' in ${{{expr}}}")
         total += len(findings)

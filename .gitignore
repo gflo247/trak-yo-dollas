@@ -6,3 +6,4 @@ _HANDOFF.md
 screenshots/
 test-csvs/
 ENTIRE-SITE-ARCHITECTURE-deep-dive.html
+__pycache__/
