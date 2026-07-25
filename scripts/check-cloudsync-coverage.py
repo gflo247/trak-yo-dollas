@@ -80,6 +80,18 @@ ROOT = Path(__file__).parent.parent
 
 KEY_RE = re.compile(r'^\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*:', re.MULTILINE)
 
+# Known false positives for the "never_synced" check, confirmed by manual
+# review and already explained in this file's own docstring above. Keyed
+# by field name. NOT exhaustive of every field the docstring discusses --
+# only fields with a settled, documented reason belong here; a field
+# reappearing after a schema refactor should still surface for a fresh
+# look (see the docstring's own warning about budgetWarnPct/currency).
+NEVER_SYNCED_KNOWN_FALSE_POSITIVES = {
+    'snapshots',       # separate sync path via saveSnapshot()/loadSnapshots(), not the prefs payload
+    'hasRealData', 'hasRealAccounts', 'hasRealSnapshot',  # loadUserData() re-derives these from what it just restored
+    'activeSources',   # confirmed device-local by the 38th pass; loadUserData() derives it fresh from restored transactions
+}
+
 
 def extract_balanced(text, open_idx, open_ch='{', close_ch='}'):
     """Given the index of an opening brace, return (end_idx, inner_text)
@@ -137,9 +149,11 @@ def scan_file(path):
     if local_keys is None or cloud_keys is None:
         return None
 
-    never_synced = sorted(local_keys - cloud_keys)
+    never_synced_all = local_keys - cloud_keys
+    suppressed = sorted(never_synced_all & NEVER_SYNCED_KNOWN_FALSE_POSITIVES)
+    never_synced = sorted(never_synced_all - NEVER_SYNCED_KNOWN_FALSE_POSITIVES)
     never_restored = sorted(cloud_keys - restored_keys)
-    return never_synced, never_restored
+    return never_synced, never_restored, suppressed
 
 
 def main():
@@ -154,12 +168,15 @@ def main():
         if result is None:
             print(f"\n=== {name}: serializeState()/syncToCloud()/loadUserData() not found in expected shape — skipped ===")
             continue
-        never_synced, never_restored = result
+        never_synced, never_restored, suppressed = result
         print(f"\n=== {name} ===")
         if never_synced:
-            print(f"  In serializeState() but missing from syncToCloud()'s savePrefs() payload ({len(never_synced)}):")
+            print(f"  In serializeState() but missing from syncToCloud()'s savePrefs() payload ({len(never_synced)}"
+                  f"{f', {len(suppressed)} already-reviewed suppressed' if suppressed else ''}):")
             for k in never_synced:
                 print(f"    - {k}")
+        elif suppressed:
+            print(f"  In serializeState() but missing from syncToCloud()'s savePrefs() payload (0, {len(suppressed)} already-reviewed suppressed)")
         if never_restored:
             print(f"  In syncToCloud()'s payload but never read as prefs.X in loadUserData() ({len(never_restored)}):")
             for k in never_restored:

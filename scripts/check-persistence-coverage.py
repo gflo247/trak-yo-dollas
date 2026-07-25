@@ -98,6 +98,35 @@ FIELD_MUTATION_RE = re.compile(
 SCHEDULE_SAVE_RE = re.compile(r'scheduleSave\(|saveToLocalStorage\(|mutateTransactions\(')
 
 
+# Known false positives for Check B, confirmed by manual review. Keyed by
+# function name (stable across line-number churn, unlike PATCHED_FNS above
+# these aren't functions covered by the external patch-list mechanism --
+# they're each individually judged safe for a distinct reason, given below).
+CHECK_B_KNOWN_FALSE_POSITIVES = {
+    # Lazily initializes state.nwGoal to a deterministic default milestone
+    # (MILESTONES.find(m=>m>nw)) only if unset, purely so the render has a
+    # value to display. Never persisting this is fine: a future render
+    # with the same net worth recomputes the identical default, so there's
+    # no user intent to lose, unlike a real settings mutation.
+    'renderNwGoalWidget',
+    # Sole caller is toggleIncludeIncome(), which calls scheduleSave()
+    # itself immediately after invoking this -- satisfies the documented
+    # "function that mutates state indirectly by calling another function
+    # that itself handles the save" false-positive shape above.
+    '_ensureBusinessCategories',
+    # Both callers (handleCsv(), importCsvText()) already handle the save
+    # themselves -- one with a conditional inline scheduleSave(), the
+    # other via the auto-save patch list (importCsvText is in PATCHED_FNS;
+    # a 54th-pass attempt to add a redundant inline call here was reverted
+    # by the 55th pass once that was found).
+    'parseCsvAccounts',
+    # A load path (reads persisted data OUT of localStorage into state),
+    # not a user action that needs saving -- the documented "load-path
+    # functions that read data into state" false-positive shape.
+    'loadFromLocalStorage',
+}
+
+
 def extract_balanced_braces(text, open_brace_idx):
     depth = 0
     i = open_brace_idx
@@ -161,13 +190,17 @@ def scan_file(path):
     text = path.read_text(encoding='utf-8')
     findings_a = []
     findings_b = []
+    suppressed_b = 0
     for name, start, body in extract_functions(text):
         if mutates_transactions(body) and not TXSDIRTY_RE.search(body):
             findings_a.append((line_of(text, start), name))
         field_match = FIELD_MUTATION_RE.search(body)
         if field_match and not SCHEDULE_SAVE_RE.search(body) and name not in PATCHED_FNS:
-            findings_b.append((line_of(text, start), name, field_match.group(0)))
-    return findings_a, findings_b
+            if name in CHECK_B_KNOWN_FALSE_POSITIVES:
+                suppressed_b += 1
+            else:
+                findings_b.append((line_of(text, start), name, field_match.group(0)))
+    return findings_a, findings_b, suppressed_b
 
 
 def main():
@@ -178,12 +211,13 @@ def main():
         if not path.exists():
             print(f"skip {name}: not found")
             continue
-        findings_a, findings_b = scan_file(path)
+        findings_a, findings_b, suppressed_b = scan_file(path)
         print(f"\n=== {name} ===")
         print(f"-- Check A: transaction mutations missing _txsDirty=true ({len(findings_a)} candidate{'s' if len(findings_a) != 1 else ''}) --")
         for line, fn_name in findings_a:
             print(f"  line {line}: function {fn_name}() mutates state.transactions but never sets _txsDirty=true")
-        print(f"-- Check B: other persisted-field mutations missing scheduleSave()/patch-list ({len(findings_b)} candidate{'s' if len(findings_b) != 1 else ''}) --")
+        print(f"-- Check B: other persisted-field mutations missing scheduleSave()/patch-list ({len(findings_b)} candidate{'s' if len(findings_b) != 1 else ''}"
+              f"{f', {suppressed_b} already-reviewed suppressed' if suppressed_b else ''}) --")
         for line, fn_name, matched in findings_b:
             print(f"  line {line}: function {fn_name}() mutates '{matched}' but never calls scheduleSave() and isn't in the auto-save patch list")
         total += len(findings_a) + len(findings_b)

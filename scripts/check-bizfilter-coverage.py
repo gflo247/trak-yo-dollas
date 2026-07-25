@@ -59,6 +59,26 @@ SIGNAL_RE = re.compile(r'isRealSpend\(|\.excluded\b|excludedCats|\.isIncome\b')
 GUARD_RE = re.compile(r'_bizFilter')
 
 
+# Known false positives, confirmed by manual review (each one matches a
+# category already named in this file's docstring/deploy.sh comment).
+# Keyed by the exact matched snippet text so a suppression naturally
+# expires the moment the underlying code at that site actually changes --
+# this silences already-reviewed sites, not a blanket line-number pin.
+KNOWN_FALSE_POSITIVES = {
+    # buildCatColorMap() -- lifetime/unfiltered-by-design color-assignment
+    # cache, not a spend total; explicitly named in this scanner's own
+    # deploy.sh comment as a known false positive.
+    't=>!t.excluded',
+    # openVendorAliasModal() -- populates a vendor-name datalist from all
+    # transactions ever entered, not a filtered spend view; "datalist
+    # population" is named in this scanner's deploy.sh comment.
+    't=>!t.excluded&&!CHECK_RE.test(t.desc)',
+    # applyVenmoOpt() -- deliberate bulk-recategorization action, named
+    # explicitly in this scanner's deploy.sh comment.
+    "t=>{ if(!ids||!ids.has(t.id))return; if(opt==='exclude'){ t.excluded=true;t.is_offset=false; } else { const cat=opt==='custom'?customCat:'Sh",
+}
+
+
 def extract_balanced_parens(text, open_paren_idx):
     """Given the index of an opening '(' , returns (end_idx, inner_text)
     for its balanced match, handling nested parens/braces/brackets so an
@@ -109,8 +129,11 @@ def main():
         if not path.exists():
             print(f"skip {name}: not found")
             continue
-        findings = scan_file(path)
-        print(f"\n=== {name} ({len(findings)} candidate site{'s' if len(findings) != 1 else ''}) ===")
+        all_findings = scan_file(path)
+        findings = [f for f in all_findings if f[3] not in KNOWN_FALSE_POSITIVES]
+        suppressed = len(all_findings) - len(findings)
+        print(f"\n=== {name} ({len(findings)} candidate site{'s' if len(findings) != 1 else ''}"
+              f"{f', {suppressed} already-reviewed suppressed' if suppressed else ''}) ===")
         for line, method, signal, snippet in findings:
             print(f"  line {line}: .{method}(...) reimplements exclusion via '{signal}' with no _bizFilter guard")
             print(f"    {snippet}")

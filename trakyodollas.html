@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ytaSR9k41nl5XFOU6vHIcqnDyThNM4+rHoT3yRrvcx4=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-udzC3NEc49oEtRNqz88TBhE9G1neGdQ8SBFFWi6Oub4=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -58,12 +58,10 @@
   --bg-deep:#111720;
   --bg-input:#111720;
   --bg-hover:#1E293B;
-  --bg-sunken:#0D1419;
 
   /* Borders */
   --border:#1E293B;
   --border-mid:#334155;
-  --border-strong:#475569;
   --border-dim:#1E293B55;
 
   /* Text */
@@ -91,9 +89,7 @@
   --accent-blue:#2563EB;
   --accent-blue-light:#60A5FA;
   --accent-green:#34D399;
-  --accent-red:#F87171;
   --accent-amber:#FBBF24;
-  --accent-purple:#A78BFA;
   --bar-marker-halo:rgba(0,0,0,.45);
 
   /* Semantic component tokens */
@@ -120,7 +116,6 @@
      its own -border sibling was the dead one -- that element hardcodes
      border:1.5px dashed var(--border-mid) instead. Found in the 140th
      adversarial pass. */
-  --modal-overlay-bg:rgba(0,0,0,.75);
   --toast-bg:#1E293B;
   --toast-border:#334155;
   /* 529 / College Fund amber tokens */
@@ -148,12 +143,10 @@
   --bg-deep:#EDF0F4;
   --bg-input:#FFFEFB;
   --bg-hover:#EDF0F4;
-  --bg-sunken:#EDF0F4;
 
   /* Borders */
   --border:#D1D9E0;
   --border-mid:#CBD5E1;
-  --border-strong:#94A3B8;
   --border-dim:#CBD5E133;
 
   /* Text */
@@ -168,16 +161,13 @@
   --pill-info-border:#CBD5E1;
   --pill-info-color:#64748B;
   --card-nudge-bg:#F8FAFC;
-  --modal-overlay-bg:rgba(15,23,42,.5);
   --toast-bg:#FFFEFB;
   --toast-border:#D1D9E0;
 
   /* Accent colors — dark-theme values fail on white; swap to AA-passing equivalents */
   --accent-blue-light:#2563EB;
   --accent-green:#047857;
-  --accent-red:#DC2626;
   --accent-amber:#B45309;
-  --accent-purple:#7C3AED;
   --bar-marker-halo:rgba(255,255,255,.65);
 }
 
@@ -2439,12 +2429,8 @@ function onSearchInput(val){
 function handleTxFileSelectDelegated(val,el){handleTxFileSelect(el);}
 function handleCsvDelegated(val,el){handleCsv(el);}
 function togglePillChecked(key,el){if(el&&typeof el==='object'&&'checked'in el)togglePill(key,el.checked);}
-function _ctaAction(cta){
-  if(cta&&cta.action)return cta.action;
-  return cta&&cta.onclick?cta.onclick.replace(/\(.*\)/,''):'_noop';
-}
+function _ctaAction(cta){return cta&&cta.action;}
 function _ctaArg(cta){return cta&&cta.arg!=null?String(cta.arg):null;}
-function _noop(){}
 function openShortcutsModal(){document.getElementById('shortcuts-modal').classList.remove('hidden');}
 function closeCommunityRulesModal(){document.getElementById('community-rules-modal').classList.add('hidden');}
 function closeAddRuleForm(){document.getElementById('add-rule-form').classList.add('hidden');}
@@ -4671,7 +4657,6 @@ function renderSpending(){
   }
   renderInsights();
   renderSourceChips();renderHorizonTabs();
-  if(typeof updateExcludedToggle==='function')updateExcludedToggle();
   renderSpendSummary();renderBucketGrid();renderTxList();
   const spendPage=document.getElementById('page-spending');
   if(spendPage&&spendPage.classList.contains('active')){
@@ -9832,9 +9817,9 @@ function toggleTheme(){
   if(tc)tc.setAttribute('content',isLight?'#111720':'#F8FAFC');
   const btn=document.getElementById('theme-toggle-btn');
   if(btn)btn.textContent=isLight?'🌙':'☀️';
-  if(typeof resetPatternCache==='function')resetPatternCache();
-  if(typeof renderAll==='function')try{renderAll();}catch(e){}
-  if(typeof renderNwChart==='function')try{renderNwChart();}catch(e){}
+  resetPatternCache();
+  try{renderAll();}catch(e){}
+  try{renderNwChart();}catch(e){}
   try{renderActiveChart();}catch(e){}
 }
 
@@ -9909,7 +9894,7 @@ function toggleChartTexture(){
     btn.style.color = _patternsEnabled ? 'var(--accent-blue-light)' : 'var(--text-muted)';
     btn.style.borderColor = _patternsEnabled ? 'var(--accent-blue-light)' : 'var(--border-mid)';
   }
-  if(typeof renderSpendChart==='function') try{renderSpendChart();}catch(e){}
+  try{renderSpendChart();}catch(e){}
 }
 
 // ── Include Income & Business Categories ──────────────────────

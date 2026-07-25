@@ -82,6 +82,34 @@ SIGNAL_RE = re.compile(r'isRealSpend\(|\.excluded\b|excludedCats|\.isIncome\b')
 GUARD_RE = re.compile(r'activeSources')
 
 
+# Known false positives, confirmed by manual review (each one matches a
+# category already named in this scanner's own docstring above). Keyed by
+# the exact matched snippet text so a suppression naturally expires the
+# moment the underlying code at that site actually changes -- this
+# silences already-reviewed sites, not a blanket line-number pin. Per this
+# file's own warning above (detectDepositIncome() looked like a false
+# positive and wasn't), each of these was traced to its actual caller/
+# purpose before being added here, not waved through on shape alone.
+KNOWN_FALSE_POSITIVES = {
+    # buildCatColorMap() -- lifetime/unfiltered-by-design color-assignment
+    # cache ("buildCatColorMap()'s permanent color assignment" is named
+    # explicitly above).
+    't=>!t.excluded',
+    # openVendorAliasModal() -- datalist population from all transactions
+    # ever entered, not a filtered spend view.
+    't=>!t.excluded&&!CHECK_RE.test(t.desc)',
+    # rebuildMonthly() -- "a per-source cache builder whose readers already
+    # filter" is named explicitly above; MONTHLY feeds charts only when
+    # showExcluded=false, and activeSources filtering happens in the
+    # readers, not here.
+    't=>{ if(t.excluded)return; // Every other spend-aggregating function in the file (getBaseTxs() and // its many callers) already excludes inc',
+    # applyVenmoOpt() -- deliberate bulk-recategorization action, matching
+    # the "deletion/count/id-lookup rather than a spend total" false-
+    # positive shape named above.
+    "t=>{ if(!ids||!ids.has(t.id))return; if(opt==='exclude'){ t.excluded=true;t.is_offset=false; } else { const cat=opt==='custom'?customCat:'Sh",
+}
+
+
 def extract_balanced_parens(text, open_paren_idx):
     """Given the index of an opening '(' , returns (end_idx, inner_text)
     for its balanced match, handling nested parens/braces/brackets so an
@@ -132,8 +160,11 @@ def main():
         if not path.exists():
             print(f"skip {name}: not found")
             continue
-        findings = scan_file(path)
-        print(f"\n=== {name} ({len(findings)} candidate site{'s' if len(findings) != 1 else ''}) ===")
+        all_findings = scan_file(path)
+        findings = [f for f in all_findings if f[3] not in KNOWN_FALSE_POSITIVES]
+        suppressed = len(all_findings) - len(findings)
+        print(f"\n=== {name} ({len(findings)} candidate site{'s' if len(findings) != 1 else ''}"
+              f"{f', {suppressed} already-reviewed suppressed' if suppressed else ''}) ===")
         for line, method, signal, snippet in findings:
             print(f"  line {line}: .{method}(...) reimplements exclusion via '{signal}' with no activeSources guard")
             print(f"    {snippet}")
