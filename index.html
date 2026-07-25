@@ -123,7 +123,7 @@ nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-con
 .diff-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;transition:border-color .2s}
 .diff-card:hover{border-color:var(--border-mid)}
 .diff-icon{font-size:22px;margin-bottom:.85rem;display:block}
-.diff-card h3{font-size:15px;font-weight:var(--fw-bold);color:var(--text-bright);margin-bottom:.35rem}
+.diff-card h3{font-size:var(--text-md);font-weight:var(--fw-bold);color:var(--text-bright);margin-bottom:.35rem}
 .diff-card p{font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-light)}
 .diff-card.ab{border-color:#2563EB33;background:#1E3A5F18}
 .diff-card.ag{border-color:#05996933;background:#064E3B18}
@@ -144,14 +144,14 @@ nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-con
 .fi{display:flex;align-items:flex-start;gap:16px;padding:1.1rem 1.25rem;border-radius:10px;transition:background .15s}
 .fi:hover{background:var(--bg-card)}
 .fi-icon{font-size:20px;flex-shrink:0;margin-top:1px;width:36px;text-align:center}
-.fi h3{font-size:14px;font-weight:var(--fw-bold);color:var(--text-bright);margin-bottom:2px}
+.fi h3{font-size:var(--text-md);font-weight:var(--fw-bold);color:var(--text-bright);margin-bottom:2px}
 .fi p{font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-light)}
 
 /* Steps */
 .steps{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
 .step{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.5rem}
 .step-num{width:28px;height:28px;border-radius:50%;background:var(--accent-blue);color:#fff;font-size:var(--text-2xs);font-weight:var(--fw-black);display:flex;align-items:center;justify-content:center;margin-bottom:1rem}
-.step h3{font-size:14px;font-weight:var(--fw-bold);color:var(--text-bright);margin-bottom:.35rem}
+.step h3{font-size:var(--text-md);font-weight:var(--fw-bold);color:var(--text-bright);margin-bottom:.35rem}
 .step p{font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-light)}
 .step.opt .step-num{background:var(--bg-deep);border:1px solid var(--border-mid);color:var(--text-muted)}
 .step.opt h3{color:var(--text-muted)}
@@ -533,11 +533,11 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
   <h2>Common questions.</h2>
   <div style="margin-top:2rem;display:flex;flex-direction:column;gap:1.5rem">
     <div>
-      <h3 style="font-size:1rem;font-weight:700;color:var(--text-bright);margin-bottom:.4rem">Does it work with my bank?</h3>
+      <h3 style="font-size:var(--text-md);font-weight:700;color:var(--text-bright);margin-bottom:.4rem">Does it work with my bank?</h3>
       <p style="font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-light)">If your bank lets you download transactions as a CSV — and nearly all of them do — you're good. Chase, Ally, Bank of America, Amex, USAA, TD, RBC, Barclays, Monzo, and most credit unions all work out of the box. Look for a Download or Export button in your transaction history.</p>
     </div>
     <div>
-      <h3 style="font-size:1rem;font-weight:700;color:var(--text-bright);margin-bottom:.4rem">Where is my data stored?</h3>
+      <h3 style="font-size:var(--text-md);font-weight:700;color:var(--text-bright);margin-bottom:.4rem">Where is my data stored?</h3>
       <p style="font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-light)">In your browser's local storage by default — on your device, not a server. Try it — close the tab, come back, it's all still there. Signing in adds optional encrypted sync (see <a href="#privacy" style="color:var(--accent-blue-light)">Privacy above</a> for how the passphrase works) and can be undone at any time. <a href="/privacy" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light)">Full data flow →</a></p>
     </div>
   </div>
@@ -546,7 +546,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <!-- Who built this -->
 <section class="section">
   <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.5rem 2rem">
-    <h3 style="font-size:1rem;font-weight:700;color:var(--text-bright);margin-bottom:.6rem">Who built this?</h3>
+    <h3 style="font-size:var(--text-md);font-weight:700;color:var(--text-bright);margin-bottom:.6rem">Who built this?</h3>
     <p style="font-size:14px;color:var(--text-secondary);line-height:1.8;font-weight:300;margin:0">One person — Nick Garofalo. I tracked my money in Python and Google Sheets for years. It worked, but I knew the analysis could go deeper — a clear picture of what spending looks like now, and what it might look like through the big changes: a move, a house, a car, a wedding, a kid. The few tools that came close all wanted my bank login. So I built this instead. It's open source — <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light)">read the code yourself ↗</a></p>
   </div>
 </section>
