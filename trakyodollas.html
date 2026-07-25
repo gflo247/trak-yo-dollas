@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-udzC3NEc49oEtRNqz88TBhE9G1neGdQ8SBFFWi6Oub4=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-rDho2mBpcCpAYqfPQ2XipPSd31jSnPehniCkn5R568A=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2722,7 +2722,13 @@ const fmt=(n,raw)=>(raw?(state.currency||'$'):esc(state.currency||'$'))+Math.abs
 // on screen, since .text() doesn't interpret entities. Defaults to
 // escaped (false) so every existing innerHTML-based caller is unaffected.
 // Found in the 105th adversarial pass.
-function fmtC(n,raw){const a=Math.abs(n),s=n<0?'-':'',c=raw?(state.currency||'$'):esc(state.currency||'$');return s+(a>=999500?c+parseFloat((a/1e6).toFixed(2))+'M':a>=1e3?c+Math.round(a/1e3)+'k':c+Math.round(a));}
+// a>=999995000 for the same reason as the 999500 threshold above, scaled
+// up one tier: the 'M' branch's own toFixed(2) first rounds up to
+// "1000.00M" at that exact point, which should read "1.00B" instead. Had
+// no 'B' tier at all until an adversarial visual pass entered an
+// unrealistic (but not impossible on a hand-edited backup/CSV) 9-figure
+// amount and found it rendered as e.g. "$1000M".
+function fmtC(n,raw){const a=Math.abs(n),s=n<0?'-':'',c=raw?(state.currency||'$'):esc(state.currency||'$');return s+(a>=999995000?c+parseFloat((a/1e9).toFixed(2))+'B':a>=999500?c+parseFloat((a/1e6).toFixed(2))+'M':a>=1e3?c+Math.round(a/1e3)+'k':c+Math.round(a));}
 // raw=true skips esc() -- see fmt()'s comment above. Found in the 106th
 // adversarial pass.
 const fmtD=(n,raw)=>(raw?(state.currency||'$'):esc(state.currency||'$'))+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -8129,7 +8135,10 @@ function saveHistoricalSnapshot(){
   hideDemoBadge();
   const sdn=document.getElementById('snap-demo-notice');if(sdn)sdn.style.display='none';
   _editingSnapshotMonthKey=null;
-  closeModals();renderHistory();renderNwChart();scheduleSave();
+  // renderMetrics()/renderNwBreakdown() -- see saveSnapshot()'s matching
+  // comment; this entry point wipes state.accounts via
+  // _replaceDemoDataWithReal() above on a demo-to-real transition too.
+  closeModals();renderMetrics();renderNwBreakdown();renderHistory();renderNwChart();scheduleSave();
   // Unlike saveSnapshot()/confirmDeleteSnapshot(), this path never wrote to
   // Supabase's per-row snapshots table -- scheduleSave() only syncs the
   // `prefs` payload, which deliberately excludes snapshots (see
@@ -10460,7 +10469,16 @@ function saveSnapshot(){
   state.hasRealSnapshot=true;
   hideDemoBadge();
   const sdn=document.getElementById('snap-demo-notice');if(sdn)sdn.style.display='none';
-  renderHistory();renderNwChart();
+  // renderMetrics()/renderNwBreakdown() -- not just renderHistory()/
+  // renderNwChart() -- since _replaceDemoDataWithReal() above wipes
+  // state.accounts on a demo-to-real transition. Without these, the top
+  // Net Worth/Total Assets/Liabilities summary cards and the "Where your
+  // wealth lives" breakdown kept showing the pre-wipe demo numbers right
+  // next to the goal-tracking widget below (refreshed as a side effect of
+  // renderNwChart()), which correctly showed the new, wiped state --
+  // e.g. a stale "$21k net worth" sitting directly above a correct "Need
+  // $100k -- 0% there" on the same screen until reload or a tab switch.
+  renderMetrics();renderNwBreakdown();renderHistory();renderNwChart();
   // Sync to Supabase if signed in. The demo-preview branch this used to
   // have here is unreachable now -- the guard at the top of this function
   // (111th adversarial pass) already returns before this point during any

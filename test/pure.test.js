@@ -3721,7 +3721,7 @@ test("saveSnapshot: calls _replaceDemoDataWithReal() before the duplicate-month 
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveSnapshot\(\)\{[\s\S]{0,3800}?\n\}/);
+  const fnMatch = source.match(/function saveSnapshot\(\)\{[\s\S]{0,4500}?\n\}/);
   assert.ok(fnMatch, "saveSnapshot() should exist");
   const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
   const dupCheckIdx = fnMatch[0].search(/state\.snapshots\.find\(s=>s\.monthKey===ym\)/);
@@ -3820,7 +3820,7 @@ test("saveSnapshot: requires state.hasRealAccounts before wiping demo data or co
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveSnapshot\(\)\{[\s\S]{0,3800}?\n\}/);
+  const fnMatch = source.match(/function saveSnapshot\(\)\{[\s\S]{0,4500}?\n\}/);
   assert.ok(fnMatch, "saveSnapshot() should exist");
   const guardIdx = fnMatch[0].search(/if\(!state\.hasRealAccounts\)\{/);
   const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
@@ -3834,7 +3834,7 @@ test("saveSnapshot: the now-unreachable demo-preview branch after the new top-of
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveSnapshot\(\)\{[\s\S]{0,3800}?\n\}/);
+  const fnMatch = source.match(/function saveSnapshot\(\)\{[\s\S]{0,4500}?\n\}/);
   assert.ok(fnMatch, "saveSnapshot() should exist");
   assert.doesNotMatch(
     fnMatch[0],
@@ -4014,7 +4014,7 @@ test("saveHistoricalSnapshot: has the demo-preview guard, wipes demo data before
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,7500}?_editingSnapshotMonthKey=null;\n  closeModals\(\);renderHistory\(\);renderNwChart\(\);scheduleSave\(\);/);
+  const fnMatch = source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,7700}?_editingSnapshotMonthKey=null;[\s\S]{0,300}?closeModals\(\);renderMetrics\(\);renderNwBreakdown\(\);renderHistory\(\);renderNwChart\(\);scheduleSave\(\);/);
   assert.ok(fnMatch, "saveHistoricalSnapshot() should exist");
   const guardIdx = fnMatch[0].search(/if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{/);
   const dateGuardIdx = fnMatch[0].search(/if\(!date\|\|!Number\.isFinite\(nw\)\)/);
