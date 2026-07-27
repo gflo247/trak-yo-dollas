@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-ufhcvjGVj9df/HsbNJDnT3G/aCwAVCfVGbydHwbkRv8=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-B6tuOBXAh21YijkTpxp4RGQuTc/L+NDfFDYR4qBVT2M=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data:;
@@ -20,8 +20,8 @@
 <meta name="description" content="How trak-yo-dolla$ handles your data. No bank connections. No selling your data. Your CSV files never leave your browser.">
 <link rel="canonical" href="https://trakyodollas.com/privacy">
 <meta property="og:type" content="website">
-<meta property="og:title" content="trak-yo-dolla$ · Privacy Policy">
-<meta property="og:description" content="Simple, honest, local-first. Your CSV never leaves your browser. No bank connections. Full source code on GitHub.">
+<meta property="og:title" content="trak-yo-dolla$ · Privacy policy">
+<meta property="og:description" content="Honest &amp; local-first. Your CSV never leaves your browser. No bank connections. Full source code on GitHub.">
 <meta property="og:url" content="https://trakyodollas.com/privacy">
 <meta property="og:image" content="https://trakyodollas.com/og.png">
 <meta property="og:image:width" content="3212">
@@ -59,7 +59,6 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:.75rem
 
 .page{max-width:720px;margin:0 auto;padding:4rem 2rem 6rem}
 
-.eyebrow{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.85rem}
 h1{font-size:2rem;font-weight:800;color:var(--text-bright);letter-spacing:-.02em;line-height:1.15;margin-bottom:.6rem}
 .intro{font-size:1rem;color:var(--text-secondary);font-weight:300;margin-bottom:2rem;line-height:1.7}
 
@@ -149,9 +148,9 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <main>
 <div class="page">
   <a href="/" class="back">← Back</a>
-  <h1>Simple, honest, local-first.</h1>
-  <p class="intro">I built this app for users in the US, Canada, UK, Australia, New Zealand, Singapore, and beyond — with no servers, so your financial data has nowhere to go but your own device. Your browser translates your CSV files into spending data entirely on your device — nothing is uploaded. The app's full source code is public on <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer">GitHub</a> — anyone can read exactly what it does. Here's how it works.</p>
-  <p style="font-style: italic; color: #888; margin-top: 0rem; margin-bottom: 2rem;">Last updated July 24, 2026</p>
+  <h1>Honest &amp; local-first.</h1>
+  <p class="intro">I built this app for users in the US, Canada, UK, Australia, New Zealand, Singapore, and beyond. No server ever reads your financial data — it stays on your device, and your browser turns your CSV files into spending data locally. The full source code is public on <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer">GitHub</a>, so anyone can verify exactly what it does. Here's how it works.</p>
+  <p style="font-style: italic; color: #888; margin-top: 0rem; margin-bottom: 2rem;">Last updated July 26, 2026</p>
 
   <!-- "What leaves your device?" summary table -->
   <div style="margin-bottom:2.5rem">
@@ -166,48 +165,66 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
         </div>
         <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-card);border-bottom:1px solid var(--border)">
           <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-primary);font-weight:600">Opening the app</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Your browser fetches the app's files from the server</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Cloudflare's servers<br><span style="font-size:12px;color:var(--text-muted)">records your internet address, browser type<br>(standard for any website you visit)</span></div>
+          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Internet address, browser type<br><span style="font-size:14px;color:var(--text-muted)">sent automatically whenever your browser requests a page — true of any site, not just this one</span></div>
+          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Cloudflare's servers</div>
           <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-no);font-weight:600">No</div>
         </div>
         <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-deep);border-bottom:1px solid var(--border)">
+          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-primary);font-weight:600">Loading extra code</div>
+          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Internet address, browser type<br><span style="font-size:14px;color:var(--text-muted)">sent to two outside services this app relies on</span></div>
+          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Two code-hosting companies<br><span style="font-size:14px;color:var(--text-muted)"><a href="#third-party-code" style="color:var(--accent-blue-light)">cdnjs</a> (powers the charts) and <a href="#third-party-code" style="color:var(--accent-blue-light)">jsDelivr</a> (powers sign-in) — not this app's own servers</span></div>
+          <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-ok);font-weight:600">Yes</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-card);border-bottom:1px solid var(--border)">
           <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-primary);font-weight:600">Importing a CSV</div>
           <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-ok);font-weight:600">Nothing</div>
           <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-ok);font-weight:600">Stays on your device</div>
           <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-muted)">Nothing to block</div>
         </div>
-        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-card);border-bottom:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-deep);border-bottom:1px solid var(--border)">
           <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-primary);font-weight:600">Opening the import screen</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)"><a href="#community-rules" style="color:var(--accent-blue-light)">community-rules.json</a></div>
+          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Internet address, browser type<br><span style="font-size:14px;color:var(--text-muted)">sent when your browser downloads <a href="#community-rules" style="color:var(--accent-blue-light)">community-rules.json</a></span></div>
           <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Cloudflare's servers</div>
           <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-ok);font-weight:600">Yes</div>
         </div>
-        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-deep);border-bottom:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-card);border-bottom:1px solid var(--border)">
           <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-primary);font-weight:600">Signing in with Google</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-warn);font-weight:600">Your financial data (encrypted)</div>
+          <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-warn);font-weight:600">Financial data (encrypted)</div>
           <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Supabase's servers (encrypted)</div>
           <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-warn);font-weight:600">Don't sign in</div>
         </div>
-        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-card);border-bottom:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-deep);border-bottom:1px solid var(--border)">
           <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-primary);font-weight:600">Signing in with email link</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Your email address<br><span style="font-size:12px;color:var(--text-muted)">+ financial data after sign-in (encrypted)</span></div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Supabase (to send the link)<br><span style="font-size:12px;color:var(--text-muted)">then your account (encrypted)</span></div>
+          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Email address<br><span style="font-size:14px;color:var(--clr-warn);font-weight:600">+ financial data after sign-in (encrypted)</span></div>
+          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Supabase (to send the link), then Supabase's servers (encrypted)</div>
           <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-warn);font-weight:600">Don't sign in</div>
         </div>
-        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-deep)">
+        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-card);border-bottom:1px solid var(--border)">
           <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-primary);font-weight:600">Analytics</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)"><a href="#analytics" style="color:var(--accent-blue-light)">Session data only</a><br><span style="font-size:12px;color:var(--text-muted)">no financial data</span></div>
+          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)"><a href="#analytics" style="color:var(--accent-blue-light)">Page views, country</a><br><span style="font-size:14px;color:var(--text-muted)">no financial data</span></div>
           <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Umami (no cookies or personal data)</div>
           <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-ok);font-weight:600">Yes</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-deep)">
+          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-primary);font-weight:600">Adding a vehicle by VIN</div>
+          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">The VIN you enter<br><span style="font-size:14px;color:var(--text-muted)">only if you use the optional VIN lookup when adding a vehicle</span></div>
+          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">A US government vehicle database<br><span style="font-size:14px;color:var(--text-muted)">NHTSA — used to auto-fill year, make, and model from your VIN</span></div>
+          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-muted)">Skip VIN lookup<br><span style="font-size:14px;color:var(--text-muted)">type it in yourself</span></div>
         </div>
       </div>
     </div>
     <div class="data-table-mobile">
       <div class="mr-card">
         <div class="mr-event">Opening the app</div>
-        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val">Your browser fetches the app's files from the server</span></div>
-        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Cloudflare's servers<br><span style="font-size:11px;color:var(--text-muted)">records your internet address, browser type (standard for any website)</span></span></div>
+        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val">Internet address, browser type<br><span style="font-size:13px;color:var(--text-muted)">sent automatically whenever your browser requests a page — true of any site, not just this one</span></span></div>
+        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Cloudflare's servers</span></div>
         <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-no);font-weight:700">No</span></div>
+      </div>
+      <div class="mr-card">
+        <div class="mr-event">Loading extra code</div>
+        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val">Internet address, browser type<br><span style="font-size:13px;color:var(--text-muted)">sent to two outside services this app relies on</span></span></div>
+        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Two code-hosting companies<br><span style="font-size:13px;color:var(--text-muted)"><a href="#third-party-code" style="color:var(--accent-blue-light)">cdnjs</a> (powers the charts) and <a href="#third-party-code" style="color:var(--accent-blue-light)">jsDelivr</a> (powers sign-in) — not this app's own servers</span></span></div>
+        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-ok);font-weight:700">Yes</span></div>
       </div>
       <div class="mr-card">
         <div class="mr-event">Importing a CSV</div>
@@ -217,27 +234,33 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       </div>
       <div class="mr-card">
         <div class="mr-event">Opening the import screen</div>
-        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val"><a href="#community-rules" style="color:var(--accent-blue-light)">community-rules.json</a></span></div>
+        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val">Internet address, browser type<br><span style="font-size:13px;color:var(--text-muted)">sent when your browser downloads <a href="#community-rules" style="color:var(--accent-blue-light)">community-rules.json</a></span></span></div>
         <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Cloudflare's servers</span></div>
         <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-ok);font-weight:700">Yes</span></div>
       </div>
       <div class="mr-card">
         <div class="mr-event">Signing in with Google</div>
-        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val" style="color:var(--clr-warn);font-weight:700">Your financial data (encrypted)</span></div>
+        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val" style="color:var(--clr-warn);font-weight:700">Financial data (encrypted)</span></div>
         <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Supabase's servers (encrypted)</span></div>
         <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-warn);font-weight:700">Don't sign in</span></div>
       </div>
       <div class="mr-card">
         <div class="mr-event">Signing in with email link</div>
-        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val">Your email address<br><span style="font-size:11px;color:var(--text-muted)">+ financial data after sign-in (encrypted)</span></span></div>
-        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Supabase (to send the link), then your account (encrypted)</span></div>
+        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val">Email address<br><span style="font-size:13px;color:var(--clr-warn);font-weight:600">+ financial data after sign-in (encrypted)</span></span></div>
+        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Supabase (to send the link), then Supabase's servers (encrypted)</span></div>
         <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-warn);font-weight:700">Don't sign in</span></div>
       </div>
       <div class="mr-card">
         <div class="mr-event">Analytics</div>
-        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val"><a href="#analytics" style="color:var(--accent-blue-light)">Session data only</a><br><span style="font-size:11px;color:var(--text-muted)">no financial data</span></span></div>
-        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Umami · no personal data</span></div>
+        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val"><a href="#analytics" style="color:var(--accent-blue-light)">Page views, country</a><br><span style="font-size:13px;color:var(--text-muted)">no financial data</span></span></div>
+        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Umami (no cookies or personal data)</span></div>
         <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-ok);font-weight:700">Yes</span></div>
+      </div>
+      <div class="mr-card">
+        <div class="mr-event">Adding a vehicle by VIN</div>
+        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val">The VIN you enter<br><span style="font-size:13px;color:var(--text-muted)">only if you use the optional VIN lookup when adding a vehicle</span></span></div>
+        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">A US government vehicle database<br><span style="font-size:13px;color:var(--text-muted)">NHTSA — used to auto-fill year, make, and model from your VIN</span></span></div>
+        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val">Skip VIN lookup<br><span style="font-size:13px;color:var(--text-muted)">type it in yourself</span></span></div>
       </div>
     </div>
     <div style="font-size:12px;color:var(--text-muted);margin-top:.5rem">Yes = any privacy extension blocks it. No = infrastructure-level, outside your control.</div>
@@ -264,10 +287,10 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
       <!-- Browser box -->
       <div style="display:flex;justify-content:center;margin-bottom:.35rem">
-        <div style="background:var(--bg-deep);border:1.5px solid var(--border-strong);border-radius:14px;padding:.85rem 1.5rem;text-align:center;width:100%;max-width:380px;box-sizing:border-box">
+        <div style="background:var(--bg-deep);border:1.5px solid var(--border-mid);border-radius:14px;padding:.85rem 1.5rem;text-align:center;width:100%;max-width:380px;box-sizing:border-box">
           <div style="font-size:22px;margin-bottom:.3rem">💻 📱</div>
           <div style="font-family:'DM Mono',monospace;font-size:9px;font-weight:600;color:var(--text-bright);letter-spacing:.08em;line-height:1.4;margin-bottom:.25rem">YOUR DATA STAYS IN YOUR BROWSER ON YOUR DEVICE</div>
-          <div style="font-size:11px;color:var(--text-muted);line-height:1.5">nothing uploaded · no account required</div>
+          <div style="font-size:11px;color:var(--text-muted);line-height:1.5">nothing uploaded unless you sync · no account required</div>
         </div>
       </div>
 
@@ -310,9 +333,9 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
       <!-- Legend -->
       <div style="display:flex;gap:1.25rem;flex-wrap:wrap;margin-top:1.1rem;padding-top:.85rem;border-top:1px solid var(--border)">
-        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-muted)"><div style="width:7px;height:7px;border-radius:50%;background:#34D399"></div>Without sign-in — stays on your device</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-muted)"><div style="width:7px;height:7px;border-radius:50%;background:#60A5FA"></div>With sign-in — encrypted on your device, then stored on Supabase's servers</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-muted)"><div style="width:7px;height:6px;border-radius:2px;border:1px dashed var(--border-mid)"></div>Cloudflare sends categorization rules (no financial data)</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-muted)"><div style="width:7px;height:7px;border-radius:50%;background:#34D399"></div>Without sign-in — stays on your device</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-muted)"><div style="width:7px;height:7px;border-radius:50%;background:#60A5FA"></div>With sign-in — encrypted on your device, then stored on Supabase's servers</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-muted)"><div style="width:7px;height:6px;border-radius:2px;border:1px dashed var(--border-mid)"></div>Cloudflare sends categorization rules (no financial data)</div>
       </div>
 
     </div>
@@ -338,13 +361,13 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       <p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:.6rem"><strong style="color:var(--text-primary)">Two separate types of data collection happen when you use this app — they're easy to confuse:</strong></p>
       <ul style="font-size:13px;color:var(--text-muted);line-height:1.8;padding-left:1.25rem">
         <li><strong style="color:var(--text-secondary)">Server logs</strong> — automatic, can't be turned off, standard for any website (see "Cloudflare hosting logs" below).</li>
-        <li style="margin-top:.4rem"><strong style="color:var(--text-secondary)">Analytics</strong> — optional, privacy-respecting, blockable. Details below.</li>
+        <li style="margin-top:.4rem"><strong style="color:var(--text-secondary)">Analytics</strong> — optional, privacy-respecting, blockable (see "Analytics — what's collected" below).</li>
       </ul>
     </div>
 
     <div class="card card-neutral">
       <div class="card-label">🖥 Cloudflare hosting logs</div>
-      <p>When you visit this app, Cloudflare records standard server request data: <strong>your internet address, browser type, pages requested, and timestamps</strong> (this is standard for any website you visit). Cloudflare manages this logging under their own privacy policy — the developer has no control over it and no direct access to individual request logs. It contains no financial data; Cloudflare applies the same logging to every website on their network. See <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">cloudflare.com/privacypolicy</a> for details.</p>
+      <p>When you visit this app, Cloudflare records standard server request data: <strong>your internet address, browser type, pages requested, and timestamps</strong> (this is standard for any website you visit). Cloudflare manages this logging under their own privacy policy — I have no control over it and no direct access to individual request logs. It contains no financial data; Cloudflare applies the same logging to every website on their network. See <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">cloudflare.com/privacypolicy</a> for details.</p>
     </div>
 
     <div class="card card-amber">
@@ -370,7 +393,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
         <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">Could a hacker access my financial data?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
-        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">No — and this isn't just a policy, it's structural. Neither the app nor the developer holds your financial data, so there's nothing to steal. That said, here are the three things someone could theoretically attack, and how each is protected:</p><ul style="font-size:13px;color:var(--text-muted);margin-top:.5rem;line-height:1.9;padding-left:1.25rem"><li><strong style="color:var(--text-secondary)">The app files</strong> — hosted on Cloudflare. Deploying any change requires the developer's Cloudflare account credentials plus their physical machine, and that account uses two-factor authentication. An attacker would need both to make any change.</li><li><strong style="color:var(--text-secondary)">The source code</strong> — stored on GitHub, also protected with two-factor authentication. Because the source is public, anyone can verify exactly what the app does and spot anything unexpected.</li><li><strong style="color:var(--text-secondary)">Your synced data</strong> — only relevant if you've signed in. The app encrypts your data on your device before sending it to Supabase — even if someone accessed the database, they'd find only encrypted data they can't read. Row-level security policies add a second layer, restricting access to your sign-in credentials only.</li></ul><p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">None of these paths expose your financial data.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">No — and this isn't just a policy, it's structural. Neither the app nor I hold your financial data, so there's nothing to steal. That said, here are the three things someone could theoretically attack, and how each is protected:</p><ul style="font-size:13px;color:var(--text-muted);margin-top:.5rem;line-height:1.9;padding-left:1.25rem"><li><strong style="color:var(--text-secondary)">The app files</strong> — hosted on Cloudflare. Deploying any change requires my Cloudflare account credentials plus my physical machine, and that account uses two-factor authentication. An attacker would need both to make any change.</li><li><strong style="color:var(--text-secondary)">The source code</strong> — stored on GitHub, also protected with two-factor authentication. Because the source is public, anyone can verify exactly what the app does and spot anything unexpected.</li><li><strong style="color:var(--text-secondary)">Your synced data</strong> — only relevant if you've signed in. The app encrypts your data on your device before sending it to Supabase — even if someone accessed the database, they'd find only encrypted data they can't read. Row-level security policies add a second layer, restricting access to your sign-in credentials only.</li></ul><p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">None of these paths expose your financial data.</p>
       </details>
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
@@ -418,9 +441,9 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
         <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">Yes. The full source code is on <a href="https://github.com/gflo247/trak-yo-dollas" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light)">GitHub</a> — it's a single HTML file with no build step or server required. Download it and open it directly in your browser, or host it on any static file host. Your data stays wherever you run it.</p>
       </details>
 
-      <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
+      <details id="third-party-code" style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border);scroll-margin-top:72px">
         <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">What third-party code runs in the app?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
-        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">The app uses D3.js, a widely used open-source charting library, to draw the spending visualizations. Like most web apps, it loads this library from jsDelivr — a content delivery network (CDN) that serves open-source software files. Your browser fetches it when the app loads. jsDelivr receives no financial data — it only delivers a JavaScript file. The same applies to the Supabase client library, loaded from jsDelivr. If you block either request using a privacy extension, your financial data remains completely safe — charts won't render without D3, but all your data stays intact and accessible.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">The app uses D3.js, a popular open-source charting library, to draw the spending visualizations. Like most web apps, it loads library files from public CDNs (content delivery networks that serve open-source software): D3's core from cdnjs, and a small D3 plugin (d3-sankey) plus the Supabase client library from jsDelivr. Your browser fetches these when the app loads. None of these CDNs receive any financial data — they only deliver JavaScript files. Blocking cdnjs breaks charts only. Blocking jsDelivr breaks charts and disables sign-in/sync too, since the Supabase library loads from there. Either way, your financial data remains completely safe and stays intact on your device.</p>
       </details>
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
@@ -438,7 +461,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
     <div style="display:flex;flex-direction:column;gap:.65rem">
       <div style="display:flex;gap:.75rem;font-size:14px">
         <span style="font-weight:700;color:var(--text-primary);flex-shrink:0;min-width:100px">Access</span>
-        <span style="color:var(--text-muted);font-weight:300;line-height:1.6">Request a copy of personal data held about you. For most users the answer is: none — financial data stays on your device. If you've synced, encrypted data is stored on Supabase's servers — email me at contact@trakyodollas.com and I'll delete it from the database.</span>
+        <span style="color:var(--text-muted);font-weight:300;line-height:1.6">Request a copy of personal data held about you. For most users the answer is: none — financial data stays on your device. If you've synced, Supabase holds only an encrypted copy that neither Supabase nor I can read — the readable copy already lives on your device (see Portability below to export it).</span>
       </div>
       <div style="display:flex;gap:.75rem;font-size:14px">
         <span style="font-weight:700;color:var(--text-primary);flex-shrink:0;min-width:100px">Erasure</span>
@@ -475,7 +498,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
         </div>
         <div style="display:flex;gap:.75rem;font-size:13px">
           <span style="color:var(--text-secondary);flex-shrink:0;min-width:180px;font-weight:600">Account sync</span>
-          <span style="color:var(--text-muted);font-weight:300">Performance of a user-initiated service — explicitly opt-in, clearly optional, and can be revoked by signing out. The app works fully without it.</span>
+          <span style="color:var(--text-muted);font-weight:300">Performance of a user-initiated service — sync is entirely your choice, and signing out revokes it. The app works fully without it.</span>
         </div>
       </div>
     </div>
@@ -528,6 +551,18 @@ document.addEventListener('click',function(e){
   const fn=window[el.dataset.action];
   if(typeof fn==='function')fn();
 });
+
+// Anchor links can target a collapsed FAQ <details> — open it so the
+// linked answer is actually visible, not just scrolled to while hidden.
+// Runs on initial load AND on same-page anchor clicks (hashchange fires
+// for the latter but not a fresh script execution, so both are needed).
+function openHashDetails(){
+  if(!location.hash)return;
+  const target=document.querySelector(location.hash);
+  if(target&&target.tagName==='DETAILS')target.open=true;
+}
+openHashDetails();
+window.addEventListener('hashchange',openHashDetails);
 
 const saved = localStorage.getItem('trakyo_theme') || 'dark';
 document.documentElement.setAttribute('data-theme', saved);
