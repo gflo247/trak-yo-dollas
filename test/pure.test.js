@@ -221,6 +221,14 @@ test("parseCSV: a newline embedded inside a quoted field doesn't fracture the ro
     { date: "01/16/2026", description: "Groceries", amount: "42.10" },
   ]);
 });
+test("parseCSV/splitCSVLine: an explicit delimiter argument overrides the comma default, needed for UK midata exports which use semicolons", () => {
+  const { parseCSV, splitCSVLine } = loadFunctions(["parseCSV","splitCSVLine","splitCSVRows"]);
+  assert.deepEqual(splitCSVLine("a;b;c", ";"), ["a", "b", "c"]);
+  const rows = parseCSV("Date;Merchant/Description;Debit/Credit\n31/03/2018;TESCO STORES;-42.17", ";");
+  assert.deepEqual(rows, [{ date: "31/03/2018", "merchant/description": "TESCO STORES", "debit/credit": "-42.17" }]);
+  // Every other format is comma-only and must be unaffected by this addition.
+  assert.deepEqual(parseCSV("Date,Amount\n01/15/2026,5.00"), [{ date: "01/15/2026", amount: "5.00" }]);
+});
 
 // ── csvSafeField() — quotes a CSV export cell and neutralizes a leading
 // =/+/-/@ so a value copied from an imported transaction (bank memo,
@@ -3147,7 +3155,7 @@ test("normalizeTxRow: chase/debitcredit branches route their raw-category fallba
     /if\(cat==='Other'\)cat=mapImportedCategory\(row\['category'\]\)\|\|'Other';/,
     "chase's 'Other' fallback should route through mapImportedCategory(), landing on a registered category or the safe 'Other' default -- not an arbitrary unregistered bank string"
   );
-  const debitcreditMatch = source.match(/\}\s*else if\(importFmt==='debitcredit'\)\{[\s\S]{0,1300}?\n\n  \} else if\(importFmt==='bofa'\)/);
+  const debitcreditMatch = source.match(/\}\s*else if\(importFmt==='debitcredit'\)\{[\s\S]{0,1500}?\n\n  \} else if\(importFmt==='anznz'\)/);
   assert.ok(debitcreditMatch, "the debitcredit import branch should exist");
   assert.match(
     debitcreditMatch[0],
@@ -5441,5 +5449,122 @@ test("the .truncate utility class exists and is applied to the 5 sites the 168th
     source,
     /<div class="truncate" style="font-size:13px;font-weight:800;color:var\(--text-primary\)" title="\$\{esc\(v\.name\)\}">\$\{esc\(v\.name\)\}<\/div>/,
     "the vehicle 'other asset' card should truncate the vehicle name"
+  );
+});
+
+// July 2026: added real CSV-import support for ANZ NZ, BNZ, Westpac NZ, and
+// ING Australia, following an adversarial-pass finding that the landing
+// page's "supports banks by name" claim wasn't backed for AU/NZ/SG. Each
+// bank's column format was researched from independently-verified real
+// sources (official bank help pages plus tested open-source converters),
+// not guessed -- see _HANDOFF.md for sourcing/confidence per bank.
+// normalizeTxRow() has established source-pattern-only test precedent in
+// this suite (see the chase/debitcredit test above) since it's a 280+ line
+// DOM/state-heavy function.
+test("normalizeTxRow: ANZ NZ/BNZ/Westpac NZ branches read the correct real column names, and ING Australia's Credit/Debit Amount columns are recognized by the debitcredit branch", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+
+  const debitcreditMatch = source.match(/\}\s*else if\(importFmt==='debitcredit'\)\{[\s\S]{0,1400}?\n\n  \} else if\(importFmt==='anznz'\)/);
+  assert.ok(debitcreditMatch, "the debitcredit import branch should exist and be immediately followed by the new anznz branch");
+  assert.match(
+    debitcreditMatch[0],
+    /row\['debit amount'\]/,
+    "debitcredit should recognize ING Australia's 'Debit Amount' column"
+  );
+  assert.match(
+    debitcreditMatch[0],
+    /row\['credit amount'\]/,
+    "debitcredit should recognize ING Australia's 'Credit Amount' column"
+  );
+
+  const anznzMatch = source.match(/\}\s*else if\(importFmt==='anznz'\)\{[\s\S]{0,1300}?\n\n  \} else if\(importFmt==='bnz'\)/);
+  assert.ok(anznzMatch, "the anznz import branch should exist");
+  assert.match(anznzMatch[0], /row\['details'\]/, "anznz should read the 'Details' column for its description");
+  assert.match(anznzMatch[0], /const rawAmt=parseFloat\(row\['amount'\]/, "anznz should read the 'Amount' column as a single signed value");
+
+  const bnzMatch = source.match(/\}\s*else if\(importFmt==='bnz'\)\{[\s\S]{0,1300}?\n\n  \} else if\(importFmt==='westpacnz'\)/);
+  assert.ok(bnzMatch, "the bnz import branch should exist");
+  assert.match(
+    bnzMatch[0],
+    /row\['processed date'\]\|\|row\['date'\]/,
+    "bnz should prefer the 'Processed Date' column over the plain 'Date' column, matching the real production converter it's sourced from"
+  );
+  assert.match(bnzMatch[0], /row\['payee'\]/, "bnz should read the 'Payee' column for its description");
+
+  const westpacnzMatch = source.match(/\}\s*else if\(importFmt==='westpacnz'\)\{[\s\S]{0,1200}?\n\n  \} else if\(importFmt==='starling'\)/);
+  assert.ok(westpacnzMatch, "the westpacnz import branch should exist and be immediately followed by the new starling branch");
+  assert.match(
+    westpacnzMatch[0],
+    /row\['description'\]\|\|row\['other party'\]/,
+    "westpacnz should read the 'Description' column, falling back to 'Other Party'"
+  );
+
+  const starlingMatch = source.match(/\}\s*else if\(importFmt==='starling'\)\{[\s\S]{0,1200}?\n\n  \} else if\(importFmt==='midata'\)/);
+  assert.ok(starlingMatch, "the starling import branch should exist and be immediately followed by the new midata branch");
+  assert.match(starlingMatch[0], /row\['counter party'\]\|\|row\['reference'\]/, "starling should read the 'Counter Party' column for its description, falling back to 'Reference'");
+  assert.match(starlingMatch[0], /const rawAmt=parseFloat\(row\['amount \(gbp\)'\]/, "starling should read the 'Amount (GBP)' column as a single signed value");
+
+  const midataMatch = source.match(/\}\s*else if\(importFmt==='midata'\)\{[\s\S]{0,2000}?\n\n  \} else if\(importFmt==='bofa'\)/);
+  assert.ok(midataMatch, "the midata import branch should exist");
+  assert.match(midataMatch[0], /row\['date'\]\|\|row\['transaction date'\]/, "midata should read 'Date', falling back to 'Transaction Date'");
+  assert.match(midataMatch[0], /row\['merchant\/description'\]\|\|row\['description'\]/, "midata should read the 'Merchant/Description' column for its description");
+  assert.match(midataMatch[0], /const rawAmt=parseFloat\(row\['debit\/credit'\]/, "midata should read the 'Debit/Credit' column as a single signed value");
+});
+
+test("parseTxFile: UK midata auto-detect is checked before the generic debit+credit check (its header contains both substrings), uses the right delimiter, and normalizeTxRow reads its real column names", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+
+  assert.match(
+    source,
+    /firstLine\.includes\('merchant\/description'\)&&firstLine\.includes\('debit\/credit'\)\)\{\s*importFmt='midata';/,
+    "midata auto-detect should require both 'merchant/description' and 'debit/credit', its real distinctive column pair"
+  );
+  const midataDetectIdx = source.indexOf("importFmt='midata'; importFmtAutoDetected=true;");
+  const debitcreditDetectIdx = source.indexOf("firstLine.includes('debit')&&firstLine.includes('credit')");
+  assert.ok(midataDetectIdx > -1 && debitcreditDetectIdx > -1, "both the midata and generic debit+credit auto-detect checks should exist");
+  assert.ok(
+    midataDetectIdx < debitcreditDetectIdx,
+    "midata's auto-detect check must come before the generic debit+credit check in source order -- a midata header contains both 'debit' and 'credit' as substrings, so if the generic check ran first every midata file would be wrongly claimed as 'debitcredit'"
+  );
+
+  assert.match(
+    source,
+    /const csvDelim=\(importFmt==='midata'&&text\.split\('\\n'\)\[0\]\.includes\(';'\)\)\?';':',';/,
+    "midata is the only format allowed a non-comma delimiter (real exports use comma or semicolon); every other format must stay comma-only"
+  );
+});
+
+test("parseTxFile: ANZ NZ/BNZ/Westpac NZ/Starling/midata have mutually-exclusive auto-detect signatures, and force DD/MM date parsing when a sample is otherwise ambiguous", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /firstLine\.includes\('particulars'\)&&firstLine\.includes\('foreign'\)\)\{\s*importFmt='anznz';/,
+    "ANZ NZ auto-detect should require both 'particulars' and 'foreign' (from ForeignCurrencyAmount), distinguishing it from BNZ/Westpac NZ which also have a Particulars column"
+  );
+  assert.match(
+    source,
+    /firstLine\.includes\('particulars'\)&&firstLine\.includes\('processed'\)\)\{\s*importFmt='bnz';/,
+    "BNZ auto-detect should require 'processed' (from Processed Date), distinguishing it from ANZ NZ/Westpac NZ"
+  );
+  assert.match(
+    source,
+    /firstLine\.includes\('particulars'\)&&firstLine\.includes\('analysis'\)\)\{\s*importFmt='westpacnz';/,
+    "Westpac NZ auto-detect should require 'analysis' (from Analysis Code), distinguishing it from ANZ NZ/BNZ"
+  );
+  assert.match(
+    source,
+    /firstLine\.includes\('counter party'\)&&firstLine\.includes\('reference'\)\)\{\s*importFmt='starling';/,
+    "Starling auto-detect should require both 'counter party' and 'reference', its real distinctive column pair"
+  );
+  assert.match(
+    source,
+    /alwaysDmyFmt=\(importFmt==='anznz'\|\|importFmt==='bnz'\|\|importFmt==='westpacnz'\|\|importFmt==='starling'\|\|importFmt==='midata'\)&&detectedFmt===null/,
+    "an ambiguous date sample (no day>12 in the first 15 rows) should force DD/MM for these five DD/MM-only formats instead of falling back to the US-oriented MM/DD default"
   );
 });

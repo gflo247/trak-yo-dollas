@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-HxV4FHh1i1bAzudYY7KYUhm2MsOvKmtalgH9aQCsdhU=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-hK9Hj08QtDyPLEaORQ8PefTy4xZP+thWXnaqEC8of0E=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1094,13 +1094,17 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
         <ul style="padding-left:1.1rem;line-height:1.7">
           <li><strong style="color:var(--text-secondary)">Checking/savings</strong> — Date, Description, Amount, Type</li>
           <li><strong style="color:var(--text-secondary)">Credit card (Chase, Amex, etc.)</strong> — Transaction Date, Description, Amount, Category</li>
-          <li><strong style="color:var(--text-secondary)">Debit/credit columns</strong> — Date, Description, Debit, Credit (or Withdrawals/Deposits)</li>
+          <li><strong style="color:var(--text-secondary)">Debit/credit columns</strong> — Date, Description, Debit, Credit (or Withdrawals/Deposits, or ING Australia's Credit/Debit Amount)</li>
           <li><strong style="color:var(--text-secondary)">Bank of America</strong> — Date, Description, Amount</li>
+          <li><strong style="color:var(--text-secondary)">ANZ, BNZ, Westpac (NZ)</strong> — Date, Amount, Description/Payee/Details — auto-detected</li>
+          <li><strong style="color:var(--text-secondary)">Starling (UK)</strong> — Date, Counter Party, Reference, Amount — auto-detected</li>
+          <li><strong style="color:var(--text-secondary)">HSBC, Nationwide, Santander, Barclays, Lloyds, Halifax (UK)</strong> — via each bank's "midata" download (Date, Merchant/Description, Debit/Credit) — auto-detected. Covers 12 months ending ~30 days ago, not a full statement.</li>
           <li><strong style="color:var(--text-secondary)">Mint</strong> — Date, Description, Amount, Transaction Type, Category</li>
           <li><strong style="color:var(--text-secondary)">YNAB</strong> — Date, Payee, Outflow, Inflow, Category</li>
           <li><strong style="color:var(--text-secondary)">Monarch Money</strong> — Date, Merchant, Amount, Category</li>
         </ul>
         <p style="margin-top:.4rem;font-size:11px">Format is detected automatically. If it's not right, use <em>Having trouble?</em> below.</p>
+        <p style="margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--border-mid);font-size:11px;line-height:1.6"><strong style="color:var(--text-secondary)">Use Kiwibank, DBS, OCBC, Bendigo Bank, or Monzo?</strong> Not auto-detected yet — the numbers matter too much to guess at a format without a real sample. Email a redacted export (header row plus a couple of rows with fake amounts) to <a href="mailto:contact@trakyodollas.com" style="color:var(--accent-blue-light)">contact@trakyodollas.com</a> to help build it — get credited by name when it ships.</p>
       </div>
     </details>
 
@@ -1165,7 +1169,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
 
     <div style="font-size:10px;color:var(--text-muted);margin-top:.5rem;line-height:1.5;text-align:center">
-      Categorization uses your rules, community patterns, and <a href="https://en.wikipedia.org/wiki/Merchant_category_code" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light);text-decoration:underline" title="Merchant Category Codes — 4-digit codes banks assign to merchants">MCC codes</a> — in that order. &nbsp;
+      Categorization uses your rules, built-in keywords, community patterns, and <a href="https://en.wikipedia.org/wiki/Merchant_category_code" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light);text-decoration:underline" title="Merchant Category Codes — 4-digit codes banks assign to merchants">MCC codes</a> — in that order. &nbsp;
       <button data-action="openCommunityRulesModal" style="background:none;border:none;color:var(--accent-blue-light);font-size:10px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">View patterns ↗</button> &nbsp;
       <button data-action="openShortcutsModal" style="background:none;border:none;color:var(--accent-blue-light);font-size:10px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">How it works ↗</button>
     </div>
@@ -1339,7 +1343,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <h3 id="add-modal-title">Add account</h3>
     <div class="form-group"><label class="form-label" for="f-name">Name</label><input type="text" id="f-name"/></div>
     <div class="form-group"><label class="form-label" for="f-source">Institution</label>
-      <select id="f-source"><option>Alliant</option><option>Ally</option><option>Amex</option><option>Bank of America</option><option>Barclays</option><option>BECU</option><option>BMO</option><option>Capital One</option><option>Chase</option><option>CIBC</option><option>Discover</option><option>E*TRADE</option><option>Fidelity</option><option>Marcus</option><option>Navy Federal</option><option>Old National</option><option>PenFed</option><option>RBC</option><option>Redfin</option><option>Schwab</option><option>Scotiabank</option><option>SoFi</option><option>Tangerine</option><option>TD Bank</option><option>Truist</option><option>USAA</option><option>Vanguard</option><option>Wells Fargo</option><option>Zillow</option><option>Other</option></select></div>
+      <select id="f-source"><option>Alliant</option><option>Ally</option><option>Amex</option><option>ANZ</option><option>Bank of America</option><option>Barclays</option><option>BECU</option><option>BMO</option><option>BNZ</option><option>Capital One</option><option>Chase</option><option>CIBC</option><option>CommBank</option><option>Discover</option><option>E*TRADE</option><option>Fidelity</option><option>Halifax</option><option>HSBC</option><option>ING</option><option>Lloyds</option><option>Marcus</option><option>Nationwide</option><option>Navy Federal</option><option>Old National</option><option>PenFed</option><option>RBC</option><option>Redfin</option><option>Santander</option><option>Schwab</option><option>Scotiabank</option><option>SoFi</option><option>Starling</option><option>Tangerine</option><option>TD Bank</option><option>Truist</option><option>USAA</option><option>Vanguard</option><option>Wells Fargo</option><option>Westpac</option><option>Zillow</option><option>Other</option></select></div>
     <div class="form-group"><label class="form-label" for="f-type">Type</label>
       <select id="f-type"><option value="cash">Cash/Savings</option><option value="investment">Investment</option><option value="home">Home</option><option value="vehicle">Vehicle</option><option value="mortgage">Mortgage</option><option value="credit">Credit card</option><option value="other-asset">Other asset</option><option value="other-liability">Other liability</option></select></div>
     <div class="form-group"><label class="form-label" for="f-balance">Balance ($)</label><input type="number" id="f-balance"/></div>
@@ -1908,9 +1912,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
           <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Categorization priority</div>
           <div style="padding:.5rem .75rem;color:var(--text-secondary)">
             <span style="color:#60A5FA;font-weight:600">1. Your rules</span> — keyword rules you've saved always win<br>
-            <span style="color:#34D399;font-weight:600">2. Community patterns</span> — <span class="community-rules-count">1802</span> community-contributed keyword→category mappings covering US, UK, AU, CA, NZ, and SG merchants — fetched once per session · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" style="color:#34D399">Suggest a pattern ↗</a><br>
-            <span style="color:#94A3B8;font-weight:600">3. Merchant Category Codes (MCC)</span> — 4-digit codes your bank or credit union assigns to merchants, if present in your CSV<br>
-            <span style="color:#64748B;font-weight:600">4. Built-in keywords</span> — ~300 common merchant names as a fallback
+            <span style="color:#64748B;font-weight:600">2. Built-in keywords</span> — ~300 common merchant names, matched automatically<br>
+            <span style="color:#34D399;font-weight:600">3. Community patterns</span> — <span class="community-rules-count">1802</span> community-contributed keyword→category mappings covering US, UK, AU, CA, NZ, and SG merchants, picking up what built-in keywords miss — fetched once per session · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" style="color:#34D399">Suggest a pattern ↗</a><br>
+            <span style="color:#94A3B8;font-weight:600">4. Merchant Category Codes (MCC)</span> — 4-digit codes your bank or credit union assigns to merchants, if present in your CSV
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1.6fr;font-size:12px;border-bottom:1px solid var(--border)">
@@ -7591,8 +7595,8 @@ function deleteVehicle(){
 /* ── ACCOUNTS ── */
 const TL_M={cash:'Cash',investment:'Investment',home:'Real estate',vehicle:'Vehicle',mortgage:'Mortgage',credit:'Credit card','other-asset':'Other asset','other-liability':'Other liab'};
 const TC_M={cash:'#60A5FA',investment:'#34D399',home:'#A78BFA',vehicle:'#2DD4BF',mortgage:'#F87171',credit:'#F97316','other-asset':tc('#475569','#64748B'),'other-liability':'#F87171'};
-const SC_M={Ally:{bg:tc('#1E3A5F','#EFF6FF'),fg:'#60A5FA'},Amex:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},Vanguard:{bg:'#7F1D1D22',fg:'#F87171'},Fidelity:{bg:'#7F1D1D22',fg:'#F87171'},Chase:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},'Old National':{bg:'#065F4622',fg:'#34D399'},Zillow:{bg:'#1E3A5F22',fg:'#60A5FA'},Redfin:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},'Bank of America':{bg:tc('#1E3A5F','#EFF6FF'),fg:'#F87171'},Barclays:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},'Capital One':{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Discover:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},'E*TRADE':{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Marcus:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Alliant:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},BMO:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},BECU:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},CIBC:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},'Navy Federal':{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},RBC:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},PenFed:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Scotiabank:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Schwab:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},SoFi:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},Tangerine:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},'TD Bank':{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Truist:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},USAA:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},'Wells Fargo':{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},Other:{bg:tc('#334155','#E2E8F0'),fg:tc('#94A3B8','#64748B')}};
-const SA_M={Ally:'AL',Amex:'AX',Vanguard:'VG',Fidelity:'FD',Chase:'CH',Barclays:'BC','Old National':'ON',Zillow:'ZL',Redfin:'RF','Bank of America':'BA','Capital One':'CO',Discover:'DV','E*TRADE':'ET',Marcus:'MC',Alliant:'AT',BMO:'BM',BECU:'BU',CIBC:'CB','Navy Federal':'NV',RBC:'RB',PenFed:'PF',Scotiabank:'SK',Schwab:'SC',SoFi:'SF',Tangerine:'TN','TD Bank':'TD',Truist:'TR',USAA:'UA','Wells Fargo':'WF',Other:'OT'};
+const SC_M={Ally:{bg:tc('#1E3A5F','#EFF6FF'),fg:'#60A5FA'},Amex:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},Vanguard:{bg:'#7F1D1D22',fg:'#F87171'},Fidelity:{bg:'#7F1D1D22',fg:'#F87171'},Chase:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},'Old National':{bg:'#065F4622',fg:'#34D399'},Zillow:{bg:'#1E3A5F22',fg:'#60A5FA'},Redfin:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},'Bank of America':{bg:tc('#1E3A5F','#EFF6FF'),fg:'#F87171'},Barclays:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},'Capital One':{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Discover:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},'E*TRADE':{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Marcus:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Alliant:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},BMO:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},BECU:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},CIBC:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},'Navy Federal':{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},RBC:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},PenFed:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Scotiabank:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Schwab:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},SoFi:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},Tangerine:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},'TD Bank':{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Truist:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},USAA:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},'Wells Fargo':{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},ANZ:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},BNZ:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},CommBank:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},ING:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Westpac:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},Starling:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},Halifax:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},HSBC:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Lloyds:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},Nationwide:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Santander:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},Other:{bg:tc('#334155','#E2E8F0'),fg:tc('#94A3B8','#64748B')}};
+const SA_M={Ally:'AL',Amex:'AX',Vanguard:'VG',Fidelity:'FD',Chase:'CH',Barclays:'BC','Old National':'ON',Zillow:'ZL',Redfin:'RF','Bank of America':'BA','Capital One':'CO',Discover:'DV','E*TRADE':'ET',Marcus:'MC',Alliant:'AT',BMO:'BM',BECU:'BU',CIBC:'CB','Navy Federal':'NV',RBC:'RB',PenFed:'PF',Scotiabank:'SK',Schwab:'SC',SoFi:'SF',Tangerine:'TN','TD Bank':'TD',Truist:'TR',USAA:'UA','Wells Fargo':'WF',ANZ:'AZ',BNZ:'BZ',CommBank:'CM',ING:'IG',Westpac:'WP',Starling:'SL',Halifax:'HX',HSBC:'HS',Lloyds:'LL',Nationwide:'NW',Santander:'SN',Other:'OT'};
 function renderAccountLists(){
   const row=a=>{const sc=SC_M[a.source]||SC_M.Other,tc=TC_M[a.type]||'var(--text-muted)';
     return`<div class="account-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="acct-icon" style="background:${sc.bg};color:${sc.fg};flex-shrink:0">${SA_M[a.source]||'??'}</div><div style="min-width:0"><div class="account-name" title="${esc(a.name)}">${esc(a.name)}</div><div class="account-sub">${esc(a.source)} · ${esc(TL_M[a.type]||a.type)}</div></div></div>
@@ -10970,12 +10974,34 @@ function parseTxFile(file){
         importFmt='chase'; importFmtAutoDetected=true;
       } else if(firstLine.includes('time')&&firstLine.includes('type')&&!firstLine.includes('memo')){
         importFmt='ally'; importFmtAutoDetected=true;
+      // UK "midata" export (HSBC, Nationwide, Santander, Barclays, Lloyds,
+      // Halifax) -- its 'Merchant/Description'+'Debit/Credit' header contains
+      // both 'debit' and 'credit' as substrings, so this MUST be checked
+      // before the generic debit+credit check directly below or it would be
+      // wrongly claimed as 'debitcredit' first. July 2026 research; see
+      // _HANDOFF.md.
+      } else if(firstLine.includes('merchant/description')&&firstLine.includes('debit/credit')){
+        importFmt='midata'; importFmtAutoDetected=true;
       } else if(firstLine.includes('debit')&&firstLine.includes('credit')){
         importFmt='debitcredit'; importFmtAutoDetected=true;
       } else if(firstLine.includes('running bal')){
         importFmt='bofa'; importFmtAutoDetected=true;
       } else if(firstLine.includes('deposits')&&firstLine.includes('withdrawals')){
         importFmt='debitcredit'; importFmtAutoDetected=true;
+      // ANZ NZ / BNZ / Westpac NZ all share a "Particulars" column (a
+      // standard NZ interbank-payment field), so each check also requires
+      // a second column unique to that bank -- checked before the generic
+      // trans-date/posting-date fallback below since none of these three
+      // banks' real headers would otherwise match anything above. July
+      // 2026 research; see _HANDOFF.md.
+      } else if(firstLine.includes('particulars')&&firstLine.includes('foreign')){
+        importFmt='anznz'; importFmtAutoDetected=true;
+      } else if(firstLine.includes('particulars')&&firstLine.includes('processed')){
+        importFmt='bnz'; importFmtAutoDetected=true;
+      } else if(firstLine.includes('particulars')&&firstLine.includes('analysis')){
+        importFmt='westpacnz'; importFmtAutoDetected=true;
+      } else if(firstLine.includes('counter party')&&firstLine.includes('reference')){
+        importFmt='starling'; importFmtAutoDetected=true;
       } else if(firstLine.includes('trans date')||firstLine.includes('posting date')){
         importFmt='generic'; importFmtAutoDetected=true;
       } else {
@@ -10992,7 +11018,15 @@ function parseTxFile(file){
         importFmt='generic'; importFmtAutoDetected=true;
       }
     }
-    const rows=parseCSV(text);
+    // midata is the one format that isn't reliably comma-delimited -- real
+    // exports seen from different banks use either comma or semicolon
+    // (confirmed across 3 independent midata parser projects, one of which
+    // has to auto-sniff the delimiter for exactly this reason). Every other
+    // supported format is comma-only, so this only branches for midata to
+    // avoid any risk to the other 15 formats' parsing. July 2026 research;
+    // see _HANDOFF.md.
+    const csvDelim=(importFmt==='midata'&&text.split('\n')[0].includes(';'))?';':',';
+    const rows=parseCSV(text,csvDelim);
     if(!rows||!rows.length){
       showToast('Could not read this CSV — check the format and try again','#F87171');return;
     }
@@ -11002,9 +11036,18 @@ function parseTxFile(file){
     _genericPositiveIsExpense=detectGenericSignConvention(rows);
     // Detect date format — update UI and store for re-parse on toggle
     const detectedFmt=detectImportDateFmt(rows);
+    // ANZ NZ, BNZ, Westpac NZ, Starling, and midata (UK) exports are always
+    // DD/MM/YYYY -- when the sample itself is ambiguous (no day>12 in the
+    // first 15 rows), detectImportDateFmt() can't tell and would normally
+    // fall back to 'mdy' (meant for US formats). None of these formats
+    // ever use MM/DD, so force 'dmy' instead of risking a wrong guess on a
+    // coincidentally-all-day-under-13 file. July 2026 addition.
+    const alwaysDmyFmt=(importFmt==='anznz'||importFmt==='bnz'||importFmt==='westpacnz'||importFmt==='starling'||importFmt==='midata')&&detectedFmt===null;
     if(detectedFmt==='iso'){
       const dfRow=document.getElementById('import-date-fmt-row');
       if(dfRow)dfRow.style.display='none';
+    } else if(alwaysDmyFmt){
+      updateDateFmtUI('dmy',false);
     } else {
       updateDateFmtUI(detectedFmt||'mdy',detectedFmt===null);
     }
@@ -11036,7 +11079,7 @@ function splitCSVRows(text){
   return rows;
 }
 
-function parseCSV(text){
+function parseCSV(text,delim){
   const lines=splitCSVRows(text.trim()).map(l=>l.trim()).filter(Boolean);
   if(lines.length<2)return [];
   // No .replace(/^"|"$/g,'') here -- splitCSVLine() already consumes a
@@ -11047,16 +11090,17 @@ function parseCSV(text){
   // (e.g. an inch mark: `"BLINDS 72"""` correctly unquotes to `BLINDS 72"`,
   // then the second strip destroyed that trailing quote). Found in the 97th
   // adversarial pass.
-  const headers=splitCSVLine(lines[0]).map(h=>h.trim().toLowerCase());
+  const headers=splitCSVLine(lines[0],delim).map(h=>h.trim().toLowerCase());
   return lines.slice(1).map(line=>{
-    const vals=splitCSVLine(line).map(v=>v.trim());
+    const vals=splitCSVLine(line,delim).map(v=>v.trim());
     const obj={};
     headers.forEach((h,i)=>{obj[h]=vals[i]||'';});
     return obj;
   });
 }
 
-function splitCSVLine(line){
+function splitCSVLine(line,delim){
+  delim=delim||',';
   const result=[];let cur='';let inQ=false;
   for(let i=0;i<line.length;i++){
     const c=line[i];
@@ -11064,7 +11108,7 @@ function splitCSVLine(line){
       if(inQ&&line[i+1]==='"'){cur+='"';i++;}
       else inQ=!inQ;
     }
-    else if(c===','&&!inQ){result.push(cur);cur='';}
+    else if(c===delim&&!inQ){result.push(cur);cur='';}
     else cur+=c;
   }
   result.push(cur);
@@ -11205,11 +11249,13 @@ function normalizeTxRow(row, source){
     if(cat==='Other')cat=mapImportedCategory(row['category'])||'Other';
 
   } else if(importFmt==='debitcredit'){
-    // Banks with separate Debit and Credit columns (e.g. some credit unions, USAA)
+    // Banks with separate Debit and Credit columns (e.g. some credit unions, USAA,
+    // and ING Australia's "Debit Amount"/"Credit Amount" columns -- confirmed via
+    // ING's own actively-maintained community CSV-import config, July 2026 research)
     date=row['date']||row['transaction date']||row['trans date']||row['posting date']||'';
     desc=(row['description']||row['memo']||row['payee']||row['name']||'').trim();
-    const debit=parseFloat(row['debit']||row['withdrawals']||row['withdrawal']||'0')||0;
-    const credit=parseFloat(row['credit']||row['deposits']||row['deposit']||'0')||0;
+    const debit=parseFloat(row['debit']||row['debit amount']||row['withdrawals']||row['withdrawal']||'0')||0;
+    const credit=parseFloat(row['credit']||row['credit amount']||row['deposits']||row['deposit']||'0')||0;
     amount=debit>0?debit:0;
     if(!amount&&credit>0){
       const xferCat=_creditDepositCat(desc);
@@ -11226,6 +11272,146 @@ function normalizeTxRow(row, source){
     // Same unregistered-category gap as the chase branch above -- see its
     // comment. Found in the 106th adversarial pass.
     if(cat==='Other')cat=mapImportedCategory(row['category'])||'Other';
+
+  } else if(importFmt==='anznz'){
+    // ANZ New Zealand personal internet banking CSV export. Real column
+    // names (no aliases needed -- ANZ NZ's own export always produces
+    // this exact 9-column header): Type, Details, Particulars, Code,
+    // Reference, Amount, Date, ForeignCurrencyAmount, ConversionCharge.
+    // Amount is a single signed column -- positive = credit/inflow,
+    // negative = debit/outflow -- confirmed by two independent
+    // real-world converters (a Ruby CSV cleaner and a YNAB-import tool)
+    // agreeing exactly on this column layout and sign convention.
+    // July 2026 research; see _HANDOFF.md.
+    date=row['date']||'';
+    desc=(row['details']||row['particulars']||'').trim();
+    const rawAmt=parseFloat(row['amount']||'0');
+    if(rawAmt>=0){
+      const xferCat=_creditDepositCat(desc);
+      if(xferCat){
+        amount=rawAmt;cat=xferCat;
+      } else {
+        if(!state.includeIncome)return null;
+        isIncome=true;amount=rawAmt;cat='Income';
+      }
+    } else {
+      amount=Math.abs(rawAmt);
+    }
+    if(!amount)return null;
+    if(!isIncome)cat=guessCatFromDesc(desc);
+
+  } else if(importFmt==='bnz'){
+    // BNZ (Bank of New Zealand) personal internet banking CSV export.
+    // Real column names: Date, Amount, Payee, Particulars, Code,
+    // Reference, Tran Type, Processed Date. Using "Processed Date"
+    // rather than the plain "Date" column for the stored transaction
+    // date, matching a deliberate choice made in a real, tested
+    // production converter (the two date columns can differ; Processed
+    // Date is the one that converter settled on). Amount is a single
+    // signed column, same convention as ANZ NZ above. July 2026
+    // research, single well-evidenced source; see _HANDOFF.md.
+    date=row['processed date']||row['date']||'';
+    desc=(row['payee']||row['particulars']||'').trim();
+    const rawAmt=parseFloat(row['amount']||'0');
+    if(rawAmt>=0){
+      const xferCat=_creditDepositCat(desc);
+      if(xferCat){
+        amount=rawAmt;cat=xferCat;
+      } else {
+        if(!state.includeIncome)return null;
+        isIncome=true;amount=rawAmt;cat='Income';
+      }
+    } else {
+      amount=Math.abs(rawAmt);
+    }
+    if(!amount)return null;
+    if(!isIncome)cat=guessCatFromDesc(desc);
+
+  } else if(importFmt==='westpacnz'){
+    // Westpac New Zealand online banking CSV export (desktop only, not
+    // available in the mobile app). Real column names: Date, Amount,
+    // Other Party, Description, Reference, Particulars, Analysis Code.
+    // Amount is a single signed column, same convention as the other NZ
+    // banks above -- confirmed by an independent real converter plus a
+    // separate source describing the export UI's own "CSV (dd/mm/yyyy)"
+    // format-picker label. July 2026 research; see _HANDOFF.md.
+    date=row['date']||'';
+    desc=(row['description']||row['other party']||'').trim();
+    const rawAmt=parseFloat(row['amount']||'0');
+    if(rawAmt>=0){
+      const xferCat=_creditDepositCat(desc);
+      if(xferCat){
+        amount=rawAmt;cat=xferCat;
+      } else {
+        if(!state.includeIncome)return null;
+        isIncome=true;amount=rawAmt;cat='Income';
+      }
+    } else {
+      amount=Math.abs(rawAmt);
+    }
+    if(!amount)return null;
+    if(!isIncome)cat=guessCatFromDesc(desc);
+
+  } else if(importFmt==='starling'){
+    // Starling Bank (UK) CSV export. Real column names: Date, Counter Party,
+    // Reference, Type, Amount (GBP), Balance (GBP) -- confirmed by 3
+    // independent open-source parsers built against real exports
+    // (starling2freeagent, starling-freeagent-export, starling-ynab), all
+    // agreeing on this exact shape. Amount is a single signed column, same
+    // convention as the NZ banks above. Always DD/MM/YYYY (UK). July 2026
+    // research; see _HANDOFF.md.
+    date=row['date']||'';
+    desc=(row['counter party']||row['reference']||'').trim();
+    const rawAmt=parseFloat(row['amount (gbp)']||row['amount']||'0');
+    if(rawAmt>=0){
+      const xferCat=_creditDepositCat(desc);
+      if(xferCat){
+        amount=rawAmt;cat=xferCat;
+      } else {
+        if(!state.includeIncome)return null;
+        isIncome=true;amount=rawAmt;cat='Income';
+      }
+    } else {
+      amount=Math.abs(rawAmt);
+    }
+    if(!amount)return null;
+    if(!isIncome)cat=guessCatFromDesc(desc);
+
+  } else if(importFmt==='midata'){
+    // UK "midata" export -- an industry-wide standardised format offered by
+    // several major UK banks (HSBC, Nationwide, Santander, Barclays, Lloyds,
+    // Halifax all confirmed current as of July 2026; NatWest confirmed
+    // DISCONTINUED, superseded by Open Banking). Real column names:
+    // Date/Transaction Date, Type/Transaction Type, Merchant/Description,
+    // Debit/Credit, Balance -- confirmed by 3 independent open-source
+    // parsers, one tested against Halifax, one against Lloyds. Always
+    // DD/MM/YYYY with a full year (unlike these same banks' *regular* CSV
+    // exports, which for Barclays/Nationwide specifically omit the year).
+    // Delimiter varies by bank (comma or semicolon) -- see csvDelim above.
+    // Sign convention (negative=debit/positive=credit, matching every other
+    // single-signed-column format in this file) is inferred from the
+    // reference converter passing the value straight through to a
+    // negative-is-debit output format with no sign flip, not from an
+    // explicit bank spec -- treat as high-confidence, not fully certain.
+    // Only a 12-month window ending ~30 days ago, and some transaction
+    // descriptions may be partially masked with asterisks by the bank.
+    // July 2026 research; see _HANDOFF.md.
+    date=row['date']||row['transaction date']||'';
+    desc=(row['merchant/description']||row['description']||'').trim();
+    const rawAmt=parseFloat(row['debit/credit']||'0');
+    if(rawAmt>=0){
+      const xferCat=_creditDepositCat(desc);
+      if(xferCat){
+        amount=rawAmt;cat=xferCat;
+      } else {
+        if(!state.includeIncome)return null;
+        isIncome=true;amount=rawAmt;cat='Income';
+      }
+    } else {
+      amount=Math.abs(rawAmt);
+    }
+    if(!amount)return null;
+    if(!isIncome)cat=guessCatFromDesc(desc);
 
   } else if(importFmt==='bofa'){
     // Bank of America checking/savings: Date, Description, Amount, Running Bal.
