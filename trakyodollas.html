@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-3wRgaRGWWvMbkbtzUTBSbo1koRg33DxiGmlqmYOLgRw=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-KpR32NPWikYva9AO6Dekm+FPrZanPQa+3iHj4C0BuZk=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -449,6 +449,18 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
    display:none/visibility:hidden, which remove content from the
    accessibility tree too. Standard clip-based pattern. */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* The Flow chart's "view as table" toggle applies this class to the same
+   <table> markup that's class="sr-only" the rest of the time (identical
+   caption/thead/tbody, built once in renderSankey()) -- swapping the
+   class is enough, no separate table needed. Mirrors the community-rules
+   table's established visual language (filterCommunityRules()): muted
+   uppercase headers, hairline row dividers, alternating row tint. */
+.sankey-flow-table{width:100%;border-collapse:collapse;margin-top:.75rem;font-size:12px}
+.sankey-flow-table caption{text-align:left;font-size:10px;color:var(--text-muted);margin-bottom:.5rem}
+.sankey-flow-table th{text-align:left;padding:.4rem .75rem;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)}
+.sankey-flow-table td{padding:.45rem .75rem;color:var(--text-secondary)}
+.sankey-flow-table tbody tr{border-bottom:1px solid var(--border)}
+.sankey-flow-table tbody tr:nth-child(even){background:var(--bg-deep)}
 .flex-between{display:flex;align-items:center;justify-content:space-between}
 .flex-col{display:flex;flex-direction:column}
 .gap-4{gap:4px}.gap-6{gap:6px}.gap-8{gap:8px}.gap-10{gap:10px}.gap-12{gap:12px}
@@ -992,6 +1004,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
     <button id="chart-texture-btn" data-action="toggleChartTexture" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">⠿ Patterns: off</button>
     <button id="cal-transfers-btn" data-action="toggleCalTransfers" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">Transfers: off</button>
+    <button id="sankey-table-btn" data-action="toggleSankeyTableView" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">▦ View as table</button>
   </div>
   <div style="position:relative">
     <div id="spend-chart-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
@@ -5260,6 +5273,7 @@ function setChartMode(mode){
   const showMoreRow=document.getElementById('chart-show-more-row');
   const footnote=document.getElementById('chart-footnote');
   const transfersBtn=document.getElementById('cal-transfers-btn');
+  const sankeyTableBtn=document.getElementById('sankey-table-btn');
   if(mode==='daily'){
     if(chartBorder)chartBorder.style.display='none';
     if(chartWrap)chartWrap.style.display='none';
@@ -5268,6 +5282,7 @@ function setChartMode(mode){
     if(skWrap)skWrap.style.display='none';
     if(textureBtn)textureBtn.style.display='none';
     if(transfersBtn)transfersBtn.style.display=state.excludedCats.has('Transfers')?'none':'';
+    if(sankeyTableBtn)sankeyTableBtn.style.display='none';
     if(showMoreRow)showMoreRow.style.display='none';
     if(footnote)footnote.textContent='';
     renderDailyCal();
@@ -5281,6 +5296,7 @@ function setChartMode(mode){
     if(skWrap)skWrap.style.display='none';
     if(textureBtn)textureBtn.style.display='none';
     if(transfersBtn)transfersBtn.style.display='none';
+    if(sankeyTableBtn)sankeyTableBtn.style.display='none';
     if(showMoreRow)showMoreRow.style.display='none';
     if(footnote)footnote.textContent='';
     // renderTreemap() bare, always the top-level view -- and
@@ -5305,6 +5321,16 @@ function setChartMode(mode){
     if(skWrap)skWrap.style.display='block';
     if(textureBtn)textureBtn.style.display='none';
     if(transfersBtn)transfersBtn.style.display='none';
+    if(sankeyTableBtn){
+      sankeyTableBtn.style.display='';
+      // Synced here, not just inside toggleSankeyTableView() -- the
+      // button's own text/color needs to reflect the persisted
+      // localStorage value the very first time this mode is entered each
+      // session too, not only after a click.
+      sankeyTableBtn.textContent=_sankeyTableView?'📊 View as chart':'▦ View as table';
+      sankeyTableBtn.style.color=_sankeyTableView?'var(--accent-blue-light)':'var(--text-muted)';
+      sankeyTableBtn.style.borderColor=_sankeyTableView?'var(--accent-blue-light)':'var(--border-mid)';
+    }
     if(showMoreRow)showMoreRow.style.display='none';
     if(footnote)footnote.textContent='';
     renderSankey();
@@ -5317,6 +5343,7 @@ function setChartMode(mode){
   if(skWrap)skWrap.style.display='none';
   if(textureBtn)textureBtn.style.display='';
   if(transfersBtn)transfersBtn.style.display='none';
+  if(sankeyTableBtn)sankeyTableBtn.style.display='none';
   renderSpendChart();
 }
 
@@ -5726,8 +5753,22 @@ function renderSankey(){
     return`<tr><td>${esc(label)}</td><td>${esc(fmtC(val))}</td><td>${pct}%</td></tr>`;
   }).join('');
   const overspendNote=isOverspend?` Spending (${fmtC(totalSpendAll)}) exceeds income by ${fmtC(totalSpendAll-totalIncome)}.`:'';
-  const flowTableHtml=`<table class="sr-only"><caption>${esc(periodStr)} income to spending flow — detailed breakdown.${esc(overspendNote)}</caption><thead><tr><th scope="col">Category</th><th scope="col">Amount</th><th scope="col">% of income</th></tr></thead><tbody><tr><td>Income</td><td>${esc(fmtC(totalIncome))}</td><td>100%</td></tr>${flowTableRows}</tbody></table>`;
-  wrap.innerHTML=`<div style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5rem;padding:0 2px">${periodStr} · INCOME → SPENDING FLOW</div><div style="position:relative"><svg id="sk-svg" width="${W}" height="${H}" style="display:block" aria-label="${esc(svgAriaLabel)}"></svg></div>${flowTableHtml}`;
+  // Class swaps between sr-only (screen-reader-only, diagram mode) and a
+  // real visible table (.sankey-flow-table, table mode) -- same markup
+  // either way, built once, so the two view modes can never drift out of
+  // sync with each other's numbers.
+  const flowTableHtml=`<table class="${_sankeyTableView?'sankey-flow-table':'sr-only'}"><caption>${esc(periodStr)} income to spending flow — detailed breakdown.${esc(overspendNote)}</caption><thead><tr><th scope="col">Category</th><th scope="col">Amount</th><th scope="col">% of income</th></tr></thead><tbody><tr><td>Income</td><td>${esc(fmtC(totalIncome))}</td><td>100%</td></tr>${flowTableRows}</tbody></table>`;
+  const periodLabelHtml=`<div style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5rem;padding:0 2px">${periodStr} · INCOME → SPENDING FLOW</div>`;
+  // Table-view mode skips the SVG -- and everything below this that
+  // builds/positions/wires it up -- entirely, rather than build a hidden
+  // diagram nobody can see. No accessibility loss either way: the table
+  // above already carries the identical numbers to screen readers
+  // regardless of which visual mode is active.
+  if(_sankeyTableView){
+    wrap.innerHTML=periodLabelHtml+flowTableHtml;
+    return;
+  }
+  wrap.innerHTML=`${periodLabelHtml}<div style="position:relative"><svg id="sk-svg" width="${W}" height="${H}" style="display:block" aria-label="${esc(svgAriaLabel)}"></svg></div>${flowTableHtml}`;
   const wrapEl=wrap.querySelector('div');
   const tip=makeTip(wrapEl);
   const svg=d3.select('#sk-svg');
@@ -9872,6 +9913,10 @@ function toggleTheme(){
 // ── Pattern fills for colorblind accessibility ─────────────────────────
 // Off by default — user can enable via "Patterns" toggle above chart.
 let _patternsEnabled = (()=>{try{return localStorage.getItem('trakyo_patterns')==='true';}catch(e){return false;}})();
+// Persisted the same way as _patternsEnabled just above -- a returning
+// user who prefers the raw numbers over the diagram shouldn't have to
+// re-toggle it every session.
+let _sankeyTableView = (()=>{try{return localStorage.getItem('trakyo_sankey_table')==='true';}catch(e){return false;}})();
 // Load persisted showExcluded preference
 (()=>{try{const v=localStorage.getItem('trakyo_show_excl');if(v!==null)state.showExcluded=v==='1';}catch(e){}})();
 
@@ -9941,6 +9986,17 @@ function toggleChartTexture(){
     btn.style.borderColor = _patternsEnabled ? 'var(--accent-blue-light)' : 'var(--border-mid)';
   }
   try{renderSpendChart();}catch(e){}
+}
+function toggleSankeyTableView(){
+  _sankeyTableView = !_sankeyTableView;
+  try{localStorage.setItem('trakyo_sankey_table', _sankeyTableView);}catch(e){}
+  const btn = document.getElementById('sankey-table-btn');
+  if(btn){
+    btn.textContent = _sankeyTableView ? '📊 View as chart' : '▦ View as table';
+    btn.style.color = _sankeyTableView ? 'var(--accent-blue-light)' : 'var(--text-muted)';
+    btn.style.borderColor = _sankeyTableView ? 'var(--accent-blue-light)' : 'var(--border-mid)';
+  }
+  renderSankey();
 }
 
 // ── Include Income & Business Categories ──────────────────────
@@ -14499,6 +14555,26 @@ document.addEventListener('DOMContentLoaded',function(){
       if(cal)cal.style.display=savedMode==='daily'?'block':'none';
       if(tm)tm.style.display=savedMode==='split'?'block':'none';
       if(sk)sk.style.display=savedMode==='sankey'?'block':'none';
+      // Mirror setChartMode()'s per-mode secondary-button visibility too --
+      // missing here left chart-texture-btn/cal-transfers-btn showing in
+      // the wrong mode on first load whenever the persisted chart mode was
+      // daily/split/sankey (pre-existing gap; sankey-table-btn, added
+      // alongside this fix, would have inherited the identical gap for
+      // its own mode had this gone unnoticed). Found and fixed July 28,
+      // 2026 while building the Flow "view as table" toggle.
+      const modeTextureBtn=document.getElementById('chart-texture-btn');
+      const modeTransfersBtn=document.getElementById('cal-transfers-btn');
+      const modeSankeyTableBtn=document.getElementById('sankey-table-btn');
+      if(modeTextureBtn)modeTextureBtn.style.display=isCanvas?'':'none';
+      if(modeTransfersBtn)modeTransfersBtn.style.display=(savedMode==='daily'&&!state.excludedCats.has('Transfers'))?'':'none';
+      if(modeSankeyTableBtn){
+        modeSankeyTableBtn.style.display=savedMode==='sankey'?'':'none';
+        if(savedMode==='sankey'){
+          modeSankeyTableBtn.textContent=_sankeyTableView?'📊 View as chart':'▦ View as table';
+          modeSankeyTableBtn.style.color=_sankeyTableView?'var(--accent-blue-light)':'var(--text-muted)';
+          modeSankeyTableBtn.style.borderColor=_sankeyTableView?'var(--accent-blue-light)':'var(--border-mid)';
+        }
+      }
     }
   }catch(e){}
 
