@@ -5650,3 +5650,82 @@ test("parseTxFile: ANZ NZ/BNZ/Westpac NZ/Starling/midata have mutually-exclusive
     "an ambiguous date sample (no day>12 in the first 15 rows) should force DD/MM for these five DD/MM-only formats instead of falling back to the US-oriented MM/DD default"
   );
 });
+
+// July 28, 2026: added a "view as table" toggle to the Flow (Sankey)
+// chart. Reuses the sr-only <table> the 124th adversarial pass already
+// built for screen readers -- same markup, same data, just swapping its
+// class between sr-only (diagram mode) and .sankey-flow-table (table
+// mode) -- rather than building a second, separate table that could
+// drift out of sync with the first.
+test("Sankey 'view as table' toggle: persisted state, button wiring, and the table/SVG swap all reference the same source", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /let _sankeyTableView = \(\(\)=>\{try\{return localStorage\.getItem\('trakyo_sankey_table'\)==='true';\}catch\(e\)\{return false;\}\}\)\(\);/,
+    "_sankeyTableView should be declared and restored from localStorage the same way _patternsEnabled already is"
+  );
+  assert.match(
+    source,
+    /function toggleSankeyTableView\(\)\{/,
+    "toggleSankeyTableView() should exist"
+  );
+  assert.match(
+    source,
+    /id="sankey-table-btn" data-action="toggleSankeyTableView"/,
+    "the toggle button should exist and dispatch through the standard data-action mechanism"
+  );
+  // setChartMode()'s sankey branch must show+sync the button; every other
+  // branch (daily, split, and the category/vendor/source/trend fallback)
+  // must hide it, matching how cal-transfers-btn is scoped to daily only.
+  const hideCount = (source.match(/if\(sankeyTableBtn\)sankeyTableBtn\.style\.display='none';/g) || []).length;
+  assert.equal(hideCount, 3, "the toggle button should be explicitly hidden in the 3 non-sankey branches of setChartMode()");
+  assert.match(
+    source,
+    /sankeyTableBtn\.style\.display='';[\s\S]{0,300}?sankeyTableBtn\.textContent=_sankeyTableView\?/,
+    "entering sankey mode should show the button and sync its label/color to the persisted state, not just the default"
+  );
+  // The class-swap: same table markup, different class depending on
+  // _sankeyTableView, so the two view modes can't show different numbers.
+  assert.match(
+    source,
+    /<table class="\$\{_sankeyTableView\?'sankey-flow-table':'sr-only'\}">/,
+    "the flow table should swap between sr-only and .sankey-flow-table based on the toggle, reusing the identical row markup either way"
+  );
+  assert.match(
+    source,
+    /if\(_sankeyTableView\)\{\s*wrap\.innerHTML=periodLabelHtml\+flowTableHtml;\s*return;\s*\}/,
+    "table-view mode should render just the label+table and return early, skipping the SVG entirely rather than building a hidden diagram"
+  );
+  assert.match(
+    source,
+    /\.sankey-flow-table\{width:100%;border-collapse:collapse/,
+    "a real visible-table CSS class should exist for table-view mode (the sr-only class alone would render nothing visible)"
+  );
+});
+
+// Found live-testing the toggle above: the page-load "restore last chart
+// mode" block is a separate, narrower mirror of setChartMode() (can't
+// just call setChartMode() itself at init -- it has side effects, like
+// resetting activeDate/activeVendors/treemapDrillCat, that are correct
+// for a real user click but wrong for restoring persisted state). That
+// mirror only ever synced the wrapper divs, never chart-texture-btn/
+// cal-transfers-btn/sankey-table-btn -- so reloading on a persisted
+// daily/split/sankey mode showed the wrong secondary button (e.g.
+// "Patterns: off" visible in Sankey mode, "View as table" missing
+// entirely) until the user manually re-clicked a tab. Pre-existing for
+// the first two buttons; sankey-table-btn would have inherited the same
+// gap for its own mode had this gone unnoticed.
+test("the page-load chart-mode restore block also syncs chart-texture-btn/cal-transfers-btn/sankey-table-btn, not just the wrapper divs", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const restoreBlockMatch = source.match(/\/\/ Restore last chart mode \(spending tab\)[\s\S]{0,3000}?\n  \}catch\(e\)\{\}/);
+  assert.ok(restoreBlockMatch, "the chart-mode restore block should exist");
+  const block = restoreBlockMatch[0];
+  assert.match(block, /modeTextureBtn\.style\.display=isCanvas\?'':'none';/, "should sync chart-texture-btn's visibility to the restored mode");
+  assert.match(block, /modeTransfersBtn\.style\.display=\(savedMode==='daily'&&!state\.excludedCats\.has\('Transfers'\)\)\?'':'none';/, "should sync cal-transfers-btn's visibility to the restored mode, matching setChartMode()'s own daily-only condition");
+  assert.match(block, /modeSankeyTableBtn\.style\.display=savedMode==='sankey'\?'':'none';/, "should sync sankey-table-btn's visibility to the restored mode");
+  assert.match(block, /modeSankeyTableBtn\.textContent=_sankeyTableView\?/, "should also sync sankey-table-btn's label/color to the persisted table-view preference, not just its visibility");
+});
