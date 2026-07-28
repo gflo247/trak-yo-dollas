@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-B6tuOBXAh21YijkTpxp4RGQuTc/L+NDfFDYR4qBVT2M=' 'sha256-TtQd6qj/g41UHk9gxqd2v6nQsLJ58zKj7vW2IV3EojQ=' https://cloud.umami.is;
+  script-src 'self' 'sha256-B6tuOBXAh21YijkTpxp4RGQuTc/L+NDfFDYR4qBVT2M=' 'sha256-7Svy5KCHEKNeIW9VSW0zv3drmhPRsXkk3tHPF15IJ1c=' https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data:;
@@ -54,27 +54,25 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:.75rem
 .nav-logo{font-family:'DM Mono',monospace;font-size:14px;color:var(--text-bright);text-decoration:none;letter-spacing:.02em}
 .nav-logo span{color:var(--accent-blue-light)}
 .nav-right{display:flex;align-items:center;gap:10px}
-.btn-ghost{background:none;border:1px solid var(--border-mid);border-radius:7px;padding:6px 14px;font-size:14px;color:var(--text-secondary);cursor:pointer;text-decoration:none;font-family:inherit;transition:border-color .15s,color .15s}
+.btn-ghost{background:none;border:1px solid var(--border-mid);border-radius:7px;padding:6px 14px;font-size:13px;color:var(--text-secondary);cursor:pointer;text-decoration:none;font-family:inherit;transition:border-color .15s,color .15s}
 .btn-ghost:hover{border-color:var(--accent-blue-light);color:var(--text-bright)}
-.theme-btn{background:none;border:1px solid var(--border-mid);border-radius:6px;padding:5px 8px;font-size:14px;cursor:pointer;color:var(--text-muted)}
+.theme-btn{background:none;border:1px solid var(--border-mid);border-radius:6px;padding:5px 8px;font-size:13px;cursor:pointer;color:var(--text-muted)}
 
 .page{max-width:720px;margin:0 auto;padding:4rem 2rem 6rem}
 
 h1{font-size:2rem;font-weight:800;color:var(--text-bright);letter-spacing:-.02em;line-height:1.15;margin-bottom:.6rem}
-.intro{font-size:1rem;color:var(--text-secondary);font-weight:300;margin-bottom:2rem;line-height:1.7}
+.intro{font-size:1rem;color:var(--text-secondary);font-weight:400;margin-bottom:2rem;line-height:1.7}
 
 .section{display:flex;flex-direction:column;gap:12px;margin-bottom:2rem}
-.card{border-radius:12px;padding:1.25rem 1.4rem}
+.card{border-radius:14px;padding:1.25rem 1.4rem}
 .card-green{background:#065F4618;border:1px solid #05996933}
 .card-blue{background:#1E3A5F22;border:1px solid #2563EB33}
-.card-amber{background:#78350F18;border:1px solid #D9770633}
-.card-neutral{background:var(--bg-card);border:1px solid var(--border-mid)}
+.card-neutral{background:var(--bg-card);border:1px solid var(--border)}
 .card-label{font-size:14px;font-weight:700;margin-bottom:6px}
 .card-green .card-label{color:#34D399}
 .card-blue .card-label{color:#60A5FA}
-.card-amber .card-label{color:#FCD34D}
 .card-neutral .card-label{color:var(--text-primary)}
-.card p{font-size:14px;color:var(--text-muted);line-height:1.65;font-weight:300}
+.card p{font-size:14px;color:var(--text-muted);line-height:1.65;font-weight:400}
 .card p strong{color:var(--text-secondary);font-weight:600}
 .card p a{color:var(--accent-blue-light)}
 
@@ -91,10 +89,8 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
 [data-theme="light"] .card-green{background:#ECFDF5;border-color:#6EE7B7}
 [data-theme="light"] .card-blue{background:#EFF6FF;border-color:#BFDBFE}
-[data-theme="light"] .card-amber{background:#FFFBEB;border-color:#FCD34D}
 [data-theme="light"] .card-green .card-label{color:#059669}
 [data-theme="light"] .card-blue .card-label{color:#1D4ED8}
-[data-theme="light"] .card-amber .card-label{color:#B45309}
 
 @media(max-width:640px){
   .page{padding:2.5rem 1.25rem 4rem}
@@ -269,38 +265,39 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
   <!-- Data flow visual -->
   <div style="margin:2rem 0 2.5rem;font-family:'DM Sans',sans-serif">
-    <div style="background:var(--bg-page);border:1px solid var(--border);border-radius:16px;padding:2rem 1.5rem 1.25rem;max-width:560px;margin:0 auto;box-sizing:border-box">
+    <h2 style="font-size:1.5rem;font-weight:800;color:var(--text-bright);letter-spacing:-.02em;margin-bottom:1.25rem;text-align:center">Your data flow</h2>
+    <div style="background:var(--bg-page);border:1px solid var(--border);border-radius:16px;padding:2rem 1.5rem 1.25rem;max-width:720px;margin:0 auto;box-sizing:border-box">
 
       <!-- Source -->
       <div style="display:flex;justify-content:center;margin-bottom:.75rem">
         <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:.55rem 2rem;text-align:center">
           <div style="font-size:20px;margin-bottom:.3rem">📄</div>
-          <div style="font-size:12px;color:var(--text-secondary);font-weight:600">YOUR BANK OR CREDIT CARD CSV FILE</div>
+          <div style="font-size:13px;color:var(--text-secondary);font-weight:600">YOUR BANK OR CREDIT CARD CSV FILE</div>
         </div>
       </div>
 
       <!-- Arrow down -->
       <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:.4rem">
-        <div style="font-size:11px;color:var(--clr-ok);font-weight:700;margin-bottom:1px">you import</div>
+        <div style="font-size:12px;color:var(--clr-ok);font-weight:700;margin-bottom:1px">you import</div>
         <div style="width:2px;height:20px;background:repeating-linear-gradient(to bottom,var(--clr-ok) 0,var(--clr-ok) 4px,transparent 4px,transparent 8px)"></div>
         <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid var(--clr-ok)"></div>
       </div>
 
       <!-- Browser box -->
       <div style="display:flex;justify-content:center;margin-bottom:.35rem">
-        <div style="background:var(--bg-deep);border:1.5px solid var(--border-mid);border-radius:14px;padding:.85rem 1.5rem;text-align:center;width:100%;max-width:380px;box-sizing:border-box">
+        <div style="background:var(--bg-deep);border:1.5px solid var(--border-mid);border-radius:14px;padding:.85rem 1.5rem;text-align:center;width:100%;max-width:500px;box-sizing:border-box">
           <div style="font-size:22px;margin-bottom:.3rem">💻 📱</div>
-          <div style="font-family:'DM Mono',monospace;font-size:9px;font-weight:600;color:var(--text-bright);letter-spacing:.08em;line-height:1.4;margin-bottom:.25rem">YOUR DATA STAYS IN YOUR BROWSER ON YOUR DEVICE</div>
-          <div style="font-size:11px;color:var(--text-muted);line-height:1.5">nothing uploaded unless you sync · no account required</div>
+          <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--text-bright);letter-spacing:.08em;line-height:1.4;margin-bottom:.25rem">YOUR DATA STAYS IN YOUR BROWSER ON YOUR DEVICE</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.5">nothing uploaded unless you sync · no account required</div>
         </div>
       </div>
 
       <!-- Community rules inbound note -->
       <div style="display:flex;justify-content:center;margin:.2rem 0 0">
-        <div style="border:1px dashed var(--border-mid);border-radius:8px;padding:.4rem .85rem;max-width:380px;width:100%;box-sizing:border-box;text-align:center">
+        <div style="border:1px dashed var(--border-mid);border-radius:8px;padding:.4rem .85rem;max-width:500px;width:100%;box-sizing:border-box;text-align:center">
           <div style="font-size:11px;color:var(--text-muted);line-height:1;margin-bottom:.15rem">⬇</div>
-          <div style="font-size:10px;color:var(--text-secondary);line-height:1.5">Cloudflare also sends categorization rules to your browser</div>
-          <div style="font-size:9px;color:var(--text-muted);margin-top:1px">once per session · no financial data leaves your device</div>
+          <div style="font-size:13px;color:var(--text-secondary);line-height:1.5">Cloudflare also sends categorization rules to your browser</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:1px">once per session · no financial data leaves your device</div>
         </div>
       </div>
 
@@ -317,26 +314,19 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       <!-- Destination boxes -->
       <div class="diag-dest">
         <div>
-          <div style="font-size:11px;font-weight:700;color:var(--clr-ok);text-align:center;margin-bottom:.35rem">without sign-in</div>
+          <div style="font-size:12px;font-weight:700;color:var(--clr-ok);text-align:center;margin-bottom:.35rem">without sign-in</div>
           <div style="background:#065F4620;border:1.5px solid #34D39988;border-radius:10px;padding:.65rem;text-align:center">
-            <div style="font-size:13px;font-weight:800;color:var(--clr-ok)">Your device only</div>
+            <div style="font-size:14px;font-weight:800;color:var(--clr-ok)">Your device only</div>
           </div>
         </div>
         <div>
-          <div style="font-size:11px;font-weight:700;color:var(--accent-blue-light);text-align:center;margin-bottom:.35rem">with sign-in</div>
+          <div style="font-size:12px;font-weight:700;color:var(--accent-blue-light);text-align:center;margin-bottom:.35rem">with sign-in</div>
           <div style="background:#1E3A5F22;border:1.5px solid #2563EB88;border-radius:10px;padding:.65rem;text-align:center">
-            <div style="font-size:11px;font-weight:800;color:var(--accent-blue-light);margin-bottom:.2rem">🔵 Supabase's servers</div>
-            <div style="font-size:9px;color:var(--text-muted);margin-bottom:.3rem">encrypted data leaves your device</div>
-            <span style="background:var(--bg-card);border:1px solid #2563EB55;border-radius:5px;font-size:9px;font-weight:700;color:var(--accent-blue-light);padding:2px 8px">opt-in only</span>
+            <div style="font-size:14px;font-weight:800;color:var(--accent-blue-light);margin-bottom:.2rem">🔵 Supabase's servers</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:.3rem">encrypted data leaves your device</div>
+            <span style="background:var(--bg-card);border:1px solid #2563EB55;border-radius:5px;font-size:11px;font-weight:700;color:var(--accent-blue-light);padding:2px 8px">opt-in only</span>
           </div>
         </div>
-      </div>
-
-      <!-- Legend -->
-      <div style="display:flex;gap:1.25rem;flex-wrap:wrap;margin-top:1.1rem;padding-top:.85rem;border-top:1px solid var(--border)">
-        <div style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-muted)"><div style="width:7px;height:7px;border-radius:50%;background:#34D399"></div>Without sign-in — stays on your device</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-muted)"><div style="width:7px;height:7px;border-radius:50%;background:#60A5FA"></div>With sign-in — encrypted on your device, then stored on Supabase's servers</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-muted)"><div style="width:7px;height:6px;border-radius:2px;border:1px dashed var(--border-mid)"></div>Cloudflare sends categorization rules (no financial data)</div>
       </div>
 
     </div>
@@ -350,7 +340,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
     <div class="card card-blue">
       <div class="card-label">🔁 Sign in to sync across devices</div>
-      <p>Sign in with Google or a passwordless email link and the app backs up your full data — accounts, transactions, budgets, categories, and snapshots — directly to your account via <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer">Supabase</a> (open source). You'll also set a <strong>sync passphrase — separate from your Google or email sign-in</strong> — and the app uses it to encrypt your data on your device before it leaves. Supabase stores only encrypted data it cannot read. Row-level security policies enforce access at the database level so only you can read it — not me. <strong>Choose that passphrase carefully: there's no reset.</strong> Sign in on any device and enter it to restore everything. Sync doesn't merge changes from multiple devices — if you edit on two devices before either syncs, the app keeps whichever save happened last. If you'd rather your data never leave your device, skip sign-in — the app works fully without it.</p>
+      <p>Sign in with Google or a passwordless email link and the app backs up your full data — accounts, transactions, budgets, categories, and snapshots — directly to your account via <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer">Supabase</a> (open source). You'll also set a <strong>sync passphrase — separate from your Google or email sign-in</strong> — and the app uses it to encrypt your data on your device before it leaves. Supabase stores only encrypted data it cannot read — and neither can I. Row-level security policies add a second layer, restricting database access to your own signed-in account. <strong>Choose that passphrase carefully: there's no reset.</strong> Sign in on any device and enter it to restore everything. Sync doesn't merge changes from multiple devices — if you edit on two devices before either syncs, the app keeps whichever save happened last. If you'd rather your data never leave your device, skip sign-in — the app works fully without it.</p>
     </div>
 
     <div class="card card-neutral">
@@ -371,7 +361,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       <p>When you visit this app, Cloudflare records standard server request data: <strong>your internet address, browser type, pages requested, and timestamps</strong> (this is standard for any website you visit). Cloudflare manages this logging under their own privacy policy — I have no control over it and no direct access to individual request logs. It contains no financial data; Cloudflare applies the same logging to every website on their network. See <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">cloudflare.com/privacypolicy</a> for details.</p>
     </div>
 
-    <div class="card card-amber">
+    <div class="card card-neutral">
       <div class="card-label" id="analytics" style="scroll-margin-top:72px">📊 Analytics — what's collected</div>
       <p>This site uses <a href="https://umami.is" target="_blank" rel="noopener noreferrer">Umami</a>, a privacy-respecting analytics tool. It records <strong>page views, referrer, browser type, operating system, and country</strong> (inferred from your IP address, which Umami never stores). Umami sets no cookies, collects no personal data, and never identifies or tracks individual visitors across sessions. You can block it with any privacy extension — the app works fine without it.</p>
     </div>
@@ -399,7 +389,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
         <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">What if this app shuts down?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
-        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">Two scenarios:</p><ul style="font-size:13px;color:var(--text-muted);margin-top:.4rem;line-height:1.9;padding-left:1.25rem"><li><strong style="color:var(--text-secondary)">The website stops working</strong> — you'd see a 'page not found' message when you try to open it, but your data is unaffected. Without signing in, it lives on your device. With sign-in, the app encrypts it on your device and stores it on Supabase's servers — tied to your sign-in credentials, not to this app.</li><li><strong style="color:var(--text-secondary)">The developer stops updating it</strong> — the app keeps working exactly as-is. No data loss, no changes.</li></ul><p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">In either case, export your transactions from the Spending tab, budget history from the Budget tab, or a full JSON backup (everything in one file) from the overflow menu (⋯) on the Spending tab — anytime. Your data outlives the app.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">Two scenarios:</p><ul style="font-size:13px;color:var(--text-muted);margin-top:.4rem;line-height:1.9;padding-left:1.25rem"><li><strong style="color:var(--text-secondary)">The website stops working</strong> — you'd see a 'page not found' message when you try to open it, but your data is unaffected. Without signing in, it lives on your device. With sign-in, the app encrypts it on your device and stores it on Supabase's servers — tied to your sign-in credentials, not to this app.</li><li><strong style="color:var(--text-secondary)">I stop maintaining it</strong> — the app keeps working exactly as-is. No data loss, no changes.</li></ul><p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">In either case, export your transactions from the Spending tab, budget history from the Budget tab, or a full JSON backup (everything in one file) from the overflow menu (⋯) on the Spending tab — anytime. Your data outlives the app.</p>
       </details>
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
@@ -409,7 +399,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
         <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">Is my synced data encrypted?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
-        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">Yes. When you sign in, the app encrypts all your data — transactions, budgets, accounts, snapshots — on your device using AES-256-GCM before sending it to Supabase's servers. Supabase stores only encrypted data it cannot read. The app derives the encryption key from a passphrase you set — not your sign-in credentials — and that passphrase never leaves your browser, so Supabase never has what it would need to decrypt your data. <strong>There's no password reset for it:</strong> if you forget your sync passphrase, you can't recover your synced data — your local data on this device is unaffected either way. If you don't sign in, encryption isn't needed — your data never leaves your device in the first place.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7">Yes. When you sign in, the app encrypts all your data — transactions, budgets, accounts, snapshots — on your device using AES-256-GCM before sending it to Supabase's servers. Supabase stores only encrypted data it cannot read. The app derives the encryption key from a passphrase you set — not your sign-in credentials — and that passphrase never leaves your browser, so Supabase never has what it would need to decrypt your data. <strong>There's no way to reset it:</strong> if you forget your sync passphrase, you can't recover your synced data — your local data on this device is unaffected either way. If you don't sign in, encryption isn't needed — your data never leaves your device in the first place.</p>
       </details>
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
@@ -434,7 +424,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
         <summary style="font-size:14px;font-weight:700;color:var(--text-bright);list-style:none;display:flex;justify-content:space-between;align-items:center">What is Supabase and why use it if you care about privacy?<span style="color:var(--text-muted);font-size:18px;font-weight:300">+</span></summary>
-        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7"><a href="https://supabase.com/" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light)">Supabase</a> is an open-source backend platform — not an ad company. I use it here for one thing only — optional sign-in and data sync (authentication and database). The app's files are served by Cloudflare, not Supabase. I chose Supabase because it's open source, privacy-focused, and handles the hard parts of secure sign-in without tying your data to Google. The app encrypts your synced data on your device before sending it to Supabase's infrastructure (AWS servers in the US) — Supabase stores only encrypted data it cannot read. If that's still a concern, skip sign-in — the app works fully without it, and the source code is public so anyone can verify exactly what it does.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:.75rem;line-height:1.7"><a href="https://supabase.com/" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light)">Supabase</a> is an open-source backend platform — not an ad company. I use it here for one thing only — optional sign-in and data sync (authentication and database). Cloudflare serves the app's files, not Supabase. I chose Supabase because it's open source, privacy-focused, and handles the hard parts of secure sign-in without tying your data to Google. The app encrypts your synced data on your device before sending it to Supabase's infrastructure (AWS servers in the US) — Supabase stores only encrypted data it cannot read. If that's still a concern, skip sign-in — the app works fully without it, and the source code is public so anyone can verify exactly what it does.</p>
       </details>
 
       <details style="background:var(--bg-card);padding:1rem 1.25rem;cursor:pointer;border-top:1px solid var(--border)">
@@ -458,31 +448,31 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
   <!-- Your rights -->
   <div style="margin-top:2.5rem;padding-top:2rem;border-top:1px solid var(--border-mid)">
     <div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.75rem">Your rights</div>
-    <p style="font-size:14px;color:var(--text-secondary);line-height:1.7;font-weight:300;margin-bottom:1rem">These rights apply to users in the EU (GDPR — General Data Protection Regulation), UK (UK GDPR), and similar frameworks elsewhere. I honor them for everyone regardless of location. Because this app holds no financial data on its own servers, most of these rights are already satisfied by design — but here's the full picture:</p>
+    <p style="font-size:14px;color:var(--text-secondary);line-height:1.7;font-weight:400;margin-bottom:1rem">These rights apply to users in the EU (GDPR — General Data Protection Regulation), UK (UK GDPR), and similar frameworks elsewhere. I honor them for everyone regardless of location. Because this app holds no financial data on its own servers, its design already satisfies most of these rights — but here's the full picture:</p>
     <div style="display:flex;flex-direction:column;gap:.65rem">
       <div style="display:flex;gap:.75rem;font-size:14px">
         <span style="font-weight:700;color:var(--text-primary);flex-shrink:0;min-width:100px">Access</span>
-        <span style="color:var(--text-muted);font-weight:300;line-height:1.6">Request a copy of personal data held about you. For most users the answer is: none — financial data stays on your device. If you've synced, Supabase holds only an encrypted copy that neither Supabase nor I can read — the readable copy already lives on your device (see Portability below to export it).</span>
+        <span style="color:var(--text-muted);font-weight:400;line-height:1.6">Request a copy of personal data held about you. For most users the answer is: none — financial data stays on your device. If you've synced, Supabase holds only an encrypted copy that neither Supabase nor I can read — the readable copy already lives on your device (see Portability below to export it).</span>
       </div>
       <div style="display:flex;gap:.75rem;font-size:14px">
         <span style="font-weight:700;color:var(--text-primary);flex-shrink:0;min-width:100px">Erasure</span>
-        <span style="color:var(--text-muted);font-weight:300;line-height:1.6">Request deletion of personal data. <a href="/trakyodollas" style="color:var(--accent-blue-light)">Clear all data</a> in the app (⋯ menu) wipes local storage on that device only — if you've synced, use "Delete synced data" (under "Forgot your passphrase?" in the sync settings) to remove the encrypted copy from Supabase's servers too. Or email <a href="mailto:contact@trakyodollas.com" style="color:var(--accent-blue-light)">contact@trakyodollas.com</a> and I'll delete it from the database.</span>
+        <span style="color:var(--text-muted);font-weight:400;line-height:1.6">Request deletion of personal data. <a href="/trakyodollas" style="color:var(--accent-blue-light)">Clear all data</a> in the app (⋯ menu) wipes local storage on that device only — if you've synced, use "Delete synced data" (under "Forgot your passphrase?" in the sync settings) to remove the encrypted copy from Supabase's servers too. Or email <a href="mailto:contact@trakyodollas.com" style="color:var(--accent-blue-light)">contact@trakyodollas.com</a> and I'll delete it from the database.</span>
       </div>
       <div style="display:flex;gap:.75rem;font-size:14px">
         <span style="font-weight:700;color:var(--text-primary);flex-shrink:0;min-width:100px">Portability</span>
-        <span style="color:var(--text-muted);font-weight:300;line-height:1.6">Export your data anytime. Use the CSV export buttons in the Spending and Budget tabs, or export a full JSON backup from the overflow menu (⋯) on the Spending tab — no request needed, no waiting.</span>
+        <span style="color:var(--text-muted);font-weight:400;line-height:1.6">Export your data anytime. Use the CSV export buttons in the Spending and Budget tabs, or export a full JSON backup from the overflow menu (⋯) on the Spending tab — no request needed, no waiting.</span>
       </div>
       <div style="display:flex;gap:.75rem;font-size:14px">
         <span style="font-weight:700;color:var(--text-primary);flex-shrink:0;min-width:100px">Rectification</span>
-        <span style="color:var(--text-muted);font-weight:300;line-height:1.6">Correct inaccurate data. Your data lives on your device — edit transactions directly in the app. No request needed.</span>
+        <span style="color:var(--text-muted);font-weight:400;line-height:1.6">Correct inaccurate data. Your data lives on your device — edit transactions directly in the app. No request needed.</span>
       </div>
       <div style="display:flex;gap:.75rem;font-size:14px">
         <span style="font-weight:700;color:var(--text-primary);flex-shrink:0;min-width:100px">Objection</span>
-        <span style="color:var(--text-muted);font-weight:300;line-height:1.6">Object to processing based on legitimate interest. The only processing in this category is Cloudflare's server logs (IP address, browser type). These are managed by Cloudflare — you can limit them by using a VPN or Tor, or contact Cloudflare directly.</span>
+        <span style="color:var(--text-muted);font-weight:400;line-height:1.6">Object to processing based on legitimate interest. The only processing in this category is Cloudflare's server logs (IP address, browser type). These are managed by Cloudflare — you can limit them by using a VPN or Tor, or contact Cloudflare directly.</span>
       </div>
       <div style="display:flex;gap:.75rem;font-size:14px">
         <span style="font-weight:700;color:var(--text-primary);flex-shrink:0;min-width:100px">Restriction</span>
-        <span style="color:var(--text-muted);font-weight:300;line-height:1.6">Ask for processing to stop while a dispute is resolved. Email <a href="mailto:contact@trakyodollas.com" style="color:var(--accent-blue-light)">contact@trakyodollas.com</a> and I'll respond promptly.</span>
+        <span style="color:var(--text-muted);font-weight:400;line-height:1.6">Ask for processing to stop while a dispute is resolved. Email <a href="mailto:contact@trakyodollas.com" style="color:var(--accent-blue-light)">contact@trakyodollas.com</a> and I'll respond promptly.</span>
       </div>
     </div>
 
@@ -491,15 +481,15 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       <div style="display:flex;flex-direction:column;gap:.5rem">
         <div style="display:flex;gap:.75rem;font-size:13px">
           <span style="color:var(--text-secondary);flex-shrink:0;min-width:180px;font-weight:600">Cloudflare hosting logs</span>
-          <span style="color:var(--text-muted);font-weight:300">Legitimate interest — logging IP address and browser type is technically necessary to deliver the website. Standard for any web host.</span>
+          <span style="color:var(--text-muted);font-weight:400">Legitimate interest — logging IP address and browser type is technically necessary to deliver the website. Standard for any web host.</span>
         </div>
         <div style="display:flex;gap:.75rem;font-size:13px">
           <span style="color:var(--text-secondary);flex-shrink:0;min-width:180px;font-weight:600">Umami analytics</span>
-          <span style="color:var(--text-muted);font-weight:300">Umami collects no personal data — GDPR doesn't apply to this processing. No cookies set, no identifiers stored. Block it with any privacy extension.</span>
+          <span style="color:var(--text-muted);font-weight:400">Umami collects no personal data — GDPR doesn't apply to this processing. No cookies set, no identifiers stored. Block it with any privacy extension.</span>
         </div>
         <div style="display:flex;gap:.75rem;font-size:13px">
           <span style="color:var(--text-secondary);flex-shrink:0;min-width:180px;font-weight:600">Account sync</span>
-          <span style="color:var(--text-muted);font-weight:300">Performance of a user-initiated service — sync is entirely your choice, and signing out revokes it. The app works fully without it.</span>
+          <span style="color:var(--text-muted);font-weight:400">Performance of a user-initiated service — sync is entirely your choice, and signing out revokes it. The app works fully without it.</span>
         </div>
       </div>
     </div>
@@ -508,7 +498,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
   <!-- Contact -->
   <div style="margin-top:2.5rem;padding-top:2rem;border-top:1px solid var(--border-mid)">
     <div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.75rem">Questions or concerns?</div>
-    <p style="font-size:14px;color:var(--text-secondary);line-height:1.7;font-weight:300">If you have questions about this privacy policy or how your data is handled, there are two ways to reach me:</p>
+    <p style="font-size:14px;color:var(--text-secondary);line-height:1.7;font-weight:400">If you have questions about this privacy policy or how your data is handled, there are two ways to reach me:</p>
     <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.85rem">
       <div class="contact-item">
         <span style="color:var(--text-muted);flex-shrink:0">✉</span>
@@ -576,6 +566,21 @@ function toggleTheme(){
   document.getElementById('theme-btn').textContent = next === 'light' ? '☀️' : '🌙';
 }
 </script>
-<script>if('serviceWorker'in navigator){navigator.serviceWorker.register('/sw.js');}</script>
+<script>if('serviceWorker'in navigator){
+  // Same pattern trakyodollas.html uses (109th adversarial pass): hadController
+  // distinguishes a genuine update (a new deploy taking over an already-open
+  // tab) from a brand-new install, where the controller goes from null -> a
+  // worker and would otherwise trigger an unwanted reload on someone's very
+  // first visit. No modal-polling needed here (this page has none) -- straight
+  // reload is safe, there's no in-progress user input to protect.
+  let hadController=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('/sw.js');
+  let _swRefreshing=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(_swRefreshing||!hadController){hadController=true;return;}
+    _swRefreshing=true;
+    location.reload();
+  });
+}</script>
 </body>
 </html>

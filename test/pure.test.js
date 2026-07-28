@@ -2671,12 +2671,12 @@ test("loadFromLocalStorage and importBackup both sort state.snapshots by monthKe
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /state\.snapshots=Array\.isArray\(saved\.snapshots\)\?saved\.snapshots\.filter\(_isValidSnapshot\):state\.snapshots;[\s\S]{0,700}?state\.snapshots\.sort\(_snapshotSortCompare\);/,
+    /state\.snapshots=Array\.isArray\(saved\.snapshots\)\?saved\.snapshots\.filter\(_isValidSnapshot\)\.map\(s=>\(\{\.\.\.s,nw:Number\(s\.nw\)\|\|0,assets:Number\(s\.assets\)\|\|0,liab:Number\(s\.liab\)\|\|0\}\)\):state\.snapshots;[\s\S]{0,700}?state\.snapshots\.sort\(_snapshotSortCompare\);/,
     "loadFromLocalStorage() should sort state.snapshots immediately after assigning it from the local cache"
   );
   assert.match(
     source,
-    /state\.snapshots=arr\(saved\.snapshots\)\.filter\(_isValidSnapshot\);[\s\S]{0,400}?state\.snapshots\.sort\(_snapshotSortCompare\);/,
+    /state\.snapshots=arr\(saved\.snapshots\)\.filter\(_isValidSnapshot\)\.map\(s=>\(\{\.\.\.s,nw:Number\(s\.nw\)\|\|0,assets:Number\(s\.assets\)\|\|0,liab:Number\(s\.liab\)\|\|0\}\)\);[\s\S]{0,400}?state\.snapshots\.sort\(_snapshotSortCompare\);/,
     "importBackup() should sort state.snapshots immediately after assigning it from the backup payload"
   );
 });
@@ -2806,8 +2806,8 @@ test("importBackup: filters malformed transactions/customCategories/snapshots en
   );
   assert.match(
     source,
-    /state\.snapshots=arr\(saved\.snapshots\)\.filter\(_isValidSnapshot\);/,
-    "importBackup() should filter state.snapshots through _isValidSnapshot"
+    /state\.snapshots=arr\(saved\.snapshots\)\.filter\(_isValidSnapshot\)\.map\(s=>\(\{\.\.\.s,nw:Number\(s\.nw\)\|\|0,assets:Number\(s\.assets\)\|\|0,liab:Number\(s\.liab\)\|\|0\}\)\);/,
+    "importBackup() should filter state.snapshots through _isValidSnapshot and coerce nw/assets/liab"
   );
 });
 test("loadFromLocalStorage: filters malformed transactions/customCategories/snapshots entries from the local cache", () => {
@@ -2826,8 +2826,8 @@ test("loadFromLocalStorage: filters malformed transactions/customCategories/snap
   );
   assert.match(
     source,
-    /state\.snapshots=Array\.isArray\(saved\.snapshots\)\?saved\.snapshots\.filter\(_isValidSnapshot\):state\.snapshots;/,
-    "loadFromLocalStorage() should filter state.snapshots through _isValidSnapshot"
+    /state\.snapshots=Array\.isArray\(saved\.snapshots\)\?saved\.snapshots\.filter\(_isValidSnapshot\)\.map\(s=>\(\{\.\.\.s,nw:Number\(s\.nw\)\|\|0,assets:Number\(s\.assets\)\|\|0,liab:Number\(s\.liab\)\|\|0\}\)\):state\.snapshots;/,
+    "loadFromLocalStorage() should filter state.snapshots through _isValidSnapshot and coerce nw/assets/liab"
   );
 });
 test("loadUserData: filters malformed snapshot rows before mapping, not after", () => {
@@ -2839,6 +2839,57 @@ test("loadUserData: filters malformed snapshot rows before mapping, not after", 
     /state\.snapshots = snaps\.filter\(_isValidSnapshot\)\.map\(s => \(\{/,
     "loadUserData() should filter snaps through _isValidSnapshot before the .map() that dereferences each entry's fields"
   );
+});
+
+// July 28, 2026: snapshot nw/assets/liab and vehicle value/purchase were
+// both restored with no numeric coercion, unlike their already-fixed
+// siblings (account balance/nextId, vehicle miles/purchaseYear) -- a hand-
+// edited or corrupted comma-formatted string like "1,234.56" would break
+// Math.abs()-based formatting and comparisons downstream instead of
+// crashing outright. Both confirmed display-only/low-reachability, not a
+// net-worth-arithmetic gap.
+test("all 3 snapshot restore paths (cloud sync, local storage, backup) coerce nw/assets/liab to numbers", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /nw: Number\(s\.nw\)\|\|0, assets: Number\(s\.assets\)\|\|0, liab: Number\(s\.liab\)\|\|0/,
+    "loadUserData()'s cloud-sync path should coerce nw/assets/liab"
+  );
+  assert.match(
+    source,
+    /saved\.snapshots\.filter\(_isValidSnapshot\)\.map\(s=>\(\{\.\.\.s,nw:Number\(s\.nw\)\|\|0,assets:Number\(s\.assets\)\|\|0,liab:Number\(s\.liab\)\|\|0\}\)\)/,
+    "loadFromLocalStorage()'s path should coerce nw/assets/liab"
+  );
+  assert.match(
+    source,
+    /arr\(saved\.snapshots\)\.filter\(_isValidSnapshot\)\.map\(s=>\(\{\.\.\.s,nw:Number\(s\.nw\)\|\|0,assets:Number\(s\.assets\)\|\|0,liab:Number\(s\.liab\)\|\|0\}\)\)/,
+    "importBackup()'s path should coerce nw/assets/liab"
+  );
+});
+test("renderVehicles coerces v.value/v.purchase to numbers once, reused across both the depreciation math and all display sites", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function renderVehicles\(\)\{[\s\S]{0,5000}?\n\}/);
+  assert.ok(fnMatch, "renderVehicles() should exist");
+  const fn = fnMatch[0];
+  assert.match(
+    fn,
+    /const vValue=Number\(v\.value\)\|\|0;\s*const vPurchase=Number\(v\.purchase\)\|\|0;/,
+    "renderVehicles() should coerce v.value/v.purchase into local consts near the top of the map callback"
+  );
+  // Every remaining reference to the raw fields should be the coercion
+  // assignment itself, not a leftover unprotected usage. Strip // comment
+  // text first -- the fix's own explanatory comment above references
+  // "v.value"/"v.purchase" in prose, which would otherwise inflate the
+  // count without being a real code site.
+  const fnCodeOnly = fn.split("\n").map(line => line.replace(/\/\/.*$/, "")).join("\n");
+  const rawValueRefs = (fnCodeOnly.match(/v\.value\b/g) || []).length;
+  const rawPurchaseRefs = (fnCodeOnly.match(/v\.purchase\b/g) || []).length;
+  assert.equal(rawValueRefs, 1, "v.value should only appear once in renderVehicles()'s actual code (the coercion line itself)");
+  assert.equal(rawPurchaseRefs, 1, "v.purchase should only appear once in renderVehicles()'s actual code (the coercion line itself)");
 });
 test("renderMetrics: allSnaps is null-safe and uses the shared snapshot sort comparator", () => {
   const fs = require("fs");
@@ -5424,7 +5475,7 @@ test("the .truncate utility class exists and is applied to the 5 sites the 168th
     "the shared .truncate utility class should be defined"
   );
   const truncateUsages = source.match(/class="truncate"/g) || [];
-  assert.equal(truncateUsages.length, 5, "the .truncate class should be applied at exactly the 5 sites this pass fixed");
+  assert.equal(truncateUsages.length, 8, "the .truncate class should be applied at the 5 sites this pass fixed, plus 3 more added in a later small-fixes round (see the dedicated test below)");
   assert.match(
     source,
     /<div class="truncate" style="font-size:12px;font-weight:700;color:var\(--amber-text\)" title="\$\{esc\(a\.name\)\}">\$\{esc\(a\.name\)\}<\/div>/,
@@ -5449,6 +5500,37 @@ test("the .truncate utility class exists and is applied to the 5 sites the 168th
     source,
     /<div class="truncate" style="font-size:13px;font-weight:800;color:var\(--text-primary\)" title="\$\{esc\(v\.name\)\}">\$\{esc\(v\.name\)\}<\/div>/,
     "the vehicle 'other asset' card should truncate the vehicle name"
+  );
+});
+
+// July 28, 2026: the rules-manager keyword chip and the two vendor-alias
+// chips were the 2 lower-priority sites the 168th pass's consolidation
+// deliberately left out (raised as a still-open consistency gap, not a
+// bug -- both already sat inside a flex-wrap parent, so an overlong
+// keyword/alias wrapped to its own line rather than overflowing). Unlike
+// the 168th pass's 5 sites (which are flex:1 children that naturally
+// shrink in a non-wrapping row), these are fixed-badge chips with no
+// competing sibling to force a shrink, so .truncate alone would be a
+// no-op -- each also gets an explicit max-width so the ellipsis has
+// something to actually truncate against.
+test("the rules-manager keyword chip and vendor-alias chips truncate with the same .truncate+title pattern as the 168th pass's 5 sites", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<span class="truncate" style="font-family:monospace;font-size:12px;font-weight:700;color:var\(--accent-blue-light\);background:var\(--bg-card\);padding:2px 8px;border-radius:4px;max-width:220px" title="\$\{esc\(r\.keyword\)\}">\$\{esc\(r\.keyword\)\}<\/span>/,
+    "the rules-manager keyword chip should truncate with a title tooltip"
+  );
+  assert.match(
+    source,
+    /<span class="truncate" style="font-family:monospace;font-size:11px;color:#F87171;background:#F8717118;padding:1px 7px;border-radius:4px;max-width:220px" title="\$\{esc\(from\)\}">\$\{esc\(from\)\}<\/span>/,
+    "the vendor-alias 'from' chip should truncate with a title tooltip"
+  );
+  assert.match(
+    source,
+    /<span class="truncate" style="font-family:monospace;font-size:11px;color:#34D399;background:#34D39918;padding:1px 7px;border-radius:4px;max-width:220px" title="\$\{esc\(to\)\}">\$\{esc\(to\)\}<\/span>/,
+    "the vendor-alias 'to' chip should truncate with a title tooltip"
   );
 });
 
