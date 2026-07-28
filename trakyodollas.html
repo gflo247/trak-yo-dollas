@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-hK9Hj08QtDyPLEaORQ8PefTy4xZP+thWXnaqEC8of0E=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-3wRgaRGWWvMbkbtzUTBSbo1koRg33DxiGmlqmYOLgRw=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1089,6 +1089,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
           <li><strong style="color:var(--text-secondary)">Chase</strong> — Sign in → Accounts → <em>Download activity</em> → CSV</li>
           <li><strong style="color:var(--text-secondary)">Amex</strong> — Sign in → Statements &amp; Activity → <em>Export</em> → CSV (all activity)</li>
           <li>Most banks: look for <em>Download</em> or <em>Export</em> in your transaction history</li>
+          <li>Only offered Excel, not CSV? Open it in Excel or Google Sheets, then <em>Save As</em> or <em>Export</em> → CSV before uploading here</li>
         </ul>
         <p style="margin-bottom:.25rem;color:var(--text-secondary);font-weight:600">Columns the app reads:</p>
         <ul style="padding-left:1.1rem;line-height:1.7">
@@ -1104,7 +1105,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
           <li><strong style="color:var(--text-secondary)">Monarch Money</strong> — Date, Merchant, Amount, Category</li>
         </ul>
         <p style="margin-top:.4rem;font-size:11px">Format is detected automatically. If it's not right, use <em>Having trouble?</em> below.</p>
-        <p style="margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--border-mid);font-size:11px;line-height:1.6"><strong style="color:var(--text-secondary)">Use Kiwibank, DBS, OCBC, Bendigo Bank, or Monzo?</strong> Not auto-detected yet — the numbers matter too much to guess at a format without a real sample. Email a redacted export (header row plus a couple of rows with fake amounts) to <a href="mailto:contact@trakyodollas.com" style="color:var(--accent-blue-light)">contact@trakyodollas.com</a> to help build it — get credited by name when it ships.</p>
+        <p style="margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--border-mid);font-size:11px;line-height:1.6"><strong style="color:var(--text-secondary)">Use ASB, Kiwibank, DBS, OCBC, Bendigo Bank, Monzo, NAB, NatWest, Tangerine, or RBC?</strong> Not auto-detected yet — the numbers matter too much to guess at a format without a real sample. Email a redacted export (header row plus a couple of rows with fake amounts) to <a href="mailto:contact@trakyodollas.com" style="color:var(--accent-blue-light)">contact@trakyodollas.com</a> to help build it — get credited by name when it ships. (NAB and NatWest only offer Excel for personal accounts — open yours in Excel or Google Sheets, <em>Save As</em> or <em>Export</em> → CSV first, then send that the same way.)</p>
       </div>
     </details>
 
@@ -1913,7 +1914,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
           <div style="padding:.5rem .75rem;color:var(--text-secondary)">
             <span style="color:#60A5FA;font-weight:600">1. Your rules</span> — keyword rules you've saved always win<br>
             <span style="color:#64748B;font-weight:600">2. Built-in keywords</span> — ~300 common merchant names, matched automatically<br>
-            <span style="color:#34D399;font-weight:600">3. Community patterns</span> — <span class="community-rules-count">1802</span> community-contributed keyword→category mappings covering US, UK, AU, CA, NZ, and SG merchants, picking up what built-in keywords miss — fetched once per session · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" style="color:#34D399">Suggest a pattern ↗</a><br>
+            <span style="color:#34D399;font-weight:600">3. Community patterns</span> — <span class="community-rules-count">1802</span> community-contributed keyword→category mappings covering US, CA, UK, AU, NZ, and SG merchants, picking up what built-in keywords miss — fetched once per session · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" style="color:#34D399">Suggest a pattern ↗</a><br>
             <span style="color:#94A3B8;font-weight:600">4. Merchant Category Codes (MCC)</span> — 4-digit codes your bank or credit union assigns to merchants, if present in your CSV
           </div>
         </div>
@@ -2691,6 +2692,22 @@ function _replaceDemoDataWithReal(){
   // after. Found in the 111th adversarial pass.
   rebuildMonthly();
   rebuildCatSelects();
+}
+// True during a genuine, ongoing demo session that hasn't transitioned to
+// real data yet -- excludes read-only preview mode (_isDemoPreview/
+// _viewingDemoOverReal), where nothing persists either way and this notice
+// would just be noise. Used to make success toasts for setNwGoal(),
+// confirmCustomGoal(), saveBudget(), saveDeclaredIncome(), saveManualIncome(),
+// toggleIncludeIncome(), addCatRule()'s two callers, addCustomCat(), and
+// addVendorAlias() honest about the fact that _replaceDemoDataWithReal()
+// above will wipe every one of these fields the moment a real save happens
+// -- previously several of these either showed an unconditional
+// permanent-sounding toast (e.g. "Goal set to $500,000") or no toast at all,
+// so a user exploring the demo who set a real goal/income/budget first lost
+// it silently, with no warning before or after. Found in an audit
+// conversation, July 2026 -- see _HANDOFF.md.
+function _isLiveDemoSession(){
+  return !state.hasRealData&&!window._isDemoPreview&&!window._viewingDemoOverReal;
 }
 
 // ── Format / theme / tooltip helpers ─────────────────────────────
@@ -4194,6 +4211,7 @@ function setNwGoal(amount){
   renderNwGoalWidget();
   renderNwChart();
   renderInsights();
+  if(_isLiveDemoSession())showToast(`Goal set to ${fmtC(amount)} (resets once you add real data)`,'#34D399');
 }
 
 function setNwGoalNextMilestone(){
@@ -4252,7 +4270,7 @@ function confirmCustomGoal(){
   renderNwGoalWidget();
   renderNwChart();
   renderInsights();
-  showToast(`Goal set to ${fmtC(state.nwGoal)}`,'#34D399');
+  showToast(`Goal set to ${fmtC(state.nwGoal)}`+(_isLiveDemoSession()?' (resets once you add real data)':''),'#34D399');
 }
 
 function renderNwChart(){
@@ -7654,9 +7672,22 @@ function renderVehicles(){
   }
   el.innerHTML=state.vehicles.map(v=>{
     const isOther=v.assetType==='other';
-    const ret=v.purchase>0?Math.min(100,Math.round(v.value/v.purchase*100)):100;
+    // v.value/v.purchase coerced here, same reasoning/pattern as the
+    // adjacent v.miles Number() coercion and v.purchaseYear esc(String())
+    // treatment below (100th/101st adversarial passes): importBackup()
+    // only shape-checks state.vehicles as an array, so a crafted or hand-
+    // edited backup could carry a non-numeric payload straight into these
+    // fields. Unlike miles (used string-safely via .toLocaleString() at
+    // its one render site), value/purchase feed direct arithmetic
+    // (division, subtraction) below, so an uncoerced string silently
+    // produced "$NaN"/"NaN% value retained" instead of a crash. Coerced
+    // once here rather than at each of the 7 usage sites below. Found in
+    // the 131st adversarial pass, fixed July 28, 2026.
+    const vValue=Number(v.value)||0;
+    const vPurchase=Number(v.purchase)||0;
+    const ret=vPurchase>0?Math.min(100,Math.round(vValue/vPurchase*100)):100;
     const age=new Date().getFullYear()-v.purchaseYear;
-    const avgDep=age>0&&v.purchase>0?Math.round((v.purchase-v.value)/age):0;
+    const avgDep=age>0&&vPurchase>0?Math.round((vPurchase-vValue)/age):0;
     // fmt() always strips the sign (Math.abs), so a plain fmt(avgDep) next
     // to a hardcoded "dep." label showed a positive dollar figure for an
     // appreciating asset (value>purchase, avgDep negative) too -- e.g. a
@@ -7669,10 +7700,10 @@ function renderVehicles(){
       return`<div style="border:1px solid var(--border-mid);border-radius:10px;padding:.7rem 1rem;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px">
         <div style="min-width:0">
           <div class="truncate" style="font-size:13px;font-weight:800;color:var(--text-primary)" title="${esc(v.name)}">${esc(v.name)}</div>
-          <div style="font-size:10px;color:#2DD4BF;margin-top:1px">${esc(v.make)}${v.purchaseYear?` · purchased ${esc(String(v.purchaseYear))}`:''}${v.purchase>0?` · ${ret}% value retained`:''}</div>
+          <div style="font-size:10px;color:#2DD4BF;margin-top:1px">${esc(v.make)}${v.purchaseYear?` · purchased ${esc(String(v.purchaseYear))}`:''}${vPurchase>0?` · ${ret}% value retained`:''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
-          <div style="font-size:15px;font-weight:800;color:#34D399">${fmt(v.value)}</div>
+          <div style="font-size:15px;font-weight:800;color:#34D399">${fmt(vValue)}</div>
           <button class="btn btn-sm" data-action="editVehicle" data-arg="${esc(String(v.id))}" type="button">Edit</button>
         </div>
       </div>`;
@@ -7682,12 +7713,12 @@ function renderVehicles(){
       <div style="padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:12px">
         <div>
           <div style="font-size:13px;font-weight:800;color:var(--text-primary)">${esc(String(v.year))} ${esc(v.make||'')} ${esc(v.model||'')}</div>
-          <div style="font-size:10px;color:#2DD4BF;margin-top:1px">${esc(v.condition)} · ${(Number(v.miles)||0).toLocaleString()} mi${v.purchase>0?` · ${ret}% value retained · ~${fmt(avgDep)}/yr ${depLabel}`:''}</div>
+          <div style="font-size:10px;color:#2DD4BF;margin-top:1px">${esc(v.condition)} · ${(Number(v.miles)||0).toLocaleString()} mi${vPurchase>0?` · ${ret}% value retained · ~${fmt(avgDep)}/yr ${depLabel}`:''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
           <div style="text-align:right">
-            <div style="font-size:15px;font-weight:800;color:#34D399">${fmt(v.value)}</div>
-            ${v.purchase>0?`<div class="text-muted-sm" style="margin-top:3px">of ${fmt(v.purchase)} orig.</div>`:''}
+            <div style="font-size:15px;font-weight:800;color:#34D399">${fmt(vValue)}</div>
+            ${vPurchase>0?`<div class="text-muted-sm" style="margin-top:3px">of ${fmt(vPurchase)} orig.</div>`:''}
           </div>
           <button class="btn btn-sm" data-action="editVehicle" data-arg="${esc(String(v.id))}" type="button">Edit</button>
         </div>
@@ -7869,6 +7900,7 @@ function saveBudget(){
   // Re-render budget tab if it's active
   if(document.getElementById('page-budget').classList.contains('active'))renderBudgetTab();
   scheduleSave();
+  if(val>0&&Number.isFinite(val)&&_isLiveDemoSession())showToast('Budget saved (resets once you add real data)','#34D399');
 }
 /* ── Mobile tooltip system ── */
 (function(){
@@ -8277,9 +8309,9 @@ function renderVendorAliasList(){
     const count=state.transactions.filter(t=>_vendorAliasChainReaches(t.desc,from)).length;
     return`<div class="list-row">
       <div style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-family:monospace;font-size:11px;color:#F87171;background:#F8717118;padding:1px 7px;border-radius:4px">${esc(from)}</span>
+        <span class="truncate" style="font-family:monospace;font-size:11px;color:#F87171;background:#F8717118;padding:1px 7px;border-radius:4px;max-width:220px" title="${esc(from)}">${esc(from)}</span>
         <span style="color:var(--text-muted);font-size:12px">→</span>
-        <span style="font-family:monospace;font-size:11px;color:#34D399;background:#34D39918;padding:1px 7px;border-radius:4px">${esc(to)}</span>
+        <span class="truncate" style="font-family:monospace;font-size:11px;color:#34D399;background:#34D39918;padding:1px 7px;border-radius:4px;max-width:220px" title="${esc(to)}">${esc(to)}</span>
         <span class="text-muted-xs">(${count} transaction${count===1?'':'s'})</span>
       </div>
       <button data-action="deleteVendorAlias" data-arg="${esc(from)}" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 5px;flex-shrink:0" title="Remove merge" type="button">✕</button>
@@ -8355,7 +8387,7 @@ function addVendorAlias(){
   renderVendorAliasList();
   renderSpending();
   scheduleSave();
-  showToast(`⟲ Merged: ${esc(from)} → ${esc(to)}`,'#34D399');
+  showToast(`⟲ Merged: ${esc(from)} → ${esc(to)}`+(_isLiveDemoSession()?' (resets once you add real data)':''),'#34D399');
 }
 
 function deleteVendorAlias(from){
@@ -9248,6 +9280,7 @@ function saveDeclaredIncome(){
     closeModals();
     renderSankey();
     renderInsights();
+    if(_isLiveDemoSession())showToast('💰 Income saved (resets once you add real data)','#34D399');
   } else {
     // Matches saveManualIncome()'s existing toast for the identical invalid-
     // input shape -- this one silently did nothing at all (no toast, no
@@ -9447,7 +9480,7 @@ function saveManualIncome(){
   document.getElementById('income-manual-hint').textContent=`Saved: ${fmt(val,true)}/mo take-home`;
   scheduleSave();
   renderInsights();
-  showToast('💰 Income saved — savings rate now tracking','#34D399');
+  showToast('💰 Income saved — savings rate now tracking'+(_isLiveDemoSession()?' (resets once you add real data)':''),'#34D399');
 }
 // selectIncomeMethod('auto') commits state.income.method='auto' and
 // scheduleSave()s the instant its card is clicked -- but selectIncomeMethod
@@ -9930,7 +9963,7 @@ function toggleIncludeIncome(){
   const btn=document.getElementById('include-income-btn');
   if(btn)btn.textContent=state.includeIncome?'✓ 💼 Include income & business categories':'💼 Include income & business categories';
   if(!state.includeIncome)_bizFilter='all';
-  showToast(state.includeIncome?'Income tracking enabled — deposits will import, business categories added':'Income tracking disabled','#34D399',3500);
+  showToast(state.includeIncome?('Income tracking enabled — deposits will import, business categories added'+(_isLiveDemoSession()?' (resets once you add real data)':'')):'Income tracking disabled','#34D399',3500);
   scheduleSave();rebuildMonthly();renderAll();
 }
 function setBizFilter(val){
@@ -10232,7 +10265,7 @@ function renderRulesList(){
     return`<div class="list-row">
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span style="font-family:monospace;font-size:12px;font-weight:700;color:var(--accent-blue-light);background:var(--bg-card);padding:2px 8px;border-radius:4px">${esc(r.keyword)}</span>
+          <span class="truncate" style="font-family:monospace;font-size:12px;font-weight:700;color:var(--accent-blue-light);background:var(--bg-card);padding:2px 8px;border-radius:4px;max-width:220px" title="${esc(r.keyword)}">${esc(r.keyword)}</span>
           <span class="text-muted-sm">→</span>
           <span style="font-size:12px;font-weight:700;color:#34D399">${esc(r.cat)}</span>
         </div>
@@ -10257,6 +10290,7 @@ function addRuleFromForm(){
   addCatRule(kw,cat);
   document.getElementById('add-rule-form').classList.add('hidden');
   renderRulesList();
+  if(_isLiveDemoSession())showToast('Rule saved (resets once you add real data)','#34D399');
 }
 
 function addCatRule(keyword,cat){
@@ -10327,7 +10361,7 @@ function confirmSaveRule(){
   const kw=document.getElementById('srp-keyword-input').value.trim();
   if(!kw||!_pendingRule)return;
   addCatRule(kw,_pendingRule.cat);
-  showToast(`⚡ Rule saved: "${esc(kw)}" → ${esc(_pendingRule.cat)}`,'#34D399');
+  showToast(`⚡ Rule saved: "${esc(kw)}" → ${esc(_pendingRule.cat)}`+(_isLiveDemoSession()?' (resets once you add real data)':''),'#34D399');
   _pendingRule=null;
   closeModals();
 }
@@ -10602,6 +10636,7 @@ function addCustomCat(){
   rebuildCatSelects();
   renderBucketGrid();
   scheduleSave();
+  if(_isLiveDemoSession())showToast('Category added (resets once you add real data)','#34D399');
 }
 function deleteCustomCat(name){
   name=String(name);
@@ -12195,7 +12230,7 @@ function applySourceAlign(fromDate){
   state.rangeFrom=fromDate.slice(0,7);
   state.rangeTo=null;
   scheduleSave();renderSpending();
-  showToast(`✓ Showing from ${fmtMonthShort(fromDate.slice(0,7))} — click "All" to see everything`);
+  showToast(`✓ Showing from ${fmtMonthShort(fromDate.slice(0,7))} — click "All" to see everything`+(_isLiveDemoSession()?' (resets once you add real data)':''));
 }
 function skipSourceAlign(){
   const modal=document.getElementById('source-align-modal');
@@ -12618,14 +12653,30 @@ async function confirmForgotPassphraseReset() {
   if (!uid) return;
   const btn = document.getElementById('sync-pp-reset-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
+  // Each table's delete is retried independently (up to 2 extra attempts,
+  // short backoff) before giving up on it specifically -- a delete on an
+  // already-deleted row is a harmless no-op, not an error, so retrying only
+  // the table(s) that actually failed can't double-delete or corrupt
+  // anything. Without this, a single transient network failure on just one
+  // of three concurrent deletes left cloud state partially wiped (the other
+  // two had already committed) behind one generic "Something went wrong",
+  // with no indication of what was and wasn't actually cleared, and no
+  // automatic recovery from what's usually a one-off blip. Found in the
+  // 88th adversarial pass, fixed July 28, 2026.
+  async function _deleteTableWithRetry(table) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { error } = await _sb.from(table).delete().eq('user_id', uid);
+      if (!error) return null;
+      if (attempt < 2) await new Promise(r => setTimeout(r, 400 * (attempt + 1)));
+    }
+    return table;
+  }
   try {
-    const [snapsRes, prefsRes, keysRes] = await Promise.all([
-      _sb.from('snapshots').delete().eq('user_id', uid),
-      _sb.from('prefs').delete().eq('user_id', uid),
-      _sb.from('user_keys').delete().eq('user_id', uid),
-    ]);
-    const failed = [['snapshots', snapsRes], ['prefs', prefsRes], ['user_keys', keysRes]].find(([, res]) => res.error);
-    if (failed) throw failed[1].error;
+    const stillFailed = (await Promise.all(['snapshots', 'prefs', 'user_keys'].map(_deleteTableWithRetry))).filter(Boolean);
+    if (stillFailed.length) {
+      showResetError(`Couldn't clear ${stillFailed.join(', ')} — the rest was cleared. Please try again.`);
+      return;
+    }
     clearSyncPassphrase();
     showToast('✓ Synced data cleared — set a new passphrase');
     await promptSyncPassphrase(uid);
@@ -12647,9 +12698,19 @@ async function loadUserData(uid) {
       // itself dereferences s.date/s.monthKey/etc., so a malformed row
       // (a corrupted cloud row, in this path) would throw inside the map
       // callback before a post-map filter ever got a chance to run.
+      // nw/assets/liab coerced here, same "filter at the point of
+      // ingestion" reasoning _isValidSnapshot already applies to monthKey
+      // -- a hand-edited or corrupted row's string nw (e.g. a comma-
+      // formatted "1,234.56") would otherwise break fmtC(s.nw)'s
+      // Math.abs(), the net-worth chart's s.nw>=m comparison, and the
+      // History tab's s.nw-prev.nw delta the same way an uncoerced
+      // account balance did (130th pass). Lower reachability than
+      // accounts -- snapshots are almost always app-generated with clean
+      // numbers already -- but the same class of gap. Found in the 130th
+      // adversarial pass, fixed July 28, 2026.
       state.snapshots = snaps.filter(_isValidSnapshot).map(s => ({
         date: s.date, label: s.label, monthKey: s.monthKey,
-        nw: s.nw, assets: s.assets, liab: s.liab
+        nw: Number(s.nw)||0, assets: Number(s.assets)||0, liab: Number(s.liab)||0
       }));
       // loadSnapshots()'s Supabase query has no .order() clause (and can't
       // sort server-side -- the row's `data` column is encrypted), so
@@ -13875,7 +13936,13 @@ function loadFromLocalStorage(){
     // state.snapshots (matching the original ||-fallback's intent) rather
     // than a wholesale reset, since this is a defensive read path, not a
     // deliberate restore. Found in the 103rd adversarial pass.
-    state.snapshots=Array.isArray(saved.snapshots)?saved.snapshots.filter(_isValidSnapshot):state.snapshots;
+    // .map() coercion of nw/assets/liab added here, matching this same
+    // pass's fix to loadUserData()'s cloud-pull path -- a hand-edited
+    // localStorage blob is exactly the "corrupted/hand-edited" scenario
+    // this line's own existing comment already guards monthKey against;
+    // the numeric fields had the identical gap. Found in the 130th
+    // adversarial pass, fixed July 28, 2026.
+    state.snapshots=Array.isArray(saved.snapshots)?saved.snapshots.filter(_isValidSnapshot).map(s=>({...s,nw:Number(s.nw)||0,assets:Number(s.assets)||0,liab:Number(s.liab)||0})):state.snapshots;
     // Defense-in-depth, matching loadUserData()'s cloud-pull fix (99th
     // adversarial pass): this local cache just trusts whatever order was
     // last serialized, so any state.snapshots corruption that ever slipped
@@ -14093,7 +14160,13 @@ function importBackup(file){
       // the whole class of "a malformed entry crashes whichever consumer
       // dereferences it first" rather than needing every one of the many
       // places that iterate state.snapshots to guard itself individually.
-      state.snapshots=arr(saved.snapshots).filter(_isValidSnapshot);
+      // .map() coercion of nw/assets/liab added here, matching this same
+      // pass's fix to the other two restore paths (cloud sync, local
+      // storage) -- a hand-edited backup file is exactly the "malformed
+      // entry" scenario this line's own existing comment already guards
+      // against for other fields; the numeric fields had the identical
+      // gap. Found in the 130th adversarial pass, fixed July 28, 2026.
+      state.snapshots=arr(saved.snapshots).filter(_isValidSnapshot).map(s=>({...s,nw:Number(s.nw)||0,assets:Number(s.assets)||0,liab:Number(s.liab)||0}));
       // Same reasoning as loadFromLocalStorage()'s equivalent fix (101st
       // adversarial pass): a hand-edited or otherwise-corrupted backup
       // file's snapshots array isn't guaranteed to already be sorted.
