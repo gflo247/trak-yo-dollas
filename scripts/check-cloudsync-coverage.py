@@ -90,6 +90,11 @@ NEVER_SYNCED_KNOWN_FALSE_POSITIVES = {
     'snapshots',       # separate sync path via saveSnapshot()/loadSnapshots(), not the prefs payload
     'hasRealData', 'hasRealAccounts', 'hasRealSnapshot',  # loadUserData() re-derives these from what it just restored
     'activeSources',   # confirmed device-local by the 38th pass; loadUserData() derives it fresh from restored transactions
+    'demoDataVersion', 'activeDemoProfileNum',  # July 29, 2026: pure local cache-invalidation bookkeeping for a
+        # cached demo session on THIS browser -- only ever set by loadDemoProfile(), never meaningful once
+        # hasRealData is true. Syncing a stale value across devices would be actively wrong, not just useless: it
+        # would make another device silently reload/replace ITS OWN cached demo session based on a version stamp
+        # that has nothing to do with what that device is showing.
 }
 
 
