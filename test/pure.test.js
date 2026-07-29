@@ -3302,7 +3302,7 @@ test("fmt/fmtD/fmtH raw param is applied at every non-D3, non-innerHTML sink: .t
   assert.doesNotMatch(source, /fmtH\(ctx\.raw\)(?!,true\))/, "every fmtH(ctx.raw) Chart.js tooltip callback should pass raw=true");
   assert.match(source, /\.map\(x=>`\$\{x\.v\}: \$\{fmtC\(x\.val,true\)\}`\)/, "the vendor chart's _otherBreakdown tooltip lines should use raw fmtC");
   assert.match(source, /\.map\(x=>`\$\{x\.c\}: \$\{fmtH\(x\.v,true\)\}`\)/, "the category chart's _otherBreakdown tooltip lines should use raw fmtH");
-  assert.match(source, /callback:v=>fmtC\(v,true\),font:\{size:9\}/, "the vendor/category stacked chart's y-axis tick callback should use raw fmtC");
+  assert.match(source, /callback:v=>fmtC\(v,true\),font:\{size:10\}/, "the vendor/category stacked chart's y-axis tick callback should use raw fmtC");
   // .textContent assignments
   assert.match(source, /hint\.textContent=current\?`Current goal: \$\{fmtC\(current,true\)\}`/, "openCustomNwGoal()'s hint should use raw fmtC");
   assert.match(source, /try something higher than \$\{fmtC\(netWorth\(\),true\)\}/, "confirmCustomGoal()'s already-met hint should use raw fmtC");
