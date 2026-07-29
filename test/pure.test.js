@@ -5729,3 +5729,35 @@ test("the page-load chart-mode restore block also syncs chart-texture-btn/cal-tr
   assert.match(block, /modeSankeyTableBtn\.style\.display=savedMode==='sankey'\?'':'none';/, "should sync sankey-table-btn's visibility to the restored mode");
   assert.match(block, /modeSankeyTableBtn\.textContent=_sankeyTableView\?/, "should also sync sankey-table-btn's label/color to the persisted table-view preference, not just its visibility");
 });
+
+// Found July 29, 2026: a demo session saved to localStorage before a demo
+// data edit (e.g. the Nov'24-Jan'25 trim) stayed stale forever after --
+// hard refresh reloads the page's code, not already-saved localStorage
+// state, and loadDemoProfile() only ever auto-runs when localStorage is
+// completely empty. Fixed with a version stamp compared on load, mirroring
+// sw.js's own cache-version pattern, guarded so it can never touch real
+// user data.
+test("demo data is version-stamped, persisted, and silently refreshed on load if stale", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(source, /const DEMO_DATA_VERSION='\d{4}-\d{2}-\d{2}';/, "DEMO_DATA_VERSION should be declared as a dated constant");
+  assert.match(source, /demoDataVersion: state\.demoDataVersion\?\?null,\s*activeDemoProfileNum: state\.activeDemoProfileNum\?\?null,/, "serializeState() should persist both new fields");
+  assert.match(source, /state\.demoDataVersion=saved\.demoDataVersion\?\?null;\s*state\.activeDemoProfileNum=saved\.activeDemoProfileNum\?\?null;/, "loadFromLocalStorage() should restore both new fields");
+  assert.match(source, /state\.demoDataVersion=DEMO_DATA_VERSION;\s*state\.activeDemoProfileNum=n;/, "loadDemoProfile() should stamp the current version and the profile number that was actually loaded");
+  // The init block's third branch: only fires for an already-saved, still-demo,
+  // version-stamped session whose stamp no longer matches -- never for real
+  // user data (guarded on !state.hasRealData) and never for a pre-this-fix
+  // demo session with no stamp at all (guarded on activeDemoProfileNum being
+  // truthy, so those just fall through unrefreshed rather than misfiring).
+  assert.match(
+    source,
+    /\}else if\(hadSavedData&&!state\.hasRealData&&state\.activeDemoProfileNum&&state\.demoDataVersion!==DEMO_DATA_VERSION\)\{/,
+    "the init block should gate the auto-refresh on saved+demo+stamped+stale, in that combination"
+  );
+  assert.match(
+    source,
+    /loadDemoProfile\(state\.activeDemoProfileNum, true, true\); \/\/ silent \+ skipRender — renderAll fires below\s*\n\s*requestAnimationFrame\(\(\)=>showToast\('🔄 Demo data refreshed to the latest version'/,
+    "the stale-demo branch should reload the same profile number that was active, silently, then tell the user it happened"
+  );
+});
