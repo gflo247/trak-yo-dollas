@@ -5686,6 +5686,32 @@ test("parseTxFile: UK midata auto-detect is checked before the generic debit+cre
   );
 });
 
+// Found live-testing the header-scan fix: dropping a second, unparseable
+// file into an already-open import modal left the first file's preview and
+// enabled Import button on screen. confirmTxImport() itself guards on
+// importParsed (correctly empty), so this could never actually import
+// stale data -- but the UI kept claiming a file was "ready to import" when
+// nothing had actually parsed.
+test("showImportPreview: the zero-transactions branch hides any stale preview/Import button left over from an earlier file in the same modal session", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "showImportPreview() should exist");
+  const zeroBranch = fnMatch[0].match(/if\(!importParsed\.length\)\{[\s\S]*?\n {4}return;\n {2}\}/);
+  assert.ok(zeroBranch, "showImportPreview() should have a zero-transactions early-return branch");
+  assert.match(
+    zeroBranch[0],
+    /getElementById\('import-preview'\)[\s\S]*?classList\.add\('hidden'\)/,
+    "the zero-transactions branch should hide #import-preview, not leave a prior file's preview showing"
+  );
+  assert.match(
+    zeroBranch[0],
+    /getElementById\('import-confirm-btn'\)[\s\S]*?classList\.add\('hidden'\)/,
+    "the zero-transactions branch should hide #import-confirm-btn, not leave a prior file's Import button enabled"
+  );
+});
+
 test("parseTxFile: ANZ NZ/BNZ/Westpac NZ/Starling/midata have mutually-exclusive auto-detect signatures, and force DD/MM date parsing when a sample is otherwise ambiguous", () => {
   const fs = require("fs");
   const path = require("path");
