@@ -11076,6 +11076,66 @@ function handleTxFileSelect(input){
   if(file)parseTxFile(file);
 }
 
+// Checks one already-lowercased candidate header line against every known
+// bank/export signature, in priority order (e.g. midata before the generic
+// debit+credit check, since a midata header contains both substrings).
+// Returns the matched format string, or null if this particular line
+// doesn't look like any known header. Shared by parseTxFile()'s multi-line
+// header scan below.
+function detectFormatFromLine(firstLine){
+  let importFmt=null,importFmtAutoDetected=false;
+  // Our own exportTransactionsCSV() output — checked first since it's the
+  // most specific signature (no bank export has both 'vendor' and
+  // 'excluded' columns). Without this, reimporting your own export fell
+  // through to a generic format that treats every positive Amount as an
+  // expense, silently converting income to spend and re-guessing
+  // categories instead of trusting the exported ones.
+  if(firstLine.includes('vendor')&&firstLine.includes('excluded')){
+    importFmt='trakyodollas'; importFmtAutoDetected=true;
+  } else if(firstLine.includes('transaction type')&&firstLine.includes('original description')){
+    importFmt='mint'; importFmtAutoDetected=true;
+  } else if(firstLine.includes('outflow')&&firstLine.includes('inflow')&&firstLine.includes('payee')){
+    importFmt='ynab'; importFmtAutoDetected=true;
+  } else if(firstLine.includes('merchant')&&firstLine.includes('original statement')){
+    importFmt='monarch'; importFmtAutoDetected=true;
+  } else if(firstLine.includes('transaction date')&&firstLine.includes('memo')){
+    importFmt='chase'; importFmtAutoDetected=true;
+  } else if(firstLine.includes('time')&&firstLine.includes('type')&&!firstLine.includes('memo')){
+    importFmt='ally'; importFmtAutoDetected=true;
+  // UK "midata" export (HSBC, Nationwide, Santander, Barclays, Lloyds,
+  // Halifax) -- its 'Merchant/Description'+'Debit/Credit' header contains
+  // both 'debit' and 'credit' as substrings, so this MUST be checked
+  // before the generic debit+credit check directly below or it would be
+  // wrongly claimed as 'debitcredit' first. July 2026 research; see
+  // _HANDOFF.md.
+  } else if(firstLine.includes('merchant/description')&&firstLine.includes('debit/credit')){
+    importFmt='midata'; importFmtAutoDetected=true;
+  } else if(firstLine.includes('debit')&&firstLine.includes('credit')){
+    importFmt='debitcredit'; importFmtAutoDetected=true;
+  } else if(firstLine.includes('running bal')){
+    importFmt='bofa'; importFmtAutoDetected=true;
+  } else if(firstLine.includes('deposits')&&firstLine.includes('withdrawals')){
+    importFmt='debitcredit'; importFmtAutoDetected=true;
+  // ANZ NZ / BNZ / Westpac NZ all share a "Particulars" column (a
+  // standard NZ interbank-payment field), so each check also requires
+  // a second column unique to that bank -- checked before the generic
+  // trans-date/posting-date fallback below since none of these three
+  // banks' real headers would otherwise match anything above. July
+  // 2026 research; see _HANDOFF.md.
+  } else if(firstLine.includes('particulars')&&firstLine.includes('foreign')){
+    importFmt='anznz'; importFmtAutoDetected=true;
+  } else if(firstLine.includes('particulars')&&firstLine.includes('processed')){
+    importFmt='bnz'; importFmtAutoDetected=true;
+  } else if(firstLine.includes('particulars')&&firstLine.includes('analysis')){
+    importFmt='westpacnz'; importFmtAutoDetected=true;
+  } else if(firstLine.includes('counter party')&&firstLine.includes('reference')){
+    importFmt='starling'; importFmtAutoDetected=true;
+  } else if(firstLine.includes('trans date')||firstLine.includes('posting date')){
+    importFmt='generic'; importFmtAutoDetected=true;
+  }
+  return importFmtAutoDetected?importFmt:null;
+}
+
 function parseTxFile(file){
   const reader=new FileReader();
   reader.onload=e=>{
@@ -11083,57 +11143,29 @@ function parseTxFile(file){
     const text=e.target.result.replace(/^\uFEFF/,'');
     // Auto-detect format from headers — skipped when user has the manual picker open
     importFmtAutoDetected=false;
+    let headerLineIdx=0;
     if(!fmtPickerOpen){
-      const firstLine=text.split('\n')[0].toLowerCase();
-      // Our own exportTransactionsCSV() output — checked first since it's the
-      // most specific signature (no bank export has both 'vendor' and
-      // 'excluded' columns). Without this, reimporting your own export fell
-      // through to a generic format that treats every positive Amount as an
-      // expense, silently converting income to spend and re-guessing
-      // categories instead of trusting the exported ones.
-      if(firstLine.includes('vendor')&&firstLine.includes('excluded')){
-        importFmt='trakyodollas'; importFmtAutoDetected=true;
-      } else if(firstLine.includes('transaction type')&&firstLine.includes('original description')){
-        importFmt='mint'; importFmtAutoDetected=true;
-      } else if(firstLine.includes('outflow')&&firstLine.includes('inflow')&&firstLine.includes('payee')){
-        importFmt='ynab'; importFmtAutoDetected=true;
-      } else if(firstLine.includes('merchant')&&firstLine.includes('original statement')){
-        importFmt='monarch'; importFmtAutoDetected=true;
-      } else if(firstLine.includes('transaction date')&&firstLine.includes('memo')){
-        importFmt='chase'; importFmtAutoDetected=true;
-      } else if(firstLine.includes('time')&&firstLine.includes('type')&&!firstLine.includes('memo')){
-        importFmt='ally'; importFmtAutoDetected=true;
-      // UK "midata" export (HSBC, Nationwide, Santander, Barclays, Lloyds,
-      // Halifax) -- its 'Merchant/Description'+'Debit/Credit' header contains
-      // both 'debit' and 'credit' as substrings, so this MUST be checked
-      // before the generic debit+credit check directly below or it would be
-      // wrongly claimed as 'debitcredit' first. July 2026 research; see
-      // _HANDOFF.md.
-      } else if(firstLine.includes('merchant/description')&&firstLine.includes('debit/credit')){
-        importFmt='midata'; importFmtAutoDetected=true;
-      } else if(firstLine.includes('debit')&&firstLine.includes('credit')){
-        importFmt='debitcredit'; importFmtAutoDetected=true;
-      } else if(firstLine.includes('running bal')){
-        importFmt='bofa'; importFmtAutoDetected=true;
-      } else if(firstLine.includes('deposits')&&firstLine.includes('withdrawals')){
-        importFmt='debitcredit'; importFmtAutoDetected=true;
-      // ANZ NZ / BNZ / Westpac NZ all share a "Particulars" column (a
-      // standard NZ interbank-payment field), so each check also requires
-      // a second column unique to that bank -- checked before the generic
-      // trans-date/posting-date fallback below since none of these three
-      // banks' real headers would otherwise match anything above. July
-      // 2026 research; see _HANDOFF.md.
-      } else if(firstLine.includes('particulars')&&firstLine.includes('foreign')){
-        importFmt='anznz'; importFmtAutoDetected=true;
-      } else if(firstLine.includes('particulars')&&firstLine.includes('processed')){
-        importFmt='bnz'; importFmtAutoDetected=true;
-      } else if(firstLine.includes('particulars')&&firstLine.includes('analysis')){
-        importFmt='westpacnz'; importFmtAutoDetected=true;
-      } else if(firstLine.includes('counter party')&&firstLine.includes('reference')){
-        importFmt='starling'; importFmtAutoDetected=true;
-      } else if(firstLine.includes('trans date')||firstLine.includes('posting date')){
-        importFmt='generic'; importFmtAutoDetected=true;
-      } else {
+      // Scan the first several logical rows for a recognizable header,
+      // instead of always assuming it's the literal first row. Some bank
+      // exports (a real Bank of America quirk) prepend preamble/summary
+      // rows -- e.g. "Description,,Summary Amt." / "Beginning balance as
+      // of ..." -- before the real "Date,Description,Amount,Running
+      // Bal." header, which used to defeat both format auto-detection
+      // (only ever checked line 0) and parseCSV()'s header-row selection
+      // (same assumption), silently dropping every row under the wrong
+      // field names. Uses the identical splitCSVRows()+trim+filter
+      // pipeline parseCSV() itself uses below, so the index found here
+      // lines up exactly with the row parseCSV() will treat as the
+      // header. Capped at 10 rows so a coincidental match deep in real
+      // transaction data can't be mistaken for a header. July 2026.
+      const scanLines=splitCSVRows(text.trim()).map(l=>l.trim()).filter(Boolean);
+      const scanLimit=Math.min(10,scanLines.length);
+      importFmt=null;
+      for(let i=0;i<scanLimit;i++){
+        const fmt=detectFormatFromLine(scanLines[i].toLowerCase());
+        if(fmt){importFmt=fmt;headerLineIdx=i;importFmtAutoDetected=true;break;}
+      }
+      if(!importFmt){
         // Nothing matched — previously left importFmt at whatever it was
         // before (stale from a prior import, or the 'ally' default on a
         // fresh session), silently misparsing an unrecognized-but-plain
@@ -11144,7 +11176,7 @@ function parseTxFile(file){
         // vanished with zero warning. Falls through to the generic
         // sign-convention-detected parser instead, which is built for
         // exactly this "unknown format" case.
-        importFmt='generic'; importFmtAutoDetected=true;
+        importFmt='generic'; importFmtAutoDetected=true; headerLineIdx=0;
       }
     }
     // midata is the one format that isn't reliably comma-delimited -- real
@@ -11155,7 +11187,7 @@ function parseTxFile(file){
     // avoid any risk to the other 15 formats' parsing. July 2026 research;
     // see _HANDOFF.md.
     const csvDelim=(importFmt==='midata'&&text.split('\n')[0].includes(';'))?';':',';
-    const rows=parseCSV(text,csvDelim);
+    const rows=parseCSV(text,csvDelim,headerLineIdx);
     if(!rows||!rows.length){
       showToast('Could not read this CSV — check the format and try again','#F87171');return;
     }
@@ -11208,9 +11240,10 @@ function splitCSVRows(text){
   return rows;
 }
 
-function parseCSV(text,delim){
+function parseCSV(text,delim,headerLineIdx){
+  headerLineIdx=headerLineIdx||0;
   const lines=splitCSVRows(text.trim()).map(l=>l.trim()).filter(Boolean);
-  if(lines.length<2)return [];
+  if(lines.length<headerLineIdx+2)return [];
   // No .replace(/^"|"$/g,'') here -- splitCSVLine() already consumes a
   // field's surrounding quotes and collapses doubled internal quotes ("" ->
   // ") while parsing, so re-stripping a leading/trailing " afterward doesn't
@@ -11218,9 +11251,13 @@ function parseCSV(text,delim){
   // content legitimately ends or starts with a literal quote character
   // (e.g. an inch mark: `"BLINDS 72"""` correctly unquotes to `BLINDS 72"`,
   // then the second strip destroyed that trailing quote). Found in the 97th
-  // adversarial pass.
-  const headers=splitCSVLine(lines[0],delim).map(h=>h.trim().toLowerCase());
-  return lines.slice(1).map(line=>{
+  // adversarial pass. headerLineIdx skips any preamble rows before the
+  // real header (e.g. a Bank of America "Beginning balance as of ..."
+  // summary line) -- parseTxFile()'s auto-detect scan finds this index;
+  // every other caller (tests, or a bare parseCSV(text) call) defaults
+  // to 0, the original always-first-line behavior.
+  const headers=splitCSVLine(lines[headerLineIdx],delim).map(h=>h.trim().toLowerCase());
+  return lines.slice(headerLineIdx+1).map(line=>{
     const vals=splitCSVLine(line,delim).map(v=>v.trim());
     const obj={};
     headers.forEach((h,i)=>{obj[h]=vals[i]||'';});
