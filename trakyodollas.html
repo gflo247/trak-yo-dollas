@@ -12029,6 +12029,19 @@ function showImportPreview(){
   const detFmtTxt=document.getElementById('import-detected-fmt-text');
   if(!importParsed.length){
     if(detFmtEl)detFmtEl.classList.add('hidden');
+    // A prior successful parse in this same modal session (re-dropping a
+    // different file, or picking another manual format) could leave the
+    // preview panel and enabled Import button showing that earlier file's
+    // transactions -- confirmTxImport() itself guards on importParsed
+    // (correctly empty here), so this could never actually import stale
+    // data, but the UI kept silently showing a "ready to import" preview
+    // for a file that in fact matched nothing. Explicitly hide both, same
+    // as openTxImportModal()'s fresh-open state. Found live-testing the
+    // header-scan fix above, same day.
+    const stalePreview=document.getElementById('import-preview');
+    const staleBtn=document.getElementById('import-confirm-btn');
+    if(stalePreview)stalePreview.classList.add('hidden');
+    if(staleBtn)staleBtn.classList.add('hidden');
     const fmtNames={ally:'Checking/Savings',chase:'Credit card',debitcredit:'Debit/Credit columns',bofa:'Bank of America',generic:'Other',mint:'Mint',ynab:'YNAB',monarch:'Monarch Money',trakyodollas:'trak-yo-dolla$ export'};
     if(!fmtPickerOpen){
       showToast('We couldn\'t read this file automatically — try selecting your format below','#F87171');
