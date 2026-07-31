@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-V9654SEi4qMU+dqsOZprLuo0iRJ637uy19+sRKRQL78=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-207vfAXEeOv2Aw2T0Vc4dPHt8JwK6XL99ki7tg43wvc=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -11143,6 +11143,12 @@ function parseTxFile(file){
     const text=e.target.result.replace(/^\uFEFF/,'');
     // Auto-detect format from headers — skipped when user has the manual picker open
     importFmtAutoDetected=false;
+    // Same splitCSVRows()+trim+filter pipeline parseCSV() itself uses, computed
+    // once here and reused both for the header-line scan below and for the
+    // midata delimiter sniff further down -- so both agree on exactly which
+    // logical row is "the header," instead of one checking against filtered
+    // rows and the other against a raw, unfiltered text.split('\n')[0].
+    const scanLines=splitCSVRows(text.trim()).map(l=>l.trim()).filter(Boolean);
     let headerLineIdx=0;
     if(!fmtPickerOpen){
       // Scan the first several logical rows for a recognizable header,
@@ -11153,12 +11159,8 @@ function parseTxFile(file){
       // Bal." header, which used to defeat both format auto-detection
       // (only ever checked line 0) and parseCSV()'s header-row selection
       // (same assumption), silently dropping every row under the wrong
-      // field names. Uses the identical splitCSVRows()+trim+filter
-      // pipeline parseCSV() itself uses below, so the index found here
-      // lines up exactly with the row parseCSV() will treat as the
-      // header. Capped at 10 rows so a coincidental match deep in real
-      // transaction data can't be mistaken for a header. July 2026.
-      const scanLines=splitCSVRows(text.trim()).map(l=>l.trim()).filter(Boolean);
+      // field names. Capped at 10 rows so a coincidental match deep in
+      // real transaction data can't be mistaken for a header. July 2026.
       const scanLimit=Math.min(10,scanLines.length);
       importFmt=null;
       for(let i=0;i<scanLimit;i++){
@@ -11185,8 +11187,13 @@ function parseTxFile(file){
     // has to auto-sniff the delimiter for exactly this reason). Every other
     // supported format is comma-only, so this only branches for midata to
     // avoid any risk to the other 15 formats' parsing. July 2026 research;
-    // see _HANDOFF.md.
-    const csvDelim=(importFmt==='midata'&&text.split('\n')[0].includes(';'))?';':',';
+    // see _HANDOFF.md. Sniffs the actual detected header row, not always
+    // text.split('\n')[0] -- a preamble-row midata file (e.g. an account
+    // summary line before the real semicolon header) would otherwise sniff
+    // the comma-only preamble line and wrongly parse the real
+    // semicolon-delimited header/rows as one giant comma-less field. Found
+    // live-testing the header-scan fix above, same day.
+    const csvDelim=(importFmt==='midata'&&(scanLines[headerLineIdx]||'').includes(';'))?';':',';
     const rows=parseCSV(text,csvDelim,headerLineIdx);
     if(!rows||!rows.length){
       showToast('Could not read this CSV — check the format and try again','#F87171');return;
