@@ -229,6 +229,48 @@ test("parseCSV/splitCSVLine: an explicit delimiter argument overrides the comma 
   // Every other format is comma-only and must be unaffected by this addition.
   assert.deepEqual(parseCSV("Date,Amount\n01/15/2026,5.00"), [{ date: "01/15/2026", amount: "5.00" }]);
 });
+test("parseCSV: an explicit headerLineIdx skips preamble rows and treats that row as the header, matching a real Bank of America export quirk", () => {
+  // 125th adversarial pass: some bank exports prepend summary/preamble
+  // rows before the real column header (e.g. "Description,,Summary Amt."
+  // and "Beginning balance as of ...") -- parseTxFile()'s auto-detect scan
+  // finds the real header's row index and passes it through here so the
+  // preamble rows are skipped entirely, not misread as data under the
+  // wrong field names.
+  const { parseCSV } = loadFunctions(["parseCSV","splitCSVLine","splitCSVRows"]);
+  const text = [
+    "Description,,Summary Amt.",
+    "Beginning balance as of 01/01/2026,,,",
+    "Date,Description,Amount,Running Bal.",
+    "01/02/2026,Coffee Shop,-5.00,995.00",
+    "01/03/2026,Groceries,-42.10,952.90",
+  ].join("\n");
+  const rows = parseCSV(text, ",", 2);
+  assert.deepEqual(rows, [
+    { date: "01/02/2026", description: "Coffee Shop", amount: "-5.00", "running bal.": "995.00" },
+    { date: "01/03/2026", description: "Groceries", amount: "-42.10", "running bal.": "952.90" },
+  ]);
+});
+test("parseCSV: headerLineIdx defaults to 0, preserving every existing caller's behavior", () => {
+  const { parseCSV } = loadFunctions(["parseCSV","splitCSVLine","splitCSVRows"]);
+  const rows = parseCSV("Date,Amount\n01/15/2026,5.00");
+  assert.deepEqual(rows, [{ date: "01/15/2026", amount: "5.00" }]);
+});
+
+// ── detectFormatFromLine() — the 125th adversarial pass's fix for the
+// header-detection gap above. parseTxFile() used to check only the file's
+// literal first line for a known bank signature; it now scans the first
+// several logical rows via this same per-line check, so a real header
+// buried under preamble rows still gets recognized. ──
+test("detectFormatFromLine: recognizes a known signature and returns its format", () => {
+  const { detectFormatFromLine } = loadFunctions(["detectFormatFromLine"]);
+  assert.equal(detectFormatFromLine("date,description,amount,running bal."), "bofa");
+  assert.equal(detectFormatFromLine("date,merchant/description,debit/credit"), "midata");
+});
+test("detectFormatFromLine: returns null for a line matching no known signature, instead of guessing", () => {
+  const { detectFormatFromLine } = loadFunctions(["detectFormatFromLine"]);
+  assert.equal(detectFormatFromLine("description,,summary amt."), null);
+  assert.equal(detectFormatFromLine("beginning balance as of 01/01/2026,,,"), null);
+});
 
 // ── csvSafeField() — quotes a CSV export cell and neutralizes a leading
 // =/+/-/@ so a value copied from an imported transaction (bank memo,
