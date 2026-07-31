@@ -271,6 +271,24 @@ test("detectFormatFromLine: returns null for a line matching no known signature,
   assert.equal(detectFormatFromLine("description,,summary amt."), null);
   assert.equal(detectFormatFromLine("beginning balance as of 01/01/2026,,,"), null);
 });
+test("parseCSV: a midata file with a comma preamble row above its real semicolon header parses correctly once the right header row and delimiter are both used", () => {
+  // Found live-testing the header-scan fix: sniffing the delimiter from
+  // text.split('\n')[0] (a comma-only preamble line, no real header) instead
+  // of the actual detected header row silently produced one giant
+  // unsplit field per row instead of a real parse.
+  const { parseCSV, detectFormatFromLine, splitCSVRows } = loadFunctions(["parseCSV","splitCSVLine","splitCSVRows","detectFormatFromLine"]);
+  const text = [
+    "Statement Summary,,",
+    "Date;Merchant/Description;Debit/Credit",
+    "31/03/2026;TESCO STORES;-42.17",
+  ].join("\n");
+  const scanLines = splitCSVRows(text.trim()).map(l=>l.trim()).filter(Boolean);
+  const headerLineIdx = scanLines.findIndex(l => detectFormatFromLine(l.toLowerCase()) === "midata");
+  assert.equal(headerLineIdx, 1, "the real header should be found on row 1, past the preamble row");
+  const csvDelim = scanLines[headerLineIdx].includes(";") ? ";" : ",";
+  const rows = parseCSV(text, csvDelim, headerLineIdx);
+  assert.deepEqual(rows, [{ date: "31/03/2026", "merchant/description": "TESCO STORES", "debit/credit": "-42.17" }]);
+});
 
 // ── csvSafeField() — quotes a CSV export cell and neutralizes a leading
 // =/+/-/@ so a value copied from an imported transaction (bank memo,
@@ -5655,9 +5673,15 @@ test("parseTxFile: UK midata auto-detect is checked before the generic debit+cre
     "midata's auto-detect check must come before the generic debit+credit check in source order -- a midata header contains both 'debit' and 'credit' as substrings, so if the generic check ran first every midata file would be wrongly claimed as 'debitcredit'"
   );
 
+  // Sniffs the actual detected header row (scanLines[headerLineIdx]), not
+  // always text.split('\n')[0] -- updated alongside the 125th adversarial
+  // pass's header-scan fix (see the preamble-row test below), which
+  // surfaced a related bug: a semicolon-delimited midata file with a
+  // comma-only preamble row above its real header sniffed the wrong line
+  // and silently failed to split on ';'.
   assert.match(
     source,
-    /const csvDelim=\(importFmt==='midata'&&text\.split\('\\n'\)\[0\]\.includes\(';'\)\)\?';':',';/,
+    /const csvDelim=\(importFmt==='midata'&&\(scanLines\[headerLineIdx\]\|\|''\)\.includes\(';'\)\)\?';':',';/,
     "midata is the only format allowed a non-comma delimiter (real exports use comma or semicolon); every other format must stay comma-only"
   );
 });
