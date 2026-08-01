@@ -1023,9 +1023,9 @@ function periodIncomeCtx(byMonth) {
     amount,
     card: "chase",
     desc: "PAYROLL DEPOSIT",
-    excluded: true,
+    excluded: false,
     is_offset: false,
-    isIncome: false,
+    isIncome: true,
     cat: "",
     biz: false,
   }));
@@ -1162,8 +1162,8 @@ test("detectDepositIncome: respectBizFilter=true scopes to the active _bizFilter
   const ctx = {
     state: {
       transactions: [
-        { id: "d1", date: "2026-07-15", amount: 4000, card: "chase", desc: "PAYROLL", excluded: true, is_offset: false, biz: false },
-        { id: "d2", date: "2026-07-20", amount: 2000, card: "chase", desc: "CLIENT INVOICE DEPOSIT", excluded: true, is_offset: false, biz: true },
+        { id: "d1", date: "2026-07-15", amount: 4000, card: "chase", desc: "PAYROLL", excluded: false, isIncome: true, is_offset: false, biz: false },
+        { id: "d2", date: "2026-07-20", amount: 2000, card: "chase", desc: "CLIENT INVOICE DEPOSIT", excluded: false, isIncome: true, is_offset: false, biz: true },
       ],
       activeSources: new Set(["chase"]),
     },
@@ -1177,6 +1177,32 @@ test("detectDepositIncome: respectBizFilter=true scopes to the active _bizFilter
 
   const personalOnly = loadFunctions(["detectDepositIncome"], { ...ctx, _bizFilter: "personal" });
   assert.equal(personalOnly.detectDepositIncome(true).avgMonthly, 4000, "'personal' filter should count only the $4000 untagged deposit");
+});
+
+// detectDepositIncome() (backing income.method==='auto') used to filter on
+// t.excluded, but every one of the 8 import formats' isIncome=true branches
+// in normalizeTxRow() leaves excluded at its default false -- excluded is a
+// separate flag also set for CC Payment/Internal Transfer rows that have
+// nothing to do with income. The old filter could never match a real
+// imported income transaction, so "auto-detect income from deposits"
+// silently always reported zero. Found wiring a demo profile's real Direct
+// Deposit transactions up to this method, August 2026.
+test("detectDepositIncome: matches a real transaction's shape (isIncome:true, excluded:false), not the old excluded:true assumption", () => {
+  const ctx = {
+    state: {
+      transactions: [
+        { id: "d1", date: "2026-07-15", amount: 4250, card: "chase", desc: "DIRECT DEPOSIT - EMPLOYER", excluded: false, isIncome: true, is_offset: false, biz: false },
+        // A CC payment: excluded:true (so it's not double-counted as spend)
+        // but isIncome:false -- must NOT be picked up as income.
+        { id: "d2", date: "2026-07-20", amount: 500, card: "chase", desc: "CHASE CREDIT CARD PAYMENT", excluded: true, isIncome: false, is_offset: false, biz: false },
+      ],
+      activeSources: new Set(["chase"]),
+    },
+    _bizFilter: "all",
+  };
+  const { detectDepositIncome } = loadFunctions(["detectDepositIncome"], ctx);
+  const result = detectDepositIncome();
+  assert.equal(result.avgMonthly, 4250, "should count the isIncome:true deposit and ignore the excluded:true-but-not-income CC payment");
 });
 
 // ── 67th adversarial pass: openSyncPassphraseReset() (66th pass) opens the
