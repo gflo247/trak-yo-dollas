@@ -9505,6 +9505,24 @@ function selectIncomeMethod(method){
     updateIncomePreview(detected.avgMonthly);
     scheduleSave();
     renderInsights();
+    // Every sibling income-modal action (saveManualIncome(), setNwGoal(),
+    // saveBudget(), toggleIncludeIncome(), etc.) shows a toast, and one
+    // that's _isLiveDemoSession()-aware ("resets once you add real data")
+    // since the July 28 pass -- this commits state.income.method='auto'
+    // and scheduleSave()s just as immediately as any of them, but had
+    // neither. Live-testing the demo-to-real transition surfaced the
+    // concrete harm: Demo Profile 1 has zero income transactions of its
+    // own, so clicking this card (an ordinary, equally-weighted option
+    // right next to Manual) silently dropped the Spending tab's Savings
+    // Rate card from a healthy percentage to a blank "Set up" state, with
+    // no toast and no warning either way. The distinct amber branch below
+    // matches that specific case honestly instead of a generic success
+    // toast that isn't true yet. Found August 2026.
+    if(detected.avgMonthly>0){
+      showToast(`💰 Auto-detect enabled — tracking ~${fmt(detected.avgMonthly,true)}/mo`+(_isLiveDemoSession()?' (resets once you add real data)':''),'#34D399');
+    }else{
+      showToast('Auto-detect enabled, but no deposit transactions found yet — savings rate won\'t show until you import a checking CSV'+(_isLiveDemoSession()?' (resets once you add real data)':''),'#FCD34D',5000);
+    }
   }
   if(method==='manual'){
     const input=document.getElementById('income-amount');
@@ -11378,6 +11396,12 @@ function _creditDepositCat(desc){
 
 function normalizeTxRow(row, source){
   let date, desc, amount, cat='Other', excluded=false, mcc='', isIncome=false, biz, isOffset=false, card;
+  // Set true only if state.catRules (tier 3 below) is what assigned cat --
+  // confirmTxImport() reads this to know which imported transactions need
+  // re-categorizing if this turns out to be a first-real-save-on-a-demo-
+  // session import, since state.catRules is one of the fields that gets
+  // wiped in that exact scenario (see confirmTxImport() for the full story).
+  let catFromUserRule=false;
 
   if(importFmt==='ally'){
     date=row['date']||row['date ']||'';
@@ -11791,7 +11815,7 @@ function normalizeTxRow(row, source){
   if(importFmt!=='trakyodollas'&&state.catRules&&state.catRules.length){
     for(const rule of state.catRules){
       if(rule.keyword&&descUpper.includes(rule.keyword.toUpperCase())){
-        cat=rule.cat;break;
+        cat=rule.cat;catFromUserRule=true;break;
       }
     }
   }
@@ -11833,7 +11857,7 @@ function normalizeTxRow(row, source){
   // pass -- just via an entry point that guard was never wired into.
   // Found in the 34th adversarial pass.
   if(isReservedCatName(cat))cat='Other';
-  return {date,desc:desc.slice(0,50),cat,card:card||source,amount:Math.round(amount*100)/100,excluded,is_offset:isOffset,isIncome:isIncome||false,biz:biz||false};
+  return {date,desc:desc.slice(0,50),cat,card:card||source,amount:Math.round(amount*100)/100,excluded,is_offset:isOffset,isIncome:isIncome||false,biz:biz||false,catFromUserRule};
 }
 
 // Shared keyword → category map, used by all import formats
@@ -12143,6 +12167,11 @@ function confirmTxImport(){
   }
   const source=document.getElementById('import-source-label').value.trim()||'Imported';
   const replace=document.getElementById('import-replace').checked;
+  // Captured before _replaceDemoDataWithReal() runs below (state.hasRealData
+  // itself isn't set true until this function's very end) -- see the
+  // catFromUserRule re-derivation right after newTxs is built for why this
+  // specific moment matters.
+  const wasFirstRealSave=!state.hasRealData;
 
   let newTxs;
   mutateTransactions(()=>{
@@ -12171,6 +12200,35 @@ function confirmTxImport(){
 
     // Assign IDs and stamp current source label onto card (user may have edited it after parsing)
     newTxs=importParsed.map(t=>({...t,card:source,id:state.nextId++}));
+    // On a first-real-save transition, normalizeTxRow() categorized these
+    // rows (during the file preview, before _replaceDemoDataWithReal() ran
+    // above) using the demo profile's own state.catRules -- e.g. Demo
+    // Profile 1's 'SHELL'->Transportation / 'RENT'->Rent rules, both
+    // custom categories that only exist because the demo seed data
+    // registered them. Left alone, the auto-register step below (108th/
+    // 109th passes) would permanently add those demo-only category names
+    // as if the user had created them, on the strength of a categorization
+    // rule that's already been wiped by the time this runs. Re-derive via
+    // community rules only (the next real, non-demo-specific tier
+    // normalizeTxRow() itself would have tried) for exactly the
+    // transactions catFromUserRule flagged, then strip the now-unneeded
+    // flag from every transaction so it never reaches state.transactions.
+    // Found live-testing the demo-to-real transition, August 2026.
+    if(wasFirstRealSave){
+      newTxs.forEach(t=>{
+        if(t.catFromUserRule){
+          const du=t.desc.toUpperCase();
+          let recat='Other';
+          if(_communityRules){
+            for(const rule of _communityRules){
+              if(rule.keyword&&du.includes(rule.keyword.toUpperCase())){recat=rule.cat;break;}
+            }
+          }
+          t.cat=recat;
+        }
+      });
+    }
+    newTxs.forEach(t=>{delete t.catFromUserRule;});
     state.transactions=[...state.transactions,...newTxs];
     state.transactions.sort((a,b)=>b.date.localeCompare(a.date));
     // The trakyodollas re-import format's normalizeTxRow() branch

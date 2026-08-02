@@ -1205,6 +1205,34 @@ test("detectDepositIncome: matches a real transaction's shape (isIncome:true, ex
   assert.equal(result.avgMonthly, 4250, "should count the isIncome:true deposit and ignore the excluded:true-but-not-income CC payment");
 });
 
+// Found live-testing the demo-to-real transition (August 2026):
+// selectIncomeMethod('auto') commits state.income.method='auto' and
+// scheduleSave()s immediately on click, exactly like every sibling
+// income-modal action (saveManualIncome(), setNwGoal(), saveBudget(),
+// toggleIncludeIncome(), etc.) -- but unlike all of them, it had no toast
+// at all, and no _isLiveDemoSession()-aware "(resets once you add real
+// data)" messaging from the July 28 pass. Live-verified the concrete harm:
+// on Demo Profile 1 (zero income transactions of its own), clicking this
+// card silently dropped the Spending tab's Savings Rate card from a
+// healthy percentage to a blank "Set up" state with no warning either way.
+test("selectIncomeMethod('auto'): shows a toast, distinguishing whether any deposits were actually detected, both demo-aware like every sibling income action", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function selectIncomeMethod\(method\)\{[\s\S]{0,1700}?\n  \}\n  if\(method==='manual'\)/);
+  assert.ok(fnMatch, "selectIncomeMethod()'s auto branch should exist");
+  assert.match(
+    fnMatch[0],
+    /if\(detected\.avgMonthly>0\)\{\s*showToast\(`💰 Auto-detect enabled — tracking ~\$\{fmt\(detected\.avgMonthly,true\)\}\/mo`\+\(_isLiveDemoSession\(\)\?' \(resets once you add real data\)':''\),'#34D399'\);/,
+    "selecting auto with real detected deposits should show a demo-aware success toast, matching saveManualIncome()'s own pattern"
+  );
+  assert.match(
+    fnMatch[0],
+    /\}else\{\s*showToast\('Auto-detect enabled, but no deposit transactions found yet[\s\S]{0,120}\+\(_isLiveDemoSession\(\)\?' \(resets once you add real data\)':''\),'#FCD34D',5000\);/,
+    "selecting auto with zero detected deposits should show a distinct, honest amber warning instead of a generic success toast that isn't true yet"
+  );
+});
+
 // ── 67th adversarial pass: openSyncPassphraseReset() (66th pass) opens the
 // same sync-passphrase-modal, and shares Cancel/Escape routing, with
 // promptSyncPassphrase()'s genuine unresolved-sign-in flow -- but
@@ -3594,13 +3622,82 @@ test("confirmTxImport: auto-registers any imported transaction's category that i
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/newTxs=importParsed\.map[\s\S]{0,2200}?\n  \}\);/);
+  const fnMatch = source.match(/newTxs=importParsed\.map[\s\S]{0,3700}?\n  \}\);/);
   assert.ok(fnMatch, "confirmTxImport()'s mutateTransactions block should exist");
   assert.match(
     fnMatch[0],
     /const knownCats=new Set\(getAllCats\(\)\.map\(c=>c\.toLowerCase\(\)\)\);\s*newTxs\.forEach\(t=>\{\s*if\(t\.cat&&!knownCats\.has\(t\.cat\.toLowerCase\(\)\)\)\{\s*state\.customCategories\.push\(\{name:t\.cat,color:null\}\);\s*knownCats\.add\(t\.cat\.toLowerCase\(\)\);\s*\}\s*\}\);/,
     "confirmTxImport() should push {name,color:null} (addCustomCat()'s own shape) for every newly-imported category not already in getAllCats(), deduping case-insensitively (109th pass) via a local Set so a repeated new category isn't pushed twice"
   );
+});
+
+// Found live-testing the demo-to-real transition (August 2026): a demo
+// profile's own state.catRules (e.g. Demo Profile 1's 'SHELL'->
+// Transportation, 'RENT'->Rent -- both custom categories that only exist
+// because the demo seed data registered them) categorize CSV rows during
+// the file preview, BEFORE the user clicks Import and before
+// _replaceDemoDataWithReal() wipes those same catRules. The auto-register-
+// unknown-category step above (108th/109th passes) then permanently
+// re-added 'Transportation'/'Rent' as if the user had created them, on the
+// strength of a rule that no longer existed by the time it ran. Live-
+// verified: importing a plain Date,Description,Amount,Type CSV with a
+// "Shell Oil" row from a Demo Profile 1 session left "Transportation" in
+// getAllCats() for the "real" post-transition account. Fixed by having
+// normalizeTxRow() flag which categorization came from state.catRules
+// (catFromUserRule) and having confirmTxImport() re-derive those specific
+// categories via community rules only -- the next real, non-demo-specific
+// tier -- whenever this is a first-real-save transition, before the
+// auto-register step ever sees them.
+test("normalizeTxRow: flags catFromUserRule only when state.catRules is what assigned the category", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /let catFromUserRule=false;/,
+    "normalizeTxRow() should declare catFromUserRule, defaulting to false"
+  );
+  assert.match(
+    source,
+    /if\(rule\.keyword&&descUpper\.includes\(rule\.keyword\.toUpperCase\(\)\)\)\{\s*cat=rule\.cat;catFromUserRule=true;break;/,
+    "the state.catRules tier (the one that runs before community rules/MCC, and 'always wins, even over ATM') should set catFromUserRule=true when it fires"
+  );
+  assert.match(
+    source,
+    /return \{date,desc:desc\.slice\(0,50\),cat,card:card\|\|source,amount:Math\.round\(amount\*100\)\/100,excluded,is_offset:isOffset,isIncome:isIncome\|\|false,biz:biz\|\|false,catFromUserRule\};/,
+    "catFromUserRule should be part of normalizeTxRow()'s return object"
+  );
+});
+test("confirmTxImport: re-derives catFromUserRule categories via community rules on a first-real-save transition, before auto-registering them as permanent custom categories", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const wasFirstRealSave=!state\.hasRealData;/,
+    "confirmTxImport() should capture whether this is a first-real-save transition before _replaceDemoDataWithReal() runs"
+  );
+  const fnMatch = source.match(/newTxs=importParsed\.map[\s\S]{0,3700}?\n  \}\);/);
+  assert.ok(fnMatch, "confirmTxImport()'s mutateTransactions block should exist");
+  assert.match(
+    fnMatch[0],
+    /if\(wasFirstRealSave\)\{\s*newTxs\.forEach\(t=>\{\s*if\(t\.catFromUserRule\)\{/,
+    "the catFromUserRule re-derivation should be gated on wasFirstRealSave -- an ordinary (non-demo-transition) import must never second-guess an already-correct user-rule categorization"
+  );
+  assert.match(
+    fnMatch[0],
+    /newTxs\.forEach\(t=>\{delete t\.catFromUserRule;\}\);/,
+    "catFromUserRule should be stripped from every transaction before it reaches state.transactions -- it's a transient signal, not part of the persisted transaction shape"
+  );
+  // The re-derivation must run (and the flag must be stripped) before the
+  // auto-register-unknown-category step, or a demo-rule-derived category
+  // would already have been permanently registered by the time it's
+  // corrected.
+  const rederiveIdx = fnMatch[0].indexOf("if(wasFirstRealSave){");
+  const stripIdx = fnMatch[0].indexOf("delete t.catFromUserRule");
+  const registerIdx = fnMatch[0].indexOf("const knownCats=");
+  assert.ok(rederiveIdx > -1 && stripIdx > -1 && registerIdx > -1, "all three steps should exist");
+  assert.ok(rederiveIdx < registerIdx && stripIdx < registerIdx, "re-derivation and stripping must both happen before the auto-register step reads t.cat");
 });
 
 // Finding 3 (MEDIUM-LOW): loadDemoProfile() deep-copies state.accounts
@@ -3722,10 +3819,10 @@ test("confirmTxImport: the demo-session-wipe branch delegates to the shared _rep
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,2500}?_replaceDemoDataWithReal\(\);/);
+  const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,2700}?_replaceDemoDataWithReal\(\);/);
   assert.ok(fnMatch, "confirmTxImport() should call _replaceDemoDataWithReal()");
   assert.doesNotMatch(
-    source.match(/function confirmTxImport\(\)\{[\s\S]{0,4900}?\n  closeModals\(\);/)[0],
+    source.match(/function confirmTxImport\(\)\{[\s\S]{0,6600}?\n  closeModals\(\);/)[0],
     /state\.income=\{method:null,monthlyAmount:0\};/,
     "confirmTxImport() itself should no longer hand-roll the income reset -- it's now inside the shared helper"
   );
@@ -4795,7 +4892,7 @@ test("normalizeTxRow's 'trakyodollas' import branch reads the per-row Source col
   );
   assert.match(
     source,
-    /return \{date,desc:desc\.slice\(0,50\),cat,card:card\|\|source,amount:Math\.round\(amount\*100\)\/100,excluded,is_offset:isOffset,isIncome:isIncome\|\|false,biz:biz\|\|false\};/,
+    /return \{date,desc:desc\.slice\(0,50\),cat,card:card\|\|source,amount:Math\.round\(amount\*100\)\/100,excluded,is_offset:isOffset,isIncome:isIncome\|\|false,biz:biz\|\|false,catFromUserRule\};/,
     "the return statement should prefer the per-row card over the file-level source label when one was parsed"
   );
 });
