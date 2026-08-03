@@ -138,8 +138,8 @@ rsync -a \
   --exclude='.git' \
   --exclude='.gitignore' \
   --exclude='.wrangler' \
+  --exclude='.firebase' \
   --exclude='_cf_deploy' \
-  --exclude='firebase.json' \
   --exclude='wrangler.toml' \
   --exclude='deploy.sh' \
   --exclude='*.sh' \
