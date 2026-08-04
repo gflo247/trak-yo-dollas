@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-PuttdhyTFF2bndiCl02Q667lbOjLqCyd6xsKnwrc9hI=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-MS7uzuQy3QxXQNOO5gbwiAihTTeLCo9hR4THh5S4pvA=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1190,7 +1190,10 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
     <!-- Preview -->
     <div id="import-preview" class="hidden" style="margin-top:.65rem">
-      <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem">Preview</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Preview</div>
+        <button id="import-preview-sort-toggle" class="hidden" data-action="toggleImportPreviewSort" style="background:none;border:none;color:var(--accent-blue-light);font-size:10px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">Show oldest first</button>
+      </div>
       <div id="import-preview-stats" style="font-size:11px;color:var(--text-secondary);margin-bottom:.4rem"></div>
       <div id="import-preview-rows" style="max-height:160px;overflow-y:auto;border:1px solid var(--border-mid);border-radius:8px;font-size:10px"></div>
       <div style="margin-top:.6rem;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:8px;padding:.5rem .65rem;display:flex;align-items:flex-start;gap:8px">
@@ -10872,6 +10875,11 @@ let fmtPickerOpen=false;
 let importParsed=[];  // [{date,desc,cat,card,amount,excluded,is_offset}]
 let _importDateFmt='mdy'; // 'mdy'=MM/DD/YYYY (US), 'dmy'=DD/MM/YYYY (UK/AU)
 let _importRawRows=null;  // stored for re-parse when date format changes
+// Which end of the date range the 8-row preview sample shows -- lets a user
+// confirm both ends of the summary line's "Jan '25 – Jul '26" claim instead
+// of only ever seeing whichever end the file happened to list first.
+// Requested by Nicholas, launch day, August 2026.
+let _importPreviewOldestFirst=false;
 // Generic-format sign convention: most bank exports use negative=expense/positive=deposit,
 // but some unsigned exports (e.g. credit-card-only CSVs) list every charge as positive with
 // no separate debit/credit marker. Detected once per file from the majority polarity of the
@@ -11029,6 +11037,7 @@ function openTxImportModal(){
   importFmt='ally';
   _importDateFmt='mdy';
   _importRawRows=null;
+  _importPreviewOldestFirst=false;
   // #import-source-label/#import-replace were never reset here -- neither
   // is touched by closeModals() or onImportSuccessClose() either. The
   // app's own "Import another CSV" button (importSuccessAndReopen()) is
@@ -11170,6 +11179,11 @@ function parseTxFile(file){
     const text=e.target.result.replace(/^\uFEFF/,'');
     // Auto-detect format from headers — skipped when user has the manual picker open
     importFmtAutoDetected=false;
+    // Dropping a new file into an already-open modal (re-picking after
+    // Cancel, or trying a different file) shouldn't carry over a prior
+    // file's "show oldest first" toggle -- same reasoning as every other
+    // per-file reset here.
+    _importPreviewOldestFirst=false;
     // Same splitCSVRows()+trim+filter pipeline parseCSV() itself uses, computed
     // once here and reused both for the header-line scan below and for the
     // midata delimiter sniff further down -- so both agree on exactly which
@@ -12057,6 +12071,11 @@ function guessCatChase(d){
   return guessCatFromDesc(d);
 }
 
+function toggleImportPreviewSort(){
+  _importPreviewOldestFirst=!_importPreviewOldestFirst;
+  showImportPreview();
+}
+
 function showImportPreview(){
   const detFmtEl=document.getElementById('import-detected-fmt');
   const detFmtTxt=document.getElementById('import-detected-fmt-text');
@@ -12089,7 +12108,11 @@ function showImportPreview(){
   const fmtLabels={ally:'Checking/Savings',chase:'Credit card',debitcredit:'Debit/Credit columns',bofa:'Bank of America',generic:'Other',mint:'Mint',ynab:'YNAB',monarch:'Monarch Money'};
   if(detFmtEl&&detFmtTxt){
     if(importFmtAutoDetected){
-      detFmtTxt.textContent=`Detected: ${fmtLabels[importFmt]||importFmt} — ${importParsed.length} transaction${importParsed.length===1?'':'s'} ready`;
+      // Used to repeat "-- N transactions ready" here too, duplicating the
+      // PREVIEW section's own leading "N transactions" a few lines below --
+      // this badge's job is just confirming which format matched; the
+      // count belongs in exactly one place. Found by Nicholas, launch day.
+      detFmtTxt.textContent=`Detected: ${fmtLabels[importFmt]||importFmt}`;
       detFmtEl.classList.remove('hidden');
     } else {
       detFmtEl.classList.add('hidden');
@@ -12116,12 +12139,36 @@ function showImportPreview(){
   // fmtD(total), not a hardcoded '$' prefix -- this preview showed '$'
   // regardless of the user's chosen currency symbol, unlike every other
   // dollar figure in the import flow. Found in the 39th adversarial pass.
-  stats.innerHTML=`<strong style="color:var(--text-bright)">${importParsed.length} transaction${importParsed.length===1?'':'s'}</strong> · <span style="color:#475569">${esc(dateRangeStr)}</span> · <span style="color:#475569">${fmtD(total)} total</span> · Top: ${topCats}`;
+  // color:var(--text-muted), not the hardcoded #475569 these two spans used
+  // to carry -- that exact hex is the one the 139th adversarial pass found
+  // and removed everywhere else in the file for failing WCAG AA outright
+  // (1.93:1 against dark theme's --bg-card, nowhere close to the 4.5:1
+  // minimum); this spot wasn't part of that sweep since it lives inside a
+  // template string, not a static CSS rule. Found fixing the row-date
+  // contrast complaint just below, same day.
+  stats.innerHTML=`<strong style="color:var(--text-bright)">${importParsed.length} transaction${importParsed.length===1?'':'s'}</strong> · <span style="color:var(--text-muted)">${esc(dateRangeStr)}</span> · <span style="color:var(--text-muted)">${fmtD(total)} total</span> · Top: ${topCats}`;
 
-  const sample=importParsed.slice(0,8);
+  // Sorted fresh each render (not just importParsed's file order, which
+  // some banks export oldest-first and others newest-first) so "oldest
+  // first" / "newest first" reliably shows the actual earliest/latest
+  // rows -- letting a user step to both ends of the dateRangeStr claim
+  // above and spot-check it against real rows, not just trust the label.
+  // Requested by Nicholas, launch day, August 2026.
+  const previewSortToggle=document.getElementById('import-preview-sort-toggle');
+  if(previewSortToggle){
+    if(importParsed.length>8){
+      previewSortToggle.classList.remove('hidden');
+      previewSortToggle.textContent=_importPreviewOldestFirst?'Show newest first':'Show oldest first';
+    } else {
+      // Nothing hidden by the 8-row cap, so there's no second "side" to reveal.
+      previewSortToggle.classList.add('hidden');
+    }
+  }
+  const sorted=[...importParsed].sort((a,b)=>_importPreviewOldestFirst?a.date.localeCompare(b.date):b.date.localeCompare(a.date));
+  const sample=sorted.slice(0,8);
   rows.innerHTML=sample.map(t=>`
     <div style="display:flex;gap:8px;padding:.3rem .6rem;border-bottom:1px solid var(--border-mid);align-items:center">
-      <span style="font-size:9px;color:var(--text-muted);min-width:72px">${esc(t.date)}</span>
+      <span style="font-size:9px;color:var(--text-secondary);min-width:72px">${esc(t.date)}</span>
       <span style="flex:1;font-size:10px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.desc)}</span>
       <span style="font-size:9px;padding:1px 6px;border-radius:99px;background:${getCatColor(t.cat)}22;color:${getCatColor(t.cat)}">${esc(t.cat)}</span>
       <span style="font-size:10px;font-weight:700;color:#F87171;min-width:52px;text-align:right">${fmtD(t.amount)}</span>
