@@ -2527,6 +2527,47 @@ test("confirmTxImport: shows the no-matching-account nudge only when no account'
   );
 });
 
+// ── One-time glow on the Spending tab's Import CSV button, requested by
+// Nicholas as a lighter alternative to a repeating pulse: fires once per
+// browser tab session, only while state.hasRealData is still false, and
+// never again once real data exists. Deliberately keyed off sessionStorage
+// rather than a new state.* field, so there's nothing for
+// check-demo-transition-coverage.py or check-cloudsync-coverage.py to
+// track and nothing to reset on the demo-to-real transition. renderSpending()
+// is DOM-heavy; source-pattern only. Added August 4, 2026. ──
+test("renderSpending: the Import CSV button gets a one-time glow, gated on !state.hasRealData and a sessionStorage flag rather than a persisted state field", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function renderSpending\(\)\{[\s\S]{0,2400}?\n}\n/);
+  assert.ok(fnMatch, "renderSpending() should exist");
+  assert.match(
+    fnMatch[0],
+    /if\(!state\.hasRealData\)\{\s*try\{\s*if\(!sessionStorage\.getItem\('trakyo_import_cta_seen'\)\)\{\s*sessionStorage\.setItem\('trakyo_import_cta_seen','1'\);/,
+    "renderSpending() should gate the glow on !state.hasRealData and a sessionStorage flag, set immediately so a second render call in the same session can't re-trigger it"
+  );
+  assert.match(
+    fnMatch[0],
+    /const importBtn=document\.getElementById\('toolbar-import-btn'\);\s*if\(importBtn\)\{\s*requestAnimationFrame\(\(\)=>importBtn\.classList\.add\('import-cta-glow'\)\);\s*setTimeout\(\(\)=>importBtn\.classList\.remove\('import-cta-glow'\),2800\);/,
+    "renderSpending() should add .import-cta-glow to #toolbar-import-btn via requestAnimationFrame (forcing a fresh animation start) and remove it again after the animation finishes, matching the codebase's existing chip-nudge/sign-in-confirm cleanup pattern"
+  );
+  assert.doesNotMatch(
+    source,
+    /state\.\w+\s*=\s*[^;]*trakyo_import_cta_seen/,
+    "the glow-seen flag should live only in sessionStorage, never get mirrored into a state.* field"
+  );
+});
+test("the .import-cta-glow animation respects prefers-reduced-motion, matching the codebase's existing motion-sensitivity awareness elsewhere", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /@keyframes import-cta-glow\{[\s\S]{0,120}?\}\s*\.import-cta-glow\{animation:import-cta-glow[^}]*\}\s*@media \(prefers-reduced-motion:reduce\)\{\.import-cta-glow\{animation:none\}\}/,
+    "the .import-cta-glow keyframe should have a paired @media(prefers-reduced-motion:reduce) override disabling the animation entirely"
+  );
+});
+
 // ── 98th adversarial pass: renderYearInReview()'s "Quietest month" reduce
 // was seeded with the *unfiltered* byMonth[0], even though it only ever
 // iterates the spent>0-filtered array -- if the window's chronologically
