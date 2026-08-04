@@ -5658,7 +5658,7 @@ test("the .truncate utility class exists and is applied to the 5 sites the 168th
     "the shared .truncate utility class should be defined"
   );
   const truncateUsages = source.match(/class="truncate"/g) || [];
-  assert.equal(truncateUsages.length, 8, "the .truncate class should be applied at the 5 sites this pass fixed, plus 3 more added in a later small-fixes round (see the dedicated test below)");
+  assert.equal(truncateUsages.length, 9, "the .truncate class should be applied at the 5 sites this pass fixed, plus 3 more added in a later small-fixes round (see the dedicated test below), plus the CSV import preview's category pill (an unbounded-length custom category name could otherwise misalign the new column-sort header, found in the adversarial pass right after that header was added)");
   assert.match(
     source,
     /<div class="truncate" style="font-size:12px;font-weight:700;color:var\(--amber-text\)" title="\$\{esc\(a\.name\)\}">\$\{esc\(a\.name\)\}<\/div>/,
@@ -5935,47 +5935,125 @@ test("showImportPreview: preview row dates use --text-secondary (5.71:1 against 
     "the row date span should use --text-secondary"
   );
 });
-test("showImportPreview: an import over 8 rows gets a working oldest/newest sort toggle, sorted by actual date rather than trusting file order", () => {
+// Follow-up feedback, same launch day: the single date-only oldest/newest
+// toggle got replaced with real column sorting (Date/Description/Category/
+// Amount, each clickable, click again to flip direction) -- e.g. sorting
+// by Amount surfaces the single largest transaction in the whole import,
+// not just the date-range's two ends. The stats line also moved out of
+// #import-preview to sit right next to the Detected badge near the top of
+// the modal, instead of below the format-picker/reset links.
+test("setImportPreviewSort(): clicking a new column sorts by it with a sensible default direction; clicking the same column again flips direction", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  assert.match(
-    source,
-    /function toggleImportPreviewSort\(\)\{\s*_importPreviewOldestFirst=!_importPreviewOldestFirst;\s*showImportPreview\(\);\s*\}/,
-    "toggleImportPreviewSort() should flip the flag and re-render the same parsed data, not re-read the file"
-  );
-  assert.match(
-    source,
-    /let _importPreviewOldestFirst=false;/,
-    "_importPreviewOldestFirst should default to false (newest first)"
-  );
+  const fnMatch = source.match(/function setImportPreviewSort\(col\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "setImportPreviewSort() should exist");
+  assert.match(fnMatch[0], /if\(_importPreviewSortCol===col\)\{\s*_importPreviewSortAsc=!_importPreviewSortAsc;/, "clicking the already-active column should flip direction");
+  assert.match(fnMatch[0], /_importPreviewSortCol=col;/, "clicking a different column should switch to it");
+  assert.match(fnMatch[0], /_importPreviewSortAsc=\(col==='desc'\|\|col==='cat'\);/, "switching to a new column should default date/amount to descending and desc/cat to ascending");
+  assert.match(fnMatch[0], /showImportPreview\(\);/, "should re-render after changing the sort");
+  assert.match(source, /let _importPreviewSortCol='date';/, "should default to sorting by date");
+  assert.match(source, /let _importPreviewSortAsc=false;/, "date should default to descending (newest first), matching the original single-purpose toggle's default");
   // Reset on both a fresh modal open and a new file dropped into an
   // already-open modal -- same two entry points every other per-file
   // import flag (importFmt, _importDateFmt, etc.) already resets at.
   const openModalFn = source.match(/function openTxImportModal\(\)\{[\s\S]*?\n\}/);
   assert.ok(openModalFn, "openTxImportModal() should exist");
-  assert.match(openModalFn[0], /_importPreviewOldestFirst=false;/, "opening the modal fresh should reset the sort toggle");
-  const parseFileFn = source.match(/function parseTxFile\(file\)\{[\s\S]*?reader\.onload=e=>\{[\s\S]{0,600}/);
+  assert.match(openModalFn[0], /_importPreviewSortCol='date';\s*_importPreviewSortAsc=false;/, "opening the modal fresh should reset the sort column/direction");
+  const parseFileFn = source.match(/function parseTxFile\(file\)\{[\s\S]*?reader\.onload=e=>\{[\s\S]{0,700}/);
   assert.ok(parseFileFn, "parseTxFile()'s reader.onload should exist");
-  assert.match(parseFileFn[0], /_importPreviewOldestFirst=false;/, "loading a new file into an already-open modal should also reset the sort toggle, not carry over the prior file's setting");
-
+  assert.match(parseFileFn[0], /_importPreviewSortCol='date';\s*_importPreviewSortAsc=false;/, "loading a new file into an already-open modal should also reset the sort, not carry over the prior file's setting");
+});
+test("showImportPreview: the 8-row sample is sorted by whichever column/direction is active, over the full importParsed set, with visible sort-direction arrows", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "showImportPreview() should exist");
   assert.match(
     fnMatch[0],
-    /const sorted=\[\.\.\.importParsed\]\.sort\(\(a,b\)=>_importPreviewOldestFirst\?a\.date\.localeCompare\(b\.date\):b\.date\.localeCompare\(a\.date\)\);/,
-    "the sample should be sorted by actual date (ascending when oldest-first, descending otherwise), not sliced straight from importParsed's file order"
+    /date:\(a,b\)=>a\.date\.localeCompare\(b\.date\),\s*desc:\(a,b\)=>a\.desc\.localeCompare\(b\.desc\),\s*cat:\(a,b\)=>a\.cat\.localeCompare\(b\.cat\),\s*amount:\(a,b\)=>a\.amount-b\.amount,/,
+    "should define a comparator for all 4 sortable columns"
+  );
+  assert.match(
+    fnMatch[0],
+    /const sorted=\[\.\.\.importParsed\]\.sort\(\(a,b\)=>\{\s*const cmp=sortCmp\[_importPreviewSortCol\]\(a,b\);\s*return _importPreviewSortAsc\?cmp:-cmp;\s*\}\);/,
+    "the sample should be sorted by the active column/direction over the full importParsed array, not sliced straight from file order"
   );
   assert.match(fnMatch[0], /const sample=sorted\.slice\(0,8\);/, "the 8-row sample should come from the freshly-sorted array");
   assert.match(
     fnMatch[0],
-    /if\(importParsed\.length>8\)\{\s*previewSortToggle\.classList\.remove\('hidden'\);/,
-    "the sort toggle should only be shown when there's a second 'side' of the import to reveal (more than 8 rows)"
+    /arrow\.textContent=col===_importPreviewSortCol\?\(_importPreviewSortAsc\?' ▲':' ▼'\):'';/,
+    "the active column's header should show a direction arrow; every other column's arrow should be cleared"
   );
+});
+test("the import-preview column headers exist for all 4 sortable fields, width-aligned with the row template below them", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  ["date", "desc", "cat", "amount"].forEach((col) => {
+    assert.match(
+      source,
+      new RegExp(`data-action="setImportPreviewSort" data-arg="${col}"[^>]*>[A-Za-z]+<span id="import-sort-arrow-${col}">`),
+      `the ${col} column header button should exist and wire to setImportPreviewSort('${col}')`
+    );
+  });
+});
+test("the import summary line (#import-preview-stats) now sits right after the Detected badge, not nested inside #import-preview below the format-picker/reset links", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const detectedBadgeMatch = source.match(/<div id="import-detected-fmt"[\s\S]*?<\/div>[\s\S]{0,600}?<div id="import-preview-stats"/);
+  assert.ok(detectedBadgeMatch, "#import-preview-stats should immediately follow the #import-detected-fmt block in the markup");
+  const previewStatsMatch = source.match(/<div id="import-preview-stats" class="hidden"/);
+  assert.ok(previewStatsMatch, "#import-preview-stats should start hidden like #import-detected-fmt, since it's no longer inside #import-preview's own hidden wrapper");
+  // showImportPreview() must now explicitly show/hide it itself in both
+  // directions, since it's a sibling of #import-preview, not a child that
+  // inherits visibility from the parent's hidden class toggling anymore.
+  const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "showImportPreview() should exist");
+  assert.match(fnMatch[0], /stats\.classList\.remove\('hidden'\);/, "showImportPreview()'s success path should explicitly un-hide the relocated stats element");
+  const zeroBranch = fnMatch[0].match(/if\(!importParsed\.length\)\{[\s\S]*?\n {4}return;\n {2}\}/);
+  assert.ok(zeroBranch, "showImportPreview() should have a zero-transactions early-return branch");
+  assert.match(zeroBranch[0], /staleStats\.classList\.add\('hidden'\)/, "the zero-transactions branch should also hide the relocated stats element, not just #import-preview/#import-confirm-btn");
+});
+
+// Two findings from the adversarial pass run immediately after the
+// relocation/column-sort work above, both fixed same day.
+test("openTxImportModal() also hides the relocated #import-preview-stats on a fresh modal open, not just #import-preview/#import-confirm-btn", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function openTxImportModal\(\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "openTxImportModal() should exist");
+  // Moving #import-preview-stats out of #import-preview (so it could sit
+  // next to the Detected badge) meant it stopped inheriting the parent's
+  // hidden-class reset on modal open -- without its own explicit line
+  // here, reopening the modal after a successful import left the
+  // previous file's "N transactions · date range · total" text visibly
+  // sitting above an otherwise-empty drop zone. Live-reproduced before
+  // this fix: called openTxImportModal() with the stats element
+  // deliberately left visible with stale content, confirmed it stayed
+  // visible and unchanged.
   assert.match(
     fnMatch[0],
-    /previewSortToggle\.classList\.add\('hidden'\);/,
-    "the sort toggle should hide itself for an import of 8 rows or fewer, since every row is already visible"
+    /const stalePreviewStats=document\.getElementById\('import-preview-stats'\);\s*if\(stalePreviewStats\)stalePreviewStats\.classList\.add\('hidden'\);/,
+    "openTxImportModal() should explicitly hide #import-preview-stats, matching how it already hides #import-preview and #import-detected-fmt"
+  );
+});
+test("the import-preview category pill truncates with the shared .truncate class, so an unusually long custom category name can't blow out the row or misalign the new Amount column header", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  // addCustomCat() enforces no max length on category names, and the new
+  // column-sort header (added same day) made any resulting misalignment
+  // visually noticeable for the first time -- previously an unbounded-
+  // width pill was harmless since there was no fixed-position header
+  // label for it to drift out from under.
+  assert.match(
+    source,
+    /<span class="truncate" style="font-size:9px;padding:1px 6px;border-radius:99px;background:\$\{getCatColor\(t\.cat\)\}22;color:\$\{getCatColor\(t\.cat\)\};max-width:100px;flex-shrink:0" title="\$\{esc\(t\.cat\)\}">\$\{esc\(t\.cat\)\}<\/span>/,
+    "the category pill should use .truncate with a max-width, flex-shrink:0 (so short names stay their natural width instead of getting squeezed), and a title tooltip for the truncated case, matching this codebase's established truncation pattern"
   );
 });
 
