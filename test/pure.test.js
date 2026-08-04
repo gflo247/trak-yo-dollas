@@ -5884,6 +5884,101 @@ test("showImportPreview's date-range formula: single-month imports show one labe
   assert.equal(rangeFor(["2026-07-31", "2025-08-01"]), "Aug '25 – Jul '26", "order in the source file shouldn't matter -- the range is derived from the full set of months, not first/last row");
 });
 
+// Three findings from live use on launch day, August 2026: the row dates in
+// the preview table were hard to read, the Detected badge and the PREVIEW
+// stats line both stated the transaction count (the same duplication this
+// week's date-range addition made more noticeable, not something it
+// introduced), and there was no way to see both ends of a large import's
+// date range without trusting the summary line -- the 8-row sample only
+// ever showed whichever end the file happened to list first.
+test("showImportPreview: the Detected badge no longer repeats the transaction count already shown in the PREVIEW stats line", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "showImportPreview() should exist");
+  assert.match(
+    fnMatch[0],
+    /detFmtTxt\.textContent=`Detected: \$\{fmtLabels\[importFmt\]\|\|importFmt\}`;/,
+    "the Detected badge should only name the format, not repeat the transaction count"
+  );
+  assert.doesNotMatch(
+    fnMatch[0],
+    /detFmtTxt\.textContent=`Detected: \$\{fmtLabels\[importFmt\]\|\|importFmt\} —/,
+    "the Detected badge should not re-introduce a trailing '-- N transactions ready' clause"
+  );
+});
+test("showImportPreview: the stats line's date-range/total spans use the theme-aware --text-muted token, not the hardcoded #475569 hex the 139th adversarial pass removed everywhere else for failing WCAG AA (1.93:1 in dark theme)", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "showImportPreview() should exist");
+  const statsLine = fnMatch[0].match(/stats\.innerHTML=`[^\n]*`;/);
+  assert.ok(statsLine, "the stats.innerHTML assignment should exist");
+  assert.doesNotMatch(statsLine[0], /#475569/, "the actual stats.innerHTML line should not contain the known-failing hardcoded hex color (a nearby explanatory comment mentioning it for context is fine)");
+  assert.match(
+    fnMatch[0],
+    /<span style="color:var\(--text-muted\)">\$\{esc\(dateRangeStr\)\}<\/span> · <span style="color:var\(--text-muted\)">\$\{fmtD\(total\)\} total<\/span>/,
+    "both the date-range and total spans should use var(--text-muted) instead"
+  );
+});
+test("showImportPreview: preview row dates use --text-secondary (5.71:1 against dark theme's --bg-card), not --text-muted (4.78:1) -- bumped after a direct 'hard to read, too faint' report", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "showImportPreview() should exist");
+  assert.match(
+    fnMatch[0],
+    /<span style="font-size:9px;color:var\(--text-secondary\);min-width:72px">\$\{esc\(t\.date\)\}<\/span>/,
+    "the row date span should use --text-secondary"
+  );
+});
+test("showImportPreview: an import over 8 rows gets a working oldest/newest sort toggle, sorted by actual date rather than trusting file order", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /function toggleImportPreviewSort\(\)\{\s*_importPreviewOldestFirst=!_importPreviewOldestFirst;\s*showImportPreview\(\);\s*\}/,
+    "toggleImportPreviewSort() should flip the flag and re-render the same parsed data, not re-read the file"
+  );
+  assert.match(
+    source,
+    /let _importPreviewOldestFirst=false;/,
+    "_importPreviewOldestFirst should default to false (newest first)"
+  );
+  // Reset on both a fresh modal open and a new file dropped into an
+  // already-open modal -- same two entry points every other per-file
+  // import flag (importFmt, _importDateFmt, etc.) already resets at.
+  const openModalFn = source.match(/function openTxImportModal\(\)\{[\s\S]*?\n\}/);
+  assert.ok(openModalFn, "openTxImportModal() should exist");
+  assert.match(openModalFn[0], /_importPreviewOldestFirst=false;/, "opening the modal fresh should reset the sort toggle");
+  const parseFileFn = source.match(/function parseTxFile\(file\)\{[\s\S]*?reader\.onload=e=>\{[\s\S]{0,600}/);
+  assert.ok(parseFileFn, "parseTxFile()'s reader.onload should exist");
+  assert.match(parseFileFn[0], /_importPreviewOldestFirst=false;/, "loading a new file into an already-open modal should also reset the sort toggle, not carry over the prior file's setting");
+
+  const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "showImportPreview() should exist");
+  assert.match(
+    fnMatch[0],
+    /const sorted=\[\.\.\.importParsed\]\.sort\(\(a,b\)=>_importPreviewOldestFirst\?a\.date\.localeCompare\(b\.date\):b\.date\.localeCompare\(a\.date\)\);/,
+    "the sample should be sorted by actual date (ascending when oldest-first, descending otherwise), not sliced straight from importParsed's file order"
+  );
+  assert.match(fnMatch[0], /const sample=sorted\.slice\(0,8\);/, "the 8-row sample should come from the freshly-sorted array");
+  assert.match(
+    fnMatch[0],
+    /if\(importParsed\.length>8\)\{\s*previewSortToggle\.classList\.remove\('hidden'\);/,
+    "the sort toggle should only be shown when there's a second 'side' of the import to reveal (more than 8 rows)"
+  );
+  assert.match(
+    fnMatch[0],
+    /previewSortToggle\.classList\.add\('hidden'\);/,
+    "the sort toggle should hide itself for an import of 8 rows or fewer, since every row is already visible"
+  );
+});
+
 test("parseTxFile: ANZ NZ/BNZ/Westpac NZ/Starling/midata have mutually-exclusive auto-detect signatures, and force DD/MM date parsing when a sample is otherwise ambiguous", () => {
   const fs = require("fs");
   const path = require("path");
