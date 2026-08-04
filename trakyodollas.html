@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-SubtTnrU8eSuu9QLXbh3KEZRt1GXoBgGGlz8GOJmwKo=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-mSh4NDrMXOhMp1O5T9i7fTAK60khW3H9Vu7QrDzJD68=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1538,6 +1538,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
 
     <div id="import-success-uncategorized" class="hidden" style="background:#78350F18;border:1px solid #D9770633;border-radius:8px;padding:.55rem .85rem;margin-bottom:1rem;font-size:12px;color:#D97706;line-height:1.5"></div>
+
+    <div id="import-success-no-account" class="hidden" style="background:#1E3A5F18;border:1px solid #2563EB33;border-radius:8px;padding:.55rem .85rem;margin-bottom:1rem;font-size:12px;color:#60A5FA;line-height:1.5"></div>
 
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1.1rem">
       <button class="btn btn-primary" style="width:100%;justify-content:center;font-size:14px;padding:.65rem" data-action="importSuccessAndAlign" type="button">View my spending</button>
@@ -12394,6 +12396,21 @@ function confirmTxImport(){
   if(uncatEl){
     if(uncatCount>0){uncatEl.textContent=`⚠️ ${uncatCount} transaction${uncatCount===1?'':'s'} landed in "Other" — click them in the Spending tab to recategorize.`;uncatEl.classList.remove('hidden');}
     else{uncatEl.classList.add('hidden');}
+  }
+  // Importing a transaction CSV only tags each row with a source label
+  // (state.activeSources/t.card) -- it never creates a state.accounts
+  // entry, which is what actually shows up on the Accounts tab and feeds
+  // netWorth()/History snapshots. A user who only ever imports never sees
+  // that gap until they go looking for an account to edit and find the
+  // tab empty, with nothing in the flow that told them balances need a
+  // separate manual step. Nudge here, at the one moment we know for
+  // certain no account matches this import's source label. Found via a
+  // real user report on launch day, August 2026.
+  const noAcctEl=document.getElementById('import-success-no-account');
+  if(noAcctEl){
+    const hasMatchingAccount=state.accounts.some(a=>a.name.trim().toLowerCase()===source.trim().toLowerCase());
+    if(!hasMatchingAccount){noAcctEl.textContent=`💡 No account named "${source}" yet — transactions are tagged by source, but balances and net worth need an actual account. Add one on the Accounts tab to track it.`;noAcctEl.classList.remove('hidden');}
+    else{noAcctEl.classList.add('hidden');}
   }
   document.getElementById('import-success-modal').classList.remove('hidden');
   // Check for Venmo cashouts
