@@ -2548,7 +2548,7 @@ test("renderSpending: the Import CSV button gets a one-time glow, gated on !stat
   );
   assert.match(
     fnMatch[0],
-    /const importBtn=document\.getElementById\('toolbar-import-btn'\);\s*if\(importBtn\)\{\s*requestAnimationFrame\(\(\)=>importBtn\.classList\.add\('import-cta-glow'\)\);\s*setTimeout\(\(\)=>importBtn\.classList\.remove\('import-cta-glow'\),2800\);/,
+    /const importBtn=document\.getElementById\('toolbar-import-btn'\);\s*if\(importBtn\)\{\s*requestAnimationFrame\(\(\)=>importBtn\.classList\.add\('import-cta-glow'\)\);\s*setTimeout\(\(\)=>importBtn\.classList\.remove\('import-cta-glow'\),2200\);/,
     "renderSpending() should add .import-cta-glow to #toolbar-import-btn via requestAnimationFrame (forcing a fresh animation start) and remove it again after the animation finishes, matching the codebase's existing chip-nudge/sign-in-confirm cleanup pattern"
   );
   assert.doesNotMatch(
@@ -2563,7 +2563,7 @@ test("the .import-cta-glow animation respects prefers-reduced-motion, matching t
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /@keyframes import-cta-glow\{[\s\S]{0,120}?\}\s*\.import-cta-glow\{animation:import-cta-glow[^}]*\}\s*@media \(prefers-reduced-motion:reduce\)\{\.import-cta-glow\{animation:none\}\}/,
+    /@keyframes import-cta-glow\{[\s\S]{0,220}?\}\s*\.import-cta-glow\{animation:import-cta-glow[^}]*\}\s*@media \(prefers-reduced-motion:reduce\)\{\.import-cta-glow\{animation:none\}\}/,
     "the .import-cta-glow keyframe should have a paired @media(prefers-reduced-motion:reduce) override disabling the animation entirely"
   );
 });

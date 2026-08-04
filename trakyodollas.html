@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-+MwRsIZ/JfrF2TPEF5MwToG/4uRZzAnsoXkatG910XQ=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-nDVQnLrJP6Qk89GvnPu8pGop3OA15umNIW7JklfcPXE=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -178,8 +178,8 @@
 @keyframes chip-nudge{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(37,99,235,0)}40%{transform:scale(1.14);box-shadow:0 0 0 5px rgba(37,99,235,.3)}}
 .chip-nudge{animation:chip-nudge .45s ease-out 2}
 /* First-arrival highlight on the Spending tab's Import CSV button, demo sessions only -- see renderSpending() */
-@keyframes import-cta-glow{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,.55)}50%{box-shadow:0 0 0 6px rgba(37,99,235,0)}}
-.import-cta-glow{animation:import-cta-glow .9s ease-out 3}
+@keyframes import-cta-glow{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(37,99,235,.6)}50%{transform:scale(1.16);box-shadow:0 0 0 8px rgba(37,99,235,.25)}}
+.import-cta-glow{animation:import-cta-glow .7s ease-in-out 3}
 @media (prefers-reduced-motion:reduce){.import-cta-glow{animation:none}}
 
 /* Light mode card surfaces and active nav */
@@ -4752,7 +4752,7 @@ function renderSpending(){
         const importBtn=document.getElementById('toolbar-import-btn');
         if(importBtn){
           requestAnimationFrame(()=>importBtn.classList.add('import-cta-glow'));
-          setTimeout(()=>importBtn.classList.remove('import-cta-glow'),2800);
+          setTimeout(()=>importBtn.classList.remove('import-cta-glow'),2200);
         }
       }
     }catch(e){}
