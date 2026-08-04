@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-MS7uzuQy3QxXQNOO5gbwiAihTTeLCo9hR4THh5S4pvA=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-SubtTnrU8eSuu9QLXbh3KEZRt1GXoBgGGlz8GOJmwKo=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1127,6 +1127,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <span style="color:#34D399;font-weight:700">✓</span>
       <span id="import-detected-fmt-text"></span>
     </div>
+    <!-- Import summary (count/date range/total/top categories) -- sits
+         right by the Detected line so what's about to import is visible
+         immediately, instead of below the format-picker/reset links and
+         info blurb further down. Moved up from inside #import-preview per
+         Nicholas's direct feedback, launch day, August 2026. -->
+    <div id="import-preview-stats" class="hidden" style="font-size:11px;color:var(--text-secondary);margin-top:.35rem"></div>
 
     <!-- Date format toggle — shown after file loads, hidden until then -->
     <div id="import-date-fmt-row" style="display:none;margin-top:.45rem;align-items:center;gap:6px;font-size:11px;color:var(--text-secondary)">
@@ -1190,12 +1196,25 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
     <!-- Preview -->
     <div id="import-preview" class="hidden" style="margin-top:.65rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
-        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Preview</div>
-        <button id="import-preview-sort-toggle" class="hidden" data-action="toggleImportPreviewSort" style="background:none;border:none;color:var(--accent-blue-light);font-size:10px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">Show oldest first</button>
+      <!-- Column-sortable header -- click a column to sort the full
+           importParsed set by it (not just the 8 visible rows), so e.g.
+           sorting by Amount surfaces the largest transaction in the whole
+           import, not just among whatever happened to already be shown.
+           Replaces the old single "Show oldest/newest" link, which only
+           ever sorted by date. Requested by Nicholas, launch day, August
+           2026. Column widths match the row template just below exactly
+           (72px date, flex:1 description, 52px right-aligned amount) so
+           labels line up with their data; Category has no fixed data
+           width (it's a variable-width pill), so its header is left
+           unaligned on purpose rather than guessing a width that would
+           drift out of sync with real category names. -->
+      <div style="display:flex;gap:8px;padding:.25rem .6rem;border:1px solid var(--border-mid);border-bottom:none;border-radius:8px 8px 0 0;background:var(--bg-deep);font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em">
+        <button data-action="setImportPreviewSort" data-arg="date" style="min-width:72px;text-align:left;background:none;border:none;color:inherit;cursor:pointer;font:inherit;padding:0" type="button">Date<span id="import-sort-arrow-date"></span></button>
+        <button data-action="setImportPreviewSort" data-arg="desc" style="flex:1;text-align:left;background:none;border:none;color:inherit;cursor:pointer;font:inherit;padding:0" type="button">Description<span id="import-sort-arrow-desc"></span></button>
+        <button data-action="setImportPreviewSort" data-arg="cat" style="text-align:left;background:none;border:none;color:inherit;cursor:pointer;font:inherit;padding:0" type="button">Category<span id="import-sort-arrow-cat"></span></button>
+        <button data-action="setImportPreviewSort" data-arg="amount" style="min-width:52px;text-align:right;background:none;border:none;color:inherit;cursor:pointer;font:inherit;padding:0" type="button">Amount<span id="import-sort-arrow-amount"></span></button>
       </div>
-      <div id="import-preview-stats" style="font-size:11px;color:var(--text-secondary);margin-bottom:.4rem"></div>
-      <div id="import-preview-rows" style="max-height:160px;overflow-y:auto;border:1px solid var(--border-mid);border-radius:8px;font-size:10px"></div>
+      <div id="import-preview-rows" style="max-height:160px;overflow-y:auto;border:1px solid var(--border-mid);border-radius:0 0 8px 8px;font-size:10px"></div>
       <div style="margin-top:.6rem;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:8px;padding:.5rem .65rem;display:flex;align-items:flex-start;gap:8px">
         <input type="checkbox" id="import-replace" style="accent-color:#2563EB;width:14px;height:14px;margin-top:2px;flex-shrink:0">
         <div>
@@ -10875,11 +10894,15 @@ let fmtPickerOpen=false;
 let importParsed=[];  // [{date,desc,cat,card,amount,excluded,is_offset}]
 let _importDateFmt='mdy'; // 'mdy'=MM/DD/YYYY (US), 'dmy'=DD/MM/YYYY (UK/AU)
 let _importRawRows=null;  // stored for re-parse when date format changes
-// Which end of the date range the 8-row preview sample shows -- lets a user
-// confirm both ends of the summary line's "Jan '25 – Jul '26" claim instead
-// of only ever seeing whichever end the file happened to list first.
-// Requested by Nicholas, launch day, August 2026.
-let _importPreviewOldestFirst=false;
+// Which column the 8-row preview sample is sorted by, and which
+// direction -- sorts the full importParsed set (not just whichever 8 rows
+// already happen to be visible), so e.g. sorting by Amount surfaces the
+// single largest transaction in the whole import, and sorting by Date
+// lets a user confirm both ends of the summary line's "Jan '25 – Jul '26"
+// claim instead of only ever seeing whichever end the file happened to
+// list first. Requested by Nicholas, launch day, August 2026.
+let _importPreviewSortCol='date';
+let _importPreviewSortAsc=false; // date defaults to newest-first, matching the original single-purpose toggle's default
 // Generic-format sign convention: most bank exports use negative=expense/positive=deposit,
 // but some unsigned exports (e.g. credit-card-only CSVs) list every charge as positive with
 // no separate debit/credit marker. Detected once per file from the majority polarity of the
@@ -11037,7 +11060,8 @@ function openTxImportModal(){
   importFmt='ally';
   _importDateFmt='mdy';
   _importRawRows=null;
-  _importPreviewOldestFirst=false;
+  _importPreviewSortCol='date';
+  _importPreviewSortAsc=false;
   // #import-source-label/#import-replace were never reset here -- neither
   // is touched by closeModals() or onImportSuccessClose() either. The
   // app's own "Import another CSV" button (importSuccessAndReopen()) is
@@ -11060,6 +11084,16 @@ function openTxImportModal(){
   if(_dfRow)_dfRow.style.display='none';
   fetchCommunityRules(); // kick off once per session, non-blocking
   document.getElementById('import-preview').classList.add('hidden');
+  // #import-preview-stats used to be a child of #import-preview and
+  // inherited its parent's hidden toggle for free -- moved out to sit
+  // next to #import-detected-fmt (per Nicholas's direct feedback, same
+  // day), which means this reset needs its own explicit line now.
+  // Without it, reopening the modal after a successful import left the
+  // previous file's "N transactions · date range · total" text visibly
+  // sitting above an otherwise-empty drop zone. Found in the adversarial
+  // pass immediately following that relocation.
+  const stalePreviewStats=document.getElementById('import-preview-stats');
+  if(stalePreviewStats)stalePreviewStats.classList.add('hidden');
   document.getElementById('import-confirm-btn').classList.add('hidden');
   document.getElementById('tx-csv-file').value='';
   document.getElementById('tx-drop-zone').style.borderColor='';
@@ -11181,9 +11215,10 @@ function parseTxFile(file){
     importFmtAutoDetected=false;
     // Dropping a new file into an already-open modal (re-picking after
     // Cancel, or trying a different file) shouldn't carry over a prior
-    // file's "show oldest first" toggle -- same reasoning as every other
+    // file's sort column/direction -- same reasoning as every other
     // per-file reset here.
-    _importPreviewOldestFirst=false;
+    _importPreviewSortCol='date';
+    _importPreviewSortAsc=false;
     // Same splitCSVRows()+trim+filter pipeline parseCSV() itself uses, computed
     // once here and reused both for the header-line scan below and for the
     // midata delimiter sniff further down -- so both agree on exactly which
@@ -12071,8 +12106,16 @@ function guessCatChase(d){
   return guessCatFromDesc(d);
 }
 
-function toggleImportPreviewSort(){
-  _importPreviewOldestFirst=!_importPreviewOldestFirst;
+function setImportPreviewSort(col){
+  if(_importPreviewSortCol===col){
+    _importPreviewSortAsc=!_importPreviewSortAsc;
+  } else {
+    _importPreviewSortCol=col;
+    // Sensible first-click direction per column -- date/amount default to
+    // showing the most eye-catching end first (newest, largest); the two
+    // text columns default to A-Z, the conventional reading order.
+    _importPreviewSortAsc=(col==='desc'||col==='cat');
+  }
   showImportPreview();
 }
 
@@ -12091,8 +12134,10 @@ function showImportPreview(){
     // as openTxImportModal()'s fresh-open state. Found live-testing the
     // header-scan fix above, same day.
     const stalePreview=document.getElementById('import-preview');
+    const staleStats=document.getElementById('import-preview-stats');
     const staleBtn=document.getElementById('import-confirm-btn');
     if(stalePreview)stalePreview.classList.add('hidden');
+    if(staleStats)staleStats.classList.add('hidden');
     if(staleBtn)staleBtn.classList.add('hidden');
     const fmtNames={ally:'Checking/Savings',chase:'Credit card',debitcredit:'Debit/Credit columns',bofa:'Bank of America',generic:'Other',mint:'Mint',ynab:'YNAB',monarch:'Monarch Money',trakyodollas:'trak-yo-dolla$ export'};
     if(!fmtPickerOpen){
@@ -12146,31 +12191,36 @@ function showImportPreview(){
   // minimum); this spot wasn't part of that sweep since it lives inside a
   // template string, not a static CSS rule. Found fixing the row-date
   // contrast complaint just below, same day.
+  stats.classList.remove('hidden');
   stats.innerHTML=`<strong style="color:var(--text-bright)">${importParsed.length} transaction${importParsed.length===1?'':'s'}</strong> · <span style="color:var(--text-muted)">${esc(dateRangeStr)}</span> · <span style="color:var(--text-muted)">${fmtD(total)} total</span> · Top: ${topCats}`;
 
-  // Sorted fresh each render (not just importParsed's file order, which
-  // some banks export oldest-first and others newest-first) so "oldest
-  // first" / "newest first" reliably shows the actual earliest/latest
-  // rows -- letting a user step to both ends of the dateRangeStr claim
-  // above and spot-check it against real rows, not just trust the label.
+  // Sorted fresh each render by whichever column/direction was last
+  // clicked, over the FULL importParsed set (not just whichever 8 rows
+  // already happen to be on screen) -- so e.g. sorting by Amount surfaces
+  // the single largest transaction in the whole import, and sorting by
+  // Date lets a user step to both ends of the dateRangeStr claim above
+  // and spot-check it against real rows, not just trust the label.
   // Requested by Nicholas, launch day, August 2026.
-  const previewSortToggle=document.getElementById('import-preview-sort-toggle');
-  if(previewSortToggle){
-    if(importParsed.length>8){
-      previewSortToggle.classList.remove('hidden');
-      previewSortToggle.textContent=_importPreviewOldestFirst?'Show newest first':'Show oldest first';
-    } else {
-      // Nothing hidden by the 8-row cap, so there's no second "side" to reveal.
-      previewSortToggle.classList.add('hidden');
-    }
-  }
-  const sorted=[...importParsed].sort((a,b)=>_importPreviewOldestFirst?a.date.localeCompare(b.date):b.date.localeCompare(a.date));
+  const sortCmp={
+    date:(a,b)=>a.date.localeCompare(b.date),
+    desc:(a,b)=>a.desc.localeCompare(b.desc),
+    cat:(a,b)=>a.cat.localeCompare(b.cat),
+    amount:(a,b)=>a.amount-b.amount,
+  };
+  ['date','desc','cat','amount'].forEach(col=>{
+    const arrow=document.getElementById(`import-sort-arrow-${col}`);
+    if(arrow)arrow.textContent=col===_importPreviewSortCol?(_importPreviewSortAsc?' ▲':' ▼'):'';
+  });
+  const sorted=[...importParsed].sort((a,b)=>{
+    const cmp=sortCmp[_importPreviewSortCol](a,b);
+    return _importPreviewSortAsc?cmp:-cmp;
+  });
   const sample=sorted.slice(0,8);
   rows.innerHTML=sample.map(t=>`
     <div style="display:flex;gap:8px;padding:.3rem .6rem;border-bottom:1px solid var(--border-mid);align-items:center">
       <span style="font-size:9px;color:var(--text-secondary);min-width:72px">${esc(t.date)}</span>
       <span style="flex:1;font-size:10px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.desc)}</span>
-      <span style="font-size:9px;padding:1px 6px;border-radius:99px;background:${getCatColor(t.cat)}22;color:${getCatColor(t.cat)}">${esc(t.cat)}</span>
+      <span class="truncate" style="font-size:9px;padding:1px 6px;border-radius:99px;background:${getCatColor(t.cat)}22;color:${getCatColor(t.cat)};max-width:100px;flex-shrink:0" title="${esc(t.cat)}">${esc(t.cat)}</span>
       <span style="font-size:10px;font-weight:700;color:#F87171;min-width:52px;text-align:right">${fmtD(t.amount)}</span>
     </div>`).join('')+(importParsed.length>8?`<div style="padding:.3rem .6rem;font-size:10px;color:var(--text-muted)">…and ${importParsed.length-8} more</div>`:'');
 
