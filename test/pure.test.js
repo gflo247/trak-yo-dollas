@@ -2487,6 +2487,46 @@ test("confirmTxImport: refuses to run during a demo-preview session instead of a
   );
 });
 
+// ── Importing a transaction CSV only tags rows with a source label
+// (state.activeSources/t.card) -- it never creates a state.accounts entry,
+// which is what the Accounts tab and netWorth()/History snapshots actually
+// read. A real user imported 3 CSVs, found the Accounts tab empty, and
+// nothing in the import-success flow explained why. Nudge on the one
+// success modal that knows for certain no account matches this import's
+// source label. confirmTxImport() is DOM-heavy; source-pattern only.
+// Found via a real user report on launch day, August 2026. ──
+test("import-success-modal has a #import-success-no-account nudge box, hidden by default like the existing uncategorized-count nudge", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const modalMatch = source.match(
+    /<div class="modal-overlay hidden" id="import-success-modal">[\s\S]{0,1900}?<!-- Community rules modal -->/
+  );
+  assert.ok(modalMatch, "import-success-modal should exist");
+  assert.match(
+    modalMatch[0],
+    /<div id="import-success-no-account" class="hidden"[^>]*><\/div>/,
+    "import-success-modal should contain a hidden-by-default #import-success-no-account box, matching #import-success-uncategorized's own hidden-by-default pattern"
+  );
+});
+test("confirmTxImport: shows the no-matching-account nudge only when no account's name matches this import's source label (case-insensitively)", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,9600}?\n}\n/);
+  assert.ok(fnMatch, "confirmTxImport() should exist");
+  assert.match(
+    fnMatch[0],
+    /const noAcctEl=document\.getElementById\('import-success-no-account'\);\s*if\(noAcctEl\)\{\s*const hasMatchingAccount=state\.accounts\.some\(a=>a\.name\.trim\(\)\.toLowerCase\(\)===source\.trim\(\)\.toLowerCase\(\)\);\s*if\(!hasMatchingAccount\)\{noAcctEl\.textContent=/,
+    "confirmTxImport() should check state.accounts for a case-insensitive name match against this import's source label before deciding whether to show the nudge"
+  );
+  assert.match(
+    fnMatch[0],
+    /else\{noAcctEl\.classList\.add\('hidden'\);\}/,
+    "confirmTxImport() should explicitly hide the nudge when a matching account does exist, not just show it when one doesn't -- otherwise it would stay stuck visible from a prior import in the same session"
+  );
+});
+
 // ── 98th adversarial pass: renderYearInReview()'s "Quietest month" reduce
 // was seeded with the *unfiltered* byMonth[0], even though it only ever
 // iterates the spent>0-filtered array -- if the window's chronologically
