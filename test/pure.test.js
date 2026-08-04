@@ -5835,6 +5835,55 @@ test("showImportPreview: the zero-transactions branch hides any stale preview/Im
   );
 });
 
+// Requested by Nicholas on launch day (August 2026): the import preview
+// showed transaction count/total/top-categories but not the date range
+// covered, so a bank export that silently only covered part of the period
+// a user expected (or the wrong account's history) wasn't obvious until
+// after the data was already merged in.
+test("showImportPreview: the preview stats line includes the imported date range, computed the same way confirmTxImport()'s post-import success modal already does", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "showImportPreview() should exist");
+  assert.match(
+    fnMatch[0],
+    /const importMonths=\[\.\.\.new Set\(importParsed\.map\(t=>t\.date\.slice\(0,7\)\)\)\]\.sort\(\);/,
+    "should collect the distinct YYYY-MM months present in importParsed"
+  );
+  assert.match(
+    fnMatch[0],
+    /const dateRangeStr=importMonths\.length>1\?`\$\{fmtMonthShort\(importMonths\[0\]\)\} – \$\{fmtMonthShort\(importMonths\[importMonths\.length-1\]\)\}`:fmtMonthShort\(importMonths\[0\]\);/,
+    "should format as a 'Jul '25 – Jul '26' range for multi-month imports, or a single fmtMonthShort() label for a one-month import"
+  );
+  assert.match(
+    fnMatch[0],
+    /stats\.innerHTML=`<strong[^`]*importParsed\.length[^`]*<\/strong> · <span[^`]*>\$\{esc\(dateRangeStr\)\}<\/span> ·/,
+    "dateRangeStr should be escaped and rendered into the stats line, right after the transaction count"
+  );
+});
+test("showImportPreview's date-range formula: single-month imports show one label, multi-month imports show a range, matching fmtMonthShort()'s real output", () => {
+  // fmtMonthShort and MON3 are top-level `const`s (an arrow function and a
+  // plain array), not `function name(){}` declarations -- loadFunctions()'s
+  // extractor only pulls the latter out of trakyodollas.html (see
+  // scripts/extract-testable-fns.js), so this mirrors fmtMonthShort()'s
+  // exact one-line body instead. The source-pattern test just above already
+  // confirms the real showImportPreview() calls the real fmtMonthShort(),
+  // so this test is purely about the range-vs-single-label formula being
+  // correct, not about which formatter produces the label text.
+  const MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const fmtMonthShort = (ym) => { const [y, m] = ym.split('-'); return `${MON3[parseInt(m) - 1]} '${y.slice(2)}`; };
+  const rangeFor = (dates) => {
+    const importMonths = [...new Set(dates.map((d) => d.slice(0, 7)))].sort();
+    return importMonths.length > 1
+      ? `${fmtMonthShort(importMonths[0])} – ${fmtMonthShort(importMonths[importMonths.length - 1])}`
+      : fmtMonthShort(importMonths[0]);
+  };
+  assert.equal(rangeFor(["2026-07-05", "2026-07-20", "2026-07-31"]), "Jul '26", "a single-month import should show one label, not a redundant range");
+  assert.equal(rangeFor(["2025-08-01", "2026-07-31"]), "Aug '25 – Jul '26", "a multi-month import should show the earliest-to-latest range regardless of row order");
+  assert.equal(rangeFor(["2026-07-31", "2025-08-01"]), "Aug '25 – Jul '26", "order in the source file shouldn't matter -- the range is derived from the full set of months, not first/last row");
+});
+
 test("parseTxFile: ANZ NZ/BNZ/Westpac NZ/Starling/midata have mutually-exclusive auto-detect signatures, and force DD/MM date parsing when a sample is otherwise ambiguous", () => {
   const fs = require("fs");
   const path = require("path");

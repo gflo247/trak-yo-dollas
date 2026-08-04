@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-8zUsX06uxVCThgEKeyvySPJpXURzF75CfFMWu0W29IA=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-PuttdhyTFF2bndiCl02Q667lbOjLqCyd6xsKnwrc9hI=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -12104,10 +12104,19 @@ function showImportPreview(){
   const cats={};
   importParsed.forEach(t=>{cats[t.cat]=(cats[t.cat]||0)+1;});
   const topCats=Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,n])=>`${esc(c)} (${n})`).join(', ');
+  // Same month-range shape confirmTxImport()'s post-import success modal
+  // already shows (fmtMonthShort(), single-month vs. range) -- surfacing it
+  // here too, before the user commits, lets them catch a bank export that
+  // silently only covered part of the period they expected (a truncated
+  // date range, or the wrong account's history) instead of only finding
+  // out after the data's already merged in. Requested by Nicholas,
+  // launch day, August 2026.
+  const importMonths=[...new Set(importParsed.map(t=>t.date.slice(0,7)))].sort();
+  const dateRangeStr=importMonths.length>1?`${fmtMonthShort(importMonths[0])} – ${fmtMonthShort(importMonths[importMonths.length-1])}`:fmtMonthShort(importMonths[0]);
   // fmtD(total), not a hardcoded '$' prefix -- this preview showed '$'
   // regardless of the user's chosen currency symbol, unlike every other
   // dollar figure in the import flow. Found in the 39th adversarial pass.
-  stats.innerHTML=`<strong style="color:var(--text-bright)">${importParsed.length} transaction${importParsed.length===1?'':'s'}</strong> · <span style="color:#475569">${fmtD(total)} total</span> · Top: ${topCats}`;
+  stats.innerHTML=`<strong style="color:var(--text-bright)">${importParsed.length} transaction${importParsed.length===1?'':'s'}</strong> · <span style="color:#475569">${esc(dateRangeStr)}</span> · <span style="color:#475569">${fmtD(total)} total</span> · Top: ${topCats}`;
 
   const sample=importParsed.slice(0,8);
   rows.innerHTML=sample.map(t=>`
