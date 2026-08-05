@@ -12465,7 +12465,7 @@ function confirmTxImport(){
   const noAcctEl=document.getElementById('import-success-no-account');
   if(noAcctEl){
     const hasMatchingAccount=state.accounts.some(a=>a.name.trim().toLowerCase()===source.trim().toLowerCase());
-    if(!hasMatchingAccount){noAcctEl.textContent=`💡 This is now on your Spending tab. Net Worth won't include it until you add an account named "${source}" — totally optional, from the Accounts tab.`;noAcctEl.classList.remove('hidden');}
+    if(!hasMatchingAccount){noAcctEl.textContent=`💡 This is now in your Spending tab. Net Worth won't include it until you add an account named "${source}" — totally optional, from the Accounts tab.`;noAcctEl.classList.remove('hidden');}
     else{noAcctEl.classList.add('hidden');}
   }
   document.getElementById('import-success-modal').classList.remove('hidden');
