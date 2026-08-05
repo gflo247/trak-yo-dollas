@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-pv3E3EMTVGhrRpRh+yMsUJwrmZw57PV9oLJqjaY8NMA=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-P9bdl41adOuQ9qiraZGhKeIJ44Pkq91+dnEnBGwqbko=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1500,7 +1500,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <button id="at-other" class="h-btn" data-action="setAssetType" data-arg="other" style="flex:1;padding:5px;font-size:11px" type="button">📦 Other asset</button>
     </div>
     <div id="asset-vehicle-fields">
-      <div class="form-group"><label class="form-label" for="v-vin">VIN <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">(optional — auto-fills details)</span></label><div style="display:flex;gap:6px"><input type="text" id="v-vin" placeholder="e.g. 1FMCU9J96NUB12345" maxlength="17" style="flex:1;font-family:monospace;text-transform:uppercase" data-input="uppercaseInput"/><button class="btn btn-sm" id="v-vin-btn" data-action="lookupVIN" style="white-space:nowrap;flex-shrink:0" type="button">Look up</button></div><div id="v-vin-status" style="font-size:10px;margin-top:4px;min-height:14px"></div></div>
+      <div class="form-group"><label class="form-label" for="v-vin">VIN <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">(optional — auto-fills details)</span></label><div style="display:flex;gap:6px"><input type="text" id="v-vin" placeholder="e.g. 1FMCU9J96NUB12345" maxlength="17" style="flex:1;font-family:monospace;text-transform:uppercase" data-input="uppercaseInput"/><button class="btn btn-sm" id="v-vin-btn" data-action="lookupVIN" style="white-space:nowrap;flex-shrink:0" type="button">Look up</button></div><div id="v-vin-status" style="font-size:11px;margin-top:4px;min-height:14px"></div></div>
       <div class="form-group"><label class="form-label" for="v-year">Year</label><input type="number" id="v-year"/></div>
       <div class="form-group"><label class="form-label" for="v-make">Make</label><input type="text" id="v-make"/></div>
       <div class="form-group"><label class="form-label" for="v-model">Model / Trim</label><input type="text" id="v-model"/></div>
@@ -3751,7 +3751,7 @@ function renderYearInReview(){
   content.innerHTML=`
     <!-- Hero stat -->
     <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;text-align:center">
-      <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">Total spent · ${dateRange}</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">Total spent · ${dateRange}</div>
       <div style="font-size:36px;font-weight:900;color:var(--text-primary);letter-spacing:-.02em">${fmt(totalSpent)}</div>
     </div>
 
@@ -6899,7 +6899,7 @@ function renderTxList(){
     }
   }
   function buildTxRow(t){
-    const cc=CARD_S[t.card]||{bg:tc('#1E293B','#F1F5F9'),fg:tc('#475569','#64748B')},color=getCatColor(t.cat);
+    const cc=CARD_S[t.card]||{bg:tc('#1E293B','#F1F5F9'),fg:tc('#8595A8','#64748B')},color=getCatColor(t.cat);
     const monthKey=t.date.slice(0,7);
     const monthTotal=monthTotals[monthKey]||0;
     const monthCatTotal=activeCatMonthTotals?(activeCatMonthTotals[monthKey]||0):monthTotal;
@@ -7875,7 +7875,7 @@ function renderHistory(){
   }
   if(!state.snapshots.length){el.innerHTML=`<div style="padding:.75rem;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px">
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:.3rem;font-weight:600">No snapshots yet</div>
-    <div style="font-size:11px;color:var(--text-muted);line-height:1.5">Update your balances on the <strong style="color:#475569">Accounts</strong> tab, then hit <strong style="color:#475569">Save snapshot</strong> to begin. Each snapshot anchors a real data point on your Dashboard trend line.</div>
+    <div style="font-size:11px;color:var(--text-muted);line-height:1.5">Update your balances on the <strong style="color:var(--text-secondary)">Accounts</strong> tab, then hit <strong style="color:var(--text-secondary)">Save snapshot</strong> to begin. Each snapshot anchors a real data point on your Dashboard trend line.</div>
   </div>`;return;}
 
   // s.date/first.date/last.date are esc()'d below (unlike the numeric
@@ -8756,11 +8756,11 @@ function buildPctDots(months,getSpend,limit){
     const ml=fmtMonthShort(m);
     const topLabel=_labelIdxs.has(i)?(ml.slice(0,3)+' \''+m.slice(2,4)):'';
     const bottomText=ms>0?mp+'%':'–';
-    const bottomColor=ms>0?mc:'#475569';
+    const bottomColor=ms>0?mc:'var(--text-muted)';
     return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;padding:0" title="'+ml+': '+fmtC(ms)+' ('+mp+'%)">'
       +'<div style="font-size:10px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:13px;line-height:13px">'+(topLabel||'')+'</div>'
       +'<div style="width:100%;height:11px;border-radius:5px;background:'+(ms>0?mc:'#1E293B')+';min-width:0"></div>'
-      +'<div style="font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;color:'+bottomColor+'">'+bottomText+'</div>'
+      +'<div style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;color:'+bottomColor+'">'+bottomText+'</div>'
       +'</div>';
   }).join('');
 }
@@ -9074,11 +9074,11 @@ function renderBudgetTab(){
       const mLabel=fmtMonthShort(m);
       const topLabel=_labelIdxs.has(i)?(mLabel.slice(0,3)+' \''+m.slice(2,4)):'';
       const mBottomText=mSpent>0?mPct+'%':'–';
-      const mBottomColor=mSpent>0?mColor:'#475569';
+      const mBottomColor=mSpent>0?mColor:'var(--text-muted)';
       return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;padding:0" title="'+mLabel+': '+fmt(mSpent)+' ('+mPct+'%)">'
         +'<div style="font-size:10px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:13px;line-height:13px">'+(topLabel||'')+'</div>'
         +'<div style="width:100%;height:11px;border-radius:5px;background:'+mColor+';min-width:0"></div>'
-        +'<div style="font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;color:'+mBottomColor+'">'+mBottomText+'</div>'
+        +'<div style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;color:'+mBottomColor+'">'+mBottomText+'</div>'
         +'</div>';
     }).join('');
 
@@ -9681,7 +9681,7 @@ function showAutoPreview(){
   if(detected.months===0){
     el.innerHTML='No deposit transactions found yet. Import a bank or credit union (checking) CSV to enable auto-detection.';
   } else {
-    el.innerHTML=`Detected <strong style="color:var(--text-bright)">${fmt(detected.avgMonthly)}/mo</strong> avg income from ${detected.months} months of deposits.<br><span style="color:#475569;font-size:10px">Excludes transfers, CC payments, and internal moves.</span>`;
+    el.innerHTML=`Detected <strong style="color:var(--text-bright)">${fmt(detected.avgMonthly)}/mo</strong> avg income from ${detected.months} months of deposits.<br><span style="color:var(--text-muted);font-size:11px">Excludes transfers, CC payments, and internal moves.</span>`;
   }
   el.classList.remove('hidden');
 }
@@ -10756,7 +10756,7 @@ function renderCatManagerList(){
         ${dot}
         <input id="rename-cat-input" value="${esc(c.name)}" data-arg="${esc(c.name)}" data-keydown="renameCatKeydown" style="flex:1;font-size:12px;padding:2px 6px;border-radius:4px;border:1px solid var(--border-mid);background:var(--bg-input);color:var(--text-primary)" type="text"/>
         <button data-action="confirmRenameCat" data-arg="${esc(c.name)}" style="font-size:11px;background:none;border:none;color:#34D399;cursor:pointer;padding:2px 6px" title="Save" type="button">✓</button>
-        <button data-action="cancelRenameCat" style="font-size:11px;background:none;border:none;color:#475569;cursor:pointer;padding:2px 6px" title="Cancel" type="button">✕</button>
+        <button data-action="cancelRenameCat" style="font-size:11px;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 6px" title="Cancel" type="button">✕</button>
       </div>`;
     }
     if(c.custom&&_confirmingDeleteCatName===c.name){
@@ -10771,8 +10771,8 @@ function renderCatManagerList(){
       ${dot}
       <span class="truncate" style="flex:1;font-size:12px;color:${c.custom?'var(--text-primary)':'var(--text-muted)'}" title="${esc(c.name)}">${esc(c.name)}${c.custom?'':' <span style="font-size:9px;color:var(--text-muted)">(built-in)</span>'}</span>
       ${c.custom?`
-        <button data-action="startRenameCat" data-arg="${esc(c.name)}" style="font-size:10px;background:none;border:none;color:#475569;cursor:pointer;padding:2px 6px" title="Rename" type="button">✏</button>
-        <button data-action="startDeleteCat" data-arg="${esc(c.name)}" style="font-size:10px;background:none;border:none;color:#475569;cursor:pointer;padding:2px 6px" title="Delete" type="button">✕</button>
+        <button data-action="startRenameCat" data-arg="${esc(c.name)}" style="font-size:11px;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 6px" title="Rename" type="button">✏</button>
+        <button data-action="startDeleteCat" data-arg="${esc(c.name)}" style="font-size:11px;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 6px" title="Delete" type="button">✕</button>
       `:''}
     </div>`;
   }).join('');
@@ -13543,7 +13543,7 @@ async function lookupVIN(){
     return;
   }
   status.textContent='Looking up…';
-  status.style.color=tc('#475569','#374151');
+  status.style.color='var(--text-muted)';
   btn.disabled=true;btn.textContent='…';
   // Captured before the fetch -- there was no way to tell this response
   // stale if the user closed the modal or switched to editing a different
