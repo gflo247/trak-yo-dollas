@@ -5844,12 +5844,12 @@ test("the rules-manager keyword chip and vendor-alias chips truncate with the sa
   );
   assert.match(
     source,
-    /<span class="truncate" style="font-family:monospace;font-size:11px;color:#F87171;background:#F8717118;padding:1px 7px;border-radius:4px;max-width:220px" title="\$\{esc\(from\)\}">\$\{esc\(from\)\}<\/span>/,
+    /<span class="truncate" style="font-family:monospace;font-size:12px;color:#F87171;background:#F8717118;padding:1px 7px;border-radius:4px;max-width:220px" title="\$\{esc\(from\)\}">\$\{esc\(from\)\}<\/span>/,
     "the vendor-alias 'from' chip should truncate with a title tooltip"
   );
   assert.match(
     source,
-    /<span class="truncate" style="font-family:monospace;font-size:11px;color:#34D399;background:#34D39918;padding:1px 7px;border-radius:4px;max-width:220px" title="\$\{esc\(to\)\}">\$\{esc\(to\)\}<\/span>/,
+    /<span class="truncate" style="font-family:monospace;font-size:12px;color:#34D399;background:#34D39918;padding:1px 7px;border-radius:4px;max-width:220px" title="\$\{esc\(to\)\}">\$\{esc\(to\)\}<\/span>/,
     "the vendor-alias 'to' chip should truncate with a title tooltip"
   );
 });
