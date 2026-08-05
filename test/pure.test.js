@@ -6068,7 +6068,7 @@ test("showImportPreview: preview row dates use --text-secondary (5.71:1 against 
   assert.ok(fnMatch, "showImportPreview() should exist");
   assert.match(
     fnMatch[0],
-    /<span style="font-size:9px;color:var\(--text-secondary\);min-width:72px">\$\{esc\(t\.date\)\}<\/span>/,
+    /<span style="font-size:10px;color:var\(--text-secondary\);min-width:72px">\$\{esc\(t\.date\)\}<\/span>/,
     "the row date span should use --text-secondary"
   );
 });
@@ -6189,7 +6189,7 @@ test("the import-preview category pill truncates with the shared .truncate class
   // label for it to drift out from under.
   assert.match(
     source,
-    /<span class="truncate" style="font-size:9px;padding:1px 6px;border-radius:99px;background:\$\{getCatColor\(t\.cat\)\}22;color:\$\{getCatColor\(t\.cat\)\};max-width:100px;flex-shrink:0" title="\$\{esc\(t\.cat\)\}">\$\{esc\(t\.cat\)\}<\/span>/,
+    /<span class="truncate" style="font-size:10px;padding:1px 6px;border-radius:99px;background:\$\{getCatColor\(t\.cat\)\}22;color:\$\{getCatColor\(t\.cat\)\};max-width:100px;flex-shrink:0" title="\$\{esc\(t\.cat\)\}">\$\{esc\(t\.cat\)\}<\/span>/,
     "the category pill should use .truncate with a max-width, flex-shrink:0 (so short names stay their natural width instead of getting squeezed), and a title tooltip for the truncated case, matching this codebase's established truncation pattern"
   );
 });
