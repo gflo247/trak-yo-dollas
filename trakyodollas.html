@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-IR+g8IXm1qgFqXiUgQ4a8O+WvwcjX0gbETw2qPEmkrs=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-pv3E3EMTVGhrRpRh+yMsUJwrmZw57PV9oLJqjaY8NMA=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1142,10 +1142,10 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div id="import-date-fmt-row" style="display:none;margin-top:.45rem;align-items:center;gap:6px;font-size:11px;color:var(--text-secondary)">
       <span style="flex-shrink:0">Date format:</span>
       <div style="display:inline-flex;border:1px solid var(--border-mid);border-radius:6px;overflow:hidden;flex-shrink:0">
-        <button id="date-fmt-mdy" data-action="setDateFmt" data-arg="mdy" style="background:#2563EB;color:#fff;border:none;padding:3px 10px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .1s,color .1s" type="button">MM/DD (US)</button>
-        <button id="date-fmt-dmy" data-action="setDateFmt" data-arg="dmy" style="background:var(--bg-deep);color:var(--text-muted);border:none;border-left:1px solid var(--border-mid);padding:3px 10px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .1s,color .1s" type="button">DD/MM (UK/AU)</button>
+        <button id="date-fmt-mdy" data-action="setDateFmt" data-arg="mdy" style="background:#2563EB;color:#fff;border:none;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .1s,color .1s" type="button">MM/DD (US)</button>
+        <button id="date-fmt-dmy" data-action="setDateFmt" data-arg="dmy" style="background:var(--bg-deep);color:var(--text-muted);border:none;border-left:1px solid var(--border-mid);padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .1s,color .1s" type="button">DD/MM (UK/AU)</button>
       </div>
-      <span id="date-fmt-note" style="font-size:10px;color:var(--text-muted)"></span>
+      <span id="date-fmt-note" style="font-size:11px;color:var(--text-muted)"></span>
     </div>
 
     <!-- Manual format fallback toggle -->
@@ -1155,7 +1155,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
     <!-- Format picker panel — collapsed by default -->
     <div id="fmt-picker-panel" class="hidden" style="margin-top:.65rem;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem .85rem">
-      <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.4rem">Bank or credit card export</div>
+      <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.4rem">Bank or credit card export</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button id="fmt-btn-ally"    class="btn fmt-btn" data-action="setImportFmt" data-arg="ally"    type="button">Checking / Savings</button>
         <button id="fmt-btn-chase"   class="btn fmt-btn" data-action="setImportFmt" data-arg="chase"   type="button">Credit card</button>
@@ -1163,7 +1163,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       </div>
       <div style="display:flex;align-items:center;gap:.5rem;margin:.7rem 0 .45rem">
         <div style="flex:1;height:1px;background:var(--border-mid)"></div>
-        <span style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap">Migrating from another app</span>
+        <span style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap">Migrating from another app</span>
         <div style="flex:1;height:1px;background:var(--border-mid)"></div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -1192,10 +1192,10 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <button data-action="hideImportFreshConfirm" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;padding:0;font-family:inherit" type="button">Cancel</button>
     </div>
 
-    <div style="font-size:10px;color:var(--text-muted);margin-top:.5rem;line-height:1.5;text-align:center">
+    <div style="font-size:11px;color:var(--text-muted);margin-top:.5rem;line-height:1.5;text-align:center">
       Categorization uses your rules, built-in keywords, community patterns, and <a href="https://en.wikipedia.org/wiki/Merchant_category_code" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light);text-decoration:underline" title="Merchant Category Codes — 4-digit codes banks assign to merchants">MCC codes</a> — in that order. &nbsp;
-      <button data-action="openCommunityRulesModal" style="background:none;border:none;color:var(--accent-blue-light);font-size:10px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">View patterns ↗</button> &nbsp;
-      <button data-action="openShortcutsModal" style="background:none;border:none;color:var(--accent-blue-light);font-size:10px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">How it works ↗</button>
+      <button data-action="openCommunityRulesModal" style="background:none;border:none;color:var(--accent-blue-light);font-size:11px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">View patterns ↗</button> &nbsp;
+      <button data-action="openShortcutsModal" style="background:none;border:none;color:var(--accent-blue-light);font-size:11px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">How it works ↗</button>
     </div>
 
     <!-- Preview -->
@@ -1212,13 +1212,13 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
            width (it's a variable-width pill), so its header is left
            unaligned on purpose rather than guessing a width that would
            drift out of sync with real category names. -->
-      <div style="display:flex;gap:8px;padding:.25rem .6rem;border:1px solid var(--border-mid);border-bottom:none;border-radius:8px 8px 0 0;background:var(--bg-deep);font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em">
+      <div style="display:flex;gap:8px;padding:.25rem .6rem;border:1px solid var(--border-mid);border-bottom:none;border-radius:8px 8px 0 0;background:var(--bg-deep);font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em">
         <button data-action="setImportPreviewSort" data-arg="date" style="min-width:72px;text-align:left;background:none;border:none;color:inherit;cursor:pointer;font:inherit;padding:0" type="button">Date<span id="import-sort-arrow-date"></span></button>
         <button data-action="setImportPreviewSort" data-arg="desc" style="flex:1;text-align:left;background:none;border:none;color:inherit;cursor:pointer;font:inherit;padding:0" type="button">Description<span id="import-sort-arrow-desc"></span></button>
         <button data-action="setImportPreviewSort" data-arg="cat" style="text-align:left;background:none;border:none;color:inherit;cursor:pointer;font:inherit;padding:0" type="button">Category<span id="import-sort-arrow-cat"></span></button>
         <button data-action="setImportPreviewSort" data-arg="amount" style="min-width:52px;text-align:right;background:none;border:none;color:inherit;cursor:pointer;font:inherit;padding:0" type="button">Amount<span id="import-sort-arrow-amount"></span></button>
       </div>
-      <div id="import-preview-rows" style="max-height:160px;overflow-y:auto;border:1px solid var(--border-mid);border-radius:0 0 8px 8px;font-size:10px"></div>
+      <div id="import-preview-rows" style="max-height:160px;overflow-y:auto;border:1px solid var(--border-mid);border-radius:0 0 8px 8px;font-size:11px"></div>
       <div style="margin-top:.6rem;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:8px;padding:.5rem .65rem;display:flex;align-items:flex-start;gap:8px">
         <input type="checkbox" id="import-replace" style="accent-color:#2563EB;width:14px;height:14px;margin-top:2px;flex-shrink:0">
         <div>
@@ -12249,11 +12249,11 @@ function showImportPreview(){
   const sample=sorted.slice(0,8);
   rows.innerHTML=sample.map(t=>`
     <div style="display:flex;gap:8px;padding:.3rem .6rem;border-bottom:1px solid var(--border-mid);align-items:center">
-      <span style="font-size:9px;color:var(--text-secondary);min-width:72px">${esc(t.date)}</span>
-      <span style="flex:1;font-size:10px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.desc)}</span>
-      <span class="truncate" style="font-size:9px;padding:1px 6px;border-radius:99px;background:${getCatColor(t.cat)}22;color:${getCatColor(t.cat)};max-width:100px;flex-shrink:0" title="${esc(t.cat)}">${esc(t.cat)}</span>
-      <span style="font-size:10px;font-weight:700;color:#F87171;min-width:52px;text-align:right">${fmtD(t.amount)}</span>
-    </div>`).join('')+(importParsed.length>8?`<div style="padding:.3rem .6rem;font-size:10px;color:var(--text-muted)">…and ${importParsed.length-8} more</div>`:'');
+      <span style="font-size:10px;color:var(--text-secondary);min-width:72px">${esc(t.date)}</span>
+      <span style="flex:1;font-size:11px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.desc)}</span>
+      <span class="truncate" style="font-size:10px;padding:1px 6px;border-radius:99px;background:${getCatColor(t.cat)}22;color:${getCatColor(t.cat)};max-width:100px;flex-shrink:0" title="${esc(t.cat)}">${esc(t.cat)}</span>
+      <span style="font-size:11px;font-weight:700;color:#F87171;min-width:52px;text-align:right">${fmtD(t.amount)}</span>
+    </div>`).join('')+(importParsed.length>8?`<div style="padding:.3rem .6rem;font-size:11px;color:var(--text-muted)">…and ${importParsed.length-8} more</div>`:'');
 
   preview.classList.remove('hidden');
   btn.classList.remove('hidden');
