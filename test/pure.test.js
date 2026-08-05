@@ -2513,7 +2513,7 @@ test("confirmTxImport: shows the no-matching-account nudge only when no account'
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,9600}?\n}\n/);
+  const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,11200}?\n}\n/);
   assert.ok(fnMatch, "confirmTxImport() should exist");
   assert.match(
     fnMatch[0],
@@ -4071,7 +4071,7 @@ test("saveTx: sets state.hasRealData and calls _replaceDemoDataWithReal(), unlik
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveTx\(\)\{[\s\S]{0,3600}?\n\}/);
+  const fnMatch = source.match(/function saveTx\(\)\{[\s\S]{0,3900}?\n\}/);
   assert.ok(fnMatch, "saveTx() should exist");
   assert.match(fnMatch[0], /_replaceDemoDataWithReal\(\);/, "saveTx() should call the shared wipe helper");
   assert.match(fnMatch[0], /state\.hasRealData=true;/, "saveTx() should now set state.hasRealData -- previously it never did, so a manual-entry-only user's transactions stayed misclassified as demo data and were silently deleted by confirmTxImport()'s own !state.hasRealData wipe on their first later CSV import");
@@ -4199,7 +4199,7 @@ test("saveTx: auto-registers the selected category as a real custom category if 
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveTx\(\)\{[\s\S]{0,3600}?\n\}/);
+  const fnMatch = source.match(/function saveTx\(\)\{[\s\S]{0,3900}?\n\}/);
   assert.ok(fnMatch, "saveTx() should exist");
   const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
   const registerIdx = fnMatch[0].search(/if\(cat&&!getAllCats\(\)\.some\(c=>c\.toLowerCase\(\)===cat\.toLowerCase\(\)\)\)\{/);
@@ -4337,7 +4337,7 @@ test("saveHistoricalSnapshot: has the demo-preview guard, wipes demo data before
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,7700}?_editingSnapshotMonthKey=null;[\s\S]{0,300}?closeModals\(\);renderMetrics\(\);renderNwBreakdown\(\);renderHistory\(\);renderNwChart\(\);scheduleSave\(\);/);
+  const fnMatch = source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,7700}?_editingSnapshotMonthKey=null;[\s\S]{0,300}?closeModals\(\);renderAll\(\);scheduleSave\(\);/);
   assert.ok(fnMatch, "saveHistoricalSnapshot() should exist");
   const guardIdx = fnMatch[0].search(/if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{/);
   const dateGuardIdx = fnMatch[0].search(/if\(!date\|\|!Number\.isFinite\(nw\)\)/);
@@ -4349,6 +4349,62 @@ test("saveHistoricalSnapshot: has the demo-preview guard, wipes demo data before
   assert.ok(dateGuardIdx < wipeIdx, "date/net-worth validation must run before the wipe");
   assert.ok(wipeIdx < dupCheckIdx, "the wipe must run BEFORE the duplicate-month check, so a demo-scripted monthKey can't false-positive against the real month being backfilled");
   assert.ok(hasRealSnapIdx >= 0, "should set state.hasRealSnapshot=true, matching saveSnapshot()'s own flag -- previously only that function set it");
+});
+
+// ── A real production report (a user's own DevTools showed accounts:[] and
+// hasRealData:true immediately after a CSV import, while the Accounts tab
+// still rendered full demo data one screen over) traced back to
+// confirmTxImport() only calling renderSpending() after
+// _replaceDemoDataWithReal() wipes state.accounts -- renderAccountLists()
+// is only reachable via renderAll() (confirmed by checking every call
+// site), so the Accounts tab kept showing stale, no-longer-backed demo
+// rows (with dead Edit buttons -- editAccount(id) correctly finds nothing
+// for a demo id against the now-empty state.accounts) until an unrelated
+// renderAll() or a full reload. The same gap existed in 3 sibling "first
+// real save" entry points that also call _replaceDemoDataWithReal():
+// saveTx() (also only called renderSpending()) and saveSnapshot()/
+// saveHistoricalSnapshot() (each called a hand-picked
+// renderMetrics()/renderNwBreakdown()/renderHistory()/renderNwChart()
+// quartet -- itself a fix for the identical bug class, 110th adversarial
+// pass -- that never actually included renderAccountLists() either).
+// saveAccount()/saveVehicle()/handleCsv() already called renderAll() and
+// don't have this problem. Fixed by widening all 4 to renderAll(),
+// matching those three. Found and fixed August 2026. ──
+test("confirmTxImport()/saveTx()/saveSnapshot()/saveHistoricalSnapshot() all call renderAll() after their demo-to-real wipe, not a narrower render subset that omits the Accounts tab", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const confirmTxImportSrc = source.match(/function confirmTxImport\(\)\{[\s\S]{0,11200}?\n}\n/)[0];
+  assert.match(
+    confirmTxImportSrc,
+    /state\.hasRealData=true;\s*hideDemoBadge\(\);\s*\/\/[\s\S]{0,1400}?renderAll\(\);\s*\/\/ Show post-import success modal/,
+    "confirmTxImport() should call renderAll() (not renderSpending()) right after state.hasRealData=true/hideDemoBadge() -- renderAll() itself reads state.hasRealData to decide whether to hide demo notices, so it must run after that flag flips, not right after closeModals() where an earlier version of this fix mistakenly placed it (caught live-testing: the 'Demo accounts' banner stayed stuck visible)"
+  );
+  assert.doesNotMatch(
+    confirmTxImportSrc,
+    /closeModals\(\);\s*renderSpending\(\);/,
+    "confirmTxImport() should no longer call renderSpending() alone after closeModals()"
+  );
+  assert.doesNotMatch(
+    confirmTxImportSrc,
+    /closeModals\(\);\s*renderAll\(\);/,
+    "renderAll() should not sit directly after closeModals() either -- it must come after state.hasRealData=true is set, later in the function"
+  );
+  assert.match(
+    source.match(/function saveTx\(\)\{[\s\S]{0,3900}?\n\}/)[0],
+    /closeModals\(\);renderAll\(\);\s*\n\}/,
+    "saveTx() should call renderAll() (not renderSpending()) as its final line"
+  );
+  assert.match(
+    source.match(/function saveSnapshot\(\)\{[\s\S]{0,4500}?\n\}/)?.[0] || "",
+    /hideDemoBadge\(\);[\s\S]{0,900}?renderAll\(\);/,
+    "saveSnapshot() should call renderAll(), not the old renderMetrics()/renderNwBreakdown()/renderHistory()/renderNwChart() quartet that omitted the Accounts tab"
+  );
+  assert.match(
+    source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,7700}?_editingSnapshotMonthKey=null;[\s\S]{0,300}?closeModals\(\);renderAll\(\);scheduleSave\(\);/)[0],
+    /closeModals\(\);renderAll\(\);scheduleSave\(\);$/,
+    "saveHistoricalSnapshot() should call renderAll() (not the old quartet), still followed by scheduleSave() since this path doesn't sync snapshots to Supabase any other way"
+  );
 });
 
 // Finding 5 (LOW): the sign-out handler re-showed the "this is demo data"
