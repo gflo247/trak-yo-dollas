@@ -2513,7 +2513,7 @@ test("confirmTxImport: shows the no-matching-account nudge only when no account'
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,11200}?\n}\n/);
+  const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,11600}?\n}\n/);
   assert.ok(fnMatch, "confirmTxImport() should exist");
   assert.match(
     fnMatch[0],
@@ -4374,7 +4374,7 @@ test("confirmTxImport()/saveTx()/saveSnapshot()/saveHistoricalSnapshot() all cal
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const confirmTxImportSrc = source.match(/function confirmTxImport\(\)\{[\s\S]{0,11200}?\n}\n/)[0];
+  const confirmTxImportSrc = source.match(/function confirmTxImport\(\)\{[\s\S]{0,11600}?\n}\n/)[0];
   assert.match(
     confirmTxImportSrc,
     /state\.hasRealData=true;\s*hideDemoBadge\(\);\s*\/\/[\s\S]{0,1400}?renderAll\(\);\s*\/\/ Show post-import success modal/,

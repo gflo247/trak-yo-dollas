@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-AmLDMnF+siU9TqOItNLd8TQd2I0tXwZMjzYu+p/ifpY=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-IR+g8IXm1qgFqXiUgQ4a8O+WvwcjX0gbETw2qPEmkrs=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1550,7 +1550,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <button class="btn" style="width:100%;justify-content:center;font-size:14px;padding:.65rem" data-action="importSuccessAndReopen" type="button">Import another CSV</button>
     </div>
 
-    <div style="font-size:11px;color:var(--text-muted);text-align:center;line-height:1.6">You can set up income, balances, and budgets anytime from the tabs.</div>
+    <div style="font-size:11px;color:var(--text-muted);text-align:center;line-height:1.6">Nothing here is required — set up income from the Spending tab, balances from the Accounts tab, or budgets from the Budget tab, anytime.</div>
     <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:.5rem;font-style:italic;opacity:.7">Don't obsess over money. Understand it.</div>
   </div>
 </div>
@@ -12455,10 +12455,17 @@ function confirmTxImport(){
   // separate manual step. Nudge here, at the one moment we know for
   // certain no account matches this import's source label. Found via a
   // real user report on launch day, August 2026.
+  //
+  // Copy tightened the next day: the original "No account named X yet"
+  // framing didn't say WHERE the imported data actually went (Spending)
+  // versus where it didn't (Net Worth), and didn't make clear this step
+  // is entirely optional, not a to-do the user is behind on. Nicholas's
+  // own read: this is meant to help someone find where balance tracking
+  // lives if they want it, not push them toward finishing setup.
   const noAcctEl=document.getElementById('import-success-no-account');
   if(noAcctEl){
     const hasMatchingAccount=state.accounts.some(a=>a.name.trim().toLowerCase()===source.trim().toLowerCase());
-    if(!hasMatchingAccount){noAcctEl.textContent=`💡 No account named "${source}" yet — transactions are tagged by source, but balances and net worth need an actual account. Add one on the Accounts tab to track it.`;noAcctEl.classList.remove('hidden');}
+    if(!hasMatchingAccount){noAcctEl.textContent=`💡 This is now on your Spending tab. Net Worth won't include it until you add an account named "${source}" — totally optional, from the Accounts tab.`;noAcctEl.classList.remove('hidden');}
     else{noAcctEl.classList.add('hidden');}
   }
   document.getElementById('import-success-modal').classList.remove('hidden');
