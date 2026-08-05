@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-P9bdl41adOuQ9qiraZGhKeIJ44Pkq91+dnEnBGwqbko=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-Qa3xyQnsXxLulaq2/RXwBcSMSRShyOv1uSP+bdbpkhQ=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -382,7 +382,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .modal h3{font-size:15px;font-weight:700;margin-bottom:1rem;color:var(--text-bright)}
 .modal-sub{font-size:11px;color:var(--text-dim);margin-bottom:1rem;line-height:1.4}
 .form-group{margin-bottom:.7rem}
-.form-label{font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;display:block}
+.form-label{font-size:12px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;display:block}
 input[type=text],input[type=number],select,textarea{width:100%;border:1px solid var(--border-mid);border-radius:8px;padding:7px 10px;font-size:13px;background:var(--bg-page);color:var(--text-primary)}
 input:focus,select:focus,textarea:focus{outline:2px solid #2563EB;outline-offset:1px}
 select option{background:var(--bg-card)}
@@ -1142,10 +1142,10 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div id="import-date-fmt-row" style="display:none;margin-top:.45rem;align-items:center;gap:6px;font-size:11px;color:var(--text-secondary)">
       <span style="flex-shrink:0">Date format:</span>
       <div style="display:inline-flex;border:1px solid var(--border-mid);border-radius:6px;overflow:hidden;flex-shrink:0">
-        <button id="date-fmt-mdy" data-action="setDateFmt" data-arg="mdy" style="background:#2563EB;color:#fff;border:none;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .1s,color .1s" type="button">MM/DD (US)</button>
-        <button id="date-fmt-dmy" data-action="setDateFmt" data-arg="dmy" style="background:var(--bg-deep);color:var(--text-muted);border:none;border-left:1px solid var(--border-mid);padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .1s,color .1s" type="button">DD/MM (UK/AU)</button>
+        <button id="date-fmt-mdy" data-action="setDateFmt" data-arg="mdy" style="background:#2563EB;color:#fff;border:none;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .1s,color .1s" type="button">MM/DD (US)</button>
+        <button id="date-fmt-dmy" data-action="setDateFmt" data-arg="dmy" style="background:var(--bg-deep);color:var(--text-muted);border:none;border-left:1px solid var(--border-mid);padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .1s,color .1s" type="button">DD/MM (UK/AU)</button>
       </div>
-      <span id="date-fmt-note" style="font-size:11px;color:var(--text-muted)"></span>
+      <span id="date-fmt-note" style="font-size:12px;color:var(--text-muted)"></span>
     </div>
 
     <!-- Manual format fallback toggle -->
@@ -1155,7 +1155,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
     <!-- Format picker panel — collapsed by default -->
     <div id="fmt-picker-panel" class="hidden" style="margin-top:.65rem;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem .85rem">
-      <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.4rem">Bank or credit card export</div>
+      <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.4rem">Bank or credit card export</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button id="fmt-btn-ally"    class="btn fmt-btn" data-action="setImportFmt" data-arg="ally"    type="button">Checking / Savings</button>
         <button id="fmt-btn-chase"   class="btn fmt-btn" data-action="setImportFmt" data-arg="chase"   type="button">Credit card</button>
@@ -1163,7 +1163,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       </div>
       <div style="display:flex;align-items:center;gap:.5rem;margin:.7rem 0 .45rem">
         <div style="flex:1;height:1px;background:var(--border-mid)"></div>
-        <span style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap">Migrating from another app</span>
+        <span style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap">Migrating from another app</span>
         <div style="flex:1;height:1px;background:var(--border-mid)"></div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -1192,10 +1192,10 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <button data-action="hideImportFreshConfirm" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;padding:0;font-family:inherit" type="button">Cancel</button>
     </div>
 
-    <div style="font-size:11px;color:var(--text-muted);margin-top:.5rem;line-height:1.5;text-align:center">
+    <div style="font-size:12px;color:var(--text-muted);margin-top:.5rem;line-height:1.5;text-align:center">
       Categorization uses your rules, built-in keywords, community patterns, and <a href="https://en.wikipedia.org/wiki/Merchant_category_code" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light);text-decoration:underline" title="Merchant Category Codes — 4-digit codes banks assign to merchants">MCC codes</a> — in that order. &nbsp;
-      <button data-action="openCommunityRulesModal" style="background:none;border:none;color:var(--accent-blue-light);font-size:11px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">View patterns ↗</button> &nbsp;
-      <button data-action="openShortcutsModal" style="background:none;border:none;color:var(--accent-blue-light);font-size:11px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">How it works ↗</button>
+      <button data-action="openCommunityRulesModal" style="background:none;border:none;color:var(--accent-blue-light);font-size:12px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">View patterns ↗</button> &nbsp;
+      <button data-action="openShortcutsModal" style="background:none;border:none;color:var(--accent-blue-light);font-size:12px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">How it works ↗</button>
     </div>
 
     <!-- Preview -->
@@ -1212,13 +1212,13 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
            width (it's a variable-width pill), so its header is left
            unaligned on purpose rather than guessing a width that would
            drift out of sync with real category names. -->
-      <div style="display:flex;gap:8px;padding:.25rem .6rem;border:1px solid var(--border-mid);border-bottom:none;border-radius:8px 8px 0 0;background:var(--bg-deep);font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em">
+      <div style="display:flex;gap:8px;padding:.25rem .6rem;border:1px solid var(--border-mid);border-bottom:none;border-radius:8px 8px 0 0;background:var(--bg-deep);font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em">
         <button data-action="setImportPreviewSort" data-arg="date" style="min-width:72px;text-align:left;background:none;border:none;color:inherit;cursor:pointer;font:inherit;padding:0" type="button">Date<span id="import-sort-arrow-date"></span></button>
         <button data-action="setImportPreviewSort" data-arg="desc" style="flex:1;text-align:left;background:none;border:none;color:inherit;cursor:pointer;font:inherit;padding:0" type="button">Description<span id="import-sort-arrow-desc"></span></button>
         <button data-action="setImportPreviewSort" data-arg="cat" style="text-align:left;background:none;border:none;color:inherit;cursor:pointer;font:inherit;padding:0" type="button">Category<span id="import-sort-arrow-cat"></span></button>
         <button data-action="setImportPreviewSort" data-arg="amount" style="min-width:52px;text-align:right;background:none;border:none;color:inherit;cursor:pointer;font:inherit;padding:0" type="button">Amount<span id="import-sort-arrow-amount"></span></button>
       </div>
-      <div id="import-preview-rows" style="max-height:160px;overflow-y:auto;border:1px solid var(--border-mid);border-radius:0 0 8px 8px;font-size:11px"></div>
+      <div id="import-preview-rows" style="max-height:160px;overflow-y:auto;border:1px solid var(--border-mid);border-radius:0 0 8px 8px;font-size:12px"></div>
       <div style="margin-top:.6rem;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:8px;padding:.5rem .65rem;display:flex;align-items:flex-start;gap:8px">
         <input type="checkbox" id="import-replace" style="accent-color:#2563EB;width:14px;height:14px;margin-top:2px;flex-shrink:0">
         <div>
@@ -1320,7 +1320,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
     <div style="margin-top:.75rem;background:#065F4622;border:1px solid #05996944;border-radius:8px;padding:.5rem .85rem;text-align:center">
       <span style="font-size:11px;font-weight:700;color:#34D399">🔒 Your browser handles CSV files locally — nothing leaves your device unless you choose to sync.</span>
-      <div style="font-size:11px;font-weight:600;color:#34D399;margin-top:4px">Synced data encrypted on your device via <a href="https://supabase.com/" target="_blank" rel="noopener" style="color:#34D399;text-decoration:underline">Supabase</a> (open source) 🔒</div>
+      <div style="font-size:12px;font-weight:600;color:#34D399;margin-top:4px">Synced data encrypted on your device via <a href="https://supabase.com/" target="_blank" rel="noopener" style="color:#34D399;text-decoration:underline">Supabase</a> (open source) 🔒</div>
     </div>
     <div style="margin-top:.75rem;text-align:center">
       <button class="btn" data-action="closeModals" type="button" style="width:100%;color:var(--text-primary);font-size:13px;font-weight:600;padding:.65rem">No thanks, keep local</button>
@@ -1461,7 +1461,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
         <input type="checkbox" id="et-excluded" style="accent-color:#7C3AED;width:14px;height:14px" data-change="updateExclNote">
         Hide this transaction from spending totals &amp; charts
       </label>
-      <div id="et-excl-note" style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.5">Use for investment contributions, credit card payments, reimbursements, or anything that shouldn't count as spending.</div>
+      <div id="et-excl-note" style="font-size:12px;color:var(--text-muted);margin-top:4px;line-height:1.5">Use for investment contributions, credit card payments, reimbursements, or anything that shouldn't count as spending.</div>
     </div>
     <div class="row" style="justify-content:space-between;gap:8px;margin-top:1rem">
       <button class="btn" data-action="confirmDeleteTx" type="button" id="delete-tx-btn" style="color:#F87171;border-color:#F8717166">Delete</button>
@@ -1500,7 +1500,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <button id="at-other" class="h-btn" data-action="setAssetType" data-arg="other" style="flex:1;padding:5px;font-size:11px" type="button">📦 Other asset</button>
     </div>
     <div id="asset-vehicle-fields">
-      <div class="form-group"><label class="form-label" for="v-vin">VIN <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">(optional — auto-fills details)</span></label><div style="display:flex;gap:6px"><input type="text" id="v-vin" placeholder="e.g. 1FMCU9J96NUB12345" maxlength="17" style="flex:1;font-family:monospace;text-transform:uppercase" data-input="uppercaseInput"/><button class="btn btn-sm" id="v-vin-btn" data-action="lookupVIN" style="white-space:nowrap;flex-shrink:0" type="button">Look up</button></div><div id="v-vin-status" style="font-size:11px;margin-top:4px;min-height:14px"></div></div>
+      <div class="form-group"><label class="form-label" for="v-vin">VIN <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">(optional — auto-fills details)</span></label><div style="display:flex;gap:6px"><input type="text" id="v-vin" placeholder="e.g. 1FMCU9J96NUB12345" maxlength="17" style="flex:1;font-family:monospace;text-transform:uppercase" data-input="uppercaseInput"/><button class="btn btn-sm" id="v-vin-btn" data-action="lookupVIN" style="white-space:nowrap;flex-shrink:0" type="button">Look up</button></div><div id="v-vin-status" style="font-size:12px;margin-top:4px;min-height:14px"></div></div>
       <div class="form-group"><label class="form-label" for="v-year">Year</label><input type="number" id="v-year"/></div>
       <div class="form-group"><label class="form-label" for="v-make">Make</label><input type="text" id="v-make"/></div>
       <div class="form-group"><label class="form-label" for="v-model">Model / Trim</label><input type="text" id="v-model"/></div>
@@ -1550,7 +1550,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <button class="btn" style="width:100%;justify-content:center;font-size:14px;padding:.65rem" data-action="importSuccessAndReopen" type="button">Import another CSV</button>
     </div>
 
-    <div style="font-size:11px;color:var(--text-muted);text-align:center;line-height:1.6">Nothing here is required — set up income from the Spending tab, balances from the Accounts tab, or budgets from the Budget tab, anytime.</div>
+    <div style="font-size:12px;color:var(--text-muted);text-align:center;line-height:1.6">Nothing here is required — set up income from the Spending tab, balances from the Accounts tab, or budgets from the Budget tab, anytime.</div>
     <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:.5rem;font-style:italic;opacity:.7">Don't obsess over money. Understand it.</div>
   </div>
 </div>
@@ -1587,7 +1587,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <input type="number" id="budget-amount" placeholder="e.g. 500" min="0"/>
     </div>
     <div id="budget-modal-context" style="font-size:11px;color:var(--text-muted);margin-bottom:.75rem;line-height:1.5"></div>
-    <div style="font-size:11px;color:var(--text-muted);margin-bottom:.75rem">Don't see a category? Add it in the Spending tab, then come back here to budget for it.</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:.75rem">Don't see a category? Add it in the Spending tab, then come back here to budget for it.</div>
     <div class="modal-footer">
       <button class="btn" data-action="closeModals" type="button">Cancel</button>
       <button class="btn btn-primary" data-action="saveBudget" type="button">Save budget</button>
@@ -1700,12 +1700,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
           <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:3px">Manual — enter your take-home pay</div>
           <div style="font-size:11px;color:var(--text-muted);line-height:1.5">Most accurate. Enter your monthly after-tax income once and we'll calculate your savings rate from your spending.</div>
           <div id="income-manual-input" class="hidden" style="margin-top:.75rem">
-            <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px" for="income-amount">Monthly take-home pay (after tax)</label>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px" for="income-amount">Monthly take-home pay (after tax)</label>
             <div style="display:flex;gap:8px;align-items:center">
               <input type="number" id="income-amount" placeholder="e.g. 6500" min="0" style="flex:1;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-size:13px"/>
               <button class="btn btn-primary btn-sm" data-action="saveManualIncome" type="button">Save</button>
             </div>
-            <div id="income-manual-hint" style="font-size:11px;color:var(--text-muted);margin-top:4px"></div>
+            <div id="income-manual-hint" style="font-size:12px;color:var(--text-muted);margin-top:4px"></div>
           </div>
         </div>
       </div>
@@ -1716,7 +1716,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <div style="display:flex;align-items:flex-start;gap:10px">
         <div id="income-method-b-dot" style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border-mid);flex-shrink:0;margin-top:2px;transition:all .15s"></div>
         <div style="flex:1">
-          <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:3px">Auto-detect from deposits <span style="font-size:11px;font-weight:700;color:var(--text-primary);background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:4px;padding:1px 6px;margin-left:4px">less accurate</span></div>
+          <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:3px">Auto-detect from deposits <span style="font-size:12px;font-weight:700;color:var(--text-primary);background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:4px;padding:1px 6px;margin-left:4px">less accurate</span></div>
           <div style="font-size:11px;color:var(--text-muted);line-height:1.5">Scans your imported transactions for deposits, excluding transfers and payments. Works best with bank or credit union (checking) CSV imports. May overcount if transfers appear as deposits.</div>
           <div id="income-auto-preview" class="hidden" style="margin-top:.65rem;background:var(--bg-card);border-radius:8px;padding:.5rem .75rem;font-size:11px;color:var(--text-secondary);line-height:1.6"></div>
         </div>
@@ -1725,12 +1725,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
     <!-- Disable -->
     <div style="text-align:center;margin-bottom:.75rem">
-      <button data-action="disableIncome" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;text-decoration:underline" type="button">Remove savings rate tracking</button>
+      <button data-action="disableIncome" style="background:none;border:none;color:var(--text-muted);font-size:12px;cursor:pointer;text-decoration:underline" type="button">Remove savings rate tracking</button>
     </div>
 
     <!-- Live preview -->
     <div id="income-preview-card" style="background:#065F4618;border:1.5px solid #05996933;border-radius:10px;padding:.75rem 1rem;margin-bottom:1rem">
-      <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">Preview — savings rate pill</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">Preview — savings rate pill</div>
       <div id="income-preview-content" style="font-size:12px;color:var(--text-muted);font-style:italic">Select a method above to see a preview</div>
     </div>
 
@@ -3751,7 +3751,7 @@ function renderYearInReview(){
   content.innerHTML=`
     <!-- Hero stat -->
     <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;text-align:center">
-      <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">Total spent · ${dateRange}</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">Total spent · ${dateRange}</div>
       <div style="font-size:36px;font-weight:900;color:var(--text-primary);letter-spacing:-.02em">${fmt(totalSpent)}</div>
     </div>
 
@@ -7875,7 +7875,7 @@ function renderHistory(){
   }
   if(!state.snapshots.length){el.innerHTML=`<div style="padding:.75rem;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px">
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:.3rem;font-weight:600">No snapshots yet</div>
-    <div style="font-size:11px;color:var(--text-muted);line-height:1.5">Update your balances on the <strong style="color:var(--text-secondary)">Accounts</strong> tab, then hit <strong style="color:var(--text-secondary)">Save snapshot</strong> to begin. Each snapshot anchors a real data point on your Dashboard trend line.</div>
+    <div style="font-size:12px;color:var(--text-muted);line-height:1.5">Update your balances on the <strong style="color:var(--text-secondary)">Accounts</strong> tab, then hit <strong style="color:var(--text-secondary)">Save snapshot</strong> to begin. Each snapshot anchors a real data point on your Dashboard trend line.</div>
   </div>`;return;}
 
   // s.date/first.date/last.date are esc()'d below (unlike the numeric
@@ -8758,7 +8758,7 @@ function buildPctDots(months,getSpend,limit){
     const bottomText=ms>0?mp+'%':'–';
     const bottomColor=ms>0?mc:'var(--text-muted)';
     return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;padding:0" title="'+ml+': '+fmtC(ms)+' ('+mp+'%)">'
-      +'<div style="font-size:10px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:13px;line-height:13px">'+(topLabel||'')+'</div>'
+      +'<div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:14px;line-height:14px">'+(topLabel||'')+'</div>'
       +'<div style="width:100%;height:11px;border-radius:5px;background:'+(ms>0?mc:'#1E293B')+';min-width:0"></div>'
       +'<div style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;color:'+bottomColor+'">'+bottomText+'</div>'
       +'</div>';
@@ -9076,7 +9076,7 @@ function renderBudgetTab(){
       const mBottomText=mSpent>0?mPct+'%':'–';
       const mBottomColor=mSpent>0?mColor:'var(--text-muted)';
       return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;padding:0" title="'+mLabel+': '+fmt(mSpent)+' ('+mPct+'%)">'
-        +'<div style="font-size:10px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:13px;line-height:13px">'+(topLabel||'')+'</div>'
+        +'<div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:14px;line-height:14px">'+(topLabel||'')+'</div>'
         +'<div style="width:100%;height:11px;border-radius:5px;background:'+mColor+';min-width:0"></div>'
         +'<div style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;color:'+mBottomColor+'">'+mBottomText+'</div>'
         +'</div>';
@@ -9681,7 +9681,7 @@ function showAutoPreview(){
   if(detected.months===0){
     el.innerHTML='No deposit transactions found yet. Import a bank or credit union (checking) CSV to enable auto-detection.';
   } else {
-    el.innerHTML=`Detected <strong style="color:var(--text-bright)">${fmt(detected.avgMonthly)}/mo</strong> avg income from ${detected.months} months of deposits.<br><span style="color:var(--text-muted);font-size:11px">Excludes transfers, CC payments, and internal moves.</span>`;
+    el.innerHTML=`Detected <strong style="color:var(--text-bright)">${fmt(detected.avgMonthly)}/mo</strong> avg income from ${detected.months} months of deposits.<br><span style="color:var(--text-muted);font-size:12px">Excludes transfers, CC payments, and internal moves.</span>`;
   }
   el.classList.remove('hidden');
 }
@@ -10755,8 +10755,8 @@ function renderCatManagerList(){
       return `<div style="display:flex;align-items:center;gap:8px;padding:.35rem .65rem;border-bottom:1px solid var(--border-mid)">
         ${dot}
         <input id="rename-cat-input" value="${esc(c.name)}" data-arg="${esc(c.name)}" data-keydown="renameCatKeydown" style="flex:1;font-size:12px;padding:2px 6px;border-radius:4px;border:1px solid var(--border-mid);background:var(--bg-input);color:var(--text-primary)" type="text"/>
-        <button data-action="confirmRenameCat" data-arg="${esc(c.name)}" style="font-size:11px;background:none;border:none;color:#34D399;cursor:pointer;padding:2px 6px" title="Save" type="button">✓</button>
-        <button data-action="cancelRenameCat" style="font-size:11px;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 6px" title="Cancel" type="button">✕</button>
+        <button data-action="confirmRenameCat" data-arg="${esc(c.name)}" style="font-size:12px;background:none;border:none;color:#34D399;cursor:pointer;padding:2px 6px" title="Save" type="button">✓</button>
+        <button data-action="cancelRenameCat" style="font-size:12px;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 6px" title="Cancel" type="button">✕</button>
       </div>`;
     }
     if(c.custom&&_confirmingDeleteCatName===c.name){
@@ -10771,8 +10771,8 @@ function renderCatManagerList(){
       ${dot}
       <span class="truncate" style="flex:1;font-size:12px;color:${c.custom?'var(--text-primary)':'var(--text-muted)'}" title="${esc(c.name)}">${esc(c.name)}${c.custom?'':' <span style="font-size:9px;color:var(--text-muted)">(built-in)</span>'}</span>
       ${c.custom?`
-        <button data-action="startRenameCat" data-arg="${esc(c.name)}" style="font-size:11px;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 6px" title="Rename" type="button">✏</button>
-        <button data-action="startDeleteCat" data-arg="${esc(c.name)}" style="font-size:11px;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 6px" title="Delete" type="button">✕</button>
+        <button data-action="startRenameCat" data-arg="${esc(c.name)}" style="font-size:12px;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 6px" title="Rename" type="button">✏</button>
+        <button data-action="startDeleteCat" data-arg="${esc(c.name)}" style="font-size:12px;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 6px" title="Delete" type="button">✕</button>
       `:''}
     </div>`;
   }).join('');
@@ -12249,11 +12249,11 @@ function showImportPreview(){
   const sample=sorted.slice(0,8);
   rows.innerHTML=sample.map(t=>`
     <div style="display:flex;gap:8px;padding:.3rem .6rem;border-bottom:1px solid var(--border-mid);align-items:center">
-      <span style="font-size:10px;color:var(--text-secondary);min-width:72px">${esc(t.date)}</span>
-      <span style="flex:1;font-size:11px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.desc)}</span>
-      <span class="truncate" style="font-size:10px;padding:1px 6px;border-radius:99px;background:${getCatColor(t.cat)}22;color:${getCatColor(t.cat)};max-width:100px;flex-shrink:0" title="${esc(t.cat)}">${esc(t.cat)}</span>
-      <span style="font-size:11px;font-weight:700;color:#F87171;min-width:52px;text-align:right">${fmtD(t.amount)}</span>
-    </div>`).join('')+(importParsed.length>8?`<div style="padding:.3rem .6rem;font-size:11px;color:var(--text-muted)">…and ${importParsed.length-8} more</div>`:'');
+      <span style="font-size:11px;color:var(--text-secondary);min-width:72px">${esc(t.date)}</span>
+      <span style="flex:1;font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.desc)}</span>
+      <span class="truncate" style="font-size:11px;padding:1px 6px;border-radius:99px;background:${getCatColor(t.cat)}22;color:${getCatColor(t.cat)};max-width:100px;flex-shrink:0" title="${esc(t.cat)}">${esc(t.cat)}</span>
+      <span style="font-size:13px;font-weight:700;color:#F87171;min-width:52px;text-align:right">${fmtD(t.amount)}</span>
+    </div>`).join('')+(importParsed.length>8?`<div style="padding:.3rem .6rem;font-size:12px;color:var(--text-muted)">…and ${importParsed.length-8} more</div>`:'');
 
   preview.classList.remove('hidden');
   btn.classList.remove('hidden');
