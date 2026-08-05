@@ -382,7 +382,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .modal h3{font-size:15px;font-weight:700;margin-bottom:1rem;color:var(--text-bright)}
 .modal-sub{font-size:11px;color:var(--text-dim);margin-bottom:1rem;line-height:1.4}
 .form-group{margin-bottom:.7rem}
-.form-label{font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;display:block}
+.form-label{font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;display:block}
 input[type=text],input[type=number],select,textarea{width:100%;border:1px solid var(--border-mid);border-radius:8px;padding:7px 10px;font-size:13px;background:var(--bg-page);color:var(--text-primary)}
 input:focus,select:focus,textarea:focus{outline:2px solid #2563EB;outline-offset:1px}
 select option{background:var(--bg-card)}
@@ -1320,7 +1320,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
     <div style="margin-top:.75rem;background:#065F4622;border:1px solid #05996944;border-radius:8px;padding:.5rem .85rem;text-align:center">
       <span style="font-size:11px;font-weight:700;color:#34D399">🔒 Your browser handles CSV files locally — nothing leaves your device unless you choose to sync.</span>
-      <div style="font-size:10px;font-weight:600;color:#34D399;margin-top:4px">Synced data encrypted on your device via <a href="https://supabase.com/" target="_blank" rel="noopener" style="color:#34D399;text-decoration:underline">Supabase</a> (open source) 🔒</div>
+      <div style="font-size:11px;font-weight:600;color:#34D399;margin-top:4px">Synced data encrypted on your device via <a href="https://supabase.com/" target="_blank" rel="noopener" style="color:#34D399;text-decoration:underline">Supabase</a> (open source) 🔒</div>
     </div>
     <div style="margin-top:.75rem;text-align:center">
       <button class="btn" data-action="closeModals" type="button" style="width:100%;color:var(--text-primary);font-size:13px;font-weight:600;padding:.65rem">No thanks, keep local</button>
@@ -1461,7 +1461,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
         <input type="checkbox" id="et-excluded" style="accent-color:#7C3AED;width:14px;height:14px" data-change="updateExclNote">
         Hide this transaction from spending totals &amp; charts
       </label>
-      <div id="et-excl-note" style="font-size:10px;color:var(--text-muted);margin-top:4px;line-height:1.5">Use for investment contributions, credit card payments, reimbursements, or anything that shouldn't count as spending.</div>
+      <div id="et-excl-note" style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.5">Use for investment contributions, credit card payments, reimbursements, or anything that shouldn't count as spending.</div>
     </div>
     <div class="row" style="justify-content:space-between;gap:8px;margin-top:1rem">
       <button class="btn" data-action="confirmDeleteTx" type="button" id="delete-tx-btn" style="color:#F87171;border-color:#F8717166">Delete</button>
@@ -1587,7 +1587,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <input type="number" id="budget-amount" placeholder="e.g. 500" min="0"/>
     </div>
     <div id="budget-modal-context" style="font-size:11px;color:var(--text-muted);margin-bottom:.75rem;line-height:1.5"></div>
-    <div style="font-size:10px;color:var(--text-muted);margin-bottom:.75rem">Don't see a category? Add it in the Spending tab, then come back here to budget for it.</div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:.75rem">Don't see a category? Add it in the Spending tab, then come back here to budget for it.</div>
     <div class="modal-footer">
       <button class="btn" data-action="closeModals" type="button">Cancel</button>
       <button class="btn btn-primary" data-action="saveBudget" type="button">Save budget</button>
@@ -1700,12 +1700,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
           <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:3px">Manual — enter your take-home pay</div>
           <div style="font-size:11px;color:var(--text-muted);line-height:1.5">Most accurate. Enter your monthly after-tax income once and we'll calculate your savings rate from your spending.</div>
           <div id="income-manual-input" class="hidden" style="margin-top:.75rem">
-            <label style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px" for="income-amount">Monthly take-home pay (after tax)</label>
+            <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px" for="income-amount">Monthly take-home pay (after tax)</label>
             <div style="display:flex;gap:8px;align-items:center">
               <input type="number" id="income-amount" placeholder="e.g. 6500" min="0" style="flex:1;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-size:13px"/>
               <button class="btn btn-primary btn-sm" data-action="saveManualIncome" type="button">Save</button>
             </div>
-            <div id="income-manual-hint" style="font-size:10px;color:var(--text-muted);margin-top:4px"></div>
+            <div id="income-manual-hint" style="font-size:11px;color:var(--text-muted);margin-top:4px"></div>
           </div>
         </div>
       </div>
@@ -1716,7 +1716,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <div style="display:flex;align-items:flex-start;gap:10px">
         <div id="income-method-b-dot" style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border-mid);flex-shrink:0;margin-top:2px;transition:all .15s"></div>
         <div style="flex:1">
-          <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:3px">Auto-detect from deposits <span style="font-size:10px;font-weight:700;color:var(--text-primary);background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:4px;padding:1px 6px;margin-left:4px">less accurate</span></div>
+          <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:3px">Auto-detect from deposits <span style="font-size:11px;font-weight:700;color:var(--text-primary);background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:4px;padding:1px 6px;margin-left:4px">less accurate</span></div>
           <div style="font-size:11px;color:var(--text-muted);line-height:1.5">Scans your imported transactions for deposits, excluding transfers and payments. Works best with bank or credit union (checking) CSV imports. May overcount if transfers appear as deposits.</div>
           <div id="income-auto-preview" class="hidden" style="margin-top:.65rem;background:var(--bg-card);border-radius:8px;padding:.5rem .75rem;font-size:11px;color:var(--text-secondary);line-height:1.6"></div>
         </div>
@@ -1730,7 +1730,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
     <!-- Live preview -->
     <div id="income-preview-card" style="background:#065F4618;border:1.5px solid #05996933;border-radius:10px;padding:.75rem 1rem;margin-bottom:1rem">
-      <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">Preview — savings rate pill</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">Preview — savings rate pill</div>
       <div id="income-preview-content" style="font-size:12px;color:var(--text-muted);font-style:italic">Select a method above to see a preview</div>
     </div>
 
