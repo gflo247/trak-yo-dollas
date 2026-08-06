@@ -4407,6 +4407,56 @@ test("confirmTxImport()/saveTx()/saveSnapshot()/saveHistoricalSnapshot() all cal
   );
 });
 
+// ── Swept every other state.transactions mutator for the same "narrower
+// render than renderAll() after a state change other tabs depend on" bug
+// class the demo-to-real render gap (test above) turned out to be one
+// instance of -- these 5 aren't demo-to-real related at all, just ordinary
+// day-to-day transaction editing, which makes them higher-traffic than the
+// one-time demo transition. All correctly rebuild MONTHLY/ALL_MONTHS via
+// mutateTransactions() already; only the DOM re-render was too narrow.
+// Found August 2026. ──
+test("applyRulesToExisting()/saveEditTx()/deleteTx()/toggleTxBiz()/applyVenmoOpt() all call renderAll(), not just renderSpending(), after mutating state.transactions", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+
+  const applyRulesSrc = source.match(/function applyRulesToExisting\(\)\{[\s\S]{0,1900}?\n\}/)?.[0] || "";
+  assert.match(
+    applyRulesSrc,
+    /\}\);\s*\/\/[\s\S]{0,700}?renderAll\(\);\s*const el=document\.getElementById\('apply-rules-result'\);/,
+    "applyRulesToExisting() should call renderAll() right after its mutateTransactions() block, before touching #apply-rules-result"
+  );
+  assert.doesNotMatch(applyRulesSrc, /\}\);\s*renderSpending\(\);/, "applyRulesToExisting() should no longer call renderSpending() alone");
+
+  const saveEditTxSrc = source.match(/function saveEditTx\(\)\{[\s\S]{0,4400}?\n\}/)?.[0] || "";
+  assert.match(
+    saveEditTxSrc,
+    /\/\/[\s\S]{0,400}?closeModals\(\);renderAll\(\);\s*\/\/ Offer to save a categorization rule/,
+    "saveEditTx() should call renderAll() (not renderSpending()) right after closeModals()"
+  );
+
+  const deleteTxSrc = source.match(/function deleteTx\(\)\{[\s\S]{0,800}?\n\}/)?.[0] || "";
+  assert.match(
+    deleteTxSrc,
+    /closeModals\(\);\s*\/\/[\s\S]{0,300}?renderAll\(\);\s*\}/,
+    "deleteTx() should call renderAll() (not renderSpending()) after closeModals()"
+  );
+
+  const toggleTxBizSrc = source.match(/function toggleTxBiz\(id\)\{[\s\S]{0,700}?\n\}/)?.[0] || "";
+  assert.match(
+    toggleTxBizSrc,
+    /\}\);\s*\/\/[\s\S]{0,300}?renderAll\(\);\s*\}/,
+    "toggleTxBiz() should call renderAll() (not renderSpending()) after its mutateTransactions() block"
+  );
+
+  const applyVenmoOptSrc = source.match(/function applyVenmoOpt\(skip\)\{[\s\S]{0,2000}?\n\}/)?.[0] || "";
+  assert.match(
+    applyVenmoOptSrc,
+    /closeModals\(\);\s*\/\/[\s\S]{0,400}?renderAll\(\);\s*showToast\('✓ Venmo cashouts updated'\);/,
+    "applyVenmoOpt() should call renderAll() (not renderSpending()) before its success toast"
+  );
+});
+
 // Finding 5 (LOW): the sign-out handler re-showed the "this is demo data"
 // nudge whenever window._demoPicked was true, with no check for whether
 // the user had since transitioned to real data -- _demoPicked is a
