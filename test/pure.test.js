@@ -6385,3 +6385,78 @@ test("demo data is version-stamped, persisted, and silently refreshed on load if
     "the stale-demo branch should reload the same profile number that was active, silently, then tell the user it happened"
   );
 });
+
+// ── check-cloudsync-coverage.py flagged 5 fields as persisted locally
+// (serializeState()) but missing from syncToCloud()'s savePrefs() payload --
+// the same "real preference, never synced" gap already fixed for nwGoal/
+// excludedCats/budgetWarnPct/currency in earlier passes. All 5 are set via a
+// deliberate user action (the chart-grain toggle, the range chips/date
+// pickers, checkSourceAlignment()'s own resolution), not incidental view
+// state, and loadFromLocalStorage()/importBackup() already restored all 5 --
+// only the cloud-sync path was missing them. Found August 2026. ──
+test("syncToCloud()/loadUserData() sync and restore chartGrain/rangeFrom/rangeTo/sourceAlignSkipped/sourceAlignDate, closing check-cloudsync-coverage.py's advisory", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+
+  const syncSrc = source.match(/async function syncToCloud\(\) \{[\s\S]{0,3600}?\n\}/)?.[0] || "";
+  assert.match(syncSrc, /chartGrain: state\.chartGrain,/, "syncToCloud() should include chartGrain in the savePrefs() payload");
+  assert.match(syncSrc, /rangeFrom: state\.rangeFrom,/, "syncToCloud() should include rangeFrom");
+  assert.match(syncSrc, /rangeTo: state\.rangeTo,/, "syncToCloud() should include rangeTo");
+  assert.match(syncSrc, /sourceAlignSkipped: state\.sourceAlignSkipped,/, "syncToCloud() should include sourceAlignSkipped");
+  assert.match(syncSrc, /sourceAlignDate: state\.sourceAlignDate,/, "syncToCloud() should include sourceAlignDate");
+
+  const loadSrc = source.match(/async function loadUserData\(uid\) \{[\s\S]{0,16400}?\n  \} catch/)?.[0] || "";
+  assert.match(
+    loadSrc,
+    /if \(prefs\.chartGrain !== undefined\) state\.chartGrain = prefs\.chartGrain \?\? 'month';/,
+    "loadUserData() should restore chartGrain, defaulting to 'month' like the other two restore paths"
+  );
+  assert.match(
+    loadSrc,
+    /if \(prefs\.rangeFrom !== undefined\) state\.rangeFrom = prefs\.rangeFrom \?\? null;/,
+    "loadUserData() should restore rangeFrom"
+  );
+  assert.match(
+    loadSrc,
+    /if \(prefs\.rangeTo !== undefined\) state\.rangeTo = prefs\.rangeTo \?\? null;/,
+    "loadUserData() should restore rangeTo"
+  );
+  assert.match(
+    loadSrc,
+    /if \(prefs\.sourceAlignSkipped !== undefined\) state\.sourceAlignSkipped = !!prefs\.sourceAlignSkipped;/,
+    "loadUserData() should restore sourceAlignSkipped, boolean-coerced like the other two restore paths"
+  );
+  assert.match(
+    loadSrc,
+    /if \(prefs\.sourceAlignDate !== undefined\) state\.sourceAlignDate = typeof prefs\.sourceAlignDate === 'string' \? prefs\.sourceAlignDate : null;/,
+    "loadUserData() should restore sourceAlignDate, type-guarded to a string like the other two restore paths"
+  );
+});
+
+// ── Two more #334155-as-text instances found sweeping for the same
+// contrast-failure shape #475569 turned out to have (both measured well
+// under WCAG AA's 4.5:1: 1.41:1/1.47:1 for the NW-goal milestone chip,
+// 1.41:1/2.54:1 for the hidden-pill label, dark/light respectively) --
+// neither was ever part of the #475569 sweep since #334155 is a distinct
+// hex value. Found August 2026. ──
+test("the NW-goal milestone chip and pill-customizer hidden-pill label no longer use #334155 as text color", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /color:\$\{isReached\?tc\('#8595A8','#64748B'\):isSelected\?'#fff':tc\('#64748B','#374151'\)\};/,
+    "the NW-goal milestone chip's isReached text color should use the same proven-safe muted pair as the rest of this session's #475569 fixes"
+  );
+  assert.match(
+    source,
+    /color:\$\{hidden\?tc\('#8595A8','#64748B'\):'var\(--text-primary\)'\}/,
+    "the pill-customizer's hidden-pill label color should use the same proven-safe muted pair"
+  );
+  assert.doesNotMatch(
+    source.replace(/\/\/.*#334155.*/g, ""), // strip explanatory comments that legitimately mention the old hex
+    /color:\$\{isReached\?tc\('#334155'|color:\$\{hidden\?tc\('#334155'/,
+    "neither site should still use #334155 as a text color"
+  );
+});

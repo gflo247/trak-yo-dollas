@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-M/HYZUdf96Qi8Rd4bo6hu287XiLM279Kmsm25gL0b8A=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-1acf5PyHYhaar5YJCvr36EihRfI8atfh6kly9c+ISBw=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -4022,7 +4022,7 @@ function renderNwGoalWidget(){
       return`<button data-action="setNwGoal" data-arg="${m}" style="
         padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:${isReached?'default':'pointer'};
         background:${isSelected?'#2563EB':tc('#1E293B','#F1F5F9')};
-        color:${isReached?tc('#334155','#CBD5E1'):isSelected?'#fff':tc('#64748B','#374151')};
+        color:${isReached?tc('#8595A8','#64748B'):isSelected?'#fff':tc('#64748B','#374151')};
         border:1px solid ${isSelected?'#2563EB':isReached?tc('#1E293B22','#E2E8F033'):tc('#334155','#CBD5E1')};
         text-decoration:${isReached?'line-through':'none'};
         opacity:${isReached?'.5':'1'}"
@@ -9360,17 +9360,17 @@ function openPillCustomizer(){
     let extraAction='';
     if(key==='savings'){
       if(!state.income.method){
-        displayNote='Income not configured — <button data-action="closeModalsOpenIncome" style="background:none;border:none;color:#60A5FA;font-size:10px;cursor:pointer;padding:0;text-decoration:underline" type="button">Set up →</button>';
+        displayNote='Income not configured — <button data-action="closeModalsOpenIncome" style="background:none;border:none;color:#60A5FA;font-size:12px;cursor:pointer;padding:0;text-decoration:underline" type="button">Set up →</button>';
       } else {
         displayNote=`Tracking via ${state.income.method==='manual'?'manual income':'deposit detection'}`;
       }
     }
     return`<div class="list-row">
       <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;color:${hidden?tc('#334155','#94A3B8'):'var(--text-primary)'};display:flex;align-items:center;gap:6px">
+        <div style="font-size:12px;font-weight:600;color:${hidden?tc('#8595A8','#64748B'):'var(--text-primary)'};display:flex;align-items:center;gap:6px">
           <span>${icon}</span>${label}
         </div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:1px">${displayNote}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:1px">${displayNote}</div>
       </div>
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0">
         <input type="checkbox" ${hidden?'':'checked'} data-change="togglePillChecked" data-arg="${key}"
@@ -13199,6 +13199,17 @@ async function loadUserData(uid) {
       // of entry into HTML regardless of which write path set it.
       if (prefs.budgetWarnPct !== undefined) { const n=parseInt(prefs.budgetWarnPct,10); state.budgetWarnPct = isNaN(n)?80:Math.min(99,Math.max(50,n)); }
       if (prefs.currency !== undefined) state.currency = prefs.currency;
+      // chartGrain/rangeFrom/rangeTo/sourceAlignSkipped/sourceAlignDate,
+      // found via check-cloudsync-coverage.py's advisory output -- same
+      // "persisted locally, never synced" gap as budgetWarnPct/currency
+      // above. Restored the same way loadFromLocalStorage()/importBackup()
+      // already do, so a corrupted/hand-edited cloud row degrades to each
+      // field's ordinary default rather than restoring a garbage value.
+      if (prefs.chartGrain !== undefined) state.chartGrain = prefs.chartGrain ?? 'month';
+      if (prefs.rangeFrom !== undefined) state.rangeFrom = prefs.rangeFrom ?? null;
+      if (prefs.rangeTo !== undefined) state.rangeTo = prefs.rangeTo ?? null;
+      if (prefs.sourceAlignSkipped !== undefined) state.sourceAlignSkipped = !!prefs.sourceAlignSkipped;
+      if (prefs.sourceAlignDate !== undefined) state.sourceAlignDate = typeof prefs.sourceAlignDate === 'string' ? prefs.sourceAlignDate : null;
       // Array.isArray, not just truthiness -- a truthy non-iterable
       // prefs.hiddenPills (e.g. a corrupted cloud row's {}) threw inside
       // new Set(). Found in the 104th adversarial pass.
@@ -13383,6 +13394,24 @@ async function syncToCloud() {
       // silently revert to '$' on another.
       budgetWarnPct: state.budgetWarnPct,
       currency: state.currency,
+      // chartGrain/rangeFrom/rangeTo/sourceAlignSkipped/sourceAlignDate had
+      // the identical "persisted locally, missing from cloud sync" gap as
+      // nwGoal/excludedCats/budgetWarnPct/currency above -- all set via a
+      // deliberate user action (the Monthly/Quarterly/Yearly chart toggle,
+      // the 3mo/6mo/12mo/This year/All range chips or manual date pickers,
+      // and checkSourceAlignment()'s own resolution), not incidental
+      // view/session state -- and loadFromLocalStorage()/importBackup()
+      // already restore all 5, just this third persistence path never did.
+      // Concretely: a user who resolved a source-alignment prompt or set a
+      // custom date range on one device saw the identical prompt/reverted
+      // range on another, even though the underlying transactions
+      // (already synced) were identical. Found via check-cloudsync-
+      // coverage.py's advisory output, August 2026.
+      chartGrain: state.chartGrain,
+      rangeFrom: state.rangeFrom,
+      rangeTo: state.rangeTo,
+      sourceAlignSkipped: state.sourceAlignSkipped,
+      sourceAlignDate: state.sourceAlignDate,
       txEdits
     });
     // Flash "Saved ✓" in auth bar
