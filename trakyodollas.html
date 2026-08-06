@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-1acf5PyHYhaar5YJCvr36EihRfI8atfh6kly9c+ISBw=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-bcW/V9xq9TbMQTHfvTqyR8oDQynA+UaKnhEYB/JZzUk=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -13223,6 +13223,7 @@ async function loadUserData(uid) {
       // deletion.
       if (Array.isArray(prefs.accounts)) state.accounts = _normalizeAccountTypes(prefs.accounts);
       if (Array.isArray(prefs.vehicles)) state.vehicles = _arrOfObj(prefs.vehicles);
+      _reclassifyOrphanedVehicleAccounts();
       // Number()-coerced, same reasoning as loadFromLocalStorage()'s
       // equivalent fix (104th adversarial pass).
       if (prefs.nextId) state.nextId = Number(prefs.nextId)||state.nextId;
@@ -14080,6 +14081,36 @@ function _normalizeAccountTypes(accounts){
   });
   return accounts;
 }
+// Reclassifies any state.accounts entry with type:'vehicle' that has no
+// corresponding state.vehicles record (checked the same way
+// renderAccountLists() computes vehicleAcctIds, including the legacy
+// type+name fallback via isPairedAccount()) as 'other-asset' instead -- a
+// fully-supported, correctly-rendered account type. Only saveVehicle() is
+// supposed to ever create a paired vehicle-type account; a hand-crafted or
+// corrupted backup/cloud-sync payload could set type:'vehicle' directly
+// and bypass that pairing entirely, producing an account that rendered in
+// neither Financial Assets (renderAccountLists() blanket-excludes
+// type==='vehicle') nor Physical Assets (renderVehicles() only ever reads
+// state.vehicles) while still counting toward netWorth()/totalAssets() --
+// the exact "invisible ghost account" bug class already closed at its main
+// entry point (the Add Account modal's Type dropdown no longer offers
+// "Vehicle" at all). Must run AFTER both state.accounts and
+// state.vehicles are assigned for a given restore -- it needs both to
+// tell a legitimately-paired vehicle account apart from an orphaned one,
+// and each of this function's 3 callers restores accounts before
+// vehicles, so calling this any earlier would check against the PREVIOUS
+// session's vehicles, not the ones just restored. Found August 2026.
+function _reclassifyOrphanedVehicleAccounts(){
+  const vehicleAcctIds=new Set(state.vehicles.filter(v=>v.acctId!=null).map(v=>v.acctId));
+  const claimed=new Set();
+  state.vehicles.filter(v=>v.acctId==null).forEach(v=>{
+    const match=state.accounts.find(a=>isPairedAccount(a,v,claimed));
+    if(match){vehicleAcctIds.add(match.id);claimed.add(match.id);}
+  });
+  state.accounts.forEach(a=>{
+    if(a.type==='vehicle'&&!vehicleAcctIds.has(a.id))a.type='other-asset';
+  });
+}
 // Restored nextId (a hand-edited/corrupted backup, or a legacy/malformed
 // cloud row) is never reconciled against the ids actually present in
 // state.accounts/state.vehicles/state.transactions -- all three share the
@@ -14383,6 +14414,7 @@ function loadFromLocalStorage(){
     // Array.isArray + _arrOfObj -- same reasoning as state.accounts just
     // above. Found in the 104th adversarial pass.
     state.vehicles=Array.isArray(saved.vehicles)?_arrOfObj(saved.vehicles):state.vehicles;
+    _reclassifyOrphanedVehicleAccounts();
     // Array.isArray(...), not just a truthy check, and filtered through
     // _isValidSnapshot -- a corrupted/hand-edited localStorage blob could
     // have saved.snapshots be any type at all (a non-array truthy value
@@ -14612,6 +14644,7 @@ function importBackup(file){
       // Restore state — mirrors loadFromLocalStorage field assignments
       state.accounts=_normalizeAccountTypes(arr(saved.accounts));
       state.vehicles=_arrOfObj(saved.vehicles);
+      _reclassifyOrphanedVehicleAccounts();
       // .filter(_isValidSnapshot) -- arr() only guarantees the top-level
       // value is an array, not that every entry in it is a well-formed
       // snapshot object. Filtering here, at the point of ingestion, closes

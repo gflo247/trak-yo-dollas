@@ -6490,3 +6490,51 @@ test("the Add Account modal's Type dropdown no longer offers \"Vehicle\", which 
   assert.match(fTypeMatch[1], /<option value="mortgage">Mortgage<\/option>/, "Mortgage should still be an option");
   assert.match(fTypeMatch[1], /<option value="other-asset">Other asset<\/option>/, "Other asset should still be an option");
 });
+
+// ── Closes the same "invisible ghost account" bug class at its second
+// entry point: a hand-crafted or corrupted backup/cloud-sync payload could
+// set an account's type to 'vehicle' directly, bypassing the dropdown
+// entirely (now removed) and saveVehicle()'s pairing. Found August 2026. ──
+test("_reclassifyOrphanedVehicleAccounts: reclassifies a vehicle-type account with no matching state.vehicles record to 'other-asset', leaving genuinely-paired ones (both modern acctId and legacy type+name matches) untouched", () => {
+  const state = {
+    accounts: [
+      { id: 1, type: "vehicle", name: "2021 Honda CR-V" },   // paired via acctId
+      { id: 2, type: "vehicle", name: "Legacy Boat" },        // paired via legacy type+name match
+      { id: 3, type: "vehicle", name: "Orphaned Ghost" },     // no matching vehicle at all
+      { id: 4, type: "cash", name: "Checking" },              // unrelated, must be untouched
+    ],
+    vehicles: [
+      { id: 101, acctId: 1, name: "2021 Honda CR-V" },
+      { id: 102, acctId: null, name: "Legacy Boat" },
+    ],
+  };
+  const { _reclassifyOrphanedVehicleAccounts: run } = loadFunctions(
+    ["_reclassifyOrphanedVehicleAccounts", "isPairedAccount"],
+    { state }
+  );
+  run();
+  assert.equal(state.accounts.find(a => a.id === 1).type, "vehicle", "the acctId-paired vehicle account should stay type:'vehicle'");
+  assert.equal(state.accounts.find(a => a.id === 2).type, "vehicle", "the legacy type+name-paired vehicle account should stay type:'vehicle'");
+  assert.equal(state.accounts.find(a => a.id === 3).type, "other-asset", "the orphaned vehicle-type account (no matching state.vehicles record) should be reclassified to 'other-asset'");
+  assert.equal(state.accounts.find(a => a.id === 4).type, "cash", "an unrelated account type should be untouched");
+});
+test("_reclassifyOrphanedVehicleAccounts() is called after both state.accounts and state.vehicles are restored, in loadUserData()/loadFromLocalStorage()/importBackup()", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /if \(Array\.isArray\(prefs\.vehicles\)\) state\.vehicles = _arrOfObj\(prefs\.vehicles\);\s*\n\s*_reclassifyOrphanedVehicleAccounts\(\);/,
+    "loadUserData() should call _reclassifyOrphanedVehicleAccounts() right after restoring state.vehicles"
+  );
+  assert.match(
+    source,
+    /state\.vehicles=Array\.isArray\(saved\.vehicles\)\?_arrOfObj\(saved\.vehicles\):state\.vehicles;\s*\n\s*_reclassifyOrphanedVehicleAccounts\(\);/,
+    "loadFromLocalStorage() should call _reclassifyOrphanedVehicleAccounts() right after restoring state.vehicles"
+  );
+  assert.match(
+    source,
+    /state\.vehicles=_arrOfObj\(saved\.vehicles\);\s*\n\s*_reclassifyOrphanedVehicleAccounts\(\);/,
+    "importBackup() should call _reclassifyOrphanedVehicleAccounts() right after restoring state.vehicles"
+  );
+});
