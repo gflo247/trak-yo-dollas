@@ -6538,3 +6538,32 @@ test("_reclassifyOrphanedVehicleAccounts() is called after both state.accounts a
     "importBackup() should call _reclassifyOrphanedVehicleAccounts() right after restoring state.vehicles"
   );
 });
+
+// ── Zillow/Redfin (both US-only) were the only real-estate valuation
+// sources in #f-source, despite this same dropdown already supporting
+// UK/Canada/Australia/NZ bank institutions -- a non-US user adding a Home
+// account had no locally-relevant option and fell back to generic
+// "Other". Added the closest known equivalent per market: Zoopla (UK),
+// Domain (Australia), homes.co.nz (NZ). No confidently-known single-
+// dominant equivalent for Canada or Singapore, so those still fall back
+// to Other for now. Found August 2026. ──
+test("#f-source includes Zoopla/Domain/homes.co.nz alongside Zillow/Redfin, each with a matching SC_M color pair and SA_M abbreviation", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fSourceMatch = source.match(/<select id="f-source">([\s\S]*?)<\/select>/);
+  assert.ok(fSourceMatch, "the f-source select should exist");
+  for (const name of ["Zoopla", "Domain", "homes.co.nz"]) {
+    assert.match(fSourceMatch[1], new RegExp(`<option>${name.replace(/\./g, "\\.")}</option>`), `f-source should offer "${name}"`);
+  }
+  const scMatch = source.match(/const SC_M=\{[\s\S]*?\};/);
+  assert.ok(scMatch, "SC_M should exist");
+  assert.match(scMatch[0], /Domain:\{bg:tc\('#2E1065','#EDE9FE'\),fg:tc\('#A78BFA','#7C3AED'\)\}/, "SC_M should have a color pair for Domain");
+  assert.match(scMatch[0], /'homes\.co\.nz':\{bg:tc\('#065F46','#ECFDF5'\),fg:tc\('#34D399','#059669'\)\}/, "SC_M should have a color pair for homes.co.nz");
+  assert.match(scMatch[0], /Zoopla:\{bg:tc\('#7C2D12','#FFF7ED'\),fg:tc\('#FB923C','#EA580C'\)\}/, "SC_M should have a color pair for Zoopla");
+  const saMatch = source.match(/const SA_M=\{[\s\S]*?\};/);
+  assert.ok(saMatch, "SA_M should exist");
+  assert.match(saMatch[0], /Domain:'DM'/, "SA_M should abbreviate Domain");
+  assert.match(saMatch[0], /'homes\.co\.nz':'HZ'/, "SA_M should abbreviate homes.co.nz");
+  assert.match(saMatch[0], /Zoopla:'ZP'/, "SA_M should abbreviate Zoopla");
+});
