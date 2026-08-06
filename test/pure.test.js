@@ -6460,3 +6460,33 @@ test("the NW-goal milestone chip and pill-customizer hidden-pill label no longer
     "neither site should still use #334155 as a text color"
   );
 });
+
+// ── "Vehicle" in the generic Add Account modal's Type dropdown (f-type)
+// created a permanently invisible ghost account: renderAccountLists()
+// blanket-excludes type==='vehicle' from the Financial Assets list (a
+// deliberate exclusion, since the Physical Assets flow is supposed to be
+// the only path for them), but renderVehicles() (Physical Assets) renders
+// exclusively from state.vehicles, which only saveVehicle() populates --
+// never saveAccount(). An account created here had no matching
+// state.vehicles entry, so it rendered in neither list, had no reachable
+// Edit/Delete button anywhere, and still fully counted in
+// netWorth()/totalAssets() (both just sum state.accounts). Found from a
+// direct question about why "Vehicle" appeared in both flows, August 2026. ──
+test("the Add Account modal's Type dropdown no longer offers \"Vehicle\", which had no working render path outside the dedicated vehicle modal", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fTypeMatch = source.match(/<select id="f-type">([\s\S]*?)<\/select>/);
+  assert.ok(fTypeMatch, "the f-type select should exist");
+  assert.doesNotMatch(
+    fTypeMatch[1],
+    /<option value="vehicle">/,
+    "f-type should no longer offer a \"Vehicle\" option -- renderAccountLists() blanket-excludes type==='vehicle' from Financial Assets, and renderVehicles() (Physical Assets) only ever reads state.vehicles, which saveAccount() never populates, so an account created with this type rendered nowhere while still counting toward net worth"
+  );
+  // Home/Mortgage/other-asset etc. should still all be present -- this
+  // should only have removed the one problematic option, not regressed
+  // the rest of the dropdown.
+  assert.match(fTypeMatch[1], /<option value="home">Home<\/option>/, "Home should still be an option");
+  assert.match(fTypeMatch[1], /<option value="mortgage">Mortgage<\/option>/, "Mortgage should still be an option");
+  assert.match(fTypeMatch[1], /<option value="other-asset">Other asset<\/option>/, "Other asset should still be an option");
+});
