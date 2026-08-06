@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-E94qcdPGlm7BZ/grZYDyeOTMjf6ibjGd6f29IX5XvFc=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-M/HYZUdf96Qi8Rd4bo6hu287XiLM279Kmsm25gL0b8A=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -7642,7 +7642,11 @@ function saveEditTx(){
     t._edited=true;
     if(!t._origDesc)t._origDesc=origDesc;
   });
-  closeModals();renderSpending();
+  // renderAll(), not just renderSpending() -- see applyRulesToExisting()'s
+  // matching comment; this edit (and the "recategorize similar
+  // transactions" checklist just above, when checked) can shift Budget
+  // tab/Dashboard/Year in Review totals too. Found August 2026.
+  closeModals();renderAll();
   // Offer to save a categorization rule if the category changed
   if(newCat!==origCat&&newCat!=='Other'){
     const kw=t.desc.split(' ')[0].replace(/[^A-Z0-9]/gi,'').toUpperCase().slice(0,20);
@@ -7668,7 +7672,10 @@ function deleteTx(){
     state.transactions=state.transactions.filter(t=>t.id!==editTxId);
   });
   closeModals();
-  renderSpending();
+  // renderAll(), not just renderSpending() -- see applyRulesToExisting()'s
+  // matching comment; a deleted transaction's category/month total shifts
+  // Budget tab/Dashboard/Year in Review too. Found August 2026.
+  renderAll();
 }
 function confirmDeleteAcct(){const el=document.getElementById('delete-acct-confirm');if(el)el.style.display='flex';}
 function cancelDeleteAcct(){const el=document.getElementById('delete-acct-confirm');if(el)el.style.display='none';}
@@ -8395,7 +8402,16 @@ function applyRulesToExisting(){
       }
     });
   });
-  renderSpending();
+  // renderAll(), not just renderSpending() -- this can bulk-recategorize
+  // transactions across every month at once, which shifts Budget tab
+  // per-category totals/YTD pace/history dots, Dashboard insights, and
+  // Year in Review too, not just the Spending tab. Same bug class as the
+  // demo-to-real render gap found and fixed elsewhere this week, just
+  // triggered by ordinary daily use instead of the one-time demo
+  // transition -- swept every other state.transactions mutator for the
+  // same gap and found 4 more (saveEditTx()/deleteTx()/toggleTxBiz()/
+  // applyVenmoOpt(), fixed alongside this one). Found August 2026.
+  renderAll();
   const el=document.getElementById('apply-rules-result');
   if(el){el.textContent=`✓ Updated ${changed} transaction${changed===1?'':'s'}`;el.style.display='block';setTimeout(()=>el.style.display='none',3000);}
   if(changed>0)showToast(`⚡ ${changed} transaction${changed===1?'':'s'} re-categorized`,'#34D399');
@@ -10142,7 +10158,10 @@ function toggleTxBiz(id){
   mutateTransactions(()=>{
     t.biz=!t.biz;
   });
-  renderSpending();
+  // renderAll(), not just renderSpending() -- see applyRulesToExisting()'s
+  // matching comment; Budget tab's own Business/Personal filter
+  // (_bizFilter) reads this same flag. Found August 2026.
+  renderAll();
 }
 
 // Vendor chart patterns — same 8 patterns as vendorColors array order
@@ -12714,7 +12733,11 @@ function applyVenmoOpt(skip){
   });
   _pendingVenmoCashoutIds=null;
   closeModals();
-  renderSpending();
+  // renderAll(), not just renderSpending() -- see applyRulesToExisting()'s
+  // matching comment; this can recategorize/re-amount every pending
+  // cashout at once, shifting Budget tab/Dashboard/Year in Review totals
+  // too. Found August 2026.
+  renderAll();
   showToast('✓ Venmo cashouts updated');
 }
 
