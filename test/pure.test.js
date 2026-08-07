@@ -6721,3 +6721,36 @@ test("Purchase price/year fields are gone from the vehicle modal; Other-asset en
     "an Other-asset entry's year should fall back to the current year, not a removed purchaseYear variable"
   );
 });
+
+// ── Legibility sweep, Dashboard tier: the earlier modal-wide legibility
+// pass (12-13px floor) never touched the Dashboard ("Net Worth" tab)
+// itself -- its demo-data notices, the trend-chart's interpolate/
+// extrapolate explanation, and the snapshot section's own demo/monthly-
+// nudge notices were all still sitting at 10-11px, the same class of
+// "genuine reading paragraph, not a badge/label" issue the shared
+// .info-box fix (Accounts tab) addressed. Left short link/button labels
+// ("Track a goal →", "Hide goal tracking") and the metric cards'
+// deliberately-small uppercase eyebrow labels alone -- those are a
+// different, legitimate small-text category the earlier sweep also never
+// touched. The "+ Add historical" button was a separate, smaller find: an
+// inline font-size:10px override matching the *mobile* .btn-sm size even
+// on desktop, one size below its sibling "+ Save snapshot" button (11px
+// desktop) for no reason -- removed so it just inherits .btn-sm like its
+// sibling. Requested directly by Nicholas, August 2026. ──
+test("Dashboard tier of the legibility sweep: demo notices and the trend-chart explanation are at least 12px, and the '+ Add historical' button matches its sibling's size", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const dashMatch = source.match(/<div class="page" id="page-dashboard">[\s\S]*?\n<\/div>\n\n<!-- ACCOUNTS -->/);
+  assert.ok(dashMatch, "the Dashboard page block should exist");
+  const dash = dashMatch[0];
+  assert.match(dash, /id="demo-notice-dash"[\s\S]{0,200}?<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.5">Demo data/, "#demo-notice-dash's paragraph text should be at least 12px");
+  assert.match(dash, /id="nw-chart-note" style="font-size:12px/, "#nw-chart-note's interpolate/extrapolate explanation should be at least 12px");
+  assert.match(dash, /id="snap-demo-notice"[\s\S]{0,200}?<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.5">Demo snapshots/, "#snap-demo-notice's paragraph text should be at least 12px");
+  assert.match(dash, /id="snap-monthly-nudge"[\s\S]{0,200}?<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.5">💡 No snapshot yet this month/, "#snap-monthly-nudge's paragraph text should be at least 12px");
+  assert.match(
+    dash,
+    /<button class="btn btn-sm" data-action="openHistoricalSnapshotModal"[^>]*style="color:#60A5FA;border-color:#2563EB44"[^>]*>\+ Add historical<\/button>/,
+    "the '+ Add historical' button should no longer force the mobile-only 10px size on desktop, so it matches its '+ Save snapshot' sibling"
+  );
+});
