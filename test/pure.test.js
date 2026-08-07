@@ -1368,17 +1368,36 @@ test("deleteVehicle: the common case (acctId already set) removes exactly that o
 // fresh-territory pass over the Budget modal. ──
 function renderAccountListsCtx(vehicles, accounts) {
   let assetHTML = "";
+  let liabHTML = "";
   return {
+    getLiabHTML: () => liabHTML,
     ctx: {
       state: { vehicles, accounts },
       isLiab: (t) => t === "credit" || t === "mortgage" || t === "other-liability",
-      SC_M: {}, TC_M: {}, SA_M: {}, TL_M: {},
+      // SC_M needs at least an 'Other' entry -- row()'s SC_M[a.source]||
+      // SC_M.Other fallback mirrors the real source's own always-present
+      // last entry (see SC_M's real definition), and throws on .bg/.fg if
+      // that fallback itself is missing.
+      SC_M: { Other: { bg: "#334155", fg: "#94A3B8" } }, TC_M: {}, SA_M: {}, TL_M: {},
+      // ASSET_GROUPS is a top-level const, not a `function` declaration,
+      // so loadFunctions()'s brace-matching extractor can't pull it from
+      // the real source -- seeded via context instead, matching this
+      // harness's existing convention (see VALUATION_M elsewhere in this
+      // file). Mirrors the real definition's match() logic exactly, since
+      // that's what determines which accounts this test's Boat entries
+      // land under.
+      ASSET_GROUPS: [
+        { label: "Investments", color: "#34D399", hdr: "#065F4618", match: (a) => a.type === "investment" },
+        { label: "Real estate", color: "#A78BFA", hdr: "#4C1D9518", match: (a) => a.type === "home" },
+        { label: "Cash", color: "#60A5FA", hdr: "#1E40AF18", match: (a) => a.type === "cash" },
+        { label: "Other assets", color: "#FBBF24", hdr: "#78350F18", match: (a) => !["investment", "home", "cash"].includes(a.type) },
+      ],
       esc: (s) => String(s),
       fmt: (n) => String(n),
       document: {
         getElementById: (id) => {
           if (id === "asset-list") return { set innerHTML(v) { assetHTML = v; }, get innerHTML() { return assetHTML; } };
-          if (id === "liability-list") return { set innerHTML(v) {}, get innerHTML() { return ""; } };
+          if (id === "liability-list") return { set innerHTML(v) { liabHTML = v; }, get innerHTML() { return liabHTML; } };
           return null;
         },
       },
@@ -6808,4 +6827,44 @@ test("Legibility sweep Tier 2: every remaining 11px paragraph line in the Income
   const previewFnMatch = source.match(/function updateIncomePreview\(incomeVal\)\{[\s\S]*?\n\}/);
   assert.ok(previewFnMatch, "updateIncomePreview() should exist");
   assert.match(previewFnMatch[0], /<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.6">\$\{fmt\(saved\)\} kept of \$\{fmt\(incomeVal\)\} take-home/, "the live preview's stat line should be at least 12px");
+});
+
+// ── The Accounts tab's Financial assets/Liabilities lists were flat --
+// every row repeated its type in a "Institution · Type" sub-line (e.g.
+// "Zillow · Real estate") even though the Net Worth tab's own "Where your
+// wealth lives" breakdown already groups the exact same accounts by that
+// same type, one page over. Rebuilt renderAccountLists() to group by type
+// the same way (same labels/colors/order, so a category reads the same
+// color on both tabs), which let the redundant per-row type text be
+// dropped in favor of moving the institution onto the name's own line
+// instead -- one line per account instead of two. No 'Vehicles' group
+// here (unlike Net Worth's breakdown) since vehicle-type accounts are
+// already blanket-excluded to the separate Physical assets section.
+// Requested directly by Nicholas, August 2026. ──
+test("renderAccountLists: groups Financial assets/Liabilities by type (matching renderNwBreakdown()'s labels/colors), drops the per-row type suffix, and skips empty groups", () => {
+  const accounts = [
+    { id: 1, type: "investment", name: "401k", source: "Fidelity", balance: 1000 },
+    { id: 2, type: "cash", name: "Checking", source: "Chase", balance: 500 },
+    { id: 3, type: "credit", name: "Visa", source: "Chase", balance: 200 },
+    { id: 4, type: "mortgage", name: "Mortgage", source: "Other", balance: 9000 },
+    // A legacy/invalid type value (predates saveAccount()'s validity guard,
+    // see the 30th adversarial pass) -- must still render somewhere rather
+    // than silently vanishing the way a strict type==='other-asset' match
+    // would drop it.
+    { id: 5, type: "loan", name: "Old Student Loan Account", source: "Other", balance: 300 },
+  ];
+  const { ctx, getAssetHTML, getLiabHTML } = renderAccountListsCtx([], accounts);
+  const { renderAccountLists } = loadFunctions(["renderAccountLists", "isPairedAccount"], ctx);
+  renderAccountLists();
+  const assetHTML = getAssetHTML();
+  const liabHTML = getLiabHTML();
+  assert.match(assetHTML, /Investments/, "should render an Investments group");
+  assert.match(assetHTML, /Cash/, "should render a Cash group");
+  assert.match(assetHTML, /Other assets/, "the legacy 'loan' type should fall back into Other assets, not vanish");
+  assert.doesNotMatch(assetHTML, /Real estate/, "an empty group (no home-type accounts) should be skipped entirely, not rendered with zero rows");
+  assert.doesNotMatch(assetHTML, /class="account-sub"/, "rows should no longer render the old two-line account-sub (institution · type) markup");
+  assert.match(assetHTML, /<span class="account-inst">Fidelity<\/span>/, "institution should render inline via .account-inst, not a separate sub-line");
+  assert.match(liabHTML, /Liabilities/, "should render a single Liabilities group");
+  assert.match(liabHTML, /Visa/, "the credit-type account should be in the Liabilities group");
+  assert.match(liabHTML, /Mortgage/, "the mortgage-type account should be in the same Liabilities group, not sub-split further");
 });

@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-i38Gyv4ymDrj94DIU2x43CjQT+q/Zytdpj3YjNvPqAc=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-xvZNpgjvq6OQlcM6wbZn9FZTqiWVTvMCUWIJ3DpkpFE=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -244,6 +244,16 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .acct-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
 .account-name{font-size:13px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .account-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
+/* Type-grouped account rows (Financial assets/Liabilities, matching the
+   Net Worth tab's "Where your wealth lives" grouping convention) sit
+   flush inside a .nw-group instead of standing alone as their own
+   bordered card -- border-top only, no margin/radius/background, matching
+   .nw-item's own flush-in-group treatment. Institution moves onto the
+   name's own line (see .account-inst) since the group header already
+   states the type, freeing the row down to one line instead of two. */
+.account-row-grouped{border:none;border-top:1px solid var(--border);border-radius:0;margin-bottom:0;background:transparent}
+.account-row-grouped:hover{background:var(--bg-hover)}
+.account-inst{font-size:12px;font-weight:400;color:var(--text-muted);margin-left:6px}
 /* buttons */
 .btn{background:none;border:1px solid var(--border-mid);border-radius:7px;padding:6px 12px;font-size:12px;font-weight:500;color:var(--text-secondary);cursor:pointer}
 .btn:hover{background:var(--bg-card);color:var(--text-primary)}
@@ -834,8 +844,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="info-box">
     💡 Balances are manually maintained. Tap <strong style="color:var(--text-secondary)">Edit</strong> on any account to update, then save a snapshot on the <strong style="color:var(--text-secondary)">History</strong> tab to record today's net worth.
   </div>
-  <div class="sh">Financial assets</div><div id="asset-list"></div>
-  <div class="sh">Liabilities</div><div id="liability-list"></div>
+  <div class="sh">Financial assets</div><div id="asset-list" class="nw-section"></div>
+  <div class="sh">Liabilities</div><div id="liability-list" class="nw-section"></div>
   <!-- 529 in accounts -->
   <div id="acct-excluded-header" class="sh" style="color:var(--amber-text-strong);border-bottom-color:var(--amber-border);display:none">Outside net worth</div>
   <div id="excluded-accounts-list"></div>
@@ -7747,10 +7757,35 @@ const TL_M={cash:'Cash',investment:'Investment',home:'Real estate',vehicle:'Vehi
 const TC_M={cash:'#60A5FA',investment:'#34D399',home:'#A78BFA',vehicle:'#2DD4BF',mortgage:'#F87171',credit:'#F97316','other-asset':tc('#8595A8','#64748B'),'other-liability':'#F87171'};
 const SC_M={Ally:{bg:tc('#1E3A5F','#EFF6FF'),fg:'#60A5FA'},Amex:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},Vanguard:{bg:'#7F1D1D22',fg:'#F87171'},Fidelity:{bg:'#7F1D1D22',fg:'#F87171'},Chase:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},'Old National':{bg:'#065F4622',fg:'#34D399'},Zillow:{bg:'#1E3A5F22',fg:'#60A5FA'},Redfin:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},'Bank of America':{bg:tc('#1E3A5F','#EFF6FF'),fg:'#F87171'},Barclays:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},'Capital One':{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Discover:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},'E*TRADE':{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Marcus:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Alliant:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},BMO:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},BECU:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},CIBC:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},'Navy Federal':{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},RBC:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},PenFed:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Scotiabank:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Schwab:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},SoFi:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},Tangerine:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},'TD Bank':{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Truist:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},USAA:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},'Wells Fargo':{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},ANZ:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},BNZ:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},CommBank:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},ING:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Westpac:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},Starling:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},Halifax:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},HSBC:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Lloyds:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},Nationwide:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Santander:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},Domain:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},'homes.co.nz':{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Zoopla:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},Zolo:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},SRX:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},Other:{bg:tc('#334155','#E2E8F0'),fg:tc('#94A3B8','#64748B')}};
 const SA_M={Ally:'AL',Amex:'AX',Vanguard:'VG',Fidelity:'FD',Chase:'CH',Barclays:'BC','Old National':'ON',Zillow:'ZL',Redfin:'RF','Bank of America':'BA','Capital One':'CO',Discover:'DV','E*TRADE':'ET',Marcus:'MC',Alliant:'AT',BMO:'BM',BECU:'BU',CIBC:'CB','Navy Federal':'NV',RBC:'RB',PenFed:'PF',Scotiabank:'SK',Schwab:'SC',SoFi:'SF',Tangerine:'TN','TD Bank':'TD',Truist:'TR',USAA:'UA','Wells Fargo':'WF',ANZ:'AZ',BNZ:'BZ',CommBank:'CM',ING:'IG',Westpac:'WP',Starling:'SL',Halifax:'HX',HSBC:'HS',Lloyds:'LL',Nationwide:'NW',Santander:'SN',Domain:'DM','homes.co.nz':'HZ',Zoopla:'ZP',Zolo:'ZO',SRX:'SX',Other:'OT'};
+// Grouped by type, matching renderNwBreakdown()'s "Where your wealth
+// lives" convention on the Net Worth tab -- same labels/colors, so the
+// same category always reads the same color on both tabs. Once the group
+// header already states the type, repeating it a second time on every
+// row ("Zillow · Real estate") is pure redundancy -- dropped in favor of
+// moving the institution onto the name's own line instead (de-emphasized
+// via .account-inst), freeing each row down to one line instead of two
+// and fitting more accounts on screen. No 'Vehicles' group here (unlike
+// Net Worth's breakdown) since this list already blanket-excludes
+// vehicle-type accounts -- those live in the separate Physical assets
+// section below. match() falls back to "Other assets" for any type that
+// isn't one of the 3 known asset types (investment/home/cash), rather
+// than a strict type==='other-asset' check, so a legacy/invalid type
+// value still renders somewhere instead of silently vanishing from the
+// list the way a strict-match miss would. Requested directly by
+// Nicholas, August 2026.
+const ASSET_GROUPS=[
+  {label:'Investments',color:'#34D399',hdr:'#065F4618',match:a=>a.type==='investment'},
+  {label:'Real estate',color:'#A78BFA',hdr:'#4C1D9518',match:a=>a.type==='home'},
+  {label:'Cash',color:'#60A5FA',hdr:'#1E40AF18',match:a=>a.type==='cash'},
+  {label:'Other assets',color:'#FBBF24',hdr:'#78350F18',match:a=>!['investment','home','cash'].includes(a.type)},
+];
 function renderAccountLists(){
   const row=a=>{const sc=SC_M[a.source]||SC_M.Other,tc=TC_M[a.type]||'var(--text-muted)';
-    return`<div class="account-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="acct-icon" style="background:${sc.bg};color:${sc.fg};flex-shrink:0">${SA_M[a.source]||'??'}</div><div style="min-width:0"><div class="account-name" title="${esc(a.name)}">${esc(a.name)}</div><div class="account-sub">${esc(a.source)} · ${esc(TL_M[a.type]||a.type)}</div></div></div>
-      <div class="flex-center gap-8"><div style="font-size:13px;font-weight:700;color:${(isLiab(a.type)?-a.balance:a.balance)<0?'#F87171':tc}">${(isLiab(a.type)?-a.balance:a.balance)<0?'-':''}${fmt(a.balance)}</div><button class="btn btn-sm" data-action="editAccount" data-arg="${a.id}" type="button">Edit</button></div></div>`;};
+    const bal=isLiab(a.type)?-a.balance:a.balance;
+    return`<div class="account-row account-row-grouped"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="acct-icon" style="background:${sc.bg};color:${sc.fg};flex-shrink:0">${SA_M[a.source]||'??'}</div><div class="account-name" title="${esc(a.name)} — ${esc(a.source)}">${esc(a.name)}<span class="account-inst">${esc(a.source)}</span></div></div>
+      <div class="flex-center gap-8"><div style="font-size:13px;font-weight:700;color:${bal<0?'#F87171':tc}">${bal<0?'-':''}${fmt(a.balance)}</div><button class="btn btn-sm" data-action="editAccount" data-arg="${a.id}" type="button">Edit</button></div></div>`;};
+  const group=(g,accts)=>accts.length?`<div class="nw-group">
+    <div class="nw-group-header" style="background:${g.hdr}"><div style="display:flex;align-items:center;gap:7px"><div style="width:9px;height:9px;border-radius:2px;background:${g.color}"></div><span style="font-size:11px;font-weight:700;color:${g.color}">${g.label}</span></div></div>${accts.map(row).join('')}</div>`:'';
   const vehicleAcctIds=new Set(state.vehicles.filter(v=>v.acctId!=null).map(v=>v.acctId));
   // Legacy vehicles/physical assets saved before acctId existed (35th pass)
   // have no acctId to match by. That's harmless for 'vehicle'-type accounts
@@ -7779,8 +7814,9 @@ function renderAccountLists(){
     const match=state.accounts.find(a=>isPairedAccount(a,v,claimedThisPass));
     if(match){vehicleAcctIds.add(match.id);claimedThisPass.add(match.id);}
   });
-  document.getElementById('asset-list').innerHTML=state.accounts.filter(a=>!isLiab(a.type)&&!a.excludeFromNW&&a.type!=='vehicle'&&!vehicleAcctIds.has(a.id)).map(row).join('');
-  document.getElementById('liability-list').innerHTML=state.accounts.filter(a=>isLiab(a.type)&&!a.excludeFromNW).map(row).join('');
+  const baseAssets=state.accounts.filter(a=>!isLiab(a.type)&&!a.excludeFromNW&&a.type!=='vehicle'&&!vehicleAcctIds.has(a.id));
+  document.getElementById('asset-list').innerHTML=ASSET_GROUPS.map(g=>group(g,baseAssets.filter(g.match))).join('');
+  document.getElementById('liability-list').innerHTML=group({label:'Liabilities',color:'#F87171',hdr:'#7F1D1D18'},state.accounts.filter(a=>isLiab(a.type)&&!a.excludeFromNW));
 }
 
 // v.id/v.year/v.model are esc(String(...))'d/coerced below -- importBackup()
