@@ -6544,16 +6544,18 @@ test("_reclassifyOrphanedVehicleAccounts() is called after both state.accounts a
 // UK/Canada/Australia/NZ bank institutions -- a non-US user adding a Home
 // account had no locally-relevant option and fell back to generic
 // "Other". Added the closest known equivalent per market: Zoopla (UK),
-// Domain (Australia), homes.co.nz (NZ). No confidently-known single-
-// dominant equivalent for Canada or Singapore, so those still fall back
-// to Other for now. Found August 2026. ──
-test("#f-source includes Zoopla/Domain/homes.co.nz alongside Zillow/Redfin, each with a matching SC_M color pair and SA_M abbreviation", () => {
+// Domain (Australia), homes.co.nz (NZ), and -- after a follow-up web
+// search specifically to confirm both are real, current services before
+// shipping a factual claim to real users -- Zolo (Canada, a national
+// "Home Value Estimator") and SRX/its "X-Value" tool (Singapore, used to
+// price 1.8m+ homes/year). Found August 2026. ──
+test("#f-source includes Zoopla/Domain/homes.co.nz/Zolo/SRX alongside Zillow/Redfin, each with a matching SC_M color pair and SA_M abbreviation", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   const fSourceMatch = source.match(/<select id="f-source">([\s\S]*?)<\/select>/);
   assert.ok(fSourceMatch, "the f-source select should exist");
-  for (const name of ["Zoopla", "Domain", "homes.co.nz"]) {
+  for (const name of ["Zoopla", "Domain", "homes.co.nz", "Zolo", "SRX"]) {
     assert.match(fSourceMatch[1], new RegExp(`<option>${name.replace(/\./g, "\\.")}</option>`), `f-source should offer "${name}"`);
   }
   const scMatch = source.match(/const SC_M=\{[\s\S]*?\};/);
@@ -6561,9 +6563,13 @@ test("#f-source includes Zoopla/Domain/homes.co.nz alongside Zillow/Redfin, each
   assert.match(scMatch[0], /Domain:\{bg:tc\('#2E1065','#EDE9FE'\),fg:tc\('#A78BFA','#7C3AED'\)\}/, "SC_M should have a color pair for Domain");
   assert.match(scMatch[0], /'homes\.co\.nz':\{bg:tc\('#065F46','#ECFDF5'\),fg:tc\('#34D399','#059669'\)\}/, "SC_M should have a color pair for homes.co.nz");
   assert.match(scMatch[0], /Zoopla:\{bg:tc\('#7C2D12','#FFF7ED'\),fg:tc\('#FB923C','#EA580C'\)\}/, "SC_M should have a color pair for Zoopla");
+  assert.match(scMatch[0], /Zolo:\{bg:tc\('#065F46','#ECFDF5'\),fg:tc\('#34D399','#059669'\)\}/, "SC_M should have a color pair for Zolo");
+  assert.match(scMatch[0], /SRX:\{bg:tc\('#1E3A5F','#EFF6FF'\),fg:tc\('#60A5FA','#2563EB'\)\}/, "SC_M should have a color pair for SRX");
   const saMatch = source.match(/const SA_M=\{[\s\S]*?\};/);
   assert.ok(saMatch, "SA_M should exist");
   assert.match(saMatch[0], /Domain:'DM'/, "SA_M should abbreviate Domain");
   assert.match(saMatch[0], /'homes\.co\.nz':'HZ'/, "SA_M should abbreviate homes.co.nz");
   assert.match(saMatch[0], /Zoopla:'ZP'/, "SA_M should abbreviate Zoopla");
+  assert.match(saMatch[0], /Zolo:'ZO'/, "SA_M should abbreviate Zolo");
+  assert.match(saMatch[0], /SRX:'SX'/, "SA_M should abbreviate SRX");
 });
