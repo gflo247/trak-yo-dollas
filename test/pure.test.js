@@ -1829,7 +1829,7 @@ test("openAddModal: resets #f-source and #f-type to their default option, not le
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /function openAddModal\(\)\{[^}]*const fs=document\.getElementById\('f-source'\);if\(fs\)fs\.selectedIndex=0;const ft=document\.getElementById\('f-type'\);if\(ft\)ft\.selectedIndex=0;/,
+    /function openAddModal\(\)\{[^}]*const ft=document\.getElementById\('f-type'\);if\(ft\)ft\.selectedIndex=0;updateSourceOptionsForType\(\);const fs=document\.getElementById\('f-source'\);if\(fs\)fs\.selectedIndex=0;/,
     "openAddModal() should reset both #f-source and #f-type to their first <option> (selectedIndex=0), matching editAccount()'s own reset-on-open convention for the other fields"
   );
 });
@@ -6476,7 +6476,7 @@ test("the Add Account modal's Type dropdown no longer offers \"Vehicle\", which 
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fTypeMatch = source.match(/<select id="f-type">([\s\S]*?)<\/select>/);
+  const fTypeMatch = source.match(/<select id="f-type"[^>]*>([\s\S]*?)<\/select>/);
   assert.ok(fTypeMatch, "the f-type select should exist");
   assert.doesNotMatch(
     fTypeMatch[1],
@@ -6572,4 +6572,49 @@ test("#f-source includes Zoopla/Domain/homes.co.nz/Zolo/SRX alongside Zillow/Red
   assert.match(saMatch[0], /Zoopla:'ZP'/, "SA_M should abbreviate Zoopla");
   assert.match(saMatch[0], /Zolo:'ZO'/, "SA_M should abbreviate Zolo");
   assert.match(saMatch[0], /SRX:'SX'/, "SA_M should abbreviate SRX");
+});
+
+// ── #f-source showed the full ~40-bank list regardless of #f-type, even
+// though a bank like Chase or Ally will never own a home -- only the 7
+// dedicated real-estate valuation sources (Zillow, Redfin, Zoopla, Domain,
+// homes.co.nz, Zolo, SRX) plus "Other" are ever relevant once Type is set
+// to Home. Filtering to just those on Type=Home removes real noise with no
+// downside, unlike the other types (a bank like Ally spans both Cash and
+// Investment, so filtering those would as often hide the institution
+// someone's looking for as help them find it). updateSourceOptionsForType()
+// is DOM-only (no return value) -- checking the source pattern directly,
+// matching this suite's precedent for DOM-mutation-only functions (see
+// openAddModal(), 87th adversarial pass). Requested directly by Nicholas,
+// August 2026. ──
+test("updateSourceOptionsForType() filters #f-source to real-estate sources only when #f-type is Home, wired via data-change and called from both openAddModal() and editAccount()", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<select id="f-type" data-change="updateSourceOptionsForType">/,
+    "#f-type should call updateSourceOptionsForType() on change, so switching Type live re-filters #f-source"
+  );
+  const fnMatch = source.match(/function updateSourceOptionsForType\(\)\{[\s\S]{0,700}?\n\}/);
+  assert.ok(fnMatch, "updateSourceOptionsForType() should exist");
+  assert.match(
+    fnMatch[0],
+    /REAL_ESTATE_SOURCES\.map\(s=>`<option>\$\{s\}<\/option>`\)\.join\(''\)\+'<option>Other<\/option>'/,
+    "when #f-type is 'home', #f-source's options should be replaced with just the real-estate sources plus Other"
+  );
+  assert.match(
+    source,
+    /const REAL_ESTATE_SOURCES=\['Domain','homes\.co\.nz','Redfin','SRX','Zillow','Zolo','Zoopla'\];/,
+    "REAL_ESTATE_SOURCES should list all 7 dedicated real-estate valuation sources currently in #f-source"
+  );
+  assert.match(
+    source,
+    /const ft=document\.getElementById\('f-type'\);if\(ft\)ft\.selectedIndex=0;updateSourceOptionsForType\(\);const fs=document\.getElementById\('f-source'\);if\(fs\)fs\.selectedIndex=0;/,
+    "openAddModal() should set #f-type first, then filter #f-source, so a fresh Add-account open isn't left showing a stale filtered list from a prior Home-type session"
+  );
+  assert.match(
+    source,
+    /document\.getElementById\('f-type'\)\.value=a\.type;updateSourceOptionsForType\(\);document\.getElementById\('f-source'\)\.value=a\.source;/,
+    "editAccount() should set #f-type before filtering #f-source, then set #f-source's value after filtering, so editing an existing Home account shows the filtered list with its actual institution still correctly selected"
+  );
 });

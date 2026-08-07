@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-3JrxAtzTT2xTF1RbMJWe4Lb5HLrPuvvUMX1rYSgywQc=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-1eueE1XpaF6KfrATzxitSHo1L44+IDIBSxV2KIRIh+k=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1385,7 +1385,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div class="form-group"><label class="form-label" for="f-source">Institution</label>
       <select id="f-source"><option>Alliant</option><option>Ally</option><option>Amex</option><option>ANZ</option><option>Bank of America</option><option>Barclays</option><option>BECU</option><option>BMO</option><option>BNZ</option><option>Capital One</option><option>Chase</option><option>CIBC</option><option>CommBank</option><option>Discover</option><option>Domain</option><option>E*TRADE</option><option>Fidelity</option><option>Halifax</option><option>homes.co.nz</option><option>HSBC</option><option>ING</option><option>Lloyds</option><option>Marcus</option><option>Nationwide</option><option>Navy Federal</option><option>Old National</option><option>PenFed</option><option>RBC</option><option>Redfin</option><option>Santander</option><option>Schwab</option><option>Scotiabank</option><option>SoFi</option><option>SRX</option><option>Starling</option><option>Tangerine</option><option>TD Bank</option><option>Truist</option><option>USAA</option><option>Vanguard</option><option>Wells Fargo</option><option>Westpac</option><option>Zillow</option><option>Zolo</option><option>Zoopla</option><option>Other</option></select></div>
     <div class="form-group"><label class="form-label" for="f-type">Type</label>
-      <select id="f-type"><option value="cash">Cash/Savings</option><option value="investment">Investment</option><option value="home">Home</option><option value="mortgage">Mortgage</option><option value="credit">Credit card</option><option value="other-asset">Other asset</option><option value="other-liability">Other liability</option></select></div>
+      <select id="f-type" data-change="updateSourceOptionsForType"><option value="cash">Cash/Savings</option><option value="investment">Investment</option><option value="home">Home</option><option value="mortgage">Mortgage</option><option value="credit">Credit card</option><option value="other-asset">Other asset</option><option value="other-liability">Other liability</option></select></div>
     <div class="form-group"><label class="form-label" for="f-balance">Balance ($)</label><input type="number" id="f-balance"/></div>
     <div class="form-group" style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-deep);border-radius:8px;padding:.6rem .85rem">
       <div>
@@ -13532,6 +13532,27 @@ function closeModals(){
   if(mlSent)mlSent.style.display='none';
   if(mlEmail)mlEmail.value='';
 }
+// Filters #f-source down to just the real-estate valuation sources when
+// Type is set to Home, so a user adding/editing a home doesn't have to
+// scroll past ~40 banks that will never apply to a property. Every other
+// Type keeps the full unfiltered list -- unlike Home, a bank like Ally or
+// Chase spans multiple other types (cash AND investment), so filtering
+// those would as often hide the institution someone's looking for as help
+// them find it. Captures #f-source's own static markup on first call
+// rather than hardcoding a parallel "full list" array, so the two can
+// never drift out of sync if the bank list changes later. Requested by
+// Nicholas.
+const REAL_ESTATE_SOURCES=['Domain','homes.co.nz','Redfin','SRX','Zillow','Zolo','Zoopla'];
+let _fSourceFullOptionsHTML=null;
+function updateSourceOptionsForType(){
+  const ft=document.getElementById('f-type'),fs=document.getElementById('f-source');
+  if(!ft||!fs)return;
+  if(_fSourceFullOptionsHTML===null)_fSourceFullOptionsHTML=fs.innerHTML;
+  const current=fs.value;
+  fs.innerHTML=ft.value==='home'?REAL_ESTATE_SOURCES.map(s=>`<option>${s}</option>`).join('')+'<option>Other</option>':_fSourceFullOptionsHTML;
+  const match=[...fs.options].find(o=>o.value===current);
+  fs.selectedIndex=match?match.index:0;
+}
 // f-source/f-type were never reset here (only editAccount()'s edit path
 // sets them) -- editing an account with a non-default institution/type
 // (e.g. Type: Mortgage), closing the modal, then opening it again to add
@@ -13548,7 +13569,7 @@ function closeModals(){
 // what a genuinely fresh page load already shows) rather than hardcoding
 // a value that could drift if the option lists ever change. Found in the
 // 87th adversarial pass.
-function openAddModal(){editAcctId=null;document.getElementById('add-modal-title').textContent='Add account';['f-name','f-balance'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-exclude').checked=false;const fs=document.getElementById('f-source');if(fs)fs.selectedIndex=0;const ft=document.getElementById('f-type');if(ft)ft.selectedIndex=0;const db=document.getElementById('delete-acct-btn');if(db)db.style.display='none';const dc=document.getElementById('delete-acct-confirm');if(dc)dc.style.display='none';document.getElementById('add-modal').classList.remove('hidden');}
+function openAddModal(){editAcctId=null;document.getElementById('add-modal-title').textContent='Add account';['f-name','f-balance'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-exclude').checked=false;const ft=document.getElementById('f-type');if(ft)ft.selectedIndex=0;updateSourceOptionsForType();const fs=document.getElementById('f-source');if(fs)fs.selectedIndex=0;const db=document.getElementById('delete-acct-btn');if(db)db.style.display='none';const dc=document.getElementById('delete-acct-confirm');if(dc)dc.style.display='none';document.getElementById('add-modal').classList.remove('hidden');}
 function openAcctCsvModal(){
   // Reset stale state from a prior open/cancel, matching openAddModal()'s
   // own reset-on-open convention immediately above -- this modal had no
@@ -13692,7 +13713,7 @@ function openVehicleModal(){
   const dc=document.getElementById('delete-vehicle-confirm');if(dc)dc.style.display='none';
   document.getElementById('vehicle-modal').classList.remove('hidden');
 }
-function editAccount(id){const a=state.accounts.find(x=>x.id===id);if(!a)return;editAcctId=id;document.getElementById('add-modal-title').textContent='Edit account';document.getElementById('f-name').value=a.name;document.getElementById('f-source').value=a.source;document.getElementById('f-type').value=a.type;document.getElementById('f-balance').value=a.balance;document.getElementById('f-exclude').checked=!!a.excludeFromNW;const db=document.getElementById('delete-acct-btn');if(db)db.style.display='';const dc=document.getElementById('delete-acct-confirm');if(dc)dc.style.display='none';document.getElementById('add-modal').classList.remove('hidden');}
+function editAccount(id){const a=state.accounts.find(x=>x.id===id);if(!a)return;editAcctId=id;document.getElementById('add-modal-title').textContent='Edit account';document.getElementById('f-name').value=a.name;document.getElementById('f-type').value=a.type;updateSourceOptionsForType();document.getElementById('f-source').value=a.source;document.getElementById('f-balance').value=a.balance;document.getElementById('f-exclude').checked=!!a.excludeFromNW;const db=document.getElementById('delete-acct-btn');if(db)db.style.display='';const dc=document.getElementById('delete-acct-confirm');if(dc)dc.style.display='none';document.getElementById('add-modal').classList.remove('hidden');}
 function saveAccount(){
   // Matches confirmTxImport()/importBackup()'s existing guard (98th
   // adversarial pass) -- without it, adding an account while previewing a
