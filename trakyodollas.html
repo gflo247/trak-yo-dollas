@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-hZCFhHSNC/P2c5FC+5AoNAtuRDlpXh3qk0ayrmVGMwI=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-D3HVbPCyKtjtUhetJCXxiTFLc6Km11UKGU4Sq4zBONY=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -373,9 +373,6 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .tx-amount{font-size:11px;font-weight:800;min-width:55px;text-align:right;color:#F87171}
 .tx-pct{font-size:9px;color:var(--text-muted);min-width:35px;text-align:right}
 .cat-badge{display:flex;align-items:center;gap:6px;margin-bottom:.5rem;padding:.3rem .7rem;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-mid)}
-/* vehicle */
-.depn-bg{height:7px;background:var(--border-mid);border-radius:4px;overflow:hidden;margin-top:3px}
-.depn-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#059669,#0D9488)}
 /* modals */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(4px)}
 .modal{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:14px;padding:1.5rem;width:min(440px,94vw);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)}
@@ -1514,8 +1511,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <div class="form-group"><label class="form-label" for="v-other-cat">Category</label><select id="v-other-cat"><option value="Boat">Boat / Watercraft</option><option value="Jewelry">Jewelry</option><option value="Art">Art / Collectibles</option><option value="Equipment">Equipment / Tools</option><option value="Electronics">Electronics</option><option value="Other">Other</option></select></div>
     </div>
     <div class="form-group"><label class="form-label" for="v-value">Est. value ($) <span style="color:#F87171">*</span></label><input type="number" id="v-value" min="0"/></div>
-    <div class="form-group"><label class="form-label" for="v-purchase">Purchase price ($)</label><input type="number" id="v-purchase"/></div>
-    <div class="form-group"><label class="form-label" for="v-purchase-year">Purchase year</label><input type="number" id="v-purchase-year"/></div>
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:.75rem"><span style="color:#F87171">*</span> required</div>
     <div class="row" style="justify-content:space-between;gap:8px;margin-top:1rem">
       <button class="btn" data-action="confirmDeleteVehicle" type="button" id="delete-vehicle-btn" style="display:none;color:#F87171;border-color:#F8717166">Delete</button>
@@ -7788,20 +7783,20 @@ function renderAccountLists(){
   document.getElementById('liability-list').innerHTML=state.accounts.filter(a=>isLiab(a.type)&&!a.excludeFromNW).map(row).join('');
 }
 
-// purchaseYear is esc(String(...))'d and miles is Number()-coerced below,
-// same reasoning as renderHistory()'s snapshot .date fix -- importBackup()
+// v.id/v.year/v.model are esc(String(...))'d/coerced below -- importBackup()
 // only shape-checks state.vehicles as an array, so a crafted backup file
-// could carry a non-numeric payload straight into these fields, which
-// otherwise interpolate directly into innerHTML. Found in the 100th
-// adversarial pass. The 100th pass's own sweep missed 3 more sites of the
-// identical gap in this same function, found in the 101st adversarial
-// pass: v.id (both editVehicle data-arg attributes) and v.year (the KBB
-// link's data-arg) both interpolate raw into an HTML attribute; v.model
-// also risked a crash (not just injection) via (v.model||'').split(' ') --
-// a crafted backup storing v.model as a truthy non-string (e.g. a number)
-// bypasses the ||'' fallback and throws on .split, since numbers have no
-// such method. All three now go through esc(String(...)) matching the
-// established pattern.
+// could carry a non-string/non-numeric payload straight into these fields:
+// v.id and v.year interpolate raw into an HTML attribute, and v.model
+// risked a crash (not just injection) via (v.model||'').split(' ') -- a
+// truthy non-string payload (e.g. a number) bypasses the ||'' fallback and
+// throws on .split, since numbers have no such method. Found in the 100th/
+// 101st adversarial passes.
+// Purchase price/year and the resulting "% value retained"/depreciation
+// stat were cut entirely (along with their #v-purchase/#v-purchase-year
+// modal fields) -- nobody's tracking their car's depreciation closely
+// enough to justify two extra fields on every single add, and Est. Value
+// alone already drives net worth with nothing else depending on them.
+// Requested directly by Nicholas, August 2026.
 function renderVehicles(){
   const el=document.getElementById('vehicle-list');if(!el)return;
   if(!state.vehicles.length){
@@ -7809,35 +7804,13 @@ function renderVehicles(){
   }
   el.innerHTML=state.vehicles.map(v=>{
     const isOther=v.assetType==='other';
-    // v.value/v.purchase coerced here, same reasoning/pattern as the
-    // adjacent v.miles Number() coercion and v.purchaseYear esc(String())
-    // treatment below (100th/101st adversarial passes): importBackup()
-    // only shape-checks state.vehicles as an array, so a crafted or hand-
-    // edited backup could carry a non-numeric payload straight into these
-    // fields. Unlike miles (used string-safely via .toLocaleString() at
-    // its one render site), value/purchase feed direct arithmetic
-    // (division, subtraction) below, so an uncoerced string silently
-    // produced "$NaN"/"NaN% value retained" instead of a crash. Coerced
-    // once here rather than at each of the 7 usage sites below. Found in
-    // the 131st adversarial pass, fixed July 28, 2026.
     const vValue=Number(v.value)||0;
-    const vPurchase=Number(v.purchase)||0;
-    const ret=vPurchase>0?Math.min(100,Math.round(vValue/vPurchase*100)):100;
-    const age=new Date().getFullYear()-v.purchaseYear;
-    const avgDep=age>0&&vPurchase>0?Math.round((vPurchase-vValue)/age):0;
-    // fmt() always strips the sign (Math.abs), so a plain fmt(avgDep) next
-    // to a hardcoded "dep." label showed a positive dollar figure for an
-    // appreciating asset (value>purchase, avgDep negative) too -- e.g. a
-    // boat worth $6,000 after being bought for $5,000 two years ago showed
-    // "~$500/yr dep." when it's actually gaining $500/yr. Found in the 46th
-    // adversarial pass.
-    const depLabel=avgDep<0?'apprec.':'dep.';
 
     if(isOther){
       return`<div style="border:1px solid var(--border-mid);border-radius:10px;padding:.7rem 1rem;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px">
         <div style="min-width:0">
           <div class="truncate" style="font-size:13px;font-weight:800;color:var(--text-primary)" title="${esc(v.name)}">${esc(v.name)}</div>
-          <div style="font-size:10px;color:#2DD4BF;margin-top:1px">${esc(v.make)}${v.purchaseYear?` · purchased ${esc(String(v.purchaseYear))}`:''}${vPurchase>0?` · ${ret}% value retained`:''}</div>
+          <div style="font-size:10px;color:#2DD4BF;margin-top:1px">${esc(v.make)}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
           <div style="font-size:15px;font-weight:800;color:#34D399">${fmt(vValue)}</div>
@@ -7850,19 +7823,17 @@ function renderVehicles(){
       <div style="padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:12px">
         <div>
           <div style="font-size:13px;font-weight:800;color:var(--text-primary)">${esc(String(v.year))} ${esc(v.make||'')} ${esc(v.model||'')}</div>
-          <div style="font-size:10px;color:#2DD4BF;margin-top:1px">${esc(v.condition)} · ${(Number(v.miles)||0).toLocaleString()} mi${vPurchase>0?` · ${ret}% value retained · ~${fmt(avgDep)}/yr ${depLabel}`:''}</div>
+          <div style="font-size:10px;color:#2DD4BF;margin-top:1px">${esc(v.condition)} · ${(Number(v.miles)||0).toLocaleString()} mi</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
           <div style="text-align:right">
             <div style="font-size:15px;font-weight:800;color:#34D399">${fmt(vValue)}</div>
-            ${vPurchase>0?`<div class="text-muted-sm" style="margin-top:3px">of ${fmt(vPurchase)} orig.</div>`:''}
           </div>
           <button class="btn btn-sm" data-action="editVehicle" data-arg="${esc(String(v.id))}" type="button">Edit</button>
         </div>
       </div>
-      <div style="padding:0 1rem .6rem 1rem">
-        <div class="depn-bg"><div class="depn-fill" style="width:${ret}%"></div></div>
-        <div style="margin-top:.5rem">
+      <div style="padding:.5rem 1rem .6rem 1rem">
+        <div>
           <a href="javascript:void(0)" data-action="openValuationLink" data-arg="${esc(String(v.year))}" data-arg2="${esc(v.make||'')}" data-arg3="${esc(String(v.model||'').split(' ')[0])}" data-region="${esc(v.region||'US')}" style="color:#60A5FA;text-decoration:underline;font-size:12px">🔍 Check value on ${esc(valuationInfo(v.region||'US').label)} ↗</a>
           ${v.vin?`<span style="font-size:9px;color:var(--text-muted);font-family:monospace;margin-left:8px">VIN: ${esc(v.vin)}</span>`:''}
         </div>
@@ -13734,7 +13705,7 @@ function openVehicleModal(){
   _vehicleModalGen++;
   editVehicleId=null;currentAssetType='vehicle';setAssetType('vehicle');
   document.getElementById('v-modal-title').textContent='Add physical asset';
-  ['v-vin','v-year','v-make','v-model','v-miles','v-value','v-purchase','v-purchase-year','v-other-name'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['v-vin','v-year','v-make','v-model','v-miles','v-value','v-other-name'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const vcs=document.getElementById('v-condition');if(vcs)vcs.value='very good';
   // v-other-cat was never reset here (only editVehicle()'s edit path sets
   // it) -- adding one "Other" physical asset with a non-default category
@@ -13828,7 +13799,7 @@ function editVehicle(id){
   if(type==='other'){const n=document.getElementById('v-other-name');if(n)n.value=v.name||'';const c=document.getElementById('v-other-cat');if(c)c.value=v.make||'Other';}
   else{const vinEl=document.getElementById('v-vin');if(vinEl)vinEl.value=v.vin||'';const s=document.getElementById('v-vin-status');if(s)s.textContent='';document.getElementById('v-year').value=v.year||'';document.getElementById('v-make').value=v.make||'';document.getElementById('v-model').value=v.model||'';const vr=document.getElementById('v-region');if(vr)vr.value=v.region||'US';document.getElementById('v-condition').value=v.condition||'very good';document.getElementById('v-miles').value=v.miles||'';}
   updateVehicleValuationLink();
-  document.getElementById('v-value').value=v.value||'';document.getElementById('v-purchase').value=v.purchase||'';document.getElementById('v-purchase-year').value=v.purchaseYear||'';
+  document.getElementById('v-value').value=v.value||'';
   const db=document.getElementById('delete-vehicle-btn');if(db)db.style.display='';
   const dc=document.getElementById('delete-vehicle-confirm');if(dc)dc.style.display='none';
   // Same v-vin-btn reset as openVehicleModal() -- a still-pending lookupVIN()
@@ -13870,8 +13841,6 @@ function saveVehicle(){
     return;
   }
   const value=parseFloat(document.getElementById('v-value').value)||0;
-  const purchase=parseFloat(document.getElementById('v-purchase').value)||0;
-  const purchaseYear=parseInt(document.getElementById('v-purchase-year').value)||new Date().getFullYear();
   // value<0, not just !value -- a negative "Est. value" is truthy so it
   // passed straight through the old check, was written directly into the
   // paired account's balance, and totalAssets() sums that unconditionally
@@ -13888,17 +13857,22 @@ function saveVehicle(){
   // vehicle has no way to be recorded as $0 without this fix -- the modal
   // just silently sits there with no save, no toast, no error. Found in
   // the 58th adversarial pass.
-  // !Number.isFinite(value/purchase), not just value<0 -- parseFloat
-  // returns a truthy Infinity for 'Infinity'/'1e400', which is not <0 and
-  // so passed the existing guard straight through into the paired
-  // account's balance, poisoning totalAssets() for every render. Same
-  // class of gap the 87th pass closed for CSV import. Found in the 119th
-  // adversarial pass.
-  if(value<0||!Number.isFinite(value)||!Number.isFinite(purchase))return;
+  // !Number.isFinite(value), not just value<0 -- parseFloat returns a
+  // truthy Infinity for 'Infinity'/'1e400', which is not <0 and so passed
+  // the existing guard straight through into the paired account's
+  // balance, poisoning totalAssets() for every render. Same class of gap
+  // the 87th pass closed for CSV import. Found in the 119th adversarial
+  // pass.
+  if(value<0||!Number.isFinite(value))return;
   let name,make,model,year,condition,miles,assetType,vin='',region='US';
   if(currentAssetType==='other'){
     const oName=(document.getElementById('v-other-name')||{}).value||'';const oCat=(document.getElementById('v-other-cat')||{}).value||'Other';
-    if(!oName)return;name=oName;make=oCat;model='';year=purchaseYear;condition='good';miles=0;assetType='other';
+    // No purchase-year field to fall back to anymore (cut alongside
+    // purchase price, August 2026) -- an Other asset's own "year" was
+    // always just the purchase-year field's value in disguise (vehicles
+    // get their real year from #v-year instead), so today's year is the
+    // only sensible default left.
+    if(!oName)return;name=oName;make=oCat;model='';year=new Date().getFullYear();condition='good';miles=0;assetType='other';
   } else {
     vin=((document.getElementById('v-vin')||{}).value||'').trim().toUpperCase();
     year=parseInt(document.getElementById('v-year').value)||new Date().getFullYear();
@@ -13929,7 +13903,7 @@ function saveVehicle(){
     const v=state.vehicles.find(x=>x.id===editVehicleId);
     if(v){
       const oldName=v.name;
-      Object.assign(v,{year,make,model,condition,miles,value,purchase,purchaseYear,vin,assetType,name,region});
+      Object.assign(v,{year,make,model,condition,miles,value,vin,assetType,name,region});
       // Vehicles/assets are paired 1:1 with a state.accounts entry via
       // acctId, so editing one never touches another vehicle's account —
       // matching by type alone (the old logic) always grabbed whichever
@@ -13968,7 +13942,7 @@ function saveVehicle(){
   } else {
     const vehId=state.nextId++;
     const acctId=state.nextId++;
-    state.vehicles.push({id:vehId,year,make,model,condition,miles,value,purchase,purchaseYear,vin,assetType,name,acctId,region});
+    state.vehicles.push({id:vehId,year,make,model,condition,miles,value,vin,assetType,name,acctId,region});
     // Paired account's type must match assetType — 'other' assets get
     // 'other-asset' (not 'vehicle'), so renderNwBreakdown()'s Net Worth
     // groups (§ Vehicles vs Other assets) categorize them correctly.
@@ -15375,7 +15349,7 @@ const DEMO_PROFILE_2 = {
   // saveVehicle() would itself generate from these fields (year + make +
   // model's first word), and equals accounts[7]'s own name exactly. Found
   // in the 50th adversarial pass.
-  vehicles:[{id:1,year:2021,make:'Honda',model:'CR-V EX',condition:'very good',miles:34000,value:22000,purchase:31500,purchaseYear:2021,vin:'',assetType:'vehicle',name:'2021 Honda CR-V',acctId:8}],
+  vehicles:[{id:1,year:2021,make:'Honda',model:'CR-V EX',condition:'very good',miles:34000,value:22000,vin:'',assetType:'vehicle',name:'2021 Honda CR-V',acctId:8}],
   // 'Nov 30, 2024' snapshot removed July 29, 2026 -- orphaned by the
   // previous day's ALL_TX_RAW trim (transactions now start 2025-02-01), so
   // this data point predated any transaction data by 3 months. Missed in

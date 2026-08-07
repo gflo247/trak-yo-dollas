@@ -2768,17 +2768,19 @@ test("renderDailyCal: shows a 'No data' state instead of crashing when there are
 });
 
 // importBackup() only shape-checks state.snapshots/state.vehicles as
-// arrays -- a crafted backup file's .date/.purchaseYear/.miles fields flow
-// unescaped into innerHTML in renderHistory()/renderVehicles(), the one
-// unescaped seam in a file that treats crafted-backup-file XSS as in-scope
-// (matches the pass-15 Budget-row and pass-34 community-rules-CSV fixes).
+// arrays -- a crafted backup file's .date/.miles fields flow unescaped
+// into innerHTML in renderHistory()/renderVehicles(), the one unescaped
+// seam in a file that treats crafted-backup-file XSS as in-scope (matches
+// the pass-15 Budget-row and pass-34 community-rules-CSV fixes).
+// .purchaseYear's own assertion here was removed alongside purchase
+// price/year themselves (cut entirely, August 2026) -- there's no field
+// left to esc(String(...)) coerce.
 test("renderHistory and renderVehicles escape snapshot/vehicle fields that could carry an HTML payload from a crafted backup file", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(source, /\$\{esc\(first\.date\)\} – \$\{esc\(last\.date\)\}/, "renderHistory()'s growth banner should esc() first.date/last.date");
   assert.match(source, /<div class="account-name" style="font-size:12px">\$\{esc\(s\.date\)\}<\/div>/, "renderHistory()'s per-row date should be esc()'d");
-  assert.match(source, /purchased \$\{esc\(String\(v\.purchaseYear\)\)\}/, "renderVehicles() should esc(String(...)) purchaseYear");
   assert.match(source, /\$\{\(Number\(v\.miles\)\|\|0\)\.toLocaleString\(\)\} mi/, "renderVehicles() should Number()-coerce miles before .toLocaleString(), since a string passes through that method unchanged");
 });
 
@@ -3078,7 +3080,14 @@ test("all 3 snapshot restore paths (cloud sync, local storage, backup) coerce nw
     "importBackup()'s path should coerce nw/assets/liab"
   );
 });
-test("renderVehicles coerces v.value/v.purchase to numbers once, reused across both the depreciation math and all display sites", () => {
+// Purchase price/year (and the v.purchase-driven "% value retained"/
+// depreciation math this test used to also cover) were cut entirely,
+// August 2026 -- nobody's tracking their car's depreciation closely
+// enough to justify two extra modal fields, and Est. Value alone already
+// drives net worth with nothing else depending on them. v.value's own
+// coercion is unchanged and still worth guarding against a crafted
+// backup's non-numeric payload.
+test("renderVehicles coerces v.value to a number once, reused across every display site", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
@@ -3087,19 +3096,10 @@ test("renderVehicles coerces v.value/v.purchase to numbers once, reused across b
   const fn = fnMatch[0];
   assert.match(
     fn,
-    /const vValue=Number\(v\.value\)\|\|0;\s*const vPurchase=Number\(v\.purchase\)\|\|0;/,
-    "renderVehicles() should coerce v.value/v.purchase into local consts near the top of the map callback"
+    /const vValue=Number\(v\.value\)\|\|0;/,
+    "renderVehicles() should coerce v.value into a local const near the top of the map callback"
   );
-  // Every remaining reference to the raw fields should be the coercion
-  // assignment itself, not a leftover unprotected usage. Strip // comment
-  // text first -- the fix's own explanatory comment above references
-  // "v.value"/"v.purchase" in prose, which would otherwise inflate the
-  // count without being a real code site.
-  const fnCodeOnly = fn.split("\n").map(line => line.replace(/\/\/.*$/, "")).join("\n");
-  const rawValueRefs = (fnCodeOnly.match(/v\.value\b/g) || []).length;
-  const rawPurchaseRefs = (fnCodeOnly.match(/v\.purchase\b/g) || []).length;
-  assert.equal(rawValueRefs, 1, "v.value should only appear once in renderVehicles()'s actual code (the coercion line itself)");
-  assert.equal(rawPurchaseRefs, 1, "v.purchase should only appear once in renderVehicles()'s actual code (the coercion line itself)");
+  assert.doesNotMatch(fn, /v\.purchase/, "renderVehicles() should no longer reference the removed v.purchase/v.purchaseYear fields at all");
 });
 test("renderMetrics: allSnaps is null-safe and uses the shared snapshot sort comparator", () => {
   const fs = require("fs");
@@ -4330,7 +4330,7 @@ test("saveVehicle: has the demo-preview guard, calls _replaceDemoDataWithReal() 
   const fnMatch = source.match(/function saveVehicle\(\)\{[\s\S]{0,7900}?closeModals\(\);renderAll\(\);\n\}/);
   assert.ok(fnMatch, "saveVehicle() should exist");
   const guardIdx = fnMatch[0].search(/if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{/);
-  const valueGuardIdx = fnMatch[0].search(/if\(value<0\|\|!Number\.isFinite\(value\)\|\|!Number\.isFinite\(purchase\)\)return;/);
+  const valueGuardIdx = fnMatch[0].search(/if\(value<0\|\|!Number\.isFinite\(value\)\)return;/);
   const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
   const fallbackIdx = fnMatch[0].search(/if\(editVehicleId&&!state\.vehicles\.find\(x=>x\.id===editVehicleId\)\)editVehicleId=null;/);
   const editCheckIdx = fnMatch[0].search(/if\(editVehicleId\)\{/);
@@ -4976,14 +4976,14 @@ test("saveAccount: a non-finite balance falls back to 0 instead of poisoning net
   );
 });
 
-test("saveVehicle: rejects non-finite value/purchase, not just a negative value", () => {
+test("saveVehicle: rejects a non-finite value, not just a negative one", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /if\(value<0\|\|!Number\.isFinite\(value\)\|\|!Number\.isFinite\(purchase\)\)return;/,
-    "should reject non-finite value or purchase alongside the existing negative-value guard"
+    /if\(value<0\|\|!Number\.isFinite\(value\)\)return;/,
+    "should reject a non-finite value alongside the existing negative-value guard (the equivalent purchase-price guard was removed alongside the field itself, August 2026)"
   );
 });
 
@@ -6687,11 +6687,37 @@ test("vehicle valuation links are region-aware (US/CA/AU/UK) and persistently vi
   const saveVehicleMatch = source.match(/function saveVehicle\(\)\{[\s\S]*?\n\}/);
   assert.ok(saveVehicleMatch, "saveVehicle() should exist");
   assert.match(saveVehicleMatch[0], /region=\(document\.getElementById\('v-region'\)\|\|\{\}\)\.value\|\|'US';/, "saveVehicle() should read #v-region");
-  assert.match(saveVehicleMatch[0], /Object\.assign\(v,\{year,make,model,condition,miles,value,purchase,purchaseYear,vin,assetType,name,region\}\);/, "editing an existing vehicle should persist the updated region");
-  assert.match(saveVehicleMatch[0], /state\.vehicles\.push\(\{id:vehId,year,make,model,condition,miles,value,purchase,purchaseYear,vin,assetType,name,acctId,region\}\);/, "creating a new vehicle should persist its region");
+  assert.match(saveVehicleMatch[0], /Object\.assign\(v,\{year,make,model,condition,miles,value,vin,assetType,name,region\}\);/, "editing an existing vehicle should persist the updated region");
+  assert.match(saveVehicleMatch[0], /state\.vehicles\.push\(\{id:vehId,year,make,model,condition,miles,value,vin,assetType,name,acctId,region\}\);/, "creating a new vehicle should persist its region");
   assert.match(
     source,
     /data-action="openValuationLink" data-arg="\$\{esc\(String\(v\.year\)\)\}" data-arg2="\$\{esc\(v\.make\|\|''\)\}" data-arg3="\$\{esc\(String\(v\.model\|\|''\)\.split\(' '\)\[0\]\)\}" data-region="\$\{esc\(v\.region\|\|'US'\)\}"[^>]*>🔍 Check value on \$\{esc\(valuationInfo\(v\.region\|\|'US'\)\.label\)\} ↗<\/a>/,
     "the physical-assets list row should pass the vehicle's own region and swap the link label to match (not hardcode 'Kelley Blue Book' regardless of destination)"
+  );
+});
+
+// ── Purchase price and Purchase year (and the "% value retained"/$X-per-
+// year depreciation stat they drove) were cut from the vehicle modal --
+// nobody's tracking their car's depreciation closely enough to justify
+// two extra fields on every single add, and Est. Value alone already
+// drives net worth with nothing else depending on them. Purchase Year was
+// also quietly doing double duty as the fallback "year" for Other-asset
+// entries (boats, jewelry, etc., which have no #v-year field of their
+// own) -- that now falls back to the current year instead. Requested
+// directly by Nicholas, August 2026. ──
+test("Purchase price/year fields are gone from the vehicle modal; Other-asset entries fall back to the current year instead of a removed Purchase Year field", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.doesNotMatch(source, /id="v-purchase"/, "#v-purchase should no longer exist");
+  assert.doesNotMatch(source, /id="v-purchase-year"/, "#v-purchase-year should no longer exist");
+  assert.doesNotMatch(source, /\.depn-bg|\.depn-fill/, "the now-meaningless depreciation progress bar's CSS should be removed too, not left dead");
+  const saveVehicleMatch = source.match(/function saveVehicle\(\)\{[\s\S]{0,7900}?closeModals\(\);renderAll\(\);\n\}/);
+  assert.ok(saveVehicleMatch, "saveVehicle() should exist");
+  assert.doesNotMatch(saveVehicleMatch[0], /v-purchase/, "saveVehicle() should no longer read #v-purchase/#v-purchase-year");
+  assert.match(
+    saveVehicleMatch[0],
+    /if\(!oName\)return;name=oName;make=oCat;model='';year=new Date\(\)\.getFullYear\(\);condition='good';miles=0;assetType='other';/,
+    "an Other-asset entry's year should fall back to the current year, not a removed purchaseYear variable"
   );
 });
