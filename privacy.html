@@ -167,8 +167,8 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       <div class="mr-card">
         <div class="mr-event">Loading extra code</div>
         <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val">Internet address, browser type<br><span style="font-size:13px;color:var(--text-muted)">sent to two outside services this app relies on</span></span></div>
-        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Two code-hosting companies<br><span style="font-size:13px;color:var(--text-muted)"><a href="#third-party-code" style="color:var(--accent-blue-light)">cdnjs</a> (powers the charts) and <a href="#third-party-code" style="color:var(--accent-blue-light)">jsDelivr</a> (powers sign-in) — not this app's own servers</span></span></div>
-        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-ok);font-weight:700">Yes</span></div>
+        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Two code-hosting companies<br><span style="font-size:13px;color:var(--text-muted)"><a href="#third-party-code" style="color:var(--accent-blue-light)">cdnjs</a> (Chart.js + D3's core) and <a href="#third-party-code" style="color:var(--accent-blue-light)">jsDelivr</a> (the Supabase client + the Flow chart's plugin) — not this app's own servers</span></span></div>
+        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-ok);font-weight:700">Yes<br><span style="font-size:13px;font-weight:400;color:var(--text-muted)">Blocking cdnjs breaks every chart. Blocking jsDelivr disables sign-in/sync and just the Flow chart — every other chart keeps working either way.</span></span></div>
       </div>
       <div class="mr-card">
         <div class="mr-event">Importing a CSV</div>
@@ -180,7 +180,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
         <div class="mr-event">Opening the import screen</div>
         <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val">Internet address, browser type<br><span style="font-size:13px;color:var(--text-muted)">sent when your browser downloads <a href="#community-rules" style="color:var(--accent-blue-light)">community-rules.json</a></span></span></div>
         <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Cloudflare's servers</span></div>
-        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-ok);font-weight:700">Yes</span></div>
+        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-ok);font-weight:700">Yes<br><span style="font-size:13px;font-weight:400;color:var(--text-muted)">CSV import still works — auto-categorization just has fewer built-in matches, so more transactions land in "Other."</span></span></div>
       </div>
       <div class="mr-card">
         <div class="mr-event">Signing in with Google</div>
@@ -198,7 +198,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
         <div class="mr-event">Analytics</div>
         <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val"><a href="#analytics" style="color:var(--accent-blue-light)">Page views, country</a><br><span style="font-size:13px;color:var(--text-muted)">no financial data</span></span></div>
         <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Umami (no cookies or personal data)</span></div>
-        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-ok);font-weight:700">Yes</span></div>
+        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-ok);font-weight:700">Yes<br><span style="font-size:13px;font-weight:400;color:var(--text-muted)">No effect on the app either way — only removes my own usage stats.</span></span></div>
       </div>
       <div class="mr-card">
         <div class="mr-event">Adding a vehicle by VIN</div>
