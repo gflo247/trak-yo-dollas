@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-xvZNpgjvq6OQlcM6wbZn9FZTqiWVTvMCUWIJ3DpkpFE=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-G0yXnVMTZh4bcTxV8Q9A8i5pY9VFRA1Ipy+m9DfQGiw=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -565,8 +565,19 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 #demo-nudge strong{color:#D97706;font-weight:600}
 #demo-nav-badge{display:none;background:#D97706;color:#000;font-size:10px;font-weight:800;padding:4px 10px;border-radius:5px;letter-spacing:.05em;cursor:pointer;border:none;font-family:inherit;white-space:nowrap;line-height:1.3}
 
-/* Desktop pills — 4 per row, wraps naturally */
-@media(min-width:601px){#insights-pills{grid-template-columns:repeat(4,1fr)!important}}
+/* Desktop pills -- was a rigid repeat(4,1fr), which has no minimum floor
+   per column: at medium widths (601-999px, a plausible split-screen/
+   smaller-laptop range) forcing exactly 4 equal columns compressed each
+   pill below what its content needs, overflowing the grid and clipping
+   text illegibly (measured: a "4/10" stat cut to "4/1", a whole pill's
+   caption cut off) -- confirmed via scrollWidth exceeding clientWidth.
+   auto-fit/minmax(300px,1fr) -- 300px covers every current pill's
+   measured min-content width (widest: Subscriptions at ~291px) -- lets
+   the grid choose however many columns actually fit instead of forcing a
+   count regardless of width, matching the same pattern already used
+   elsewhere (e.g. the privacy page's .mr-grid). Found via a
+   user-friendliness pass, August 2026. */
+@media(min-width:601px){#insights-pills{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))!important}}
 @media(min-width:601px){.range-select{padding:5px 10px;font-size:12px;min-width:90px}.range-sep{font-size:12px}.range-dropdowns{gap:6px}.grain-row .h-btn{padding:4px 16px}}
 
 /* Sankey flow */
@@ -908,7 +919,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
         <button data-action="openPillCustomizer" title="Show or hide insight pills" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:var(--text-muted);cursor:pointer" type="button">⚙ Customize</button>
       </div>
     </div>
-    <div id="insights-pills" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px"></div>
+    <div id="insights-pills" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:8px"></div>
   </div>
   <!-- Empty state nudge — shown only before first import, sits above controls -->
   <div class="flex-between" style="margin-bottom:.5rem">
@@ -1508,9 +1519,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
     <div id="asset-vehicle-fields">
       <div class="form-group"><label class="form-label" for="v-vin">VIN <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">(optional — auto-fills details)</span></label><div style="display:flex;gap:6px"><input type="text" id="v-vin" placeholder="e.g. 1FMCU9J96NUB12345" maxlength="17" style="flex:1;font-family:monospace;text-transform:uppercase" data-input="uppercaseInput"/><button class="btn btn-sm" id="v-vin-btn" data-action="lookupVIN" style="white-space:nowrap;flex-shrink:0" type="button">Look up</button></div><div id="v-vin-status" style="font-size:12px;margin-top:4px;min-height:14px"></div></div>
-      <div class="form-group"><label class="form-label" for="v-year">Year</label><input type="number" id="v-year" data-input="updateVehicleValuationLink"/></div>
-      <div class="form-group"><label class="form-label" for="v-make">Make</label><input type="text" id="v-make" data-input="updateVehicleValuationLink"/></div>
-      <div class="form-group"><label class="form-label" for="v-model">Model / Trim</label><input type="text" id="v-model" data-input="updateVehicleValuationLink"/></div>
+      <div class="form-group"><label class="form-label" for="v-year">Year</label><input type="number" id="v-year" placeholder="e.g. 2020" data-input="updateVehicleValuationLink"/></div>
+      <div class="form-group"><label class="form-label" for="v-make">Make</label><input type="text" id="v-make" placeholder="e.g. Honda" data-input="updateVehicleValuationLink"/></div>
+      <div class="form-group"><label class="form-label" for="v-model">Model / Trim</label><input type="text" id="v-model" placeholder="e.g. Civic EX" data-input="updateVehicleValuationLink"/></div>
       <div class="form-group"><label class="form-label" for="v-region">Region <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">(for the value-check link below)</span></label><select id="v-region" data-change="updateVehicleValuationLink"><option value="US" selected>United States</option><option value="CA">Canada</option><option value="AU">Australia</option><option value="UK">United Kingdom</option><option value="Other">Other</option></select></div>
       <div id="v-valuation-link" style="font-size:12px;margin-bottom:.85rem;min-height:14px"></div>
       <div class="form-group"><label class="form-label" for="v-condition">Condition</label><select id="v-condition"><option value="excellent">Excellent</option><option value="very good" selected>Very good</option><option value="good">Good</option><option value="fair">Fair</option></select></div>
@@ -3606,7 +3617,13 @@ function renderNwBreakdown(){
     {label:'Other assets',color:'#FBBF24',hdr:'#78350F18',accts:state.accounts.filter(a=>a.type==='other-asset'&&a.balance!==0&&!a.excludeFromNW)},
     {label:'Liabilities',color:'#F87171',hdr:'#7F1D1D18',accts:state.accounts.filter(a=>isLiab(a.type)&&a.balance!==0&&!a.excludeFromNW),isLiab:true},
   ];
-  const visible=f==='assets'?GROUPS.filter(g=>g.label!=='Liabilities'):f==='liabilities'?GROUPS.filter(g=>g.label==='Liabilities'):GROUPS;
+  // .filter(g=>g.accts.length) -- previously absent, so a user with zero
+  // accounts of a given type (e.g. no 'other-asset' entries) still saw an
+  // empty "$0 · 0.0% of assets" group header with nothing under it, no
+  // explanation, reading like something was broken or missing rather than
+  // "you have none of these." Found via a user-friendliness pass, August
+  // 2026.
+  const visible=(f==='assets'?GROUPS.filter(g=>g.label!=='Liabilities'):f==='liabilities'?GROUPS.filter(g=>g.label==='Liabilities'):GROUPS).filter(g=>g.accts.length);
   document.getElementById('nw-breakdown').innerHTML=visible.map(g=>{
     const raw=g.accts.reduce((s,a)=>s+a.balance,0),net=g.isLiab?-raw:raw-(g.deduct||0);
     const pct=assets>0?Math.abs(net)/assets*100:0;
@@ -7977,7 +7994,7 @@ function renderHistory(){
           <div class="text-muted-xs">assets ${fmtC(s.assets)} · liab ${fmtC(s.liab)}</div>
         </div>
         <button data-action="editSnapshot" data-arg="${i}" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;padding:2px 5px;line-height:1" title="Edit snapshot" type="button">✏️</button>
-        <button data-action="deleteSnapshot" data-arg="${i}" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 5px;line-height:1" title="Delete snapshot" type="button">✕</button>
+        <button data-action="deleteSnapshot" data-arg="${i}" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 5px;line-height:1" title="Delete snapshot" type="button">🗑️</button>
       </div>
     </div>`;}).join('');
 
@@ -13620,7 +13637,13 @@ function updateSourceOptionsForType(){
 // what a genuinely fresh page load already shows) rather than hardcoding
 // a value that could drift if the option lists ever change. Found in the
 // 87th adversarial pass.
-function openAddModal(){editAcctId=null;document.getElementById('add-modal-title').textContent='Add account';['f-name','f-balance'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-exclude').checked=false;const ft=document.getElementById('f-type');if(ft)ft.selectedIndex=0;updateSourceOptionsForType();const fs=document.getElementById('f-source');if(fs)fs.selectedIndex=0;const db=document.getElementById('delete-acct-btn');if(db)db.style.display='none';const dc=document.getElementById('delete-acct-confirm');if(dc)dc.style.display='none';document.getElementById('add-modal').classList.remove('hidden');}
+// #f-source used to reset to selectedIndex=0 on open -- the alphabetically-
+// first bank ("Alliant"), not a neutral placeholder. A user who filled in
+// Name/Balance without touching that dropdown silently got an essentially
+// random institution assigned, with nothing prompting them to check it.
+// Defaults to "Other" instead, matching what that option already exists
+// for. Found via a user-friendliness pass, August 2026.
+function openAddModal(){editAcctId=null;document.getElementById('add-modal-title').textContent='Add account';['f-name','f-balance'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-exclude').checked=false;const ft=document.getElementById('f-type');if(ft)ft.selectedIndex=0;updateSourceOptionsForType();const fs=document.getElementById('f-source');if(fs)fs.value='Other';const db=document.getElementById('delete-acct-btn');if(db)db.style.display='none';const dc=document.getElementById('delete-acct-confirm');if(dc)dc.style.display='none';document.getElementById('add-modal').classList.remove('hidden');}
 function openAcctCsvModal(){
   // Reset stale state from a prior open/cancel, matching openAddModal()'s
   // own reset-on-open convention immediately above -- this modal had no
@@ -13809,7 +13832,16 @@ function saveAccount(){
   // to save rather than corrupt it, matching the existing !name guard.
   // Found in the 30th adversarial pass, after the demo's own 'Student
   // Loan' account (type:'loan', never a valid <option>) hit exactly this.
-  if(!name||!type)return;
+  // This guard used to fail completely silently -- the modal just sat
+  // there with no toast, no highlighted field, nothing telling the user
+  // why Save wasn't working. Matches the established error-toast color/
+  // pattern used elsewhere (e.g. saveEditTx()'s invalid-date/-amount
+  // guards) rather than inventing a new one. Found via a user-friendliness
+  // pass, August 2026.
+  if(!name||!type){
+    showToast(!name?'Enter an account name':'Choose an account type','#F87171',4000);
+    return;
+  }
   // Dismiss dashboard notice on first real edit
   const dn=document.getElementById('demo-notice-dash');if(dn)dn.style.display='none';
   const da=document.getElementById('demo-notice-accounts');if(da)da.style.display='none';

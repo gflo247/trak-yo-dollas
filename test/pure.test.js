@@ -1857,14 +1857,14 @@ test("normalizeTxRow: an unparseable date is rejected outright, not silently rep
 // mirrored onto this modal. openAddModal() itself is DOM-only (no return
 // value, just element mutation) -- checking the source pattern directly,
 // matching this suite's precedent for DOM-mutation-only functions. ──
-test("openAddModal: resets #f-source and #f-type to their default option, not leaving editAccount()'s stale selection behind", () => {
+test("openAddModal: resets #f-type to its first option and #f-source to 'Other' (not the alphabetically-first bank), not leaving editAccount()'s stale selection behind", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /function openAddModal\(\)\{[^}]*const ft=document\.getElementById\('f-type'\);if\(ft\)ft\.selectedIndex=0;updateSourceOptionsForType\(\);const fs=document\.getElementById\('f-source'\);if\(fs\)fs\.selectedIndex=0;/,
-    "openAddModal() should reset both #f-source and #f-type to their first <option> (selectedIndex=0), matching editAccount()'s own reset-on-open convention for the other fields"
+    /function openAddModal\(\)\{[^}]*const ft=document\.getElementById\('f-type'\);if\(ft\)ft\.selectedIndex=0;updateSourceOptionsForType\(\);const fs=document\.getElementById\('f-source'\);if\(fs\)fs\.value='Other';/,
+    "openAddModal() should reset #f-type to selectedIndex=0 and #f-source to 'Other' -- a neutral default, not the alphabetically-first bank a user might silently leave selected"
   );
 });
 
@@ -4062,7 +4062,7 @@ test("saveAccount: calls _replaceDemoDataWithReal() before adding the account, a
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveAccount\(\)\{[\s\S]{0,3700}?closeModals\(\);renderAll\(\);\}/);
+  const fnMatch = source.match(/function saveAccount\(\)\{[\s\S]{0,4100}?closeModals\(\);renderAll\(\);\}/);
   assert.ok(fnMatch, "saveAccount() should exist");
   const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
   const pushIdx = fnMatch[0].search(/state\.accounts\.push\(/);
@@ -6643,7 +6643,7 @@ test("updateSourceOptionsForType() filters #f-source to real-estate sources only
   );
   assert.match(
     source,
-    /const ft=document\.getElementById\('f-type'\);if\(ft\)ft\.selectedIndex=0;updateSourceOptionsForType\(\);const fs=document\.getElementById\('f-source'\);if\(fs\)fs\.selectedIndex=0;/,
+    /const ft=document\.getElementById\('f-type'\);if\(ft\)ft\.selectedIndex=0;updateSourceOptionsForType\(\);const fs=document\.getElementById\('f-source'\);if\(fs\)fs\.value='Other';/,
     "openAddModal() should set #f-type first, then filter #f-source, so a fresh Add-account open isn't left showing a stale filtered list from a prior Home-type session"
   );
   assert.match(
@@ -6867,4 +6867,90 @@ test("renderAccountLists: groups Financial assets/Liabilities by type (matching 
   assert.match(liabHTML, /Liabilities/, "should render a single Liabilities group");
   assert.match(liabHTML, /Visa/, "the credit-type account should be in the Liabilities group");
   assert.match(liabHTML, /Mortgage/, "the mortgage-type account should be in the same Liabilities group, not sub-split further");
+});
+
+// ── User-friendliness pass, August 2026 -- a batch of 5 findings from a
+// hands-on walkthrough of the live app with fresh demo data, none of them
+// caught by prior bug-hunting passes since nothing here was incorrect,
+// just unclear or silent. ──
+
+// Finding: saveAccount()'s !name||!type guard used to fail completely
+// silently -- no toast, no highlighted field, nothing telling the user
+// why Save wasn't working. Confirmed live: clicking Save on an empty Add
+// Account form left the modal open with zero visible feedback.
+test("saveAccount: shows an error toast when name or type is missing, instead of failing silently", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function saveAccount\(\)\{[\s\S]{0,4100}?closeModals\(\);renderAll\(\);\}/);
+  assert.ok(fnMatch, "saveAccount() should exist");
+  assert.match(
+    fnMatch[0],
+    /if\(!name\|\|!type\)\{\s*showToast\(!name\?'Enter an account name':'Choose an account type','#F87171',4000\);\s*return;\s*\}/,
+    "saveAccount() should show an error toast naming the missing field, matching the established error-toast color used elsewhere (e.g. saveEditTx()'s invalid-date guard)"
+  );
+});
+
+// Finding: renderNwBreakdown() rendered every group in GROUPS regardless
+// of whether it had any accounts -- confirmed live, a user with zero
+// other-asset-type accounts still saw an "Other assets -- 0.0% of assets
+// -- $0" header with nothing under it, reading like something was broken
+// rather than "you have none of these."
+test("renderNwBreakdown: skips empty groups instead of rendering a bare '$0' header with no accounts under it", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function renderNwBreakdown\(\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "renderNwBreakdown() should exist");
+  assert.match(
+    fnMatch[0],
+    /const visible=\(f==='assets'\?GROUPS\.filter\(g=>g\.label!=='Liabilities'\):f==='liabilities'\?GROUPS\.filter\(g=>g\.label==='Liabilities'\):GROUPS\)\.filter\(g=>g\.accts\.length\);/,
+    "the visible groups list should be filtered to only groups with at least one account"
+  );
+});
+
+// Finding: #insights-pills forced exactly repeat(4,1fr) above 600px with
+// no minimum floor per column -- at medium widths (601-999px, a
+// plausible split-screen/smaller-laptop range) this compressed pills
+// below what their content needs. Confirmed live at a ~917px viewport:
+// scrollWidth (1069px) exceeded clientWidth (842px), with a "4/10" stat
+// visibly cut to "4/1" and a whole pill's caption clipped off-screen.
+test("#insights-pills uses auto-fit/minmax on desktop instead of a rigid 4-column grid with no minimum width", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /@media\(min-width:601px\)\{#insights-pills\{grid-template-columns:repeat\(auto-fit,minmax\(300px,1fr\)\)!important\}\}/,
+    "the desktop breakpoint should use auto-fit/minmax so column count adapts to available width instead of forcing exactly 4"
+  );
+  assert.doesNotMatch(source, /grid-template-columns:repeat\(4,1fr\)/, "the rigid 4-equal-column rule should be gone entirely");
+});
+
+// Finding: the Net Worth tab's snapshot rows used a "✕" for delete, while
+// Budget's category rows use a "🗑️" for the identical action -- both had
+// proper confirmation dialogs and title tooltips, so not a safety issue,
+// just an inconsistent visual language for the same action across tabs.
+test("deleteSnapshot's button uses the same 🗑️ delete icon as removeBudget, not a mismatched ✕", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /data-action="deleteSnapshot" data-arg="\$\{i\}"[^>]*title="Delete snapshot" type="button">🗑️<\/button>/,
+    "the snapshot row's delete button should use 🗑️, matching removeBudget's icon for the same action"
+  );
+});
+
+// Finding: the Add Vehicle modal's Year/Make/Model fields had no
+// placeholder example text, unlike the VIN field directly above them
+// (which shows "E.G. 1FMCU9J96NUB12345") -- an inconsistency within the
+// same modal.
+test("the Add Vehicle modal's Year/Make/Model fields have example placeholder text, matching the VIN field's convention", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(source, /id="v-year" placeholder="e\.g\. 2020"/, "#v-year should have example placeholder text");
+  assert.match(source, /id="v-make" placeholder="e\.g\. Honda"/, "#v-make should have example placeholder text");
+  assert.match(source, /id="v-model" placeholder="e\.g\. Civic EX"/, "#v-model should have example placeholder text");
 });
