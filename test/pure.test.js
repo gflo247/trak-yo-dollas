@@ -6787,3 +6787,25 @@ test("Legibility sweep Tier 1: Spending tab's Insights sub-lines and the Account
   assert.match(insights, /<span style="font-size:10px;font-weight:700;color:var\(--text-muted\)">Savings rate<\/span>/, "the 'Savings rate' eyebrow label should remain untouched");
   assert.match(insights, /<div style="font-size:9px;font-weight:800;color:#34D399;letter-spacing:\.08em;text-transform:uppercase;padding:0 2px">✓ Worth your attention<\/div>/, "the '✓ Worth your attention' eyebrow label should remain untouched");
 });
+
+// ── Legibility sweep, Tier 2 (held from Tier 1 per Nicholas's request):
+// the Income Setup modal ("💰 Income & savings rate") turned out to hold
+// every remaining find, not just the 2 originally spotted -- its intro
+// blurb, both Method A/B descriptions, the auto-detect preview card, and
+// the live savings-rate preview's stat line were all still 11px. Bumped
+// all 5 to 12px, matching the floor the rest of this sweep settled on. ──
+test("Legibility sweep Tier 2: every remaining 11px paragraph line in the Income Setup modal is at least 12px", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const modalMatch = source.match(/<div class="modal-overlay hidden" id="income-modal">[\s\S]*?\n<\/div>\n\n<!-- Flow chart declared income modal -->/);
+  assert.ok(modalMatch, "the Income Setup modal block should exist");
+  const modal = modalMatch[0];
+  assert.match(modal, /<p style="font-size:12px;color:var\(--text-muted\);background:var\(--bg-card\);border-radius:8px;padding:\.5rem \.75rem;margin-bottom:1rem;line-height:1\.5">Once saved, your savings rate will appear/, "the intro blurb should be at least 12px");
+  assert.match(modal, /<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.5">Most accurate\. Enter your monthly after-tax income/, "Method A's description should be at least 12px");
+  assert.match(modal, /<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.5">Scans your imported transactions for deposits/, "Method B's description should be at least 12px");
+  assert.match(modal, /<div id="income-auto-preview" class="hidden" style="margin-top:\.65rem;background:var\(--bg-card\);border-radius:8px;padding:\.5rem \.75rem;font-size:12px;color:var\(--text-secondary\);line-height:1\.6"><\/div>/, "#income-auto-preview's container should be at least 12px, so its 'Detected $X/mo...' content inherits that instead of 11px");
+  const previewFnMatch = source.match(/function updateIncomePreview\(incomeVal\)\{[\s\S]*?\n\}/);
+  assert.ok(previewFnMatch, "updateIncomePreview() should exist");
+  assert.match(previewFnMatch[0], /<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.6">\$\{fmt\(saved\)\} kept of \$\{fmt\(incomeVal\)\} take-home/, "the live preview's stat line should be at least 12px");
+});
