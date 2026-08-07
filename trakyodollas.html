@@ -397,7 +397,7 @@ select option{background:var(--bg-card)}
 .fmt-btn{color:var(--text-dim);border-color:var(--border-mid);min-height:44px;display:inline-flex;align-items:center;justify-content:center}
 
 /* Semantic utility classes for theme-aware components */
-.info-box{font-size:10px;color:var(--text-muted);background:var(--bg-card);border:1px solid var(--border-mid);border-radius:6px;padding:.4rem .65rem;margin-bottom:.5rem}
+.info-box{font-size:12px;color:var(--text-muted);background:var(--bg-card);border:1px solid var(--border-mid);border-radius:6px;padding:.4rem .65rem;margin-bottom:.5rem}
 .tab-strip{display:flex;gap:2px;background:var(--bg-card);border-radius:6px;padding:2px;flex-shrink:0}
 .tab-strip-lg{display:flex;gap:3px;margin-bottom:.5rem;background:var(--bg-card);border-radius:8px;padding:3px;width:fit-content}
 .section-box{background:var(--bg-card);border-radius:10px;padding:.85rem 1rem;margin-bottom:1rem}
@@ -762,7 +762,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 <main>
 <div class="page" id="page-dashboard">
   <div id="demo-notice-dash" style="background:transparent;border:1px solid var(--border-dim);border-radius:8px;padding:.3rem .75rem;margin-bottom:.75rem;opacity:.6">
-    <div style="font-size:10px;color:var(--text-muted);line-height:1.5">Demo data — add your real balances in <button data-action="navToAccounts" style="background:none;border:none;color:var(--text-muted);font-size:10px;cursor:pointer;text-decoration:underline;padding:0" type="button">Accounts</button>, then <strong style="color:var(--text-secondary)">+ Save snapshot</strong> at the bottom of this tab to start tracking your net worth over time.</div>
+    <div style="font-size:12px;color:var(--text-muted);line-height:1.5">Demo data — add your real balances in <button data-action="navToAccounts" style="background:none;border:none;color:var(--text-muted);font-size:12px;cursor:pointer;text-decoration:underline;padding:0" type="button">Accounts</button>, then <strong style="color:var(--text-secondary)">+ Save snapshot</strong> at the bottom of this tab to start tracking your net worth over time.</div>
   </div>
 
   <!-- Hero: NW total + assets/liabilities -->
@@ -780,7 +780,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div id="nw-goal-milestones" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem"></div>
     <div class="chart-wrap chart-dark" style="height:200px;position:relative"><svg id="nwChart" width="100%" height="200"></svg><div id="nw-tip" style="display:none;position:absolute;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:6px;padding:5px 9px;font-size:11px;color:var(--text-primary);pointer-events:none;white-space:nowrap;z-index:10"></div></div>
     <div id="nw-gain-note" style="font-size:11px;margin-top:5px;padding:0 2px;display:none"></div>
-    <div id="nw-chart-note" style="font-size:11px;color:var(--text-muted);margin-top:4px;padding:0 2px;line-height:1.5">📌 The line <em>interpolates</em> between saved snapshots (straight line between known points), then <em>extrapolates</em> forward using current account balances. <span style="color:#34D399">●</span> Green dots mark saved snapshots.</div>
+    <div id="nw-chart-note" style="font-size:12px;color:var(--text-muted);margin-top:4px;padding:0 2px;line-height:1.5">📌 The line <em>interpolates</em> between saved snapshots (straight line between known points), then <em>extrapolates</em> forward using current account balances. <span style="color:#34D399">●</span> Green dots mark saved snapshots.</div>
     <div id="nw-projection" style="display:none"></div>
     <div id="nw-goal-projection" style="font-size:11px;color:var(--text-muted);line-height:1.5;margin-top:.65rem"></div>
   </div>
@@ -797,13 +797,13 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.45rem">
       <div class="sh" style="margin:0">Net worth snapshots</div>
       <div style="display:flex;gap:6px">
-        <button class="btn btn-sm" data-action="openHistoricalSnapshotModal" title="Backfill a past net worth data point — useful if you know what your net worth was at a specific date in the past" style="font-size:10px;color:#60A5FA;border-color:#2563EB44" type="button">+ Add historical</button>
+        <button class="btn btn-sm" data-action="openHistoricalSnapshotModal" title="Backfill a past net worth data point — useful if you know what your net worth was at a specific date in the past" style="color:#60A5FA;border-color:#2563EB44" type="button">+ Add historical</button>
         <button class="btn btn-sm btn-primary" data-action="saveSnapshot" type="button">+ Save snapshot</button>
       </div>
     </div>
-    <div id="snap-demo-notice" style="background:transparent;border:1px solid var(--border-dim);border-radius:8px;padding:.3rem .75rem;margin-bottom:.5rem;opacity:.6"><div style="font-size:10px;color:var(--text-muted);line-height:1.5">Demo snapshots — save real ones via <strong style="color:var(--text-secondary)">+ Save snapshot</strong> above.</div></div>
+    <div id="snap-demo-notice" style="background:transparent;border:1px solid var(--border-dim);border-radius:8px;padding:.3rem .75rem;margin-bottom:.5rem;opacity:.6"><div style="font-size:12px;color:var(--text-muted);line-height:1.5">Demo snapshots — save real ones via <strong style="color:var(--text-secondary)">+ Save snapshot</strong> above.</div></div>
     <div id="snap-monthly-nudge" style="display:none;background:transparent;border:1px solid #2563EB33;border-radius:8px;padding:.3rem .75rem;margin-bottom:.5rem">
-      <div style="font-size:10px;color:var(--text-muted);line-height:1.5">💡 No snapshot yet this month — hit <button data-action="saveSnapshot" style="background:none;border:none;color:var(--accent-blue-light);font-size:10px;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">+ Save snapshot</button> to keep your trend line current.</div>
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.5">💡 No snapshot yet this month — hit <button data-action="saveSnapshot" style="background:none;border:none;color:var(--accent-blue-light);font-size:12px;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">+ Save snapshot</button> to keep your trend line current.</div>
     </div>
     <div id="snapshot-list"></div>
   </div>
