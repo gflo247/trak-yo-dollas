@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-1eueE1XpaF6KfrATzxitSHo1L44+IDIBSxV2KIRIh+k=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-hZCFhHSNC/P2c5FC+5AoNAtuRDlpXh3qk0ayrmVGMwI=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1501,9 +1501,11 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
     <div id="asset-vehicle-fields">
       <div class="form-group"><label class="form-label" for="v-vin">VIN <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">(optional — auto-fills details)</span></label><div style="display:flex;gap:6px"><input type="text" id="v-vin" placeholder="e.g. 1FMCU9J96NUB12345" maxlength="17" style="flex:1;font-family:monospace;text-transform:uppercase" data-input="uppercaseInput"/><button class="btn btn-sm" id="v-vin-btn" data-action="lookupVIN" style="white-space:nowrap;flex-shrink:0" type="button">Look up</button></div><div id="v-vin-status" style="font-size:12px;margin-top:4px;min-height:14px"></div></div>
-      <div class="form-group"><label class="form-label" for="v-year">Year</label><input type="number" id="v-year"/></div>
-      <div class="form-group"><label class="form-label" for="v-make">Make</label><input type="text" id="v-make"/></div>
-      <div class="form-group"><label class="form-label" for="v-model">Model / Trim</label><input type="text" id="v-model"/></div>
+      <div class="form-group"><label class="form-label" for="v-year">Year</label><input type="number" id="v-year" data-input="updateVehicleValuationLink"/></div>
+      <div class="form-group"><label class="form-label" for="v-make">Make</label><input type="text" id="v-make" data-input="updateVehicleValuationLink"/></div>
+      <div class="form-group"><label class="form-label" for="v-model">Model / Trim</label><input type="text" id="v-model" data-input="updateVehicleValuationLink"/></div>
+      <div class="form-group"><label class="form-label" for="v-region">Region <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">(for the value-check link below)</span></label><select id="v-region" data-change="updateVehicleValuationLink"><option value="US" selected>United States</option><option value="CA">Canada</option><option value="AU">Australia</option><option value="UK">United Kingdom</option><option value="Other">Other</option></select></div>
+      <div id="v-valuation-link" style="font-size:12px;margin-bottom:.85rem;min-height:14px"></div>
       <div class="form-group"><label class="form-label" for="v-condition">Condition</label><select id="v-condition"><option value="excellent">Excellent</option><option value="very good" selected>Very good</option><option value="good">Good</option><option value="fair">Fair</option></select></div>
       <div class="form-group"><label class="form-label" for="v-miles">Mileage</label><input type="number" id="v-miles"/></div>
     </div>
@@ -7861,7 +7863,7 @@ function renderVehicles(){
       <div style="padding:0 1rem .6rem 1rem">
         <div class="depn-bg"><div class="depn-fill" style="width:${ret}%"></div></div>
         <div style="margin-top:.5rem">
-          <a href="javascript:void(0)" data-action="openKBB" data-arg="${esc(String(v.year))}" data-arg2="${esc(v.make||'')}" data-arg3="${esc(String(v.model||'').split(' ')[0])}" style="color:#60A5FA;text-decoration:underline;font-size:11px">🔍 Check value on Kelley Blue Book ↗</a>
+          <a href="javascript:void(0)" data-action="openValuationLink" data-arg="${esc(String(v.year))}" data-arg2="${esc(v.make||'')}" data-arg3="${esc(String(v.model||'').split(' ')[0])}" data-region="${esc(v.region||'US')}" style="color:#60A5FA;text-decoration:underline;font-size:12px">🔍 Check value on ${esc(valuationInfo(v.region||'US').label)} ↗</a>
           ${v.vin?`<span style="font-size:9px;color:var(--text-muted);font-family:monospace;margin-left:8px">VIN: ${esc(v.vin)}</span>`:''}
         </div>
       </div>
@@ -12741,14 +12743,56 @@ function applyVenmoOpt(skip){
   showToast('✓ Venmo cashouts updated');
 }
 
-function openKBB(year,make,model){
+// Region-specific vehicle valuation destinations. Only kbb.com (US) has a
+// confirmed, working /make/model/year/ deep-link pattern -- verified via
+// web search before shipping, matching this app's own established caution
+// around unverified consumer brand claims (see the earlier real-estate
+// Institution work). Canadian Black Book/RedBook/Parkers each require
+// picking the vehicle through their own on-site form rather than a URL
+// query string, so those link to the tool's landing page instead of a
+// guessed, unconfirmed deep-link format. kbb.com.au (Kelley Blue Book's
+// nominal Australian arm) doesn't even resolve as of this writing -- its
+// only real AU product (MarketLens) turned out to be a dealer-only login
+// tool, not a public consumer site -- so Australia points to RedBook, the
+// actual long-running consumer standard there, instead. Added directly at
+// Nicholas's request, August 2026.
+const VALUATION_M={
+  US:{label:'Kelley Blue Book',url:(y,mk,mo)=>`https://www.kbb.com/${encodeURIComponent(String(mk||'').toLowerCase().replace(/\s+/g,'-'))}/${encodeURIComponent(String(mo||'').toLowerCase().replace(/\s+/g,'-'))}/${y}/`},
+  CA:{label:'Canadian Black Book',url:()=>'https://www.canadianblackbook.com/value-your-vehicle-2/'},
+  AU:{label:'RedBook',url:()=>'https://www.redbook.com.au/'},
+  UK:{label:'Parkers',url:()=>'https://www.parkers.co.uk/car-valuation/'},
+};
+function valuationInfo(region){return VALUATION_M[region]||VALUATION_M.US;}
+function openValuationLink(year,make,model,el){
   // make/model are coerced to a Number by the shared dispatcher if they look
   // numeric (e.g. a model's first word like BMW "3 Series", Porsche "911",
-  // Fiat "500") -- (model||'').toLowerCase() then throws since a truthy
-  // Number has no .toLowerCase, silently killing the link.
-  const m=encodeURIComponent(String(make||'').toLowerCase().replace(/\s+/g,'-'));
-  const mo=encodeURIComponent(String(model||'').toLowerCase().replace(/\s+/g,'-'));
-  window.open(`https://www.kbb.com/${m}/${mo}/${year}/`,'_blank','noopener,noreferrer');
+  // Fiat "500") -- VALUATION_M.US.url() already String()-coerces both
+  // before .toLowerCase(), since a truthy Number has no .toLowerCase and
+  // would otherwise silently kill the link.
+  const region=(el&&el.dataset.region)||'US';
+  window.open(valuationInfo(region).url(year,make,model),'_blank','noopener,noreferrer');
+}
+// Drives the vehicle modal's persistent "Check value" link -- previously
+// this only ever appeared transiently inside #v-vin-status right after a
+// fresh, successful VIN lookup, and editVehicle() clears that same status
+// field to blank on every reopen. Editing an existing vehicle (the common
+// case -- year/make/model are already saved, there's no VIN lookup to
+// re-run) showed no valuation link anywhere in the modal at all, only from
+// the physical-assets list row afterward. Wired to fire on every
+// year/make/model/region change (typed manually or VIN-populated) so the
+// link is live regardless of how those fields got filled in. Found from a
+// direct question about whether the link belonged in the modal too,
+// August 2026.
+function updateVehicleValuationLink(){
+  const el=document.getElementById('v-valuation-link');
+  if(!el)return;
+  const y=(document.getElementById('v-year')||{}).value||'';
+  const mk=(document.getElementById('v-make')||{}).value||'';
+  const mo=(document.getElementById('v-model')||{}).value||'';
+  const region=(document.getElementById('v-region')||{}).value||'US';
+  if(!y.trim()||!mk.trim()){el.innerHTML='';return;}
+  const info=valuationInfo(region);
+  el.innerHTML=`<a href="javascript:void(0)" data-action="openValuationLink" data-arg="${esc(y.trim())}" data-arg2="${esc(mk.trim())}" data-arg3="${esc(mo.trim().split(' ')[0])}" data-region="${esc(region)}" style="color:#60A5FA;text-decoration:underline">🔍 Check value on ${esc(info.label)} ↗</a>`;
 }
 
 function renderExcludedAccounts(){
@@ -13662,10 +13706,12 @@ async function lookupVIN(){
     if(trim&&!model.includes(trim))modelStr+=` ${trim}`;
     else if(series&&!model.includes(series))modelStr+=` ${series}`;
     document.getElementById('v-model').value=modelStr;
-    // Success message with KBB link
-    status.innerHTML=`<span style="color:#34D399">✓ ${esc(year)} ${esc(make.charAt(0)+make.slice(1).toLowerCase())} ${esc(model)}</span>
-      <a href="javascript:void(0)" data-action="openKBB" data-arg="${esc(year)}" data-arg2="${esc(make)}" data-arg3="${esc(model)}"
-         style="color:#60A5FA;text-decoration:underline;margin-left:8px;font-size:10px">Check value on Kelley Blue Book ↗</a>`;
+    status.innerHTML=`<span style="color:#34D399">✓ ${esc(year)} ${esc(make.charAt(0)+make.slice(1).toLowerCase())} ${esc(model)}</span>`;
+    // The valuation link itself now lives in the persistent
+    // #v-valuation-link area (updateVehicleValuationLink()), not bolted
+    // onto this one-off success message, so it stays visible on reopen
+    // instead of vanishing the moment #v-vin-status gets reset to blank.
+    updateVehicleValuationLink();
   } catch(err) {
     console.error('VIN lookup error:',err);
     if(_gen!==_vehicleModalGen)return;
@@ -13700,6 +13746,14 @@ function openVehicleModal(){
   // unmarked option, "Boat / Watercraft") to match. Found in the 45th
   // adversarial pass.
   const voc=document.getElementById('v-other-cat');if(voc)voc.value='Boat';
+  // Same stale-select shape as v-other-cat immediately above, for the same
+  // reason -- v-region was never reset here either, only editVehicle()'s
+  // edit path sets it, so editing a Canada/UK/Australia vehicle then adding
+  // a genuinely new (US-default) one left Region showing the previous
+  // vehicle's stale value, silently pointing "Check value" at the wrong
+  // country's site.
+  const vr=document.getElementById('v-region');if(vr)vr.value='US';
+  updateVehicleValuationLink();
   // #v-vin-btn is one shared DOM node reused across every modal open --
   // if a lookupVIN() call for a previously-open vehicle is still in flight
   // when this modal opens fresh, its early-return-on-stale-response (guard
@@ -13772,7 +13826,8 @@ function editVehicle(id){
   const type=v.assetType||'vehicle';currentAssetType=type;setAssetType(type);
   document.getElementById('v-modal-title').textContent='Edit physical asset';
   if(type==='other'){const n=document.getElementById('v-other-name');if(n)n.value=v.name||'';const c=document.getElementById('v-other-cat');if(c)c.value=v.make||'Other';}
-  else{const vinEl=document.getElementById('v-vin');if(vinEl)vinEl.value=v.vin||'';const s=document.getElementById('v-vin-status');if(s)s.textContent='';document.getElementById('v-year').value=v.year||'';document.getElementById('v-make').value=v.make||'';document.getElementById('v-model').value=v.model||'';document.getElementById('v-condition').value=v.condition||'very good';document.getElementById('v-miles').value=v.miles||'';}
+  else{const vinEl=document.getElementById('v-vin');if(vinEl)vinEl.value=v.vin||'';const s=document.getElementById('v-vin-status');if(s)s.textContent='';document.getElementById('v-year').value=v.year||'';document.getElementById('v-make').value=v.make||'';document.getElementById('v-model').value=v.model||'';const vr=document.getElementById('v-region');if(vr)vr.value=v.region||'US';document.getElementById('v-condition').value=v.condition||'very good';document.getElementById('v-miles').value=v.miles||'';}
+  updateVehicleValuationLink();
   document.getElementById('v-value').value=v.value||'';document.getElementById('v-purchase').value=v.purchase||'';document.getElementById('v-purchase-year').value=v.purchaseYear||'';
   const db=document.getElementById('delete-vehicle-btn');if(db)db.style.display='';
   const dc=document.getElementById('delete-vehicle-confirm');if(dc)dc.style.display='none';
@@ -13840,7 +13895,7 @@ function saveVehicle(){
   // class of gap the 87th pass closed for CSV import. Found in the 119th
   // adversarial pass.
   if(value<0||!Number.isFinite(value)||!Number.isFinite(purchase))return;
-  let name,make,model,year,condition,miles,assetType,vin='';
+  let name,make,model,year,condition,miles,assetType,vin='',region='US';
   if(currentAssetType==='other'){
     const oName=(document.getElementById('v-other-name')||{}).value||'';const oCat=(document.getElementById('v-other-cat')||{}).value||'Other';
     if(!oName)return;name=oName;make=oCat;model='';year=purchaseYear;condition='good';miles=0;assetType='other';
@@ -13848,6 +13903,7 @@ function saveVehicle(){
     vin=((document.getElementById('v-vin')||{}).value||'').trim().toUpperCase();
     year=parseInt(document.getElementById('v-year').value)||new Date().getFullYear();
     make=(document.getElementById('v-make').value||'').trim();model=(document.getElementById('v-model').value||'').trim();
+    region=(document.getElementById('v-region')||{}).value||'US';
     condition=document.getElementById('v-condition').value;miles=parseInt(document.getElementById('v-miles').value)||0;
     name=make?`${year} ${make} ${model.split(' ')[0]}`.trim():`${year} Vehicle`.trim();assetType='vehicle';
   }
@@ -13873,7 +13929,7 @@ function saveVehicle(){
     const v=state.vehicles.find(x=>x.id===editVehicleId);
     if(v){
       const oldName=v.name;
-      Object.assign(v,{year,make,model,condition,miles,value,purchase,purchaseYear,vin,assetType,name});
+      Object.assign(v,{year,make,model,condition,miles,value,purchase,purchaseYear,vin,assetType,name,region});
       // Vehicles/assets are paired 1:1 with a state.accounts entry via
       // acctId, so editing one never touches another vehicle's account —
       // matching by type alone (the old logic) always grabbed whichever
@@ -13912,7 +13968,7 @@ function saveVehicle(){
   } else {
     const vehId=state.nextId++;
     const acctId=state.nextId++;
-    state.vehicles.push({id:vehId,year,make,model,condition,miles,value,purchase,purchaseYear,vin,assetType,name,acctId});
+    state.vehicles.push({id:vehId,year,make,model,condition,miles,value,purchase,purchaseYear,vin,assetType,name,acctId,region});
     // Paired account's type must match assetType — 'other' assets get
     // 'other-asset' (not 'vehicle'), so renderNwBreakdown()'s Net Worth
     // groups (§ Vehicles vs Other assets) categorize them correctly.
