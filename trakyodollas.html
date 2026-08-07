@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-9WBVva/TP6wB7oEbEsBGBl8Xyv5JKx1a/7opIsza8/I=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-i38Gyv4ymDrj94DIU2x43CjQT+q/Zytdpj3YjNvPqAc=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1687,7 +1687,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="income-modal-title" tabindex="-1" style="width:min(480px,95vw)">
     <h3 id="income-modal-title" style="font-size:16px;margin-bottom:.4rem">💰 Income & savings rate</h3>
     <p style="font-size:12px;color:var(--text-muted);margin-bottom:.5rem;line-height:1.6">Your savings rate is how much of your income you keep each month. Choose how you want to track it:</p>
-    <p style="font-size:11px;color:var(--text-muted);background:var(--bg-card);border-radius:8px;padding:.5rem .75rem;margin-bottom:1rem;line-height:1.5">Once saved, your savings rate will appear as a pill in the <strong style="color:#94A3B8">'26 Apr at a glance</strong> card on the Net Worth tab.</p>
+    <p style="font-size:12px;color:var(--text-muted);background:var(--bg-card);border-radius:8px;padding:.5rem .75rem;margin-bottom:1rem;line-height:1.5">Once saved, your savings rate will appear as a pill in the <strong style="color:#94A3B8">'26 Apr at a glance</strong> card on the Net Worth tab.</p>
 
     <!-- Method A: Manual -->
     <div id="income-method-a" data-action="selectIncomeMethod" data-arg="manual" tabindex="0" role="button" aria-pressed="false" style="border:1.5px solid var(--border-mid);border-radius:10px;padding:.85rem 1rem;margin-bottom:.75rem;cursor:pointer">
@@ -1695,7 +1695,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
         <div id="income-method-a-dot" style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border-mid);flex-shrink:0;margin-top:2px;transition:all .15s"></div>
         <div style="flex:1">
           <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:3px">Manual — enter your take-home pay</div>
-          <div style="font-size:11px;color:var(--text-muted);line-height:1.5">Most accurate. Enter your monthly after-tax income once and we'll calculate your savings rate from your spending.</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.5">Most accurate. Enter your monthly after-tax income once and we'll calculate your savings rate from your spending.</div>
           <div id="income-manual-input" class="hidden" style="margin-top:.75rem">
             <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px" for="income-amount">Monthly take-home pay (after tax)</label>
             <div style="display:flex;gap:8px;align-items:center">
@@ -1714,8 +1714,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
         <div id="income-method-b-dot" style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border-mid);flex-shrink:0;margin-top:2px;transition:all .15s"></div>
         <div style="flex:1">
           <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:3px">Auto-detect from deposits <span style="font-size:12px;font-weight:700;color:var(--text-primary);background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:4px;padding:1px 6px;margin-left:4px">less accurate</span></div>
-          <div style="font-size:11px;color:var(--text-muted);line-height:1.5">Scans your imported transactions for deposits, excluding transfers and payments. Works best with bank or credit union (checking) CSV imports. May overcount if transfers appear as deposits.</div>
-          <div id="income-auto-preview" class="hidden" style="margin-top:.65rem;background:var(--bg-card);border-radius:8px;padding:.5rem .75rem;font-size:11px;color:var(--text-secondary);line-height:1.6"></div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.5">Scans your imported transactions for deposits, excluding transfers and payments. Works best with bank or credit union (checking) CSV imports. May overcount if transfers appear as deposits.</div>
+          <div id="income-auto-preview" class="hidden" style="margin-top:.65rem;background:var(--bg-card);border-radius:8px;padding:.5rem .75rem;font-size:12px;color:var(--text-secondary);line-height:1.6"></div>
         </div>
       </div>
     </div>
@@ -9507,7 +9507,7 @@ function updateIncomePreview(incomeVal){
       </div>
       <span style="font-size:20px;font-weight:900;color:${color}">${rate}%</span>
     </div>
-    <div style="font-size:11px;color:var(--text-muted);line-height:1.6">${fmt(saved)} kept of ${fmt(incomeVal)} take-home · <strong style="color:${color}">${bench}</strong></div>`;
+    <div style="font-size:12px;color:var(--text-muted);line-height:1.6">${fmt(saved)} kept of ${fmt(incomeVal)} take-home · <strong style="color:${color}">${bench}</strong></div>`;
 }
 
 // Tracks the user's most recent explicit method click, distinct from which
