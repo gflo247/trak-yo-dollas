@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-D3HVbPCyKtjtUhetJCXxiTFLc6Km11UKGU4Sq4zBONY=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-9WBVva/TP6wB7oEbEsBGBl8Xyv5JKx1a/7opIsza8/I=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -813,7 +813,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 <!-- ACCOUNTS -->
 <div class="page" id="page-accounts">
   <div id="demo-notice-accounts" style="background:transparent;border:1px solid var(--border-dim);border-radius:8px;padding:.3rem .75rem;margin-bottom:.75rem;opacity:.6">
-    <div style="font-size:10px;color:var(--text-muted);line-height:1.5">Demo accounts — add or edit your real balances to replace these.</div>
+    <div style="font-size:12px;color:var(--text-muted);line-height:1.5">Demo accounts — add or edit your real balances to replace these.</div>
   </div>
   <div class="flex-between">
     <span class="page-title">Accounts</span>
@@ -3177,7 +3177,7 @@ function renderInsights(){
         </div>
         <span style="font-size:12px;font-weight:700;color:#60A5FA">Set up →</span>
       </div>
-      <div style="font-size:10px;color:var(--text-muted);line-height:1.35">See what % of your income you save each month</div>
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.35">See what % of your income you save each month</div>
     </div>`});
   }
 
@@ -3250,7 +3250,7 @@ function renderInsights(){
         </div>
         <div style="font-size:18px;font-weight:900;color:#A78BFA;line-height:1;letter-spacing:-.02em;white-space:nowrap;flex-shrink:0">${fmtC(subTotal)} · ${subCount} recurring</div>
       </div>
-      <div style="font-size:10px;color:var(--text-muted);line-height:1.35">That's ${fmtC(subTotal*12)}/yr · largest: ${esc(displayVendor(topSub.vendor))} at ${fmtC(topSub.amt)}/mo · <span style="color:#A78BFA;font-weight:600">view all →</span></div>
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.35">That's ${fmtC(subTotal*12)}/yr · largest: ${esc(displayVendor(topSub.vendor))} at ${fmtC(topSub.amt)}/mo · <span style="color:#A78BFA;font-weight:600">view all →</span></div>
     </div>`);
   }
 
@@ -3480,7 +3480,7 @@ function renderInsights(){
           <div style="font-size:30px;line-height:1;flex-shrink:0">✓</div>
           <div>
             <div style="font-size:18px;font-weight:900;color:#34D399;line-height:1.15">Everything looks on track this month</div>
-            <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;line-height:1.45">Nothing needs attention right now. Nice work.</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:3px;line-height:1.45">Nothing needs attention right now. Nice work.</div>
           </div>
         </div>
       </div>`;

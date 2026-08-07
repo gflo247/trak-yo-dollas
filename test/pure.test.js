@@ -6754,3 +6754,36 @@ test("Dashboard tier of the legibility sweep: demo notices and the trend-chart e
     "the '+ Add historical' button should no longer force the mobile-only 10px size on desktop, so it matches its '+ Save snapshot' sibling"
   );
 });
+
+// ── Legibility sweep, Tier 1 (highest-traffic pages): Spending is the
+// default landing tab, so its Insights pills' explanatory sub-lines --
+// the savings-rate nudge, the subscriptions stat line, and the "nothing
+// needs attention" positive empty state -- were the highest-impact
+// leftover from the Dashboard-only pass above. Bundled in the Accounts
+// tab's own remaining "Demo accounts" notice (10px), the sibling of the
+// two already-fixed via .info-box and #demo-notice-dash, since it's the
+// same paragraph-notice pattern. Left the pills' own uppercase eyebrow
+// labels ("Savings rate", "Subscriptions", "⚑/✓ Worth your attention")
+// alone -- same deliberate small-label design chrome excluded from the
+// Dashboard tier. Requested directly by Nicholas, August 2026. ──
+test("Legibility sweep Tier 1: Spending tab's Insights sub-lines and the Accounts tab's remaining demo notice are at least 12px", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /id="demo-notice-accounts"[\s\S]{0,200}?<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.5">Demo accounts/,
+    "#demo-notice-accounts's paragraph text should be at least 12px"
+  );
+  const insightsMatch = source.match(/function renderInsights\(\)\{[\s\S]*?\n\}/);
+  assert.ok(insightsMatch, "renderInsights() should exist");
+  const insights = insightsMatch[0];
+  assert.match(insights, /<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.35">See what % of your income you save each month<\/div>/, "the savings-rate nudge's explanatory line should be at least 12px");
+  assert.match(insights, /<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.35">That's \$\{fmtC\(subTotal\*12\)\}\/yr/, "the subscriptions pill's stat line should be at least 12px");
+  assert.match(insights, /<div style="font-size:12px;color:var\(--text-secondary\);margin-top:3px;line-height:1\.45">Nothing needs attention right now\. Nice work\.<\/div>/, "the positive empty-state subtitle should be at least 12px");
+  // The eyebrow labels immediately beside/above each of these should be
+  // untouched -- still 9-10px, confirming this pass targeted only the
+  // reading-paragraph lines, not the deliberately-small section labels.
+  assert.match(insights, /<span style="font-size:10px;font-weight:700;color:var\(--text-muted\)">Savings rate<\/span>/, "the 'Savings rate' eyebrow label should remain untouched");
+  assert.match(insights, /<div style="font-size:9px;font-weight:800;color:#34D399;letter-spacing:\.08em;text-transform:uppercase;padding:0 2px">✓ Worth your attention<\/div>/, "the '✓ Worth your attention' eyebrow label should remain untouched");
+});
