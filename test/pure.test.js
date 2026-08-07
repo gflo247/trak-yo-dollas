@@ -858,15 +858,30 @@ test("parseCsvAccounts: an unrecognized type is skipped, not silently stored ver
   assert.equal(ctx.state.accounts.length, 0);
 });
 
-// ── 14th adversarial pass: openKBB()'s make/model can be coerced to a
-// Number by the shared dispatcher when a vehicle's model starts with a
-// number (BMW "3 Series", Porsche "911", Fiat "500") -- (model||'')
-// .toLowerCase() then throws (a truthy Number has no .toLowerCase),
-// silently killing the "Check value on Kelley Blue Book" link. ──
-test("openKBB: a numeric-looking model (coerced to a Number by the dispatcher) doesn't throw", () => {
-  const ctx = { window: { open: () => {} } };
-  const { openKBB } = loadFunctions(["openKBB"], ctx);
-  assert.doesNotThrow(() => openKBB(2020, "BMW", 3));
+// ── 14th adversarial pass: openKBB()'s (now openValuationLink()'s)
+// make/model can be coerced to a Number by the shared dispatcher when a
+// vehicle's model starts with a number (BMW "3 Series", Porsche "911",
+// Fiat "500") -- (model||'').toLowerCase() then throws (a truthy Number
+// has no .toLowerCase), silently killing the "Check value" link. Renamed
+// and made region-aware (US/Canada/Australia/UK) August 2026; the
+// underlying numeric-model coercion risk is unchanged for the US branch,
+// still the default region. ──
+test("openValuationLink: a numeric-looking model (coerced to a Number by the dispatcher) doesn't throw, for both the default US region and a region with no deep-link params", () => {
+  const ctx = {
+    window: { open: () => {} },
+    // VALUATION_M is a top-level const, not a `function` declaration, so
+    // loadFunctions()'s brace-matching extractor can't pull it from the
+    // real source -- seeded via context instead, matching this harness's
+    // existing convention for closed-over variables (see `state`
+    // elsewhere in this file). Only shaped enough to exercise the
+    // numeric-coercion path being tested here; VALUATION_M's actual
+    // real-world contents are covered separately by the source-pattern
+    // test below.
+    VALUATION_M: { US: { url: (y, mk, mo) => `${mk}/${mo}/${y}` }, CA: { url: () => "https://example.test/ca" } },
+  };
+  const { openValuationLink } = loadFunctions(["openValuationLink", "valuationInfo"], ctx);
+  assert.doesNotThrow(() => openValuationLink(2020, "BMW", 3));
+  assert.doesNotThrow(() => openValuationLink(2020, "BMW", 3, { dataset: { region: "CA" } }));
 });
 
 // ── 14th adversarial pass, CRITICAL: deploy.sh's `sed "s/__CACHE_VERSION__/
@@ -2844,8 +2859,8 @@ test("renderVehicles: escapes v.id and v.year in data-arg attributes, and coerce
   assert.equal(idMatches.length, 2, "both editVehicle buttons (the 'other' asset branch and the regular vehicle branch) should esc(String(v.id))");
   assert.match(
     source,
-    /data-action="openKBB" data-arg="\$\{esc\(String\(v\.year\)\)\}"/,
-    "the KBB link's data-arg should esc(String(v.year))"
+    /data-action="openValuationLink" data-arg="\$\{esc\(String\(v\.year\)\)\}"/,
+    "the valuation link's data-arg should esc(String(v.year))"
   );
   assert.match(
     source,
@@ -6616,5 +6631,67 @@ test("updateSourceOptionsForType() filters #f-source to real-estate sources only
     source,
     /document\.getElementById\('f-type'\)\.value=a\.type;updateSourceOptionsForType\(\);document\.getElementById\('f-source'\)\.value=a\.source;/,
     "editAccount() should set #f-type before filtering #f-source, then set #f-source's value after filtering, so editing an existing Home account shows the filtered list with its actual institution still correctly selected"
+  );
+});
+
+// ── The vehicle "Check value" link had two gaps: (1) it always pointed at
+// kbb.com regardless of where the user actually is, even though KBB is
+// verified US-only (Canada's KBB was discontinued after being folded into
+// Autotrader.ca; there's no UK edition; kbb.com.au doesn't even resolve --
+// its only real AU product turned out to be a dealer-only login tool, not
+// a public site) -- verified via web search before shipping, same
+// caution this app already applies to real-estate-institution brand
+// claims. (2) it only ever appeared transiently inside #v-vin-status right
+// after a fresh, successful VIN lookup -- editVehicle() clears that same
+// status field to blank on every reopen, so editing an existing vehicle
+// (the common case) showed no valuation link in the modal at all, only
+// from the physical-assets list row. Added a #v-region selector (US
+// default, so pre-existing vehicles with no stored region keep pointing
+// at KBB exactly as before) and a persistent #v-valuation-link area that
+// updates live from year/make/model/region, wired into both modal-open
+// paths and saveVehicle()'s persistence. Requested directly by Nicholas,
+// August 2026. ──
+test("vehicle valuation links are region-aware (US/CA/AU/UK) and persistently visible in the modal, not just after a fresh VIN lookup", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<select id="v-region" data-change="updateVehicleValuationLink"><option value="US" selected>United States<\/option><option value="CA">Canada<\/option><option value="AU">Australia<\/option><option value="UK">United Kingdom<\/option><option value="Other">Other<\/option><\/select>/,
+    "#v-region should offer US (default)/Canada/Australia/UK/Other"
+  );
+  assert.match(
+    source,
+    /<div id="v-valuation-link"/,
+    "the vehicle modal should have a persistent #v-valuation-link area, separate from the VIN-lookup-only #v-vin-status"
+  );
+  const vmMatch = source.match(/const VALUATION_M=\{[\s\S]*?\n\};/);
+  assert.ok(vmMatch, "VALUATION_M should exist");
+  assert.match(vmMatch[0], /US:\{label:'Kelley Blue Book',url:\(y,mk,mo\)=>`https:\/\/www\.kbb\.com\/\$\{encodeURIComponent\(String\(mk\|\|''\)\.toLowerCase\(\)\.replace\(\/\\s\+\/g,'-'\)\)\}\/\$\{encodeURIComponent\(String\(mo\|\|''\)\.toLowerCase\(\)\.replace\(\/\\s\+\/g,'-'\)\)\}\/\$\{y\}\/`\}/, "VALUATION_M.US should keep the original kbb.com/{make}/{model}/{year}/ deep-link pattern");
+  assert.match(vmMatch[0], /CA:\{label:'Canadian Black Book'/, "VALUATION_M.CA should point at Canadian Black Book");
+  assert.match(vmMatch[0], /AU:\{label:'RedBook'/, "VALUATION_M.AU should point at RedBook, not kbb.com.au (unresolvable) or the dealer-only MarketLens product");
+  assert.match(vmMatch[0], /UK:\{label:'Parkers'/, "VALUATION_M.UK should point at Parkers");
+  assert.match(
+    source,
+    /const vr=document\.getElementById\('v-region'\);if\(vr\)vr\.value='US';\s*updateVehicleValuationLink\(\);/,
+    "openVehicleModal() should reset #v-region to US and refresh the valuation link on every fresh open, so a stale filtered region from a prior vehicle can't leak into a new one"
+  );
+  assert.match(
+    source,
+    /const vr=document\.getElementById\('v-region'\);if\(vr\)vr\.value=v\.region\|\|'US';/,
+    "editVehicle() should restore the vehicle's own stored region (defaulting to US for pre-existing vehicles saved before this field existed)"
+  );
+  const editVehicleMatch = source.match(/function editVehicle\(id\)\{[\s\S]*?\n\}/);
+  assert.ok(editVehicleMatch, "editVehicle() should exist");
+  assert.match(editVehicleMatch[0], /updateVehicleValuationLink\(\);/, "editVehicle() should refresh the valuation link so it's visible immediately on reopen, not just after a fresh VIN lookup");
+  const saveVehicleMatch = source.match(/function saveVehicle\(\)\{[\s\S]*?\n\}/);
+  assert.ok(saveVehicleMatch, "saveVehicle() should exist");
+  assert.match(saveVehicleMatch[0], /region=\(document\.getElementById\('v-region'\)\|\|\{\}\)\.value\|\|'US';/, "saveVehicle() should read #v-region");
+  assert.match(saveVehicleMatch[0], /Object\.assign\(v,\{year,make,model,condition,miles,value,purchase,purchaseYear,vin,assetType,name,region\}\);/, "editing an existing vehicle should persist the updated region");
+  assert.match(saveVehicleMatch[0], /state\.vehicles\.push\(\{id:vehId,year,make,model,condition,miles,value,purchase,purchaseYear,vin,assetType,name,acctId,region\}\);/, "creating a new vehicle should persist its region");
+  assert.match(
+    source,
+    /data-action="openValuationLink" data-arg="\$\{esc\(String\(v\.year\)\)\}" data-arg2="\$\{esc\(v\.make\|\|''\)\}" data-arg3="\$\{esc\(String\(v\.model\|\|''\)\.split\(' '\)\[0\]\)\}" data-region="\$\{esc\(v\.region\|\|'US'\)\}"[^>]*>🔍 Check value on \$\{esc\(valuationInfo\(v\.region\|\|'US'\)\.label\)\} ↗<\/a>/,
+    "the physical-assets list row should pass the vehicle's own region and swap the link label to match (not hardcode 'Kelley Blue Book' regardless of destination)"
   );
 });
