@@ -101,18 +101,23 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
   .footer-links a,.footer-support{font-size:11px;padding:5px 2px;color:var(--text-muted)}
 }
 
-.data-table-desktop{display:block}
-.data-table-mobile{display:none}
-@media(max-width:640px){
-  .data-table-desktop{display:none}
-  .data-table-mobile{display:flex;flex-direction:column;gap:10px}
-  .mr-card{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;overflow:hidden}
-  .mr-event{padding:.6rem .85rem;font-size:14px;font-weight:700;color:var(--text-primary);background:var(--bg-deep);border-bottom:1px solid var(--border-mid)}
-  .mr-field{display:flex;gap:.6rem;padding:.4rem .85rem;border-bottom:1px solid var(--border)}
-  .mr-field:last-child{border-bottom:none}
-  .mr-lbl{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;flex:0 0 110px;min-width:110px;padding-top:2px;line-height:1.4;white-space:nowrap}
-  .mr-val{font-size:13px;color:var(--text-secondary);line-height:1.5;flex:1}
-}
+/* "What leaves your device?" cards -- one shared layout for every viewport
+   (replaces a separate 4-column desktop table + single-column mobile card
+   stack, August 2026). The content itself is 8 independent event→facts
+   blocks with uneven, often multi-sentence prose per field, not uniform
+   short values worth comparing down a column -- a table's alignment
+   stopped being useful once several cells wrapped to 2-3 lines each,
+   and it meant maintaining the same copy in two separate markup blocks.
+   auto-fit/minmax gives 2 columns at this page's 720px content width and
+   collapses to 1 on anything narrower, with no separate breakpoint needed
+   for the column count itself. Requested directly by Nicholas. */
+.mr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px}
+.mr-card{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;overflow:hidden}
+.mr-event{padding:.6rem .85rem;font-size:14px;font-weight:700;color:var(--text-primary);background:var(--bg-deep);border-bottom:1px solid var(--border-mid)}
+.mr-field{display:flex;gap:.6rem;padding:.4rem .85rem;border-bottom:1px solid var(--border)}
+.mr-field:last-child{border-bottom:none}
+.mr-lbl{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;flex:0 0 110px;min-width:110px;padding-top:2px;line-height:1.4;white-space:nowrap}
+.mr-val{font-size:13px;color:var(--text-secondary);line-height:1.5;flex:1}
 
 .diag-dest{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
 @media(max-width:359px){
@@ -152,65 +157,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
   <!-- "What leaves your device?" summary table -->
   <div style="margin-bottom:2.5rem">
     <div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.75rem">What leaves your device?</div>
-    <div class="data-table-desktop" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-      <div style="min-width:540px;border:1px solid var(--border-mid);border-radius:10px;overflow:hidden">
-        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-deep);border-bottom:1px solid var(--border-mid)">
-          <div style="padding:.55rem .85rem;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase">Event</div>
-          <div style="padding:.55rem .85rem;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase">Data sent</div>
-          <div style="padding:.55rem .85rem;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase">Where it goes</div>
-          <div style="padding:.55rem .85rem;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase">Blockable?</div>
-        </div>
-        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-card);border-bottom:1px solid var(--border)">
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-primary);font-weight:600">Opening the app</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Internet address, browser type<br><span style="font-size:14px;color:var(--text-muted)">sent automatically whenever your browser requests a page — true of any site, not just this one</span></div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Cloudflare's servers</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-no);font-weight:600">No</div>
-        </div>
-        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-deep);border-bottom:1px solid var(--border)">
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-primary);font-weight:600">Loading extra code</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Internet address, browser type<br><span style="font-size:14px;color:var(--text-muted)">sent to two outside services this app relies on</span></div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Two code-hosting companies<br><span style="font-size:14px;color:var(--text-muted)"><a href="#third-party-code" style="color:var(--accent-blue-light)">cdnjs</a> (powers the charts) and <a href="#third-party-code" style="color:var(--accent-blue-light)">jsDelivr</a> (powers sign-in) — not this app's own servers</span></div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-ok);font-weight:600">Yes</div>
-        </div>
-        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-card);border-bottom:1px solid var(--border)">
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-primary);font-weight:600">Importing a CSV</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-ok);font-weight:600">Nothing</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-ok);font-weight:600">Stays on your device</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-muted)">Nothing to block</div>
-        </div>
-        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-deep);border-bottom:1px solid var(--border)">
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-primary);font-weight:600">Opening the import screen</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Internet address, browser type<br><span style="font-size:14px;color:var(--text-muted)">sent when your browser downloads <a href="#community-rules" style="color:var(--accent-blue-light)">community-rules.json</a></span></div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Cloudflare's servers</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-ok);font-weight:600">Yes</div>
-        </div>
-        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-card);border-bottom:1px solid var(--border)">
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-primary);font-weight:600">Signing in with Google</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-warn);font-weight:600">Financial data (encrypted)</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Supabase's servers (encrypted)</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-warn);font-weight:600">Don't sign in</div>
-        </div>
-        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-deep);border-bottom:1px solid var(--border)">
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-primary);font-weight:600">Signing in with email link</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Email address<br><span style="font-size:14px;color:var(--clr-warn);font-weight:600">+ financial data after sign-in (encrypted)</span></div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Supabase (to send the link), then Supabase's servers (encrypted)</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-warn);font-weight:600">Don't sign in</div>
-        </div>
-        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-card);border-bottom:1px solid var(--border)">
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-primary);font-weight:600">Analytics</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)"><a href="#analytics" style="color:var(--accent-blue-light)">Page views, country</a><br><span style="font-size:14px;color:var(--text-muted)">no financial data</span></div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">Umami (no cookies or personal data)</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--clr-ok);font-weight:600">Yes</div>
-        </div>
-        <div style="display:grid;grid-template-columns:1.4fr 1.8fr 1.8fr 1fr;background:var(--bg-deep)">
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-primary);font-weight:600">Adding a vehicle by VIN</div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">The VIN you enter<br><span style="font-size:14px;color:var(--text-muted)">only if you use the optional VIN lookup when adding a vehicle</span></div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-secondary)">A US government vehicle database<br><span style="font-size:14px;color:var(--text-muted)">NHTSA — used to auto-fill year, make, and model from your VIN</span></div>
-          <div style="padding:.7rem .85rem;font-size:14px;color:var(--text-muted)">Skip VIN lookup<br><span style="font-size:14px;color:var(--text-muted)">type it in yourself</span></div>
-        </div>
-      </div>
-    </div>
-    <div class="data-table-mobile">
+    <div class="mr-grid">
       <div class="mr-card">
         <div class="mr-event">Opening the app</div>
         <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val">Internet address, browser type<br><span style="font-size:13px;color:var(--text-muted)">sent automatically whenever your browser requests a page — true of any site, not just this one</span></span></div>
