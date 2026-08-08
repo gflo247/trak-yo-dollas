@@ -222,21 +222,23 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .m-green{background:#064E3B22;color:#34D399;border-color:#05996944}
 .m-red{background:#7F1D1D22;color:#F87171;border-color:#DC262644}
 /* NW */
-/* max-width, not the whole page -- these list-row areas (.nw-section
-   covers the Net Worth breakdown and the Accounts tab's Financial
-   assets/Liabilities; #tx-list/#snapshot-list below cover Spending's
-   transaction list and Net Worth's snapshot list) use a two-cluster flex
-   layout (name/date on the left, value+actions on the right) with
-   nothing to fill the middle. On a wide monitor the two clusters drift
-   apart into a large dead gap -- confirmed at 1491px: roughly 900px of
-   empty space in every row. Charts and the category-tile grid scale into
-   extra width fine, so capped only these specific list containers rather
-   than the whole page. 800px keeps every current row (including the
-   transaction list's category+source pills, %, and amount all present at
-   once) comfortably clustered with no cramping. Found via a
-   user-friendliness pass, August 2026. */
-.nw-section{display:flex;flex-direction:column;gap:6px;max-width:800px}
-#tx-list,#snapshot-list{max-width:800px}
+.nw-section{display:flex;flex-direction:column;gap:6px}
+/* .list-col wraps a section's own header row together with its list
+   (Spending's transaction list, Net Worth's breakdown/snapshots,
+   Accounts' Financial assets/Liabilities) -- not the whole page, since
+   charts and the category-tile grid already scale into extra width fine
+   and only these row-based areas leave a dead gap on a wide monitor.
+   First attempt (capped just the list, left-aligned) just relocated that
+   same gap to one block on the right instead of distributing it, and
+   left the header row (which still spanned full width above the now-
+   narrower list) misaligned from the rows below it -- centering only the
+   list would have made that worse, not better. Wrapping header+list
+   together and centering the whole unit keeps both edges consistent.
+   800px was chosen against the transaction list specifically (the
+   densest row: date, description, category pill, source pill, %, and
+   amount all at once) -- comfortable with no cramping at that width.
+   Found via a user-friendliness pass, August 2026. */
+.list-col{max-width:800px;margin-left:auto;margin-right:auto}
 .nw-group{border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .nw-group-header{display:flex;justify-content:space-between;align-items:center;padding:.5rem .85rem}
 .nw-item{display:flex;align-items:center;justify-content:space-between;padding:.38rem .85rem .38rem 1.1rem;border-top:1px solid var(--border)}
@@ -821,14 +823,20 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   </div>
 
   <!-- Tertiary: Breakdown + Snapshots — reference, visually quieter -->
+  <!-- The border-top divider stays full width (a section rule spanning the
+       whole tab); .list-col wraps just the content inside it, so the line
+       itself doesn't also shrink to 800px and float oddly in the middle. -->
   <div style="margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--border)">
+   <div class="list-col">
     <div class="sh" style="margin-bottom:.5rem">Where your wealth lives</div>
     <div class="nw-section" id="nw-breakdown"></div>
     <div id="nw-excluded-header" class="sh" style="margin-top:1.1rem;color:var(--amber-text-strong);border-bottom-color:var(--amber-border);display:none">Outside net worth</div>
     <div id="nw-excluded-row"></div>
+   </div>
   </div>
 
   <div style="margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--border)">
+   <div class="list-col">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.45rem">
       <div class="sh" style="margin:0">Net worth snapshots</div>
       <div style="display:flex;gap:6px">
@@ -841,6 +849,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <div style="font-size:12px;color:var(--text-muted);line-height:1.5">💡 No snapshot yet this month — hit <button data-action="saveSnapshot" style="background:none;border:none;color:var(--accent-blue-light);font-size:12px;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">+ Save snapshot</button> to keep your trend line current.</div>
     </div>
     <div id="snapshot-list"></div>
+   </div>
   </div>
 
 </div>
@@ -869,8 +878,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="info-box">
     💡 Balances are manually maintained. Tap <strong style="color:var(--text-secondary)">Edit</strong> on any account to update, then save a snapshot on the <strong style="color:var(--text-secondary)">History</strong> tab to record today's net worth.
   </div>
-  <div class="sh">Financial assets</div><div id="asset-list" class="nw-section"></div>
-  <div class="sh">Liabilities</div><div id="liability-list" class="nw-section"></div>
+  <div class="list-col"><div class="sh">Financial assets</div><div id="asset-list" class="nw-section"></div></div>
+  <div class="list-col"><div class="sh">Liabilities</div><div id="liability-list" class="nw-section"></div></div>
   <!-- 529 in accounts -->
   <div id="acct-excluded-header" class="sh" style="color:var(--amber-text-strong);border-bottom-color:var(--amber-border);display:none">Outside net worth</div>
   <div id="excluded-accounts-list"></div>
@@ -1058,23 +1067,25 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <button data-action="toggleChartShowAll" id="chart-show-more-btn" style="background:none;border:none;color:#60A5FA;font-size:11px;font-weight:600;cursor:pointer;padding:0" type="button"></button>
   </div>
 
-  <div class="flex-between" style="margin-top:.9rem;margin-bottom:.3rem">
-    <div class="flex-center gap-8">
-      <div class="sh" style="margin:0" id="tx-count-label">Transactions</div>
-      <button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search" style="background:none;border:1px solid #2563EB44;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:600;color:#60A5FA;cursor:pointer" type="button">⬇ Export CSV</button>
+  <div class="list-col">
+    <div class="flex-between" style="margin-top:.9rem;margin-bottom:.3rem">
+      <div class="flex-center gap-8">
+        <div class="sh" style="margin:0" id="tx-count-label">Transactions</div>
+        <button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search" style="background:none;border:1px solid #2563EB44;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:600;color:#60A5FA;cursor:pointer" type="button">⬇ Export CSV</button>
+      </div>
+      <div class="row sort-row">
+        <span class="hide-mobile" style="font-size:10px;color:var(--text-muted);font-weight:600">Sort:</span>
+        <button class="sort-btn" id="sort-date-btn" data-action="setSort" data-arg="date" type="button">Date</button>
+        <button class="sort-btn on" id="sort-amt-btn" data-action="setSort" data-arg="amount" type="button">$ Amount ↓</button>
+        <button class="sort-btn hide-mobile" id="sort-pct-btn" data-action="setSort" data-arg="pct" type="button">% of Month</button>
+        <button class="sort-btn hide-mobile" id="sort-vendor-btn" data-action="setSort" data-arg="vendor" type="button">Vendor</button>
+        <button class="sort-btn" id="sort-cat-btn" data-action="setSort" data-arg="cat" type="button">Category</button>
+      </div>
     </div>
-    <div class="row sort-row">
-      <span class="hide-mobile" style="font-size:10px;color:var(--text-muted);font-weight:600">Sort:</span>
-      <button class="sort-btn" id="sort-date-btn" data-action="setSort" data-arg="date" type="button">Date</button>
-      <button class="sort-btn on" id="sort-amt-btn" data-action="setSort" data-arg="amount" type="button">$ Amount ↓</button>
-      <button class="sort-btn hide-mobile" id="sort-pct-btn" data-action="setSort" data-arg="pct" type="button">% of Month</button>
-      <button class="sort-btn hide-mobile" id="sort-vendor-btn" data-action="setSort" data-arg="vendor" type="button">Vendor</button>
-      <button class="sort-btn" id="sort-cat-btn" data-action="setSort" data-arg="cat" type="button">Category</button>
-    </div>
+    <div id="cat-filter-badge" class="hidden"></div>
+    <div id="tx-list"></div>
+    <div style="text-align:center;margin:.6rem 0" id="tx-more"></div>
   </div>
-  <div id="cat-filter-badge" class="hidden"></div>
-  <div id="tx-list"></div>
-  <div style="text-align:center;margin:.6rem 0" id="tx-more"></div>
 </div>
 
 <!-- HISTORY -->

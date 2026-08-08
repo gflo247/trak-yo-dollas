@@ -6962,20 +6962,52 @@ test("the Add Vehicle modal's Year/Make/Model fields have example placeholder te
 // the middle -- confirmed live at a 1491px viewport: roughly 900px of
 // dead space in every row. Capped just these specific containers, not
 // the whole page, since charts/the category-tile grid already use extra
-// width well. Nicholas asked to target only these 4 rather than a global
-// page max-width. ──
-test("list-row areas (Accounts/breakdown, transactions, snapshots) cap max-width instead of leaving a dead gap on wide viewports", () => {
+// width well.
+//
+// First attempt capped just the list, left-aligned -- Nicholas pointed
+// out (with live screenshots) that this just relocated the same dead
+// space to one block on the right instead of distributing it, and each
+// section's header row still spanned full width above the now-narrower
+// list, misaligned from it. Centering just the list would have made that
+// worse, not better. Reworked into a shared .list-col class wrapping each
+// section's header together with its list, so both share the same
+// centered max-width as one unit -- the border-top divider lines above
+// the Net Worth breakdown/snapshots sections deliberately stay full width
+// (.list-col wraps only their inner content), so the divider itself
+// doesn't also shrink and float in the middle. ──
+test("list-col wraps each area's header together with its list, centered, instead of leaving one relocated to the right or left orphaned from the other", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /\.nw-section\{display:flex;flex-direction:column;gap:6px;max-width:800px\}/,
-    ".nw-section (covers #nw-breakdown, #asset-list, #liability-list) should cap max-width"
+    /\.list-col\{max-width:800px;margin-left:auto;margin-right:auto\}/,
+    ".list-col should cap max-width and center itself"
+  );
+  assert.doesNotMatch(source, /\.nw-section\{[^}]*max-width/, ".nw-section itself should no longer carry the max-width -- centering now happens per-section via the wrapping .list-col");
+  assert.match(
+    source,
+    /<div class="list-col">\s*<div class="flex-between" style="margin-top:\.9rem;margin-bottom:\.3rem">[\s\S]{0,1500}?<div id="tx-list"><\/div>/,
+    "the transaction list's header and #tx-list should share one .list-col wrapper"
   );
   assert.match(
     source,
-    /#tx-list,#snapshot-list\{max-width:800px\}/,
-    "#tx-list and #snapshot-list should cap max-width"
+    /<div class="list-col">\s*<div class="sh" style="margin-bottom:\.5rem">Where your wealth lives<\/div>\s*<div class="nw-section" id="nw-breakdown"><\/div>/,
+    "the Net Worth breakdown's header and #nw-breakdown should share one .list-col wrapper"
+  );
+  assert.match(
+    source,
+    /<div class="list-col">\s*<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:\.45rem">\s*<div class="sh" style="margin:0">Net worth snapshots<\/div>/,
+    "the Net Worth snapshots header and #snapshot-list should share one .list-col wrapper"
+  );
+  assert.match(
+    source,
+    /<div class="list-col"><div class="sh">Financial assets<\/div><div id="asset-list" class="nw-section"><\/div><\/div>/,
+    "Financial assets' header and #asset-list should share one .list-col wrapper"
+  );
+  assert.match(
+    source,
+    /<div class="list-col"><div class="sh">Liabilities<\/div><div id="liability-list" class="nw-section"><\/div><\/div>/,
+    "Liabilities' header and #liability-list should share one .list-col wrapper"
   );
 });
