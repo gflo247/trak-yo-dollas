@@ -6954,3 +6954,28 @@ test("the Add Vehicle modal's Year/Make/Model fields have example placeholder te
   assert.match(source, /id="v-make" placeholder="e\.g\. Honda"/, "#v-make should have example placeholder text");
   assert.match(source, /id="v-model" placeholder="e\.g\. Civic EX"/, "#v-model should have example placeholder text");
 });
+
+// ── Follow-up to the user-friendliness pass above: 4 list-row areas
+// (Accounts' Financial assets/Liabilities, Spending's transaction list,
+// Net Worth's snapshot list, Net Worth's breakdown) use a two-cluster
+// flex layout (name/date left, value+actions right) with nothing to fill
+// the middle -- confirmed live at a 1491px viewport: roughly 900px of
+// dead space in every row. Capped just these specific containers, not
+// the whole page, since charts/the category-tile grid already use extra
+// width well. Nicholas asked to target only these 4 rather than a global
+// page max-width. ──
+test("list-row areas (Accounts/breakdown, transactions, snapshots) cap max-width instead of leaving a dead gap on wide viewports", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /\.nw-section\{display:flex;flex-direction:column;gap:6px;max-width:800px\}/,
+    ".nw-section (covers #nw-breakdown, #asset-list, #liability-list) should cap max-width"
+  );
+  assert.match(
+    source,
+    /#tx-list,#snapshot-list\{max-width:800px\}/,
+    "#tx-list and #snapshot-list should cap max-width"
+  );
+});

@@ -222,7 +222,21 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .m-green{background:#064E3B22;color:#34D399;border-color:#05996944}
 .m-red{background:#7F1D1D22;color:#F87171;border-color:#DC262644}
 /* NW */
-.nw-section{display:flex;flex-direction:column;gap:6px}
+/* max-width, not the whole page -- these list-row areas (.nw-section
+   covers the Net Worth breakdown and the Accounts tab's Financial
+   assets/Liabilities; #tx-list/#snapshot-list below cover Spending's
+   transaction list and Net Worth's snapshot list) use a two-cluster flex
+   layout (name/date on the left, value+actions on the right) with
+   nothing to fill the middle. On a wide monitor the two clusters drift
+   apart into a large dead gap -- confirmed at 1491px: roughly 900px of
+   empty space in every row. Charts and the category-tile grid scale into
+   extra width fine, so capped only these specific list containers rather
+   than the whole page. 800px keeps every current row (including the
+   transaction list's category+source pills, %, and amount all present at
+   once) comfortably clustered with no cramping. Found via a
+   user-friendliness pass, August 2026. */
+.nw-section{display:flex;flex-direction:column;gap:6px;max-width:800px}
+#tx-list,#snapshot-list{max-width:800px}
 .nw-group{border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .nw-group-header{display:flex;justify-content:space-between;align-items:center;padding:.5rem .85rem}
 .nw-item{display:flex;align-items:center;justify-content:space-between;padding:.38rem .85rem .38rem 1.1rem;border-top:1px solid var(--border)}
