@@ -3129,18 +3129,6 @@ function renderInsights(){
       ${(sub||cta)?`<div style="font-size:12px;color:var(--text-muted);line-height:1.35">${sub}${cta?` · <button data-action="${_ctaAction(cta)}"${_ctaArg(cta)!==null?` data-arg="${esc(_ctaArg(cta))}"`:''} style="background:none;border:none;color:${color};font-size:12px;font-weight:700;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">${cta.label} →</button>`:''}</div>`:''}
     </div>`;
 
-  const pill=(icon,label,value,color,sub)=>`
-    <div style="display:flex;flex-direction:column;justify-content:center;background:${color}15;border:1.5px solid ${color}55;border-radius:12px;padding:.75rem .9rem;gap:.4rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <div style="display:flex;align-items:center;gap:7px;flex-shrink:1;min-width:0">
-          <span style="font-size:16px;flex-shrink:0">${icon}</span>
-          <span style="font-size:10px;font-weight:700;color:var(--text-secondary);white-space:nowrap">${label}</span>
-        </div>
-        <div style="font-size:18px;font-weight:900;color:${color};line-height:1;letter-spacing:-.02em;white-space:nowrap;flex-shrink:0">${value}</div>
-      </div>
-      ${sub?`<div style="font-size:10px;color:var(--text-muted);line-height:1.35">${sub}</div>`:''}
-    </div>`;
-
   // ── Spend pill pre-computation ────────────────────────────────
   const spendTooltip=`${latestLabel}: ${fmtH(latestSpend)}&#10;Prior month: ${fmtH(prevSpend)}&#10;Change: ${spendUp?'+':'−'}${fmtH(Math.abs(spendDiff))} (${spendUp?'+':'−'}${spendPct}%)&#10;&#10;Tap Spending → Trend for month-by-month`;
   const avgSpend=allMonths.filter(m=>m!==currentM).length>0
