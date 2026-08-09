@@ -7181,8 +7181,8 @@ test("Spending tab's category tile name/meta/budget line, both empty states, the
   );
   assert.match(
     source,
-    /<span style="font-size:12px;color:var\(--text-muted\)">\$\{fmt\(curAmt\)\} of \$\{fmt\(budget\)\} budget<\/span>/,
-    "the in-tile budget line should be 12px"
+    /<span style="font-size:12px;color:var\(--text-muted\)">\$\{fmt\(curAmt\)\} \/ \$\{fmt\(budget\)\}<\/span>/,
+    "the in-tile budget line should be 12px, formatted as '$X / $Y' matching the Budget tab's own convention"
   );
   assert.match(
     source,
@@ -7208,5 +7208,35 @@ test("Spending tab's category tile name/meta/budget line, both empty states, the
     source,
     /<div style="font-size:12px;color:var\(--text-muted\);margin-bottom:\.75rem">Import a bank, credit union, or credit card CSV to get started<\/div>/,
     "the 'no transactions yet' empty state should be 12px"
+  );
+});
+
+// Finding: bumping the in-tile budget line to 12px in the previous
+// commit introduced a real wrap -- "$1,269 of $1,200 budget" (a 4-digit
+// budget, e.g. the Home tile) no longer fit in a 170px tile at the
+// larger size and wrapped to 2 lines, confirmed live via a height
+// measurement (28px vs. 14px for a single line) before and after.
+// Nicholas asked whether switching to a compact "$X / $Y" fraction
+// format was worth it; checked first and found the Budget tab's own
+// per-category row already displays this same data as "$518 / $200"
+// (see the sibling amountHTML template a few hundred lines below) --
+// so this wasn't just a space-saving nicety, it was fixing both the
+// wrap and an inconsistency with the app's own primary budget UI in
+// one move. Dropped "of"/"budget" since the tile's colored status dot,
+// its own tooltip, and its position under a budget-tracking header
+// already carry that context.
+test("the in-tile budget line uses a compact '$X / $Y' fraction instead of '$X of $Y budget', preventing 4-digit budgets from wrapping to 2 lines", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<span style="font-size:12px;color:var\(--text-muted\)">\$\{fmt\(curAmt\)\} \/ \$\{fmt\(budget\)\}<\/span>/,
+    "the budget line should read '$X / $Y', matching the Budget tab's own format"
+  );
+  assert.doesNotMatch(
+    source,
+    /\$\{fmt\(curAmt\)\} of \$\{fmt\(budget\)\} budget/,
+    "the old verbose 'of ... budget' wording should be gone"
   );
 });
