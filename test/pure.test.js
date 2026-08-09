@@ -7091,24 +7091,40 @@ test("the insights card's month narrative and pill sub-lines meet the 12px legib
 // at least one could fit. Simulating the mobile layout directly showed
 // plenty of room once the card already stacks vertically below 600px --
 // the old rule (#spend-top5-inline,#spend-top5-vendors{display:none})
-// removed both outright rather than just reflowing them. Kept only
-// categories on mobile (it pairs with the category tile grid directly
-// below; vendor detail stays reachable via that grid's own Vendor
-// toggle) and stopped hiding the wrapper, restyling it to stack
-// full-width/left-aligned instead. Along the way both lists' rows were
-// found at 10px, under this session's 12px floor -- bumped those too,
-// which required widening the name column's truncation cap from 90px to
-// 120px since "Checks Written" (91px wide at 12px) started clipping to
-// "Checks Writt…" at the old cap -- caught live via scrollWidth vs
-// clientWidth before it shipped.
-test("Top 5 Categories stays visible on mobile (Top 5 Vendors still hides), and both lists' rows are 12px with room for their longest names", () => {
+// removed both outright rather than just reflowing them. First attempt
+// kept categories but stacked it full-width below Total Spend -- Nicholas
+// pushed back with a live phone screenshot: he wanted it to stay screen
+// right, matching desktop's side-by-side layout, not relocated under the
+// total. Reworked to keep .spend-total-card in its default row layout on
+// mobile (just a smaller gap + min-width:0 on the Top 5 wrapper so it can
+// shrink), instead of forcing flex-direction:column -- confirmed it still
+// fits with zero overflow down to a 310px card width (iPhone SE range).
+// Kept only categories visible (pairs with the category tile grid
+// directly below; vendor detail stays reachable via that grid's own
+// Vendor toggle). Along the way both lists' rows were found at 10px,
+// under this session's 12px floor -- bumped those too, which required
+// widening the name column's truncation cap from 90px to 120px since
+// "Checks Written" (91px wide at 12px) started clipping to "Checks
+// Writt…" at the old cap -- caught live via scrollWidth vs clientWidth
+// before it shipped.
+test("Top 5 Categories stays screen-right on mobile, matching desktop's side-by-side layout (Top 5 Vendors still hides), and both lists' rows are 12px with room for their longest names", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /\.spend-total-card>div:last-child\{text-align:left!important;min-width:0!important;margin-top:\.6rem;border-top:1px solid var\(--border-mid\);padding-top:\.6rem\}/,
-    "the wrapper around both Top 5 lists should reflow full-width/left-aligned on mobile, not disappear"
+    /\.spend-total-card\{gap:12px\}/,
+    "the mobile breakpoint should not force .spend-total-card into a column -- it should stay in its default row layout, just with a small gap"
+  );
+  assert.doesNotMatch(
+    source,
+    /@media\(max-width:600px\)\{[\s\S]*?\.spend-total-card\{flex-direction:column/,
+    "the mobile breakpoint should no longer force .spend-total-card to stack vertically"
+  );
+  assert.match(
+    source,
+    /\.spend-total-card>div:last-child\{min-width:0!important\}/,
+    "the Top 5 wrapper should be able to shrink below its desktop min-width on mobile, not stack full-width"
   );
   assert.match(
     source,
