@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-g4jbZOYT6x+EQ+Wa8vvktjiuf3jhjntpohSEaSR7eVo=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-UI5wlIiNedTN+voYRkgXYbESA7mmadowjVTgeFv7gv8=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -542,7 +542,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   .bucket-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
   #insights-pills{grid-template-columns:1fr!important}
   .spend-total-card{flex-direction:column;gap:.5rem}
-  .spend-total-card>div:last-child{display:none}
+  .spend-total-card>div:last-child{text-align:left!important;min-width:0!important;margin-top:.6rem;border-top:1px solid var(--border-mid);padding-top:.6rem}
+  .spend-top5-col-vendors{display:none}
   #range-dropdowns-inline{width:100%}
   .quick-chips .h-btn,.grain-row .h-btn{font-size:11px;padding:8px 6px;min-height:36px}
   #auth-bar{padding:0 4px;gap:3px}
@@ -553,7 +554,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   .btn-privacy-nav{font-size:9px!important;padding:2px 6px!important}
   .modal{padding:.85rem}
   .nw-group-header{flex-wrap:wrap;gap:6px}
-  #spend-top5-inline,#spend-top5-vendors{display:none}
   .app-footer{flex-direction:column;align-items:center;padding:.75rem 1.5rem}
   .footer-left{justify-content:center}
   .footer-nav{margin-left:0;justify-content:center;gap:14px}
@@ -1004,7 +1004,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
           <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:4px">Top 5 categories</div>
           <div id="spend-top5-inline"></div>
         </div>
-        <div style="flex:1">
+        <div class="spend-top5-col-vendors" style="flex:1">
           <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:4px">Top 5 vendors</div>
           <div id="spend-top5-vendors"></div>
         </div>
@@ -4959,8 +4959,8 @@ function renderSpendSummary(){
   baseTxs.filter(isRealSpend).forEach(t=>{catTotals[t.cat]=(catTotals[t.cat]||0)+t.amount;});
   const top5=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,5);
   document.getElementById('spend-top5-inline').innerHTML=top5.map(([cat,amt])=>
-    `<div style="font-size:10px;font-weight:600;color:rgba(255,255,255,.75);margin-bottom:2px;display:flex;justify-content:space-between;gap:14px">
-      <span style="opacity:${state.activeCats.has(cat)?1:.55};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px" title="${esc(cat)}">${esc(cat)}</span><span style="opacity:.35">${fmt(amt)}</span></div>`).join('');
+    `<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75);margin-bottom:2px;display:flex;justify-content:space-between;gap:14px">
+      <span style="opacity:${state.activeCats.has(cat)?1:.55};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px" title="${esc(cat)}">${esc(cat)}</span><span style="opacity:.35">${fmt(amt)}</span></div>`).join('');
 
   // Top 5 vendors — respect category filter
   const vendorTotals5={};
@@ -4971,8 +4971,8 @@ function renderSpendSummary(){
   const top5v=Object.entries(vendorTotals5).sort((a,b)=>b[1]-a[1]).slice(0,5);
   const vtEl=document.getElementById('spend-top5-vendors');
   if(vtEl)vtEl.innerHTML=top5v.map(([v,amt])=>
-    `<div style="font-size:10px;font-weight:600;color:rgba(255,255,255,.75);margin-bottom:2px;display:flex;justify-content:space-between;gap:14px">
-      <span style="opacity:${state.activeVendors&&state.activeVendors.has(v)?1:.55};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px" title="${esc(v)}">${esc(displayVendor(v))}</span><span style="opacity:.35">${fmt(amt)}</span></div>`).join('');
+    `<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75);margin-bottom:2px;display:flex;justify-content:space-between;gap:14px">
+      <span style="opacity:${state.activeVendors&&state.activeVendors.has(v)?1:.55};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px" title="${esc(v)}">${esc(displayVendor(v))}</span><span style="opacity:.35">${fmt(amt)}</span></div>`).join('');
 
   const badge=document.getElementById('cat-filter-badge');
   if(state.activeCats.size>0){

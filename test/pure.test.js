@@ -5830,7 +5830,7 @@ test("the top-5-categories inline panel truncates long category names, matching 
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /<span style="opacity:\$\{state\.activeCats\.has\(cat\)\?1:\.55\};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px" title="\$\{esc\(cat\)\}">\$\{esc\(cat\)\}<\/span>/,
+    /<span style="opacity:\$\{state\.activeCats\.has\(cat\)\?1:\.55\};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px" title="\$\{esc\(cat\)\}">\$\{esc\(cat\)\}<\/span>/,
     "the top-5-categories panel's category span should truncate with ellipsis and a title tooltip"
   );
 });
@@ -7083,5 +7083,52 @@ test("the insights card's month narrative and pill sub-lines meet the 12px legib
     source,
     /\$\{\(sub\|\|cta\)\?`<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.35">\$\{sub\}\$\{cta\?` · <button data-action="\$\{_ctaAction\(cta\)\}"/,
     "each insight pill's sub-line (and its CTA link) should be 12px"
+  );
+});
+
+// Finding: Nicholas noticed Spending's Total Spend card shows Top 5
+// Categories/Top 5 Vendors on desktop but not mobile, and asked whether
+// at least one could fit. Simulating the mobile layout directly showed
+// plenty of room once the card already stacks vertically below 600px --
+// the old rule (#spend-top5-inline,#spend-top5-vendors{display:none})
+// removed both outright rather than just reflowing them. Kept only
+// categories on mobile (it pairs with the category tile grid directly
+// below; vendor detail stays reachable via that grid's own Vendor
+// toggle) and stopped hiding the wrapper, restyling it to stack
+// full-width/left-aligned instead. Along the way both lists' rows were
+// found at 10px, under this session's 12px floor -- bumped those too,
+// which required widening the name column's truncation cap from 90px to
+// 120px since "Checks Written" (91px wide at 12px) started clipping to
+// "Checks Writt…" at the old cap -- caught live via scrollWidth vs
+// clientWidth before it shipped.
+test("Top 5 Categories stays visible on mobile (Top 5 Vendors still hides), and both lists' rows are 12px with room for their longest names", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /\.spend-total-card>div:last-child\{text-align:left!important;min-width:0!important;margin-top:\.6rem;border-top:1px solid var\(--border-mid\);padding-top:\.6rem\}/,
+    "the wrapper around both Top 5 lists should reflow full-width/left-aligned on mobile, not disappear"
+  );
+  assert.match(
+    source,
+    /\.spend-top5-col-vendors\{display:none\}/,
+    "only the vendors column should hide on mobile"
+  );
+  assert.doesNotMatch(
+    source,
+    /#spend-top5-inline,#spend-top5-vendors\{display:none\}/,
+    "the old rule hiding both lists outright should be gone"
+  );
+  const rowStyle = 'font-size:12px;font-weight:600;color:rgba(255,255,255,.75);margin-bottom:2px;display:flex;justify-content:space-between;gap:14px';
+  assert.equal(
+    source.split(rowStyle).length - 1,
+    2,
+    "both the categories and vendors row templates should be 12px"
+  );
+  assert.match(
+    source,
+    /white-space:nowrap;max-width:120px" title="\$\{esc\(v\)\}">\$\{esc\(displayVendor\(v\)\)\}<\/span>/,
+    "the vendor name column should be widened to 120px so 12px text (e.g. 'Checks Written') doesn't clip"
   );
 });
