@@ -7148,3 +7148,65 @@ test("Top 5 Categories stays screen-right on mobile, matching desktop's side-by-
     "the vendor name column should be widened to 120px so 12px text (e.g. 'Checks Written') doesn't clip"
   );
 });
+
+// Finding: Nicholas asked for a full sweep of the Spending tab's text
+// sizes. Swept every render function that builds it (summary card,
+// category/vendor tiles, chart tabs, Sankey, calendar heatmap,
+// transaction list) and split what was under 12px into genuine reading
+// text (worth fixing) vs. deliberate design chrome -- short badges,
+// pills, icon buttons, and chart axis/tooltip text (kept as-is; the
+// floor only applies to text a user actually reads as a sentence).
+// Bumped the 8 genuine-reading-text sites to 12px: .bucket-name/
+// .bucket-meta (the category tile's name and "Avg: $X/mo · Peak: ..."
+// line -- both shared classes touching every tile on the page), the
+// in-tile budget line ("$X of $Y budget"), two transaction-list empty
+// states, the "select a source" hint, the calendar legend's click hint,
+// and the "Hidden from spending" note. Live-verified all 8 in the
+// browser, including triggering both empty states and the calendar
+// hint directly via state -- no wrapping/clipping in the now-taller
+// category tiles.
+test("Spending tab's category tile name/meta/budget line, both empty states, the no-source hint, calendar hint, and hidden-transactions note are all 12px, not 9-11px", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /\.bucket-name\{font-size:12px;font-weight:700;margin-bottom:\.3rem;line-height:1\.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical\}/,
+    ".bucket-name (the category/vendor tile's title) should be 12px"
+  );
+  assert.match(
+    source,
+    /\.bucket-meta\{font-size:12px;color:var\(--text-muted\);margin-top:3px;line-height:1\.4\}/,
+    ".bucket-meta (the tile's 'Avg: $X/mo · Peak: ...' line) should be 12px"
+  );
+  assert.match(
+    source,
+    /<span style="font-size:12px;color:var\(--text-muted\)">\$\{fmt\(curAmt\)\} of \$\{fmt\(budget\)\} budget<\/span>/,
+    "the in-tile budget line should be 12px"
+  );
+  assert.match(
+    source,
+    /\(noneSelected\?`<span style="font-size:12px;color:#F87171;align-self:center;margin-left:2px">← select a source to show spending<\/span>`:''\)/,
+    "the 'select a source' hint above the chart should be 12px"
+  );
+  assert.match(
+    source,
+    /<span id="cal-legend-hint" style="font-size:12px;color:var\(--text-muted\);margin-left:6px;display:none">· click a shade to filter<\/span>/,
+    "the calendar heatmap's legend click-hint should be 12px"
+  );
+  assert.match(
+    source,
+    /<div style="font-size:12px;font-weight:700;color:var\(--text-muted\);letter-spacing:\.07em;text-transform:uppercase;padding:\.5rem \.25rem \.25rem;opacity:\.6">Hidden from spending \(\$\{alwaysShowExcl\.length\}\) — click to edit &amp; restore<\/div>/,
+    "the 'Hidden from spending' note should be 12px"
+  );
+  assert.match(
+    source,
+    /<div style="font-size:12px;color:var\(--text-muted\);margin-bottom:\.75rem">Click a source chip above to show spending<\/div>/,
+    "the 'no sources selected' empty state should be 12px"
+  );
+  assert.match(
+    source,
+    /<div style="font-size:12px;color:var\(--text-muted\);margin-bottom:\.75rem">Import a bank, credit union, or credit card CSV to get started<\/div>/,
+    "the 'no transactions yet' empty state should be 12px"
+  );
+});
