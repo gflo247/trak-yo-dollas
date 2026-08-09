@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-kqpaDEGr5hw/2RwOlfl6P5UMKNfeBTnxB7bWlU43efs=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-g4jbZOYT6x+EQ+Wa8vvktjiuf3jhjntpohSEaSR7eVo=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3126,7 +3126,7 @@ function renderInsights(){
         </div>
         <div style="font-size:18px;font-weight:900;color:${color};line-height:1;letter-spacing:-.02em;white-space:nowrap;flex-shrink:0">${value}</div>
       </div>
-      ${(sub||cta)?`<div style="font-size:10px;color:var(--text-muted);line-height:1.35">${sub}${cta?` · <button data-action="${_ctaAction(cta)}"${_ctaArg(cta)!==null?` data-arg="${esc(_ctaArg(cta))}"`:''} style="background:none;border:none;color:${color};font-size:10px;font-weight:700;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">${cta.label} →</button>`:''}</div>`:''}
+      ${(sub||cta)?`<div style="font-size:12px;color:var(--text-muted);line-height:1.35">${sub}${cta?` · <button data-action="${_ctaAction(cta)}"${_ctaArg(cta)!==null?` data-arg="${esc(_ctaArg(cta))}"`:''} style="background:none;border:none;color:${color};font-size:12px;font-weight:700;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">${cta.label} →</button>`:''}</div>`:''}
     </div>`;
 
   const pill=(icon,label,value,color,sub)=>`
@@ -3475,7 +3475,7 @@ function renderInsights(){
           </div>
           <span style="font-size:10px;color:var(--text-muted);flex-shrink:0;margin-left:8px">${_narrativeExpanded?'↑ less':'↓ more'}</span>
         </div>
-        <div style="font-size:${_narrativeExpanded?'11':'10'}px;color:${_narrativeExpanded?'var(--text-secondary)':'var(--text-muted)'};line-height:${_narrativeExpanded?'1.7':'1.5'}">${_narrativeExpanded?full:preview}</div>
+        <div style="font-size:12px;color:${_narrativeExpanded?'var(--text-secondary)':'var(--text-muted)'};line-height:${_narrativeExpanded?'1.7':'1.5'}">${_narrativeExpanded?full:preview}</div>
       </div>`;
     }
   }

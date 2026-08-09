@@ -7063,3 +7063,25 @@ test("deleteRule, startDeleteCat, deleteVendorAlias, and the source chip's remov
     "the source chip's remove span should use 🗑️"
   );
 });
+
+// Finding: Nicholas asked about text sizing in Spending's "at a glance"
+// insights card. The month narrative sentence ("July came in right around
+// your usual pace...") was 10px collapsed / 11px expanded, and each
+// insight pill's sub-line ("$5,537 kept this month...", "52% of the way
+// to $750k...") was 10px -- both are genuine reading sentences, not short
+// badge labels, so both were under this session's 12px legibility floor.
+test("the insights card's month narrative and pill sub-lines meet the 12px legibility floor, not 10-11px", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<div style="font-size:12px;color:\$\{_narrativeExpanded\?'var\(--text-secondary\)':'var\(--text-muted\)'\};line-height:\$\{_narrativeExpanded\?'1\.7':'1\.5'\}">\$\{_narrativeExpanded\?full:preview\}<\/div>/,
+    "the month narrative sentence should be 12px in both its collapsed and expanded states"
+  );
+  assert.match(
+    source,
+    /\$\{\(sub\|\|cta\)\?`<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.35">\$\{sub\}\$\{cta\?` · <button data-action="\$\{_ctaAction\(cta\)\}"/,
+    "each insight pill's sub-line (and its CTA link) should be 12px"
+  );
+});
