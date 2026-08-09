@@ -7011,3 +7011,55 @@ test("list-col wraps each area's header together with its list, centered, instea
     "Liabilities' header and #liability-list should share one .list-col wrapper"
   );
 });
+
+// Finding: Nicholas asked whether the Budget tab's support text was too
+// small, quoting the subtitle sentence directly. It and the gate notice
+// below it were both 11px, under the 12px legibility floor established
+// earlier this session for genuine reading/instructional text.
+test("Budget tab's subtitle and gate notice meet the 12px legibility floor, not 11px", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<div id="budget-view-subtitle" style="font-size:12px;/,
+    "#budget-view-subtitle should be 12px"
+  );
+  assert.match(
+    source,
+    /<div id="budget-view-gate" style="display:none;background:var\(--bg-card\);border:1px solid var\(--border-mid\);border-left:3px solid #FBBF24;border-radius:6px;padding:\.5rem \.75rem;margin-bottom:\.5rem;font-size:12px;/,
+    "#budget-view-gate should be 12px"
+  );
+});
+
+// Finding: fixing deleteSnapshot's icon to 🗑️ earlier this session only
+// compared it against removeBudget (2 data points) -- when Nicholas asked
+// "did we settle on garbage cans or X as our site wide delete icon?", a
+// full site-wide grep showed ✕/× was still used at 4 other delete sites.
+// ✕ conventionally signals "close/dismiss", but all 6 of these actions are
+// permanent deletions, so standardized every one on 🗑️.
+test("deleteRule, startDeleteCat, deleteVendorAlias, and the source chip's remove button all use 🗑️, not a mismatched ✕/×", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /data-action="deleteRule" data-arg="\$\{i\}"[^>]*title="Delete rule" type="button">🗑️<\/button>/,
+    "deleteRule's button should use 🗑️"
+  );
+  assert.match(
+    source,
+    /data-action="startDeleteCat" data-arg="\$\{esc\(c\.name\)\}"[^>]*title="Delete" type="button">🗑️<\/button>/,
+    "startDeleteCat's button should use 🗑️"
+  );
+  assert.match(
+    source,
+    /data-action="deleteVendorAlias" data-arg="\$\{esc\(from\)\}"[^>]*title="Remove merge" type="button">🗑️<\/button>/,
+    "deleteVendorAlias's button should use 🗑️"
+  );
+  assert.match(
+    source,
+    /<span class="src-x-btn" data-action="openSrcRemovePop"[^>]*title="Remove this source">🗑️<\/span>/,
+    "the source chip's remove span should use 🗑️"
+  );
+});

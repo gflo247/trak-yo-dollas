@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-G0yXnVMTZh4bcTxV8Q9A8i5pY9VFRA1Ipy+m9DfQGiw=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-kqpaDEGr5hw/2RwOlfl6P5UMKNfeBTnxB7bWlU43efs=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -906,8 +906,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
   </div>
 
-  <div id="budget-view-subtitle" style="font-size:11px;color:var(--text-muted);margin-bottom:.5rem;line-height:1.4"></div>
-  <div id="budget-view-gate" style="display:none;background:var(--bg-card);border:1px solid var(--border-mid);border-left:3px solid #FBBF24;border-radius:6px;padding:.5rem .75rem;margin-bottom:.5rem;font-size:11px;color:var(--text-secondary);line-height:1.5"></div>
+  <div id="budget-view-subtitle" style="font-size:12px;color:var(--text-muted);margin-bottom:.5rem;line-height:1.4"></div>
+  <div id="budget-view-gate" style="display:none;background:var(--bg-card);border:1px solid var(--border-mid);border-left:3px solid #FBBF24;border-radius:6px;padding:.5rem .75rem;margin-bottom:.5rem;font-size:12px;color:var(--text-secondary);line-height:1.5"></div>
 
   <!-- Summary bar -->
   <div id="budget-summary-bar" data-action="cycleBudgetHeroHist" tabindex="0" role="button" aria-label="Expand or collapse 12-month history" style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:.85rem 1rem;margin-bottom:.4rem;cursor:pointer"></div>
@@ -4860,7 +4860,7 @@ function renderSourceChips(){
     sources.map(s=>{
       const cls=getSrcChipClass(s);
       const safe=esc(s);
-      return `<div class="src-chip-wrap" style="position:relative;display:inline-block"><button class="chip ${cls} ${state.activeSources.has(s)?'on':''}" data-action="toggleSource" data-arg="${safe}" type="button">${safe}<span class="src-x-btn" data-action="openSrcRemovePop" data-stop="1" data-src="${safe}" tabindex="0" role="button" aria-label="Remove source ${safe}" title="Remove this source">×</span></button><div class="src-remove-pop" style="display:none"></div></div>`;
+      return `<div class="src-chip-wrap" style="position:relative;display:inline-block"><button class="chip ${cls} ${state.activeSources.has(s)?'on':''}" data-action="toggleSource" data-arg="${safe}" type="button">${safe}<span class="src-x-btn" data-action="openSrcRemovePop" data-stop="1" data-src="${safe}" tabindex="0" role="button" aria-label="Remove source ${safe}" title="Remove this source">🗑️</span></button><div class="src-remove-pop" style="display:none"></div></div>`;
     }).join('')+
     (noneSelected?`<span style="font-size:11px;color:#F87171;align-self:center;margin-left:2px">← select a source to show spending</span>`:'')
     +hiddenChip;
@@ -8511,7 +8511,7 @@ function renderVendorAliasList(){
         <span class="truncate" style="font-family:monospace;font-size:12px;color:#34D399;background:#34D39918;padding:1px 7px;border-radius:4px;max-width:220px" title="${esc(to)}">${esc(to)}</span>
         <span class="text-muted-xs">(${count} transaction${count===1?'':'s'})</span>
       </div>
-      <button data-action="deleteVendorAlias" data-arg="${esc(from)}" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 5px;flex-shrink:0" title="Remove merge" type="button">✕</button>
+      <button data-action="deleteVendorAlias" data-arg="${esc(from)}" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 5px;flex-shrink:0" title="Remove merge" type="button">🗑️</button>
     </div>`;
   }).join('');
 }
@@ -10513,7 +10513,7 @@ function renderRulesList(){
         </div>
         <div class="text-muted-sm" style="margin-top:3px">${matches} matching transaction${matches===1?'':'s'} in your data</div>
       </div>
-      <button data-action="deleteRule" data-arg="${i}" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 6px;flex-shrink:0" title="Delete rule" type="button">✕</button>
+      <button data-action="deleteRule" data-arg="${i}" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 6px;flex-shrink:0" title="Delete rule" type="button">🗑️</button>
     </div>`;}).join('');
 }
 
@@ -10842,7 +10842,7 @@ function renderCatManagerList(){
       <span class="truncate" style="flex:1;font-size:12px;color:${c.custom?'var(--text-primary)':'var(--text-muted)'}" title="${esc(c.name)}">${esc(c.name)}${c.custom?'':' <span style="font-size:9px;color:var(--text-muted)">(built-in)</span>'}</span>
       ${c.custom?`
         <button data-action="startRenameCat" data-arg="${esc(c.name)}" style="font-size:12px;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 6px" title="Rename" type="button">✏</button>
-        <button data-action="startDeleteCat" data-arg="${esc(c.name)}" style="font-size:12px;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 6px" title="Delete" type="button">✕</button>
+        <button data-action="startDeleteCat" data-arg="${esc(c.name)}" style="font-size:12px;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 6px" title="Delete" type="button">🗑️</button>
       `:''}
     </div>`;
   }).join('');
