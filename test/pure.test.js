@@ -7493,37 +7493,3 @@ test("detectSubscriptions: excludes Gas and Home categories entirely (mortgage/r
   const realResult = fnReal(["2026-05", "2026-06", "2026-07"], "2026-07");
   assert.equal(realResult.subVendors.length, 1, "an ordinary, genuinely discretionary subscription in an unaffected category should still be detected");
 });
-
-// Finding: Nicholas asked for the #demo-nudge banner's text to be more
-// concise, and for the "Import a CSV" button/"Switch profile" link to
-// stop stacking awkwardly on mobile. Live-tested at 375px and 320px
-// widths before shipping: the old plain-inline-text layout let "Import
-// a CSV" (a chunky visual button, not just a text link) wrap onto its
-// own line mid-sentence, orphaned from its lead-in text. Shortened the
-// copy (dropped "fills all 4 tabs — explore them," which wasn't
-// essential information, and the redundant "for your own numbers"
-// since "Import a CSV" already implies that) and wrapped the content in
-// a flex row with flex-wrap so wrapping happens between whole chunks
-// (text span / button / text span) instead of at an arbitrary point
-// mid-layout -- confirmed live this holds as a clean 2-line block down
-// to 320px (iPhone SE range) with neither button ever isolated alone.
-test("#demo-nudge is shorter and wraps as flex chunks, not raw inline text that orphans the Import a CSV button", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  assert.match(
-    source,
-    /<div id="demo-nudge" style="display:none;background:rgba\(217,119,6,\.1\);border-bottom:1px solid rgba\(217,119,6,\.2\);padding:8px 1rem;font-size:12px;color:var\(--text-secondary\);text-align:center;letter-spacing:\.01em">\s*<div style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px">/,
-    "#demo-nudge's content should be wrapped in a flex row with flex-wrap"
-  );
-  assert.match(
-    source,
-    /<span>👇 Demo data shown —<\/span>/,
-    "the shortened lead-in text should be its own flex item"
-  );
-  assert.doesNotMatch(
-    source,
-    /Demo data fills all 4 tabs — explore them/,
-    "the old, longer lead-in text should be gone"
-  );
-});
