@@ -7308,3 +7308,24 @@ test("the Spending breakdown tab strip, the Patterns toggle, and both range-chip
     "the mobile-only override should drop its now-redundant font-size:11px, keeping only the touch-target padding/min-height"
   );
 });
+
+// Finding: Nicholas asked whether the in-tile "% of budget" badge
+// (e.g. "106%", "259%") was worth making bigger. It was 10px, smaller
+// than the 12px "$X / $Y" fraction sitting right next to it, even
+// though it's the more important signal in that row -- bold,
+// color-coded red/amber/green, the actual "am I over budget" answer.
+// Tested live first: bumping it to 12px keeps every tile on one line,
+// including the tightest case ("$1,269 / $1,200 106%" on the Home
+// tile, confirmed via rowHeight staying at 14px/single-line rather
+// than the 28px this exact row hit during the earlier Peak-line
+// wrapping investigation).
+test("the in-tile '% of budget' badge is 12px, matching the '$X / $Y' fraction next to it instead of being smaller than its own less-important neighbor", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<span style="font-size:12px;font-weight:700;color:\$\{curAmt>budget\+0\.005\?'#F87171':curAmt\/budget>0\.8\?'#FBBF24':'#34D399'\}">\$\{Math\.round\(curAmt\/budget\*100\)\}%<\/span>/,
+    "the budget percentage badge should be 12px"
+  );
+});
