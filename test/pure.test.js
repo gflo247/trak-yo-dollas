@@ -7329,3 +7329,27 @@ test("the in-tile '% of budget' badge is 12px, matching the '$X / $Y' fraction n
     "the budget percentage badge should be 12px"
   );
 });
+
+// Finding: fixing the Subscriptions pill's score=0 default surfaced a
+// deeper bug -- score had NEVER been used to choose the 2 visible
+// "regular" insight pills, only to pick the single lead pill. The
+// regular slots were always whichever pills got pushed first in
+// renderInsights() (Savings rate, then Net worth), regardless of score,
+// so a higher-scoring pill pushed later could never displace them
+// without the user expanding "+more insights". Sorting regularPills by
+// score before slicing fixes this for every pill, not just
+// Subscriptions. Live-verified: with the demo data's own numbers
+// (Subscriptions scoring 15, both Savings/Net worth scoring 10),
+// Subscriptions and Top mover became the two visible pills instead of
+// Savings/Net worth, matching what their scores actually say should be
+// most notable.
+test("the insights card's 2 visible regular pills are chosen by score, not by which pill happened to be pushed first in the function", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const regularPills=pillsArr\.filter\(p=>p\.key!==leadPill\.key\)\.sort\(\(a,b\)=>b\.score-a\.score\);/,
+    "regularPills should be sorted by score (descending) before the visible slice is taken"
+  );
+});

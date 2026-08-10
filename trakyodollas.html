@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-53k6rmsPnHrZh0RqQ0nFzobesAeacon5fWyrujDhpgQ=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-aH4SWjyx5TqiovYCAs3QV3As87O2LxatIRi55grWTMo=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3474,7 +3474,19 @@ function renderInsights(){
     // ── Score pills by urgency to find the lead insight ──────────
     const scoredPills=[...pillsArr].map(p=>({...p}));
     const leadPill=scoredPills.reduce((a,b)=>b.score>a.score?b:a,scoredPills[0]);
-    const regularPills=pillsArr.filter(p=>p.key!==leadPill.key);
+    // Sorted by score, not left in push order -- previously the 2 visible
+    // "regular" slots were always whichever pills happened to be pushed
+    // first in this function (Savings rate, then Net worth), regardless of
+    // score, since score only ever fed the lead-pill reduce() above. A
+    // pill pushed later (e.g. Subscriptions, 3rd) could score higher than
+    // both and still never surface without expanding "+more insights" --
+    // confirmed live while fixing the Subscriptions pill's own score,
+    // which had been silently defaulting to 0 for the same underlying
+    // reason: nothing here ever consumed score for the regular slots, so
+    // there'd been no way to notice the default was dead weight. Array.
+    // prototype.sort is spec-guaranteed stable, so ties still fall back to
+    // push order, same as before.
+    const regularPills=pillsArr.filter(p=>p.key!==leadPill.key).sort((a,b)=>b.score-a.score);
     const visibleRegular=state.insightsPillsExpanded?regularPills:regularPills.slice(0,SHOW-1);
     const hiddenPills=regularPills.slice(SHOW-1);
 
