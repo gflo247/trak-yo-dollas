@@ -7493,3 +7493,40 @@ test("detectSubscriptions: excludes Gas and Home categories entirely (mortgage/r
   const realResult = fnReal(["2026-05", "2026-06", "2026-07"], "2026-07");
   assert.equal(realResult.subVendors.length, 1, "an ordinary, genuinely discretionary subscription in an unaffected category should still be detected");
 });
+
+// Finding: Nicholas said moving "Switch profile" text into the
+// #demo-nudge banner's flex-wrap layout was a regression (less clear,
+// and didn't fix the real problem: tap targets stacking too close
+// together for touch users) and asked for a better location instead.
+// #demo-nav-badge ("DEMO DATA" in the top-right nav) already does the
+// identical action and sits nowhere near Import CSV -- but live-testing
+// it turned up two compounding, pre-existing bugs that meant it had
+// never actually been visible in any scenario tested this session:
+// (1) only loadDemoProfile()'s own render callback ever explicitly
+// showed it -- renderAll(), which runs on every ordinary page load/
+// refresh, only ever hid it, never showed it; (2) every "show" call
+// site used style.display='', which is a no-op against this element's
+// own CSS rule hardcoding display:none (unlike #demo-chip, a sibling
+// with no such rule, where the identical style.display='' pattern
+// correctly works). Confirmed live: calling showDemoNudge() by hand on
+// a fresh boot with demo data active left the badge invisible before
+// this fix, and confirmed visible+clickable (opens the actual demo
+// picker) after it, on a genuinely fresh boot (cleared localStorage,
+// not just an in-memory state mutation).
+test("#demo-nav-badge is reliably shown by showDemoNudge() (not just loadDemoProfile()'s callback) with an explicit visible display value (not the no-op '')", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function showDemoNudge\(\)\{[\s\S]{0,2500}?\n\}/);
+  assert.ok(fnMatch, "showDemoNudge() should exist");
+  assert.match(
+    fnMatch[0],
+    /const badge=document\.getElementById\('demo-nav-badge'\);\s*if\(badge&&!state\.hasRealData\)badge\.style\.display=hasDemoData\?'inline-block':'none';/,
+    "showDemoNudge() should manage #demo-nav-badge's visibility with an explicit 'inline-block', matching the same condition #demo-nudge/#spending-start-here already use"
+  );
+  assert.doesNotMatch(
+    source,
+    /Switch profile<\/button>/,
+    "the redundant 'Switch profile' link should no longer be in the #demo-nudge banner"
+  );
+});
