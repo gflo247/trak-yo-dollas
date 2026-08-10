@@ -7271,3 +7271,40 @@ test("category tiles no longer show 'Peak: 'YY Mon' in the meta line, since it s
     "the meta line should no longer append '· Peak: ...'"
   );
 });
+
+// Finding: Nicholas asked to unify text size at 11px across the
+// Spending breakdown tab strip (By category/By vendor/.../Flow), the
+// "Patterns: on/off" toggle, and the "3mo/6mo/.../All" +
+// "Monthly/Quarterly/Yearly" range chips -- the latter two were already
+// 11px on mobile (a touch-target-driven override) but only 10px on
+// desktop, while the breakdown tabs and Patterns toggle were 10px
+// everywhere. Bumping the shared .h-btn base class from 10px to 11px
+// covers all of these at once since none of them carry their own
+// font-size override (verified by checking every class="h-btn" site in
+// the file -- the few that do have inline font-size overrides, e.g. the
+// Category/Vendor bucket-mode toggle at 11px and the Vehicle/Other
+// asset-type toggle at 12px, were confirmed untouched by this change).
+// The old mobile-only override on .quick-chips/.grain-row duplicating
+// font-size:11px became redundant once the base class matched, so it
+// was dropped from that rule (kept the padding/min-height, which are
+// still mobile-specific for touch-target sizing).
+test("the Spending breakdown tab strip, the Patterns toggle, and both range-chip rows are unified at 11px on desktop, matching what mobile already had", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /\.h-btn\{flex:1;background:none;border:none;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;color:var\(--text-muted\);cursor:pointer;white-space:nowrap\}/,
+    "the shared .h-btn base class should be 11px"
+  );
+  assert.match(
+    source,
+    /<button id="chart-texture-btn" data-action="toggleChartTexture" style="background:none;border:1px solid var\(--border-mid\);border-radius:6px;padding:2px 8px;font-size:11px;/,
+    "the Patterns toggle should be 11px"
+  );
+  assert.match(
+    source,
+    /\.quick-chips \.h-btn,\.grain-row \.h-btn\{padding:8px 6px;min-height:36px\}/,
+    "the mobile-only override should drop its now-redundant font-size:11px, keeping only the touch-target padding/min-height"
+  );
+});
