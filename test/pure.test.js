@@ -7240,3 +7240,34 @@ test("the in-tile budget line uses a compact '$X / $Y' fraction instead of '$X o
     "the old verbose 'of ... budget' wording should be gone"
   );
 });
+
+// Finding: even after switching the budget line to a compact fraction,
+// every single category tile's "Avg/Peak" meta line was still wrapping
+// to 2 lines (34px vs. 17px for one line, confirmed live across all 8
+// visible tiles) -- the 12px bump alone wasn't enough once "Peak: 'YY
+// Mon" was in the mix too. Nicholas asked whether adding the peak
+// dollar amount (making the info actually useful) or cutting it
+// entirely was the better fix. Tested both directly: adding the amount
+// ("Peak: $1,269 ('25 Mar)") stayed at 34px, still wrapped -- longer
+// text in the same space doesn't fix a space problem. Cutting it
+// dropped straight to 17px, one line. Also worth knowing: the peak
+// amount was already computed (getCatStats()'s s.peakAmt) but never
+// once displayed anywhere, and s.peakLabel now has zero remaining
+// consumers in the file -- both are dead data pass 168 (whichever pass
+// this becomes) may want to remove, left untouched here since only the
+// display was in scope.
+test("category tiles no longer show 'Peak: 'YY Mon' in the meta line, since it stayed 2-line-wrapped even with the amount added and had no consumer worth the space", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<div class="bucket-meta">\$\{signal\?`\$\{signal\} · `:''\}Avg: \$\{fmt\(Math\.round\(s\.total\/Math\.max\(grainedPeriods\.length,1\)\)\)\}\$\{grainLabel\}<\/div>/,
+    "the tile's meta line should end after the average, with no trailing Peak text"
+  );
+  assert.doesNotMatch(
+    source,
+    /Avg: \$\{fmt\(Math\.round\(s\.total\/Math\.max\(grainedPeriods\.length,1\)\)\)\}\$\{grainLabel\} · Peak:/,
+    "the meta line should no longer append '· Peak: ...'"
+  );
+});

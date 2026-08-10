@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-HwoOY1lc3TP92J3wdSovwM7e5lNPTPCXQpcxwxgMR/Y=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-epQwIMEy++98m3PJ1h4MHGtMjRdpePmwOCPd+VFlNoA=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -5322,7 +5322,7 @@ function renderBucketGrid(){
         </div>
       </div>
       <div class="bucket-total" style="color:${color}">${fmt(s.total)}</div>
-      <div class="bucket-meta">${signal?`${signal} · `:''}Avg: ${fmt(Math.round(s.total/Math.max(grainedPeriods.length,1)))}${grainLabel} · Peak: ${s.peakLabel}</div>
+      <div class="bucket-meta">${signal?`${signal} · `:''}Avg: ${fmt(Math.round(s.total/Math.max(grainedPeriods.length,1)))}${grainLabel}</div>
       ${budgetBadge}
     </div>`;}).join('')+otherCatTile;
 }
