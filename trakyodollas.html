@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-aH4SWjyx5TqiovYCAs3QV3As87O2LxatIRi55grWTMo=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-kdV7YWD0dzyWpH0499GosZ651mAizGJo36vpLsAwVro=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1903,6 +1903,17 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   </div>
 </div>
 
+<!-- Duplicate charges modal -->
+<div class="modal-overlay hidden" id="duplicate-charges-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="duplicate-charges-modal-title" tabindex="-1" style="width:min(480px,95vw)">
+    <div class="modal-header">
+      <h3 id="duplicate-charges-modal-title" style="margin:0">⚠️ Possible duplicate charges</h3>
+      <button class="btn btn-primary" data-action="closeModals" type="button">Done</button>
+    </div>
+    <div id="duplicate-charges-list" style="max-height:480px;overflow-y:auto"></div>
+  </div>
+</div>
+
 <!-- Year in Review modal -->
 <div class="modal-overlay hidden" id="year-review-modal">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="year-review-modal-title" tabindex="-1" style="width:min(580px,95vw);max-height:90vh;overflow-y:auto">
@@ -3276,6 +3287,18 @@ function renderInsights(){
     const subList=subVendors.slice(0,8).map(s=>`${esc(displayVendor(s.vendor))}: ${fmtC(s.amt)}`).join('&#10;');
     const tooltip=`Vendors charged in 3+ of last 6 months with consistent amounts.&#10;&#10;Detected (${subCount}):&#10;${subList}${subCount>8?`&#10;...and ${subCount-8} more`:''}`;
     const topSub=subVendors[0];
+    // Score was previously omitted entirely -- addPill()'s score=0 default
+    // meant this pill could never win the lead slot and always sorted
+    // behind every other pill pushed before it in the visible "top 3",
+    // so it was hidden behind "+more insights" in every scenario tested
+    // this session even though the rest of the app's pills all pass a
+    // real score. Scaled the same way Largest charge/Weekend do: a low
+    // baseline for "still worth knowing" plus an escalation when the
+    // subscriptions genuinely deserve attention -- either they eat a
+    // big share of the month's real spend (creep worth noticing) or
+    // there are simply a lot of them to track.
+    const subShare=latestSpend>0?subTotal/latestSpend:0;
+    const subScore=subShare>=0.15?45:subCount>=6?30:15;
     addPill('subscriptions','Subscriptions',`<div data-action="openSubscriptionsModal" tabindex="0" role="button" style="display:flex;flex-direction:column;justify-content:center;background:#A78BFA15;border:1.5px solid #A78BFA55;border-radius:12px;padding:.75rem .9rem;gap:.4rem;cursor:pointer">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
         <div style="display:flex;align-items:center;gap:7px;flex-shrink:1;min-width:0">
@@ -3285,7 +3308,31 @@ function renderInsights(){
         <div style="font-size:18px;font-weight:900;color:#A78BFA;line-height:1;letter-spacing:-.02em;white-space:nowrap;flex-shrink:0">${fmtC(subTotal)} · ${subCount} recurring</div>
       </div>
       <div style="font-size:12px;color:var(--text-muted);line-height:1.35">That's ${fmtC(subTotal*12)}/yr · largest: ${esc(displayVendor(topSub.vendor))} at ${fmtC(topSub.amt)}/mo · <span style="color:#A78BFA;font-weight:600">view all →</span></div>
-    </div>`);
+    </div>`,subScore);
+  }
+
+  // Pill — Possible duplicate charges. Same shape as the Subscriptions
+  // pill just above (click-through to a modal, no separate ⓘ tooltip
+  // trigger) since they're the same kind of insight: a detected pattern
+  // across transactions worth a closer look, not a single computed stat.
+  // Scored high enough at real dollar amounts to compete for the lead
+  // slot -- a likely double-charge is concrete and time-sensitive
+  // (dispute windows), arguably more actionable than most of the other
+  // pills here, not just background trivia.
+  const{clusters:dupClusters,dupTotal}=detectDuplicateCharges();
+  if(dupClusters.length>0){
+    const topDup=dupClusters[0];
+    const dupScore=dupTotal>=100?85:dupTotal>=30?50:25;
+    addPill('duplicates','Possible duplicates',`<div data-action="openDuplicateChargesModal" tabindex="0" role="button" style="display:flex;flex-direction:column;justify-content:center;background:#F8717115;border:1.5px solid #F8717155;border-radius:12px;padding:.75rem .9rem;gap:.4rem;cursor:pointer">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div style="display:flex;align-items:center;gap:7px;flex-shrink:1;min-width:0">
+          <span style="font-size:16px;flex-shrink:0">⚠️</span>
+          <span style="font-size:10px;font-weight:700;color:var(--text-secondary);white-space:nowrap">Possible duplicates</span>
+        </div>
+        <div style="font-size:18px;font-weight:900;color:#F87171;line-height:1;letter-spacing:-.02em;white-space:nowrap;flex-shrink:0">${fmtC(dupTotal)}</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.35">${esc(displayVendor(topDup.vendor))} charged ${topDup.txs.length}× at ${fmtC(topDup.amount)} within days · <span style="color:#F87171;font-weight:600">view all →</span></div>
+    </div>`,dupScore);
   }
 
   // Pill 4 — Budget health
@@ -8615,6 +8662,7 @@ const PILL_DEFS=[
   {key:'savings',  icon:'🟢', label:'Savings rate',          note:'Requires income to be configured'},
   {key:'networth', icon:'📊', label:'Net worth',              note:'Change since last snapshot, with goal progress if set'},
   {key:'subscriptions',icon:'🔄',label:'Subscriptions',       note:'Recurring charges detected in your data'},
+  {key:'duplicates', icon:'⚠️', label:'Possible duplicates', note:'Same vendor + amount charged within 2 days, in the last 35 days'},
   {key:'budget-health',icon:'🔴',label:'Budget health',       note:'How many budgets are on track this month'},
   {key:'topmover', icon:'⬆️', label:'Top mover',             note:'Biggest spending category change this month'},
   {key:'largest-tx',icon:'💥', label:'Largest charge',        note:'Biggest single transaction this month'},
@@ -9972,6 +10020,89 @@ function detectSubscriptions(allMonths,latestFullM){
   });
   subVendors.sort((a,b)=>b.amt-a.amt);
   return{subVendors,subTotal};
+}
+
+// Detects likely double-charges: same resolved vendor + exact same amount,
+// posted within DUP_WINDOW_DAYS of each other. Deliberately NOT trying to
+// catch "similar" amounts or a loose day window -- a same-vendor,
+// same-exact-amount, within-48-hours match is specific enough to mostly
+// avoid flagging ordinary repeat purchases (two different Starbucks runs
+// days apart rarely land on the identical cent amount), while DUP_MIN_AMOUNT
+// filters out the small-dollar coincidences that would still slip through
+// (a $4.50 coffee bought twice in one week is a far more plausible
+// coincidence than a $312.00 charge landing twice by chance). Known,
+// accepted false-positive case this can't distinguish from a real
+// duplicate: a genuine split payment to the same vendor for the same
+// amount within the window (e.g. two identical rent installments) --
+// same limitation class as detectSubscriptions()'s own consistency
+// heuristic just above, surfaced here for the same reason: this is
+// pattern-matching on amounts/dates, not the actual line-item intent.
+function detectDuplicateCharges(){
+  const DUP_WINDOW_DAYS=2,DUP_MIN_AMOUNT=15,LOOKBACK_DAYS=35;
+  const today=new Date();
+  const cutoff=new Date(today);cutoff.setDate(cutoff.getDate()-LOOKBACK_DAYS);
+  const cutoffStr=`${cutoff.getFullYear()}-${String(cutoff.getMonth()+1).padStart(2,'0')}-${String(cutoff.getDate()).padStart(2,'0')}`;
+  const groups={};
+  // Same filter shape as detectSubscriptions() above (isRealSpend/!is_offset/
+  // amount>0/excludedCats/activeSources/_bizFilter) so this respects the
+  // same source/category/business filters as every other insight on this
+  // card, instead of silently disagreeing with them.
+  state.transactions.filter(t=>isRealSpend(t)&&!t.is_offset&&t.amount>=DUP_MIN_AMOUNT&&!state.excludedCats.has(t.cat)&&state.activeSources.has(t.card)&&t.date>=cutoffStr&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).forEach(t=>{
+    const key=resolveVendor(t.desc)+'|'+t.amount.toFixed(2);
+    (groups[key]=groups[key]||[]).push(t);
+  });
+  const clusters=[];
+  Object.values(groups).forEach(txs=>{
+    if(txs.length<2)return;
+    txs.sort((a,b)=>a.date.localeCompare(b.date));
+    let cluster=[txs[0]];
+    const flush=()=>{if(cluster.length>=2)clusters.push({vendor:resolveVendor(cluster[0].desc),amount:cluster[0].amount,cat:cluster[0].cat,txs:cluster.slice()});};
+    for(let i=1;i<txs.length;i++){
+      const days=(new Date(txs[i].date+'T12:00:00')-new Date(txs[i-1].date+'T12:00:00'))/86400000;
+      if(days<=DUP_WINDOW_DAYS){cluster.push(txs[i]);}
+      else{flush();cluster=[txs[i]];}
+    }
+    flush();
+  });
+  // "Extra" = every charge past the first in a cluster -- the first is
+  // presumed legitimate, the rest are what's actually in question.
+  clusters.sort((a,b)=>(b.amount*(b.txs.length-1))-(a.amount*(a.txs.length-1)));
+  const dupTotal=clusters.reduce((s,c)=>s+c.amount*(c.txs.length-1),0);
+  return{clusters,dupTotal};
+}
+
+function openDuplicateChargesModal(){
+  const{clusters,dupTotal}=detectDuplicateCharges();
+  const list=document.getElementById('duplicate-charges-list');
+  if(!list)return;
+  if(!clusters.length){
+    list.innerHTML=`<div style="text-align:center;padding:1.5rem;color:var(--text-muted);font-size:12px">No likely duplicate charges detected.<br>Checked the last 35 days for same vendor + same amount within 2 days.</div>`;
+  } else {
+    list.innerHTML=`<div style="background:var(--bg-card);border-radius:8px;padding:.6rem .85rem;margin-bottom:.75rem">
+      <div class="label-upper">Possibly duplicated</div>
+      <div style="font-size:18px;font-weight:800;color:#F87171">${fmtC(dupTotal)}</div>
+    </div>
+    <div style="font-size:10px;color:var(--text-muted);margin-bottom:.65rem">Same vendor + exact amount within 2 days of each other, $15+, last 35 days. Double-check before disputing -- a genuine split payment can look identical to this.</div>`+
+    clusters.map(({vendor,amount,cat,txs})=>{
+      const catColor=getCatColor(cat);
+      const dateList=txs.map(t=>t.date).join(', ');
+      return`<div class="list-row" style="margin-bottom:5px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(displayVendor(vendor))} × ${txs.length}</div>
+          <div style="font-size:10px;margin-top:1px;display:flex;align-items:center;gap:5px">
+            <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${catColor};flex-shrink:0"></span>
+            <span style="color:var(--text-muted)">${esc(cat)}</span>
+            <span style="color:var(--text-muted)" title="${esc(dateList)}">· ${dateList}</span>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:13px;font-weight:800;color:#F87171">${fmtC(amount)}</div>
+          <div class="text-muted-xs">each</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('duplicate-charges-modal').classList.remove('hidden');
 }
 
 function openSubscriptionsModal(){

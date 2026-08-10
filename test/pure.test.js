@@ -7353,3 +7353,86 @@ test("the insights card's 2 visible regular pills are chosen by score, not by wh
     "regularPills should be sorted by score (descending) before the visible slice is taken"
   );
 });
+
+// Finding: Nicholas asked to build a duplicate-charge detection insight,
+// following the same "detected pattern -> click for modal" shape as the
+// Subscriptions pill. detectDuplicateCharges() flags same-vendor +
+// EXACT-same-amount charges landing within 2 days of each other ($15+,
+// last 35 days) -- deliberately narrow (exact amount, not "similar";
+// tight day window, not a loose one) specifically to avoid flagging
+// ordinary repeat purchases, which was the main false-positive risk
+// considered before building this. Stress-tested live in the browser
+// before writing these (injecting synthetic transactions, since the
+// demo data has no genuine duplicates to exercise the code path):
+// confirmed an exact-match pair/triple cluster correctly, and confirmed
+// each of a different-amount same-vendor pair, a same-amount
+// different-vendor pair, a same-vendor/amount pair 6 days apart (outside
+// the window), a same-vendor/amount pair under $15, and a charge
+// immediately followed by its own refund (negative amount) all
+// correctly do NOT cluster. Known, accepted limitation documented in
+// the function's own comment: a genuine split payment (same vendor,
+// same amount, within the window) is indistinguishable from a real
+// duplicate by this heuristic -- same class of limitation
+// detectSubscriptions()'s own consistency check already has.
+test("detectDuplicateCharges: clusters an exact same-vendor/same-amount charge within the day window, and correctly excludes each near-miss case", () => {
+  const today = new Date();
+  const d = (daysAgo) => {
+    const x = new Date(today);
+    x.setDate(x.getDate() - daysAgo);
+    return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+  };
+  const mk = (id, desc, amount, daysAgo) => ({ id, date: d(daysAgo), desc, cat: "Gas", card: "chase", amount, excluded: false, isIncome: false, is_offset: false, biz: false });
+
+  const runWith = (txs) => {
+    const { detectDuplicateCharges: fn } = loadFunctions(["detectDuplicateCharges"], {
+      isRealSpend: (t) => !t.excluded && !t.isIncome,
+      resolveVendor: (d) => d,
+      state: { transactions: txs, excludedCats: new Set(), activeSources: new Set(["chase"]) },
+      _bizFilter: "all",
+    });
+    return fn();
+  };
+
+  const exactDup = runWith([mk(1, "EXXON", 52.47, 3), mk(2, "EXXON", 52.47, 2)]);
+  assert.equal(exactDup.clusters.length, 1, "an exact same-vendor/same-amount pair 1 day apart should cluster");
+  assert.equal(exactDup.clusters[0].txs.length, 2);
+  assert.equal(exactDup.dupTotal, 52.47, "dupTotal should count only the 'extra' charge past the first, not both");
+
+  const diffAmount = runWith([mk(1, "STARBUCKS", 20, 3), mk(2, "STARBUCKS", 25, 2)]);
+  assert.equal(diffAmount.clusters.length, 0, "same vendor but a different amount should not cluster");
+
+  const diffVendor = runWith([mk(1, "TARGET", 40, 3), mk(2, "WALMART", 40, 2)]);
+  assert.equal(diffVendor.clusters.length, 0, "same amount but a different vendor should not cluster");
+
+  const tooFarApart = runWith([mk(1, "COSTCO", 120, 20), mk(2, "COSTCO", 120, 14)]);
+  assert.equal(tooFarApart.clusters.length, 0, "same vendor/amount but 6 days apart (outside the 2-day window) should not cluster");
+
+  const belowMin = runWith([mk(1, "VENDING", 3, 2), mk(2, "VENDING", 3, 1)]);
+  assert.equal(belowMin.clusters.length, 0, "same vendor/amount within the window but under the $15 minimum should not cluster");
+
+  const chargeAndRefund = runWith([mk(1, "BEST BUY", 200, 3), mk(2, "BEST BUY", -200, 2)]);
+  assert.equal(chargeAndRefund.clusters.length, 0, "a charge immediately followed by its own refund (negative amount) should not be flagged as a duplicate");
+});
+
+// Finding: the pill and its modal should be registered/wired the same
+// way Subscriptions (its closest sibling) already is.
+test("Possible duplicates pill is registered in PILL_DEFS and its modal is wired to openDuplicateChargesModal", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /\{key:'duplicates', icon:'⚠️', label:'Possible duplicates', note:'Same vendor \+ amount charged within 2 days, in the last 35 days'\},/,
+    "the pill customizer's PILL_DEFS should include an entry for duplicates"
+  );
+  assert.match(
+    source,
+    /<div class="modal-overlay hidden" id="duplicate-charges-modal">/,
+    "the duplicate charges modal markup should exist"
+  );
+  assert.match(
+    source,
+    /data-action="openDuplicateChargesModal" tabindex="0" role="button"/,
+    "the pill itself should open the modal on click"
+  );
+});

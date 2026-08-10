@@ -146,7 +146,12 @@ TRAKYODOLLAS_KNOWN_FALSE_POSITIVES = {
     # cta.label: every pillWithTip() caller passes either a hardcoded
     # string or (the one variable case) a value already esc()-wrapped at
     # construction (biggestCat.cat via `See ${esc(biggestCat.cat)}...`).
-    ('(sub||cta)?`<div style="font-size:10px;color:var(--text-muted);line-height:1.35">${sub}${cta?` · <button data-action="${', '.label'),
+    # Key text bumped from font-size:10px to :12px along with the rest of
+    # the Spending tab's legibility sweep -- this suppression naturally
+    # expiring on that text change (rather than silently continuing to
+    # match) is this scanner's own designed behavior; same site, just
+    # re-confirmed and re-keyed.
+    ('(sub||cta)?`<div style="font-size:12px;color:var(--text-muted);line-height:1.35">${sub}${cta?` · <button data-action="${', '.label'),
 
     # renderNwBreakdown()'s GROUPS array is a hardcoded literal
     # ({label:'Investments',color:'#34D399',...}), never user-settable.
