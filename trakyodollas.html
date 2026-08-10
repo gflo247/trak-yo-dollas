@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-kdV7YWD0dzyWpH0499GosZ651mAizGJo36vpLsAwVro=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-wkXNqFx0MqofMFrNK7OPgHbjYZpTKXxcfQ3OntzRKBk=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -9948,6 +9948,17 @@ function exportBudgetCSV(){
 function detectSubscriptions(allMonths,latestFullM){
   const recentMonths=(allMonths||Object.keys(MONTHLY).sort()).slice(-6);
   const vendorMonths={};
+  // Debt service (mortgage/auto/student/personal loans) satisfies the exact
+  // same "same vendor, 3+ of last 6 months, consistent amount" shape a real
+  // subscription does, but isn't one -- it's already tracked in Net Worth/
+  // Liabilities, has a defined payoff schedule, and isn't something a user
+  // "cancels" the way they'd cancel a forgotten streaming service. Checked
+  // against the raw description (not the resolved vendor name) so this
+  // still catches the charge even if a user has renamed/merged it via a
+  // vendor alias to something that no longer literally contains the word.
+  // \bloan\b as a single keyword covers every loan type (auto/student/
+  // personal/car) without needing to enumerate them.
+  const DEBT_KEYWORDS=/\b(mortgage|loan)\b/i;
   // Missing state.activeSources.has(t.card) until the 34th adversarial
   // pass -- every comparable spend-aggregating view in the app (getBaseTxs()
   // and its ~45 call sites) respects the user's deselected-source filter;
@@ -9983,7 +9994,7 @@ function detectSubscriptions(allMonths,latestFullM){
   // (every is_offset entry is definitionally negative), but it's left in
   // place rather than removed, matching this file's established pattern
   // of layering guards rather than replacing a working, documented one.
-  state.transactions.filter(t=>isRealSpend(t)&&!t.is_offset&&t.amount>0&&!state.excludedCats.has(t.cat)&&state.activeSources.has(t.card)&&recentMonths.includes(t.date.slice(0,7))&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).forEach(t=>{
+  state.transactions.filter(t=>isRealSpend(t)&&!t.is_offset&&t.amount>0&&!DEBT_KEYWORDS.test(t.desc)&&!state.excludedCats.has(t.cat)&&state.activeSources.has(t.card)&&recentMonths.includes(t.date.slice(0,7))&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).forEach(t=>{
     const v=resolveVendor(t.desc);
     if(!vendorMonths[v])vendorMonths[v]=[];
     vendorMonths[v].push({m:t.date.slice(0,7),amt:t.amount,desc:t.desc,cat:t.cat});

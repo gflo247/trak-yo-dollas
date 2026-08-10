@@ -4663,7 +4663,7 @@ test("detectSubscriptions: sums ALL of a vendor's entries in the latest month, n
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function detectSubscriptions\(allMonths,latestFullM\)\{[\s\S]{0,4700}?return\{subVendors,subTotal\};/);
+  const fnMatch = source.match(/function detectSubscriptions\(allMonths,latestFullM\)\{[\s\S]{0,5500}?return\{subVendors,subTotal\};/);
   assert.ok(fnMatch, "detectSubscriptions() should exist");
   assert.match(
     fnMatch[0],
@@ -7435,4 +7435,54 @@ test("Possible duplicates pill is registered in PILL_DEFS and its modal is wired
     /data-action="openDuplicateChargesModal" tabindex="0" role="button"/,
     "the pill itself should open the modal on click"
   );
+});
+
+// Finding: detectSubscriptions() satisfied on Mortgage in the live demo
+// data (Profile 2: $426.76/mo, 3 months, well within the 20% variance
+// band) -- confirmed live before writing this test. Nicholas asked
+// whether a mortgage should count as a "subscription" at all: it
+// shouldn't -- it's debt service already tracked in Net Worth/
+// Liabilities, has a defined payoff schedule, and isn't something a
+// user "cancels" the way they'd cancel a forgotten streaming service.
+// Excluded via a description keyword check (mortgage/loan) rather than
+// category, since the category this lands in ("Home") also legitimately
+// holds real subscriptions (lawn care, home security monitoring) that a
+// category-wide exclusion would have silently swept out too. \bloan\b
+// as one keyword covers every loan type (auto/student/personal/car)
+// without enumerating each. Checked against the raw description, not
+// the resolved vendor name, so a user-renamed/merged vendor alias can't
+// accidentally defeat the exclusion.
+test("detectSubscriptions: excludes mortgage/loan payments, which satisfy the same recurring-and-consistent shape as a real subscription but aren't one", () => {
+  const mkMonths = (vendor, cat) =>
+    [1, 2, 3].map((n) => ({
+      id: n,
+      date: `2026-0${4 + n}-01`,
+      desc: vendor,
+      cat,
+      card: "chase",
+      amount: 500,
+      excluded: false,
+      isIncome: false,
+      is_offset: false,
+      biz: false,
+    }));
+  const ctx = (txs) => ({
+    MONTHLY: { "2026-05": {}, "2026-06": {}, "2026-07": {} },
+    isRealSpend: (t) => !t.excluded && !t.isIncome,
+    resolveVendor: (d) => d,
+    state: { transactions: txs, excludedCats: new Set(), activeSources: new Set(["chase"]) },
+    _bizFilter: "all",
+  });
+
+  const { detectSubscriptions: fnMortgage } = loadFunctions(["detectSubscriptions"], ctx(mkMonths("MORTGAGE PAYMENT", "Home")));
+  const mortgageResult = fnMortgage(["2026-05", "2026-06", "2026-07"], "2026-07");
+  assert.deepEqual(mortgageResult.subVendors, [], "a mortgage payment should not be listed as a subscription even though it's recurring and consistent");
+
+  const { detectSubscriptions: fnLoan } = loadFunctions(["detectSubscriptions"], ctx(mkMonths("STUDENT LOAN PMT", "Bills & Utilities")));
+  const loanResult = fnLoan(["2026-05", "2026-06", "2026-07"], "2026-07");
+  assert.deepEqual(loanResult.subVendors, [], "any loan payment (not just mortgages specifically) should be excluded");
+
+  const { detectSubscriptions: fnReal } = loadFunctions(["detectSubscriptions"], ctx(mkMonths("NETFLIX", "Entertainment")));
+  const realResult = fnReal(["2026-05", "2026-06", "2026-07"], "2026-07");
+  assert.equal(realResult.subVendors.length, 1, "an ordinary, genuinely discretionary subscription should still be detected -- the exclusion should be narrow, not sweep out real subscriptions too");
 });
