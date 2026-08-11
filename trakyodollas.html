@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-oGKjx3TPHfWsj2OngSCRMrRB1GoLmdSMKNGkx/1RJqQ=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-OEhqORevpQJvj3wGDFM6xXu1b3CuJhhJlLKQMWnxl94=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -852,6 +852,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.45rem">
       <div class="sh" style="margin:0">Net worth snapshots</div>
       <div style="display:flex;gap:6px">
+        <button data-action="exportNetWorthCSV" title="Export snapshot history as CSV" style="background:none;border:1px solid #2563EB44;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:600;color:#60A5FA;cursor:pointer" type="button">⬇ Export CSV</button>
         <button class="btn btn-sm" data-action="openHistoricalSnapshotModal" title="Backfill a past net worth data point — useful if you know what your net worth was at a specific date in the past" style="color:#60A5FA;border-color:#2563EB44" type="button">+ Add historical</button>
         <button class="btn btn-sm btn-primary" data-action="saveSnapshot" type="button">+ Save snapshot</button>
       </div>
@@ -977,6 +978,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
           <button data-action="openVendorAliasModal|closeSpendingOverflow" class="overflow-item" type="button">⟲ Merge duplicate vendors</button>
           <button data-action="openCatModal|closeSpendingOverflow" class="overflow-item" type="button">⚙ Manage categories</button>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+          <button data-action="exportAllTransactionsCSV|closeSpendingOverflow" class="overflow-item" title="All transactions, unfiltered — readable in Excel/Sheets, but no accounts/budgets/settings. For a full-fidelity backup, use Export data backup below." type="button">⬇ Export all transactions (CSV)</button>
           <button data-action="exportBackup|closeSpendingOverflow" class="overflow-item" type="button">📦 Export data backup</button>
           <button data-action="triggerImportBackup|closeSpendingOverflow" class="overflow-item" type="button">📥 Import data backup</button>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
@@ -9897,28 +9899,25 @@ function csvSafeField(s){
 // left untouched. Found in the 97th adversarial pass.
 function _stripCsvFormulaGuard(s){return /^'[=+\-@\t\r]/.test(s)?s.slice(1):s;}
 
-function exportTransactionsCSV(){
-  const txs=getSortedTxs();
-  if(!txs.length){showToast('No transactions to export','#FCD34D');return;}
-
-  // Build CSV — export what user currently sees (filtered + sorted).
-  // IsIncome and Business are included specifically so re-importing this
-  // exact export round-trips correctly (see the dedicated 'trakyodollas'
-  // import format below) — without IsIncome, every format's importer
-  // treats a positive Amount column as an expense, silently converting
-  // income to spend on reimport; without Business, every re-imported
-  // transaction silently loses its Business/Personal tag (found in the
-  // 27th adversarial pass — t.biz is read by ~30 call sites gated on
-  // _bizFilter, but was never written to or read from the CSV at all).
-  // IsOffset is included for the same reason: applyVenmoOpt() is the one
-  // place in the app that produces a negative t.amount (an offset credit
-  // that reduces a category's spend total, shown green/no-% in the tx
-  // list) — without this column, re-import stripped the sign and forced
-  // is_offset:false, silently flipping a -$50 offset credit into a +$50
-  // ordinary expense: a $100 swing on that category/month's total, not
-  // just a display change. Found in the 36th adversarial pass.
-  const headers=['Date','Description','Vendor','Category','Amount','Source','Excluded','IsIncome','Business','IsOffset'];
-  const rows=txs.map(t=>[
+// Shared by exportTransactionsCSV()/exportAllTransactionsCSV() so the two
+// stay in sync — IsIncome and Business are included specifically so
+// re-importing this exact export round-trips correctly (see the dedicated
+// 'trakyodollas' import format below) — without IsIncome, every format's
+// importer treats a positive Amount column as an expense, silently
+// converting income to spend on reimport; without Business, every
+// re-imported transaction silently loses its Business/Personal tag (found
+// in the 27th adversarial pass — t.biz is read by ~30 call sites gated on
+// _bizFilter, but was never written to or read from the CSV at all).
+// IsOffset is included for the same reason: applyVenmoOpt() is the one
+// place in the app that produces a negative t.amount (an offset credit
+// that reduces a category's spend total, shown green/no-% in the tx
+// list) — without this column, re-import stripped the sign and forced
+// is_offset:false, silently flipping a -$50 offset credit into a +$50
+// ordinary expense: a $100 swing on that category/month's total, not
+// just a display change. Found in the 36th adversarial pass.
+const TX_CSV_HEADERS=['Date','Description','Vendor','Category','Amount','Source','Excluded','IsIncome','Business','IsOffset'];
+function txToCsvRow(t){
+  return[
     t.date,
     csvSafeField(t.desc),
     csvSafeField(resolveVendor(t.desc)),
@@ -9929,22 +9928,64 @@ function exportTransactionsCSV(){
     t.isIncome?'yes':'no',
     t.biz?'yes':'no',
     t.is_offset?'yes':'no'
-  ].join(','));
-
+  ].join(',');
+}
+function downloadCSVFile(filename,headers,rows){
   const csv=[headers.join(','),...rows].join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
-  const today=new Date();
-  const dateStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-  const filterLabel=state.searchQuery?`-search-${state.searchQuery.slice(0,20)}`:state.activeCats.size>0?`-filtered`:'';
   a.href=url;
-  a.download=`trak-yo-dollas-spending-${dateStr}${filterLabel}.csv`;
+  a.download=filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+function todayDateStr(){
+  const today=new Date();
+  return`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+}
+function exportTransactionsCSV(){
+  const txs=getSortedTxs();
+  if(!txs.length){showToast('No transactions to export','#FCD34D');return;}
+  // Export what user currently sees (filtered + sorted) — see
+  // exportAllTransactionsCSV() for the unfiltered "everything" version.
+  const filterLabel=state.searchQuery?`-search-${state.searchQuery.slice(0,20)}`:state.activeCats.size>0?`-filtered`:'';
+  downloadCSVFile(`trak-yo-dollas-spending-${todayDateStr()}${filterLabel}.csv`,TX_CSV_HEADERS,txs.map(txToCsvRow));
+  showToast(`⬇ Exported ${txs.length} transactions`,'#34D399');
+}
+// Finding: Nicholas asked whether a full, unfiltered CSV export made sense
+// alongside the JSON "Export data backup" -- JSON is full-fidelity but
+// isn't readable in Excel/Sheets or shareable with an accountant, and the
+// only existing CSV export (above) silently scopes to whatever filter/
+// search happens to be active on the Spending tab, easy to mistake for
+// "everything." This one always exports the complete, unfiltered
+// state.transactions regardless of what's currently on screen.
+function exportAllTransactionsCSV(){
+  const txs=[...state.transactions].sort((a,b)=>a.date.localeCompare(b.date));
+  if(!txs.length){showToast('No transactions to export','#FCD34D');return;}
+  downloadCSVFile(`trak-yo-dollas-all-transactions-${todayDateStr()}.csv`,TX_CSV_HEADERS,txs.map(txToCsvRow));
   showToast(`⬇ Exported ${txs.length} transactions`,'#34D399');
 }
 
+// Finding: same "utility alongside the JSON backup" request as
+// exportAllTransactionsCSV() above, for the Net Worth tab's snapshot
+// history — a clean, already-tabular time series (date/net worth/assets/
+// liabilities) that's arguably an even more natural CSV shape than
+// transactions, useful for a financial advisor, your own spreadsheet
+// chart, or a portable historical record independent of the app.
+function exportNetWorthCSV(){
+  const snaps=getSortedSnaps();
+  if(!snaps.length){showToast('No snapshots to export','#FCD34D');return;}
+  const headers=['Date','Net Worth','Assets','Liabilities'];
+  const rows=snaps.map(s=>[
+    csvSafeField(s.date),
+    (Number(s.nw)||0).toFixed(2),
+    (Number(s.assets)||0).toFixed(2),
+    (Number(s.liab)||0).toFixed(2)
+  ].join(','));
+  downloadCSVFile(`trak-yo-dollas-networth-${todayDateStr()}.csv`,headers,rows);
+  showToast(`⬇ Exported ${snaps.length} snapshots`,'#34D399');
+}
 function exportBudgetCSV(){
   const budgeted=Object.entries(state.budgets).filter(([,v])=>v>0);
   if(!budgeted.length){showToast('No budgets set to export','#FCD34D');return;}

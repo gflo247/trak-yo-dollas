@@ -7731,3 +7731,84 @@ test("renderVehicles() (Physical assets) wraps entries in one shared .nw-group w
     "no vehicle/asset row should still get its own standalone bordered+margined card"
   );
 });
+
+// Finding: Nicholas asked whether a CSV download offered any utility
+// alongside the JSON "Export data backup" -- JSON is full-fidelity but
+// isn't readable in Excel/Sheets or shareable with an accountant, and the
+// only existing CSV export (exportTransactionsCSV, Spending tab) silently
+// scopes to whatever filter/search happens to be active, easy to mistake
+// for "everything." Added exportAllTransactionsCSV() (always the complete,
+// unfiltered state.transactions, wired into the overflow menu next to
+// Export data backup) and exportNetWorthCSV() (the Net Worth tab's
+// snapshot history -- date/net worth/assets/liabilities, an even more
+// natural CSV shape than transactions since it's already a clean tabular
+// time series). Extracted the shared row/download logic
+// (txToCsvRow/downloadCSVFile/todayDateStr) out of the pre-existing
+// exportTransactionsCSV() so the filtered and unfiltered transaction
+// exports can't drift apart the way the file's own comments warn similar
+// duplicated CSV-building logic has drifted before (the 27th/36th
+// adversarial passes' IsIncome/Business/IsOffset findings).
+test("exportAllTransactionsCSV: exports every transaction regardless of active filters, unlike exportTransactionsCSV", () => {
+  let capturedCsv = null;
+  const ctx = {
+    state: { transactions: [
+      { date: "2026-02-01", desc: "A", cat: "Groceries", amount: 10, card: "Checking", excluded: false, isIncome: false, biz: false, is_offset: false },
+      { date: "2026-01-01", desc: "B", cat: "Shopping", amount: 20, card: "Gold Card", excluded: false, isIncome: false, biz: false, is_offset: false },
+    ] },
+    csvSafeField: (s) => s,
+    resolveVendor: (d) => d,
+    showToast: () => {},
+    document: { createElement: () => ({ click: () => {} }) },
+    Blob: function (parts) { capturedCsv = parts[0]; },
+    URL: { createObjectURL: () => "blob:fake", revokeObjectURL: () => {} },
+    TX_CSV_HEADERS: ["Date", "Description", "Vendor", "Category", "Amount", "Source", "Excluded", "IsIncome", "Business", "IsOffset"],
+  };
+  const { exportAllTransactionsCSV } = loadFunctions(["exportAllTransactionsCSV", "txToCsvRow", "downloadCSVFile", "todayDateStr"], ctx);
+  exportAllTransactionsCSV();
+  const lines = capturedCsv.split("\n");
+  assert.equal(lines.length, 3, "header row plus both transactions, regardless of any filter state (none was even passed in)");
+  assert.ok(lines[1].startsWith("2026-01-01"), "should be sorted oldest-first");
+  assert.ok(lines[2].startsWith("2026-02-01"));
+});
+
+test("exportNetWorthCSV: exports snapshot history as Date/Net Worth/Assets/Liabilities, oldest first", () => {
+  let capturedCsv = null;
+  const ctx = {
+    state: { snapshots: [
+      { date: "Jun 30, 2026", monthKey: "2026-06", nw: 100000, assets: 120000, liab: 20000 },
+      { date: "Jan 31, 2026", monthKey: "2026-01", nw: 90000, assets: 110000, liab: 20000 },
+    ] },
+    csvSafeField: (s) => s,
+    showToast: () => {},
+    document: { createElement: () => ({ click: () => {} }) },
+    Blob: function (parts) { capturedCsv = parts[0]; },
+    URL: { createObjectURL: () => "blob:fake", revokeObjectURL: () => {} },
+  };
+  const { exportNetWorthCSV } = loadFunctions(["exportNetWorthCSV", "downloadCSVFile", "todayDateStr", "getSortedSnaps", "_snapshotSortCompare"], ctx);
+  exportNetWorthCSV();
+  const lines = capturedCsv.split("\n");
+  assert.equal(lines[0], "Date,Net Worth,Assets,Liabilities");
+  assert.equal(lines[1], "Jan 31, 2026,90000.00,110000.00,20000.00", "should sort oldest-first, matching getSortedSnaps()");
+  assert.equal(lines[2], "Jun 30, 2026,100000.00,120000.00,20000.00");
+});
+
+test("Export all transactions (CSV) and Export CSV (Net Worth snapshots) are wired into the UI", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /data-action="exportAllTransactionsCSV\|closeSpendingOverflow"/,
+    "the overflow menu should have an entry wired to exportAllTransactionsCSV"
+  );
+  assert.match(
+    source,
+    /data-action="exportNetWorthCSV" title="Export snapshot history as CSV"/,
+    "the Net Worth tab's snapshot header should have an Export CSV button wired to exportNetWorthCSV"
+  );
+  assert.match(
+    source,
+    /const TX_CSV_HEADERS=\['Date','Description','Vendor','Category','Amount','Source','Excluded','IsIncome','Business','IsOffset'\];/,
+    "TX_CSV_HEADERS should match the header list the exportAllTransactionsCSV test mocks in its context"
+  );
+});
