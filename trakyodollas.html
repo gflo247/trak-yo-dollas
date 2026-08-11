@@ -542,7 +542,22 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   .show-mobile{display:inline!important}
   #spending-start-here{display:none!important}
   #demo-nudge{font-size:11px;padding:6px .75rem;line-height:1.5}
-  #demo-nav-badge{font-size:8px;padding:4px 8px;letter-spacing:.03em;white-space:nowrap;text-align:center;line-height:1.3;max-width:none}
+  /* !important on every property this shares with the later, unconditional
+     #demo-nav-badge rule below (~line 593 base styles) -- without it, this
+     "mobile override" never actually won the cascade: media-query
+     wrapping doesn't add specificity, so the later unconditional rule
+     (same #id selector, tied specificity) always overrode it regardless
+     of viewport width. The badge had been rendering at full desktop size
+     (10px font, 4px 10px padding) on mobile this whole time. Confirmed
+     with a direct getComputedStyle test isolating the two rules before
+     concluding this wasn't just a "make it smaller" request but a real,
+     previously-silent bug -- found while investigating a related report
+     that #auth-sign-in-btn's own mobile shrink wasn't visually applying
+     either (same bug class, there via inline-style-beats-no-!important
+     instead of source order, see #auth-sign-in-btn below). Padding also
+     tightened further than the original (never-applied) 8px, per direct
+     request to conserve more horizontal space. */
+  #demo-nav-badge{font-size:8px!important;padding:4px 5px!important;letter-spacing:.03em!important;white-space:nowrap;text-align:center;line-height:1.3;max-width:none}
   .nav-btn{font-size:10px;padding:10px 2px 8px;letter-spacing:.03em}
   .page{padding:.65rem}
   .flex-between{flex-wrap:wrap;gap:.5rem}
@@ -558,8 +573,21 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   #range-dropdowns-inline{width:100%}
   .quick-chips .h-btn,.grain-row .h-btn{padding:8px 6px;min-height:36px}
   #auth-bar{padding:0 4px;gap:3px}
-  #theme-toggle-btn{padding:2px 5px;font-size:11px}
-  #auth-sign-in-btn{font-size:9px;padding:2px 7px}
+  /* !important on both -- neither button's mobile shrink was actually
+     applying. Both #theme-toggle-btn and #auth-sign-in-btn carry an
+     inline style="...font-size:...;padding:..." (set directly on the
+     element, not via a class), and an inline style always beats an
+     external selector rule of ANY specificity unless that rule has
+     !important -- matching .btn-privacy-nav's own mobile rule a few
+     lines below, which already (correctly) uses !important for the
+     identical reason. Confirmed directly via getComputedStyle before
+     fixing: both reported their full desktop size at a width well past
+     this breakpoint. #auth-sign-in-btn found while investigating why it
+     looked a different size than the Privacy button next to it on
+     mobile; #theme-toggle-btn has the identical bug shape and was fixed
+     alongside it rather than left silently broken next to the fix. */
+  #theme-toggle-btn{padding:2px 5px!important;font-size:11px!important}
+  #auth-sign-in-btn{font-size:9px!important;padding:2px 7px!important}
   #auth-sign-out-btn{font-size:9px;padding:2px 7px;white-space:nowrap}
   #auth-user-label{display:none!important}
   .btn-privacy-nav{font-size:9px!important;padding:2px 6px!important}
@@ -611,8 +639,16 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
    to 11px) -- that base was reading small at desktop viewing distance,
    with no touch-target constraint to justify staying tiny. Bumped both
    together on desktop only, so they still read as a matched pair, and
-   the mobile sizing Nicholas confirmed was already fine stays untouched. */
-@media(min-width:601px){#global-settings-btn,#theme-toggle-btn{font-size:15px;padding:3px 9px}}
+   the mobile sizing Nicholas confirmed was already fine stays untouched.
+   !important required -- both buttons carry an inline style="...
+   font-size:12px..." set directly on the element, which otherwise always
+   wins over this external rule regardless of specificity. Missed the
+   first time this rule was added; caught via a direct getComputedStyle
+   check (12px, not 15px, at 1618px width) while investigating a related
+   mobile-sizing report -- the earlier "looks noticeably clearer" verification
+   was a screenshot judgment call, not a computed-style check, and this rule
+   had silently never applied. */
+@media(min-width:601px){#global-settings-btn,#theme-toggle-btn{font-size:15px!important;padding:3px 9px!important}}
 
 /* Sankey flow */
 .sankey-nudge{background:var(--bg-card);border:1.5px dashed var(--border-mid);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer}
@@ -824,7 +860,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <span id="auth-user-label" style="font-size:10px;color:var(--text-muted);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
   </div>
   <button data-action="openPrivacyPanel" class="btn btn-sm btn-primary btn-privacy-nav" style="font-size:10px;padding:3px 10px;white-space:nowrap" type="button"><span class="hide-mobile">🔒 Privacy</span><span class="show-mobile">🔒</span></button>
-  <button id="auth-sign-in-btn" class="btn btn-sm btn-primary" data-action="openAuthModal" style="font-size:10px;padding:3px 10px" title="Save snapshots, custom categories &amp; transaction edits across devices" type="button"><span class="hide-mobile">👤 Sign In</span><span class="show-mobile">👤</span></button>
+  <button id="auth-sign-in-btn" class="btn btn-sm" data-action="openAuthModal" style="font-size:10px;padding:3px 10px;color:#60A5FA;border-color:#2563EB44" title="Save snapshots, custom categories &amp; transaction edits across devices" type="button"><span class="hide-mobile">👤 Sign In</span><span class="show-mobile">👤</span></button>
   <button id="auth-sign-out-btn" class="btn btn-sm hidden" data-action="doSignOut" style="font-size:10px;padding:3px 10px;color:var(--text-muted)" type="button">Sign out</button>
 </div>
 </nav>

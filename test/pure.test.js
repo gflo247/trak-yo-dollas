@@ -7890,3 +7890,57 @@ test("#auth-sign-in-btn shows '👤 Sign In' on desktop and just 👤 on mobile,
     "should not have introduced a second lock-family icon next to the existing 🔒 Privacy button"
   );
 });
+
+// Finding: Nicholas reported #auth-sign-in-btn didn't look the same size as
+// the Privacy button next to it on mobile, and that the 👤 icon was hard to
+// see against Sign In's solid blue background. Root-caused, not just
+// restyled:
+// (1) #global-settings-btn/#theme-toggle-btn/#auth-sign-in-btn all carry an
+//     inline style="...font-size:...;padding:..." set directly on the
+//     element -- an inline style always beats an external selector rule of
+//     ANY specificity unless that rule has !important. The mobile-shrink
+//     rules for these three (and this session's own earlier desktop-bump
+//     rule for the first two) lacked !important, so none of them had ever
+//     actually applied -- confirmed directly via getComputedStyle before
+//     fixing, not assumed. .btn-privacy-nav's own mobile rule already
+//     (correctly) used !important, which is exactly why Privacy looked
+//     right while its neighbors didn't.
+// (2) #demo-nav-badge had a DIFFERENT bug with the same symptom: no inline
+//     style, but its "mobile" rule and its later unconditional base rule
+//     have tied specificity (same #id selector) -- media-query wrapping
+//     doesn't add specificity, so the LATER rule in source order (the
+//     unconditional base, listed after the mobile block) always won
+//     regardless of viewport. Confirmed with an isolated two-rule test
+//     before concluding this wasn't just a "make it smaller" request.
+// (3) Sign In's 👤 contrast: dropped the btn-primary class (solid blue
+//     fill) for the same ghost-blue treatment "+ Add historical" already
+//     uses elsewhere (color:#60A5FA;border-color:#2563EB44;background
+//     inherited as none from .btn's own base) -- emoji glyphs render in a
+//     fixed color set by the OS font, not CSS `color`, so no amount of
+//     text-color tuning fixes a low-contrast icon on a strong fill; only
+//     removing the fill does. ──
+test("The nav's mobile-shrink and desktop-bump rules for #demo-nav-badge/#theme-toggle-btn/#global-settings-btn/#auth-sign-in-btn use !important so they actually beat inline styles and source-order ties, and Sign In no longer has a solid blue fill", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /#demo-nav-badge\{font-size:8px!important;padding:4px 5px!important;letter-spacing:\.03em!important/,
+    "#demo-nav-badge's mobile rule should use !important to beat the later, tied-specificity base rule"
+  );
+  assert.match(
+    source,
+    /#theme-toggle-btn\{padding:2px 5px!important;font-size:11px!important\}\s*\n\s*#auth-sign-in-btn\{font-size:9px!important;padding:2px 7px!important\}/,
+    "#theme-toggle-btn and #auth-sign-in-btn's mobile rules should use !important to beat their own inline styles"
+  );
+  assert.match(
+    source,
+    /@media\(min-width:601px\)\{#global-settings-btn,#theme-toggle-btn\{font-size:15px!important;padding:3px 9px!important\}\}/,
+    "the desktop icon-bump rule should use !important to beat the inline styles on both buttons"
+  );
+  assert.match(
+    source,
+    /<button id="auth-sign-in-btn" class="btn btn-sm" data-action="openAuthModal" style="font-size:10px;padding:3px 10px;color:#60A5FA;border-color:#2563EB44"/,
+    "#auth-sign-in-btn should no longer carry btn-primary's solid blue fill, using the same ghost-blue treatment as '+ Add historical'"
+  );
+});
