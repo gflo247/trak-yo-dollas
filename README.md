@@ -192,14 +192,12 @@ The app uses a hash-based Content Security Policy — inline scripts are allowli
 ## Security
 
 - **Hash-based CSP** — `script-src` uses SHA-256 hashes for every inline script block; no `unsafe-inline`. `scripts/update-csp-hashes.py` recomputes hashes automatically.
-- **Self-hosted fonts** — eliminates the Google Fonts request on every page load
 - **Security headers on all responses** — `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`
 - **`noindex` on the app page** — search traffic lands on the landing page, not the bare tool
 - **All external links** use `rel="noopener noreferrer"`
-- **Passwordless email sign-in** — magic link via Supabase; no password stored anywhere
-- **Google auth via redirect flow** — Supabase OAuth always uses redirect (no popups), reliable across all browsers and mobile
+- **Sign-in security** — the passwordless email link stores no password anywhere; Google OAuth always uses the redirect flow (no popups), reliable across all browsers and mobile
 - **Community pattern submissions** are reviewed manually as plain text before any changes deploy
-- My GitHub and Google accounts use two-factor authentication
+- **GitHub 2FA** — my GitHub account, the source of this code, uses two-factor authentication
 - **WCAG AA accessible** — text contrast, focus states, and keyboard navigation meet AA standards in both light and dark themes, across all three pages
 
 ---
