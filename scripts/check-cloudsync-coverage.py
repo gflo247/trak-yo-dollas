@@ -95,6 +95,13 @@ NEVER_SYNCED_KNOWN_FALSE_POSITIVES = {
         # hasRealData is true. Syncing a stale value across devices would be actively wrong, not just useless: it
         # would make another device silently reload/replace ITS OWN cached demo session based on a version stamp
         # that has nothing to do with what that device is showing.
+    'rangeFrom', 'rangeTo', 'chartGrain',  # August 10, 2026: confirmed the same device-local "what am I
+        # currently viewing" category as activeSources above -- the selected Spending-tab date-range filter and
+        # chart granularity, not data. No reason a second device should be forced onto the same window/grain the
+        # first happened to be showing.
+    'sourceAlignDate', 'sourceAlignSkipped',  # August 10, 2026: whether the multi-source-alignment nudge has
+        # been dismissed and when -- a one-time "seen this" flag, not data. Worst case of not syncing is seeing
+        # the nudge again on a second device; not worth the sync-payload weight for that.
 }
 
 
