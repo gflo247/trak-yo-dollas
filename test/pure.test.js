@@ -7169,7 +7169,13 @@ test("Top 5 Categories stays screen-right on mobile, matching desktop's side-by-
     /#spend-top5-inline,#spend-top5-vendors\{display:none\}/,
     "the old rule hiding both lists outright should be gone"
   );
-  const rowStyle = 'font-size:12px;font-weight:600;color:rgba(255,255,255,.75);margin-bottom:2px;display:flex;justify-content:space-between;gap:14px';
+  // color:var(--text-primary), not the original hardcoded color:rgba(255,255,255,.75)
+  // -- that hardcoded white was invisible in light theme (white-on-near-white),
+  // found August 11, 2026 from a landing-page hero screenshot Nicholas took that
+  // showed the "TOP 5 CATEGORIES"/"TOP 5 VENDORS" headers with no rows visible
+  // underneath in light mode. The row content was present in the DOM the whole
+  // time (confirmed live) -- purely a contrast bug, not missing data.
+  const rowStyle = 'font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:2px;display:flex;justify-content:space-between;gap:14px';
   assert.equal(
     source.split(rowStyle).length - 1,
     2,
