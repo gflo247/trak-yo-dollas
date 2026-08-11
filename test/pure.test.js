@@ -93,19 +93,14 @@ test("classifyBudgetStatus: not at-risk for a non-current (historical) month", (
 // nonsensical "$0 over budget" label (fmt() rounds to whole dollars,
 // so the sub-cent difference renders as $0). Found in the 141st
 // adversarial pass. ──
-test("classifyBudgetStatus: a sub-cent float-accumulation overshoot doesn't flip a category to OVER", () => {
+test("classifyBudgetStatus: a sub-cent float-accumulation overshoot doesn't flip a category to OVER, but a genuine overspend (well beyond the epsilon) still does", () => {
   const { classifyBudgetStatus } = loadFunctions(["classifyBudgetStatus"]);
   // The classic 0.1+0.2 float-noise shape: spend lands a hair above
   // budget purely from accumulated floating-point error, not a real
   // overspend.
   const noisySpend = 0.1 + 0.2 + 299.7; // === 300.00000000000006, not exactly 300
-  const result = classifyBudgetStatus(noisySpend, 300, true, 0.9, 80);
-  assert.equal(result.over, false, "a sub-cent float overshoot should not be classified as over budget");
-});
-test("classifyBudgetStatus: a genuine overspend (well beyond the epsilon) is still correctly flagged as over", () => {
-  const { classifyBudgetStatus } = loadFunctions(["classifyBudgetStatus"]);
-  const result = classifyBudgetStatus(300.5, 300, true, 0.9, 80);
-  assert.equal(result.over, true, "a real 50-cent overspend should still be classified as over budget");
+  assert.equal(classifyBudgetStatus(noisySpend, 300, true, 0.9, 80).over, false, "a sub-cent float overshoot should not be classified as over budget");
+  assert.equal(classifyBudgetStatus(300.5, 300, true, 0.9, 80).over, true, "a real 50-cent overspend should still be classified as over budget");
 });
 
 // ── 142nd adversarial pass ──────────────────────────────────────────────
@@ -120,34 +115,19 @@ test("classifyBudgetStatus: a genuine overspend (well beyond the epsilon) is sti
 // extracted to eliminate (see its own header comment and the 44th
 // pass's near-identical fix for the warnPct boundary). Found in the
 // 142nd adversarial pass, re-verifying the 141st pass's own fix. ──
-test("compact budget badge dot/pct color use the same float-noise epsilon as classifyBudgetStatus()", () => {
+test("the 4 sibling dot/pct-color render sites (compact badge, buildCondensedDots/buildPctDots, hero history dots, inline per-cat dots) all use the same float-noise epsilon as classifyBudgetStatus()", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const matches = source.match(/curAmt>budget\+0\.005\?'#F87171':curAmt\/budget>0\.8\?'#FBBF24':'#34D399'/g) || [];
-  assert.equal(matches.length, 2, "both the dot and the % text color should use the same epsilon-tolerant comparison");
-});
-test("buildCondensedDots()/buildPctDots() use the same float-noise epsilon as classifyBudgetStatus()", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const matches = source.match(/ms>limit\+0\.005\?'#F87171':mp>=warnPct\?'#FBBF24':'#34D399'/g) || [];
-  assert.equal(matches.length, 2, "both buildCondensedDots() and buildPctDots() should use the same epsilon-tolerant comparison");
-});
-test("the hero 12-month history dots use the same float-noise epsilon as classifyBudgetStatus()", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const badgeMatches = source.match(/curAmt>budget\+0\.005\?'#F87171':curAmt\/budget>0\.8\?'#FBBF24':'#34D399'/g) || [];
+  assert.equal(badgeMatches.length, 2, "both the compact badge's dot and % text color should use the same epsilon-tolerant comparison");
+  const condensedMatches = source.match(/ms>limit\+0\.005\?'#F87171':mp>=warnPct\?'#FBBF24':'#34D399'/g) || [];
+  assert.equal(condensedMatches.length, 2, "both buildCondensedDots() and buildPctDots() should use the same epsilon-tolerant comparison");
   assert.match(
     source,
     /mSpent>totalBudget\+0\.005\?'#F87171':mPct>=warnPct\?'#FBBF24':'#34D399'/,
     "the hero history dots should use the same epsilon-tolerant comparison"
   );
-});
-test("the inline per-cat condensed dots use the same float-noise epsilon as classifyBudgetStatus()", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
     /ms>budget\+0\.005\?'#F87171':mp>=warnPct\?'#FBBF24':'#34D399'/,
@@ -492,21 +472,12 @@ test("_getOrCreateSalt: lost the insert race — re-fetches and returns the winn
 // `!t.excluded&&!t.isIncome` during the 10th adversarial pass (July 6,
 // 2026). A category rule can retag t.cat but never t.isIncome, which is
 // why isIncome (not cat) is the field this must check. ──
-test("isRealSpend: a normal, non-excluded, non-income transaction counts as spend", () => {
+test("isRealSpend: normal/excluded/income/excluded+income cases", () => {
   const { isRealSpend } = loadFunctions(["isRealSpend"]);
-  assert.equal(isRealSpend({ excluded: false, isIncome: false }), true);
-});
-test("isRealSpend: a manually-excluded transaction never counts as spend", () => {
-  const { isRealSpend } = loadFunctions(["isRealSpend"]);
-  assert.equal(isRealSpend({ excluded: true, isIncome: false }), false);
-});
-test("isRealSpend: an income transaction never counts as spend, even if a category rule retagged its cat away from 'Income'", () => {
-  const { isRealSpend } = loadFunctions(["isRealSpend"]);
-  assert.equal(isRealSpend({ excluded: false, isIncome: true, cat: "Salary" }), false);
-});
-test("isRealSpend: excluded and income together still returns false, not a crash", () => {
-  const { isRealSpend } = loadFunctions(["isRealSpend"]);
-  assert.equal(isRealSpend({ excluded: true, isIncome: true }), false);
+  assert.equal(isRealSpend({ excluded: false, isIncome: false }), true, "a normal, non-excluded, non-income transaction counts as spend");
+  assert.equal(isRealSpend({ excluded: true, isIncome: false }), false, "a manually-excluded transaction never counts as spend");
+  assert.equal(isRealSpend({ excluded: false, isIncome: true, cat: "Salary" }), false, "an income transaction never counts as spend, even if a category rule retagged its cat away from 'Income'");
+  assert.equal(isRealSpend({ excluded: true, isIncome: true }), false, "excluded and income together still returns false, not a crash");
 });
 
 // ── saveToLocalStorage() / scheduleSave() persistence gates — the CRITICAL
@@ -1122,38 +1093,27 @@ test("computePeriodSpendVsIncome: calls detectDepositIncome() at most once per i
 // exact bug that fix addressed, since it was never ported to the Year in
 // Review feature's own separate month-window calculation. Both now call the
 // shared sumIncomeForMonths() helper directly. ──
-test("sumIncomeForMonths: sums each month's auto-detected income instead of multiplying the latest month's figure by month count", () => {
+test("sumIncomeForMonths: sums each month's auto-detected income instead of multiplying the latest month's figure by month count; declared/manual income is unaffected by the per-month sum", () => {
   let calls = 0;
-  const ctx = {
+  const autoCtx = {
     detectDepositIncome: () => {
       calls++;
       return { byMonth: { "2026-05": 3000, "2026-06": 6000, "2026-07": 3000 }, avgMonthly: 4000 };
     },
     getEffectiveIncome: () => 0,
-    state: {
-      income: { method: "auto", monthlyAmount: 0 },
-      declaredIncome: 0,
-    },
+    state: { income: { method: "auto", monthlyAmount: 0 }, declaredIncome: 0 },
   };
-  const { sumIncomeForMonths } = loadFunctions(["sumIncomeForMonths"], ctx);
-  const result = sumIncomeForMonths(["2026-05", "2026-06", "2026-07"]);
-  assert.equal(result, 12000, "should sum $3000 + $6000 + $3000, not multiply July's $3000 by 3 months");
+  const autoResult = loadFunctions(["sumIncomeForMonths"], autoCtx).sumIncomeForMonths(["2026-05", "2026-06", "2026-07"]);
+  assert.equal(autoResult, 12000, "should sum $3000 + $6000 + $3000, not multiply July's $3000 by 3 months");
   assert.equal(calls, 1, "detectDepositIncome() should be called once, not once per month");
-});
-test("sumIncomeForMonths: declared/manual income (constant per month) is unaffected by the per-month sum", () => {
-  const ctx = {
-    detectDepositIncome: () => {
-      throw new Error("should not be called for declared income");
-    },
+
+  const manualCtx = {
+    detectDepositIncome: () => { throw new Error("should not be called for declared income"); },
     getEffectiveIncome: () => 2500,
-    state: {
-      income: { method: "manual", monthlyAmount: 2500 },
-      declaredIncome: 3000,
-    },
+    state: { income: { method: "manual", monthlyAmount: 2500 }, declaredIncome: 3000 },
   };
-  const { sumIncomeForMonths } = loadFunctions(["sumIncomeForMonths"], ctx);
-  const result = sumIncomeForMonths(["2026-05", "2026-06", "2026-07"]);
-  assert.equal(result, 7500, "3 months of the same $2500 getEffectiveIncome() figure");
+  const manualResult = loadFunctions(["sumIncomeForMonths"], manualCtx).sumIncomeForMonths(["2026-05", "2026-06", "2026-07"]);
+  assert.equal(manualResult, 7500, "3 months of the same $2500 getEffectiveIncome() figure");
 });
 
 // ── 78th adversarial pass: detectDepositIncome() never checked _bizFilter,
@@ -1289,27 +1249,24 @@ test("cancelSyncPassphrase: does NOT sign out when opened via openSyncPassphrase
 // 69th adversarial passes. Prefers the modern acctId link; falls back to
 // the pre-acctId legacy match (type + exact name) for records saved before
 // the 35th pass introduced acctId. ──
-test("isPairedAccount: matches by acctId when set, ignoring type/name entirely", () => {
+test("isPairedAccount: acctId match, legacy type+name fallback, and the exclude set", () => {
   const { isPairedAccount } = loadFunctions(["isPairedAccount"]);
-  const v = { acctId: 42, name: "irrelevant" };
-  assert.equal(isPairedAccount({ id: 42, type: "cash", name: "different" }, v), true);
-  assert.equal(isPairedAccount({ id: 43, type: "vehicle", name: "irrelevant" }, v), false);
-});
-test("isPairedAccount: legacy record (acctId null) falls back to type + exact name match", () => {
-  const { isPairedAccount } = loadFunctions(["isPairedAccount"]);
-  const v = { acctId: null, name: "2021 Honda CR-V" };
-  assert.equal(isPairedAccount({ id: 1, type: "vehicle", name: "2021 Honda CR-V" }, v), true);
-  assert.equal(isPairedAccount({ id: 2, type: "other-asset", name: "2021 Honda CR-V" }, v), true, "other-asset is a valid paired type too, not just vehicle");
-  assert.equal(isPairedAccount({ id: 3, type: "cash", name: "2021 Honda CR-V" }, v), false, "name match alone isn't enough -- type must be vehicle or other-asset");
-  assert.equal(isPairedAccount({ id: 4, type: "vehicle", name: "Different Name" }, v), false);
-});
-test("isPairedAccount: legacy record respects the exclude set, so ambiguous same-named siblings don't both claim the same account", () => {
-  const { isPairedAccount } = loadFunctions(["isPairedAccount"]);
-  const v = { acctId: null, name: "Boat" };
-  const acct = { id: 5, type: "other-asset", name: "Boat" };
-  assert.equal(isPairedAccount(acct, v), true);
-  assert.equal(isPairedAccount(acct, v, new Set([5])), false, "an excluded account id should never match, even with an otherwise-correct type+name");
-  assert.equal(isPairedAccount(acct, v, new Set([6])), true, "excluding an unrelated id shouldn't affect the match");
+
+  const v1 = { acctId: 42, name: "irrelevant" };
+  assert.equal(isPairedAccount({ id: 42, type: "cash", name: "different" }, v1), true, "matches by acctId when set, ignoring type/name entirely");
+  assert.equal(isPairedAccount({ id: 43, type: "vehicle", name: "irrelevant" }, v1), false);
+
+  const v2 = { acctId: null, name: "2021 Honda CR-V" };
+  assert.equal(isPairedAccount({ id: 1, type: "vehicle", name: "2021 Honda CR-V" }, v2), true, "legacy record (acctId null) falls back to type + exact name match");
+  assert.equal(isPairedAccount({ id: 2, type: "other-asset", name: "2021 Honda CR-V" }, v2), true, "other-asset is a valid paired type too, not just vehicle");
+  assert.equal(isPairedAccount({ id: 3, type: "cash", name: "2021 Honda CR-V" }, v2), false, "name match alone isn't enough -- type must be vehicle or other-asset");
+  assert.equal(isPairedAccount({ id: 4, type: "vehicle", name: "Different Name" }, v2), false);
+
+  const v3 = { acctId: null, name: "Boat" };
+  const acct3 = { id: 5, type: "other-asset", name: "Boat" };
+  assert.equal(isPairedAccount(acct3, v3), true);
+  assert.equal(isPairedAccount(acct3, v3, new Set([5])), false, "a legacy record respects the exclude set -- an excluded account id should never match, even with an otherwise-correct type+name (so ambiguous same-named siblings don't both claim the same account)");
+  assert.equal(isPairedAccount(acct3, v3, new Set([6])), true, "excluding an unrelated id shouldn't affect the match");
 });
 
 // ── 70th adversarial pass: deleteVehicle()'s legacy fallback removed EVERY
@@ -1487,8 +1444,8 @@ test("exportBudgetCSV: a completed PAST month landing in the warn-to-100% band r
 // numeric-looking category name (e.g. "2024") arrives as a real Number, not
 // a string -- restoreCat()/toggleCatExclusion() already guard against this
 // exact coercion risk with their own String(cat) cast; these two didn't. ──
-test("confirmCatExclusion: a numeric-looking category name (coerced to a Number by the dispatcher) is stored as a string, matching how every consumer checks state.excludedCats.has(t.cat)", () => {
-  const ctx = {
+test("confirmCatExclusion/undoCatExclusion: a numeric-looking category name (coerced to a Number by the dispatcher) is stored as a string and can then be correctly undone", () => {
+  const confirmCtx = {
     state: { excludedCats: new Set(), activeCats: new Set([2024]) },
     scheduleSave: () => {},
     renderSourceChips: () => {},
@@ -1500,12 +1457,10 @@ test("confirmCatExclusion: a numeric-looking category name (coerced to a Number 
     tc: (dark) => dark,
     showToast: () => {},
   };
-  const { confirmCatExclusion } = loadFunctions(["confirmCatExclusion"], ctx);
-  confirmCatExclusion(2024); // dispatcher would pass the Number 2024, not the string "2024"
-  assert.deepEqual([...ctx.state.excludedCats], ["2024"], "should be stored as a string, not the Number 2024");
-});
-test("undoCatExclusion: a numeric-looking category name (coerced to a Number) correctly removes the string entry confirmCatExclusion() actually stored", () => {
-  const ctx = {
+  loadFunctions(["confirmCatExclusion"], confirmCtx).confirmCatExclusion(2024); // dispatcher would pass the Number 2024, not the string "2024"
+  assert.deepEqual([...confirmCtx.state.excludedCats], ["2024"], "confirmCatExclusion should store it as a string, not the Number 2024, matching how every consumer checks state.excludedCats.has(t.cat)");
+
+  const undoCtx = {
     state: { excludedCats: new Set(["2024"]) },
     scheduleSave: () => {},
     renderSourceChips: () => {},
@@ -1516,9 +1471,8 @@ test("undoCatExclusion: a numeric-looking category name (coerced to a Number) co
     esc: (s) => String(s),
     showToast: () => {},
   };
-  const { undoCatExclusion } = loadFunctions(["undoCatExclusion"], ctx);
-  undoCatExclusion(2024); // dispatcher-coerced Number, same as a real click on the new Undo button
-  assert.equal(ctx.state.excludedCats.size, 0, "should remove the string entry, not silently fail to match a Number against it");
+  loadFunctions(["undoCatExclusion"], undoCtx).undoCatExclusion(2024); // dispatcher-coerced Number, same as a real click on the new Undo button
+  assert.equal(undoCtx.state.excludedCats.size, 0, "undoCatExclusion should remove the string entry confirmCatExclusion() actually stored, not silently fail to match a Number against it");
 });
 
 // ── 74th adversarial pass: removeBudget()'s Undo toast only ever passed 2
@@ -1718,19 +1672,17 @@ test("renderNwGoalWidget: progress fraction is clamped to [0,1], not just <=1 --
 // fillPct fed a CSS width%, and ringHTML's arcPct fed a conic-gradient
 // stop -- both invalid when negative, silently breaking the visual fill
 // (a "full" bar or a blank ring) instead of correctly showing empty. ──
-test("barTicksHTML: fillPct floors at 0 for a net-refunded (negative spend) category, not a negative CSS width%", () => {
+test("barTicksHTML/ringHTML: fillPct/arcPct both floor at 0 for a net-refunded (negative spend/ytd) category, instead of a negative CSS width%/conic-gradient stop", () => {
   const { barTicksHTML } = loadFunctions(["barTicksHTML"], { fmt: (n) => "$" + Math.abs(n).toLocaleString(), COMBO_TICK_PCT: 6 });
   assert.equal(barTicksHTML(100, 80, -50, true).fillPct, 0, "negative spend should floor fillPct at 0, not produce a negative CSS width%");
   assert.ok(barTicksHTML(100, 80, 50, true).fillPct > 0, "positive spend below the scale max is unaffected");
-});
-test("ringHTML: arcPct formula floors at 0 for a net-refunded (negative ytd) category, not a negative conic-gradient stop", () => {
+
   // ringHTML() takes a destructured `{ytd,ytdPace}` parameter, which the
   // extraction harness's brace-counter can't handle (it stops at the
   // destructured param's own closing brace, mistaking it for the function
   // body's end) -- a pre-existing loadFunctions() limitation unrelated to
-  // this fix, not something to work around by changing shared test
-  // infrastructure mid-pass. Checking the source pattern directly instead,
-  // same approach as the renderNwGoalWidget test above.
+  // this fix. Checking the source pattern directly instead, then
+  // re-deriving the same formula to exercise the actual floor behavior.
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
@@ -2241,35 +2193,29 @@ test("confirmRenameCat: updates state.treemapDrillCat and the _treemapPrevActive
 // -- toggling "Show in totals" while previewing a demo (over real saved
 // data, or via the marketing ?demoPreview=1 link) leaked a demo-only
 // preference into the visitor's next real session. ──
-test("toggleExcluded: persists trakyo_show_excl to localStorage during a normal session", () => {
-  let stored = null;
-  const ctx = {
-    state: { showExcluded: false },
-    window: {},
-    localStorage: { setItem: (k, v) => { stored = [k, v]; } },
-    document: { getElementById: () => null },
-    renderSourceChips: () => {}, renderSpendSummary: () => {}, renderBucketGrid: () => {}, renderTxList: () => {}, renderActiveChart: () => {},
-    showTxN: 50,
+test("toggleExcluded: persists to localStorage during a normal session, but not during a demo-preview session", () => {
+  const mkCtx = (windowOverrides) => {
+    let stored = null;
+    const ctx = {
+      state: { showExcluded: false },
+      window: windowOverrides,
+      localStorage: { setItem: (k, v) => { stored = [k, v]; } },
+      document: { getElementById: () => null },
+      renderSourceChips: () => {}, renderSpendSummary: () => {}, renderBucketGrid: () => {}, renderTxList: () => {}, renderActiveChart: () => {},
+      showTxN: 50,
+    };
+    return { ctx, getStored: () => stored };
   };
-  const { toggleExcluded } = loadFunctions(["toggleExcluded"], ctx);
-  toggleExcluded();
-  assert.equal(ctx.state.showExcluded, true, "toggleExcluded() should flip state.showExcluded");
-  assert.deepEqual(stored, ["trakyo_show_excl", "1"], "a normal session should persist the toggle to localStorage");
-});
-test("toggleExcluded: does NOT persist trakyo_show_excl to localStorage during a demo-preview session", () => {
-  let stored = null;
-  const ctx = {
-    state: { showExcluded: false },
-    window: { _viewingDemoOverReal: true },
-    localStorage: { setItem: (k, v) => { stored = [k, v]; } },
-    document: { getElementById: () => null },
-    renderSourceChips: () => {}, renderSpendSummary: () => {}, renderBucketGrid: () => {}, renderTxList: () => {}, renderActiveChart: () => {},
-    showTxN: 50,
-  };
-  const { toggleExcluded } = loadFunctions(["toggleExcluded"], ctx);
-  toggleExcluded();
-  assert.equal(ctx.state.showExcluded, true, "toggleExcluded() should still flip the in-memory flag so the current demo-preview session reflects the toggle");
-  assert.equal(stored, null, "a demo-preview session (_viewingDemoOverReal) must not leak the toggle into localStorage for the next real session to pick up");
+
+  const normal = mkCtx({});
+  loadFunctions(["toggleExcluded"], normal.ctx).toggleExcluded();
+  assert.equal(normal.ctx.state.showExcluded, true, "toggleExcluded() should flip state.showExcluded");
+  assert.deepEqual(normal.getStored(), ["trakyo_show_excl", "1"], "a normal session should persist the toggle to localStorage");
+
+  const demoPreview = mkCtx({ _viewingDemoOverReal: true });
+  loadFunctions(["toggleExcluded"], demoPreview.ctx).toggleExcluded();
+  assert.equal(demoPreview.ctx.state.showExcluded, true, "toggleExcluded() should still flip the in-memory flag so the current demo-preview session reflects the toggle");
+  assert.equal(demoPreview.getStored(), null, "a demo-preview session (_viewingDemoOverReal) must not leak the toggle into localStorage for the next real session to pick up");
 });
 
 // ── 96th adversarial pass: renderNwGoalWidget()'s ETA calculation called
@@ -2604,33 +2550,29 @@ test("the .import-cta-glow animation respects prefers-reduced-motion, matching t
   );
 });
 
-// ── 98th adversarial pass: renderYearInReview()'s "Quietest month" reduce
-// was seeded with the *unfiltered* byMonth[0], even though it only ever
-// iterates the spent>0-filtered array -- if the window's chronologically
-// first month has spent===0 (a deselected source zeroing it, or just a
-// genuinely quiet first month), that $0 seed beats every real candidate in
-// the b.spent<a.spent comparison every time, so "Quietest month" always
-// showed that $0 month instead of the actual lowest nonzero-spend month. ──
-test("Year in Review: quietestMonth is seeded from the filtered (spent>0) array, not the raw unfiltered byMonth[0]", () => {
+// ── 98th adversarial pass, two independent findings in the same
+// renderYearInReview()/copyYirSummary() pair:
+// (1) "Quietest month" was seeded with the *unfiltered* byMonth[0], even
+// though it only ever iterates the spent>0-filtered array -- if the
+// window's chronologically first month has spent===0 (a deselected
+// source zeroing it, or just a genuinely quiet first month), that $0 seed
+// beats every real candidate in the b.spent<a.spent comparison every
+// time, so "Quietest month" always showed that $0 month instead of the
+// actual lowest nonzero-spend month.
+// (2) The net-worth-change card picked firstSnap as the earliest snapshot
+// AT OR AFTER the window's start, and lastSnap as the latest snapshot AT
+// OR BEFORE the window's end -- if no snapshot falls inside the window
+// but snapshots exist on both sides, firstSnap can land chronologically
+// AFTER lastSnap, inverting both the sign of nwChange and the
+// "firstSnap -> lastSnap" display labels/range. ──
+test("Year in Review: quietestMonth is seeded from the filtered (spent>0) array, not the raw unfiltered byMonth[0]; net-worth change requires firstSnap to be chronologically at or before lastSnap", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const matches = source.match(/const _positive\w*=byMonth\.filter\(m=>m\.spent>0\);\s*const quietestMonth=_positive\w*\.length\?_positive\w*\.reduce\(\(a,b\)=>b\.spent<a\.spent\?b:a\):null;/g) || [];
-  assert.equal(matches.length, 2, "both renderYearInReview() and copyYirSummary() should seed quietestMonth's reduce from the filtered array (or null if nothing passed the filter), not raw byMonth[0]");
-});
-
-// ── 98th adversarial pass: renderYearInReview()'s net-worth-change card
-// picked firstSnap as the earliest snapshot AT OR AFTER the window's start,
-// and lastSnap as the latest snapshot AT OR BEFORE the window's end -- if no
-// snapshot falls inside the window but snapshots exist on both sides,
-// firstSnap can land chronologically AFTER lastSnap, inverting both the
-// sign of nwChange and the "firstSnap -> lastSnap" display labels/range. ──
-test("Year in Review: net-worth change requires firstSnap to be chronologically at or before lastSnap", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const matches = source.match(/firstSnap&&lastSnap&&firstSnap!==lastSnap&&firstSnap\.monthKey<=lastSnap\.monthKey\?lastSnap\.nw-firstSnap\.nw:null/g) || [];
-  assert.equal(matches.length, 2, "both renderYearInReview() and copyYirSummary() should require firstSnap.monthKey<=lastSnap.monthKey before computing nwChange, falling back to null (hides the card) rather than showing an inverted result");
+  const quietestMatches = source.match(/const _positive\w*=byMonth\.filter\(m=>m\.spent>0\);\s*const quietestMonth=_positive\w*\.length\?_positive\w*\.reduce\(\(a,b\)=>b\.spent<a\.spent\?b:a\):null;/g) || [];
+  assert.equal(quietestMatches.length, 2, "both renderYearInReview() and copyYirSummary() should seed quietestMonth's reduce from the filtered array (or null if nothing passed the filter), not raw byMonth[0]");
+  const nwChangeMatches = source.match(/firstSnap&&lastSnap&&firstSnap!==lastSnap&&firstSnap\.monthKey<=lastSnap\.monthKey\?lastSnap\.nw-firstSnap\.nw:null/g) || [];
+  assert.equal(nwChangeMatches.length, 2, "both renderYearInReview() and copyYirSummary() should require firstSnap.monthKey<=lastSnap.monthKey before computing nwChange, falling back to null (hides the card) rather than showing an inverted result");
 });
 
 // ── 98th adversarial pass: _vendorAliasChainReaches() (added the 97th pass)
@@ -2757,30 +2699,26 @@ test("window._isDemoPreview is computed at parse time, before the DOMContentLoad
 // ── 100th adversarial pass: fresh-territory findings, all outside the
 // just-rebaselined session-filter/demo-preview cluster. ──
 
-// renderDailyCal()'s endDate defaulted to midnight local time (the numeric
-// Date constructor's default), while every transaction parses at noon --
-// a transaction on the range's actual last calendar day (noon) failed
-// d<=endDate (midnight) and was silently excluded from the calendar's
-// totals/cells. Month-end bills (rent, mortgage) are a routine trigger.
-test("renderDailyCal: endDate is anchored to noon, matching how transaction dates are parsed, so the last day of the range isn't silently excluded", () => {
+test("renderDailyCal: endDate is anchored to noon (matching how transaction dates are parsed, so the last day of the range isn't silently excluded), and shows a 'No data' state instead of crashing when there are no transaction months in range", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+
+  // endDate defaulted to midnight local time (the numeric Date
+  // constructor's default), while every transaction parses at noon -- a
+  // transaction on the range's actual last calendar day (noon) failed
+  // d<=endDate (midnight) and was silently excluded from the calendar's
+  // totals/cells. Month-end bills (rent, mortgage) are a routine trigger.
   assert.match(
     source,
     /const endDate=new Date\(maxMonth\.slice\(0,4\),parseInt\(maxMonth\.slice\(5,7\)\),0,12\); \/\/ last day of max month/,
     "endDate's Date constructor should pass 12 as the hours argument, matching new Date(t.date+'T12:00:00')'s noon anchor for every transaction"
   );
-});
 
-// renderDailyCal() threw (maxMonth.slice() on undefined) when
-// getFilteredMonths() returns [] -- reachable uncaught via
-// setChartMode('daily') for a user with no transactions in range, the
-// same crash shape renderSankey() had before the 99th pass's fix.
-test("renderDailyCal: shows a 'No data' state instead of crashing when there are no transaction months in range", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  // Threw (maxMonth.slice() on undefined) when getFilteredMonths()
+  // returns [] -- reachable uncaught via setChartMode('daily') for a
+  // user with no transactions in range, the same crash shape
+  // renderSankey() had before the 99th pass's fix.
   assert.match(
     source,
     /function renderDailyCal\(\)\{[\s\S]{0,2500}?const filteredMonths=getFilteredMonths\(\);[\s\S]{0,700}?if\(!filteredMonths\.length\)\{\s*wrap\.innerHTML=`<div style="padding:2rem;color:var\(--text-muted\);font-size:12px;text-align:center">No data for this period<\/div>`;\s*return;\s*\}/,
@@ -3148,18 +3086,15 @@ test("renderMetrics: allSnaps is null-safe and uses the shared snapshot sort com
 // with string-only values), consolidate the array/object-shape guards
 // the same way _isValidSnapshot() already did for snapshots. ──
 
-test("_arrOfObj: coerces to an array and drops null/primitive entries", () => {
-  const ctx = {};
-  const { _arrOfObj } = loadFunctions(["_arrOfObj"], ctx);
-  assert.deepEqual(_arrOfObj([{ a: 1 }, null, "x", 5, { b: 2 }]), [{ a: 1 }, { b: 2 }]);
+test("_arrOfObj/_strValueObj: the two shared crafted-backup ingestion helpers coerce/filter their input as documented", () => {
+  const { _arrOfObj, _strValueObj } = loadFunctions(["_arrOfObj", "_strValueObj"], {});
+
+  assert.deepEqual(_arrOfObj([{ a: 1 }, null, "x", 5, { b: 2 }]), [{ a: 1 }, { b: 2 }], "_arrOfObj coerces to an array and drops null/primitive entries");
   assert.deepEqual(_arrOfObj(null), []);
   assert.deepEqual(_arrOfObj({}), []);
   assert.deepEqual(_arrOfObj(undefined), []);
-});
-test("_strValueObj: keeps only string-valued keys, coerces non-object input to {}", () => {
-  const ctx = {};
-  const { _strValueObj } = loadFunctions(["_strValueObj"], ctx);
-  assert.deepEqual(_strValueObj({ a: "Amazon", b: 5, c: null, d: "Shopping" }), { a: "Amazon", d: "Shopping" });
+
+  assert.deepEqual(_strValueObj({ a: "Amazon", b: 5, c: null, d: "Shopping" }), { a: "Amazon", d: "Shopping" }, "_strValueObj keeps only string-valued keys, coerces non-object input to {}");
   assert.deepEqual(_strValueObj(null), {});
   assert.deepEqual(_strValueObj([1, 2]), {}, "an array should not be treated as a valid vendorAliases object");
   assert.deepEqual(_strValueObj("x"), {});
@@ -3213,23 +3148,18 @@ test("_normalizeAccountTypes: coerces balance to a finite number, stripping comm
 // isPairedAccount() to misattribute a vehicle's value, and the very next
 // in-app "Add account" to mint a new id that collides with an existing
 // one. Found in the 131st adversarial pass. ──
-test("_reconcileNextId: bumps nextId past the max id actually present in accounts/vehicles, closing a duplicate/stale-id gap on restore", () => {
-  const state = { accounts: [{ id: 5000 }, { id: 5003 }], vehicles: [{ id: 5010 }], transactions: [], nextId: 3 };
-  const { _reconcileNextId } = loadFunctions(["_reconcileNextId"], { state });
-  _reconcileNextId();
-  assert.equal(state.nextId, 5011, "nextId should be bumped to 1 past the max id found across accounts and vehicles, since the restored nextId (3) was stale/too-low");
-});
-test("_reconcileNextId: leaves nextId untouched when it's already safely ahead of every existing id", () => {
-  const state = { accounts: [{ id: 5000 }], vehicles: [{ id: 5001 }], transactions: [], nextId: 6000 };
-  const { _reconcileNextId } = loadFunctions(["_reconcileNextId"], { state });
-  _reconcileNextId();
-  assert.equal(state.nextId, 6000, "nextId should stay unchanged when the restored value already exceeds every existing id");
-});
-test("_reconcileNextId: a non-finite/missing id is treated as 0, not NaN, so it can't poison the Math.max computation", () => {
-  const state = { accounts: [{ id: "garbage" }, {}], vehicles: [], transactions: [], nextId: 1 };
-  const { _reconcileNextId } = loadFunctions(["_reconcileNextId"], { state });
-  _reconcileNextId();
-  assert.equal(state.nextId, 1, "with no valid ids present, nextId should stay at its own already-safe value, not become NaN");
+test("_reconcileNextId: bumps past the max existing id, leaves an already-safe nextId untouched, and treats a non-finite/missing id as 0 not NaN", () => {
+  const s1 = { accounts: [{ id: 5000 }, { id: 5003 }], vehicles: [{ id: 5010 }], transactions: [], nextId: 3 };
+  loadFunctions(["_reconcileNextId"], { state: s1 })._reconcileNextId();
+  assert.equal(s1.nextId, 5011, "nextId should be bumped to 1 past the max id found across accounts and vehicles, since the restored nextId (3) was stale/too-low");
+
+  const s2 = { accounts: [{ id: 5000 }], vehicles: [{ id: 5001 }], transactions: [], nextId: 6000 };
+  loadFunctions(["_reconcileNextId"], { state: s2 })._reconcileNextId();
+  assert.equal(s2.nextId, 6000, "nextId should stay unchanged when the restored value already exceeds every existing id");
+
+  const s3 = { accounts: [{ id: "garbage" }, {}], vehicles: [], transactions: [], nextId: 1 };
+  loadFunctions(["_reconcileNextId"], { state: s3 })._reconcileNextId();
+  assert.equal(s3.nextId, 1, "with no valid ids present (non-finite/missing), nextId should stay at its own already-safe value, not become NaN and poison the Math.max computation");
 });
 
 // ── 134th adversarial pass ──────────────────────────────────────────────
@@ -3259,14 +3189,13 @@ test("_reconcileNextId: bumps nextId past the max id present in transactions too
 // ceiling Math.max(...bigArray) can exceed, throwing a RangeError and
 // aborting the restore path entirely. Found in the 135th adversarial
 // pass, re-verifying the 134th pass's own fix. ──
-test("_reconcileNextId: doesn't throw on a very large transactions array (no unbounded argument-spread into Math.max)", () => {
+test("_reconcileNextId: doesn't throw on a very large transactions array (no unbounded argument-spread into Math.max), and is called after state.transactions is restored in all 3 restore paths, not before", () => {
   const bigTransactions = Array.from({ length: 200000 }, (_, i) => ({ id: i }));
   const state = { accounts: [{ id: 1 }], vehicles: [], transactions: bigTransactions, nextId: 2 };
   const { _reconcileNextId } = loadFunctions(["_reconcileNextId"], { state });
   assert.doesNotThrow(() => _reconcileNextId(), "should not throw a RangeError on a large transactions array");
   assert.equal(state.nextId, 200000, "should still correctly compute the max id (199999) + 1 across a large array");
-});
-test("loadFromLocalStorage/loadUserData/importBackup: _reconcileNextId() is called after state.transactions is restored, not before", () => {
+
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
@@ -3299,30 +3228,27 @@ test("importBackup/loadUserData: both also call _reconcileNextId() after restori
   const matches = source.match(/_reconcileNextId\(\);/g) || [];
   assert.equal(matches.length, 3, "all 3 restore paths (cloud sync, local storage, backup restore) should call _reconcileNextId() once each");
 });
-test("importBackup: vehicles/catRules/vendorAliases all route through the new shared helpers", () => {
+test("importBackup and loadUserData both route vehicles/catRules/vendorAliases/customCategories (and, for loadUserData -- the least-guarded of the three ingestion paths -- hiddenPills/transactions/nextId too) through the shared guard helpers", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  assert.match(source, /state\.vehicles=_arrOfObj\(saved\.vehicles\);/, "vehicles should route through _arrOfObj()");
-  assert.match(source, /state\.catRules=_arrOfObj\(saved\.catRules\)\.filter\(r=>typeof r\.keyword==='string'\);/, "catRules should be entry-filtered plus a string-keyword check");
-  assert.match(source, /state\.vendorAliases=_strValueObj\(saved\.vendorAliases\);/, "vendorAliases should route through _strValueObj()");
-  assert.match(source, /state\.customCategories=_arrOfObj\(saved\.customCategories\);/, "customCategories should route through _arrOfObj() (simplified from the 103rd pass's manual inline filter)");
-});
-test("loadUserData: customCategories/vehicles/catRules/vendorAliases/hiddenPills/transactions/nextId all get the same guards as the other two ingestion paths -- the cloud-sync path was the least-guarded of the three", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  assert.match(source, /if \(prefs\.customCategories\) state\.customCategories = _arrOfObj\(prefs\.customCategories\);/, "customCategories should route through _arrOfObj() -- this was pass 103's own gap on the cloud-sync path");
-  assert.match(source, /if \(Array\.isArray\(prefs\.vehicles\)\) state\.vehicles = _arrOfObj\(prefs\.vehicles\);/, "vehicles should route through _arrOfObj()");
-  assert.match(source, /if \(prefs\.catRules\) state\.catRules = _arrOfObj\(prefs\.catRules\)\.filter\(r=>typeof r\.keyword==='string'\);/, "catRules should be entry-filtered plus a string-keyword check");
-  assert.match(source, /if \(prefs\.vendorAliases\) state\.vendorAliases = _strValueObj\(prefs\.vendorAliases\);/, "vendorAliases should route through _strValueObj()");
-  assert.match(source, /if \(Array\.isArray\(prefs\.hiddenPills\)\) state\.hiddenPills = new Set\(prefs\.hiddenPills\);/, "hiddenPills should be Array.isArray-guarded, not just truthy-checked");
+
+  assert.match(source, /state\.vehicles=_arrOfObj\(saved\.vehicles\);/, "importBackup: vehicles should route through _arrOfObj()");
+  assert.match(source, /state\.catRules=_arrOfObj\(saved\.catRules\)\.filter\(r=>typeof r\.keyword==='string'\);/, "importBackup: catRules should be entry-filtered plus a string-keyword check");
+  assert.match(source, /state\.vendorAliases=_strValueObj\(saved\.vendorAliases\);/, "importBackup: vendorAliases should route through _strValueObj()");
+  assert.match(source, /state\.customCategories=_arrOfObj\(saved\.customCategories\);/, "importBackup: customCategories should route through _arrOfObj() (simplified from the 103rd pass's manual inline filter)");
+
+  assert.match(source, /if \(prefs\.customCategories\) state\.customCategories = _arrOfObj\(prefs\.customCategories\);/, "loadUserData: customCategories should route through _arrOfObj() -- this was pass 103's own gap on the cloud-sync path");
+  assert.match(source, /if \(Array\.isArray\(prefs\.vehicles\)\) state\.vehicles = _arrOfObj\(prefs\.vehicles\);/, "loadUserData: vehicles should route through _arrOfObj()");
+  assert.match(source, /if \(prefs\.catRules\) state\.catRules = _arrOfObj\(prefs\.catRules\)\.filter\(r=>typeof r\.keyword==='string'\);/, "loadUserData: catRules should be entry-filtered plus a string-keyword check");
+  assert.match(source, /if \(prefs\.vendorAliases\) state\.vendorAliases = _strValueObj\(prefs\.vendorAliases\);/, "loadUserData: vendorAliases should route through _strValueObj()");
+  assert.match(source, /if \(Array\.isArray\(prefs\.hiddenPills\)\) state\.hiddenPills = new Set\(prefs\.hiddenPills\);/, "loadUserData: hiddenPills should be Array.isArray-guarded, not just truthy-checked");
   assert.match(
     source,
     /state\.transactions = prefs\.transactions\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'&&\/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\$\/\.test\(t\.date\)\?t\.date:'',desc:typeof t\.desc==='string'\?t\.desc:'',cat:typeof t\.cat==='string'\?t\.cat:'Other',card:typeof t\.card==='string'\?t\.card:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
-    "transactions should get the same entry-filter and date-coercion pass 103 already applied to importBackup()/loadFromLocalStorage()"
+    "loadUserData: transactions should get the same entry-filter and date-coercion pass 103 already applied to importBackup()/loadFromLocalStorage()"
   );
-  assert.match(source, /if \(prefs\.nextId\) state\.nextId = Number\(prefs\.nextId\)\|\|state\.nextId;/, "nextId should be Number()-coerced");
+  assert.match(source, /if \(prefs\.nextId\) state\.nextId = Number\(prefs\.nextId\)\|\|state\.nextId;/, "loadUserData: nextId should be Number()-coerced");
 });
 
 // ── 105th adversarial pass: fresh findings after re-verifying pass 104's
@@ -3331,20 +3257,15 @@ test("loadUserData: customCategories/vehicles/catRules/vendorAliases/hiddenPills
 // subfields, not the entry/date-level guards already fixed), plus two
 // unrelated fresh-territory findings. ──
 
-test("transaction ingestion: desc/cat/card are string-coerced (with cat defaulting to 'Other') at all 3 ingestion points, not just date/amount", () => {
+test("transaction ingestion: desc/cat/card are string-coerced (with cat defaulting to 'Other') at all 3 ingestion points, not just date/amount -- and resolveVendor/displayVendor's own guards are falsy-only, confirming the fix is necessary", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   const pattern = /date:typeof t\.date==='string'&&\/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\$\/\.test\(t\.date\)\?t\.date:'',desc:typeof t\.desc==='string'\?t\.desc:'',cat:typeof t\.cat==='string'\?t\.cat:'Other',card:typeof t\.card==='string'\?t\.card:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset/g;
   const matches = source.match(pattern) || [];
   assert.equal(matches.length, 3, "all 3 ingestion points (loadUserData, loadFromLocalStorage, importBackup) should coerce desc/cat/card the same way -- a truthy non-string desc previously threw in resolveVendor()/displayVendor(), reachable from the Treemap, Spending tab, and the Dashboard's own 'largest charge' card");
-});
-test("resolveVendor and displayVendor only guard against falsy input, not a truthy non-string, confirming the transaction-ingestion fix is necessary", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  assert.match(source, /const resolveVendor=desc=>\{\s*if\(!desc\)return desc;/, "resolveVendor()'s guard is falsy-only");
-  assert.match(source, /const displayVendor=name=>\{\s*if\(!name\)return name;/, "displayVendor()'s guard is falsy-only");
+  assert.match(source, /const resolveVendor=desc=>\{\s*if\(!desc\)return desc;/, "resolveVendor()'s guard is falsy-only, so a truthy non-string would have slipped through without the ingestion-side fix above");
+  assert.match(source, /const displayVendor=name=>\{\s*if\(!name\)return name;/, "displayVendor()'s guard is falsy-only, same reasoning");
 });
 
 test("loadUserData and loadFromLocalStorage object-shape-guard state.budgets/state.income, matching importBackup()'s existing obj()-based guard", () => {
@@ -4962,103 +4883,69 @@ test("saveHistoricalSnapshot: only clears _editingSnapshotMonthKey when the demo
 // (JSON.stringify(Infinity)==="null", and every loader's `||0`
 // coercion turns null back into 0) -- so not a crash, but a real
 // silent-data-corruption path. Found in the 119th adversarial pass. ──
-test("saveTx: rejects a non-finite (Infinity/1e400) amount, not just a falsy one", () => {
+test("the 8 manual-entry save functions (saveTx, saveEditTx, saveAccount, saveVehicle, saveBudget, saveHistoricalSnapshot, saveDeclaredIncome, saveManualIncome) all reject non-finite (Infinity/1e400) values, not just falsy/NaN ones", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveTx\(\)\{[\s\S]{0,1600}/);
-  assert.ok(fnMatch, "saveTx() should exist");
-  assert.match(
-    fnMatch[0],
-    /if\(!desc\|\|!amount\|\|!Number\.isFinite\(amount\)\)\{/,
-    "should reject a non-finite amount alongside the existing falsy check"
-  );
-});
 
-test("saveEditTx: rejects a non-finite amount, not just NaN", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const saveTxMatch = source.match(/function saveTx\(\)\{[\s\S]{0,1600}/);
+  assert.ok(saveTxMatch, "saveTx() should exist");
+  assert.match(
+    saveTxMatch[0],
+    /if\(!desc\|\|!amount\|\|!Number\.isFinite\(amount\)\)\{/,
+    "saveTx should reject a non-finite amount alongside the existing falsy check"
+  );
+
   assert.match(
     source,
     /if\(!Number\.isFinite\(amountVal\)\)\{showToast\('⚠ Invalid amount — edit not saved'/,
-    "should use !Number.isFinite instead of isNaN, so Infinity is also rejected"
+    "saveEditTx should use !Number.isFinite instead of isNaN, so Infinity is also rejected"
   );
-});
 
-test("saveAccount: a non-finite balance falls back to 0 instead of poisoning net worth", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
     /_balanceRaw=parseFloat\(document\.getElementById\('f-balance'\)\.value\),\s*balance=Number\.isFinite\(_balanceRaw\)\?_balanceRaw:0,/,
-    "balance should be derived via a Number.isFinite check, not a bare `||0` fallback that Infinity survives"
+    "saveAccount's balance should be derived via a Number.isFinite check, not a bare `||0` fallback that Infinity survives"
   );
-});
 
-test("saveVehicle: rejects a non-finite value, not just a negative one", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
     /if\(value<0\|\|!Number\.isFinite\(value\)\)return;/,
-    "should reject a non-finite value alongside the existing negative-value guard (the equivalent purchase-price guard was removed alongside the field itself, August 2026)"
+    "saveVehicle should reject a non-finite value alongside the existing negative-value guard (the equivalent purchase-price guard was removed alongside the field itself, August 2026)"
   );
-});
 
-test("saveBudget: a non-finite budget amount is treated as absent, not saved", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
     /if\(val>0&&Number\.isFinite\(val\)\)state\.budgets\[cat\]=Math\.round\(val\);/,
-    "should require Number.isFinite alongside val>0 before saving the budget"
+    "saveBudget should require Number.isFinite alongside val>0 before saving"
   );
-});
 
-test("saveHistoricalSnapshot: net worth/assets/liabilities are all Number.isFinite-guarded", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
     /const assetsRaw=parseFloat\(document\.getElementById\('hist-snap-assets'\)\.value\);\s*const assets=Number\.isFinite\(assetsRaw\)\?assetsRaw:nw;/,
-    "assets should fall back to nw only via a Number.isFinite check, not a bare `||nw` that Infinity survives"
+    "saveHistoricalSnapshot's assets should fall back to nw only via a Number.isFinite check, not a bare `||nw` that Infinity survives"
   );
   assert.match(
     source,
     /const liabRaw=parseFloat\(document\.getElementById\('hist-snap-liab'\)\.value\);\s*const liab=Number\.isFinite\(liabRaw\)\?liabRaw:0;/,
-    "liab should fall back to 0 only via a Number.isFinite check"
+    "saveHistoricalSnapshot's liab should fall back to 0 only via a Number.isFinite check"
   );
   assert.match(
     source,
     /if\(!date\|\|!Number\.isFinite\(nw\)\)\{showToast\('Please enter a date and net worth'/,
-    "nw should be rejected via !Number.isFinite, not just isNaN"
+    "saveHistoricalSnapshot's nw should be rejected via !Number.isFinite, not just isNaN"
   );
-});
 
-test("saveDeclaredIncome: rejects a non-finite value, not just NaN", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
     /if\(Number\.isFinite\(val\)&&val>0\)\{/,
-    "should use Number.isFinite instead of !isNaN, so Infinity is also rejected"
+    "saveDeclaredIncome should use Number.isFinite instead of !isNaN, so Infinity is also rejected"
   );
-});
 
-test("saveManualIncome: rejects a non-finite value alongside the existing falsy/negative checks", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
     /if\(!val\|\|val<=0\|\|!Number\.isFinite\(val\)\)\{showToast\('Please enter a valid monthly income'/,
-    "should reject a non-finite value alongside the existing checks"
+    "saveManualIncome should reject a non-finite value alongside the existing checks"
   );
 });
 
@@ -5071,25 +4958,19 @@ test("saveManualIncome: rejects a non-finite value alongside the existing falsy/
 // the 87th or 119th pass), and the custom net-worth-goal input (whose
 // type="number" field accepts scientific notation like '1e400'). Found
 // in the 120th adversarial pass. ──
-test("parseCsvAccounts: rejects a non-finite (Infinity/1e400) balance, not just NaN", () => {
+test("parseCsvAccounts and confirmCustomGoal (the 120th pass's extension of the 119th pass's Number.isFinite sweep) both reject non-finite (Infinity/1e400) values, not just NaN", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
     /if\(!name\.trim\(\)\|\|!normType\|\|!Number\.isFinite\(balance\)\)\{skipped\+\+;return;\}/,
-    "should reject a non-finite balance alongside the existing name/type checks"
+    "parseCsvAccounts should reject a non-finite balance alongside the existing name/type checks"
   );
-});
-
-test("confirmCustomGoal: rejects a non-finite (Infinity/1e400) goal amount, not just NaN", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
     /if\(!Number\.isFinite\(parsed\)\|\|parsed<=0\)\{/,
-    "should reject a non-finite parsed value alongside the existing parsed<=0 check"
+    "confirmCustomGoal should reject a non-finite parsed value alongside the existing parsed<=0 check"
   );
 });
 
@@ -5434,7 +5315,7 @@ test("Escape key handler dismisses the pill-tip overlay, matching every other di
 // .modal-sub, .fmt-btn, and the search placeholder. Failed WCAG AA in
 // dark theme, the app's default -- light theme's own #6B7280 (~4.8:1)
 // was already fine. Found in the 139th adversarial pass. ──
-test("dark theme's --text-dim reaches at least WCAG AA contrast against --bg-card, matching --text-muted's already-verified-safe value", () => {
+test("dark theme's --text-dim reaches at least WCAG AA contrast against --bg-card (matching --text-muted's already-verified-safe value), and the fully-dead --text-faint token is removed", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
@@ -5443,16 +5324,10 @@ test("dark theme's --text-dim reaches at least WCAG AA contrast against --bg-car
     /--text-dim:#8595A8;/,
     "dark theme's --text-dim should be #8595A8 (matching --text-muted, ~4.8:1 against --bg-card), not the old #475569 (~1.9:1)"
   );
-});
-
-// LOW (dead code): --text-faint had zero var(--text-faint) consumers
-// anywhere in the file, and its light-theme declaration was duplicated
-// within the same rule (a genuinely dead, silently-overridden value on
-// top of being entirely unread). Found in the 139th adversarial pass. ──
-test("--text-faint is removed (was fully dead -- zero consumers, and duplicated within the light-theme rule)", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  // --text-faint had zero var(--text-faint) consumers anywhere in the file,
+  // and its light-theme declaration was duplicated within the same rule (a
+  // genuinely dead, silently-overridden value on top of being entirely
+  // unread). Found in the 139th adversarial pass.
   assert.doesNotMatch(
     source,
     /--text-faint:#(334155|9CA3AF|6B7280);/,
@@ -5556,7 +5431,7 @@ test("copyYirSummary()'s clipboard write has a .catch() so a permission-denied r
 // the same as a click -- gated on tagName so it can't double-fire on
 // actual <button>/<a> elements, which already get Enter/Space for free.
 // Found in the 148th adversarial pass. ──
-test("category/vendor bucket-card tiles and active-filter pills are keyboard-focusable and keyboard-activatable", () => {
+test("category/vendor bucket-card tiles and active-filter pills are keyboard-focusable and keyboard-activatable, with a visible focus outline that isn't silently overridden by the unconditional .active-bucket outline", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
@@ -5590,25 +5465,14 @@ test("category/vendor bucket-card tiles and active-filter pills are keyboard-foc
     /document\.addEventListener\('keydown',function\(e\)\{\s*if\(e\.key!=='Enter'&&e\.key!==' '\)return;\s*const tag=e\.target\.tagName;\s*if\(tag==='BUTTON'\|\|tag==='A'\|\|tag==='INPUT'\|\|tag==='SELECT'\|\|tag==='TEXTAREA'\)return;\s*if\(!e\.target\.hasAttribute\('data-action'\)\|\|e\.target\.getAttribute\('tabindex'\)!=='0'\)return;\s*e\.preventDefault\(\);\s*dispatch\(e,'data-action',false\);\s*\}\);/,
     "a keydown listener should activate Enter/Space on focusable non-native data-action elements"
   );
-});
 
-// ── 149th adversarial pass ──────────────────────────────────────────────
-// LOW: .bucket-card.active-bucket{outline:1.5px solid currentColor} is an
-// unconditional author-origin rule, so it beats the UA default
-// :focus-visible outline on the same property outright (author normal
-// always wins over UA normal, regardless of specificity) -- an already-
-// active tile showed no visual change at all when it received keyboard
-// focus, so a keyboard user tabbing through the grid couldn't tell which
-// active tile was focused. Only reachable once these tiles gained
-// tabindex="0" in the 148th adversarial pass. Fixed by adding an explicit
-// .bucket-card:focus-visible rule and a higher-specificity
-// .bucket-card.active-bucket:focus-visible rule (dashed, to stay visually
-// distinct from the plain active-only solid outline). Found in the 149th
-// adversarial pass. ──
-test("bucket-card tiles have an explicit :focus-visible outline that isn't silently overridden by the unconditional .active-bucket outline", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  // 149th adversarial pass, only reachable once these tiles gained
+  // tabindex="0" in the 148th pass above: .bucket-card.active-bucket{
+  // outline:1.5px solid currentColor} is an unconditional author-origin
+  // rule, so it beats the UA default :focus-visible outline on the same
+  // property outright (author normal always wins over UA normal,
+  // regardless of specificity) -- an already-active tile showed no visual
+  // change at all when it received keyboard focus.
   assert.match(
     source,
     /\.bucket-card:focus-visible\{outline:2px solid currentColor;outline-offset:2px\}/,
@@ -6138,31 +6002,26 @@ test("showImportPreview: the Detected badge no longer repeats the transaction co
     "the Detected badge should not re-introduce a trailing '-- N transactions ready' clause"
   );
 });
-test("showImportPreview: the stats line's date-range/total spans use the theme-aware --text-muted token, not the hardcoded #475569 hex the 139th adversarial pass removed everywhere else for failing WCAG AA (1.93:1 in dark theme)", () => {
+test("showImportPreview: the stats line's date-range/total spans use --text-muted, not the hardcoded #475569 hex removed elsewhere for failing WCAG AA; preview row dates use the higher-contrast --text-secondary", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "showImportPreview() should exist");
+
   const statsLine = fnMatch[0].match(/stats\.innerHTML=`[^\n]*`;/);
   assert.ok(statsLine, "the stats.innerHTML assignment should exist");
-  assert.doesNotMatch(statsLine[0], /#475569/, "the actual stats.innerHTML line should not contain the known-failing hardcoded hex color (a nearby explanatory comment mentioning it for context is fine)");
+  assert.doesNotMatch(statsLine[0], /#475569/, "the actual stats.innerHTML line should not contain the known-failing hardcoded hex color the 139th adversarial pass removed everywhere else for failing WCAG AA (1.93:1 in dark theme) -- a nearby explanatory comment mentioning it for context is fine");
   assert.match(
     fnMatch[0],
     /<span style="color:var\(--text-muted\)">\$\{esc\(dateRangeStr\)\}<\/span> · <span style="color:var\(--text-muted\)">\$\{fmtD\(total\)\} total<\/span>/,
     "both the date-range and total spans should use var(--text-muted) instead"
   );
-});
-test("showImportPreview: preview row dates use --text-secondary (5.71:1 against dark theme's --bg-card), not --text-muted (4.78:1) -- bumped after a direct 'hard to read, too faint' report", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "showImportPreview() should exist");
+
   assert.match(
     fnMatch[0],
     /<span style="font-size:11px;color:var\(--text-secondary\);min-width:72px">\$\{esc\(t\.date\)\}<\/span>/,
-    "the row date span should use --text-secondary"
+    "the row date span should use --text-secondary (5.71:1 against dark theme's --bg-card, vs --text-muted's 4.78:1) -- bumped after a direct 'hard to read, too faint' report"
   );
 });
 // Follow-up feedback, same launch day: the single date-only oldest/newest
