@@ -18,7 +18,7 @@ Import a CSV from your bank, credit union, or credit card. Your browser translat
 - **"At a Glance" insights** — curated monthly insights surfaced by urgency: savings rate, budget health, top mover, largest charge, subscriptions, possible duplicate charges, weekend spending patterns. Each compares against your own history.
 - **Budget tab** — set monthly limits and see them alongside your 12-month average and year-to-date pace in one view, with AT RISK warnings before you go over. Every category row shows 12-month history. Sort by % used, amount, how unusual vs. your average, or A–Z — each ascending or descending.
 - **Full picture net worth** — checking, savings, investments, loans, real estate, and vehicles in one place. Save monthly snapshots and track your trajectory toward a goal. Annualized growth rate shown alongside dollar change.
-- **Smart auto-categorization** — four-tier system: your keyword rules → community-contributed patterns → MCC codes from your bank → built-in merchant keywords. Vendor names display in proper case (Starbucks, not STARBUCKS) without changing your underlying data.
+- **Smart auto-categorization** — four-tier system: your keyword rules → community-contributed patterns → MCC codes from your bank → built-in merchant keywords. Vendor names display in proper case (Starbucks, not STARBUCKS) without changing your underlying data. Categories (including your own custom ones) can be renamed in-place anytime — updates every transaction, budget, rule, and exclusion that referenced the old name.
 - **Multi-source import** — import from multiple banks and credit cards. Sources with different date ranges prompt optional alignment to overlapping coverage.
 - **Spending exclusions** — hide categories like transfers and CC payments from spending totals. Reversible, per-category or per-transaction.
 - **Export anytime** — one click to export transactions or budget history as CSV, or export a full JSON backup of everything in the app: transactions, accounts, net worth snapshots, budgets, categories, and settings, all in one file.
@@ -200,26 +200,7 @@ The app uses a hash-based Content Security Policy — inline scripts are allowli
 - **Google auth via redirect flow** — Supabase OAuth always uses redirect (no popups), reliable across all browsers and mobile
 - **Community pattern submissions** are reviewed manually as plain text before any changes deploy
 - My GitHub and Google accounts use two-factor authentication
-
----
-
-## Recent updates
-
-- **Include income / freelancer support** — opt-in toggle adds income tracking and business categories; tag any transaction as business or personal and filter Spending by All/Business/Personal via a segmented pill control next to the tab title
-- **Landing page screenshot + lightbox** — app screenshot with click/tap full-screen overlay and frosted zoom pill; mobile gets scrollable/pinch-zoomable view
-- **Interactive preview auto-advance** — landing page preview cycles through all chart modes and tabs via IntersectionObserver; manual interaction cancels auto-advance
-- **Category rename** — custom categories can now be renamed in-place; updates transactions, budgets, rules, and exclusions
-- **Delete account / asset / transaction** — inline confirmation pattern (no browser dialog) for removing accounts, physical assets, and individual transactions
-- **Cloudflare Email Routing** — `contact@trakyodollas.com` forwarding and Gmail "Send mail as" now active
-- **Client-side encryption** — all synced data encrypted on your device (AES-256-GCM) before reaching Supabase; even Supabase can't read it
-- **Supabase migration** — replaced Firebase Auth + Firestore with Supabase Auth + Postgres; open-source, privacy-centered sync
-- **Cloudflare Workers hosting** — migrated from Firebase Hosting; `trakyodollas.com` is the canonical domain; deploy via `./deploy.sh prod`
-- **Email magic link sign-in** — passwordless sign-in alongside Google; Supabase sends a one-time link, no password required
-- **PWA / offline support** — service worker caches the full app; install to home screen on Android, iPhone, or desktop Chrome; offline banner and graceful error page when network is unavailable
-- **JSON backup / restore** — export all data as a structured JSON file; import it back on any device
-- **Budget tab redesign** — single combined view shows budget, 12-month average, and YTD pace per category; combo tick marks merge when budget and average are close; configurable "near limit" warn threshold; Unusual sort by deviation from your own average
-- **Event delegation refactor** — replaced all `onclick=` inline handlers with `data-action` attribute system; single IIFE dispatcher; eliminates inline script surface area
-- **WCAG AA theme compliance** — all accent colors, text hierarchy, and backgrounds pass AA contrast in both light and dark themes across all three pages
+- **WCAG AA accessible** — text contrast, focus states, and keyboard navigation meet AA standards in both light and dark themes, across all three pages
 
 ---
 
