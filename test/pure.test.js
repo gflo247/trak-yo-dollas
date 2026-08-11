@@ -7562,3 +7562,51 @@ test("#demo-nudge's banner text uses 'Switch profiles' in place of 'explore them
     "the leading pointing-hand emoji should be gone -- it pointed at nothing specific (this banner is the very first element on the page) and the amber background/border already draw attention on their own"
   );
 });
+
+// Finding: while questioning whether the #demo-nav-badge fix from
+// 2 commits ago actually delivered on "stays reachable while
+// scrolling," live-tested it directly -- scrolled 1200px and the badge
+// (and the entire sticky .nav bar around it) scrolled away with the
+// page, landing far off-screen, despite .nav's explicit
+// position:sticky. Root cause: html/body both had overflow-x:hidden
+// (deliberately, to block horizontal-scroll bugs) -- per spec, setting
+// overflow-x to any non-'visible' value while overflow-y is left unset
+// forces overflow-y to auto-compute to 'auto' too, turning <body> into
+// its own scroll container and breaking position:sticky's "stick to
+// the viewport" behavior for everything inside it, not just one
+// element. This wasn't scoped to the demo badge -- the entire nav bar
+// had silently never actually stayed pinned while scrolling, for any
+// user, the whole time position:sticky has been in this file.
+// Confirmed via getComputedStyle(body).overflow before the fix:
+// "hidden auto" (overflow-y auto-computed, exactly as the spec
+// predicts), no transform/filter/contain/willChange on any ancestor to
+// blame instead. Fixed by switching overflow-x:hidden to
+// overflow-x:clip on both html and body -- :clip blocks the same
+// horizontal overflow :hidden did (preserving the original intent)
+// without establishing a scroll container, so it doesn't trigger the
+// overflow-y side effect. Live-verified after the fix: computed
+// overflow is "clip visible" (overflow-y correctly stays visible now),
+// .nav's bounding rect stays pinned at top:0 after scrolling 1200px
+// (was -1122.5px before), and no horizontal scrollbar appeared
+// (document.documentElement.scrollWidth still equals clientWidth),
+// confirming the original horizontal-overflow protection still holds.
+test("html/body use overflow-x:clip, not :hidden, so position:sticky (.nav and everything in it) isn't silently broken by the overflow-y auto-compute side effect", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /html\{overflow-x:clip;max-width:100%\}/,
+    "html should use overflow-x:clip"
+  );
+  assert.match(
+    source,
+    /body\{font-family:var\(--font-sans,system-ui,sans-serif\);background:var\(--bg-page\)!important;color:var\(--text-primary\);font-size:14px;overflow-x:clip;max-width:100%\}/,
+    "body should use overflow-x:clip"
+  );
+  assert.doesNotMatch(
+    source,
+    /^html\{overflow-x:hidden/m,
+    "html should no longer use overflow-x:hidden"
+  );
+});

@@ -186,8 +186,19 @@
 [data-theme="light"] .section-box,[data-theme="light"] .section-box-sm{border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.05),0 1px 8px rgba(0,0,0,.03)}
 [data-theme="light"] .nav-btn.active{color:var(--accent-blue-light);border-bottom-color:var(--accent-blue-light)}
 
-html{overflow-x:hidden;max-width:100%}
-body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)!important;color:var(--text-primary);font-size:14px;overflow-x:hidden;max-width:100%}
+/* overflow-x:clip, not :hidden -- per spec, setting overflow-x to any
+   non-'visible' value while overflow-y is left unset forces overflow-y
+   to auto-compute to 'auto' too, turning <body> into its own scroll
+   container. That silently breaks position:sticky's "stick to the
+   viewport" behavior for everything inside it -- confirmed live: the
+   sticky .nav (and everything in it, not just one specific element)
+   scrolled away with the page instead of staying pinned, found while
+   investigating why the demo-data nav badge never appeared to survive
+   scrolling. :clip blocks the same horizontal overflow :hidden did
+   (the reason this was here in the first place) without establishing a
+   scroll container, so it doesn't trigger that side effect. */
+html{overflow-x:clip;max-width:100%}
+body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)!important;color:var(--text-primary);font-size:14px;overflow-x:clip;max-width:100%}
 .nav{display:flex;border-bottom:1px solid var(--border);background:var(--bg-page);position:sticky;top:0;z-index:25;transition:top .2s}
 .nav-logo{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--text-bright);text-decoration:none;letter-spacing:.02em;padding:0 12px;flex-shrink:0;display:flex;align-items:center}
 .nav-logo span{color:var(--accent-blue-light)}
