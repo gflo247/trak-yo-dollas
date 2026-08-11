@@ -7446,6 +7446,50 @@ test("Possible duplicates pill is registered in PILL_DEFS and its modal is wired
   );
 });
 
+// Finding: Nicholas asked whether either demo profile actually has
+// possible duplicate charges to show off the feature above -- neither
+// did (detectDuplicateCharges() returned zero clusters against both).
+// Added two real duplicate pairs to Demo Profile 2's ALL_TX_RAW so a
+// fresh demo load surfaces the "Possible duplicates" pill/modal without
+// needing synthetic data injected by hand. Live-verified via
+// detectDuplicateCharges() against the loaded profile before writing
+// this: both pairs cluster correctly and nothing else in the profile's
+// ~35-day lookback window does.
+test("Demo Profile 2's ALL_TX_RAW includes two genuine duplicate-charge pairs, so the Possible duplicates pill has something to show on a fresh demo load", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /\{"date":"2026-07-09","desc":"BEST BUY","cat":"Shopping","card":"Checking","amount":89\.97,"excluded":false\},\{"date":"2026-07-10","desc":"BEST BUY","cat":"Shopping","card":"Checking","amount":89\.97,"excluded":false\}/,
+    "ALL_TX_RAW should contain a same-vendor/same-amount Best Buy pair one day apart"
+  );
+  assert.match(
+    source,
+    /\{"date":"2026-07-18","desc":"TARGET","cat":"Shopping","card":"Gold Card","amount":54\.32,"excluded":false\},\{"date":"2026-07-19","desc":"TARGET","cat":"Shopping","card":"Gold Card","amount":54\.32,"excluded":false\}/,
+    "ALL_TX_RAW should contain a same-vendor/same-amount Target pair one day apart"
+  );
+});
+
+// Finding: Nicholas asked whether the landing page mentions duplicate-
+// charge detection at all -- it didn't (grep for "duplicate" in
+// index.html came back empty), even though the feature has had its own
+// pill/modal in the app for a while. Added a clause to the existing
+// "Recurring charge detection" feature-list entry rather than a whole
+// new .fi card, since it's a close sibling of subscription detection
+// (same "flag a pattern in your charges" shape) and the feature list
+// was already fairly long.
+test("index.html's landing page mentions duplicate-charge detection", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const indexSource = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+  assert.match(
+    indexSource,
+    /flags possible duplicate charges/i,
+    "the landing page's feature list should mention duplicate-charge detection"
+  );
+});
+
 // Finding: detectSubscriptions() satisfied on both Mortgage and a gas
 // station (BP) in the live demo data -- confirmed live before writing
 // this test (Profile 2: Mortgage $426.76/mo/3mo; BP $77.29/mo/4mo, both
