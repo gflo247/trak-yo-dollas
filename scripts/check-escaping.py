@@ -206,8 +206,18 @@ TRAKYODOLLAS_KNOWN_FALSE_POSITIVES = {
     ("(isLiab(a.type)?-a.balance:a.balance)<0?'-':''", '.type'),
 
     # Already esc(v.vin)-wrapped at the actual render point; the flagged
-    # match is just the preceding `v.vin?` existence check.
-    ('v.vin?`<span style="font-size:9px;color:var(--text-muted);font-family:monospace;margin-left:8px">VIN: ${esc(v.vin)}</spa', '.vin'),
+    # match is just the preceding `v.vin?` existence check. Re-keyed when
+    # renderVehicles() was rebuilt around a new outer `${state.vehicles.
+    # map(v=>{...}).join('')}` template wrapper (Physical assets rebuilt
+    # to match the rest of the Accounts tab's tighter row format) --
+    # this scanner's brace-counting expr extractor got confused by the
+    # combination of that new outer ${...} boundary and the existing
+    # if(isOther){...} block's own braces, and now reports a nonsensical
+    # expr slice that doesn't even contain ".vin" as the "match context."
+    # Confirmed by direct re-inspection: the actual v.vin usage a few
+    # lines later is unchanged, still wrapped in esc() exactly as this
+    # entry originally verified.
+    ("state.vehicles.map(v=>{\n    const isOther=v.assetType==='other';\n    const vValue=Number(v.value)||0;\n\n    if(isOther){\n", '.vin'),
 
     # Hardcoded literal object (sortDirLabels.unusual = {desc:...,asc:...}
     # is a sort-direction key, not a transaction description field).

@@ -5881,7 +5881,7 @@ test("the .truncate utility class exists and is applied to the 5 sites the 168th
     "the shared .truncate utility class should be defined"
   );
   const truncateUsages = source.match(/class="truncate"/g) || [];
-  assert.equal(truncateUsages.length, 9, "the .truncate class should be applied at the 5 sites this pass fixed, plus 3 more added in a later small-fixes round (see the dedicated test below), plus the CSV import preview's category pill (an unbounded-length custom category name could otherwise misalign the new column-sort header, found in the adversarial pass right after that header was added)");
+  assert.equal(truncateUsages.length, 8, "the .truncate class should be applied at the 5 sites this pass fixed, plus 3 more added in a later small-fixes round (see the dedicated test below), plus the CSV import preview's category pill (an unbounded-length custom category name could otherwise misalign the new column-sort header, found in the adversarial pass right after that header was added), minus 1: renderVehicles()'s 'other asset' row switched from a bare class=\"truncate\" div to .account-name (which already carries the identical overflow:hidden;text-overflow:ellipsis;white-space:nowrap truncation, plus the account-row-grouped layout this row was rebuilt around), when Physical assets was rebuilt to match the rest of the Accounts tab's tighter row format");
   assert.match(
     source,
     /<div class="truncate" style="font-size:12px;font-weight:700;color:var\(--amber-text\)" title="\$\{esc\(a\.name\)\}">\$\{esc\(a\.name\)\}<\/div>/,
@@ -5902,10 +5902,17 @@ test("the .truncate utility class exists and is applied to the 5 sites the 168th
     /<span class="truncate" style="flex:1;font-size:12px;color:\$\{c\.custom\?'var\(--text-primary\)':'var\(--text-muted\)'\}" title="\$\{esc\(c\.name\)\}">/,
     "the category manager list should truncate the category name"
   );
+  // The vehicle "other asset" card's name div moved off the bare
+  // .truncate class onto .account-name when Physical assets was rebuilt
+  // around the same tight .account-row-grouped-style row Financial
+  // assets/Liabilities/Outside net worth use -- .account-name's own CSS
+  // already carries the identical overflow:hidden;text-overflow:
+  // ellipsis;white-space:nowrap truncation (see its own CSS rule,
+  // ~line 272), so this is a like-for-like swap, not a regression.
   assert.match(
     source,
-    /<div class="truncate" style="font-size:13px;font-weight:800;color:var\(--text-primary\)" title="\$\{esc\(v\.name\)\}">\$\{esc\(v\.name\)\}<\/div>/,
-    "the vehicle 'other asset' card should truncate the vehicle name"
+    /<div class="account-name" title="\$\{esc\(v\.name\)\} — \$\{esc\(v\.make\)\}">\$\{esc\(v\.name\)\}/,
+    "the vehicle 'other asset' card should still truncate the vehicle name, now via .account-name"
   );
 });
 
@@ -7608,5 +7615,51 @@ test("html/body use overflow-x:clip, not :hidden, so position:sticky (.nav and e
     source,
     /^html\{overflow-x:hidden/m,
     "html should no longer use overflow-x:hidden"
+  );
+});
+
+// Finding: Nicholas pointed out that Outside net worth and Physical
+// assets, on the Accounts tab, still used older, bulkier row/card
+// styles -- each entry as its own full standalone bordered box -- while
+// Financial assets/Liabilities had already been rebuilt (August 6) into
+// tight .account-row-grouped rows sharing one .nw-group border. Rebuilt
+// both to match: Outside net worth wraps its accounts in a plain
+// .nw-group (no redundant inner colored header, since the page-level
+// "Outside net worth" heading already labels it) using the identical
+// account-row-grouped row template Financial assets/Liabilities use,
+// just in amber. Physical assets does the same, but by hand rather than
+// reusing the shared classes directly, since vehicles carry a second
+// sub-row (valuation link + VIN) a single flex row can't hold.
+test("Outside net worth (Accounts tab) uses the tight .account-row-grouped format, not the older, bulkier .account-row-529 card", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /acctEl\.innerHTML=`<div class="nw-group">\$\{excluded\.map\(a=>`\s*<div class="account-row account-row-grouped">/,
+    "the Accounts tab's excluded-accounts list should wrap rows in .nw-group using .account-row-grouped"
+  );
+  assert.doesNotMatch(
+    source,
+    /acctEl\.innerHTML=excluded\.map\(a=>`\s*<div class="account-row account-row-529">/,
+    "the old .account-row-529 card style should be gone from the Accounts tab's excluded-accounts list"
+  );
+});
+
+test("renderVehicles() (Physical assets) wraps entries in one shared .nw-group with border-top dividers, not each getting its own standalone bordered card", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function renderVehicles\(\)\{[\s\S]{0,3500}?\n\}/);
+  assert.ok(fnMatch, "renderVehicles() should exist");
+  assert.match(
+    fnMatch[0],
+    /el\.innerHTML=`<div class="nw-group">\$\{state\.vehicles\.map\(v=>\{/,
+    "renderVehicles() should wrap all entries in one shared .nw-group"
+  );
+  assert.doesNotMatch(
+    fnMatch[0],
+    /border:1px solid var\(--border-mid\);border-radius:10px;(overflow:hidden;)?(padding:\.7rem 1rem;)?margin-bottom:8px/,
+    "no vehicle/asset row should still get its own standalone bordered+margined card"
   );
 });
