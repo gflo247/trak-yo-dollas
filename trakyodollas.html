@@ -586,6 +586,15 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
      looked a different size than the Privacy button next to it on
      mobile; #theme-toggle-btn has the identical bug shape and was fixed
      alongside it rather than left silently broken next to the fix. */
+  /* #global-settings-btn itself was missing from this block entirely --
+     it fell back to its unshrunk 12px/2px 8px inline base on mobile while
+     #theme-toggle-btn (its desktop-paired sibling, see the @media(min-
+     width:601px) rule below) correctly shrunk to 11px, so the two looked
+     mismatched on mobile despite being a matched pair everywhere else.
+     Found via a direct follow-up report right after fixing the sibling
+     bugs above -- same size as #theme-toggle-btn, matching their desktop
+     pairing. */
+  #global-settings-btn{padding:2px 5px!important;font-size:11px!important}
   #theme-toggle-btn{padding:2px 5px!important;font-size:11px!important}
   #auth-sign-in-btn{font-size:9px!important;padding:2px 7px!important}
   #auth-sign-out-btn{font-size:9px;padding:2px 7px;white-space:nowrap}
@@ -859,7 +868,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
     <span id="auth-user-label" style="font-size:10px;color:var(--text-muted);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
   </div>
-  <button data-action="openPrivacyPanel" class="btn btn-sm btn-primary btn-privacy-nav" style="font-size:10px;padding:3px 10px;white-space:nowrap" type="button"><span class="hide-mobile">🔒 Privacy</span><span class="show-mobile">🔒</span></button>
+  <button data-action="openPrivacyPanel" class="btn btn-sm btn-privacy-nav" style="font-size:10px;padding:3px 10px;white-space:nowrap;color:#60A5FA;border-color:#2563EB44" type="button"><span class="hide-mobile">🔒 Privacy</span><span class="show-mobile">🔒</span></button>
   <button id="auth-sign-in-btn" class="btn btn-sm" data-action="openAuthModal" style="font-size:10px;padding:3px 10px;color:#60A5FA;border-color:#2563EB44" title="Save snapshots, custom categories &amp; transaction edits across devices" type="button"><span class="hide-mobile">👤 Sign In</span><span class="show-mobile">👤</span></button>
   <button id="auth-sign-out-btn" class="btn btn-sm hidden" data-action="doSignOut" style="font-size:10px;padding:3px 10px;color:var(--text-muted)" type="button">Sign out</button>
 </div>

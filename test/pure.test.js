@@ -7944,3 +7944,30 @@ test("The nav's mobile-shrink and desktop-bump rules for #demo-nav-badge/#theme-
     "#auth-sign-in-btn should no longer carry btn-primary's solid blue fill, using the same ghost-blue treatment as '+ Add historical'"
   );
 });
+
+// Finding: immediate follow-up report after the fix above -- #global-
+// settings-btn was missing from the mobile-shrink block entirely (never
+// added when the ⚙ menu itself was built), so it stayed at its unshrunk
+// 12px/2px 8px inline base on mobile while its desktop-paired sibling
+// #theme-toggle-btn correctly shrunk to 11px -- the two looked mismatched
+// despite always being sized together on desktop. Separately, Privacy's
+// solid btn-primary blue fill became the one visually "loud" element once
+// Sign In moved to a ghost-blue outline -- dropped it to the identical
+// treatment so the whole 4-icon cluster (⚙/🌙 neutral-gray, 🔒/👤
+// blue-accented) reads as one consistent row instead of three ghost
+// buttons and one solid-filled one.
+test("#global-settings-btn has a mobile-shrink rule matching #theme-toggle-btn, and Privacy no longer has a solid blue fill either", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /#global-settings-btn\{padding:2px 5px!important;font-size:11px!important\}\s*\n\s*#theme-toggle-btn\{padding:2px 5px!important;font-size:11px!important\}/,
+    "#global-settings-btn's mobile rule should exist and match #theme-toggle-btn's exactly"
+  );
+  assert.match(
+    source,
+    /<button data-action="openPrivacyPanel" class="btn btn-sm btn-privacy-nav" style="font-size:10px;padding:3px 10px;white-space:nowrap;color:#60A5FA;border-color:#2563EB44"/,
+    "the Privacy nav button should use the same ghost-blue treatment as Sign In, not btn-primary's solid fill"
+  );
+});
