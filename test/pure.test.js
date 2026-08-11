@@ -33,23 +33,17 @@ test("esc: coerces non-string input instead of throwing", () => {
 // render sites. This is the validation `assignColors()`/`getCatColor()` now
 // run before trusting a custom color, added during the July 6, 2026
 // pre-launch adversarial review. ──
-test("isValidHexColor: accepts standard 6-digit and shorthand 3-digit hex colors", () => {
+test("isValidHexColor: accepts standard/shorthand hex, rejects style-attribute breakout attempts and non-hex input", () => {
   const { isValidHexColor } = loadFunctions(["isValidHexColor"]);
-  assert.equal(isValidHexColor("#34D399"), true);
-  assert.equal(isValidHexColor("#fff"), true);
-});
-test("isValidHexColor: rejects a value that breaks out of a style attribute", () => {
-  const { isValidHexColor } = loadFunctions(["isValidHexColor"]);
-  assert.equal(isValidHexColor('red;background:url(javascript:alert(1))'), false);
-  assert.equal(isValidHexColor('#fff" onmouseover="alert(1)'), false);
-});
-test("isValidHexColor: rejects non-strings, empty string, and near-miss hex lengths", () => {
-  const { isValidHexColor } = loadFunctions(["isValidHexColor"]);
+  assert.equal(isValidHexColor("#34D399"), true, "standard 6-digit hex");
+  assert.equal(isValidHexColor("#fff"), true, "shorthand 3-digit hex");
+  assert.equal(isValidHexColor('red;background:url(javascript:alert(1))'), false, "rejects a value that breaks out of a style attribute");
+  assert.equal(isValidHexColor('#fff" onmouseover="alert(1)'), false, "rejects a value that breaks out of a style attribute");
   assert.equal(isValidHexColor(null), false);
   assert.equal(isValidHexColor(undefined), false);
   assert.equal(isValidHexColor(""), false);
-  assert.equal(isValidHexColor("#12345"), false);
-  assert.equal(isValidHexColor("blue"), false);
+  assert.equal(isValidHexColor("#12345"), false, "near-miss hex length");
+  assert.equal(isValidHexColor("blue"), false, "non-hex color name");
 });
 
 // ── classifyBudgetStatus() — shared by the Spending tab's "Budget health"
@@ -153,24 +147,15 @@ test("classifyBudgetStatus: a zero/unset budget returns pct 0 instead of Infinit
 
 // ── splitCSVLine() / parseCSV() — the first thing that touches a
 // user-uploaded bank CSV. ──
-test("splitCSVLine: splits plain comma-separated fields", () => {
+test("splitCSVLine: plain fields, quoted commas, trailing empty fields, and doubled-quote escaping", () => {
   const { splitCSVLine } = loadFunctions(["splitCSVLine"]);
-  assert.deepEqual(splitCSVLine("a,b,c"), ["a", "b", "c"]);
-});
-test("splitCSVLine: a comma inside quotes doesn't split the field (quotes themselves are stripped)", () => {
-  const { splitCSVLine } = loadFunctions(["splitCSVLine"]);
-  assert.deepEqual(splitCSVLine('a,"b,c",d'), ["a", "b,c", "d"]);
-});
-test("splitCSVLine: a trailing empty field after the last comma is preserved", () => {
-  const { splitCSVLine } = loadFunctions(["splitCSVLine"]);
-  assert.deepEqual(splitCSVLine("a,b,"), ["a", "b", ""]);
-});
-test("splitCSVLine: a doubled quote inside a quoted field is a literal quote, not two field boundaries", () => {
+  assert.deepEqual(splitCSVLine("a,b,c"), ["a", "b", "c"], "splits plain comma-separated fields");
+  assert.deepEqual(splitCSVLine('a,"b,c",d'), ["a", "b,c", "d"], "a comma inside quotes doesn't split the field (quotes themselves are stripped)");
+  assert.deepEqual(splitCSVLine("a,b,"), ["a", "b", ""], "a trailing empty field after the last comma is preserved");
   // Standard CSV escaping: "" inside a quoted field means one literal ".
   // The naive quote-toggle parser used to treat each " independently and
   // silently drop both characters instead of keeping one.
-  const { splitCSVLine } = loadFunctions(["splitCSVLine"]);
-  assert.deepEqual(splitCSVLine('"He said ""hi""",next'), ['He said "hi"', "next"]);
+  assert.deepEqual(splitCSVLine('"He said ""hi""",next'), ['He said "hi"', "next"], "a doubled quote inside a quoted field is a literal quote, not two field boundaries");
 });
 test("parseCSV: lowercases headers and maps each row to an object keyed by them", () => {
   const { parseCSV } = loadFunctions(["parseCSV","splitCSVLine","splitCSVRows"]);
@@ -274,24 +259,15 @@ test("parseCSV: a midata file with a comma preamble row above its real semicolon
 // =/+/-/@ so a value copied from an imported transaction (bank memo,
 // custom category name) can't be interpreted as a formula by Excel/Sheets
 // when the exported file is reopened there. ──
-test("csvSafeField: quotes a plain value and escapes embedded quotes", () => {
+test("csvSafeField: quotes and escapes embedded quotes, defuses formula-injection prefixes (=/+/-/@), and handles null/undefined", () => {
   const { csvSafeField } = loadFunctions(["csvSafeField"]);
-  assert.equal(csvSafeField('Trader Joe\'s "Everything" Bagel'), '"Trader Joe\'s ""Everything"" Bagel"');
-});
-test("csvSafeField: prefixes a leading = with a single quote to defuse formula injection", () => {
-  const { csvSafeField } = loadFunctions(["csvSafeField"]);
-  assert.equal(csvSafeField("=HYPERLINK(\"http://evil\",\"click\")"), '"\'=HYPERLINK(""http://evil"",""click"")"');
-});
-test("csvSafeField: also defuses leading +, -, and @", () => {
-  const { csvSafeField } = loadFunctions(["csvSafeField"]);
-  assert.equal(csvSafeField("+1+1"), "\"'+1+1\"");
-  assert.equal(csvSafeField("-1+1"), "\"'-1+1\"");
-  assert.equal(csvSafeField("@SUM(1,2)"), "\"'@SUM(1,2)\"");
-});
-test("csvSafeField: null/undefined becomes an empty quoted field", () => {
-  const { csvSafeField } = loadFunctions(["csvSafeField"]);
-  assert.equal(csvSafeField(null), '""');
-  assert.equal(csvSafeField(undefined), '""');
+  assert.equal(csvSafeField('Trader Joe\'s "Everything" Bagel'), '"Trader Joe\'s ""Everything"" Bagel"', "quotes a plain value and escapes embedded quotes");
+  assert.equal(csvSafeField("=HYPERLINK(\"http://evil\",\"click\")"), '"\'=HYPERLINK(""http://evil"",""click"")"', "prefixes a leading = with a single quote to defuse formula injection");
+  assert.equal(csvSafeField("+1+1"), "\"'+1+1\"", "also defuses a leading +");
+  assert.equal(csvSafeField("-1+1"), "\"'-1+1\"", "also defuses a leading -");
+  assert.equal(csvSafeField("@SUM(1,2)"), "\"'@SUM(1,2)\"", "also defuses a leading @");
+  assert.equal(csvSafeField(null), '""', "null becomes an empty quoted field");
+  assert.equal(csvSafeField(undefined), '""', "undefined becomes an empty quoted field");
 });
 
 // ── parseImportDate() — a malformed or corrupted CSV row (out-of-range day/month,
@@ -301,31 +277,20 @@ test("csvSafeField: null/undefined becomes an empty quoted field", () => {
 // this row", so a round-trip validation guard was added to make that the
 // outcome for genuinely invalid calendar dates rather than a wrong-but-plausible
 // silent date shift. ──
-test("parseImportDate: rejects an invalid calendar date (Feb 30) instead of rolling over to March", () => {
+test("parseImportDate: rejects invalid/out-of-range/incomplete calendar dates instead of silently rolling over or guessing a year, while still parsing every valid format", () => {
   const { parseImportDate } = loadFunctions(["parseImportDate"]);
-  assert.equal(parseImportDate("02/30/2026", "mdy"), "");
-});
-test("parseImportDate: rejects out-of-range month/day (13/45) instead of rolling into next year", () => {
-  const { parseImportDate } = loadFunctions(["parseImportDate"]);
-  assert.equal(parseImportDate("13/45/2026", "mdy"), "");
-});
-test("parseImportDate: rejects an invalid ISO calendar date (2026-02-30)", () => {
-  const { parseImportDate } = loadFunctions(["parseImportDate"]);
-  assert.equal(parseImportDate("2026-02-30"), "");
-});
-test("parseImportDate: still parses valid mdy, dmy, iso, and locale-string dates", () => {
-  const { parseImportDate } = loadFunctions(["parseImportDate"]);
-  assert.equal(parseImportDate("05/01/2026", "mdy"), "2026-05-01");
-  assert.equal(parseImportDate("25/12/2026", "dmy"), "2026-12-25");
-  assert.equal(parseImportDate("2026-05-01"), "2026-05-01");
-  assert.equal(parseImportDate("Jan 15, 2025"), "2025-01-15");
-});
-test("parseImportDate: rejects an incomplete date missing a year (03/10) instead of the native parser's silent year-2001 guess — 11th adversarial pass", () => {
-  const { parseImportDate } = loadFunctions(["parseImportDate"]);
+  assert.equal(parseImportDate("02/30/2026", "mdy"), "", "an invalid calendar date (Feb 30) should be rejected, not rolled over to March");
+  assert.equal(parseImportDate("13/45/2026", "mdy"), "", "out-of-range month/day (13/45) should be rejected, not rolled into next year");
+  assert.equal(parseImportDate("2026-02-30"), "", "an invalid ISO calendar date should be rejected the same way");
+  assert.equal(parseImportDate("05/01/2026", "mdy"), "2026-05-01", "valid mdy still parses");
+  assert.equal(parseImportDate("25/12/2026", "dmy"), "2026-12-25", "valid dmy still parses");
+  assert.equal(parseImportDate("2026-05-01"), "2026-05-01", "valid iso still parses");
+  assert.equal(parseImportDate("Jan 15, 2025"), "2025-01-15", "valid locale-string dates still parse");
   // Matches neither the ISO nor MM/DD/YYYY regex (both require a 2-4 digit
   // year group), so it used to fall through to the unguarded native
   // new Date('03/10') fallback branch, which silently parses as 2001-03-10.
-  assert.equal(parseImportDate("03/10", "mdy"), "");
+  // 11th adversarial pass.
+  assert.equal(parseImportDate("03/10", "mdy"), "", "an incomplete date missing a year should be rejected, not silently guess year 2001 via the native parser fallback");
 });
 
 // ── 84th adversarial pass: the 83rd pass added manual Add/Edit Transaction
