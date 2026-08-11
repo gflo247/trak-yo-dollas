@@ -124,18 +124,31 @@ trak-yo-dollas/
   sitemap.xml             ← sitemap for search engines
   robots.txt              ← crawler directives
   app-screenshot.png      ← landing page app screenshot (with lightbox)
+  app-screenshot-light.png← light-theme variant
   og.png                  ← Open Graph / social share image
+  _headers                ← Cloudflare static-asset response headers (X-Frame-Options, etc.)
   icons/
     icon-192.png          ← PWA icon (192×192)
     icon-512.png          ← PWA icon (512×512, maskable)
   fonts/                  ← self-hosted DM Mono and DM Sans (no Google Fonts request)
   scripts/
-    update-csp-hashes.py         ← recomputes inline script SHA-256 hashes for the CSP
-    update-sitemap-dates.py      ← patches sitemap <lastmod> from file mtimes before deploy
-    check-no-inline-handlers.sh  ← lints for leftover onclick= attributes
+    update-csp-hashes.py            ← recomputes inline script SHA-256 hashes for the CSP
+    update-sitemap-dates.py         ← patches sitemap <lastmod> from file mtimes before deploy
+    check-syntax.py                 ← parses all 3 HTML files, catches syntax errors before deploy
+    check-no-inline-handlers.sh     ← lints for leftover onclick= attributes
+    check-connect-src.py            ← every fetch()/client call must be covered by the CSP's connect-src
+    extract-testable-fns.js         ← pulls named functions out of trakyodollas.html for the test suite
+    check-escaping.py               ← advisory: flags ${...} interpolations of risky fields missing esc()
+    check-*-coverage.py (7 files)   ← advisory: app-specific data-integrity scanners (state fields that
+                                       should but don't sync to the cloud, source/business filters missing
+                                       from a spend loop, modals missing ARIA attributes, and similar
+                                       cross-cutting invariants specific to this app's state model)
+  test/
+    pure.test.js           ← node --test suite (see "Tests" below)
   .github/
-    FUNDING.yml           ← Ko-fi support link (shown on GitHub repo)
-  README.md               ← this file
+    FUNDING.yml            ← Ko-fi support link (shown on GitHub repo)
+  package.json             ← exists solely to run `npm test`; the app itself has no build step
+  README.md                ← this file
 ```
 
 ---
@@ -152,6 +165,14 @@ npx serve .
 python3 -m http.server 8080
 ```
 
+### Tests
+
+`trakyodollas.html` is a single classic `<script>` with no module system, so the test suite extracts named functions directly out of the shipped HTML (by brace-matching, not a hand-copied duplicate) and runs them under `node --test`. `package.json` exists solely for this — the app itself still has no build step.
+
+```bash
+npm test
+```
+
 ---
 
 ## Deployment
@@ -162,7 +183,7 @@ Hosted on [Cloudflare Workers](https://workers.cloudflare.com/) via static asset
 ./deploy.sh prod
 ```
 
-`deploy.sh` runs `update-csp-hashes.py` and `update-sitemap-dates.py` first, builds a clean deploy directory via rsync (excluding dev-only files), then runs `wrangler deploy`. Never run `wrangler deploy` directly — skipping the hash and rsync steps causes CSP violations or leaks dev files to the public URL.
+`deploy.sh` is a hard gate, not just a build script. It runs, in order: a syntax check, the full `node --test` suite (`npm test`), an inline-event-handler lint, and a CSP `connect-src` completeness check — any failure aborts before anything is touched. Only then does it recompute CSP hashes (`update-csp-hashes.py`) and sitemap dates (`update-sitemap-dates.py`), build a clean deploy directory via rsync (excluding dev-only files), and run `wrangler deploy`. A further set of advisory scanners (data-integrity/coverage checks specific to this app's state model — see `scripts/`) run after and report but don't block. Never run `wrangler deploy` directly — skipping straight to it bypasses every one of these gates, which is exactly how it's caught real bugs before they shipped.
 
 The app uses a hash-based Content Security Policy — inline scripts are allowlisted by SHA-256 hash. `update-csp-hashes.py` recomputes all hashes automatically before every deploy.
 
