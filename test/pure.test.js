@@ -7865,3 +7865,28 @@ test("toggleGlobalSettings/closeGlobalSettings mirror toggleSpendingOverflow/clo
   closeGlobalSettings();
   assert.equal(menuStyle.display, "none", "closeGlobalSettings should force it closed regardless of current state");
 });
+
+// Finding: Nicholas asked whether an icon in front of "Sign In" on desktop,
+// collapsing to icon-only on mobile, would help free up nav space -- same
+// .hide-mobile/.show-mobile pattern the 🔒 Privacy button already uses.
+// Picked 👤 specifically to avoid sitting next to 🔒 with a second
+// lock-family icon (🔑/🔐 were the obvious alternatives) -- confirmed
+// unused anywhere else in the file first, so it carries no conflicting
+// meaning. updateAuthUI() only toggles signInBtn's hidden class, never
+// touches its innerHTML/textContent, so restructuring its contents into
+// two spans doesn't risk that logic silently wiping the icon back out.
+test("#auth-sign-in-btn shows '👤 Sign In' on desktop and just 👤 on mobile, matching the Privacy button's hide-mobile/show-mobile pattern", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<button id="auth-sign-in-btn"[^>]*><span class="hide-mobile">👤 Sign In<\/span><span class="show-mobile">👤<\/span><\/button>/,
+    "#auth-sign-in-btn should wrap its label in hide-mobile/show-mobile spans, matching the Privacy button"
+  );
+  assert.doesNotMatch(
+    source,
+    /🔑|🔐/,
+    "should not have introduced a second lock-family icon next to the existing 🔒 Privacy button"
+  );
+});
