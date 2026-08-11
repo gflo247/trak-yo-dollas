@@ -36,9 +36,9 @@ Local-first by design. I cannot see your financial data — not by policy, but b
 - **Runs entirely in your browser** — data saves to your device's local storage
 - **Nothing leaves your device unless you choose to sync** — and when you do, it's encrypted on your device first
 - **Optional sign-in** — opt-in only, never required; sign in with Google or a passwordless email link to sync across devices via Supabase (open source)
-- **Privacy-respecting analytics** — [Umami](https://umami.is) (no cookies, no personal data, page view counts only)
+- **Privacy-respecting analytics** — [Umami](https://umami.is) (page views, referrer, browser/OS, and country; no cookies, no personal data, never identifies you across sessions)
 - **Self-hosted fonts** — DM Mono and DM Sans are served from this repo, not Google Fonts
-- **Hash-based Content Security Policy** — inline scripts are allowlisted by SHA-256 hash; no `unsafe-inline`
+- **Hash-based Content Security Policy** — inline `<script>` blocks are allowlisted by SHA-256 hash; no `unsafe-inline` in `script-src`
 - **No paywall** — free to use, all features included
 
 Full details, data flow diagram, and FAQ: [privacy policy](https://trakyodollas.com/privacy)
@@ -51,7 +51,7 @@ Full details, data flow diagram, and FAQ: [privacy policy](https://trakyodollas.
 Under Statements or Download Activity in your bank, credit union, or credit card portal.
 
 **2. Import it**
-Open the app, click ⬆ Import CSV. Works with Chase, Ally, Fidelity, Vanguard, NFCU, BECU, PenFed, Alliant, TD, RBC, Scotiabank, BMO, CIBC, Capital One, Discover, Amex, USAA, Bank of America, Wells Fargo, and most banks and credit unions.
+Open the app, click ⬆ Import CSV. Works with Chase, Ally, Fidelity, Vanguard, NFCU, BECU, PenFed, Alliant, TD, Scotiabank, BMO, CIBC, Capital One, Discover, Amex, USAA, Bank of America, Wells Fargo, and most banks and credit unions.
 
 **Migrating from another app?** The import modal has a dedicated section for Mint, YNAB, and Monarch Money — category names map across automatically.
 
@@ -74,9 +74,9 @@ Transactions auto-categorize on import. Switch between chart views, set budgets,
 
 ### Categories
 
-Groceries, Food & Drink, Shopping, Home, Gas, Bills & Utilities, Insurance, Health & Wellness, Personal Care, Entertainment, Gifts & Donations, Travel, Automotive, Education, Child Care, Pet(s), Checks, Taxes & Fees, Investment Contributions, Transfers, CC Payment, College Fund(s), Other.
+Groceries, Food & Drink, Shopping, Home, Gas, Bills & Utilities, Insurance, Health & Wellness, Personal Care, Entertainment, Gifts & Donations, Travel, Automotive, Education, Child Care, Pet(s), Checks, Taxes & Fees, Investment Contributions, Transfers, Internal Transfer, CC Payment, College Fund(s), Other.
 
-Investment Contributions, Transfers, and CC Payment are excluded from spending totals by default (they're not spending — they're financial flows). Toggle any category's visibility from the spending tab.
+Investment Contributions, Transfers, Internal Transfer, and CC Payment are excluded from spending totals by default (they're not spending — they're financial flows). Toggle any category's visibility from the spending tab.
 
 ### Community patterns
 
@@ -139,10 +139,11 @@ trak-yo-dollas/
     check-connect-src.py            ← every fetch()/client call must be covered by the CSP's connect-src
     extract-testable-fns.js         ← pulls named functions out of trakyodollas.html for the test suite
     check-escaping.py               ← advisory: flags ${...} interpolations of risky fields missing esc()
-    check-*-coverage.py (7 files)   ← advisory: app-specific data-integrity scanners (state fields that
+    check-*-coverage.py (6 files)   ← advisory: app-specific data-integrity scanners (state fields that
                                        should but don't sync to the cloud, source/business filters missing
-                                       from a spend loop, modals missing ARIA attributes, and similar
-                                       cross-cutting invariants specific to this app's state model)
+                                       from a spend loop, and similar cross-cutting invariants specific to
+                                       this app's state model)
+    check-modal-aria.py             ← advisory: flags modals missing required ARIA attributes
   test/
     pure.test.js           ← node --test suite (see "Tests" below)
   .github/
