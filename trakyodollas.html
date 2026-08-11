@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-OEhqORevpQJvj3wGDFM6xXu1b3CuJhhJlLKQMWnxl94=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-uajkA+YpKiJNXODPkPpyDPdB8MYhOSZRdxLzAHC3fbY=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -792,6 +792,19 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <button class="nav-btn" data-action="showPageAccounts" type="button">Accounts</button>
 <div id="auth-bar" style="display:flex;align-items:center;gap:6px;padding:0 10px;margin-left:auto;flex-shrink:0">
   <button id="demo-nav-badge" data-action="openDemoPicker" data-arg="false" title="Switch demo profile" type="button">DEMO DATA</button>
+  <div style="position:relative">
+    <button id="global-settings-btn" data-action="toggleGlobalSettings" data-stop title="Settings, backup &amp; export" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer;color:var(--text-muted)" type="button">⚙</button>
+    <div id="global-settings-menu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:var(--bg-card);border:1px solid var(--border-mid);border-radius:9px;padding:4px;min-width:200px;z-index:50;box-shadow:0 4px 16px rgba(0,0,0,.35)">
+      <button id="pwa-install-btn" data-action="triggerPwaInstall|closeGlobalSettings" class="overflow-item" style="display:none" type="button">📲 Add to Home Screen</button>
+      <button data-action="openCurrencyModal|closeGlobalSettings" class="overflow-item" type="button">🌍 Currency symbol</button>
+      <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+      <button data-action="exportAllTransactionsCSV|closeGlobalSettings" class="overflow-item" title="All transactions, unfiltered — readable in Excel/Sheets, but no accounts/budgets/settings. For a full-fidelity backup, use Export data backup below." type="button">⬇ Export all transactions (CSV)</button>
+      <button data-action="exportBackup|closeGlobalSettings" class="overflow-item" type="button">📦 Export data backup</button>
+      <button data-action="triggerImportBackup|closeGlobalSettings" class="overflow-item" type="button">📥 Import data backup</button>
+      <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+      <button data-action="openClearDataModal|closeGlobalSettings" class="overflow-item" style="color:#F87171" type="button">🗑 Clear all data</button>
+    </div>
+  </div>
   <button data-action="toggleTheme" id="theme-toggle-btn" title="Toggle light/dark theme" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer;color:var(--text-muted)" type="button">🌙</button>
   <div id="auth-user-info" class="hidden" style="display:flex;align-items:center;gap:6px">
     <div style="position:relative">
@@ -970,19 +983,11 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <div style="position:relative">
         <button id="toolbar-overflow-btn" class="btn btn-sm" data-action="toggleSpendingOverflow" data-stop title="More options" style="padding:3px 9px;font-size:13px;font-weight:700;letter-spacing:.05em;line-height:1" type="button">···</button>
         <div id="toolbar-overflow-menu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:var(--bg-card);border:1px solid var(--border-mid);border-radius:9px;padding:4px;min-width:170px;z-index:50;box-shadow:0 4px 16px rgba(0,0,0,.35)">
-          <button id="pwa-install-btn" data-action="triggerPwaInstall|closeSpendingOverflow" class="overflow-item" style="display:none" type="button">📲 Add to Home Screen</button>
-          <button data-action="openCurrencyModal|closeSpendingOverflow" class="overflow-item" type="button">🌍 Currency symbol</button>
           <button id="include-income-btn" data-action="toggleIncludeIncome|closeSpendingOverflow" class="overflow-item" type="button">💼 Include income &amp; business categories</button>
           <button data-action="openIncomeModal|closeSpendingOverflow" class="overflow-item" type="button">💰 Income &amp; savings rate</button>
           <button data-action="openRulesModal|closeSpendingOverflow" class="overflow-item" type="button">⚡ Auto-categorization rules</button>
           <button data-action="openVendorAliasModal|closeSpendingOverflow" class="overflow-item" type="button">⟲ Merge duplicate vendors</button>
           <button data-action="openCatModal|closeSpendingOverflow" class="overflow-item" type="button">⚙ Manage categories</button>
-          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <button data-action="exportAllTransactionsCSV|closeSpendingOverflow" class="overflow-item" title="All transactions, unfiltered — readable in Excel/Sheets, but no accounts/budgets/settings. For a full-fidelity backup, use Export data backup below." type="button">⬇ Export all transactions (CSV)</button>
-          <button data-action="exportBackup|closeSpendingOverflow" class="overflow-item" type="button">📦 Export data backup</button>
-          <button data-action="triggerImportBackup|closeSpendingOverflow" class="overflow-item" type="button">📥 Import data backup</button>
-          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <button data-action="openClearDataModal|closeSpendingOverflow" class="overflow-item" style="color:#F87171" type="button">🗑 Clear all data</button>
         </div>
       </div>
     </div>
@@ -7101,6 +7106,32 @@ function closeSpendingOverflow(){
 document.addEventListener('click',function(e){
   const menu=document.getElementById('toolbar-overflow-menu');
   const btn=document.getElementById('toolbar-overflow-btn');
+  if(menu&&btn&&!menu.contains(e.target)&&!btn.contains(e.target)){
+    menu.style.display='none';
+  }
+});
+
+// Nav's ⚙ menu — the cross-tab items (currency, backup/restore, CSV export,
+// clear data, PWA install) that used to live only inside the Spending tab's
+// overflow menu, unreachable from Budget/Net Worth/Accounts without
+// switching tabs first. Same toggle/outside-click-close shape as
+// toggleSpendingOverflow() above, kept as a separate menu/listener rather
+// than merged into it since the two buttons live in different DOM
+// locations (nav vs. Spending's own toolbar) and either one can be open
+// while the other tab is showing.
+function toggleGlobalSettings(){
+  const menu=document.getElementById('global-settings-menu');
+  if(!menu)return;
+  const isOpen=menu.style.display!=='none';
+  menu.style.display=isOpen?'none':'block';
+}
+function closeGlobalSettings(){
+  const menu=document.getElementById('global-settings-menu');
+  if(menu)menu.style.display='none';
+}
+document.addEventListener('click',function(e){
+  const menu=document.getElementById('global-settings-menu');
+  const btn=document.getElementById('global-settings-btn');
   if(menu&&btn&&!menu.contains(e.target)&&!btn.contains(e.target)){
     menu.style.display='none';
   }

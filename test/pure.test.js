@@ -7798,8 +7798,8 @@ test("Export all transactions (CSV) and Export CSV (Net Worth snapshots) are wir
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /data-action="exportAllTransactionsCSV\|closeSpendingOverflow"/,
-    "the overflow menu should have an entry wired to exportAllTransactionsCSV"
+    /data-action="exportAllTransactionsCSV\|closeGlobalSettings"/,
+    "the nav's global settings menu should have an entry wired to exportAllTransactionsCSV"
   );
   assert.match(
     source,
@@ -7811,4 +7811,57 @@ test("Export all transactions (CSV) and Export CSV (Net Worth snapshots) are wir
     /const TX_CSV_HEADERS=\['Date','Description','Vendor','Category','Amount','Source','Excluded','IsIncome','Business','IsOffset'\];/,
     "TX_CSV_HEADERS should match the header list the exportAllTransactionsCSV test mocks in its context"
   );
+});
+
+// Finding: Nicholas asked whether the overflow menu's cross-tab items
+// (currency, backup/restore, CSV export, clear data, PWA install) should
+// be reachable from every tab, not just Spending -- they weren't; a user
+// on Budget/Net Worth/Accounts had to switch to Spending first to reach
+// "Export data backup" or "Clear all data." Moved those 6 items out of
+// Spending's own overflow menu into a new ⚙ menu inside <nav> (present on
+// every tab, since it's one shared element, not per-page markup), leaving
+// Spending's overflow with only the genuinely Spending-scoped items
+// (income toggle, income settings, auto-categorization rules, vendor
+// merge, category manager). toggleGlobalSettings()/closeGlobalSettings()
+// mirror toggleSpendingOverflow()/closeSpendingOverflow()'s exact
+// toggle/outside-click-close shape as a deliberate choice, not
+// duplication avoided -- the two menus live in different DOM locations
+// and either can be open while the other tab is showing.
+test("The nav has a global ⚙ settings menu with the cross-tab items, and Spending's own overflow menu no longer duplicates them", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const navMatch = source.match(/<nav class="nav"[\s\S]{0,5000}?<\/nav>/);
+  assert.ok(navMatch, "the main <nav> element should exist");
+  assert.match(navMatch[0], /id="global-settings-btn" data-action="toggleGlobalSettings"/, "nav should have a ⚙ button that opens the global settings menu");
+  assert.match(navMatch[0], /id="global-settings-menu"/, "nav should contain the global settings menu");
+  for (const action of ["triggerPwaInstall", "openCurrencyModal", "exportAllTransactionsCSV", "exportBackup", "triggerImportBackup", "openClearDataModal"]) {
+    assert.match(navMatch[0], new RegExp(`data-action="${action}\\|closeGlobalSettings"`), `nav's global settings menu should include ${action}`);
+  }
+
+  const overflowMatch = source.match(/<div id="toolbar-overflow-menu"[\s\S]{0,1200}?<\/div>\s*<\/div>/);
+  assert.ok(overflowMatch, "Spending's own overflow menu should still exist");
+  for (const action of ["toggleIncludeIncome", "openIncomeModal", "openRulesModal", "openVendorAliasModal", "openCatModal"]) {
+    assert.match(overflowMatch[0], new RegExp(`data-action="${action}\\|closeSpendingOverflow"`), `Spending's overflow menu should keep ${action}`);
+  }
+  for (const action of ["triggerPwaInstall", "openCurrencyModal", "exportAllTransactionsCSV", "exportBackup", "triggerImportBackup", "openClearDataModal"]) {
+    assert.doesNotMatch(overflowMatch[0], new RegExp(action), `${action} should have moved to the global menu, not stayed duplicated in Spending's overflow`);
+  }
+});
+
+test("toggleGlobalSettings/closeGlobalSettings mirror toggleSpendingOverflow/closeSpendingOverflow's toggle behavior", () => {
+  const menuStyle = { display: "none" };
+  const ctx = {
+    document: {
+      getElementById: (id) => (id === "global-settings-menu" ? { style: menuStyle } : null),
+    },
+  };
+  const { toggleGlobalSettings, closeGlobalSettings } = loadFunctions(["toggleGlobalSettings", "closeGlobalSettings"], ctx);
+  toggleGlobalSettings();
+  assert.equal(menuStyle.display, "block", "first toggle should open the menu");
+  toggleGlobalSettings();
+  assert.equal(menuStyle.display, "none", "second toggle should close it again");
+  menuStyle.display = "block";
+  closeGlobalSettings();
+  assert.equal(menuStyle.display, "none", "closeGlobalSettings should force it closed regardless of current state");
 });
