@@ -606,6 +606,13 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
    user-friendliness pass, August 2026. */
 @media(min-width:601px){#insights-pills{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))!important}}
 @media(min-width:601px){.range-select{padding:5px 10px;font-size:12px;min-width:90px}.range-sep{font-size:12px}.range-dropdowns{gap:6px}.grain-row .h-btn{padding:4px 16px}}
+/* The ⚙ settings icon and 🌙 theme toggle share one inline 12px base size
+   (mobile's own @media(max-width:600px) block above shrinks it further,
+   to 11px) -- that base was reading small at desktop viewing distance,
+   with no touch-target constraint to justify staying tiny. Bumped both
+   together on desktop only, so they still read as a matched pair, and
+   the mobile sizing Nicholas confirmed was already fine stays untouched. */
+@media(min-width:601px){#global-settings-btn,#theme-toggle-btn{font-size:15px;padding:3px 9px}}
 
 /* Sankey flow */
 .sankey-nudge{background:var(--bg-card);border:1.5px dashed var(--border-mid);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer}
