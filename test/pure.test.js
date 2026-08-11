@@ -7021,6 +7021,30 @@ test("list-col wraps each area's header together with its list, centered, instea
   );
 });
 
+// Finding: Nicholas caught, via a live screenshot of dev, that this same
+// max-width treatment never reached Outside net worth or Physical
+// assets -- both were rebuilt onto the tighter .nw-group row format on
+// August 10 (same day as this sweep), but neither got wrapped in
+// .list-col, so they stayed full-width and stretched edge-to-edge on a
+// wide monitor while Financial assets/Liabilities right above them
+// stayed capped at 800px and centered -- the exact "same tab, two
+// different widths" inconsistency this whole sweep was meant to fix.
+test("Outside net worth and Physical assets are also wrapped in .list-col, matching Financial assets/Liabilities right above them", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<div class="list-col">\s*<div id="acct-excluded-header" class="sh"[^>]*>Outside net worth<\/div>\s*<div id="excluded-accounts-list"><\/div>\s*<\/div>/,
+    "Outside net worth's header and #excluded-accounts-list should share one .list-col wrapper"
+  );
+  assert.match(
+    source,
+    /<div class="list-col">\s*<div style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;margin-bottom:\.5rem"><div class="sh" style="margin:0">Physical assets<\/div>[\s\S]{0,500}?<div id="vehicle-list"><\/div>\s*<\/div>/,
+    "Physical assets' header, info-box, and #vehicle-list should share one .list-col wrapper"
+  );
+});
+
 // Finding: Nicholas asked whether the Budget tab's support text was too
 // small, quoting the subtitle sentence directly. It and the gate notice
 // below it were both 11px, under the 12px legibility floor established
