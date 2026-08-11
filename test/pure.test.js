@@ -7524,9 +7524,36 @@ test("#demo-nav-badge is reliably shown by showDemoNudge() (not just loadDemoPro
     /const badge=document\.getElementById\('demo-nav-badge'\);\s*if\(badge&&!state\.hasRealData\)badge\.style\.display=hasDemoData\?'inline-block':'none';/,
     "showDemoNudge() should manage #demo-nav-badge's visibility with an explicit 'inline-block', matching the same condition #demo-nudge/#spending-start-here already use"
   );
+});
+
+// Finding: putting "Switch profiles" only in the nav's DEMO DATA badge
+// (previous commit) turned out to lack clarity of its own -- "DEMO
+// DATA" reads as a label, not a call-to-action, so Nicholas asked for
+// "Switch profiles" back in the banner text itself, in place of
+// "explore them", balancing concision against clarity without adding a
+// new element. This also incidentally re-solves the original fat-
+// finger concern without any flex-wrap redesign: "Switch profiles" and
+// "Import a CSV" are no longer adjacent, separated only by " · ", the
+// way the very first version had them -- they now sit at different
+// points in the sentence, with "to explore, then" running text between
+// them. Live-verified at a simulated 375px width: the two land on
+// different lines, never touching. The #demo-nav-badge fix from the
+// previous commit stays -- it's a legitimate independent bug fix, and
+// the badge remains as a secondary, always-visible way to switch
+// profiles even after the top banner scrolls out of view or gets
+// dismissed.
+test("#demo-nudge's banner text uses 'Switch profiles' in place of 'explore them', positioned well before Import a CSV rather than adjacent to it", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /👇 Demo data fills all 4 tabs —\s*<button data-action="openDemoPicker" data-arg="false" style="background:none;border:none;color:#D97706;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Switch profiles<\/button>\s*to explore, then\s*<button data-action="openTxImportModal"/,
+    "the banner should read 'Switch profiles' (as a secondary text-link button) positioned before 'Import a CSV', not adjacent to it at the end"
+  );
   assert.doesNotMatch(
     source,
-    /Switch profile<\/button>/,
-    "the redundant 'Switch profile' link should no longer be in the #demo-nudge banner"
+    /explore them/,
+    "the old 'explore them' wording should be gone, replaced by the Switch profiles link"
   );
 });
