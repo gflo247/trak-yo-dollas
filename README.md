@@ -21,7 +21,7 @@ Import a CSV from your bank, credit union, or credit card. Your browser translat
 - **Smart auto-categorization** — four-tier system: your keyword rules → community-contributed patterns → MCC codes from your bank → built-in merchant keywords. Vendor names display in proper case (Starbucks, not STARBUCKS) without changing your underlying data.
 - **Multi-source import** — import from multiple banks and credit cards. Sources with different date ranges prompt optional alignment to overlapping coverage.
 - **Spending exclusions** — hide categories like transfers and CC payments from spending totals. Reversible, per-category or per-transaction.
-- **Export anytime** — one click to export transactions or budget history as CSV, or export a full JSON backup of all your data.
+- **Export anytime** — one click to export transactions or budget history as CSV, or export a full JSON backup of everything in the app: transactions, accounts, net worth snapshots, budgets, categories, and settings, all in one file.
 - **Works offline, installs as an app** — service worker caches the full app; install to your home screen on Android or iPhone, or via Chrome on desktop.
 - **Freelancer-friendly** — opt-in income tracking alongside spending; tag transactions as business or personal and filter your whole view by either, all without a separate bookkeeping app.
 - **Two demo profiles** — explore every feature before touching your own data.

@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-uuZc0BPlpNVp7+W+HRAVLiyYaRoqhRgrqOX/IuH3T0A=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-ArtGDnRX1oBssVtTn9cWTkLVyaF+4N4kFGzDd62rt4A=' 'sha256-FKZecKiSmrzvo2l/cuMc7H+9VsOoSxOWhDOej6nXpiw=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -851,8 +851,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <button data-action="openCurrencyModal|closeGlobalSettings" class="overflow-item" type="button">🌍 Currency symbol</button>
       <div style="border-top:1px solid var(--border);margin:4px 0"></div>
       <button data-action="exportAllTransactionsCSV|closeGlobalSettings" class="overflow-item" title="All transactions, unfiltered — readable in Excel/Sheets, but no accounts/budgets/settings. For a full-fidelity backup, use Export data backup (JSON) below." type="button">⬇ Export all transactions (CSV)</button>
-      <button data-action="exportBackup|closeGlobalSettings" class="overflow-item" type="button">📦 Export data backup (JSON)</button>
-      <button data-action="triggerImportBackup|closeGlobalSettings" class="overflow-item" type="button">📥 Import data backup (JSON)</button>
+      <button data-action="exportBackup|closeGlobalSettings" class="overflow-item" title="Everything, from every tab — transactions, accounts, net worth snapshots, budgets, categories, and settings — in one file." type="button">📦 Export data backup (JSON)</button>
+      <button data-action="triggerImportBackup|closeGlobalSettings" class="overflow-item" title="Replaces everything currently in the app with what's in the backup file — transactions, accounts, budgets, snapshots, and settings." type="button">📥 Import data backup (JSON)</button>
       <div style="border-top:1px solid var(--border);margin:4px 0"></div>
       <button data-action="openClearDataModal|closeGlobalSettings" class="overflow-item" style="color:#F87171" type="button">🗑 Clear all data</button>
     </div>
@@ -15102,7 +15102,7 @@ function importBackup(file){
       // `state` a mix of old and partially-restored data with no rollback.
       const arr=v=>Array.isArray(v)?v:[];
       const obj=v=>(v&&typeof v==='object'&&!Array.isArray(v))?v:{};
-      if(!confirm('Replace ALL current data with this backup? This cannot be undone.'))return;
+      if(!confirm('Replace all current data — transactions, accounts, budgets, net worth snapshots, and settings — with this backup? This cannot be undone.'))return;
       // Restore state — mirrors loadFromLocalStorage field assignments
       state.accounts=_normalizeAccountTypes(arr(saved.accounts));
       state.vehicles=_arrOfObj(saved.vehicles);

@@ -7661,7 +7661,7 @@ test("The nav has a global ⚙ settings menu with the cross-tab items, and Spend
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const navMatch = source.match(/<nav class="nav"[\s\S]{0,5000}?<\/nav>/);
+  const navMatch = source.match(/<nav class="nav"[\s\S]{0,6000}?<\/nav>/);
   assert.ok(navMatch, "the main <nav> element should exist");
   assert.match(navMatch[0], /id="global-settings-btn" data-action="toggleGlobalSettings"/, "nav should have a ⚙ button that opens the global settings menu");
   assert.match(navMatch[0], /id="global-settings-menu"/, "nav should contain the global settings menu");
