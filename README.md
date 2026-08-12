@@ -137,6 +137,9 @@ trak-yo-dollas/
     check-syntax.py                 ← parses all 3 HTML files, catches syntax errors before deploy
     check-no-inline-handlers.sh     ← lints for leftover onclick= attributes
     check-connect-src.py            ← every fetch()/client call must be covered by the CSP's connect-src
+    check-contrast.py               ← every --accent-*/--clr-*/--amber-text* token clears 4.5:1 in the
+                                       theme(s) it's actually used as text in, and no hardcoded hex bypasses
+                                       one of them
     extract-testable-fns.js         ← pulls named functions out of trakyodollas.html for the test suite
     check-escaping.py               ← advisory: flags ${...} interpolations of risky fields missing esc()
     check-*-coverage.py (6 files)   ← advisory: app-specific data-integrity scanners (state fields that
@@ -184,7 +187,7 @@ Hosted on [Cloudflare Workers](https://workers.cloudflare.com/) via static asset
 ./deploy.sh prod
 ```
 
-`deploy.sh` is a hard gate, not just a build script. It runs, in order: a syntax check, the full `node --test` suite (`npm test`), an inline-event-handler lint, and a CSP `connect-src` completeness check — any failure aborts before anything is touched. Only then does it recompute CSP hashes (`update-csp-hashes.py`) and sitemap dates (`update-sitemap-dates.py`), build a clean deploy directory via rsync (excluding dev-only files), and run `wrangler deploy`. A further set of advisory scanners (data-integrity/coverage checks specific to this app's state model — see `scripts/`) run after and report but don't block. Never run `wrangler deploy` directly — skipping straight to it bypasses every one of these gates, which is exactly how it's caught real bugs before they shipped.
+`deploy.sh` is a hard gate, not just a build script. It runs, in order: a syntax check, the full `node --test` suite (`npm test`), an inline-event-handler lint, a CSP `connect-src` completeness check, and a WCAG AA text-contrast check — any failure aborts before anything is touched. Only then does it recompute CSP hashes (`update-csp-hashes.py`) and sitemap dates (`update-sitemap-dates.py`), build a clean deploy directory via rsync (excluding dev-only files), and run `wrangler deploy`. A further set of advisory scanners (data-integrity/coverage checks specific to this app's state model — see `scripts/`) run after and report but don't block. Never run `wrangler deploy` directly — skipping straight to it bypasses every one of these gates, which is exactly how it's caught real bugs before they shipped.
 
 The app uses a hash-based Content Security Policy — inline scripts are allowlisted by SHA-256 hash. `update-csp-hashes.py` recomputes all hashes automatically before every deploy.
 
