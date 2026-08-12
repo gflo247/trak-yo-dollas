@@ -13,12 +13,12 @@ Import a CSV from your bank, credit union, or credit card. Your browser translat
 
 ## What it does
 
-- **"This month" narrative** — a plain-English summary of your most recent month: lighter or heavier than usual, biggest category mover, savings rate vs your own average. Written conversationally, not like a data report.
+- **"This month" narrative** — a plain-English summary of your most recent month: lighter or heavier than usual, biggest category mover, savings rate vs your own average. Reads conversationally, not like a data report.
 - **Several ways to see your spending** — category bar charts, income flow chart, daily heatmap, vendor breakdown, trend view, and split treemap. Click any tile to filter transactions instantly. Switch grain to Monthly, Quarterly, or Yearly — category cards and sparklines update to match.
 - **"At a Glance" insights** — curated monthly insights surfaced by urgency: savings rate, budget health, top mover, largest charge, subscriptions, possible duplicate charges, weekend spending patterns. Each compares against your own history.
 - **Budget tab** — set monthly limits and see them alongside your 12-month average and year-to-date pace in one view, with AT RISK warnings before you go over. Every category row shows 12-month history. Sort by % used, amount, how unusual vs. your average, or A–Z — each ascending or descending.
-- **Full picture net worth** — checking, savings, investments, loans, real estate, and vehicles in one place. Save monthly snapshots and track your trajectory toward a goal. Annualized growth rate shown alongside dollar change.
-- **Smart auto-categorization** — four-tier system: your keyword rules → community-contributed patterns → MCC codes from your bank → built-in merchant keywords. Vendor names display in proper case (Starbucks, not STARBUCKS) without changing your underlying data. Categories (including your own custom ones) can be renamed in-place anytime — updates every transaction, budget, rule, and exclusion that referenced the old name.
+- **Full picture net worth** — checking, savings, investments, loans, real estate, and vehicles in one place. Save monthly snapshots and track your trajectory toward a goal. Shows annualized growth rate alongside dollar change.
+- **Smart auto-categorization** — four-tier system: your keyword rules → community-contributed patterns → MCC codes from your bank → built-in merchant keywords. Vendor names display in proper case (Starbucks, not STARBUCKS) without changing your underlying data. You can rename categories (including your own custom ones) in-place anytime — updates every transaction, budget, rule, and exclusion that referenced the old name.
 - **Multi-source import** — import from multiple banks and credit cards. Sources with different date ranges prompt optional alignment to overlapping coverage.
 - **Spending exclusions** — hide categories like transfers and CC payments from spending totals. Reversible, per-category or per-transaction.
 - **Export anytime** — one click to export transactions or budget history as CSV, or export a full JSON backup of everything in the app: transactions, accounts, net worth snapshots, budgets, categories, and settings, all in one file.
@@ -37,8 +37,8 @@ Local-first by design. I cannot see your financial data — not by policy, but b
 - **Nothing leaves your device unless you choose to sync** — and when you do, it's encrypted on your device first
 - **Optional sign-in** — opt-in only, never required; sign in with Google or a passwordless email link to sync across devices via Supabase (open source)
 - **Privacy-respecting analytics** — [Umami](https://umami.is) (page views, referrer, browser/OS, and country; no cookies, no personal data, never identifies you across sessions)
-- **Self-hosted fonts** — DM Mono and DM Sans are served from this repo, not Google Fonts
-- **Hash-based Content Security Policy** — inline `<script>` blocks are allowlisted by SHA-256 hash; no `unsafe-inline` in `script-src`
+- **Self-hosted fonts** — DM Mono and DM Sans come from this repo, not Google Fonts
+- **Hash-based Content Security Policy** — SHA-256 hashes allowlist every inline `<script>` block; no `unsafe-inline` in `script-src`
 - **No paywall** — free to use, all features included
 
 Full details, data flow diagram, and FAQ: [privacy policy](https://trakyodollas.com/privacy)
@@ -76,7 +76,7 @@ Transactions auto-categorize on import. Switch between chart views, set budgets,
 
 Groceries, Food & Drink, Shopping, Home, Gas, Bills & Utilities, Insurance, Health & Wellness, Personal Care, Entertainment, Gifts & Donations, Travel, Automotive, Education, Child Care, Pet(s), Checks, Taxes & Fees, Investment Contributions, Transfers, Internal Transfer, CC Payment, College Fund(s), Other.
 
-Investment Contributions, Transfers, Internal Transfer, and CC Payment are excluded from spending totals by default (they're not spending — they're financial flows). Toggle any category's visibility from the spending tab.
+The app excludes Investment Contributions, Transfers, Internal Transfer, and CC Payment from spending totals by default (they're not spending — they're financial flows). Toggle any category's visibility from the spending tab.
 
 ### Community patterns
 
@@ -90,7 +90,7 @@ The count in the app and on the landing page updates automatically when the file
 ```json
 {"keyword": "MERCHANT NAME", "cat": "Category"}
 ```
-Keywords match case-insensitively against transaction descriptions. All submissions are reviewed as plain text before merging.
+Keywords match case-insensitively against transaction descriptions. I review all submissions as plain text before merging.
 
 ---
 
@@ -140,7 +140,7 @@ trak-yo-dollas/
     update-sitemap-dates.py         ← patches sitemap <lastmod> from file mtimes before deploy
     check-syntax.py                 ← parses all 3 HTML files, catches syntax errors before deploy
     check-no-inline-handlers.sh     ← lints for leftover onclick= attributes
-    check-connect-src.py            ← every fetch()/client call must be covered by the CSP's connect-src
+    check-connect-src.py            ← the CSP's connect-src must cover every fetch()/client call
     check-contrast.py               ← every --accent-*/--clr-*/--amber-text* token clears 4.5:1 in the
                                        theme(s) it's actually used as text in, and no hardcoded hex bypasses
                                        one of them
@@ -185,7 +185,7 @@ npm test
 
 ## Deployment
 
-Hosted on [Cloudflare Workers](https://workers.cloudflare.com/) via static asset serving. [Supabase](https://supabase.com/) (open source) handles optional sign-in and cross-device sync.
+[Cloudflare Workers](https://workers.cloudflare.com/) hosts the app via static asset serving. [Supabase](https://supabase.com/) (open source) handles optional sign-in and cross-device sync.
 
 ```bash
 ./deploy.sh prod
@@ -193,7 +193,7 @@ Hosted on [Cloudflare Workers](https://workers.cloudflare.com/) via static asset
 
 `deploy.sh` is a hard gate, not just a build script. It runs, in order: a syntax check, the full `node --test` suite (`npm test`), an inline-event-handler lint, a CSP `connect-src` completeness check, and a WCAG AA text-contrast check — any failure aborts before anything is touched. Only then does it recompute CSP hashes (`update-csp-hashes.py`) and sitemap dates (`update-sitemap-dates.py`), build a clean deploy directory via rsync (excluding dev-only files), and run `wrangler deploy`. A further set of advisory scanners (data-integrity/coverage checks specific to this app's state model — see `scripts/`) run after and report but don't block. Never run `wrangler deploy` directly — skipping straight to it bypasses every one of these gates, which is exactly how it's caught real bugs before they shipped.
 
-The app uses a hash-based Content Security Policy — inline scripts are allowlisted by SHA-256 hash. `update-csp-hashes.py` recomputes all hashes automatically before every deploy.
+The app uses a hash-based Content Security Policy — SHA-256 hashes allowlist inline scripts. `update-csp-hashes.py` recomputes all hashes automatically before every deploy.
 
 ---
 
@@ -204,7 +204,7 @@ The app uses a hash-based Content Security Policy — inline scripts are allowli
 - **`noindex` on the app page** — search traffic lands on the landing page, not the bare tool
 - **All external links** use `rel="noopener noreferrer"`
 - **Sign-in security** — the passwordless email link stores no password anywhere; Google OAuth always uses the redirect flow (no popups), reliable across all browsers and mobile
-- **Community pattern submissions** are reviewed manually as plain text before any changes deploy
+- **Community pattern submissions** — I review them manually as plain text before any changes deploy
 - **GitHub 2FA** — my GitHub account, the source of this code, uses two-factor authentication
 - **WCAG AA accessible** — text contrast, focus states, and keyboard navigation meet AA standards in both light and dark themes, across all three pages
 
