@@ -1,4 +1,6 @@
 _HANDOFF.md
+_notes.md
+*.archived
 .firebase
 .wrangler
 .DS_Store

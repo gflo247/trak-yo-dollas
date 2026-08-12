@@ -165,6 +165,8 @@ rsync -a \
   --exclude='test-csvs' \
   --exclude='.github' \
   --exclude='_HANDOFF.md' \
+  --exclude='_notes.md' \
+  --exclude='*.archived' \
   --exclude='ENTIRE-SITE-ARCHITECTURE-deep-dive.html' \
   --exclude='scripts' \
   --exclude='test' \
