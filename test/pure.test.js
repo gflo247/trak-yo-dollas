@@ -5417,8 +5417,8 @@ test("category/vendor bucket-card tiles and active-filter pills are keyboard-foc
   );
   assert.match(
     source,
-    /data-action="toggleCatFilter" data-arg="\$\{sc\}" tabindex="0" role="button" aria-pressed="\$\{isActive\}"/,
-    "category bucket-card tile should be focusable and expose its toggle state"
+    /data-action="toggleCatFilter" data-arg="\$\{sc\}" aria-pressed="\$\{isActive\}" aria-label="Filter by \$\{esc\(sc\)\}"/,
+    "category bucket-card tile's stretched hit-button (a real <button>, not a nested role=button div) should expose its toggle state"
   );
   assert.match(
     source,
@@ -5440,12 +5440,12 @@ test("category/vendor bucket-card tiles and active-filter pills are keyboard-foc
   // change at all when it received keyboard focus.
   assert.match(
     source,
-    /\.bucket-card:focus-visible\{outline:2px solid currentColor;outline-offset:2px\}/,
-    "non-active bucket-card tiles should have an explicit focus-visible outline"
+    /\.bucket-hit:focus-visible\{outline:2px solid currentColor;outline-offset:2px\}/,
+    "non-active bucket-card tiles should have an explicit focus-visible outline on their stretched hit-button"
   );
   assert.match(
     source,
-    /\.bucket-card\.active-bucket:focus-visible\{outline:2\.5px dashed currentColor;outline-offset:2px\}/,
+    /\.bucket-card\.active-bucket \.bucket-hit:focus-visible\{outline:2\.5px dashed currentColor;outline-offset:2px\}/,
     "active bucket-card tiles should have a focus-visible outline distinct from the plain active-only outline"
   );
 });
@@ -5661,7 +5661,7 @@ test("the top-5-categories inline panel truncates long category names, matching 
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /<span style="opacity:\$\{state\.activeCats\.has\(cat\)\?1:\.55\};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px" title="\$\{esc\(cat\)\}">\$\{esc\(cat\)\}<\/span>/,
+    /<span style="color:\$\{state\.activeCats\.has\(cat\)\?'var\(--text-primary\)':'var\(--text-secondary\)'\};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px" title="\$\{esc\(cat\)\}">\$\{esc\(cat\)\}<\/span>/,
     "the top-5-categories panel's category span should truncate with ellipsis and a title tooltip"
   );
 });
@@ -5766,12 +5766,12 @@ test("the rules-manager keyword chip and vendor-alias chips truncate with the sa
   );
   assert.match(
     source,
-    /<span class="truncate" style="font-family:monospace;font-size:12px;color:#F87171;background:#F8717118;padding:1px 7px;border-radius:4px;max-width:220px" title="\$\{esc\(from\)\}">\$\{esc\(from\)\}<\/span>/,
+    /<span class="truncate" style="font-family:monospace;font-size:12px;color:var\(--accent-red\);background:#F8717118;padding:1px 7px;border-radius:4px;max-width:220px" title="\$\{esc\(from\)\}">\$\{esc\(from\)\}<\/span>/,
     "the vendor-alias 'from' chip should truncate with a title tooltip"
   );
   assert.match(
     source,
-    /<span class="truncate" style="font-family:monospace;font-size:12px;color:#34D399;background:#34D39918;padding:1px 7px;border-radius:4px;max-width:220px" title="\$\{esc\(to\)\}">\$\{esc\(to\)\}<\/span>/,
+    /<span class="truncate" style="font-family:monospace;font-size:12px;color:var\(--accent-green\);background:#34D39918;padding:1px 7px;border-radius:4px;max-width:220px" title="\$\{esc\(to\)\}">\$\{esc\(to\)\}<\/span>/,
     "the vendor-alias 'to' chip should truncate with a title tooltip"
   );
 });
@@ -6602,7 +6602,7 @@ test("Dashboard tier of the legibility sweep: demo notices and the trend-chart e
   assert.match(dash, /id="snap-monthly-nudge"[\s\S]{0,200}?<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.5">💡 No snapshot yet this month/, "#snap-monthly-nudge's paragraph text should be at least 12px");
   assert.match(
     dash,
-    /<button class="btn btn-sm" data-action="openHistoricalSnapshotModal"[^>]*style="color:#60A5FA;border-color:#2563EB44"[^>]*>\+ Add historical<\/button>/,
+    /<button class="btn btn-sm" data-action="openHistoricalSnapshotModal"[^>]*style="color:var\(--accent-blue-light\);border-color:#2563EB44"[^>]*>\+ Add historical<\/button>/,
     "the '+ Add historical' button should no longer force the mobile-only 10px size on desktop, so it matches its '+ Save snapshot' sibling"
   );
 });
@@ -6637,7 +6637,7 @@ test("Legibility sweep Tier 1: Spending tab's Insights sub-lines and the Account
   // untouched -- still 9-10px, confirming this pass targeted only the
   // reading-paragraph lines, not the deliberately-small section labels.
   assert.match(insights, /<span style="font-size:10px;font-weight:700;color:var\(--text-muted\)">Savings rate<\/span>/, "the 'Savings rate' eyebrow label should remain untouched");
-  assert.match(insights, /<div style="font-size:9px;font-weight:800;color:#34D399;letter-spacing:\.08em;text-transform:uppercase;padding:0 2px">✓ Worth your attention<\/div>/, "the '✓ Worth your attention' eyebrow label should remain untouched");
+  assert.match(insights, /<div style="font-size:9px;font-weight:800;color:var\(--accent-green\);letter-spacing:\.08em;text-transform:uppercase;padding:0 2px">✓ Worth your attention<\/div>/, "the '✓ Worth your attention' eyebrow label should remain untouched");
 });
 
 // ── Legibility sweep, Tier 2 (held from Tier 1 per Nicholas's request):
@@ -6916,8 +6916,8 @@ test("deleteRule, startDeleteCat, deleteVendorAlias, and the source chip's remov
   );
   assert.match(
     source,
-    /<span class="src-x-btn" data-action="openSrcRemovePop"[^>]*title="Remove this source">🗑️<\/span>/,
-    "the source chip's remove span should use 🗑️"
+    /<button class="src-x-btn" data-action="openSrcRemovePop"[^>]*title="Remove this source" type="button">🗑️<\/button>/,
+    "the source chip's remove button should use 🗑️"
   );
 });
 
@@ -7049,7 +7049,7 @@ test("Spending tab's category tile name/meta/budget line, both empty states, the
   );
   assert.match(
     source,
-    /\(noneSelected\?`<span style="font-size:12px;color:#F87171;align-self:center;margin-left:2px">← select a source to show spending<\/span>`:''\)/,
+    /\(noneSelected\?`<span style="font-size:12px;color:var\(--accent-red\);align-self:center;margin-left:2px">← select a source to show spending<\/span>`:''\)/,
     "the 'select a source' hint above the chart should be 12px"
   );
   assert.match(
@@ -7770,7 +7770,7 @@ test("The nav's mobile-shrink and desktop-bump rules for #demo-nav-badge/#theme-
   );
   assert.match(
     source,
-    /<button id="auth-sign-in-btn" class="btn btn-sm" data-action="openAuthModal" style="font-size:10px;padding:3px 10px;color:#60A5FA;border-color:#2563EB44"/,
+    /<button id="auth-sign-in-btn" class="btn btn-sm" data-action="openAuthModal" style="font-size:10px;padding:3px 10px;color:var\(--accent-blue-light\);border-color:#2563EB44"/,
     "#auth-sign-in-btn should no longer carry btn-primary's solid blue fill, using the same ghost-blue treatment as '+ Add historical'"
   );
 });
@@ -7797,7 +7797,7 @@ test("#global-settings-btn has a mobile-shrink rule matching #theme-toggle-btn, 
   );
   assert.match(
     source,
-    /<button data-action="openPrivacyPanel" class="btn btn-sm btn-privacy-nav" style="font-size:10px;padding:3px 10px;white-space:nowrap;color:#60A5FA;border-color:#2563EB44"/,
+    /<button data-action="openPrivacyPanel" class="btn btn-sm btn-privacy-nav" style="font-size:10px;padding:3px 10px;white-space:nowrap;color:var\(--accent-blue-light\);border-color:#2563EB44"/,
     "the Privacy nav button should use the same ghost-blue treatment as Sign In, not btn-primary's solid fill"
   );
 });

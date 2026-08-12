@@ -42,8 +42,8 @@
   --bg-page:#F8FAFC;--bg-card:#FFFEFB;--bg-deep:#F1F5F9;
   --border:#E2E8F0;--border-mid:#CBD5E1;
   --text-bright:#0F172A;--text-primary:#1E293B;--text-secondary:#4B5563;--text-muted:#4B5563;
-  --accent-blue-light:#1D4ED8;--accent-green:#059669;
-  --clr-ok:#047857;--clr-warn:#B45309;--clr-no:#DC2626;
+  --accent-blue-light:#1D4ED8;--accent-green:#047857;
+  --clr-ok:#047857;--clr-warn:#B45309;--clr-no:#B91C1C;
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -69,8 +69,8 @@ h1{font-size:2rem;font-weight:800;color:var(--text-bright);letter-spacing:-.02em
 .card-blue{background:#1E3A5F22;border:1px solid #2563EB33}
 .card-neutral{background:var(--bg-card);border:1px solid var(--border)}
 .card-label{font-size:14px;font-weight:700;margin-bottom:6px}
-.card-green .card-label{color:#34D399}
-.card-blue .card-label{color:#60A5FA}
+.card-green .card-label{color:var(--accent-green)}
+.card-blue .card-label{color:var(--accent-blue-light)}
 .card-neutral .card-label{color:var(--text-primary)}
 .card p{font-size:14px;color:var(--text-muted);line-height:1.65;font-weight:400}
 .card p strong{color:var(--text-secondary);font-weight:600}

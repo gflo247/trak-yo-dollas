@@ -30,6 +30,21 @@ bash scripts/check-no-inline-handlers.sh
 echo "=== Checking connect-src covers every network destination ==="
 python3 scripts/check-connect-src.py
 
+# Hard gate — added after an axe-core audit found 68 dark-theme and 243
+# light-theme WCAG AA color-contrast violations despite this exact class of
+# bug having been individually patched at least ten times before (see git
+# log for "contrast"/"WCAG"). Every prior fix was reactive and per-instance;
+# nothing ever stopped the next new component from hardcoding a raw hex
+# value instead of the theme-aware --accent-*/--clr-*/--amber-text* CSS
+# variable, so every one of those fixes was a matter of time from
+# regressing again the moment a new component reused the same shortcut.
+# This is a deterministic, mechanical check (unlike the heuristic advisory
+# scanners below) — either a token clears 4.5:1 in the theme(s) it's
+# actually rendered as text in, and every hardcoded hex in the file
+# matches a var() reference instead of a raw literal, or it doesn't.
+echo "=== Checking WCAG AA text contrast on theme-aware color tokens ==="
+python3 scripts/check-contrast.py
+
 # Advisory only (not a hard gate — has known false positives, e.g. a
 # risky-named field used in a hardcoded/internal object rather than
 # rendered user data). Review the output; don't just wait for it to fail.

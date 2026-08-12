@@ -58,7 +58,12 @@
   --text-muted:#4B5563;
   --accent-blue-light:#1D4ED8;
   --accent-green:#047857;
-  --accent-red:#DC2626;
+  /* #DC2626 cleared white (4.62:1) but not --bg-deep (4.41:1, just under
+     4.5) -- matches the same near-miss trakyodollas.html's own
+     --accent-red light value had before an axe-core audit caught it
+     there; using the same darker value here for the same reason and for
+     consistency across all three pages. */
+  --accent-red:#B91C1C;
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -133,8 +138,8 @@ nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-con
 .privacy-box>p{font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:2rem;font-weight:var(--fw-normal);line-height:var(--lh-body)}
 .privacy-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .pi{display:flex;align-items:flex-start;gap:10px;padding:.7rem .85rem;background:var(--bg-deep);border-radius:10px}
-.pi-yes{width:20px;height:20px;border-radius:50%;background:#065F4622;border:1px solid #34D39944;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:#34D399;margin-top:1px}
-.pi-no{width:20px;height:20px;border-radius:50%;background:#7F1D1D22;border:1px solid #F8717144;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:#F87171;margin-top:1px}
+.pi-yes{width:20px;height:20px;border-radius:50%;background:#065F4622;border:1px solid #34D39944;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:var(--accent-green);margin-top:1px}
+.pi-no{width:20px;height:20px;border-radius:50%;background:#7F1D1D22;border:1px solid #F8717144;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:var(--accent-red);margin-top:1px}
 .pi strong{display:block;font-size:14px;font-weight:var(--fw-bold);color:var(--text-bright);margin-bottom:2px}
 .pi span{font-size:var(--text-sm);color:var(--text-secondary);font-weight:var(--fw-normal);line-height:var(--lh-body)}
 
