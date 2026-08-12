@@ -133,6 +133,10 @@ trak-yo-dollas/
   fonts/                  ← self-hosted DM Mono and DM Sans (no Google Fonts request)
   scripts/
     update-csp-hashes.py            ← recomputes inline script SHA-256 hashes for the CSP
+    update-privacy-date.py          ← sets privacy.html's "Last updated" date from its last real
+                                       git commit, not file mtime (mtime changes on every deploy
+                                       even with no content change, since the hash-recompute step
+                                       above rewrites the file unconditionally)
     update-sitemap-dates.py         ← patches sitemap <lastmod> from file mtimes before deploy
     check-syntax.py                 ← parses all 3 HTML files, catches syntax errors before deploy
     check-no-inline-handlers.sh     ← lints for leftover onclick= attributes

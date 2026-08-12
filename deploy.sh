@@ -145,6 +145,12 @@ echo "=== Scanning modals for ARIA dialog attributes (advisory) ==="
 python3 scripts/check-modal-aria.py || true
 
 python3 scripts/update-csp-hashes.py
+# Git-based, not mtime-based (unlike update-sitemap-dates.py below) --
+# update-csp-hashes.py just rewrote all 3 files unconditionally, which
+# would make an mtime-based "last updated" show today's date on every
+# single deploy regardless of whether privacy.html's actual content
+# changed. git only advances when the file's tracked content really does.
+python3 scripts/update-privacy-date.py
 python3 scripts/update-sitemap-dates.py
 
 # Build clean deploy directory — only files meant for public serving
