@@ -10083,9 +10083,20 @@ function exportTransactionsCSV(){
   if(!txs.length){showToast('No transactions to export','#FCD34D');return;}
   // Export what user currently sees (filtered + sorted) — see
   // exportAllTransactionsCSV() for the unfiltered "everything" version.
-  const filterLabel=state.searchQuery?`-search-${state.searchQuery.slice(0,20)}`:state.activeCats.size>0?`-filtered`:'';
+  // "Filtered" is a plain count comparison against state.transactions,
+  // not a list of individual filter dimensions to keep in sync -- the
+  // previous version only checked searchQuery/activeCats, 2 of the 9 real
+  // filters getFilteredTxs()/getBaseTxs() apply (also: active sources,
+  // date range, excluded categories, business/personal, vendor, a single
+  // clicked date), so a source or date-range filter alone silently
+  // produced a file the filename called unfiltered and said nothing about
+  // in the toast — the only place a mobile user (no hover, so no access
+  // to this button's title tooltip) would ever see this at all. A count
+  // comparison can't miss a filter dimension the way a checklist can.
+  const isFiltered=txs.length<state.transactions.length;
+  const filterLabel=state.searchQuery?`-search-${state.searchQuery.slice(0,20)}`:isFiltered?'-filtered':'';
   downloadCSVFile(`trak-yo-dollas-spending-${todayDateStr()}${filterLabel}.csv`,TX_CSV_HEADERS,txs.map(txToCsvRow));
-  showToast(`⬇ Exported ${txs.length} transactions`,'#34D399');
+  showToast(isFiltered?`⬇ Exported ${txs.length} of ${state.transactions.length} transactions (filtered)`:`⬇ Exported ${txs.length} transactions`,'#34D399');
 }
 // Finding: Nicholas asked whether a full, unfiltered CSV export made sense
 // alongside the JSON "Export data backup" -- JSON is full-fidelity but

@@ -7601,6 +7601,54 @@ test("exportAllTransactionsCSV: exports every transaction regardless of active f
   assert.ok(lines[2].startsWith("2026-02-01"));
 });
 
+// Finding: Nicholas asked whether the mobile-collapsed Export CSV button
+// should show its desktop hover-tip ("respects current filters and
+// search") before downloading, since title tooltips don't fire on touch
+// at all -- but digging into getFilteredTxs()/getBaseTxs() found the
+// underlying claim was already inaccurate on desktop too: the filename
+// label only checked searchQuery/activeCats, 2 of the 9 real filter
+// dimensions applied (also active sources, date range, excluded
+// categories, business/personal, vendor, a single clicked date), so a
+// source or date-range filter alone produced a file silently mislabeled
+// "unfiltered" with no mention anywhere, mobile or desktop. Fixed by
+// comparing the exported count against state.transactions.length instead
+// of enumerating filter types -- a count comparison can't miss a
+// dimension the way a checklist can, and the toast (unlike the button's
+// title attribute) is visible on every input method.
+test("exportTransactionsCSV: toast and filename both reflect filtered-vs-total counts, not just search/category", () => {
+  let capturedCsv = null, capturedFilename = null, toastMsg = null;
+  const allTxs = [
+    { date: "2026-02-01", desc: "A", cat: "Groceries", amount: 10, card: "Checking", excluded: false, isIncome: false, biz: false, is_offset: false },
+    { date: "2026-01-01", desc: "B", cat: "Shopping", amount: 20, card: "Gold Card", excluded: false, isIncome: false, biz: false, is_offset: false },
+    { date: "2026-01-15", desc: "C", cat: "Shopping", amount: 5, card: "Gold Card", excluded: false, isIncome: false, biz: false, is_offset: false },
+  ];
+  const ctx = {
+    state: { transactions: allTxs, searchQuery: "" },
+    // Standing in for getSortedTxs() -- only 1 of 3 transactions "shown"
+    // here, simulating a source/date filter neither the old searchQuery
+    // nor activeCats check would have caught.
+    getSortedTxs: () => [allTxs[0]],
+    csvSafeField: (s) => s,
+    resolveVendor: (d) => d,
+    showToast: (msg) => { toastMsg = msg; },
+    document: { createElement: () => ({ click: () => {} }) },
+    Blob: function (parts) { capturedCsv = parts[0]; },
+    URL: { createObjectURL: () => "blob:fake", revokeObjectURL: () => {} },
+    TX_CSV_HEADERS: ["Date", "Description", "Vendor", "Category", "Amount", "Source", "Excluded", "IsIncome", "Business", "IsOffset"],
+    todayDateStr: () => "2026-08-13",
+  };
+  ctx.document.createElement = () => {
+    const el = { click: () => {} };
+    Object.defineProperty(el, "download", { set: (v) => { capturedFilename = v; }, get: () => capturedFilename });
+    return el;
+  };
+  const { exportTransactionsCSV } = loadFunctions(["exportTransactionsCSV", "txToCsvRow", "downloadCSVFile"], ctx);
+  exportTransactionsCSV();
+  assert.equal(capturedCsv.split("\n").length, 2, "header row plus the 1 transaction getSortedTxs() returned");
+  assert.match(capturedFilename, /-filtered\.csv$/, "filename should flag this as filtered even though no search/category filter was involved");
+  assert.equal(toastMsg, "⬇ Exported 1 of 3 transactions (filtered)", "toast should state both counts -- the only place a mobile user (no hover, no title tooltip) sees this at all");
+});
+
 test("exportNetWorthCSV: exports snapshot history as Date/Net Worth/Assets/Liabilities, oldest first", () => {
   let capturedCsv = null;
   const ctx = {
