@@ -84,7 +84,7 @@ The app excludes Investment Contributions, Transfers, Internal Transfer, and CC 
 
 The count in the app and on the landing page updates automatically when the file changes — no hardcoded numbers to maintain.
 
-**To suggest a pattern:** fill out the [suggestion form](https://forms.gle/6oV9UPtv8RKKUHM96) — no account required.
+**To suggest a merchant category:** fill out the [suggestion form](https://forms.gle/6oV9UPtv8RKKUHM96) — no account required.
 
 **To contribute via PR:** add entries to `community-rules.json`:
 ```json

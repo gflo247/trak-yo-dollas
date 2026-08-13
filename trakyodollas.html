@@ -1063,7 +1063,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <span class="page-title" id="spending-page-title">Spending</span>
     <div class="row" style="gap:5px;align-items:center">
       <button id="toolbar-import-btn" class="btn btn-sm btn-primary" data-action="openTxImportModal" title="Import transactions from a bank, credit union, or credit card CSV. Your files are processed locally and never uploaded." type="button">⬆ Import CSV</button>
-      <button class="btn btn-sm btn-primary" data-action="openAddTxModal" type="button">+ Add</button>
       <!-- Overflow menu -->
       <div style="position:relative">
         <button id="toolbar-overflow-btn" class="btn btn-sm" data-action="toggleSpendingOverflow" data-stop title="More options" style="padding:3px 9px;font-size:13px;font-weight:700;letter-spacing:.05em;line-height:1" type="button">···</button>
@@ -1074,7 +1073,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
           <button data-action="openVendorAliasModal|closeSpendingOverflow" class="overflow-item" type="button">⟲ Merge duplicate vendors</button>
           <button data-action="openCatModal|closeSpendingOverflow" class="overflow-item" type="button">⚙ Manage categories</button>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" data-action="closeSpendingOverflow" class="overflow-item" style="text-decoration:none">🏷️ Suggest a merchant pattern ↗</a>
+          <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" data-action="closeSpendingOverflow" class="overflow-item" style="text-decoration:none">🏷️ Suggest a merchant category ↗</a>
         </div>
       </div>
     </div>
@@ -1180,6 +1179,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div class="flex-between" style="margin-top:.9rem;margin-bottom:.3rem">
       <div class="flex-center gap-8">
         <div class="sh" style="margin:0" id="tx-count-label">Transactions</div>
+        <button data-action="openAddTxModal" title="Add a single transaction manually" style="background:none;border:1px solid #2563EB44;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--accent-blue-light);cursor:pointer" type="button">+<span class="hide-mobile"> Add</span></button>
         <button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search" style="background:none;border:1px solid #2563EB44;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--accent-blue-light);cursor:pointer" type="button">⬇<span class="hide-mobile"> Export CSV</span></button>
       </div>
       <div class="row sort-row">
@@ -1721,7 +1721,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div id="cr-table" style="overflow-y:auto;flex:1;border:1px solid var(--border);border-radius:8px;font-size:11px"></div>
     <div style="margin-top:.75rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
       <div style="font-size:11px;color:var(--text-muted)">Missing a merchant? Help improve categorization for everyone.</div>
-      <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="text-decoration:none;white-space:nowrap">Suggest a pattern ↗</a>
+      <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="text-decoration:none;white-space:nowrap">Suggest a merchant category ↗</a>
     </div>
   </div>
 </div>
@@ -2118,7 +2118,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
           <div style="padding:.5rem .75rem;color:var(--text-secondary)">
             <span style="color:var(--accent-blue-light);font-weight:600">1. Your rules</span> — keyword rules you've saved always win<br>
             <span style="color:#64748B;font-weight:600">2. Built-in keywords</span> — ~300 common merchant names, matched automatically<br>
-            <span style="color:var(--accent-green);font-weight:600">3. Community patterns</span> — <span class="community-rules-count">1802</span> community-contributed keyword→category mappings covering US, CA, UK, AU, NZ, and SG merchants, picking up what built-in keywords miss — fetched once per session · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" style="color:var(--accent-green)">Suggest a pattern ↗</a><br>
+            <span style="color:var(--accent-green);font-weight:600">3. Community patterns</span> — <span class="community-rules-count">1802</span> community-contributed keyword→category mappings covering US, CA, UK, AU, NZ, and SG merchants, picking up what built-in keywords miss — fetched once per session · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" style="color:var(--accent-green)">Suggest a merchant category ↗</a><br>
             <span style="color:#94A3B8;font-weight:600">4. Merchant Category Codes (MCC)</span> — 4-digit codes your bank or credit union assigns to merchants, if present in your CSV
           </div>
         </div>

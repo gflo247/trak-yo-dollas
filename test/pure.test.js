@@ -6820,7 +6820,7 @@ test("list-col wraps each area's header together with its list, centered, instea
   assert.doesNotMatch(source, /\.nw-section\{[^}]*max-width/, ".nw-section itself should no longer carry the max-width -- centering now happens per-section via the wrapping .list-col");
   assert.match(
     source,
-    /<div class="list-col">\s*<div class="flex-between" style="margin-top:\.9rem;margin-bottom:\.3rem">[\s\S]{0,1500}?<div id="tx-list"><\/div>/,
+    /<div class="list-col">\s*<div class="flex-between" style="margin-top:\.9rem;margin-bottom:\.3rem">[\s\S]{0,2000}?<div id="tx-list"><\/div>/,
     "the transaction list's header and #tx-list should share one .list-col wrapper"
   );
   assert.match(
@@ -7706,7 +7706,7 @@ test("toggleGlobalSettings/closeGlobalSettings mirror toggleSpendingOverflow/clo
 // path users already associate with fixing categorization. Same Google
 // Form URL used everywhere else in the app (README, index.html,
 // privacy.html, the two existing in-app links) -- not a new destination.
-test("Spending's overflow menu includes a direct link to suggest a merchant pattern", () => {
+test("Spending's overflow menu includes a direct link to suggest a merchant category", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
