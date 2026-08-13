@@ -7789,6 +7789,35 @@ test("The Spending tab's Export CSV button collapses to icon-only on mobile via 
   );
 });
 
+// Finding: Nicholas pointed out the +Add/Export CSV buttons looked small
+// on a real mobile screenshot once collapsed to icon-only -- collapsing
+// the text label also removed the only thing padding their tap area out
+// horizontally, leaving ~18px-tall/~26px-wide targets from padding:2px 8px
+// alone, well under the ~36-44px floor iOS/Android both recommend. Reused
+// the min-height:36px this file already established for .quick-chips/
+// .grain-row buttons in the same mobile media query, rather than picking
+// a new number.
+test("The +Add and Export CSV buttons on the Spending tab get an enlarged mobile tap target via .tx-icon-btn", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /\.tx-icon-btn\{min-width:36px;min-height:36px;display:inline-flex;align-items:center;justify-content:center\}/,
+    "the mobile media query should enlarge .tx-icon-btn to a real touch target, matching .quick-chips/.grain-row's existing min-height:36px"
+  );
+  assert.match(
+    source,
+    /<button data-action="openAddTxModal" title="Add a single transaction manually" class="tx-icon-btn"/,
+    "the +Add button should carry the enlarged-touch-target class"
+  );
+  assert.match(
+    source,
+    /<button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search" class="tx-icon-btn"/,
+    "the Export CSV button should carry the enlarged-touch-target class"
+  );
+});
+
 // Finding: Nicholas asked whether an icon in front of "Sign In" on desktop,
 // collapsing to icon-only on mobile, would help free up nav space -- same
 // .hide-mobile/.show-mobile pattern the 🔒 Privacy button already uses.

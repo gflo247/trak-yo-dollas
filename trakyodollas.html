@@ -605,6 +605,13 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   .spend-top5-col-vendors{display:none}
   #range-dropdowns-inline{width:100%}
   .quick-chips .h-btn,.grain-row .h-btn{padding:8px 6px;min-height:36px}
+  /* Collapsing to icon-only here (.hide-mobile hiding "Add"/"Export CSV")
+     shrank these to their padding+glyph size alone -- ~18px tall, ~26px
+     wide, well under the ~36-44px touch-target floor iOS/Android both
+     recommend, and worse than before the collapse since there was no
+     longer any label text padding the tap area out horizontally either.
+     Same min-height already used for .quick-chips/.grain-row above. */
+  .tx-icon-btn{min-width:36px;min-height:36px;display:inline-flex;align-items:center;justify-content:center}
   #auth-bar{padding:0 4px;gap:3px}
   /* !important on both -- neither button's mobile shrink was actually
      applying. Both #theme-toggle-btn and #auth-sign-in-btn carry an
@@ -1179,8 +1186,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div class="flex-between" style="margin-top:.9rem;margin-bottom:.3rem">
       <div class="flex-center gap-8">
         <div class="sh" style="margin:0" id="tx-count-label">Transactions</div>
-        <button data-action="openAddTxModal" title="Add a single transaction manually" style="background:none;border:1px solid #2563EB44;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--accent-blue-light);cursor:pointer" type="button">+<span class="hide-mobile"> Add</span></button>
-        <button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search" style="background:none;border:1px solid #2563EB44;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--accent-blue-light);cursor:pointer" type="button">⬇<span class="hide-mobile"> Export CSV</span></button>
+        <button data-action="openAddTxModal" title="Add a single transaction manually" class="tx-icon-btn" style="background:none;border:1px solid #2563EB44;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--accent-blue-light);cursor:pointer" type="button">+<span class="hide-mobile"> Add</span></button>
+        <button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search" class="tx-icon-btn" style="background:none;border:1px solid #2563EB44;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--accent-blue-light);cursor:pointer" type="button">⬇<span class="hide-mobile"> Export CSV</span></button>
       </div>
       <div class="row sort-row">
         <span class="hide-mobile" style="font-size:10px;color:var(--text-muted);font-weight:600">Sort:</span>
