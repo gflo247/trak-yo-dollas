@@ -68,19 +68,19 @@ Transactions auto-categorize on import. Switch between chart views, set budgets,
 | Priority | Source | Notes |
 |---|---|---|
 | 1 | **Your rules** | Keyword rules you've saved — always win |
-| 2 | **Community patterns** | [`community-rules.json`](community-rules.json) — 1,800+ mappings, fetched once per session |
-| 3 | **MCC codes** | Merchant Category Codes from your bank CSV, if present |
-| 4 | **Built-in keywords** | Common merchant names covering major US, CA, UK, AU, NZ, and SG brands |
+| 2 | **Built-in keywords** | Common merchant names covering major US, CA, UK, AU, NZ, and SG brands |
+| 3 | **Community patterns** | [`community-rules.json`](community-rules.json) — 1,800+ mappings, fetched once per session |
+| 4 | **MCC codes** | Merchant Category Codes from your bank CSV, if present |
 
 ### Categories
 
 Groceries, Food & Drink, Shopping, Home, Gas, Bills & Utilities, Insurance, Health & Wellness, Personal Care, Entertainment, Gifts & Donations, Travel, Automotive, Education, Child Care, Pet(s), Checks, Taxes & Fees, Investment Contributions, Transfers, Internal Transfer, CC Payment, College Fund(s), Other.
 
-The app excludes Investment Contributions, Transfers, Internal Transfer, and CC Payment from spending totals by default (they're not spending — they're financial flows). Toggle any category's visibility from the spending tab.
+The app excludes Investment Contributions, Transfers, Internal Transfer, and CC Payment from spending totals by default (they're not spending — they're financial flows). Toggle any category's visibility from the Spending tab.
 
 ### Community patterns
 
-[`community-rules.json`](community-rules.json) contains community-contributed keyword→category mappings covering merchants across all categories in the US, UK, Australia, Canada, New Zealand, and Singapore: airlines, hotel chains, streaming services, restaurant chains, gas stations, grocery chains, and more.
+[`community-rules.json`](community-rules.json) contains community-contributed keyword→category mappings covering merchants across all categories in the US, Canada, UK, Australia, New Zealand, and Singapore: airlines, hotel chains, streaming services, restaurant chains, gas stations, grocery chains, and more.
 
 The count in the app and on the landing page updates automatically when the file changes — no hardcoded numbers to maintain.
 

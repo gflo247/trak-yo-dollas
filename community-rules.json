@@ -5801,7 +5801,7 @@
   },
   {
     "keyword": "RONA HARDWARE",
-    "cat": "Shopping"
+    "cat": "Home"
   },
   {
     "keyword": "ROSS DRESS",
@@ -7226,5 +7226,97 @@
   {
     "keyword": "JIMMY JOHN'S",
     "cat": "Food & Drink"
+  },
+  {
+    "keyword": "BIG O TIRES",
+    "cat": "Automotive"
+  },
+  {
+    "keyword": "TIRES PLUS",
+    "cat": "Automotive"
+  },
+  {
+    "keyword": "HOMEGOODS",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "THE CONTAINER STORE",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "CHUCK E CHEESE",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "AMERICAN FAMILY INSURANCE",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "SAFECO",
+    "cat": "Insurance"
+  },
+  {
+    "keyword": "HOLLYWOOD FEED",
+    "cat": "Pet(s)"
+  },
+  {
+    "keyword": "THE LEARNING EXPERIENCE",
+    "cat": "Child Care"
+  },
+  {
+    "keyword": "MOUNTAIN EQUIPMENT CO-OP",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "HOME HARDWARE",
+    "cat": "Home"
+  },
+  {
+    "keyword": "PETRO-CANADA",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "LCBO",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "THE BEER STORE",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "CENTER PARCS",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "NATIONAL TRUST",
+    "cat": "Entertainment"
+  },
+  {
+    "keyword": "FLIGHT CENTRE",
+    "cat": "Travel"
+  },
+  {
+    "keyword": "AUSTRALIA POST",
+    "cat": "Bills & Utilities"
+  },
+  {
+    "keyword": "WAREHOUSE STATIONERY",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "Z ENERGY",
+    "cat": "Gas"
+  },
+  {
+    "keyword": "GUARDIAN",
+    "cat": "Personal Care"
+  },
+  {
+    "keyword": "LAZADA",
+    "cat": "Shopping"
+  },
+  {
+    "keyword": "SHOPEE",
+    "cat": "Shopping"
   }
 ]

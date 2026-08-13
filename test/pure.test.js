@@ -7838,13 +7838,13 @@ test("The +Add and Export CSV buttons match the Date/Amount/Category sort pills'
 // meaning. updateAuthUI() only toggles signInBtn's hidden class, never
 // touches its innerHTML/textContent, so restructuring its contents into
 // two spans doesn't risk that logic silently wiping the icon back out.
-test("#auth-sign-in-btn shows '👤 Sign In' on desktop and just 👤 on mobile, matching the Privacy button's hide-mobile/show-mobile pattern", () => {
+test("#auth-sign-in-btn shows '👤 Sign in' on desktop and just 👤 on mobile, matching the Privacy button's hide-mobile/show-mobile pattern", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /<button id="auth-sign-in-btn"[^>]*><span class="hide-mobile">👤 Sign In<\/span><span class="show-mobile">👤<\/span><\/button>/,
+    /<button id="auth-sign-in-btn"[^>]*><span class="hide-mobile">👤 Sign in<\/span><span class="show-mobile">👤<\/span><\/button>/,
     "#auth-sign-in-btn should wrap its label in hide-mobile/show-mobile spans, matching the Privacy button"
   );
   assert.doesNotMatch(

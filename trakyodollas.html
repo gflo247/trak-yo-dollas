@@ -893,11 +893,11 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <button id="global-settings-btn" data-action="toggleGlobalSettings" data-stop title="Settings, backup, &amp; export" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer;color:var(--text-muted)" type="button">⚙</button>
     <div id="global-settings-menu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:var(--bg-card);border:1px solid var(--border-mid);border-radius:9px;padding:4px;min-width:200px;z-index:50;box-shadow:0 4px 16px rgba(0,0,0,.35)">
       <button id="pwa-install-btn" data-action="triggerPwaInstall|closeGlobalSettings" class="overflow-item" style="display:none" type="button">📲 Add to Home Screen</button>
-      <button data-action="openCurrencyModal|closeGlobalSettings" class="overflow-item" type="button">🌍 Currency symbol</button>
+      <button data-action="openCurrencyModal|closeGlobalSettings" class="overflow-item" type="button">🌍 Set currency symbol</button>
       <div style="border-top:1px solid var(--border);margin:4px 0"></div>
       <button data-action="exportAllTransactionsCSV|closeGlobalSettings" class="overflow-item" title="All transactions, unfiltered — readable in Excel/Sheets, but no accounts/budgets/settings. For a full-fidelity backup, use Export data backup (JSON) below." type="button">⬇ Export all transactions (CSV)</button>
-      <button data-action="exportBackup|closeGlobalSettings" class="overflow-item" title="Everything, from every tab — transactions, accounts, net worth snapshots, budgets, categories, and settings — in one file." type="button">📦 Export data backup (JSON)</button>
-      <button data-action="triggerImportBackup|closeGlobalSettings" class="overflow-item" title="Replaces everything currently in the app with what's in the backup file — transactions, accounts, budgets, snapshots, and settings." type="button">📥 Import data backup (JSON)</button>
+      <button data-action="exportBackup|closeGlobalSettings" class="overflow-item" title="Everything, from every tab — transactions, accounts, net worth snapshots, budgets, categories, and settings — in one file." type="button">⬇ Export data backup (JSON)</button>
+      <button data-action="triggerImportBackup|closeGlobalSettings" class="overflow-item" title="Replaces everything currently in the app with what's in the backup file — transactions, accounts, budgets, snapshots, and settings." type="button">⬆ Import data backup (JSON)</button>
       <div style="border-top:1px solid var(--border);margin:4px 0"></div>
       <button data-action="openClearDataModal|closeGlobalSettings" class="overflow-item" style="color:var(--accent-red)" type="button">🗑 Clear all data</button>
     </div>
@@ -914,7 +914,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <span id="auth-user-label" style="font-size:10px;color:var(--text-muted);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
   </div>
   <button data-action="openPrivacyPanel" class="btn btn-sm btn-privacy-nav" style="font-size:10px;padding:3px 10px;white-space:nowrap;color:var(--accent-blue-light);border-color:#2563EB44" type="button"><span class="hide-mobile">🔒 Privacy</span><span class="show-mobile">🔒</span></button>
-  <button id="auth-sign-in-btn" class="btn btn-sm" data-action="openAuthModal" style="font-size:10px;padding:3px 10px;color:var(--accent-blue-light);border-color:#2563EB44" title="Save snapshots, custom categories &amp; transaction edits across devices" type="button"><span class="hide-mobile">👤 Sign In</span><span class="show-mobile">👤</span></button>
+  <button id="auth-sign-in-btn" class="btn btn-sm" data-action="openAuthModal" style="font-size:10px;padding:3px 10px;color:var(--accent-blue-light);border-color:#2563EB44" title="Save snapshots, custom categories &amp; transaction edits across devices" type="button"><span class="hide-mobile">👤 Sign in</span><span class="show-mobile">👤</span></button>
   <button id="auth-sign-out-btn" class="btn btn-sm hidden" data-action="doSignOut" style="font-size:10px;padding:3px 10px;color:var(--text-muted)" type="button">Sign out</button>
 </div>
 </nav>
@@ -995,7 +995,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       and was itself correctly written, just never invoked by anything.
       Found in the 77th adversarial pass. -->
       <button class="btn btn-sm" data-action="openAcctCsvModal" type="button">⬆ Import CSV</button>
-      <button class="btn btn-sm btn-primary" data-action="openAddModal" type="button">+ Add Account</button>
+      <button class="btn btn-sm btn-primary" data-action="openAddModal" type="button">+ Add account</button>
     </div>
   </div>
   <div class="info-box">
@@ -1011,7 +1011,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
   <div class="list-col">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;margin-bottom:.5rem"><div class="sh" style="margin:0">Physical assets</div><button class="btn btn-sm btn-primary" data-action="openVehicleModal" type="button">+ Add asset</button></div>
-  <div class="info-box">💡 Track vehicles, boats, jewelry, collectibles — any physical asset with real value. Own a home, condo, apartment, or flat? Use <strong style="color:var(--text-secondary)">+ Add Account</strong> above instead (Type: Home) — it'll net out against a Mortgage liability in your net worth either way.</div>
+  <div class="info-box">💡 Track vehicles, boats, jewelry, collectibles — any physical asset with real value. Own a home, condo, apartment, or flat? Use <strong style="color:var(--text-secondary)">+ Add account</strong> above instead (Type: Home) — it'll net out against a Mortgage liability in your net worth either way.</div>
   <div id="vehicle-list"></div>
   </div>
 
@@ -1221,7 +1221,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div id="cat-manager-list" style="max-height:200px;overflow-y:auto;border:1px solid var(--border-mid);border-radius:8px;margin-bottom:.7rem"></div>
     <div style="display:flex;gap:6px;align-items:center">
       <input type="text" id="new-cat-name" placeholder="Category name…" style="flex:1"/>
-      <button class="btn btn-primary btn-sm" data-action="addCustomCat" style="white-space:nowrap;flex-shrink:0" type="button">+ Add Category</button>
+      <button class="btn btn-primary btn-sm" data-action="addCustomCat" style="white-space:nowrap;flex-shrink:0" type="button">+ Add category</button>
     </div>
     <div class="row" style="justify-content:flex-end;margin-top:.85rem">
       <button class="btn btn-primary" data-action="closeModals" type="button">Done</button>
@@ -12341,6 +12341,11 @@ function normalizeTxRow(row, source){
   const isATM=importFmt!=='trakyodollas'&&ATM_BRANCH_RE.test(desc);
   if(isATM)cat='Other';
 
+  // Live priority order: user rules -> built-in keywords (already applied
+  // above via guessCatFromDesc/guessCatAlly/guessCatChase per branch) ->
+  // community rules -> MCC. Also documented in README.md's Auto-
+  // categorization table and index.html's "Four-layer auto-categorization"
+  // card -- keep both in sync if this order ever changes.
   // Apply user-defined categorization rules (highest priority — always win, even over ATM)
   // -- except for our own re-imported CSV export, same "trust every field
   // directly" reasoning as the ATM/community-rules/MCC exemptions below.
