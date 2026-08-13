@@ -4420,7 +4420,7 @@ function renderNwGoalWidget(){
         <div style="font-size:17px;font-weight:800;color:${isClose?'#34D399':'var(--text-bright)'};line-height:1;white-space:nowrap">${etaStr}</div>
         <div class="text-muted-sm nowrap">in ~${timeLabel}${isClose?' — almost there!':''}</div>
       </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:9px;padding:.5rem .85rem;display:flex;align-items:center;gap:.75rem;min-width:0;flex-shrink:1" title="Net worth change from oldest to newest data point, divided by months between them.">
+      <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:9px;padding:.5rem .85rem;display:flex;align-items:center;gap:.75rem;min-width:0;flex-shrink:1" title="Net worth change between your oldest and newest data points, divided by the number of months between them.">
         <div class="label-upper nowrap">Average monthly growth</div>
         <div style="font-size:17px;font-weight:800;color:var(--accent-green);line-height:1;white-space:nowrap">+${fmtC(Math.round(monthlyGrowth))}</div>
         <div class="text-muted-sm">from ${growthSource}</div>
