@@ -7817,6 +7817,27 @@ test("The import-fresh blurb states the categorization order as rules -> built-i
   );
 });
 
+// Finding: the sync-passphrase modal's "we never see this passphrase and
+// can't reset it" warning -- the only thing standing between a user and
+// permanently losing their synced data -- was styled with the same green
+// (--accent-green) the app uses everywhere else for success/on-track
+// states, so it visually read as reassurance instead of a warning right
+// when someone most needed to stop and think. Nicholas explicitly chose
+// not to add extra friction (a confirm-you've-saved-it checkbox, etc.) on
+// top of the existing "Confirm passphrase" field -- just fixing the color
+// so the existing text actually lands.
+test("The sync-passphrase warning uses amber (warning) styling, not green (success) styling", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const warningMatch = source.match(/<div style="margin-top:\.75rem;[^"]*">\s*<span style="[^"]*">We never see this passphrase[\s\S]*?<\/span>\s*<\/div>/);
+  assert.ok(warningMatch, "the sync-passphrase warning box should exist");
+  assert.match(warningMatch[0], /var\(--amber-bg-mid\)/, "background should use the amber warning token, not a green success token");
+  assert.match(warningMatch[0], /var\(--amber-border-strong\)/, "border should use the amber warning token, not a green success token");
+  assert.match(warningMatch[0], /var\(--amber-text-strong\)/, "text should use the amber warning token, not var(--accent-green)");
+  assert.doesNotMatch(warningMatch[0], /accent-green/, "should no longer use the success-green token anywhere in this box");
+});
+
 // Finding: the Spending tab's "⬇ Export CSV" button (next to the
 // Transactions header) is one of three visually-identical inline export
 // buttons (Budget and Net Worth have their own) -- considered folding it
