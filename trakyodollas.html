@@ -1357,7 +1357,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
 
     <div style="font-size:12px;color:var(--text-muted);margin-top:.5rem;line-height:1.5;text-align:center">
-      Categorization uses your rules, community patterns, <a href="https://en.wikipedia.org/wiki/Merchant_category_code" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light);text-decoration:underline" title="Merchant Category Codes — 4-digit codes banks assign to merchants">MCC codes</a>, and built-in keywords — in that order. &nbsp;
+      Categorization uses your rules, built-in keywords, community patterns, and <a href="https://en.wikipedia.org/wiki/Merchant_category_code" target="_blank" rel="noopener noreferrer" style="color:var(--accent-blue-light);text-decoration:underline" title="Merchant Category Codes — 4-digit codes banks assign to merchants">MCC codes</a> — in that order. &nbsp;
       <button data-action="openCommunityRulesModal" style="background:none;border:none;color:var(--accent-blue-light);font-size:12px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">View patterns ↗</button> &nbsp;
       <button data-action="openShortcutsModal" style="background:none;border:none;color:var(--accent-blue-light);font-size:12px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">How it works ↗</button>
     </div>
@@ -3833,6 +3833,15 @@ function renderNwBreakdown(){
   // "you have none of these." Found via a user-friendliness pass, August
   // 2026.
   const visible=(f==='assets'?GROUPS.filter(g=>g.label!=='Liabilities'):f==='liabilities'?GROUPS.filter(g=>g.label==='Liabilities'):GROUPS).filter(g=>g.accts.length);
+  // Same "empty section reads as broken" gap the comment above already
+  // fixed per-group, one level up: a user with NO accounts at all (e.g.
+  // just imported a CSV and hasn't touched Accounts yet) left every group
+  // filtered out, so "Where your wealth lives" rendered with nothing
+  // under it -- the header, but no explanation.
+  if(!visible.length){
+    document.getElementById('nw-breakdown').innerHTML='<p style="font-size:12px;color:var(--text-muted);padding:.4rem 0">No accounts yet — add one from the Accounts tab.</p>';
+    return;
+  }
   document.getElementById('nw-breakdown').innerHTML=visible.map(g=>{
     const raw=g.accts.reduce((s,a)=>s+a.balance,0),net=g.isLiab?-raw:raw-(g.deduct||0);
     const pct=assets>0?Math.abs(net)/assets*100:0;
@@ -8083,8 +8092,14 @@ function renderAccountLists(){
     if(match){vehicleAcctIds.add(match.id);claimedThisPass.add(match.id);}
   });
   const baseAssets=state.accounts.filter(a=>!isLiab(a.type)&&!a.excludeFromNW&&a.type!=='vehicle'&&!vehicleAcctIds.has(a.id));
-  document.getElementById('asset-list').innerHTML=ASSET_GROUPS.map(g=>group(g,baseAssets.filter(g.match))).join('');
-  document.getElementById('liability-list').innerHTML=group({label:'Liabilities',color:'#F87171',hdr:'#7F1D1D18'},state.accounts.filter(a=>isLiab(a.type)&&!a.excludeFromNW));
+  const liabAccts=state.accounts.filter(a=>isLiab(a.type)&&!a.excludeFromNW);
+  // Matches renderVehicles()'s "No physical assets yet." empty state below --
+  // before this, a first-time user who imported a CSV without adding any
+  // accounts (a normal, encouraged path: the import-success modal explicitly
+  // calls adding an account "totally optional") landed on two section
+  // headers with nothing under them, no different from a rendering bug.
+  document.getElementById('asset-list').innerHTML=baseAssets.length?ASSET_GROUPS.map(g=>group(g,baseAssets.filter(g.match))).join(''):'<p style="font-size:12px;color:var(--text-muted);padding:.4rem 0">No financial accounts yet — add one above.</p>';
+  document.getElementById('liability-list').innerHTML=liabAccts.length?group({label:'Liabilities',color:'#F87171',hdr:'#7F1D1D18'},liabAccts):'<p style="font-size:12px;color:var(--text-muted);padding:.4rem 0">No liabilities yet.</p>';
 }
 
 // v.id/v.year/v.model are esc(String(...))'d/coerced below -- importBackup()

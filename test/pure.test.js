@@ -6702,6 +6702,20 @@ test("renderAccountLists: groups Financial assets/Liabilities by type (matching 
   assert.match(liabHTML, /Mortgage/, "the mortgage-type account should be in the same Liabilities group, not sub-split further");
 });
 
+// Finding: a first-time user who imports a CSV without adding any accounts
+// (a normal path -- the import-success modal explicitly calls adding an
+// account "totally optional") landed on the Accounts tab with "Financial
+// assets" and "Liabilities" headers rendering with nothing under them --
+// no different-looking from a rendering bug. renderVehicles()'s "No
+// physical assets yet." already handled this correctly one panel over.
+test("renderAccountLists: zero accounts shows 'No financial accounts yet'/'No liabilities yet' instead of a blank section under each header", () => {
+  const { ctx, getAssetHTML, getLiabHTML } = renderAccountListsCtx([], []);
+  const { renderAccountLists } = loadFunctions(["renderAccountLists", "isPairedAccount"], ctx);
+  renderAccountLists();
+  assert.match(getAssetHTML(), /No financial accounts yet/, "empty Financial assets should show an explanatory empty state");
+  assert.match(getLiabHTML(), /No liabilities yet/, "empty Liabilities should show an explanatory empty state");
+});
+
 // ── User-friendliness pass, August 2026 -- a batch of 5 findings from a
 // hands-on walkthrough of the live app with fresh demo data, none of them
 // caught by prior bug-hunting passes since nothing here was incorrect,
@@ -6739,6 +6753,25 @@ test("renderNwBreakdown: skips empty groups instead of rendering a bare '$0' hea
     fnMatch[0],
     /const visible=\(f==='assets'\?GROUPS\.filter\(g=>g\.label!=='Liabilities'\):f==='liabilities'\?GROUPS\.filter\(g=>g\.label==='Liabilities'\):GROUPS\)\.filter\(g=>g\.accts\.length\);/,
     "the visible groups list should be filtered to only groups with at least one account"
+  );
+});
+
+// Finding: the group-skipping fix above still left one gap -- a user with
+// ZERO accounts of any type (every group empty, not just one) saw the
+// "Where your wealth lives" section header with a fully blank body under
+// it, since visible.map([]).join('') is just ''. Confirmed live: import a
+// CSV without adding any accounts and the Net Worth tab shows this exact
+// state.
+test("renderNwBreakdown: a fully-empty accounts list shows 'No accounts yet' instead of a blank body under 'Where your wealth lives'", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function renderNwBreakdown\(\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "renderNwBreakdown() should exist");
+  assert.match(
+    fnMatch[0],
+    /if\(!visible\.length\)\{[\s\S]*?No accounts yet[\s\S]*?return;\s*\}/,
+    "renderNwBreakdown() should short-circuit to an explanatory empty state when every group is empty"
   );
 });
 
@@ -7764,6 +7797,23 @@ test("Spending's overflow menu includes a direct link to suggest a merchant cate
     overflowMatch[0],
     /<a href="https:\/\/forms\.gle\/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" data-action="closeSpendingOverflow" class="overflow-item"/,
     "the overflow menu should link directly to the same suggestion form used elsewhere in the app, and close itself on click"
+  );
+});
+
+// Finding: the "Import fresh" screen's own categorization-priority blurb
+// stated the same wrong order README's table used to have (rules ->
+// community patterns -> MCC -> built-in keywords) -- a third, independently
+// wrong copy of the same fact, found live while testing the import flow.
+// The real runtime order (traced through parseTxRow's shared block) is
+// rules -> built-in keywords -> community patterns -> MCC.
+test("The import-fresh blurb states the categorization order as rules -> built-in keywords -> community patterns -> MCC, matching the real runtime order", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /Categorization uses your rules, built-in keywords, community patterns, and.*MCC codes.*— in that order\./,
+    "should list built-in keywords before community patterns, matching the app's actual priority order"
   );
 });
 
