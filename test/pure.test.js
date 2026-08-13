@@ -7784,37 +7784,48 @@ test("The Spending tab's Export CSV button collapses to icon-only on mobile via 
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /<button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search"[^>]*>⬇<span class="hide-mobile"> Export CSV<\/span><\/button>/,
+    /<button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search" class="tx-icon-btn" type="button"><span class="tx-icon">⬇<\/span><span class="hide-mobile"> Export CSV<\/span><\/button>/,
     "the Spending tab's Export CSV button should keep its ⬇ icon always visible and hide only the text label on mobile"
   );
 });
 
-// Finding: Nicholas pointed out the +Add/Export CSV buttons looked small
-// on a real mobile screenshot once collapsed to icon-only -- collapsing
-// the text label also removed the only thing padding their tap area out
-// horizontally, leaving ~18px-tall/~26px-wide targets from padding:2px 8px
-// alone, well under the ~36-44px floor iOS/Android both recommend. Reused
-// the min-height:36px this file already established for .quick-chips/
-// .grain-row buttons in the same mobile media query, rather than picking
-// a new number.
-test("The +Add and Export CSV buttons on the Spending tab get an enlarged mobile tap target via .tx-icon-btn", () => {
+// Finding: an initial touch-target pass (min-width/min-height:36px,
+// borrowed from .quick-chips/.grain-row) made +Add/Export CSV look
+// oversized once Nicholas saw it on a real device, next to the Date/
+// $ Amount/Category sort pills sharing that same row. Replaced the
+// touch-target figure with .sort-btn's own scale (padding:3px 9px;
+// font-size:11px, no forced min-size) instead, applied at every width
+// (not just mobile -- the same 10px/2px 8px vs 11px/3px 9px mismatch
+// existed on desktop too, just less visible there with the text label
+// still shown). The glyph itself (not the whole button) gets a bump via
+// .tx-icon, so it reads as "same-scale pill, bigger icon" rather than "a
+// bigger button" -- also inlined into the shared .tx-icon-btn class
+// instead of duplicated per-button inline styles, so both buttons can't
+// drift apart the way the file's own comments warn duplicated styling has
+// drifted before.
+test("The +Add and Export CSV buttons match the Date/Amount/Category sort pills' scale via .tx-icon-btn, with just the glyph sized up via .tx-icon", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /\.tx-icon-btn\{min-width:36px;min-height:36px;display:inline-flex;align-items:center;justify-content:center\}/,
-    "the mobile media query should enlarge .tx-icon-btn to a real touch target, matching .quick-chips/.grain-row's existing min-height:36px"
+    /\.tx-icon-btn\{background:none;border:1px solid #2563EB44;border-radius:5px;padding:3px 9px;font-size:11px;font-weight:600;color:var\(--accent-blue-light\);cursor:pointer\}/,
+    ".tx-icon-btn should match .sort-btn's own padding:3px 9px;font-size:11px scale, not a touch-target-driven size"
   );
   assert.match(
     source,
-    /<button data-action="openAddTxModal" title="Add a single transaction manually" class="tx-icon-btn"/,
-    "the +Add button should carry the enlarged-touch-target class"
+    /\.tx-icon-btn \.tx-icon\{font-size:15px/,
+    ".tx-icon should size up just the glyph, not the whole button"
   );
   assert.match(
     source,
-    /<button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search" class="tx-icon-btn"/,
-    "the Export CSV button should carry the enlarged-touch-target class"
+    /<button data-action="openAddTxModal" title="Add a single transaction manually" class="tx-icon-btn" type="button"><span class="tx-icon">\+<\/span>/,
+    "the +Add button should use the shared class with no per-button inline style duplicating it"
+  );
+  assert.match(
+    source,
+    /<button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search" class="tx-icon-btn" type="button"><span class="tx-icon">⬇<\/span>/,
+    "the Export CSV button should use the shared class with no per-button inline style duplicating it"
   );
 });
 
