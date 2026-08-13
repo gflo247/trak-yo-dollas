@@ -7669,7 +7669,7 @@ test("The nav has a global ⚙ settings menu with the cross-tab items, and Spend
     assert.match(navMatch[0], new RegExp(`data-action="${action}\\|closeGlobalSettings"`), `nav's global settings menu should include ${action}`);
   }
 
-  const overflowMatch = source.match(/<div id="toolbar-overflow-menu"[\s\S]{0,1200}?<\/div>\s*<\/div>/);
+  const overflowMatch = source.match(/<div id="toolbar-overflow-menu"[\s\S]{0,1600}?<\/div>\s*<\/div>/);
   assert.ok(overflowMatch, "Spending's own overflow menu should still exist");
   for (const action of ["toggleIncludeIncome", "openIncomeModal", "openRulesModal", "openVendorAliasModal", "openCatModal"]) {
     assert.match(overflowMatch[0], new RegExp(`data-action="${action}\\|closeSpendingOverflow"`), `Spending's overflow menu should keep ${action}`);
@@ -7694,6 +7694,51 @@ test("toggleGlobalSettings/closeGlobalSettings mirror toggleSpendingOverflow/clo
   menuStyle.display = "block";
   closeGlobalSettings();
   assert.equal(menuStyle.display, "none", "closeGlobalSettings should force it closed regardless of current state");
+});
+
+// Finding: the community-pattern suggestion form was only reachable via a
+// two-click path buried inside the CSV import modal (Import → "View
+// patterns" → the community-rules sub-modal's own button), or by reading
+// the GitHub README -- nowhere near where a user would actually notice the
+// need (a transaction sitting in "Other"). Added directly to Spending's own
+// overflow menu, alongside the other categorization-related items it
+// already has (auto-categorization rules, manage categories), which is a
+// path users already associate with fixing categorization. Same Google
+// Form URL used everywhere else in the app (README, index.html,
+// privacy.html, the two existing in-app links) -- not a new destination.
+test("Spending's overflow menu includes a direct link to suggest a merchant pattern", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const overflowMatch = source.match(/<div id="toolbar-overflow-menu"[\s\S]{0,1600}?<\/div>\s*<\/div>/);
+  assert.ok(overflowMatch, "Spending's own overflow menu should exist");
+  assert.match(
+    overflowMatch[0],
+    /<a href="https:\/\/forms\.gle\/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" data-action="closeSpendingOverflow" class="overflow-item"/,
+    "the overflow menu should link directly to the same suggestion form used elsewhere in the app, and close itself on click"
+  );
+});
+
+// Finding: the Spending tab's "⬇ Export CSV" button (next to the
+// Transactions header) is one of three visually-identical inline export
+// buttons (Budget and Net Worth have their own) -- considered folding it
+// into the "Transactions" header text itself to save mobile width, but
+// that would overload a label that's also a live transaction-count display
+// with an undiscoverable click target, undoing the same kind of
+// discoverability problem the suggestion-form link above was just fixed
+// for. Used the existing .hide-mobile pattern instead (already used by the
+// "Sort:" label two rows below this one): the ⬇ icon always shows, the
+// "Export CSV" text collapses under 600px, button stays a real, visible,
+// explicitly-labeled control at every width.
+test("The Spending tab's Export CSV button collapses to icon-only on mobile via .hide-mobile, not by folding into the Transactions label", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search"[^>]*>⬇<span class="hide-mobile"> Export CSV<\/span><\/button>/,
+    "the Spending tab's Export CSV button should keep its ⬇ icon always visible and hide only the text label on mobile"
+  );
 });
 
 // Finding: Nicholas asked whether an icon in front of "Sign In" on desktop,

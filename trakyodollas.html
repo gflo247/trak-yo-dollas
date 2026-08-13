@@ -1073,6 +1073,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
           <button data-action="openRulesModal|closeSpendingOverflow" class="overflow-item" type="button">⚡ Auto-categorization rules</button>
           <button data-action="openVendorAliasModal|closeSpendingOverflow" class="overflow-item" type="button">⟲ Merge duplicate vendors</button>
           <button data-action="openCatModal|closeSpendingOverflow" class="overflow-item" type="button">⚙ Manage categories</button>
+          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+          <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" data-action="closeSpendingOverflow" class="overflow-item" style="text-decoration:none">🏷️ Suggest a merchant pattern ↗</a>
         </div>
       </div>
     </div>
@@ -1178,7 +1180,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div class="flex-between" style="margin-top:.9rem;margin-bottom:.3rem">
       <div class="flex-center gap-8">
         <div class="sh" style="margin:0" id="tx-count-label">Transactions</div>
-        <button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search" style="background:none;border:1px solid #2563EB44;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--accent-blue-light);cursor:pointer" type="button">⬇ Export CSV</button>
+        <button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search" style="background:none;border:1px solid #2563EB44;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--accent-blue-light);cursor:pointer" type="button">⬇<span class="hide-mobile"> Export CSV</span></button>
       </div>
       <div class="row sort-row">
         <span class="hide-mobile" style="font-size:10px;color:var(--text-muted);font-weight:600">Sort:</span>
