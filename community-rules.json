@@ -7206,5 +7206,25 @@
   {
     "keyword": "WYNDHAM",
     "cat": "Travel"
+  },
+  {
+    "keyword": "MASSAGE HEIGHTS",
+    "cat": "Personal Care"
+  },
+  {
+    "keyword": "RALPHS",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "FRY'S FOOD",
+    "cat": "Groceries"
+  },
+  {
+    "keyword": "SWEETGREEN",
+    "cat": "Food & Drink"
+  },
+  {
+    "keyword": "JIMMY JOHN'S",
+    "cat": "Food & Drink"
   }
 ]
