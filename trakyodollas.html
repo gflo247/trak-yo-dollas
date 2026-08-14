@@ -470,8 +470,19 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
    events instead -- those two are what actually remove it from hit-testing
    and the accessibility tree while still allowing the inner .drawer's
    transform to transition instead of popping instantly. */
-.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;justify-content:flex-end;z-index:100;backdrop-filter:blur(4px);transition:background-color .25s ease;visibility:visible}
-.drawer-overlay.hidden{display:flex!important;visibility:hidden;pointer-events:none;background:rgba(0,0,0,0);backdrop-filter:none}
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;justify-content:flex-end;z-index:100;backdrop-filter:blur(4px);transition:background-color .25s ease,visibility 0s linear 0s;visibility:visible}
+/* visibility's own transition-delay is the whole trick here -- opening
+   (this rule not applying) flips visibility:visible with 0 delay so the
+   slide-in is visible from frame 1, but closing needs the .25s delay below
+   so the box stays painted for the full slide-out/fade-out before it
+   actually leaves the accessibility tree and hit-testing. Without the
+   delay, visibility:hidden applies instantly and the box stops being
+   painted at all -- transform/background-color are still "transitioning"
+   in the underlying computed values, just never rendered, so the close
+   silently snaps shut instead of animating. Found live-testing the close
+   specifically, not something a static screenshot after the click could
+   have shown. */
+.drawer-overlay.hidden{display:flex!important;visibility:hidden;pointer-events:none;background:rgba(0,0,0,0);backdrop-filter:none;transition:background-color .25s ease,visibility 0s linear .25s}
 .drawer{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:14px 0 0 14px;height:100vh;max-height:100vh;overflow-y:auto;width:min(480px,94vw);padding:1.5rem;box-shadow:-20px 0 60px rgba(0,0,0,.5);transform:translateX(100%);transition:transform .25s ease}
 .drawer-overlay:not(.hidden) .drawer{transform:translateX(0)}
 .drawer h3{font-size:15px;font-weight:700;margin-bottom:1rem;color:var(--text-bright)}
@@ -14026,7 +14037,13 @@ function _a11yFallbackFocus(modalEl,myGen){
 // list captured once at open time would go stale. offsetParent!==null is
 // a correct visibility filter here specifically because this app hides
 // sub-panels via display:none (.hidden{display:none!important}) or
-// inline style.display, never visibility:hidden.
+// inline style.display -- the one exception is .drawer-overlay.hidden
+// (visibility:hidden, needed so its close animation stays painted instead
+// of display:none snapping it away instantly), but that's harmless here:
+// every call site scopes container to one specific modal's own .modal/
+// .drawer subtree, and drawers are always top-level siblings, never
+// nested inside another modal's scope -- so a closed drawer's buttons can
+// never get swept into a DIFFERENT open modal's focusable-elements list.
 function _a11yGetFocusable(container){
   const nodes=container.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
   return Array.prototype.filter.call(nodes,el=>el.offsetParent!==null);
