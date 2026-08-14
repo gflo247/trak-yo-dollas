@@ -8005,3 +8005,56 @@ test("#global-settings-btn has a mobile-shrink rule matching #theme-toggle-btn, 
     "the Privacy nav button should use the same ghost-blue treatment as Sign In, not btn-primary's solid fill"
   );
 });
+
+// Finding: converting Manage categories/Community patterns/Year in review/
+// Tips & shortcuts from centered modals to right-side drawers (long-list or
+// report-shaped content, not short decisions) had a real regression trap --
+// closeModals() and the a11y focus-trap observer both select elements by
+// the literal '.modal-overlay' class, so simply swapping the class to
+// '.drawer-overlay' would have silently broken Escape-key/backdrop-click
+// closing and the accessibility observer for exactly these 4 dialogs.
+// Fixed by keeping BOTH classes (modal-overlay drawer-overlay / modal
+// drawer) so existing selectors still find them, with .drawer-overlay's
+// later cascade position doing the actual positioning override.
+test("The 4 drawer-converted modals (cat/community-rules/year-review/shortcuts) keep the modal-overlay/modal classes alongside the new drawer classes, so closeModals() and the a11y observer still find them", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  for (const id of ["cat-modal", "community-rules-modal", "year-review-modal", "shortcuts-modal"]) {
+    const overlayRe = new RegExp(`<div class="modal-overlay drawer-overlay hidden" id="${id}">`);
+    assert.match(source, overlayRe, `#${id}'s overlay should carry both modal-overlay and drawer-overlay`);
+    const innerRe = new RegExp(`id="${id}">\\s*<div class="modal drawer"`);
+    assert.match(source, innerRe, `#${id}'s inner panel should carry both modal and drawer classes`);
+  }
+});
+
+test("The .drawer-overlay/.drawer CSS variant docks right, fills viewport height, and overrides the global .hidden{display:none!important} with an !important of its own so the slide transition can run", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /\.drawer-overlay\{[^}]*justify-content:flex-end/,
+    "drawer-overlay should dock its content to the right edge, not center it like .modal-overlay"
+  );
+  assert.match(
+    source,
+    /\.drawer-overlay\.hidden\{display:flex!important;visibility:hidden;pointer-events:none/,
+    "the hidden override needs display:flex!important (higher specificity than the global .hidden rule) plus visibility+pointer-events to actually hide it, since display can't be transitioned"
+  );
+  assert.match(
+    source,
+    /\.drawer\{[^}]*height:100vh[^}]*transform:translateX\(100%\)/,
+    "the drawer panel should be full viewport height and start translated off-screen"
+  );
+  assert.match(
+    source,
+    /\.drawer-overlay:not\(\.hidden\) \.drawer\{transform:translateX\(0\)\}/,
+    "removing .hidden from the overlay should slide the drawer panel into view"
+  );
+  assert.match(
+    source,
+    /@media\(prefers-reduced-motion:reduce\)\{\.drawer-overlay,\.drawer\{transition:none\}\}/,
+    "the slide/fade transition should be disabled under prefers-reduced-motion, matching this app's existing animation convention"
+  );
+});

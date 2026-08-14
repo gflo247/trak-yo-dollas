@@ -29,7 +29,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
 
-MODAL_OVERLAY_RE = re.compile(r'class="modal-overlay hidden" id="([^"]+)"')
+MODAL_OVERLAY_RE = re.compile(r'class="modal-overlay(?: drawer-overlay)? hidden" id="([^"]+)"')
 DEMO_PICKER_RE = re.compile(r'id="demo-picker-overlay"')
 ID_RE = re.compile(r'\bid="([^"]+)"')
 REQUIRED_ATTRS = ['role="dialog"', 'aria-modal="true"', 'tabindex="-1"']

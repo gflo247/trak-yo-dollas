@@ -459,6 +459,23 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(4px)}
 .modal{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:14px;padding:1.5rem;width:min(440px,94vw);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)}
 .modal h3{font-size:15px;font-weight:700;margin-bottom:1rem;color:var(--text-bright)}
+/* Drawer variant -- same open/close JS as every other modal (just adds/removes
+   the shared .hidden class), but slides in from the right instead of
+   popping in centered, for content that's fundamentally a long list or
+   report rather than a short decision (category/rules management, the
+   community-rules browser, year in review). .hidden{display:none!important}
+   is global and would otherwise block any transition outright, so
+   .drawer-overlay.hidden overrides display back to flex!important (higher
+   specificity wins the !important tie) and hides via visibility+pointer-
+   events instead -- those two are what actually remove it from hit-testing
+   and the accessibility tree while still allowing the inner .drawer's
+   transform to transition instead of popping instantly. */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;justify-content:flex-end;z-index:100;backdrop-filter:blur(4px);transition:background-color .25s ease;visibility:visible}
+.drawer-overlay.hidden{display:flex!important;visibility:hidden;pointer-events:none;background:rgba(0,0,0,0);backdrop-filter:none}
+.drawer{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:14px 0 0 14px;height:100vh;max-height:100vh;overflow-y:auto;width:min(480px,94vw);padding:1.5rem;box-shadow:-20px 0 60px rgba(0,0,0,.5);transform:translateX(100%);transition:transform .25s ease}
+.drawer-overlay:not(.hidden) .drawer{transform:translateX(0)}
+.drawer h3{font-size:15px;font-weight:700;margin-bottom:1rem;color:var(--text-bright)}
+@media(prefers-reduced-motion:reduce){.drawer-overlay,.drawer{transition:none}}
 .modal-sub{font-size:11px;color:var(--text-dim);margin-bottom:1rem;line-height:1.4}
 .form-group{margin-bottom:.7rem}
 .form-label{font-size:12px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;display:block}
@@ -1214,11 +1231,11 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 
 <!-- Category manager modal -->
-<div class="modal-overlay hidden" id="cat-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cat-modal-title" tabindex="-1">
+<div class="modal-overlay drawer-overlay hidden" id="cat-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="cat-modal-title" tabindex="-1">
     <h3 id="cat-modal-title">Manage categories</h3>
     <p class="modal-sub">Add custom categories. The app picks colors automatically to keep your categories visually distinct from each other.</p>
-    <div id="cat-manager-list" style="max-height:200px;overflow-y:auto;border:1px solid var(--border-mid);border-radius:8px;margin-bottom:.7rem"></div>
+    <div id="cat-manager-list" style="max-height:60vh;overflow-y:auto;border:1px solid var(--border-mid);border-radius:8px;margin-bottom:.7rem"></div>
     <div style="display:flex;gap:6px;align-items:center">
       <input type="text" id="new-cat-name" placeholder="Category name…" style="flex:1"/>
       <button class="btn btn-primary btn-sm" data-action="addCustomCat" style="white-space:nowrap;flex-shrink:0" type="button">+ Add category</button>
@@ -1720,8 +1737,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 </div>
 
 <!-- Community rules modal -->
-<div class="modal-overlay hidden" id="community-rules-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="community-rules-modal-title" tabindex="-1" style="width:min(560px,95vw);max-height:80vh;display:flex;flex-direction:column">
+<div class="modal-overlay drawer-overlay hidden" id="community-rules-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="community-rules-modal-title" tabindex="-1" style="width:min(560px,94vw);display:flex;flex-direction:column">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-shrink:0">
       <div>
         <h3 id="community-rules-modal-title" style="font-size:16px;margin:0">Community patterns</h3>
@@ -2036,8 +2053,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 </div>
 
 <!-- Year in Review modal -->
-<div class="modal-overlay hidden" id="year-review-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="year-review-modal-title" tabindex="-1" style="width:min(580px,95vw);max-height:90vh;overflow-y:auto">
+<div class="modal-overlay drawer-overlay hidden" id="year-review-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="year-review-modal-title" tabindex="-1" style="width:min(580px,94vw)">
     <div class="modal-header">
       <h3 id="year-review-modal-title" style="margin:0">📅 Year in review</h3>
       <button class="btn" data-action="closeModals" type="button">Done</button>
@@ -2067,8 +2084,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 </div>
 
 <!-- Keyboard shortcuts / tips modal -->
-<div class="modal-overlay hidden" id="shortcuts-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="shortcuts-modal-title" tabindex="-1" style="width:min(480px,95vw)">
+<div class="modal-overlay drawer-overlay hidden" id="shortcuts-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="shortcuts-modal-title" tabindex="-1">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
       <h3 id="shortcuts-modal-title" style="margin:0">Tips & shortcuts</h3>
       <button data-action="closeModals" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0;line-height:1" type="button">×</button>
