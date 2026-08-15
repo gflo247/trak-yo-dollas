@@ -504,6 +504,20 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .drawer-overlay:not(.hidden) .drawer{transform:translateX(0)}
 .drawer h3{font-size:15px;font-weight:700;margin-bottom:1rem;color:var(--text-bright)}
 @media(prefers-reduced-motion:reduce){.drawer-overlay,.drawer{transition:none}}
+/* Shortcuts-modal only, desktop/persistent mode: openShortcutsModal() drops
+   the shared .modal-overlay class at open time when there's enough
+   viewport width (>=900px) to keep the app usable alongside a ~480px
+   panel -- that's what actually opts it out of closeModals()'s sweep, the
+   Tab-focus-trap, and Escape's "close any open modal" branch, all three
+   of which key off .modal-overlay specifically elsewhere in this file.
+   This is the visual half of that: with the backdrop no longer implying
+   "nothing else is clickable" (it would be lying, since it genuinely is),
+   pointer-events:none on the overlay lets clicks reach the app everywhere
+   except the panel itself, which opts back in via pointer-events:auto.
+   No other drawer/modal in this file can ever match this selector --
+   every other one always carries both classes, hardcoded in its markup. */
+.drawer-overlay:not(.modal-overlay){background:transparent;pointer-events:none}
+.drawer-overlay:not(.modal-overlay) .drawer{pointer-events:auto}
 .modal-sub{font-size:11px;color:var(--text-dim);margin-bottom:1rem;line-height:1.4}
 .form-group{margin-bottom:.7rem}
 .form-label{font-size:12px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;display:block}
@@ -2116,10 +2130,10 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="shortcuts-modal-title" tabindex="-1">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
       <h3 id="shortcuts-modal-title" style="margin:0">Tips & shortcuts</h3>
-      <button data-action="closeModals" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0;line-height:1" type="button">×</button>
+      <button data-action="closeShortcutsModal" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0;line-height:1" type="button">×</button>
     </div>
 
-    <div style="margin-bottom:1.25rem">
+    <div class="hide-mobile" style="margin-bottom:1.25rem">
       <div class="label-upper" style="margin-bottom:.5rem">Keyboard</div>
       <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
         <div style="display:grid;grid-template-columns:1fr auto;font-size:12px;border-bottom:1px solid var(--border)">
@@ -2167,7 +2181,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <div class="label-upper" style="margin-bottom:.5rem">Tips</div>
       <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
         <div style="display:grid;grid-template-columns:1fr 1.6fr;font-size:12px;border-bottom:1px solid var(--border)">
-          <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">··· → Clear all data</div>
+          <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">⚙ → Clear all data</div>
           <div style="padding:.5rem .75rem;color:var(--text-secondary)">Deletes all your data permanently. Type "clear" in the confirmation box to unlock the button</div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1.6fr;font-size:12px;border-bottom:1px solid var(--border)">
@@ -2187,19 +2201,15 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
           <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Edit a transaction</div>
           <div style="padding:.5rem .75rem;color:var(--text-secondary)">Save category changes as a permanent rule</div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1.6fr;font-size:12px;border-bottom:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:1fr 1.6fr;font-size:12px">
           <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">⚙ Customize (At a Glance)</div>
           <div style="padding:.5rem .75rem;color:var(--text-secondary)">Show or hide individual insight cards</div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1.6fr;font-size:12px">
-          <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Net Worth → Save snapshot</div>
-          <div style="padding:.5rem .75rem;color:var(--text-secondary)">Do this monthly to keep your trend current</div>
         </div>
       </div>
     </div>
 
     <div class="modal-footer">
-      <button class="btn btn-primary" data-action="closeModals" type="button">Got it</button>
+      <button class="btn btn-primary" data-action="closeShortcutsModal" type="button">Got it</button>
     </div>
   </div>
 </div>
@@ -2736,7 +2746,21 @@ function handleCsvDelegated(val,el){handleCsv(el);}
 function togglePillChecked(key,el){if(el&&typeof el==='object'&&'checked'in el)togglePill(key,el.checked);}
 function _ctaAction(cta){return cta&&cta.action;}
 function _ctaArg(cta){return cta&&cta.arg!=null?String(cta.arg):null;}
-function openShortcutsModal(){document.getElementById('shortcuts-modal').classList.remove('hidden');}
+function openShortcutsModal(){
+  const el=document.getElementById('shortcuts-modal');
+  const panel=el.querySelector('.drawer');
+  // >=900px: enough room to keep the app usable next to a ~480px panel, so
+  // it opens as a genuinely persistent, non-blocking reference panel
+  // instead of another blocking modal. See the CSS comment by
+  // .drawer-overlay:not(.modal-overlay) for the visual half of this, and
+  // the Escape handler's own shortcuts-modal check for the keyboard half.
+  const persistent=window.innerWidth>=900;
+  el.classList.toggle('modal-overlay',!persistent);
+  panel.setAttribute('aria-modal',persistent?'false':'true');
+  el.classList.remove('hidden');
+}
+function closeShortcutsModal(){document.getElementById('shortcuts-modal').classList.add('hidden');}
+function toggleShortcutsModal(){document.getElementById('shortcuts-modal').classList.contains('hidden')?openShortcutsModal():closeShortcutsModal();}
 function closeCommunityRulesModal(){document.getElementById('community-rules-modal').classList.add('hidden');}
 function closeAddRuleForm(){document.getElementById('add-rule-form').classList.add('hidden');}
 function triggerCsvFileInput(){document.getElementById('csv-file').click();}
@@ -7405,6 +7429,14 @@ document.addEventListener('keydown',function(e){
       if(_clearAllDataInProgress)return;
       closeModals();return;
     }
+    // Persistent shortcuts-modal (desktop, no longer a .modal-overlay --
+    // see openShortcutsModal()) falls through the openModal check above
+    // since that selector no longer matches it. Checked here, after any
+    // real modal (which should take priority if both happen to be open)
+    // but before the "Clear filters" fallback below, so Escape closes the
+    // panel first rather than clearing filters out from under it.
+    const shortcutsEl=document.getElementById('shortcuts-modal');
+    if(shortcutsEl&&!shortcutsEl.classList.contains('hidden')){closeShortcutsModal();return;}
     // Clear active filters
     let cleared=false;
     if(state.activeDate){state.activeDate=null;document.querySelectorAll('.cal-day-active').forEach(el=>{el.classList.remove('cal-day-active');el.style.outline='';});cleared=true;}
@@ -7469,7 +7501,7 @@ document.addEventListener('keydown',function(e){
   // Don't fire other shortcuts when typing in an input
   if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
   if(e.key==='?'){
-    document.getElementById('shortcuts-modal').classList.remove('hidden');
+    toggleShortcutsModal();
     return;
   }
 });

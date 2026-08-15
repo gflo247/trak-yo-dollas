@@ -8143,3 +8143,95 @@ test("Manage categories: the '(built-in)' tag meets the 12px legibility floor, b
     "cat-modal should override the shared drawer's 480px default -- its content (short category names, no secondary data column) doesn't need that much width and was leaving a wide blank gap on built-in rows, which have no action buttons at all"
   );
 });
+
+// Finding: on request, Tips & shortcuts became a genuinely persistent,
+// non-blocking panel on wide-enough viewports (>=900px) instead of another
+// blocking modal -- staying open while you go try the thing a tip just
+// described is the whole point. The mechanism: openShortcutsModal() drops
+// the shared .modal-overlay class at open time, which is what actually
+// opts it out of closeModals()'s sweep, the Tab-focus-trap, and Escape's
+// "close any open modal" branch -- all three key off that class
+// specifically elsewhere in this file, so removing it is a single lever
+// rather than needing to special-case each one. aria-modal is flipped to
+// match (true when it's genuinely modal on narrow viewports, false when
+// it isn't), since leaving aria-modal="true" on a panel that no longer
+// blocks anything would actively mislead screen reader users. Mobile
+// (<900px) is completely unchanged -- there's no room for simultaneous
+// side-by-side use on a phone regardless.
+test("Tips & shortcuts opens as a persistent, non-blocking panel on wide viewports (drops .modal-overlay, flips aria-modal) instead of always being a blocking modal", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function openShortcutsModal\(\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "openShortcutsModal() should exist");
+  assert.match(fnMatch[0], /window\.innerWidth>=900/, "should gate persistent mode on a viewport-width check");
+  assert.match(fnMatch[0], /classList\.toggle\('modal-overlay',!persistent\)/, "should drop .modal-overlay in persistent mode -- that's the single lever every other piece of shared modal machinery keys off");
+  assert.match(fnMatch[0], /setAttribute\('aria-modal',persistent\?'false':'true'\)/, "aria-modal should track whether it's genuinely blocking, not stay hardcoded true once it isn't");
+  assert.match(source, /function closeShortcutsModal\(\)\{document\.getElementById\('shortcuts-modal'\)\.classList\.add\('hidden'\)/, "needs its own dedicated close function -- the shared closeModals() sweep only finds .modal-overlay elements, which this one no longer is in persistent mode");
+  assert.match(source, /function toggleShortcutsModal\(\)/, "the '?' key and any other single entry point should toggle rather than only ever open, so re-pressing '?' closes it");
+});
+
+test("The .drawer-overlay:not(.modal-overlay) CSS lets clicks pass through to the app everywhere except the panel itself, and no other drawer's markup can accidentally match it", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /\.drawer-overlay:not\(\.modal-overlay\)\{background:transparent;pointer-events:none\}/,
+    "the overlay itself should be click-through and untinted once it's not blocking anything"
+  );
+  assert.match(
+    source,
+    /\.drawer-overlay:not\(\.modal-overlay\) \.drawer\{pointer-events:auto\}/,
+    "the panel itself should opt back into receiving clicks even though its parent overlay doesn't"
+  );
+  for (const id of ["cat-modal", "community-rules-modal", "year-review-modal"]) {
+    const overlayRe = new RegExp(`<div class="modal-overlay drawer-overlay hidden" id="${id}">`);
+    assert.match(source, overlayRe, `#${id} should always carry both classes in its markup -- only shortcuts-modal ever drops .modal-overlay, and only at runtime via JS`);
+  }
+});
+
+test("Escape closes the persistent shortcuts panel (after any real modal, before falling through to Clear filters), since it no longer matches the generic .modal-overlay:not(.hidden) close check once persistent", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /closeModals\(\);return;\s*\}\s*\/\/ Persistent shortcuts-modal[\s\S]{0,600}?closeShortcutsModal\(\);return;\}\s*\/\/ Clear active filters/,
+    "the shortcuts-modal Escape check should sit after the real-modal-closing branch and before the 'Clear active filters' fallback"
+  );
+});
+
+// Finding: two content bugs surfaced auditing the Tips table while
+// building the above. (1) "Clear all data" lives in the ⚙ global settings
+// menu, but the tip said "··· → Clear all data" (the Spending tab's own,
+// different overflow menu) -- the exact same stale-menu-reference bug
+// already caught and fixed in privacy.html earlier, just missed here. (2)
+// The "Net Worth → Save snapshot: do this monthly" row was redundant with
+// an existing *active* banner nudge on the Net Worth tab itself (only
+// shown to real users who haven't saved a snapshot this month) -- a
+// passive line in a reference panel doesn't actually remind anyone of
+// anything ongoing the way a proactive banner does, and it was also a
+// different kind of content than every other row (a behavioral suggestion
+// vs. "what does clicking this do").
+test("Tips & shortcuts: 'Clear all data' correctly points at the ⚙ menu (not the stale '···' Spending-overflow reference), and the redundant monthly-snapshot reminder row is gone", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const modalMatch = source.match(/<!-- Keyboard shortcuts \/ tips modal -->[\s\S]*?<div class="modal-footer">/);
+  assert.ok(modalMatch, "the shortcuts-modal block should exist");
+  assert.match(modalMatch[0], />⚙ → Clear all data</, "should point at the ⚙ menu, where Clear all data actually lives");
+  assert.doesNotMatch(modalMatch[0], /··· → Clear all data/, "should no longer reference the Spending tab's own, different overflow menu");
+  assert.doesNotMatch(modalMatch[0], /Net Worth → Save snapshot/, "the redundant monthly-reminder row should be removed -- the Net Worth tab's own active banner nudge already does this job");
+});
+
+test("Tips & shortcuts' Keyboard section is hidden on mobile -- '?' and Esc need an actual keyboard, which a typical touchscreen phone doesn't have", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<div class="hide-mobile" style="margin-bottom:1\.25rem">\s*<div class="label-upper" style="margin-bottom:\.5rem">Keyboard<\/div>/,
+    "the Keyboard section should use the app's existing .hide-mobile convention, matching every other mobile-irrelevant content elsewhere"
+  );
+});
