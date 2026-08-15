@@ -478,7 +478,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
    Confirmed live on both desktop and mobile that the previous rgba(0,0,0,.7)
    +blur(4px) copy-pasted from .modal-overlay made the app behind it
    unreadable, not just dimmed. */
-.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;justify-content:flex-end;z-index:100;transition:background-color .25s ease,visibility 0s linear 0s;visibility:visible}
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.15);display:flex;justify-content:flex-end;z-index:100;transition:background-color .25s ease,visibility 0s linear 0s;visibility:visible}
 /* visibility's own transition-delay is the whole trick here -- opening
    (this rule not applying) flips visibility:visible with 0 delay so the
    slide-in is visible from frame 1, but closing needs the .25s delay below
@@ -1260,7 +1260,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <!-- Category manager modal -->
 <div class="modal-overlay drawer-overlay hidden" id="cat-modal">
-  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="cat-modal-title" tabindex="-1">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="cat-modal-title" tabindex="-1" style="width:min(400px,94vw)">
     <h3 id="cat-modal-title">Manage categories</h3>
     <p class="modal-sub">Add custom categories. The app picks colors automatically to keep your categories visually distinct from each other.</p>
     <div id="cat-manager-list" style="max-height:60vh;overflow-y:auto;border:1px solid var(--border-mid);border-radius:8px;margin-bottom:.7rem"></div>
@@ -11287,7 +11287,7 @@ function renderCatManagerList(){
     }
     return `<div style="display:flex;align-items:center;gap:8px;padding:.35rem .65rem;border-bottom:1px solid var(--border-mid)">
       ${dot}
-      <span class="truncate" style="flex:1;font-size:12px;color:${c.custom?'var(--text-primary)':'var(--text-muted)'}" title="${esc(c.name)}">${esc(c.name)}${c.custom?'':' <span style="font-size:9px;color:var(--text-muted)">(built-in)</span>'}</span>
+      <span class="truncate" style="flex:1;font-size:12px;color:${c.custom?'var(--text-primary)':'var(--text-secondary)'}" title="${esc(c.name)}">${esc(c.name)}${c.custom?'':' <span style="font-size:12px;color:var(--text-muted)">(built-in)</span>'}</span>
       ${c.custom?`
         <button data-action="startRenameCat" data-arg="${esc(c.name)}" style="font-size:12px;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 6px" title="Rename" type="button">✏</button>
         <button data-action="startDeleteCat" data-arg="${esc(c.name)}" style="font-size:12px;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 6px" title="Delete" type="button">🗑️</button>

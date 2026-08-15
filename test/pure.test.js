@@ -5728,7 +5728,7 @@ test("the .truncate utility class exists and is applied to the 5 sites the 168th
   );
   assert.match(
     source,
-    /<span class="truncate" style="flex:1;font-size:12px;color:\$\{c\.custom\?'var\(--text-primary\)':'var\(--text-muted\)'\}" title="\$\{esc\(c\.name\)\}">/,
+    /<span class="truncate" style="flex:1;font-size:12px;color:\$\{c\.custom\?'var\(--text-primary\)':'var\(--text-secondary\)'\}" title="\$\{esc\(c\.name\)\}">/,
     "the category manager list should truncate the category name"
   );
   // The vehicle "other asset" card's name div moved off the bare
@@ -8099,10 +8099,47 @@ test("The drawer backdrop is a lighter, unblurred tint (not .modal-overlay's opa
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   const overlayMatch = source.match(/\.drawer-overlay\{[^}]*\}/);
   assert.ok(overlayMatch, "the base .drawer-overlay rule should exist");
-  assert.match(overlayMatch[0], /background:rgba\(0,0,0,\.35\)/, "backdrop should be meaningfully lighter than .modal-overlay's rgba(0,0,0,.7)");
+  assert.match(overlayMatch[0], /background:rgba\(0,0,0,\.15\)/, "backdrop should be meaningfully lighter than .modal-overlay's rgba(0,0,0,.7) -- .35 alone (an earlier pass) still wasn't enough per live user feedback, lightened further to .15");
   assert.doesNotMatch(overlayMatch[0], /backdrop-filter/, "no blur -- blur alone makes the app behind it illegible even at lower opacity");
   const drawerMatch = source.match(/\.drawer\{[^}]*\}/);
   assert.ok(drawerMatch, "the .drawer panel rule should exist");
   assert.match(drawerMatch[0], /height:100vh;height:100dvh/, "100vh fallback first, 100dvh override second so unsupported browsers still get a value");
   assert.match(drawerMatch[0], /max-height:100vh;max-height:100dvh/, "max-height needs the same vh->dvh fallback pattern as height");
+});
+
+// Finding: a batch of 3 things surfaced live-testing Manage categories --
+// (1) the "(built-in)" tag rendered at 9px, below this app's own
+// established 12px legibility floor (see the Tier 1/2 legibility-sweep
+// precedents elsewhere in this file); (2) built-in rows used --text-muted
+// against custom rows' --text-primary, a big enough contrast gap that it
+// read as a different FONT SIZE, not just intentionally dimmed, even
+// though both are actually 12px; (3) cat-modal inherited the shared
+// drawer's 480px default width, but its content (a single short category
+// name, no secondary data column) left built-in rows -- which have no
+// action buttons at all -- with a wide, awkward blank gap on the right
+// that the old 440px modal never had room to expose.
+test("Manage categories: the '(built-in)' tag meets the 12px legibility floor, built-in vs custom rows use a softer contrast gap (text-secondary vs text-muted) instead of reading as different sizes, and the drawer is narrowed to fit its actual content", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /\(built-in\)<\/span>/,
+    "the built-in tag markup should still exist"
+  );
+  assert.match(
+    source,
+    /<span style="font-size:12px;color:var\(--text-muted\)">\(built-in\)<\/span>/,
+    "the '(built-in)' tag should be 12px, not the old 9px which was below this app's own established legibility floor"
+  );
+  assert.match(
+    source,
+    /color:\$\{c\.custom\?'var\(--text-primary\)':'var\(--text-secondary\)'\}/,
+    "built-in rows should use --text-secondary (a softer dim) instead of --text-muted, which was extreme enough to read as a different font size rather than intentional de-emphasis"
+  );
+  assert.match(
+    source,
+    /id="cat-modal">\s*<div class="modal drawer"[^>]*style="width:min\(400px,94vw\)"/,
+    "cat-modal should override the shared drawer's 480px default -- its content (short category names, no secondary data column) doesn't need that much width and was leaving a wide blank gap on built-in rows, which have no action buttons at all"
+  );
 });
