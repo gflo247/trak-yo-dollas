@@ -518,6 +518,22 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
    every other one always carries both classes, hardcoded in its markup. */
 .drawer-overlay:not(.modal-overlay){background:transparent;pointer-events:none}
 .drawer-overlay:not(.modal-overlay) .drawer{pointer-events:auto}
+/* Click-through alone still left the panel sitting visually on top of
+   whatever was underneath it -- on desktop that includes the nav's own
+   right-edge controls (the demo badge, theme toggle, and ⚙ settings
+   button all live in #auth-bar, margin-left:auto'd to the far right) and
+   the Spending tab's own "..." overflow button. A persistent panel whose
+   entire pitch is "go try the thing a tip just pointed you at without
+   closing this" defeats itself if the control it's pointing at is the one
+   thing it's covering. Each open*() function toggles this body class and
+   sets --pp-width to its own panel's width (see .drawer width overrides
+   per modal) whenever it goes persistent, and every close*() function
+   removes it -- so the app's own content genuinely narrows to make room,
+   the same width the panel actually occupies, instead of just being
+   overlaid. >=900px only: mobile has no spare width to reflow into and
+   keeps the original blocking-modal treatment untouched. */
+@media(min-width:900px){body.persistent-panel-open{margin-right:var(--pp-width,480px);transition:margin-right .25s ease}}
+@media(prefers-reduced-motion:reduce){body.persistent-panel-open{transition:none}}
 .modal-sub{font-size:11px;color:var(--text-dim);margin-bottom:1rem;line-height:1.4}
 .form-group{margin-bottom:.7rem}
 .form-label{font-size:12px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;display:block}
@@ -2778,11 +2794,13 @@ function openShortcutsModal(){
   const persistent=window.innerWidth>=900;
   el.classList.toggle('modal-overlay',!persistent);
   panel.setAttribute('aria-modal',persistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',persistent);
+  document.body.style.setProperty('--pp-width','480px');
   el.classList.remove('hidden');
 }
-function closeShortcutsModal(){document.getElementById('shortcuts-modal').classList.add('hidden');}
+function closeShortcutsModal(){document.getElementById('shortcuts-modal').classList.add('hidden');document.body.classList.remove('persistent-panel-open');}
 function toggleShortcutsModal(){document.getElementById('shortcuts-modal').classList.contains('hidden')?openShortcutsModal():closeShortcutsModal();}
-function closeCommunityRulesModal(){document.getElementById('community-rules-modal').classList.add('hidden');}
+function closeCommunityRulesModal(){document.getElementById('community-rules-modal').classList.add('hidden');document.body.classList.remove('persistent-panel-open');}
 function closeAddRuleForm(){document.getElementById('add-rule-form').classList.add('hidden');}
 function triggerCsvFileInput(){document.getElementById('csv-file').click();}
 function selectVenmoCustom(){const i=document.querySelector('input[value=custom]');if(i){i.checked=true;selectVenmoOpt(i);}}
@@ -4001,9 +4019,11 @@ function openYearInReview(){
   const persistent=window.innerWidth>=900;
   el.classList.toggle('modal-overlay',!persistent);
   panel.setAttribute('aria-modal',persistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',persistent);
+  document.body.style.setProperty('--pp-width','580px');
   el.classList.remove('hidden');
 }
-function closeYearInReview(){document.getElementById('year-review-modal').classList.add('hidden');}
+function closeYearInReview(){document.getElementById('year-review-modal').classList.add('hidden');document.body.classList.remove('persistent-panel-open');}
 
 function setYirEndMonth(m){
   _yirEndMonth=m;
@@ -7640,6 +7660,8 @@ function openCommunityRulesModal(){
   const persistent=window.innerWidth>=900;
   el.classList.toggle('modal-overlay',!persistent);
   panel.setAttribute('aria-modal',persistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',persistent);
+  document.body.style.setProperty('--pp-width','560px');
   el.classList.remove('hidden');
   document.getElementById('cr-search').value='';
   renderCommunityRulesTable('');
@@ -11355,9 +11377,11 @@ function openCatModal(){
   const persistent=window.innerWidth>=900;
   el.classList.toggle('modal-overlay',!persistent);
   panel.setAttribute('aria-modal',persistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',persistent);
+  document.body.style.setProperty('--pp-width','400px');
   el.classList.remove('hidden');
 }
-function closeCatModal(){document.getElementById('cat-modal').classList.add('hidden');}
+function closeCatModal(){document.getElementById('cat-modal').classList.add('hidden');document.body.classList.remove('persistent-panel-open');}
 let _editingCatName=null;
 // Category deletion previously had zero confirmation — a single click on
 // the ✕ button immediately deleted, cascading through budgets/rules/

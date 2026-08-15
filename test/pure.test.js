@@ -8246,6 +8246,63 @@ test("_closeOtherPersistentPanels() is called at the start of all 4 open functio
   }
 });
 
+// Finding: click-through alone still left a persistent panel sitting
+// visually on top of whatever was underneath it, including the nav's own
+// right-edge controls (⚙ settings, theme toggle, demo badge -- all live in
+// #auth-bar) and the Spending tab's "..." overflow button. A panel whose
+// whole pitch is "go try the thing a tip just pointed you at without
+// closing this" defeats itself if the control it's pointing at is the one
+// thing it's covering. Fixed by having the app's own content genuinely
+// narrow by the panel's width (via a body class + CSS custom property)
+// instead of just being overlaid.
+test("body.persistent-panel-open adds a >=900px-only margin-right driven by --pp-width, so the app genuinely narrows instead of just being overlaid", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /@media\(min-width:900px\)\{body\.persistent-panel-open\{margin-right:var\(--pp-width,480px\)/,
+    "the reflow margin should only apply at >=900px, matching the same breakpoint every open function gates persistence on"
+  );
+  assert.match(
+    source,
+    /@media\(prefers-reduced-motion:reduce\)\{body\.persistent-panel-open\{transition:none\}\}/,
+    "should respect prefers-reduced-motion like the drawer's own transitions do"
+  );
+});
+
+for (const [openFn, closeFn, width] of [
+  ["openShortcutsModal", "closeShortcutsModal", "480px"],
+  ["openCommunityRulesModal", "closeCommunityRulesModal", "560px"],
+  ["openYearInReview", "closeYearInReview", "580px"],
+  ["openCatModal", "closeCatModal", "400px"],
+]) {
+  test(`${openFn}()/${closeFn}() set and clear persistent-panel-open + --pp-width:${width}, matching this panel's own drawer width`, () => {
+    const fs = require("fs");
+    const path = require("path");
+    const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+    const openMatch = source.match(new RegExp(`function ${openFn}\\(\\)\\{[\\s\\S]*?\\n\\}`));
+    assert.ok(openMatch, `${openFn}() should exist`);
+    assert.match(
+      openMatch[0],
+      /classList\.toggle\('persistent-panel-open',persistent\)/,
+      `${openFn}() should toggle the body class to match its own persistent state, which also self-heals any stale class left by _closeOtherPersistentPanels() bypassing the other panel's own close function`
+    );
+    assert.match(
+      openMatch[0],
+      new RegExp(`style\\.setProperty\\('--pp-width','${width}'\\)`),
+      `${openFn}() should set --pp-width to match this panel's own .drawer width override`
+    );
+    const closeMatch = source.match(new RegExp(`function ${closeFn}\\(\\)\\{[^\\n]*?\\n?[^}]*\\}`));
+    assert.ok(closeMatch, `${closeFn}() should exist`);
+    assert.match(
+      closeMatch[0],
+      /classList\.remove\('persistent-panel-open'\)/,
+      `${closeFn}() should remove the body class -- since only one persistent panel can be open at a time, closing it always means the reflow margin should go away too`
+    );
+  });
+}
+
 test("The .drawer-overlay:not(.modal-overlay) CSS lets clicks pass through to the app everywhere except the panel itself, and no other drawer's markup can accidentally match it", () => {
   const fs = require("fs");
   const path = require("path");
