@@ -1283,7 +1283,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <button class="btn btn-primary btn-sm" data-action="addCustomCat" style="white-space:nowrap;flex-shrink:0" type="button">+ Add category</button>
     </div>
     <div class="row" style="justify-content:flex-end;margin-top:.85rem">
-      <button class="btn btn-primary" data-action="closeModals" type="button">Done</button>
+      <button class="btn btn-primary" data-action="closeCatModal" type="button">Done</button>
     </div>
   </div>
 </div>
@@ -2099,7 +2099,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="year-review-modal-title" tabindex="-1" style="width:min(580px,94vw)">
     <div class="modal-header">
       <h3 id="year-review-modal-title" style="margin:0">📅 Year in review</h3>
-      <button class="btn" data-action="closeModals" type="button">Done</button>
+      <button class="btn" data-action="closeYearInReview" type="button">Done</button>
     </div>
     <!-- Start month selector -->
     <div id="yir-start-selector" style="margin-bottom:1rem"></div>
@@ -2746,7 +2746,28 @@ function handleCsvDelegated(val,el){handleCsv(el);}
 function togglePillChecked(key,el){if(el&&typeof el==='object'&&'checked'in el)togglePill(key,el.checked);}
 function _ctaAction(cta){return cta&&cta.action;}
 function _ctaArg(cta){return cta&&cta.arg!=null?String(cta.arg):null;}
+// Only one persistent panel (desktop, >=900px -- shortcuts/community-
+// rules/year-review/cat) should ever be open at once -- all four dock to
+// the same position with the same z-index, so opening a second one while
+// the first is still open silently stacked them on top of each other,
+// with the "replaced" one still technically open (not hidden), just
+// invisible behind the new one -- confirmed by checking DOM order, none
+// of the four closed any of the others before this. Only reachable in
+// persistent mode: the old blocking backdrop made triggering a second
+// modal while one was open physically impossible, which is exactly why
+// this gap only opened up once clicks could reach the rest of the app
+// again. Called at the start of all four open functions; harmless when
+// nothing else is open, and a no-op on mobile too (only one can ever be
+// open there regardless, same reason as above).
+function _closeOtherPersistentPanels(exceptId){
+  ['shortcuts-modal','community-rules-modal','year-review-modal','cat-modal'].forEach(id=>{
+    if(id===exceptId)return;
+    const el=document.getElementById(id);
+    if(el&&!el.classList.contains('hidden'))el.classList.add('hidden');
+  });
+}
 function openShortcutsModal(){
+  _closeOtherPersistentPanels('shortcuts-modal');
   const el=document.getElementById('shortcuts-modal');
   const panel=el.querySelector('.drawer');
   // >=900px: enough room to keep the app usable next to a ~480px panel, so
@@ -3967,11 +3988,22 @@ const YIR_EXCLUDE_CATS=new Set([...TRANSFER_LIKE_CATS,'Checks']);
 function toggleNarrative(){_narrativeExpanded=!_narrativeExpanded;renderInsights();}
 
 function openYearInReview(){
+  _closeOtherPersistentPanels('year-review-modal');
   const allMonths=Object.keys(MONTHLY).sort();
   _yirEndMonth=allMonths[allMonths.length-1]||null;
   renderYearInReview();
-  document.getElementById('year-review-modal').classList.remove('hidden');
+  const el=document.getElementById('year-review-modal');
+  const panel=el.querySelector('.drawer');
+  // Same persistent-panel treatment as shortcuts-modal/community-rules-
+  // modal -- see openShortcutsModal() for the full reasoning. >=900px:
+  // drops .modal-overlay (opting out of closeModals()'s sweep and the
+  // Tab-focus-trap) and flips aria-modal to match.
+  const persistent=window.innerWidth>=900;
+  el.classList.toggle('modal-overlay',!persistent);
+  panel.setAttribute('aria-modal',persistent?'false':'true');
+  el.classList.remove('hidden');
 }
+function closeYearInReview(){document.getElementById('year-review-modal').classList.add('hidden');}
 
 function setYirEndMonth(m){
   _yirEndMonth=m;
@@ -7358,9 +7390,6 @@ document.addEventListener('keydown',function(e){
     // adversarial pass.
     const pillTip=document.getElementById('pill-tip-overlay');
     if(pillTip){pillTip.remove();return;}
-    // Close community rules modal
-    const crModal=document.getElementById('community-rules-modal');
-    if(crModal&&!crModal.classList.contains('hidden')){crModal.classList.add('hidden');return;}
     // Close hidden popover next
     const pop=document.getElementById('hidden-popover');
     if(pop&&pop.style.display!=='none'){pop.style.display='none';return;}
@@ -7429,14 +7458,37 @@ document.addEventListener('keydown',function(e){
       if(_clearAllDataInProgress)return;
       closeModals();return;
     }
-    // Persistent shortcuts-modal (desktop, no longer a .modal-overlay --
-    // see openShortcutsModal()) falls through the openModal check above
-    // since that selector no longer matches it. Checked here, after any
-    // real modal (which should take priority if both happen to be open)
-    // but before the "Clear filters" fallback below, so Escape closes the
-    // panel first rather than clearing filters out from under it.
+    // Persistent panels (desktop, >=900px -- shortcuts/community-rules/
+    // year-review/cat all use this same mechanism, see their own open
+    // functions) fall through the openModal check above since dropping
+    // .modal-overlay is what makes that selector stop matching them.
+    // Checked here, after any real modal (which should take priority if
+    // both happen to be open) but before the "Clear filters" fallback
+    // below, so Escape closes whichever persistent panel is open first
+    // rather than clearing filters out from under it. Community-rules-
+    // modal used to have its own bespoke Escape check much earlier in this
+    // handler (before the real-modal block above), closing ahead of a real
+    // modal even when both were open -- moved here for the same priority
+    // order as the others, now that all four persistent panels share one
+    // mechanism instead of each having their own special case.
     const shortcutsEl=document.getElementById('shortcuts-modal');
     if(shortcutsEl&&!shortcutsEl.classList.contains('hidden')){closeShortcutsModal();return;}
+    const crEl=document.getElementById('community-rules-modal');
+    if(crEl&&!crEl.classList.contains('hidden')){closeCommunityRulesModal();return;}
+    const yirEl=document.getElementById('year-review-modal');
+    if(yirEl&&!yirEl.classList.contains('hidden')){closeYearInReview();return;}
+    // Same "closes the whole modal, doesn't special-case an in-progress
+    // inline row action" behavior the generic .modal-overlay check already
+    // had for cat-modal before this -- renameCatKeydown's own Escape
+    // handler already intercepts and stopImmediatePropagation()s before
+    // this ever runs while a rename is in progress, but there's no
+    // equivalent guard for _confirmingDeleteCatName (the inline delete-
+    // confirm row), so Escape during a pending delete confirmation closes
+    // the modal outright rather than just canceling the confirm -- not a
+    // new regression, the old generic check didn't special-case that
+    // either, just noting it wasn't re-solved here.
+    const catEl=document.getElementById('cat-modal');
+    if(catEl&&!catEl.classList.contains('hidden')){closeCatModal();return;}
     // Clear active filters
     let cleared=false;
     if(state.activeDate){state.activeDate=null;document.querySelectorAll('.cal-day-active').forEach(el=>{el.classList.remove('cal-day-active');el.style.outline='';});cleared=true;}
@@ -7570,7 +7622,25 @@ function updateExclNote(){
   note.style.color=cb.checked?'#A78BFA':'var(--text-muted)';
 }
 function openCommunityRulesModal(){
-  document.getElementById('community-rules-modal').classList.remove('hidden');
+  _closeOtherPersistentPanels('community-rules-modal');
+  const el=document.getElementById('community-rules-modal');
+  const panel=el.querySelector('.drawer');
+  // Same persistent-panel treatment as shortcuts-modal (see its own
+  // openShortcutsModal() for the full reasoning) -- checking if a merchant
+  // is already mapped, then going to look at your actual transactions to
+  // see if it applied, is the same "reference while acting elsewhere"
+  // shape as a keyboard shortcut. >=900px: enough room to keep the app
+  // usable alongside it, so it drops .modal-overlay (opting out of
+  // closeModals()'s sweep and the Tab-focus-trap, both keyed off that
+  // class) and flips aria-modal to match. Unlike shortcuts-modal, this one
+  // already had its own dedicated close function and bespoke Escape
+  // handling (not routed through the generic .modal-overlay:not(.hidden)
+  // mechanism at all) -- see the Escape handler's own comment for why its
+  // position there needed to move to match shortcuts' priority order.
+  const persistent=window.innerWidth>=900;
+  el.classList.toggle('modal-overlay',!persistent);
+  panel.setAttribute('aria-modal',persistent?'false':'true');
+  el.classList.remove('hidden');
   document.getElementById('cr-search').value='';
   renderCommunityRulesTable('');
 }
@@ -11256,24 +11326,38 @@ function saveSnapshot(){
 }
 
 function openCatModal(){
+  _closeOtherPersistentPanels('cat-modal');
   _confirmingDeleteCatName=null;
   // _editingCatName was never reset here -- only cancelRenameCat()/
   // confirmRenameCat() (the row's own X/checkmark) clear it, not the
-  // modal's "Done" button (routed through the generic closeModals(),
-  // which doesn't touch it either). Clicking rename on a category, then
-  // "Done" instead of confirming/cancelling, left it set -- reopening
-  // "Manage categories" made renderCatManagerList() see the stale flag
-  // and re-render that row straight into edit mode, unprompted, with
-  // focus/select auto-applied, before the user touched anything. Same
-  // reset-on-open shape as openVehicleModal()'s #v-other-cat (45th pass),
-  // openAcctCsvModal() (77th pass), and openAddModal() (87th pass) --
-  // each independently missed a sibling field/flag their modal-open
-  // function should have cleared. Found in the 88th adversarial pass.
+  // modal's "Done" button (closeCatModal(), which doesn't touch it
+  // either). Clicking rename on a category, then "Done" instead of
+  // confirming/cancelling, left it set -- reopening "Manage categories"
+  // made renderCatManagerList() see the stale flag and re-render that row
+  // straight into edit mode, unprompted, with focus/select auto-applied,
+  // before the user touched anything. Same reset-on-open shape as
+  // openVehicleModal()'s #v-other-cat (45th pass), openAcctCsvModal()
+  // (77th pass), and openAddModal() (87th pass) -- each independently
+  // missed a sibling field/flag their modal-open function should have
+  // cleared. Found in the 88th adversarial pass.
   _editingCatName=null;
   renderCatManagerList();
   rebuildCatSelects();
-  document.getElementById('cat-modal').classList.remove('hidden');
+  const el=document.getElementById('cat-modal');
+  const panel=el.querySelector('.drawer');
+  // Same persistent-panel treatment as shortcuts-modal/community-rules-
+  // modal/year-review-modal -- see openShortcutsModal() for the full
+  // reasoning. >=900px: drops .modal-overlay (opting out of
+  // closeModals()'s sweep and the Tab-focus-trap) and flips aria-modal to
+  // match. The one drawer of the four with real mutating actions (add/
+  // rename/delete), not just browsing -- worth extra scrutiny in testing,
+  // not just assuming it behaves like the read-only three.
+  const persistent=window.innerWidth>=900;
+  el.classList.toggle('modal-overlay',!persistent);
+  panel.setAttribute('aria-modal',persistent?'false':'true');
+  el.classList.remove('hidden');
 }
+function closeCatModal(){document.getElementById('cat-modal').classList.add('hidden');}
 let _editingCatName=null;
 // Category deletion previously had zero confirmation — a single click on
 // the ✕ button immediately deleted, cascading through budgets/rules/

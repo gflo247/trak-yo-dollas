@@ -1800,7 +1800,7 @@ test("openCatModal: resets _editingCatName, not just _confirmingDeleteCatName, s
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /function openCatModal\(\)\{\s*_confirmingDeleteCatName=null;[\s\S]{0,1200}?_editingCatName=null;\s*renderCatManagerList\(\);/,
+    /function openCatModal\(\)\{[\s\S]{0,200}?_confirmingDeleteCatName=null;[\s\S]{0,1200}?_editingCatName=null;\s*renderCatManagerList\(\);/,
     "openCatModal() should reset _editingCatName alongside _confirmingDeleteCatName, before rendering the category list"
   );
 });
@@ -8171,6 +8171,81 @@ test("Tips & shortcuts opens as a persistent, non-blocking panel on wide viewpor
   assert.match(source, /function toggleShortcutsModal\(\)/, "the '?' key and any other single entry point should toggle rather than only ever open, so re-pressing '?' closes it");
 });
 
+// Finding: extended the same persistent-panel treatment from shortcuts-
+// modal to the other three "reference/browse" drawers -- community-rules
+// and year-review are read-only, cat-modal is the one with real mutating
+// actions (add/rename/delete), which is why it got its own extra-scrutiny
+// comment in openCatModal() rather than being assumed identical to the
+// other two just because the mechanism is copy-pasted.
+for (const [openFn, closeFn, modalId] of [
+  ["openCommunityRulesModal", "closeCommunityRulesModal", "community-rules-modal"],
+  ["openYearInReview", "closeYearInReview", "year-review-modal"],
+  ["openCatModal", "closeCatModal", "cat-modal"],
+]) {
+  test(`${openFn}() opens as a persistent, non-blocking panel on wide viewports (drops .modal-overlay, flips aria-modal), matching shortcuts-modal's mechanism`, () => {
+    const fs = require("fs");
+    const path = require("path");
+    const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+    const fnMatch = source.match(new RegExp(`function ${openFn}\\(\\)\\{[\\s\\S]*?\\n\\}`));
+    assert.ok(fnMatch, `${openFn}() should exist`);
+    assert.match(fnMatch[0], /window\.innerWidth>=900/, "should gate persistent mode on the same viewport-width check as shortcuts-modal");
+    assert.match(fnMatch[0], /classList\.toggle\('modal-overlay',!persistent\)/, "should drop .modal-overlay in persistent mode");
+    assert.match(fnMatch[0], /setAttribute\('aria-modal',persistent\?'false':'true'\)/, "aria-modal should track whether it's genuinely blocking");
+    const closeRe = new RegExp(`function ${closeFn}\\(\\)\\{document\\.getElementById\\('${modalId}'\\)\\.classList\\.add\\('hidden'\\)`);
+    assert.match(source, closeRe, `needs its own dedicated close function -- the shared closeModals() sweep no longer finds this modal once it drops .modal-overlay`);
+  });
+}
+
+test("Every one of the 4 persistent panels' Done/×/Got it buttons uses its own dedicated close function, not the generic closeModals() -- a real regression risk once .modal-overlay can be dropped at runtime", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const catBlock = source.match(/<!-- Category manager modal -->[\s\S]*?<\/div>\s*<\/div>\s*<\/div>\s*\n\n<!-- Transaction CSV import modal -->/);
+  assert.ok(catBlock, "cat-modal's markup block should exist");
+  assert.match(catBlock[0], /data-action="closeCatModal"/, "cat-modal's Done button should use the dedicated close function");
+  assert.doesNotMatch(catBlock[0], /data-action="closeModals"/, "cat-modal should have no remaining buttons wired to the generic sweep");
+  const yirBlock = source.match(/<div class="modal-overlay drawer-overlay hidden" id="year-review-modal">[\s\S]*?<div id="yir-content"><\/div>\s*<\/div>\s*<\/div>/);
+  assert.ok(yirBlock, "year-review-modal's markup block should exist");
+  assert.match(yirBlock[0], /data-action="closeYearInReview"/, "year-review-modal's Done button should use the dedicated close function");
+  assert.doesNotMatch(yirBlock[0], /data-action="closeModals"/, "year-review-modal should have no remaining buttons wired to the generic sweep");
+});
+
+// Finding: an adversarial pass caught a real bug once all 4 panels could
+// be persistent -- none of the 4 open functions closed any of the other
+// 3 first. All four dock to the same position with the same z-index, so
+// opening a second one while the first was still open silently stacked
+// them on top of each other, with the "replaced" one still technically
+// open (not hidden), just invisible behind the new one. Only reachable
+// once persistent (the old blocking backdrop made triggering a second
+// modal while one was open physically impossible, on both desktop and
+// mobile) -- which is exactly why this gap only opened up as a side
+// effect of the persistence feature itself, not something the original
+// blocking-modal design ever had to guard against.
+test("_closeOtherPersistentPanels() is called at the start of all 4 open functions, so opening one persistent panel closes any other that's already open instead of silently stacking on top of it", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /function _closeOtherPersistentPanels\(exceptId\)\{\s*\['shortcuts-modal','community-rules-modal','year-review-modal','cat-modal'\]\.forEach/,
+    "the helper should exist and enumerate all 4 persistent-eligible panels"
+  );
+  for (const [openFn, exceptId] of [
+    ["openShortcutsModal", "shortcuts-modal"],
+    ["openYearInReview", "year-review-modal"],
+    ["openCommunityRulesModal", "community-rules-modal"],
+    ["openCatModal", "cat-modal"],
+  ]) {
+    const fnMatch = source.match(new RegExp(`function ${openFn}\\(\\)\\{[\\s\\S]*?\\n\\}`));
+    assert.ok(fnMatch, `${openFn}() should exist`);
+    assert.match(
+      fnMatch[0],
+      new RegExp(`_closeOtherPersistentPanels\\('${exceptId}'\\)`),
+      `${openFn}() should close the other 3 panels before opening, passing its own id so it doesn't close itself`
+    );
+  }
+});
+
 test("The .drawer-overlay:not(.modal-overlay) CSS lets clicks pass through to the app everywhere except the panel itself, and no other drawer's markup can accidentally match it", () => {
   const fs = require("fs");
   const path = require("path");
@@ -8191,14 +8266,30 @@ test("The .drawer-overlay:not(.modal-overlay) CSS lets clicks pass through to th
   }
 });
 
-test("Escape closes the persistent shortcuts panel (after any real modal, before falling through to Clear filters), since it no longer matches the generic .modal-overlay:not(.hidden) close check once persistent", () => {
+test("Escape closes whichever persistent panel is open (shortcuts, community-rules, year-review, cat) -- all four checks sit after any real modal closes, before falling through to Clear filters, since none of them match the generic .modal-overlay:not(.hidden) close check anymore once persistent", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  assert.match(
+  const blockMatch = source.match(/closeModals\(\);return;\s*\}\s*\/\/ Persistent panels[\s\S]{0,3000}?\/\/ Clear active filters/);
+  assert.ok(blockMatch, "the persistent-panels Escape block should sit between the real-modal-closing branch and the 'Clear active filters' fallback");
+  const order = ["closeShortcutsModal", "closeCommunityRulesModal", "closeYearInReview", "closeCatModal"];
+  let lastIndex = -1;
+  for (const fn of order) {
+    const idx = blockMatch[0].indexOf(`${fn}();return;`);
+    assert.ok(idx !== -1, `${fn}() should be called in the persistent-panels Escape block`);
+    assert.ok(idx > lastIndex, `${fn}() should appear after the previous check, in the same order the panels were built`);
+    lastIndex = idx;
+  }
+});
+
+test("community-rules-modal's Escape handling moved out of its old, much-earlier bespoke check (which closed ahead of a real modal even when both were open) into the same consolidated, correctly-ordered block as the other three persistent panels", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.doesNotMatch(
     source,
-    /closeModals\(\);return;\s*\}\s*\/\/ Persistent shortcuts-modal[\s\S]{0,600}?closeShortcutsModal\(\);return;\}\s*\/\/ Clear active filters/,
-    "the shortcuts-modal Escape check should sit after the real-modal-closing branch and before the 'Clear active filters' fallback"
+    /if\(pillTip\)\{pillTip\.remove\(\);return;\}\s*\/\/ Close community rules modal/,
+    "the old early bespoke community-rules-modal Escape check (before the real-modal-closing branch) should be gone, not left duplicated alongside the new consolidated one"
   );
 });
 
