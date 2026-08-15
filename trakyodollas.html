@@ -470,7 +470,15 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
    events instead -- those two are what actually remove it from hit-testing
    and the accessibility tree while still allowing the inner .drawer's
    transform to transition instead of popping instantly. */
-.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;justify-content:flex-end;z-index:100;backdrop-filter:blur(4px);transition:background-color .25s ease,visibility 0s linear 0s;visibility:visible}
+/* background is a flat, lighter tint with no blur -- deliberately different
+   from .modal-overlay's opaque+blurred backdrop. A modal wants full
+   attention/no distraction; a drawer's whole point (vs. just using another
+   modal) is staying oriented in the app underneath while browsing a long
+   list or report, which an opaque or blurred backdrop defeats outright.
+   Confirmed live on both desktop and mobile that the previous rgba(0,0,0,.7)
+   +blur(4px) copy-pasted from .modal-overlay made the app behind it
+   unreadable, not just dimmed. */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;justify-content:flex-end;z-index:100;transition:background-color .25s ease,visibility 0s linear 0s;visibility:visible}
 /* visibility's own transition-delay is the whole trick here -- opening
    (this rule not applying) flips visibility:visible with 0 delay so the
    slide-in is visible from frame 1, but closing needs the .25s delay below
@@ -482,8 +490,17 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
    silently snaps shut instead of animating. Found live-testing the close
    specifically, not something a static screenshot after the click could
    have shown. */
-.drawer-overlay.hidden{display:flex!important;visibility:hidden;pointer-events:none;background:rgba(0,0,0,0);backdrop-filter:none;transition:background-color .25s ease,visibility 0s linear .25s}
-.drawer{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:14px 0 0 14px;height:100vh;max-height:100vh;overflow-y:auto;width:min(480px,94vw);padding:1.5rem;box-shadow:-20px 0 60px rgba(0,0,0,.5);transform:translateX(100%);transition:transform .25s ease}
+.drawer-overlay.hidden{display:flex!important;visibility:hidden;pointer-events:none;background:rgba(0,0,0,0);transition:background-color .25s ease,visibility 0s linear .25s}
+/* height/max-height declared twice on purpose -- 100vh first as a fallback
+   for browsers without dvh support, 100dvh second (wins when supported,
+   silently ignored as an invalid value when not, leaving the vh fallback
+   in place). 100vh alone measures against the LARGEST possible mobile
+   viewport (browser chrome collapsed), not what's actually visible with
+   the address bar showing, so the drawer rendered taller than the real
+   viewport and its top got pushed off-screen -- confirmed live on an
+   actual phone, not just simulated. 100dvh tracks the real, current
+   viewport as browser chrome shows/hides. */
+.drawer{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:14px 0 0 14px;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;overflow-y:auto;width:min(480px,94vw);padding:1.5rem;box-shadow:-20px 0 60px rgba(0,0,0,.5);transform:translateX(100%);transition:transform .25s ease}
 .drawer-overlay:not(.hidden) .drawer{transform:translateX(0)}
 .drawer h3{font-size:15px;font-weight:700;margin-bottom:1rem;color:var(--text-bright)}
 @media(prefers-reduced-motion:reduce){.drawer-overlay,.drawer{transition:none}}

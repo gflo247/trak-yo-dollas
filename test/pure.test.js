@@ -8058,3 +8058,51 @@ test("The .drawer-overlay/.drawer CSS variant docks right, fills viewport height
     "the slide/fade transition should be disabled under prefers-reduced-motion, matching this app's existing animation convention"
   );
 });
+
+// Finding: visibility applies instantly with no transition-delay by default,
+// and visibility:hidden stops an element from being painted immediately --
+// so even though transform/background-color were still "transitioning" in
+// the underlying computed values on close, the box stopped rendering the
+// instant .hidden was added and the slide-out/fade-out never actually
+// showed. Open animated fine (visibility:visible has nothing to wait for);
+// close silently snapped shut. Caught live-testing the close specifically,
+// not something a static screenshot right after the click could show.
+test("The drawer's close animation actually plays -- visibility has a matching transition-delay so it stays painted through the slide-out instead of vanishing instantly", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /\.drawer-overlay\{[^}]*transition:background-color \.25s ease,visibility 0s linear 0s/,
+    "opening (visibility:visible) should apply with zero delay so the slide-in is visible from frame 1"
+  );
+  assert.match(
+    source,
+    /\.drawer-overlay\.hidden\{[^}]*transition:background-color \.25s ease,visibility 0s linear \.25s/,
+    "closing (visibility:hidden) needs a .25s delay matching the slide-out duration, or the box stops being painted before the animation is visible"
+  );
+});
+
+// Finding: two things surfaced testing live on an actual phone, not a
+// simulated viewport -- (1) the drawer's opaque, blurred backdrop
+// (rgba(0,0,0,.7)+blur(4px), copy-pasted from .modal-overlay) made the app
+// behind it unreadable on both desktop and mobile, directly contradicting
+// the "stay oriented in the app underneath" reasoning for using a drawer
+// instead of another modal in the first place. (2) .drawer{height:100vh}
+// measures against the largest possible mobile viewport (chrome
+// collapsed), not what's actually visible with the address bar showing, so
+// the drawer rendered taller than the real viewport and its top (title,
+// close button) got pushed off-screen.
+test("The drawer backdrop is a lighter, unblurred tint (not .modal-overlay's opaque blur) so the app stays visible behind it, and height falls back from 100vh to 100dvh to avoid the mobile-address-bar cutoff", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const overlayMatch = source.match(/\.drawer-overlay\{[^}]*\}/);
+  assert.ok(overlayMatch, "the base .drawer-overlay rule should exist");
+  assert.match(overlayMatch[0], /background:rgba\(0,0,0,\.35\)/, "backdrop should be meaningfully lighter than .modal-overlay's rgba(0,0,0,.7)");
+  assert.doesNotMatch(overlayMatch[0], /backdrop-filter/, "no blur -- blur alone makes the app behind it illegible even at lower opacity");
+  const drawerMatch = source.match(/\.drawer\{[^}]*\}/);
+  assert.ok(drawerMatch, "the .drawer panel rule should exist");
+  assert.match(drawerMatch[0], /height:100vh;height:100dvh/, "100vh fallback first, 100dvh override second so unsupported browsers still get a value");
+  assert.match(drawerMatch[0], /max-height:100vh;max-height:100dvh/, "max-height needs the same vh->dvh fallback pattern as height");
+});
