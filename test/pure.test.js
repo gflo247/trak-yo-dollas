@@ -5728,7 +5728,7 @@ test("the .truncate utility class exists and is applied to the 5 sites the 168th
   );
   assert.match(
     source,
-    /<span class="truncate" style="flex:1;font-size:12px;color:\$\{c\.custom\?'var\(--text-primary\)':'var\(--text-secondary\)'\}" title="\$\{esc\(c\.name\)\}">/,
+    /<span class="truncate" style="flex:1;font-size:12px;color:var\(--text-primary\)" title="\$\{esc\(c\.name\)\}">/,
     "the category manager list should truncate the category name"
   );
   // The vehicle "other asset" card's name div moved off the bare
@@ -8118,7 +8118,7 @@ test("The drawer backdrop is a lighter, unblurred tint (not .modal-overlay's opa
 // name, no secondary data column) left built-in rows -- which have no
 // action buttons at all -- with a wide, awkward blank gap on the right
 // that the old 440px modal never had room to expose.
-test("Manage categories: the '(built-in)' tag meets the 12px legibility floor, built-in vs custom rows use a softer contrast gap (text-secondary vs text-muted) instead of reading as different sizes, and the drawer is narrowed to fit its actual content", () => {
+test("Manage categories: the '(built-in)' tag meets the 12px legibility floor, built-in and custom rows share one text color instead of a brightness gap that read as a boldness/size difference, and the drawer is narrowed to fit its actual content", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
@@ -8134,8 +8134,8 @@ test("Manage categories: the '(built-in)' tag meets the 12px legibility floor, b
   );
   assert.match(
     source,
-    /color:\$\{c\.custom\?'var\(--text-primary\)':'var\(--text-secondary\)'\}/,
-    "built-in rows should use --text-secondary (a softer dim) instead of --text-muted, which was extreme enough to read as a different font size rather than intentional de-emphasis"
+    /<span class="truncate" style="flex:1;font-size:12px;color:var\(--text-primary\)" title="\$\{esc\(c\.name\)\}">/,
+    "built-in and custom rows should share one text color -- a first pass (text-muted vs text-primary, then a softer text-secondary vs text-primary) both still read as a font-weight/size difference rather than intentional de-emphasis, even though font-size was identical throughout. The (built-in) label and the presence/absence of edit/delete icons already differentiate the two without needing a color gap too."
   );
   assert.match(
     source,

@@ -11287,7 +11287,7 @@ function renderCatManagerList(){
     }
     return `<div style="display:flex;align-items:center;gap:8px;padding:.35rem .65rem;border-bottom:1px solid var(--border-mid)">
       ${dot}
-      <span class="truncate" style="flex:1;font-size:12px;color:${c.custom?'var(--text-primary)':'var(--text-secondary)'}" title="${esc(c.name)}">${esc(c.name)}${c.custom?'':' <span style="font-size:12px;color:var(--text-muted)">(built-in)</span>'}</span>
+      <span class="truncate" style="flex:1;font-size:12px;color:var(--text-primary)" title="${esc(c.name)}">${esc(c.name)}${c.custom?'':' <span style="font-size:12px;color:var(--text-muted)">(built-in)</span>'}</span>
       ${c.custom?`
         <button data-action="startRenameCat" data-arg="${esc(c.name)}" style="font-size:12px;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 6px" title="Rename" type="button">✏</button>
         <button data-action="startDeleteCat" data-arg="${esc(c.name)}" style="font-size:12px;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 6px" title="Delete" type="button">🗑️</button>
