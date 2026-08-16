@@ -5699,12 +5699,8 @@ function setChartMode(mode){
   // trend-table-wrap is shown whenever mode==='trend', independent of
   // table vs. chart view -- its sr-only copy of the table needs to stay
   // reachable to screen readers even while the canvas chart is what's
-  // visually showing (see its own HTML comment). trendTableActive is
-  // narrower: only true when Trend's *table* view is the thing that
-  // should occupy the canvas's usual space, which chartBorder/chartWrap/
-  // textureBtn below also need to agree on.
+  // visually showing (see its own HTML comment).
   if(trendTableWrap)trendTableWrap.style.display=mode==='trend'?'block':'none';
-  const trendTableActive=mode==='trend'&&_chartTableView.trend;
   if(mode==='daily'){
     if(chartBorder)chartBorder.style.display='none';
     if(chartWrap)chartWrap.style.display='none';
@@ -5758,12 +5754,20 @@ function setChartMode(mode){
     renderSankey();
     return;
   }
-  if(chartBorder)chartBorder.style.display=trendTableActive?'none':'';
-  if(chartWrap)chartWrap.style.display=trendTableActive?'none':'';
+  // chartBorder/chartWrap/textureBtn aren't set here for trend's table-
+  // view case -- renderSpendChart()'s own trend branch now owns that
+  // (see its comment), since toggleChartTableView() re-renders through
+  // renderActiveChart() without ever going through setChartMode() again,
+  // and this function's own version of that logic would go stale the
+  // moment a same-mode table-view toggle fired. Unconditionally shown
+  // here; renderSpendChart(), called synchronously below, immediately
+  // corrects it if trend's table-view is actually active.
+  if(chartBorder)chartBorder.style.display='';
+  if(chartWrap)chartWrap.style.display='';
   if(calWrap)calWrap.style.display='none';
   if(tmWrap)tmWrap.style.display='none';
   if(skWrap)skWrap.style.display='none';
-  if(textureBtn)textureBtn.style.display=trendTableActive?'none':'';
+  if(textureBtn)textureBtn.style.display='';
   if(transfersBtn)transfersBtn.style.display='none';
   _syncChartTableBtn();
   renderSpendChart();
@@ -6913,13 +6917,29 @@ function renderSpendChart(){
     const trendTableHtml=`<table class="${_chartTableView.trend?'chart-data-table':'sr-only'}"><caption>${esc(catLabel)} trend by ${useAgg?state.chartGrain:'month'}.</caption><thead><tr><th scope="col">Period</th><th scope="col">Total</th><th scope="col">3-mo avg</th><th scope="col">vs. prior period</th></tr></thead><tbody>${trendTableRows}</tbody></table>`;
     const trendTableWrapEl=document.getElementById('trend-table-wrap');
     if(trendTableWrapEl)trendTableWrapEl.innerHTML=trendTableHtml;
+    // setChartMode() only applies chartBorder/chartWrap/textureBtn's
+    // trendTableActive-driven visibility when actually SWITCHING into
+    // Trend mode -- toggleChartTableView() re-renders through
+    // renderActiveChart() without going through setChartMode() at all
+    // (switching mode has side effects, like resetting filters, that a
+    // same-mode view toggle shouldn't trigger), so toggling table view
+    // while already on Trend never reached that logic, leaving the
+    // canvas's empty bordered box and the Patterns button visible
+    // underneath the table. Owning it here too, on every render
+    // regardless of entry path, is what actually fixes it. Found live-
+    // testing on dev.
+    const trendChartBorder=document.getElementById('spend-chart-border');
+    const trendChartWrap=document.getElementById('spend-chart-wrap');
+    const trendTextureBtn=document.getElementById('chart-texture-btn');
+    if(trendChartBorder)trendChartBorder.style.display=_chartTableView.trend?'none':'';
+    if(trendChartWrap)trendChartWrap.style.display=_chartTableView.trend?'none':'';
+    if(trendTextureBtn)trendTextureBtn.style.display=_chartTableView.trend?'none':'';
     // Table-view mode skips Chart.js entirely, matching renderSankey()'s/
     // renderTreemap()'s established pattern. Trend's canvas is a
     // persistent element Chart.js attaches to (unlike Sankey/Split's
     // self-owned wrap divs it can freely replace), so its container is
-    // hidden rather than replaced -- see setChartMode()'s
-    // chartWrap/chartBorder handling and #trend-table-wrap's own HTML
-    // comment for the other half of this.
+    // hidden rather than replaced, above, instead of being swapped out
+    // for a table the way the other 3 charts' own wraps are.
     if(_chartTableView.trend){
       if(fn){fn.textContent='';fn.style.display='none';}
       return;

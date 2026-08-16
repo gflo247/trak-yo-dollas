@@ -6282,7 +6282,7 @@ test("HTML: #chart-table-btn and #chart-table-export-btn exist, dispatch through
   assert.match(source, /<div id="trend-table-wrap" style="display:none"><\/div>/, "trend-table-wrap should exist as its own sibling container, separate from spend-chart-wrap's persistent <canvas>");
 });
 
-test("setChartMode(): calls _syncChartTableBtn() in all 4 branches (daily/split/sankey/fallthrough) instead of the old hardcoded per-branch button visibility, and toggles trend-table-wrap/chartBorder/chartWrap based on trendTableActive", () => {
+test("setChartMode(): calls _syncChartTableBtn() in all 4 branches (daily/split/sankey/fallthrough) instead of the old hardcoded per-branch button visibility, and shows trend-table-wrap whenever mode is trend", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
@@ -6290,9 +6290,37 @@ test("setChartMode(): calls _syncChartTableBtn() in all 4 branches (daily/split/
   assert.ok(fnMatch, "setChartMode() should exist");
   const syncCount = (fnMatch[0].match(/_syncChartTableBtn\(\);/g) || []).length;
   assert.equal(syncCount, 4, "_syncChartTableBtn() should be called once per branch (daily, split, sankey, and the category/vendor/source/trend fallthrough)");
-  assert.match(fnMatch[0], /const trendTableActive=mode==='trend'&&_chartTableView\.trend;/, "should compute whether Trend's own table-view should occupy the canvas's usual space");
   assert.match(fnMatch[0], /if\(trendTableWrap\)trendTableWrap\.style\.display=mode==='trend'\?'block':'none';/, "trend-table-wrap should be shown whenever mode is trend, independent of table vs. chart view, so its sr-only copy stays reachable to screen readers even in chart view");
-  assert.match(fnMatch[0], /if\(chartBorder\)chartBorder\.style\.display=trendTableActive\?'none':'';/, "the canvas's bordered wrapper should hide when Trend's table-view is what should be showing instead");
+});
+
+// Found live-testing on dev: toggleChartTableView() re-renders through
+// renderActiveChart(), which never goes through setChartMode() at all (that
+// function has side effects -- resetting filters etc. -- correct for an
+// actual mode switch but wrong for a same-mode view toggle). setChartMode()
+// was the ONLY place chartBorder/chartWrap/chart-texture-btn's visibility
+// got set based on Trend's table-view state, so clicking "View as table"
+// while already on Trend left the canvas's now-empty bordered box and the
+// Patterns button both still visible underneath the table. Fixed by having
+// renderSpendChart()'s own trend branch own that visibility on every
+// render, regardless of entry path, rather than relying on setChartMode()
+// alone -- setChartMode()'s own copy of this logic was removed as
+// redundant once renderSpendChart() (called synchronously right after)
+// became the actual source of truth.
+test("renderSpendChart()'s trend branch owns chartBorder/chartWrap/chart-texture-btn's visibility itself (not just setChartMode()), so toggling table view while already on Trend actually hides the empty canvas underneath", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const trendMatch = source.match(/\} else if\(state\.chartMode==='trend'\)\{[\s\S]*?\n  \} else if\(state\.chartMode==='vendor'\)\{/);
+  assert.ok(trendMatch, "the trend branch of renderSpendChart() should exist");
+  assert.match(trendMatch[0], /trendChartBorder\.style\.display=_chartTableView\.trend\?'none':'';/, "should hide spend-chart-border based on the CURRENT _chartTableView.trend, not a value computed once elsewhere");
+  assert.match(trendMatch[0], /trendChartWrap\.style\.display=_chartTableView\.trend\?'none':'';/, "should hide spend-chart-wrap (the canvas's own container) the same way");
+  assert.match(trendMatch[0], /trendTextureBtn\.style\.display=_chartTableView\.trend\?'none':'';/, "should hide chart-texture-btn (Patterns toggle) the same way -- it's meaningless once there's no chart to apply a fill pattern to");
+  // setChartMode()'s own copy of this logic should be gone now that
+  // renderSpendChart() (called synchronously right after, in the same
+  // function) is the real source of truth -- leaving both would just be
+  // dead, confusing duplication.
+  const setChartModeMatch = source.match(/function setChartMode\(mode\)\{[\s\S]*?\n\}/);
+  assert.doesNotMatch(setChartModeMatch[0], /trendTableActive/, "setChartMode() should no longer compute or reference trendTableActive -- that logic now lives solely in renderSpendChart()'s trend branch");
 });
 
 // Found live-testing the original Flow-only toggle: the page-load "restore
