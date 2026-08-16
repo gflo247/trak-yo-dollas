@@ -2966,7 +2966,16 @@ test("loadFromLocalStorage: filters malformed transactions/customCategories/snap
     "loadFromLocalStorage() should filter state.snapshots through _isValidSnapshot and coerce nw/assets/liab"
   );
 });
-test("loadUserData: filters malformed snapshot rows before mapping, not after", () => {
+// July 28, 2026: snapshot nw/assets/liab and vehicle value/purchase were
+// both restored with no numeric coercion, unlike their already-fixed
+// siblings (account balance/nextId, vehicle miles/purchaseYear) -- a hand-
+// edited or corrupted comma-formatted string like "1,234.56" would break
+// Math.abs()-based formatting and comparisons downstream instead of
+// crashing outright. Both confirmed display-only/low-reachability, not a
+// net-worth-arithmetic gap. loadFromLocalStorage()'s and importBackup()'s
+// own coercion is covered by their own dedicated tests above -- only
+// loadUserData()'s cloud-sync path is novel here.
+test("loadUserData: filters malformed snapshot rows before mapping, not after, and coerces nw/assets/liab to numbers", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
@@ -2975,33 +2984,10 @@ test("loadUserData: filters malformed snapshot rows before mapping, not after", 
     /state\.snapshots = snaps\.filter\(_isValidSnapshot\)\.map\(s => \(\{/,
     "loadUserData() should filter snaps through _isValidSnapshot before the .map() that dereferences each entry's fields"
   );
-});
-
-// July 28, 2026: snapshot nw/assets/liab and vehicle value/purchase were
-// both restored with no numeric coercion, unlike their already-fixed
-// siblings (account balance/nextId, vehicle miles/purchaseYear) -- a hand-
-// edited or corrupted comma-formatted string like "1,234.56" would break
-// Math.abs()-based formatting and comparisons downstream instead of
-// crashing outright. Both confirmed display-only/low-reachability, not a
-// net-worth-arithmetic gap.
-test("all 3 snapshot restore paths (cloud sync, local storage, backup) coerce nw/assets/liab to numbers", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
     /nw: Number\(s\.nw\)\|\|0, assets: Number\(s\.assets\)\|\|0, liab: Number\(s\.liab\)\|\|0/,
     "loadUserData()'s cloud-sync path should coerce nw/assets/liab"
-  );
-  assert.match(
-    source,
-    /saved\.snapshots\.filter\(_isValidSnapshot\)\.map\(s=>\(\{\.\.\.s,nw:Number\(s\.nw\)\|\|0,assets:Number\(s\.assets\)\|\|0,liab:Number\(s\.liab\)\|\|0\}\)\)/,
-    "loadFromLocalStorage()'s path should coerce nw/assets/liab"
-  );
-  assert.match(
-    source,
-    /arr\(saved\.snapshots\)\.filter\(_isValidSnapshot\)\.map\(s=>\(\{\.\.\.s,nw:Number\(s\.nw\)\|\|0,assets:Number\(s\.assets\)\|\|0,liab:Number\(s\.liab\)\|\|0\}\)\)/,
-    "importBackup()'s path should coerce nw/assets/liab"
   );
 });
 // Purchase price/year (and the v.purchase-driven "% value retained"/
@@ -4061,7 +4047,7 @@ test("renderSpendChart: the shared peakIdx is computed from getBaseTxs() (respec
 // construction, every account-adding path already sets hasRealAccounts
 // and hasRealData together, so this guard also means the wipe below it is
 // always already a no-op by the time it's reached. ──
-test("saveSnapshot: requires state.hasRealAccounts before wiping demo data or computing netWorth()/totalAssets()/totalLiab()", () => {
+test("saveSnapshot: requires state.hasRealAccounts before wiping demo data or computing netWorth()/totalAssets()/totalLiab(), and the old mid-function demo-preview branch it made unreachable is gone", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
@@ -4074,13 +4060,6 @@ test("saveSnapshot: requires state.hasRealAccounts before wiping demo data or co
   assert.ok(wipeIdx >= 0 && nwIdx >= 0, "the wipe call and netWorth() computation should both exist");
   assert.ok(guardIdx < wipeIdx, "the hasRealAccounts guard must run BEFORE the wipe");
   assert.ok(wipeIdx < nwIdx, "the wipe must still run before netWorth() is computed (for defense-in-depth), but only after the guard above has already ensured real accounts exist");
-});
-test("saveSnapshot: the now-unreachable demo-preview branch after the new top-of-function guard was removed", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function saveSnapshot\(\)\{[\s\S]{0,4500}?\n\}/);
-  assert.ok(fnMatch, "saveSnapshot() should exist");
   assert.doesNotMatch(
     fnMatch[0],
     /if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{\s*showToast\(`✓ Snapshot saved/,

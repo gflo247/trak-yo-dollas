@@ -293,7 +293,6 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .account-row-529:hover{background:var(--amber-bg-mid)}
 .acct-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
 .account-name{font-size:13px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.account-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
 /* Type-grouped account rows (Financial assets/Liabilities, matching the
    Net Worth tab's "Where your wealth lives" grouping convention) sit
    flush inside a .nw-group instead of standing alone as their own
@@ -573,14 +572,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 /* Labels */
 .label-upper{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em}
-.label-upper-sm{font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em}
 
 /* Boxes */
 .deep-box{background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem 1rem}
-.deep-box-sm{background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:8px;padding:.55rem .85rem}
-.card-box{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem 1rem}
-.card-sm{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:9px}
-.card-block{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px}
 
 /* Inputs */
 .input-full{width:100%;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-size:13px;box-sizing:border-box}
@@ -619,17 +613,13 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 .sankey-flow-table td{padding:.45rem .75rem;color:var(--text-secondary)}
 .sankey-flow-table tbody tr{border-bottom:1px solid var(--border)}
 .sankey-flow-table tbody tr:nth-child(even){background:var(--bg-deep)}
-.flex-between{display:flex;align-items:center;justify-content:space-between}
-.flex-col{display:flex;flex-direction:column}
-.gap-4{gap:4px}.gap-6{gap:6px}.gap-8{gap:8px}.gap-10{gap:10px}.gap-12{gap:12px}
+.gap-8{gap:8px}
 
 /* Text helpers */
 .text-success{color:var(--accent-green);font-weight:700}
 .text-danger{color:var(--accent-red);font-weight:700}
 .text-muted-xs{font-size:11px;color:var(--text-muted)}
 .text-muted-sm{font-size:12px;color:var(--text-muted)}
-.text-muted-md{font-size:12px;color:var(--text-muted)}
-.text-meta{font-size:9px;color:var(--text-muted)}
 .nowrap{white-space:nowrap}
 .ellipsis{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
@@ -828,35 +818,11 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 .demo-profile-label{font-size:14px;font-weight:700;color:var(--text-bright);margin-bottom:2px}
 .demo-profile-desc{font-size:12px;color:var(--text-secondary);line-height:1.4;font-weight:400}
 
-/* Spend summary card */
-
-/* Account avatars */
-
-/* Nav active border */
-
-/* Budget rows */
-
-/* Transaction rows */
-
-/* Sort/export row */
-
-/* Excl toggle text */
-
-/* Chip row */
-[data-theme="light"] .source-chip{background:var(--bg-deep);border-color:var(--border-mid);color:var(--text-muted)}
-
-/* Section headings */
-
-
 /* Total assets / liabilities cards */
-[data-theme="light"] #summary-metrics .metric-card,
 [data-theme="light"] .nw-group{background:var(--bg-card)!important;border-color:var(--border)!important}
 
 /* NW total card */
 [data-theme="light"] #nw-total-card{background:var(--bg-card)!important;border-color:var(--border)!important}
-
-/* Where your wealth lives */
-[data-theme="light"] #wealth-breakdown .wl-row{background:var(--bg-card);border-color:var(--border)}
 
 /* Dynamically rendered card backgrounds */
 [data-theme="light"] #bucket-grid .bucket-card,
@@ -867,10 +833,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   color:var(--text-primary)!important;
 }
 [data-theme="light"] #bucket-grid .bucket-name{color:inherit!important}
-[data-theme="light"] .budget-row-bg{background:var(--bg-card)!important}
-
-/* Progress bar tracks */
-[data-theme="light"] #budget-rows .progress-track{background:var(--bg-deep)!important}
 
 /* Other vendors / categories tiles */
 [data-theme="light"] #bucket-grid > div[style*="0F172A"]{background:var(--bg-deep)!important}
@@ -882,17 +844,11 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 /* Modal overlays stay dark */
 [data-theme="light"] .modal-overlay{background:rgba(15,23,42,.6)!important}
 
-/* Insights card header & buttons */
-
-/* Insight pill labels & sub-text */
-
 /* Pill info (ⓘ) buttons */
 [data-theme="light"] #insights-pills button[data-tip]{background:var(--bg-deep)!important;border-color:var(--border-mid)!important;color:var(--text-muted)!important}
 
 /* Savings nudge pill */
 [data-theme="light"] #insights-pills div[style*="#1E293B"]{background:var(--bg-card)!important;border-color:var(--border-mid)!important}
-
-/* Theme toggle button */
 
 /* ── End light theme overrides ──────────────────────────────────── */
 
@@ -3102,7 +3058,7 @@ const fmt=(n,raw)=>(raw?(state.currency||'$'):esc(state.currency||'$'))+Math.abs
 // raw=true skips esc() -- for D3 .text() calls, which set an SVG text
 // node's textContent (not innerHTML): that context never needs HTML
 // escaping and, worse, double-escapes a custom currency symbol containing
-// '&' (a free-text field, setCurrency()) into a literal visible "&amp;"
+// '&' (a free-text field, applyCustomCurrency()) into a literal visible "&amp;"
 // on screen, since .text() doesn't interpret entities. Defaults to
 // escaped (false) so every existing innerHTML-based caller is unaffected.
 // Found in the 105th adversarial pass.
@@ -4413,7 +4369,7 @@ function renderNwGoalWidget(){
       <div style="background:var(--bg-card);border:1px solid #05996933;border-radius:10px;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div>
           <div style="font-size:13px;font-weight:700;color:var(--accent-green);margin-bottom:2px">You're past every built-in milestone!</div>
-          <div class="text-muted-md">Set a custom goal to keep tracking progress.</div>
+          <div class="text-muted-sm">Set a custom goal to keep tracking progress.</div>
         </div>
         <button data-action="openCustomNwGoal" style="background:#059669;color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap" type="button">Set custom goal →</button>
       </div>${hideLink}`;
@@ -4435,7 +4391,7 @@ function renderNwGoalWidget(){
       <div style="background:var(--bg-card);border:1px solid #05996933;border-radius:10px;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div>
           <div style="font-size:13px;font-weight:700;color:var(--accent-green);margin-bottom:2px">Goal reached!</div>
-          <div class="text-muted-md">You hit ${fmtC(goal)}. Time to aim higher.</div>
+          <div class="text-muted-sm">You hit ${fmtC(goal)}. Time to aim higher.</div>
         </div>
         <button data-action="${hasNextMilestone?'setNwGoalNextMilestone':'openCustomNwGoal'}" style="background:#059669;color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap" type="button">${hasNextMilestone?'Set next milestone →':'Set custom goal →'}</button>
       </div>${hideLink}`;
