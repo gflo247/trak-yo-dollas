@@ -6206,6 +6206,30 @@ for (const [renderFn, tableViewKey, tableVarName] of [
   });
 }
 
+// Found from a direct question comparing all 7 Spending-breakdown views:
+// Flow was the only one with a standalone title ("PERIOD -> INCOME TO
+// SPENDING FLOW") above its diagram. On inspection it was mostly
+// redundant -- the date range it restated is already shown once,
+// persistently, by the page-level date-range picker above all 7 views,
+// and "what this is" is already the selected "Flow" tab label directly
+// above it. The one piece of context a title alone provided -- that the
+// numbers are summed across multiple months, not a single point in time,
+// since a Sankey diagram (unlike Trend's labeled bars or Daily's dated
+// cells) has no axis or per-cell dates to infer that from -- already
+// lives on the Income node's own label ("Nmo income"), independent of
+// the title. Removed rather than added to the other 6.
+test("renderSankey() no longer builds a standalone period/title label above the diagram -- the Income node's own '${monthCount}mo income' label already carries the duration context a title provided", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function renderSankey\(\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "renderSankey() should exist");
+  assert.doesNotMatch(fnMatch[0], /periodLabelHtml/, "periodLabelHtml (the standalone title div) should no longer exist");
+  assert.doesNotMatch(fnMatch[0], /INCOME → SPENDING FLOW/, "the title text itself should be gone");
+  assert.match(fnMatch[0], /name:`\$\{monthCount\}mo income`/, "the Income node's own label should still carry the multi-month duration context the removed title used to also state");
+  assert.match(fnMatch[0], /if\(_chartTableView\.sankey\)\{\s*wrap\.innerHTML=flowTableHtml;\s*return;\s*\}/, "table-view mode should render just the table now, with no title prefix");
+});
+
 test("renderSpendChart()'s trend branch: same table/skip-chart pattern as the other 3, but writes into #trend-table-wrap rather than replacing its own wrap (Trend's canvas is a persistent element, unlike the other 3's self-owned wrap divs)", () => {
   const fs = require("fs");
   const path = require("path");
@@ -6228,6 +6252,39 @@ test("Daily's table lists only days with spend (matching the stats bar's own 'N 
     fnMatch[0],
     /Object\.entries\(byDay\)\.filter\(\(\[,v\]\)=>v>0\)\.sort\(\(a,b\)=>a\[0\]\.localeCompare\(b\[0\]\)\)\.map/,
     "the table's rows should filter byDay to spend>0 entries, sorted chronologically, not iterate every calendar day in range"
+  );
+});
+
+// Found from a direct question comparing the table's date format against
+// every other CSV export in this file -- txToCsvRow()/exportNetWorthCSV()
+// both use the raw YYYY-MM-DD string with no reformatting, since it's what
+// actually sorts correctly as plain text in a spreadsheet and round-trips
+// unambiguously across locales (no US MM/DD vs. rest-of-world DD/MM
+// guessing). Daily's table was the only one that broke that convention
+// with a "Sat, Feb 1, 2025" string. Split into two columns rather than
+// dropping weekday entirely -- Day still lets someone eyeball the pattern
+// behind the Weekends stat card above the table without cross-referencing
+// a calendar themselves.
+test("Daily's table splits Date (raw YYYY-MM-DD, matching every other CSV export in this file) and Day (weekday name) into their own columns, not one combined human-readable string", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function renderDailyCal\(\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "renderDailyCal() should exist");
+  assert.match(
+    fnMatch[0],
+    /<th scope="col">Date<\/th><th scope="col">Day<\/th><th scope="col">Amount<\/th><th scope="col">Transactions<\/th>/,
+    "the table should have 4 columns in this order: Date, Day, Amount, Transactions"
+  );
+  assert.match(
+    fnMatch[0],
+    /<tr><td>\$\{esc\(d\)\}<\/td><td>\$\{esc\(dayName\)\}<\/td>/,
+    "Date should render the raw `d` key (YYYY-MM-DD) unformatted, with weekday in its own separate Day cell"
+  );
+  assert.match(
+    fnMatch[0],
+    /const dayName=new Date\(d\+'T12:00:00'\)\.toLocaleDateString\('default',\{weekday:'short'\}\);/,
+    "the table's own Day cell should format only the weekday, not the old combined month/day/year string (that combined format is still legitimately used elsewhere in this function, by #cal-tip's hover tooltip, so a whole-function negative check would be a false positive there)"
   );
 });
 

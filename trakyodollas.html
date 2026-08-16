@@ -6203,17 +6203,29 @@ function renderSankey(){
   // either way, built once, so the two view modes can never drift out of
   // sync with each other's numbers.
   const flowTableHtml=`<table class="${_chartTableView.sankey?'chart-data-table':'sr-only'}"><caption>${esc(periodStr)} income to spending flow — detailed breakdown.${esc(overspendNote)}</caption><thead><tr><th scope="col">Category</th><th scope="col">Amount</th><th scope="col">% of income</th></tr></thead><tbody><tr><td>Income</td><td>${esc(fmtC(totalIncome))}</td><td>100%</td></tr>${flowTableRows}</tbody></table>`;
-  const periodLabelHtml=`<div style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5rem;padding:0 2px">${periodStr} · INCOME → SPENDING FLOW</div>`;
   // Table-view mode skips the SVG -- and everything below this that
   // builds/positions/wires it up -- entirely, rather than build a hidden
   // diagram nobody can see. No accessibility loss either way: the table
   // above already carries the identical numbers to screen readers
   // regardless of which visual mode is active.
   if(_chartTableView.sankey){
-    wrap.innerHTML=periodLabelHtml+flowTableHtml;
+    wrap.innerHTML=flowTableHtml;
     return;
   }
-  wrap.innerHTML=`${periodLabelHtml}<div style="position:relative"><svg id="sk-svg" width="${W}" height="${H}" style="display:block" aria-label="${esc(svgAriaLabel)}"></svg></div>${flowTableHtml}`;
+  // No standalone "PERIOD · INCOME -> SPENDING FLOW" title above the
+  // diagram (removed August 2026) -- Flow was the only one of the 7
+  // Spending-breakdown views with one, and on inspection it was mostly
+  // redundant: the date range it restated is already shown once,
+  // persistently, by the page-level date-range picker above every one of
+  // these views, and "what this is" is already the selected "Flow" tab
+  // label directly above it. The one piece of context a title alone
+  // provided -- that the numbers are summed across multiple months, not
+  // a single point in time, since a Sankey diagram (unlike Trend's
+  // labeled bars or Daily's dated cells) has no axis or per-cell dates
+  // to infer that from -- already lives on the Income node's own label
+  // ("${monthCount}mo income" a few lines up), not the title. Found from
+  // a direct question comparing all 7 views' titles.
+  wrap.innerHTML=`<div style="position:relative"><svg id="sk-svg" width="${W}" height="${H}" style="display:block" aria-label="${esc(svgAriaLabel)}"></svg></div>${flowTableHtml}`;
   const wrapEl=wrap.querySelector('div');
   const tip=makeTip(wrapEl);
   const svg=d3.select('#sk-svg');
@@ -6531,11 +6543,21 @@ function renderDailyCal(){
   // reachable by neither keyboard nor screen reader) -- unlike Split's
   // SVG or Trend's canvas, this mode had no fallback text whatsoever
   // before this table existed.
+  // Date is the raw YYYY-MM-DD string (`d`), not a reformatted "Sat, Feb
+  // 1, 2025" -- every other CSV export in this file (txToCsvRow(),
+  // exportNetWorthCSV()) uses the same unformatted date for the same two
+  // reasons: it's what actually sorts correctly as plain text in a
+  // spreadsheet, and it round-trips unambiguously across locales (no US
+  // MM/DD vs. rest-of-world DD/MM guessing). Day is its own column
+  // rather than folded into Date, since it's what actually lets someone
+  // eyeball the pattern behind the Weekends stat card above without
+  // cross-referencing a calendar. Found from a direct question about the
+  // table's date format, August 2026.
   const dailyTableRows=Object.entries(byDay).filter(([,v])=>v>0).sort((a,b)=>a[0].localeCompare(b[0])).map(([d,v])=>{
-    const dayLabel=new Date(d+'T12:00:00').toLocaleDateString('default',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
-    return`<tr><td>${esc(dayLabel)}</td><td>${esc(fmt(v))}</td><td>${byDayCount[d]||0}</td></tr>`;
+    const dayName=new Date(d+'T12:00:00').toLocaleDateString('default',{weekday:'short'});
+    return`<tr><td>${esc(d)}</td><td>${esc(dayName)}</td><td>${esc(fmt(v))}</td><td>${byDayCount[d]||0}</td></tr>`;
   }).join('');
-  const dailyTableHtml=`<table class="${_chartTableView.daily?'chart-data-table':'sr-only'}"><caption>Daily spending, ${esc(periodStr)}. Only days with spend are listed.</caption><thead><tr><th scope="col">Date</th><th scope="col">Amount</th><th scope="col">Transactions</th></tr></thead><tbody>${dailyTableRows}</tbody></table>`;
+  const dailyTableHtml=`<table class="${_chartTableView.daily?'chart-data-table':'sr-only'}"><caption>Daily spending, ${esc(periodStr)}. Only days with spend are listed.</caption><thead><tr><th scope="col">Date</th><th scope="col">Day</th><th scope="col">Amount</th><th scope="col">Transactions</th></tr></thead><tbody>${dailyTableRows}</tbody></table>`;
   // Table-view mode skips the whole calendar grid entirely, matching
   // renderSankey()'s/renderTreemap()'s established pattern -- no
   // accessibility loss, the table above already carries identical
