@@ -6122,82 +6122,201 @@ test("parseTxFile: ANZ NZ/BNZ/Westpac NZ/Starling/midata have mutually-exclusive
 });
 
 // July 28, 2026: added a "view as table" toggle to the Flow (Sankey)
-// chart. Reuses the sr-only <table> the 124th adversarial pass already
-// built for screen readers -- same markup, same data, just swapping its
-// class between sr-only (diagram mode) and .sankey-flow-table (table
-// mode) -- rather than building a second, separate table that could
-// drift out of sync with the first.
-test("Sankey 'view as table' toggle: persisted state, button wiring, and the table/SVG swap all reference the same source", () => {
+// chart, Flow-only at first. Generalized to Split/Trend/Daily too (this
+// session) once an adversarial pass on the accessibility gap found all 3
+// shared Flow's exact problem -- Split's SVG tiles truncate/hide labels
+// when small, Trend's Chart.js <canvas> has no DOM text nodes for its
+// data points at all, and Daily's calendar cells had literally no text,
+// title, or aria-label anywhere (the exact spend amount only ever
+// surfaced via a mouse-only #cal-tip hover, unreachable by keyboard or
+// screen reader). Each of the 4 reuses the identical sr-only <table> the
+// 124th adversarial pass built for Flow's screen readers -- same markup,
+// same data, just swapping its class between sr-only (diagram mode) and
+// .chart-data-table (table mode) -- rather than 4 separate, potentially
+// drifting copies. Shared toggle/sync/export functions (below) replace
+// what was originally Flow-only bespoke code (toggleSankeyTableView()).
+test("_chartTableView/TABLE_VIEW_LS_KEYS: all 4 modes persist independently, sankey keeps its original localStorage key", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /let _sankeyTableView = \(\(\)=>\{try\{return localStorage\.getItem\('trakyo_sankey_table'\)==='true';\}catch\(e\)\{return false;\}\}\)\(\);/,
-    "_sankeyTableView should be declared and restored from localStorage the same way _patternsEnabled already is"
+    /const TABLE_VIEW_LS_KEYS=\{sankey:'trakyo_sankey_table',split:'trakyo_split_table',trend:'trakyo_trend_table',daily:'trakyo_daily_table'\};/,
+    "all 4 modes should have their own localStorage key, sankey's unchanged from before this generalization so an existing user's persisted Flow preference isn't reset"
   );
   assert.match(
     source,
-    /function toggleSankeyTableView\(\)\{/,
-    "toggleSankeyTableView() should exist"
-  );
-  assert.match(
-    source,
-    /id="sankey-table-btn" data-action="toggleSankeyTableView"/,
-    "the toggle button should exist and dispatch through the standard data-action mechanism"
-  );
-  // setChartMode()'s sankey branch must show+sync the button; every other
-  // branch (daily, split, and the category/vendor/source/trend fallback)
-  // must hide it, matching how cal-transfers-btn is scoped to daily only.
-  const hideCount = (source.match(/if\(sankeyTableBtn\)sankeyTableBtn\.style\.display='none';/g) || []).length;
-  assert.equal(hideCount, 3, "the toggle button should be explicitly hidden in the 3 non-sankey branches of setChartMode()");
-  assert.match(
-    source,
-    /sankeyTableBtn\.style\.display='';[\s\S]{0,300}?sankeyTableBtn\.textContent=_sankeyTableView\?/,
-    "entering sankey mode should show the button and sync its label/color to the persisted state, not just the default"
-  );
-  // The class-swap: same table markup, different class depending on
-  // _sankeyTableView, so the two view modes can't show different numbers.
-  assert.match(
-    source,
-    /<table class="\$\{_sankeyTableView\?'sankey-flow-table':'sr-only'\}">/,
-    "the flow table should swap between sr-only and .sankey-flow-table based on the toggle, reusing the identical row markup either way"
-  );
-  assert.match(
-    source,
-    /if\(_sankeyTableView\)\{\s*wrap\.innerHTML=periodLabelHtml\+flowTableHtml;\s*return;\s*\}/,
-    "table-view mode should render just the label+table and return early, skipping the SVG entirely rather than building a hidden diagram"
-  );
-  assert.match(
-    source,
-    /\.sankey-flow-table\{width:100%;border-collapse:collapse/,
-    "a real visible-table CSS class should exist for table-view mode (the sr-only class alone would render nothing visible)"
+    /let _chartTableView=\(\(\)=>\{\s*const v=\{\};\s*for\(const mode in TABLE_VIEW_LS_KEYS\)\{\s*try\{v\[mode\]=localStorage\.getItem\(TABLE_VIEW_LS_KEYS\[mode\]\)==='true';\}catch\(e\)\{v\[mode\]=false;\}\s*\}\s*return v;\s*\}\)\(\);/,
+    "_chartTableView should restore each mode's own boolean from its own localStorage key, defaulting to false (chart view) like _sankeyTableView originally did"
   );
 });
 
-// Found live-testing the toggle above: the page-load "restore last chart
-// mode" block is a separate, narrower mirror of setChartMode() (can't
-// just call setChartMode() itself at init -- it has side effects, like
-// resetting activeDate/activeVendors/treemapDrillCat, that are correct
-// for a real user click but wrong for restoring persisted state). That
-// mirror only ever synced the wrapper divs, never chart-texture-btn/
-// cal-transfers-btn/sankey-table-btn -- so reloading on a persisted
-// daily/split/sankey mode showed the wrong secondary button (e.g.
-// "Patterns: off" visible in Sankey mode, "View as table" missing
-// entirely) until the user manually re-clicked a tab. Pre-existing for
-// the first two buttons; sankey-table-btn would have inherited the same
-// gap for its own mode had this gone unnoticed.
-test("the page-load chart-mode restore block also syncs chart-texture-btn/cal-transfers-btn/sankey-table-btn, not just the wrapper divs", () => {
+test("toggleChartTableView(): flips the current mode's own boolean, persists it, resyncs the button, and re-renders via the existing renderActiveChart() dispatcher", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function toggleChartTableView\(\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "toggleChartTableView() should exist");
+  assert.match(fnMatch[0], /if\(!\(mode in TABLE_VIEW_LS_KEYS\)\)return;/, "should no-op outside the 4 eligible modes as a safety net");
+  assert.match(fnMatch[0], /_chartTableView\[mode\]=!_chartTableView\[mode\];/, "should flip only the current mode's own entry, not a single shared boolean");
+  assert.match(fnMatch[0], /localStorage\.setItem\(TABLE_VIEW_LS_KEYS\[mode\],_chartTableView\[mode\]\);/, "should persist to that mode's own key");
+  assert.match(fnMatch[0], /_syncChartTableBtn\(\);/, "should resync the shared button");
+  assert.match(fnMatch[0], /renderActiveChart\(\);/, "should re-render through the existing mode dispatcher rather than calling a specific render function directly");
+});
+
+test("_syncChartTableBtn(): shows/hides #chart-table-btn and #chart-table-export-btn together based on mode eligibility, syncs the toggle button's label/color to the current mode's own state", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function _syncChartTableBtn\(\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "_syncChartTableBtn() should exist");
+  assert.match(fnMatch[0], /const eligible=mode in TABLE_VIEW_LS_KEYS;/, "eligibility should be derived from the same TABLE_VIEW_LS_KEYS map toggleChartTableView() uses, not a separate hardcoded list that could drift out of sync");
+  assert.match(fnMatch[0], /btn\.style\.display=eligible\?'':'none';/, "the toggle button should show only in the 4 eligible modes");
+  assert.match(fnMatch[0], /exportBtn\.style\.display=eligible\?'':'none';/, "the export button should show/hide in lockstep with the toggle button, not independently");
+  assert.match(fnMatch[0], /const active=_chartTableView\[mode\];/, "label/color sync should read the CURRENT mode's own entry, not a stale single boolean");
+});
+
+// Each of the 4 render functions builds the identical table unconditionally
+// (sr-only in chart-view, visible in table-view) and skips its own visual
+// chart entirely when that mode's table-view is active, matching
+// renderSankey()'s original established pattern -- no accessibility loss
+// either way, and table-view mode never wastes work building a diagram/
+// chart nobody can see.
+for (const [renderFn, tableViewKey, tableVarName] of [
+  ["renderSankey", "sankey", "flowTableHtml"],
+  ["renderTreemap", "split", "tmTableHtml"],
+  ["renderDailyCal", "daily", "dailyTableHtml"],
+]) {
+  test(`${renderFn}(): swaps its table between sr-only and .chart-data-table based on _chartTableView.${tableViewKey}, and skips its own visual chart entirely in table-view mode`, () => {
+    const fs = require("fs");
+    const path = require("path");
+    const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+    const fnMatch = source.match(new RegExp(`function ${renderFn}\\([^)]*\\)\\{[\\s\\S]*?\\n\\}`));
+    assert.ok(fnMatch, `${renderFn}() should exist`);
+    assert.match(
+      fnMatch[0],
+      new RegExp(`class="\\$\\{_chartTableView\\.${tableViewKey}\\?'chart-data-table':'sr-only'\\}"`),
+      `${renderFn}()'s table should swap classes based on _chartTableView.${tableViewKey}`
+    );
+    assert.match(
+      fnMatch[0],
+      new RegExp(`if\\(_chartTableView\\.${tableViewKey}\\)\\{[\\s\\S]{0,200}?return;\\s*\\}`),
+      `${renderFn}() should return early in table-view mode, before building its own visual chart`
+    );
+  });
+}
+
+test("renderSpendChart()'s trend branch: same table/skip-chart pattern as the other 3, but writes into #trend-table-wrap rather than replacing its own wrap (Trend's canvas is a persistent element, unlike the other 3's self-owned wrap divs)", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const trendMatch = source.match(/\} else if\(state\.chartMode==='trend'\)\{[\s\S]*?\n  \} else if\(state\.chartMode==='vendor'\)\{/);
+  assert.ok(trendMatch, "the trend branch of renderSpendChart() should exist");
+  assert.match(trendMatch[0], /class="\$\{_chartTableView\.trend\?'chart-data-table':'sr-only'\}"/, "the trend table should swap classes based on _chartTableView.trend");
+  assert.match(trendMatch[0], /document\.getElementById\('trend-table-wrap'\)/, "should target trend-table-wrap, not spend-chart-wrap (which holds the persistent <canvas> Chart.js attaches to)");
+  assert.match(trendMatch[0], /if\(_chartTableView\.trend\)\{[\s\S]{0,150}?return;\s*\}/, "should return early in table-view mode, before building the Chart.js instance");
+  assert.doesNotMatch(trendMatch[0].split(/if\(_chartTableView\.trend\)\{[\s\S]{0,150}?return;\s*\}/)[0], /new Chart\(/, "no Chart.js construction should happen before the table-view early return");
+});
+
+test("Daily's table lists only days with spend (matching the stats bar's own 'N days with spend'), not one row per calendar day", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function renderDailyCal\(\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "renderDailyCal() should exist");
+  assert.match(
+    fnMatch[0],
+    /Object\.entries\(byDay\)\.filter\(\(\[,v\]\)=>v>0\)\.sort\(\(a,b\)=>a\[0\]\.localeCompare\(b\[0\]\)\)\.map/,
+    "the table's rows should filter byDay to spend>0 entries, sorted chronologically, not iterate every calendar day in range"
+  );
+});
+
+test("Split's table reflects whichever level the treemap itself is currently on (top-level categories vs. drillCat's vendors), matching the breadcrumb", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function renderTreemap\(drillCat\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "renderTreemap() should exist");
+  assert.match(
+    fnMatch[0],
+    /<th scope="col">\$\{drillCat\?'Vendor':'Category'\}<\/th>/,
+    "the table's first column header should say Vendor when drilled in, Category otherwise"
+  );
+  assert.match(
+    fnMatch[0],
+    /const tmTableRows=data\.map\(d=>\{/,
+    "the table's rows should be built from the same `data` array the diagram itself renders (top-level catTotals or drillCat's catVendors), so table view can never contradict the breadcrumb above it"
+  );
+});
+
+// Export: each of the 4 tables is already built unconditionally (sr-only
+// or visible), so export doesn't require switching to table view first --
+// reads straight from whichever table's own cells, guaranteeing the
+// export always matches exactly what's on screen (or what a screen
+// reader hears), with no separate data-shaping code to keep in sync.
+test("exportChartTable()/exportTableCSV(): maps each of the 4 modes to the wrapper its table actually lives in, and reuses the existing downloadCSVFile()/csvSafeField()/todayDateStr() helpers rather than reinventing CSV escaping", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /const CHART_TABLE_WRAP_IDS=\{sankey:'sankey-wrap',split:'treemap-wrap',trend:'trend-table-wrap',daily:'daily-cal-wrap'\};/,
+    "should map all 4 modes to their table's actual containing wrapper -- trend-table-wrap for Trend specifically, not spend-chart-wrap"
+  );
+  const exportFnMatch = source.match(/function exportChartTable\(\)\{[\s\S]*?\n\}/);
+  assert.ok(exportFnMatch, "exportChartTable() should exist");
+  assert.match(exportFnMatch[0], /CHART_TABLE_WRAP_IDS\[state\.chartMode\]/, "should look up the wrapper id for the CURRENT chart mode");
+  const csvFnMatch = source.match(/function exportTableCSV\(tableEl,filenameBase\)\{[\s\S]*?\n\}/);
+  assert.ok(csvFnMatch, "exportTableCSV(tableEl, filenameBase) should exist as the shared generic export, taking any table element");
+  assert.match(csvFnMatch[0], /csvSafeField\(td\.textContent\)/, "cell values should go through the existing csvSafeField() (CSV-injection guard + quote escaping), not a new ad-hoc escape");
+  assert.match(csvFnMatch[0], /downloadCSVFile\(`trak-yo-dollas-\$\{filenameBase\}-\$\{todayDateStr\(\)\}\.csv`,headers,rows\)/, "should trigger the download through the existing shared downloadCSVFile() helper, matching every other CSV export in this file");
+  assert.match(csvFnMatch[0], /if\(!rows\.length\)\{showToast\('No data to export'/, "should toast rather than silently no-op when the table has no data rows (including when tableEl itself is null, e.g. Flow's own 'no income set up' empty state never built a table at all)");
+});
+
+test("HTML: #chart-table-btn and #chart-table-export-btn exist, dispatch through the standard data-action mechanism, and #trend-table-wrap exists as Trend's dedicated table container", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(source, /id="chart-table-btn" data-action="toggleChartTableView"/, "the toggle button should exist with the generalized id/action");
+  assert.match(source, /id="chart-table-export-btn" data-action="exportChartTable"/, "the export button should exist alongside it");
+  assert.match(source, /<div id="trend-table-wrap" style="display:none"><\/div>/, "trend-table-wrap should exist as its own sibling container, separate from spend-chart-wrap's persistent <canvas>");
+});
+
+test("setChartMode(): calls _syncChartTableBtn() in all 4 branches (daily/split/sankey/fallthrough) instead of the old hardcoded per-branch button visibility, and toggles trend-table-wrap/chartBorder/chartWrap based on trendTableActive", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function setChartMode\(mode\)\{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "setChartMode() should exist");
+  const syncCount = (fnMatch[0].match(/_syncChartTableBtn\(\);/g) || []).length;
+  assert.equal(syncCount, 4, "_syncChartTableBtn() should be called once per branch (daily, split, sankey, and the category/vendor/source/trend fallthrough)");
+  assert.match(fnMatch[0], /const trendTableActive=mode==='trend'&&_chartTableView\.trend;/, "should compute whether Trend's own table-view should occupy the canvas's usual space");
+  assert.match(fnMatch[0], /if\(trendTableWrap\)trendTableWrap\.style\.display=mode==='trend'\?'block':'none';/, "trend-table-wrap should be shown whenever mode is trend, independent of table vs. chart view, so its sr-only copy stays reachable to screen readers even in chart view");
+  assert.match(fnMatch[0], /if\(chartBorder\)chartBorder\.style\.display=trendTableActive\?'none':'';/, "the canvas's bordered wrapper should hide when Trend's table-view is what should be showing instead");
+});
+
+// Found live-testing the original Flow-only toggle: the page-load "restore
+// last chart mode" block is a separate, narrower mirror of setChartMode()
+// (can't just call setChartMode() itself at init -- it has side effects,
+// like resetting activeDate/activeVendors/treemapDrillCat, that are
+// correct for a real user click but wrong for restoring persisted state).
+// That mirror only ever synced the wrapper divs, never the secondary
+// buttons -- so reloading on a persisted daily/split/sankey/trend mode
+// showed the wrong secondary button until the user manually re-clicked a
+// tab. Now shares _syncChartTableBtn() with setChartMode() itself rather
+// than hand-duplicating the sync logic a 3rd time.
+test("the page-load chart-mode restore block also syncs chart-texture-btn/cal-transfers-btn/the table-view buttons (via the shared _syncChartTableBtn()), and trend-table-wrap/trendTableActive, not just the wrapper divs", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   const restoreBlockMatch = source.match(/\/\/ Restore last chart mode \(spending tab\)[\s\S]{0,3000}?\n  \}catch\(e\)\{\}/);
   assert.ok(restoreBlockMatch, "the chart-mode restore block should exist");
   const block = restoreBlockMatch[0];
-  assert.match(block, /modeTextureBtn\.style\.display=isCanvas\?'':'none';/, "should sync chart-texture-btn's visibility to the restored mode");
+  assert.match(block, /const trendTableActive=savedMode==='trend'&&_chartTableView\.trend;/, "should compute the same trendTableActive setChartMode() does");
+  assert.match(block, /if\(ttw\)ttw\.style\.display=savedMode==='trend'\?'block':'none';/, "should sync trend-table-wrap's visibility to the restored mode");
+  assert.match(block, /modeTextureBtn\.style\.display=\(isCanvas&&!trendTableActive\)\?'':'none';/, "should sync chart-texture-btn's visibility, also accounting for trendTableActive now");
   assert.match(block, /modeTransfersBtn\.style\.display=\(savedMode==='daily'&&!state\.excludedCats\.has\('Transfers'\)\)\?'':'none';/, "should sync cal-transfers-btn's visibility to the restored mode, matching setChartMode()'s own daily-only condition");
-  assert.match(block, /modeSankeyTableBtn\.style\.display=savedMode==='sankey'\?'':'none';/, "should sync sankey-table-btn's visibility to the restored mode");
-  assert.match(block, /modeSankeyTableBtn\.textContent=_sankeyTableView\?/, "should also sync sankey-table-btn's label/color to the persisted table-view preference, not just its visibility");
+  assert.match(block, /_syncChartTableBtn\(\);/, "should resync the table-view buttons through the same shared function setChartMode() uses, not a hand-duplicated 3rd copy");
 });
 
 // Found July 29, 2026: a demo session saved to localStorage before a demo

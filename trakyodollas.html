@@ -601,18 +601,22 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
    display:none/visibility:hidden, which remove content from the
    accessibility tree too. Standard clip-based pattern. */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-/* The Flow chart's "view as table" toggle applies this class to the same
+/* Each of the 4 chart-mode "view as table" toggles (Flow, Split, Trend,
+   Daily -- see toggleChartTableView()) applies this class to the same
    <table> markup that's class="sr-only" the rest of the time (identical
-   caption/thead/tbody, built once in renderSankey()) -- swapping the
-   class is enough, no separate table needed. Mirrors the community-rules
-   table's established visual language (filterCommunityRules()): muted
-   uppercase headers, hairline row dividers, alternating row tint. */
-.sankey-flow-table{width:100%;border-collapse:collapse;margin-top:.75rem;font-size:12px}
-.sankey-flow-table caption{text-align:left;font-size:10px;color:var(--text-muted);margin-bottom:.5rem}
-.sankey-flow-table th{text-align:left;padding:.4rem .75rem;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)}
-.sankey-flow-table td{padding:.45rem .75rem;color:var(--text-secondary)}
-.sankey-flow-table tbody tr{border-bottom:1px solid var(--border)}
-.sankey-flow-table tbody tr:nth-child(even){background:var(--bg-deep)}
+   caption/thead/tbody, built once by each chart's own render function) --
+   swapping the class is enough, no separate table needed. Originally
+   Flow-only (.sankey-flow-table); renamed when the other 3 charts adopted
+   the identical pattern rather than leaving a Sankey-specific class name
+   doing unrelated work. Mirrors the community-rules table's established
+   visual language (filterCommunityRules()): muted uppercase headers,
+   hairline row dividers, alternating row tint. */
+.chart-data-table{width:100%;border-collapse:collapse;margin-top:.75rem;font-size:12px}
+.chart-data-table caption{text-align:left;font-size:10px;color:var(--text-muted);margin-bottom:.5rem}
+.chart-data-table th{text-align:left;padding:.4rem .75rem;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)}
+.chart-data-table td{padding:.45rem .75rem;color:var(--text-secondary)}
+.chart-data-table tbody tr{border-bottom:1px solid var(--border)}
+.chart-data-table tbody tr:nth-child(even){background:var(--bg-deep)}
 .gap-8{gap:8px}
 
 /* Text helpers */
@@ -1200,7 +1204,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
     <button id="chart-texture-btn" data-action="toggleChartTexture" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">⠿ Patterns: off</button>
     <button id="cal-transfers-btn" data-action="toggleCalTransfers" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">Transfers: off</button>
-    <button id="sankey-table-btn" data-action="toggleSankeyTableView" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">▦ View as table</button>
+    <button id="chart-table-btn" data-action="toggleChartTableView" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">▦ View as table</button>
+    <button id="chart-table-export-btn" data-action="exportChartTable" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">⬇ Export table</button>
   </div>
   <div style="position:relative">
     <div id="spend-chart-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch" tabindex="0" role="region" aria-label="Spending chart, scrollable on narrow screens">
@@ -1214,6 +1219,16 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div id="daily-cal-wrap" style="display:none"></div>
   <div id="treemap-wrap" style="display:none"></div>
   <div id="sankey-wrap" style="display:none"></div>
+  <!-- Trend's chart is a persistent <canvas> Chart.js attaches to
+       (id="spendChart" above), unlike daily-cal-wrap/treemap-wrap/
+       sankey-wrap, which each own a div they freely rebuild via
+       innerHTML -- so Trend's table (chart-view mode: sr-only, table
+       mode: visible, exactly like the other 3) needs its own separate
+       container rather than replacing the canvas's own wrap. Shown only
+       when chartMode==='trend' (setChartMode()), regardless of table vs
+       chart view, so its sr-only copy stays reachable to screen readers
+       even while the chart itself is what's visually showing. -->
+  <div id="trend-table-wrap" style="display:none"></div>
   <div id="chart-show-more-row" style="display:none;text-align:right;margin-top:4px">
     <button data-action="toggleChartShowAll" id="chart-show-more-btn" style="background:none;border:none;color:var(--accent-blue-light);font-size:11px;font-weight:600;cursor:pointer;padding:0" type="button"></button>
   </div>
@@ -5676,11 +5691,20 @@ function setChartMode(mode){
   const calWrap=document.getElementById('daily-cal-wrap');
   const tmWrap=document.getElementById('treemap-wrap');
   const skWrap=document.getElementById('sankey-wrap');
+  const trendTableWrap=document.getElementById('trend-table-wrap');
   const textureBtn=document.getElementById('chart-texture-btn');
   const showMoreRow=document.getElementById('chart-show-more-row');
   const footnote=document.getElementById('chart-footnote');
   const transfersBtn=document.getElementById('cal-transfers-btn');
-  const sankeyTableBtn=document.getElementById('sankey-table-btn');
+  // trend-table-wrap is shown whenever mode==='trend', independent of
+  // table vs. chart view -- its sr-only copy of the table needs to stay
+  // reachable to screen readers even while the canvas chart is what's
+  // visually showing (see its own HTML comment). trendTableActive is
+  // narrower: only true when Trend's *table* view is the thing that
+  // should occupy the canvas's usual space, which chartBorder/chartWrap/
+  // textureBtn below also need to agree on.
+  if(trendTableWrap)trendTableWrap.style.display=mode==='trend'?'block':'none';
+  const trendTableActive=mode==='trend'&&_chartTableView.trend;
   if(mode==='daily'){
     if(chartBorder)chartBorder.style.display='none';
     if(chartWrap)chartWrap.style.display='none';
@@ -5689,9 +5713,9 @@ function setChartMode(mode){
     if(skWrap)skWrap.style.display='none';
     if(textureBtn)textureBtn.style.display='none';
     if(transfersBtn)transfersBtn.style.display=state.excludedCats.has('Transfers')?'none':'';
-    if(sankeyTableBtn)sankeyTableBtn.style.display='none';
     if(showMoreRow)showMoreRow.style.display='none';
     if(footnote)footnote.textContent='';
+    _syncChartTableBtn();
     renderDailyCal();
     return;
   }
@@ -5703,7 +5727,6 @@ function setChartMode(mode){
     if(skWrap)skWrap.style.display='none';
     if(textureBtn)textureBtn.style.display='none';
     if(transfersBtn)transfersBtn.style.display='none';
-    if(sankeyTableBtn)sankeyTableBtn.style.display='none';
     if(showMoreRow)showMoreRow.style.display='none';
     if(footnote)footnote.textContent='';
     // renderTreemap() bare, always the top-level view -- and
@@ -5716,6 +5739,7 @@ function setChartMode(mode){
     // pass fixed everywhere else, missed here because this function
     // wasn't part of that pass's own call-site enumeration. Found in
     // the 94th adversarial pass.
+    _syncChartTableBtn();
     state.treemapDrillCat=null;
     renderTreemap();
     return;
@@ -5728,29 +5752,20 @@ function setChartMode(mode){
     if(skWrap)skWrap.style.display='block';
     if(textureBtn)textureBtn.style.display='none';
     if(transfersBtn)transfersBtn.style.display='none';
-    if(sankeyTableBtn){
-      sankeyTableBtn.style.display='';
-      // Synced here, not just inside toggleSankeyTableView() -- the
-      // button's own text/color needs to reflect the persisted
-      // localStorage value the very first time this mode is entered each
-      // session too, not only after a click.
-      sankeyTableBtn.textContent=_sankeyTableView?'📊 View as chart':'▦ View as table';
-      sankeyTableBtn.style.color=_sankeyTableView?'var(--accent-blue-light)':'var(--text-muted)';
-      sankeyTableBtn.style.borderColor=_sankeyTableView?'var(--accent-blue-light)':'var(--border-mid)';
-    }
     if(showMoreRow)showMoreRow.style.display='none';
     if(footnote)footnote.textContent='';
+    _syncChartTableBtn();
     renderSankey();
     return;
   }
-  if(chartBorder)chartBorder.style.display='';
-  if(chartWrap)chartWrap.style.display='';
+  if(chartBorder)chartBorder.style.display=trendTableActive?'none':'';
+  if(chartWrap)chartWrap.style.display=trendTableActive?'none':'';
   if(calWrap)calWrap.style.display='none';
   if(tmWrap)tmWrap.style.display='none';
   if(skWrap)skWrap.style.display='none';
-  if(textureBtn)textureBtn.style.display='';
+  if(textureBtn)textureBtn.style.display=trendTableActive?'none':'';
   if(transfersBtn)transfersBtn.style.display='none';
-  if(sankeyTableBtn)sankeyTableBtn.style.display='none';
+  _syncChartTableBtn();
   renderSpendChart();
 }
 
@@ -5797,30 +5812,6 @@ function renderTreemap(drillCat){
   const H=280;
   const total=drillCat?(catVendors[drillCat]?Object.values(catVendors[drillCat]).reduce((a,b)=>a+b,0):1):Object.values(catTotals).reduce((a,b)=>a+b,0);
 
-  wrap.innerHTML=`
-    <div class="tm-breadcrumb" id="tm-bc">${drillCat?
-      `<span class="tm-breadcrumb-link" data-action="resetTreemapToCategories" tabindex="0" role="button">All categories</span> › <span style="color:var(--text-primary)">${esc(drillCat)}</span>`
-      :'<span style="color:var(--text-muted)">All categories</span>'}
-    </div>
-    <div style="position:relative">
-      <svg id="tm-svg" width="${W}" height="${H}" style="display:block;border-radius:8px;overflow:hidden"></svg>
-      <div class="tm-tip" id="tm-tip"></div>
-    </div>
-    <div class="tm-hint">${drillCat?'Click a vendor to filter transactions below · breadcrumb to go back':'Click any tile to drill into vendors'}</div>`;
-
-  const tip=document.getElementById('tm-tip');
-  const svgEl=document.getElementById('tm-svg');
-  if(!svgEl||!window.d3)return;
-
-  // After render, restore active vendor visual state if a filter is set
-  const restoreActiveVendor=()=>{
-    if(drillCat&&state.activeVendors&&state.activeVendors.size>0){
-      const activeVendor=[...state.activeVendors][0];
-      d3.selectAll('.tm-tile-rect')
-        .attr('opacity',d=>resolveVendor(d.data.name)===activeVendor?1:.45);
-    }
-  };
-
   const allCatEntries=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
   const topEntries=allCatEntries.slice(0,8);
   const beyondTop8=allCatEntries.slice(8);
@@ -5849,6 +5840,49 @@ function renderTreemap(drillCat){
   const data=drillCat
     ?Object.entries(catVendors[drillCat]||{}).map(([name,value])=>({name,value})).sort((a,b)=>b.value-a.value)
     :topEntries.map(([name,value])=>({name,value}));
+
+  const breadcrumbHtml=`<div class="tm-breadcrumb" id="tm-bc">${drillCat?
+      `<span class="tm-breadcrumb-link" data-action="resetTreemapToCategories" tabindex="0" role="button">All categories</span> › <span style="color:var(--text-primary)">${esc(drillCat)}</span>`
+      :'<span style="color:var(--text-muted)">All categories</span>'}
+    </div>`;
+  // Accessible/exportable equivalent, same shape as renderSankey()'s own
+  // flowTableHtml -- built once so table-view and chart-view (sr-only)
+  // can never show different numbers. Mirrors whatever level the diagram
+  // itself is currently on (top-level categories, or vendors within
+  // drillCat), so switching to table view never contradicts the
+  // breadcrumb above it.
+  const tmTableRows=data.map(d=>{
+    const pct=total>0?Math.round(d.value/total*100):0;
+    return`<tr><td>${esc(tmDisplayName(d.name))}</td><td>${esc(fmtC(d.value))}</td><td>${pct}%</td></tr>`;
+  }).join('');
+  const tmTableHtml=`<table class="${_chartTableView.split?'chart-data-table':'sr-only'}"><caption>${drillCat?`${esc(drillCat)} spending by vendor.`:'Spending by category.'}</caption><thead><tr><th scope="col">${drillCat?'Vendor':'Category'}</th><th scope="col">Amount</th><th scope="col">% of ${drillCat?esc(drillCat):'total'}</th></tr></thead><tbody>${tmTableRows}</tbody></table>`;
+  // Table-view mode skips the SVG entirely, matching renderSankey()'s
+  // established pattern -- no accessibility loss, the table above already
+  // carries identical numbers to screen readers regardless of mode.
+  if(_chartTableView.split){
+    wrap.innerHTML=breadcrumbHtml+tmTableHtml;
+    return;
+  }
+
+  wrap.innerHTML=`${breadcrumbHtml}
+    <div style="position:relative">
+      <svg id="tm-svg" width="${W}" height="${H}" style="display:block;border-radius:8px;overflow:hidden"></svg>
+      <div class="tm-tip" id="tm-tip"></div>
+    </div>
+    <div class="tm-hint">${drillCat?'Click a vendor to filter transactions below · breadcrumb to go back':'Click any tile to drill into vendors'}</div>${tmTableHtml}`;
+
+  const tip=document.getElementById('tm-tip');
+  const svgEl=document.getElementById('tm-svg');
+  if(!svgEl||!window.d3)return;
+
+  // After render, restore active vendor visual state if a filter is set
+  const restoreActiveVendor=()=>{
+    if(drillCat&&state.activeVendors&&state.activeVendors.size>0){
+      const activeVendor=[...state.activeVendors][0];
+      d3.selectAll('.tm-tile-rect')
+        .attr('opacity',d=>resolveVendor(d.data.name)===activeVendor?1:.45);
+    }
+  };
 
   // Update chart-footnote below the chart area
   const bfn=document.getElementById('chart-footnote');
@@ -6161,17 +6195,17 @@ function renderSankey(){
   }).join('');
   const overspendNote=isOverspend?` Spending (${fmtC(totalSpendAll)}) exceeds income by ${fmtC(totalSpendAll-totalIncome)}.`:'';
   // Class swaps between sr-only (screen-reader-only, diagram mode) and a
-  // real visible table (.sankey-flow-table, table mode) -- same markup
+  // real visible table (.chart-data-table, table mode) -- same markup
   // either way, built once, so the two view modes can never drift out of
   // sync with each other's numbers.
-  const flowTableHtml=`<table class="${_sankeyTableView?'sankey-flow-table':'sr-only'}"><caption>${esc(periodStr)} income to spending flow — detailed breakdown.${esc(overspendNote)}</caption><thead><tr><th scope="col">Category</th><th scope="col">Amount</th><th scope="col">% of income</th></tr></thead><tbody><tr><td>Income</td><td>${esc(fmtC(totalIncome))}</td><td>100%</td></tr>${flowTableRows}</tbody></table>`;
+  const flowTableHtml=`<table class="${_chartTableView.sankey?'chart-data-table':'sr-only'}"><caption>${esc(periodStr)} income to spending flow — detailed breakdown.${esc(overspendNote)}</caption><thead><tr><th scope="col">Category</th><th scope="col">Amount</th><th scope="col">% of income</th></tr></thead><tbody><tr><td>Income</td><td>${esc(fmtC(totalIncome))}</td><td>100%</td></tr>${flowTableRows}</tbody></table>`;
   const periodLabelHtml=`<div style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5rem;padding:0 2px">${periodStr} · INCOME → SPENDING FLOW</div>`;
   // Table-view mode skips the SVG -- and everything below this that
   // builds/positions/wires it up -- entirely, rather than build a hidden
   // diagram nobody can see. No accessibility loss either way: the table
   // above already carries the identical numbers to screen readers
   // regardless of which visual mode is active.
-  if(_sankeyTableView){
+  if(_chartTableView.sankey){
     wrap.innerHTML=periodLabelHtml+flowTableHtml;
     return;
   }
@@ -6472,13 +6506,41 @@ function renderDailyCal(){
 
   // Render
   const tip=document.getElementById('cal-tip');
-  wrap.innerHTML=`
-    <div class="cal-stats">
+  const calStatsHtml=`<div class="cal-stats">
       <div class="cal-stat"><div class="cal-stat-label">Total</div><div class="cal-stat-val">${fmtC(total)}</div><div class="cal-stat-sub">${activeDays} days with spend${state.activeCats.size===0&&!state.showTransfersInCal?' · <span data-action="toggleCalTransfers" tabindex="0" role="button" style="color:var(--accent-blue-light);cursor:pointer;text-decoration:underline">excluding transfers</span>':''}</div></div>
       <div class="cal-stat"><div class="cal-stat-label">Average/day</div><div class="cal-stat-val">${fmtC(avgActive)}</div><div class="cal-stat-sub">active days only</div></div>
       <div class="cal-stat${peakEntry?' cal-stat-clickable':''}" data-action="${peakEntry?'filterToDateDynamic':''}" data-arg="${peakEntry?peakEntry[0]:''}"${peakEntry?' tabindex="0" role="button"':''} title="${peakEntry?'Click to filter transactions to this day':''}"><div class="cal-stat-label">Peak day</div><div class="cal-stat-val">${peakEntry?fmt(peakEntry[1]):'—'}</div><div class="cal-stat-sub">${peakEntry?new Date(peakEntry[0]+'T12:00:00').toLocaleDateString('default',{month:'short',day:'numeric',year:'numeric'}):'—'}</div></div>
       <div class="cal-stat"><div class="cal-stat-label">Weekends</div><div class="cal-stat-val">${wkndPct===0?'Even':(wkndPct>0?'+':'')+wkndPct+'%'}</div><div class="cal-stat-sub">vs weekday avg/day</div></div>
-    </div>
+    </div>`;
+  const periodStr=filteredMonths.length===1
+    ?fmtMonthShort(filteredMonths[0])
+    :`${fmtMonthShort(filteredMonths[0])} – ${fmtMonthShort(filteredMonths[filteredMonths.length-1])}`;
+  // Accessible/exportable equivalent, same shape as renderSankey()'s own
+  // flowTableHtml -- built once so table-view and chart-view (sr-only)
+  // can never show different numbers. Only days with actual spend are
+  // listed (matching activeDays above), not one row per calendar day --
+  // the calendar's whole point is visualizing which days had spend at
+  // all, and a table with hundreds of $0 rows wouldn't serve that any
+  // better than the stats bar above it already does. The color-coded
+  // grid this replaces has no visible per-day text at all (the exact
+  // amount only ever surfaced via a mouse-only hover tooltip, #cal-tip,
+  // reachable by neither keyboard nor screen reader) -- unlike Split's
+  // SVG or Trend's canvas, this mode had no fallback text whatsoever
+  // before this table existed.
+  const dailyTableRows=Object.entries(byDay).filter(([,v])=>v>0).sort((a,b)=>a[0].localeCompare(b[0])).map(([d,v])=>{
+    const dayLabel=new Date(d+'T12:00:00').toLocaleDateString('default',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+    return`<tr><td>${esc(dayLabel)}</td><td>${esc(fmt(v))}</td><td>${byDayCount[d]||0}</td></tr>`;
+  }).join('');
+  const dailyTableHtml=`<table class="${_chartTableView.daily?'chart-data-table':'sr-only'}"><caption>Daily spending, ${esc(periodStr)}. Only days with spend are listed.</caption><thead><tr><th scope="col">Date</th><th scope="col">Amount</th><th scope="col">Transactions</th></tr></thead><tbody>${dailyTableRows}</tbody></table>`;
+  // Table-view mode skips the whole calendar grid entirely, matching
+  // renderSankey()'s/renderTreemap()'s established pattern -- no
+  // accessibility loss, the table above already carries identical
+  // numbers to screen readers regardless of mode.
+  if(_chartTableView.daily){
+    wrap.innerHTML=calStatsHtml+dailyTableHtml;
+    return;
+  }
+  wrap.innerHTML=`${calStatsHtml}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
       <div class="cal-legend-wrap">
         <span style="margin-right:2px">less</span>
@@ -6498,7 +6560,7 @@ function renderDailyCal(){
         <div class="cal-dow-label">W</div><div class="cal-dow-label"></div><div class="cal-dow-label">F</div><div class="cal-dow-label"></div>
       </div>
       <div id="cal-months-grid" style="display:flex;gap:4px"></div>
-    </div>`;
+    </div>${dailyTableHtml}`;
 
   // Legend — clickable to filter by intensity (multi-select)
   const legendEl=document.getElementById('cal-legend-cells');
@@ -6837,6 +6899,31 @@ function renderSpendChart(){
     });
     const trendOpts=JSON.parse(JSON.stringify(commonOpts));
     const catLabel=state.activeCats.size===1?[...state.activeCats][0]:state.activeCats.size>1?`${state.activeCats.size} categories`:'All spending';
+    // Accessible/exportable equivalent, same shape as renderSankey()'s own
+    // flowTableHtml -- built once so table-view and chart-view (sr-only)
+    // can never show different numbers. Chart.js's canvas has no DOM text
+    // nodes for its data points at all (unlike Split's SVG, which at
+    // least has small/truncated <text> labels) -- this table is Trend's
+    // only accessible representation of its own numbers, not just a
+    // convenience alongside one.
+    const trendTableRows=periods.map((p,i)=>{
+      const momPct=i>0&&totals[i-1]>0?Math.round((totals[i]-totals[i-1])/totals[i-1]*100):null;
+      return`<tr><td>${esc(p.label)}</td><td>${esc(fmtC(totals[i]))}</td><td>${esc(fmtC(rolling[i]))}</td><td>${momPct===null?'—':(momPct>=0?'+':'')+momPct+'%'}</td></tr>`;
+    }).join('');
+    const trendTableHtml=`<table class="${_chartTableView.trend?'chart-data-table':'sr-only'}"><caption>${esc(catLabel)} trend by ${useAgg?state.chartGrain:'month'}.</caption><thead><tr><th scope="col">Period</th><th scope="col">Total</th><th scope="col">3-mo avg</th><th scope="col">vs. prior period</th></tr></thead><tbody>${trendTableRows}</tbody></table>`;
+    const trendTableWrapEl=document.getElementById('trend-table-wrap');
+    if(trendTableWrapEl)trendTableWrapEl.innerHTML=trendTableHtml;
+    // Table-view mode skips Chart.js entirely, matching renderSankey()'s/
+    // renderTreemap()'s established pattern. Trend's canvas is a
+    // persistent element Chart.js attaches to (unlike Sankey/Split's
+    // self-owned wrap divs it can freely replace), so its container is
+    // hidden rather than replaced -- see setChartMode()'s
+    // chartWrap/chartBorder handling and #trend-table-wrap's own HTML
+    // comment for the other half of this.
+    if(_chartTableView.trend){
+      if(fn){fn.textContent='';fn.style.display='none';}
+      return;
+    }
     if(fn)fn.textContent=`Trend: ${catLabel}`;
     // Feature 3: find crossings where spend > rolling avg (momentum signal)
     const crossingPlugin={
@@ -10615,10 +10702,24 @@ function toggleTheme(){
 // ── Pattern fills for colorblind accessibility ─────────────────────────
 // Off by default — user can enable via "Patterns" toggle above chart.
 let _patternsEnabled = (()=>{try{return localStorage.getItem('trakyo_patterns')==='true';}catch(e){return false;}})();
+// The 4 chart modes with a "view as table" toggle (Flow, Split, Trend,
+// Daily -- see toggleChartTableView()/_syncChartTableBtn() below). Each
+// mode gets its own independent preference/localStorage key, not one
+// shared boolean -- leaving Flow in table view shouldn't force Split into
+// table view too the next time it's opened. 'trakyo_sankey_table' keeps
+// its original name (predates the other 3) so an existing user's already-
+// persisted Flow preference isn't silently reset by this generalization.
+const TABLE_VIEW_LS_KEYS={sankey:'trakyo_sankey_table',split:'trakyo_split_table',trend:'trakyo_trend_table',daily:'trakyo_daily_table'};
 // Persisted the same way as _patternsEnabled just above -- a returning
 // user who prefers the raw numbers over the diagram shouldn't have to
 // re-toggle it every session.
-let _sankeyTableView = (()=>{try{return localStorage.getItem('trakyo_sankey_table')==='true';}catch(e){return false;}})();
+let _chartTableView=(()=>{
+  const v={};
+  for(const mode in TABLE_VIEW_LS_KEYS){
+    try{v[mode]=localStorage.getItem(TABLE_VIEW_LS_KEYS[mode])==='true';}catch(e){v[mode]=false;}
+  }
+  return v;
+})();
 // Load persisted showExcluded preference
 (()=>{try{const v=localStorage.getItem('trakyo_show_excl');if(v!==null)state.showExcluded=v==='1';}catch(e){}})();
 
@@ -10689,16 +10790,70 @@ function toggleChartTexture(){
   }
   try{renderSpendChart();}catch(e){}
 }
-function toggleSankeyTableView(){
-  _sankeyTableView = !_sankeyTableView;
-  try{localStorage.setItem('trakyo_sankey_table', _sankeyTableView);}catch(e){}
-  const btn = document.getElementById('sankey-table-btn');
+// Shared by Flow/Split/Trend/Daily's "view as table" buttons -- all 4
+// charts had the identical shape of toggle (flip a mode-specific boolean,
+// persist it, resync the one shared button, re-render), first written
+// bespoke for Flow alone (toggleSankeyTableView(), 168th-pass predecessor
+// of this file) and generalized here rather than copy-pasting it 3 more
+// times. No-ops outside the 4 eligible modes as a safety net -- the button
+// itself is only ever visible in those modes (_syncChartTableBtn()), so
+// this should be unreachable any other way.
+function toggleChartTableView(){
+  const mode=state.chartMode;
+  if(!(mode in TABLE_VIEW_LS_KEYS))return;
+  _chartTableView[mode]=!_chartTableView[mode];
+  try{localStorage.setItem(TABLE_VIEW_LS_KEYS[mode],_chartTableView[mode]);}catch(e){}
+  _syncChartTableBtn();
+  renderActiveChart();
+}
+// Called both from toggleChartTableView() above and from setChartMode()/
+// the boot-time chart-mode restore (search TABLE_VIEW_LS_KEYS) -- the
+// button's text/color needs to reflect the persisted localStorage value
+// the very first time a mode is entered each session too, not only after
+// a click, so this can't live inside the toggle function alone.
+function _syncChartTableBtn(){
+  const mode=state.chartMode;
+  const eligible=mode in TABLE_VIEW_LS_KEYS;
+  const btn=document.getElementById('chart-table-btn');
+  const exportBtn=document.getElementById('chart-table-export-btn');
   if(btn){
-    btn.textContent = _sankeyTableView ? '📊 View as chart' : '▦ View as table';
-    btn.style.color = _sankeyTableView ? 'var(--accent-blue-light)' : 'var(--text-muted)';
-    btn.style.borderColor = _sankeyTableView ? 'var(--accent-blue-light)' : 'var(--border-mid)';
+    btn.style.display=eligible?'':'none';
+    if(eligible){
+      const active=_chartTableView[mode];
+      btn.textContent=active?'📊 View as chart':'▦ View as table';
+      btn.style.color=active?'var(--accent-blue-light)':'var(--text-muted)';
+      btn.style.borderColor=active?'var(--accent-blue-light)':'var(--border-mid)';
+    }
   }
-  renderSankey();
+  if(exportBtn)exportBtn.style.display=eligible?'':'none';
+}
+// Each of the 4 charts builds its own accessible <table> unconditionally
+// (sr-only in chart-view mode, visible in table-view mode -- see each
+// render function's own comment), regardless of which view is currently
+// showing, so export doesn't require switching to table view first. Maps
+// chartMode to the wrapper id that table lives inside; Trend's is
+// trend-table-wrap rather than spend-chart-wrap since the canvas there is
+// a persistent element Chart.js attaches to, not something its render
+// function can freely replace with a table.
+const CHART_TABLE_WRAP_IDS={sankey:'sankey-wrap',split:'treemap-wrap',trend:'trend-table-wrap',daily:'daily-cal-wrap'};
+function exportChartTable(){
+  const wrapId=CHART_TABLE_WRAP_IDS[state.chartMode];
+  const tableEl=wrapId?document.querySelector('#'+wrapId+' table'):null;
+  exportTableCSV(tableEl,state.chartMode);
+}
+// Generic table->CSV export, shared by all 4 chart-table exports above.
+// Reads straight from the table's own cells rather than re-deriving the
+// numbers from state -- guarantees the export always matches exactly
+// what's on screen (or what a screen reader hears), with no separate
+// data-shaping code that could drift out of sync with the table itself.
+function exportTableCSV(tableEl,filenameBase){
+  const rows=tableEl?[...tableEl.querySelectorAll('tbody tr')].map(tr=>
+    [...tr.querySelectorAll('td')].map(td=>csvSafeField(td.textContent)).join(',')
+  ):[];
+  if(!rows.length){showToast('No data to export','#FCD34D');return;}
+  const headers=[...tableEl.querySelectorAll('thead th')].map(th=>csvSafeField(th.textContent));
+  downloadCSVFile(`trak-yo-dollas-${filenameBase}-${todayDateStr()}.csv`,headers,rows);
+  showToast(`⬇ Exported ${rows.length} row${rows.length===1?'':'s'}`,'#34D399');
 }
 
 // ── Include Income & Business Categories ──────────────────────
@@ -15683,36 +15838,34 @@ document.addEventListener('DOMContentLoaded',function(){
       // Mirror the wrapper show/hide that setChartMode normally handles,
       // so renderAll renders into the right container on first load
       const isCanvas=savedMode!=='daily'&&savedMode!=='split'&&savedMode!=='sankey';
+      const trendTableActive=savedMode==='trend'&&_chartTableView.trend;
       const cw=document.getElementById('spend-chart-wrap');
       const cb=document.getElementById('spend-chart-border');
       const cal=document.getElementById('daily-cal-wrap');
       const tm=document.getElementById('treemap-wrap');
       const sk=document.getElementById('sankey-wrap');
-      if(cb)cb.style.display=isCanvas?'':'none';
-      if(cw)cw.style.display=isCanvas?'':'none';
+      const ttw=document.getElementById('trend-table-wrap');
+      if(cb)cb.style.display=(isCanvas&&!trendTableActive)?'':'none';
+      if(cw)cw.style.display=(isCanvas&&!trendTableActive)?'':'none';
       if(cal)cal.style.display=savedMode==='daily'?'block':'none';
       if(tm)tm.style.display=savedMode==='split'?'block':'none';
       if(sk)sk.style.display=savedMode==='sankey'?'block':'none';
+      if(ttw)ttw.style.display=savedMode==='trend'?'block':'none';
       // Mirror setChartMode()'s per-mode secondary-button visibility too --
       // missing here left chart-texture-btn/cal-transfers-btn showing in
       // the wrong mode on first load whenever the persisted chart mode was
-      // daily/split/sankey (pre-existing gap; sankey-table-btn, added
-      // alongside this fix, would have inherited the identical gap for
-      // its own mode had this gone unnoticed). Found and fixed July 28,
-      // 2026 while building the Flow "view as table" toggle.
+      // daily/split/sankey (pre-existing gap; the table-view toggle/export
+      // buttons, added alongside this fix, would have inherited the
+      // identical gap for their own modes had this gone unnoticed). Found
+      // and fixed July 28, 2026 while building the Flow "view as table"
+      // toggle; _syncChartTableBtn() (shared with setChartMode() itself)
+      // now generalizes that same button-sync logic to all 4 table-view-
+      // eligible modes rather than just Flow.
       const modeTextureBtn=document.getElementById('chart-texture-btn');
       const modeTransfersBtn=document.getElementById('cal-transfers-btn');
-      const modeSankeyTableBtn=document.getElementById('sankey-table-btn');
-      if(modeTextureBtn)modeTextureBtn.style.display=isCanvas?'':'none';
+      if(modeTextureBtn)modeTextureBtn.style.display=(isCanvas&&!trendTableActive)?'':'none';
       if(modeTransfersBtn)modeTransfersBtn.style.display=(savedMode==='daily'&&!state.excludedCats.has('Transfers'))?'':'none';
-      if(modeSankeyTableBtn){
-        modeSankeyTableBtn.style.display=savedMode==='sankey'?'':'none';
-        if(savedMode==='sankey'){
-          modeSankeyTableBtn.textContent=_sankeyTableView?'📊 View as chart':'▦ View as table';
-          modeSankeyTableBtn.style.color=_sankeyTableView?'var(--accent-blue-light)':'var(--text-muted)';
-          modeSankeyTableBtn.style.borderColor=_sankeyTableView?'var(--accent-blue-light)':'var(--border-mid)';
-        }
-      }
+      _syncChartTableBtn();
     }
   }catch(e){}
 
