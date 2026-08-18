@@ -1545,7 +1545,20 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
     <div id="sync-pp-main">
       <div class="form-group">
-        <label class="form-label" for="sync-pp-input">Passphrase</label>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <label class="form-label" for="sync-pp-input" style="margin-bottom:0">Passphrase</label>
+          <!-- A regular sign-in password is either muscle memory or sits in a
+               password manager already -- this passphrase is neither: it's a
+               one-off secret the user has to get exactly right while typing
+               it blind, with the warning right below spelling out that a typo
+               here means permanently, unrecoverably losing synced data.
+               Toggles both fields together (not one button each) since
+               sync-pp-confirm only ever exists alongside this one, during
+               first-time setup -- nobody wants to reveal one but not the
+               other in the same breath. Found from a direct question about
+               why this couldn't be verified before submitting. -->
+          <button type="button" id="sync-pp-visibility-btn" data-action="toggleSyncPassphraseVisibility" style="background:none;border:none;color:var(--text-muted);font-size:11px;text-decoration:underline;cursor:pointer;font-family:inherit;padding:0">Show</button>
+        </div>
         <input type="password" id="sync-pp-input" autocomplete="off" data-keydown="confirmSyncPassphraseOnEnter"
           style="width:100%;padding:.6rem .75rem;border:1px solid var(--border-mid);border-radius:8px;background:var(--bg-deep);color:var(--text-primary);font-size:13px;outline:none;font-family:inherit">
       </div>
@@ -13792,7 +13805,10 @@ async function promptSyncPassphrase(uid) {
   const confirmInput = document.getElementById('sync-pp-confirm');
   const email = (window._fbUser && window._fbUser.email) || '';
   if (errorEl) { errorEl.style.display = 'none'; errorEl.textContent = ''; }
-  if (input) input.value = '';
+  if (input) { input.value = ''; input.type = 'password'; }
+  if (confirmInput) confirmInput.type = 'password';
+  const visBtn = document.getElementById('sync-pp-visibility-btn');
+  if (visBtn) visBtn.textContent = 'Show';
   if (confirmInput) confirmInput.value = '';
   hideForgotPassphrase();
   const forgotWrap = document.getElementById('sync-pp-forgot-wrap');
@@ -13844,6 +13860,19 @@ async function submitSyncPassphrase() {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Continue'; }
   }
+}
+function toggleSyncPassphraseVisibility(_, btn) {
+  const input = document.getElementById('sync-pp-input');
+  const confirmInput = document.getElementById('sync-pp-confirm');
+  if (!input) return;
+  const showing = input.type === 'text';
+  const newType = showing ? 'password' : 'text';
+  input.type = newType;
+  // Toggled together, not independently -- sync-pp-confirm only exists
+  // alongside sync-pp-input during first-time setup, so there's never a
+  // reason to reveal one but not the other.
+  if (confirmInput) confirmInput.type = newType;
+  if (btn) btn.textContent = showing ? 'Show' : 'Hide';
 }
 function cancelSyncPassphrase() {
   closeModals();

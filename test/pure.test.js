@@ -6619,6 +6619,33 @@ test("validateClearConfirm() and confirmForgotPassphraseReset() use the same cas
   assert.doesNotMatch(source, /toUpperCase\(\) : '';\s*if \(typed !== 'RESET'\)/, "confirmForgotPassphraseReset() should no longer uppercase-and-compare-to-RESET");
 });
 
+// Found from a direct question about why the sync passphrase couldn't be
+// verified before submitting: unlike a regular sign-in password (muscle
+// memory, or sitting in a password manager already), this is a one-off
+// secret the user has to get exactly right while typing it blind -- and
+// the warning directly below the field says a typo here means permanently,
+// unrecoverably losing synced data, with no reset path. Added a shared
+// Show/Hide toggle rather than a per-field one, since sync-pp-confirm only
+// ever exists alongside sync-pp-input during first-time setup -- nobody
+// wants to reveal one but not the other in the same breath. Reset to
+// hidden every time the modal freshly opens (promptSyncPassphrase()), so a
+// previous session's "revealed" state can't linger into the next.
+test("toggleSyncPassphraseVisibility(): toggles sync-pp-input and sync-pp-confirm together (not independently), and promptSyncPassphrase() resets both to hidden on every fresh open", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(source, /<button type="button" id="sync-pp-visibility-btn" data-action="toggleSyncPassphraseVisibility"/, "the toggle button should exist and dispatch through the standard data-action mechanism");
+  const fnMatch = source.match(/function toggleSyncPassphraseVisibility\(_, btn\) \{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "toggleSyncPassphraseVisibility() should exist");
+  assert.match(fnMatch[0], /input\.type = newType;/, "should set sync-pp-input's type");
+  assert.match(fnMatch[0], /if \(confirmInput\) confirmInput\.type = newType;/, "should set sync-pp-confirm's type too, in the same call -- not a separate toggle a user has to click twice");
+  const promptMatch = source.match(/async function promptSyncPassphrase\(uid\) \{[\s\S]{0,3000}?if \(visBtn\) visBtn\.textContent = 'Show';/);
+  assert.ok(promptMatch, "promptSyncPassphrase() should exist");
+  assert.match(promptMatch[0], /input\.type = 'password';/, "should reset the main field to hidden on every fresh open");
+  assert.match(promptMatch[0], /if \(confirmInput\) confirmInput\.type = 'password';/, "should reset the confirm field to hidden too");
+  assert.match(promptMatch[0], /if \(visBtn\) visBtn\.textContent = 'Show';/, "should reset the toggle button's own label back to 'Show', not leave it reading 'Hide' from a previous session");
+});
+
 // ── Two more #334155-as-text instances found sweeping for the same
 // contrast-failure shape #475569 turned out to have (both measured well
 // under WCAG AA's 4.5:1: 1.41:1/1.47:1 for the NW-goal milestone chip,
