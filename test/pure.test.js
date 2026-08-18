@@ -6732,6 +6732,46 @@ test("the sync-conflict banner is hidden on every recovery path that also resets
   }
 });
 
+// ── The banner initially shipped in normal document flow, like every other
+// top banner in this file (#demo-preview-banner, #offline-banner, etc) --
+// but unlike those, it's meant to stay visible for as long as the
+// underlying "your edits aren't syncing" condition holds, which can span
+// plenty of scrolling on a page with hundreds of transactions. A quick
+// manual test caught it: the banner scrolled away after the very first
+// scroll tick, same as any other normal-flow element, defeating the whole
+// point of making it persistent instead of a toast in the first place. ──
+test("the sync-conflict banner is position:fixed (so it survives scrolling, unlike every other top banner) and pushes .nav/body down via updateBannerOffset() to avoid overlapping it", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const bannerMatch = source.match(/<div id="sync-conflict-banner" role="alert" style="([^"]+)">/);
+  assert.ok(bannerMatch, "the banner element should exist");
+  assert.match(bannerMatch[1], /position:fixed;top:0;left:0;right:0;/, "should be taken out of normal document flow so scrolling can't carry it away");
+  const navZIndexMatch = source.match(/\.nav\{[^}]*z-index:(\d+)/);
+  const bannerZIndexMatch = bannerMatch[1].match(/z-index:(\d+)/);
+  assert.ok(navZIndexMatch && bannerZIndexMatch, "both .nav and the banner should declare a z-index");
+  assert.ok(
+    Number(bannerZIndexMatch[1]) > Number(navZIndexMatch[1]),
+    "the banner's z-index should be higher than .nav's, so it renders above the nav it's meant to sit on top of, not underneath it"
+  );
+  const offsetFnMatch = source.match(/function updateBannerOffset\(\)\{[\s\S]{0,1000}?\n\}/);
+  assert.ok(offsetFnMatch, "updateBannerOffset() should be defined");
+  assert.match(
+    offsetFnMatch[0],
+    /const conflictBanner=document\.getElementById\('sync-conflict-banner'\);/,
+    "should also measure the sync-conflict banner, not just the pre-existing (and always-empty) #demo-chip"
+  );
+  assert.match(
+    offsetFnMatch[0],
+    /conflictBanner\.offsetHeight/,
+    "should factor the conflict banner's real rendered height into the offset, since fixed positioning takes it out of flow and nothing else would push .nav/body down for it"
+  );
+  const showFn = source.match(/function showSyncConflictBanner\(\)\{[\s\S]{0,200}?\n\}/)?.[0] || "";
+  const hideFn = source.match(/function hideSyncConflictBanner\(\)\{[\s\S]{0,200}?\n\}/)?.[0] || "";
+  assert.match(showFn, /updateBannerOffset\(\);/, "showing the banner should immediately recompute the nav/body offset, not wait for a resize");
+  assert.match(hideFn, /updateBannerOffset\(\);/, "hiding the banner (including via dismiss, which delegates to this) should recompute the offset back down, or nav/body would keep the gap after the banner is gone");
+});
+
 // ── Two more #334155-as-text instances found sweeping for the same
 // contrast-failure shape #475569 turned out to have (both measured well
 // under WCAG AA's 4.5:1: 1.41:1/1.47:1 for the NW-goal milestone chip,

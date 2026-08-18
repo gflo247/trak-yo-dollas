@@ -918,8 +918,11 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 </div>
 <!-- Stays up until dismissed or reloaded, unlike a toast -- the underlying
      "your edits aren't syncing" condition doesn't go away on its own after
-     a few seconds, so the warning shouldn't either. See showSyncConflictBanner(). -->
-<div id="sync-conflict-banner" role="alert" style="display:none;background:rgba(251,191,36,.1);border-bottom:1px solid rgba(251,191,36,.3);padding:8px 1rem;font-size:12px;color:var(--text-secondary);text-align:center;letter-spacing:.01em">
+     a few seconds, so the warning shouldn't either. See showSyncConflictBanner().
+     position:fixed (not the other top banners' normal flow) so it also stays
+     pinned while scrolling, not just while the page is at rest -- updateBannerOffset()
+     pushes .nav/body down to make room for it since fixed content doesn't. -->
+<div id="sync-conflict-banner" role="alert" style="display:none;position:fixed;top:0;left:0;right:0;z-index:26;background:linear-gradient(rgba(251,191,36,.1),rgba(251,191,36,.1)),var(--bg-page);border-bottom:1px solid rgba(251,191,36,.3);padding:8px 1rem;font-size:12px;color:var(--text-secondary);text-align:center;letter-spacing:.01em">
   ⚠ <strong style="color:var(--amber-text-strong)">Your synced data changed on another device</strong> — your changes here are saved on this device but won't sync until you reload.
   <button data-action="reloadForSyncConflict" style="background:var(--amber-text-strong);color:#000;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 3px" type="button">Reload now</button>
   <button data-action="dismissSyncConflictBanner" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:4px 6px;font-family:inherit;vertical-align:middle" title="Dismiss" type="button">✕</button>
@@ -3231,9 +3234,18 @@ function showDemoPreviewBanner(){
 }
 function updateBannerOffset(){
   const banner=document.getElementById('demo-chip');
+  // #sync-conflict-banner is position:fixed (see its own comment) so it
+  // stays visible while scrolling, unlike every other top banner in this
+  // file -- that takes it out of normal document flow, so nothing pushes
+  // .nav (itself position:sticky) down to make room for it, and it would
+  // sit permanently on top of/behind the nav instead of above it. Folded
+  // into this existing offset mechanism rather than a second one, since
+  // both banners need the identical nav-top/body-padding treatment.
+  const conflictBanner=document.getElementById('sync-conflict-banner');
   const nav=document.querySelector('.nav');
   if(!banner||!nav)return;
-  const h=banner.style.display==='none'?0:banner.offsetHeight;
+  const h=(banner.style.display==='none'?0:banner.offsetHeight)
+        + (!conflictBanner||conflictBanner.style.display==='none'?0:conflictBanner.offsetHeight);
   nav.style.top=h+'px';
   document.body.style.paddingTop=h+'px';
 }
@@ -13797,10 +13809,12 @@ let _syncConflictWarned = false;
 function showSyncConflictBanner(){
   const el = document.getElementById('sync-conflict-banner');
   if (el) el.style.display = 'block';
+  updateBannerOffset();
 }
 function hideSyncConflictBanner(){
   const el = document.getElementById('sync-conflict-banner');
   if (el) el.style.display = 'none';
+  updateBannerOffset();
 }
 function dismissSyncConflictBanner(){
   hideSyncConflictBanner();
