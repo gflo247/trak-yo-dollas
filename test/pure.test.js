@@ -6625,23 +6625,67 @@ test("confirmForgotPassphraseReset(): lowercases before comparing (matching vali
 // unrecoverably losing synced data, with no reset path. Added a shared
 // Show/Hide toggle rather than a per-field one, since sync-pp-confirm only
 // ever exists alongside sync-pp-input during first-time setup -- nobody
-// wants to reveal one but not the other in the same breath. Reset to
-// hidden every time the modal freshly opens (promptSyncPassphrase()), so a
-// previous session's "revealed" state can't linger into the next.
-test("toggleSyncPassphraseVisibility(): toggles sync-pp-input and sync-pp-confirm together (not independently), and promptSyncPassphrase() resets both to hidden on every fresh open", () => {
+// wants to reveal one but not the other in the same breath.
+//
+// First version put the toggle as a plain text link up in the label row --
+// technically present and correctly rendered (verified in devtools), but
+// easy to miss entirely, since a quiet 11px muted-gray link floating above
+// the field looks nothing like the near-universal eye-icon-inside-the-
+// field convention every other password field uses. Found from a second,
+// separate direct question after the first fix still wasn't discoverable
+// live. Moved inside the input itself as an absolutely-positioned icon
+// button. The eye glyph itself doesn't change between states (no widely-
+// supported "eye with slash" emoji) -- the masked/unmasked text right next
+// to it already signals which mode it's in -- but the accessible label
+// does update, so a screen reader always hears the action the next press
+// will take rather than a static, sometimes-wrong "Show".
+//
+// Reset to hidden every time the modal freshly opens (promptSyncPassphrase()),
+// so a previous session's "revealed" state can't linger into the next.
+test("toggleSyncPassphraseVisibility(): renders as an icon button inside the input (not a text link above it), toggles sync-pp-input and sync-pp-confirm together, updates the accessible label to reflect the next action, and promptSyncPassphrase() resets everything on every fresh open", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  assert.match(source, /<button type="button" id="sync-pp-visibility-btn" data-action="toggleSyncPassphraseVisibility"/, "the toggle button should exist and dispatch through the standard data-action mechanism");
+  assert.match(
+    source,
+    /<div style="position:relative">\s*<input type="password" id="sync-pp-input"[\s\S]{0,400}?<button type="button" id="sync-pp-visibility-btn" data-action="toggleSyncPassphraseVisibility" aria-label="Show passphrase" title="Show passphrase"[\s\S]{0,200}?>👁<\/button>/,
+    "the toggle should be an icon button absolutely positioned inside the same wrapper as sync-pp-input, not a text link in the label row above it"
+  );
   const fnMatch = source.match(/function toggleSyncPassphraseVisibility\(_, btn\) \{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "toggleSyncPassphraseVisibility() should exist");
   assert.match(fnMatch[0], /input\.type = newType;/, "should set sync-pp-input's type");
   assert.match(fnMatch[0], /if \(confirmInput\) confirmInput\.type = newType;/, "should set sync-pp-confirm's type too, in the same call -- not a separate toggle a user has to click twice");
-  const promptMatch = source.match(/async function promptSyncPassphrase\(uid\) \{[\s\S]{0,3000}?if \(visBtn\) visBtn\.textContent = 'Show';/);
+  assert.match(fnMatch[0], /btn\.setAttribute\('aria-label', label\);/, "should update the accessible label to reflect whichever action comes next, since the eye glyph itself doesn't change");
+  const promptMatch = source.match(/async function promptSyncPassphrase\(uid\) \{[\s\S]{0,3000}?visBtn\.setAttribute\('title', 'Show passphrase'\); \}/);
   assert.ok(promptMatch, "promptSyncPassphrase() should exist");
   assert.match(promptMatch[0], /input\.type = 'password';/, "should reset the main field to hidden on every fresh open");
   assert.match(promptMatch[0], /if \(confirmInput\) confirmInput\.type = 'password';/, "should reset the confirm field to hidden too");
-  assert.match(promptMatch[0], /if \(visBtn\) visBtn\.textContent = 'Show';/, "should reset the toggle button's own label back to 'Show', not leave it reading 'Hide' from a previous session");
+  assert.match(promptMatch[0], /visBtn\.setAttribute\('aria-label', 'Show passphrase'\);/, "should reset the toggle's accessible label back to 'Show passphrase', not leave it reading 'Hide' from a previous session");
+});
+
+// Finding: the sync-passphrase modal's description paragraph (11px, via the
+// shared .modal-sub class) and its "we never see this passphrase" warning
+// box (11px) both fell below this app's own established 12px legibility
+// floor -- and this is the one modal where getting the words actually read
+// matters most, since it's explaining an unrecoverable, one-way action.
+// Scoped to just this modal's own instances rather than raising .modal-sub
+// itself, which 9 other modals also share and haven't been individually
+// reviewed here. Found from a direct question about the modal's text
+// feeling small overall.
+test("The sync-passphrase modal's description and warning-box text are 12px, not 11px, matching this app's established legibility floor", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<p class="modal-sub" id="sync-pp-desc" style="margin-bottom:\.75rem;font-size:12px"><\/p>/,
+    "sync-pp-desc should override .modal-sub's 11px default with an explicit 12px"
+  );
+  assert.match(
+    source,
+    /<span style="font-size:12px;font-weight:700;color:var\(--amber-text-strong\)">We never see this passphrase/,
+    "the warning box's own text should be 12px, not the old 11px"
+  );
 });
 
 // ── Two more #334155-as-text instances found sweeping for the same
