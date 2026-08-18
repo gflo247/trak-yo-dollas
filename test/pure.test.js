@@ -6605,18 +6605,16 @@ test("confirmForgotPassphraseReset(): lowercases before comparing (matching vali
   assert.match(fnMatch[0], /if \(typed !== 'reset'\) \{ showResetError\('Type reset to confirm\.'\); return; \}/, "should compare against and prompt lowercase 'reset', not uppercase 'RESET'");
   assert.doesNotMatch(source, /Type RESET to confirm/, "the old uppercase label/error text should be gone from the file entirely");
   assert.match(source, /<label class="form-label" for="sync-pp-reset-input">Type reset to confirm<\/label>/, "the modal's own label should also prompt lowercase, not just the error text");
-});
-
-test("validateClearConfirm() and confirmForgotPassphraseReset() use the same case-normalization direction (lowercase), not opposite ones", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  // Folded in from a since-removed test that otherwise just re-verified, via
+  // a negative regex, what the positive assertions above already prove --
+  // this is the one piece of that test with standalone value: the only
+  // place in the file that checks validateClearConfirm()'s own comparison
+  // direction, confirming it matches rather than opposes this fix's.
   assert.match(
     source,
     /function validateClearConfirm\(val\)\{[\s\S]*?val\.trim\(\)\.toLowerCase\(\)===['"]clear['"]/,
-    "validateClearConfirm() should lowercase before comparing to 'clear'"
+    "validateClearConfirm() should lowercase before comparing to 'clear', the same direction confirmForgotPassphraseReset() now uses"
   );
-  assert.doesNotMatch(source, /toUpperCase\(\) : '';\s*if \(typed !== 'RESET'\)/, "confirmForgotPassphraseReset() should no longer uppercase-and-compare-to-RESET");
 });
 
 // Found from a direct question about why the sync passphrase couldn't be
