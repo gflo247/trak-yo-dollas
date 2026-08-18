@@ -6754,7 +6754,7 @@ test("the sync-conflict banner is position:fixed (so it survives scrolling, unli
     Number(bannerZIndexMatch[1]) > Number(navZIndexMatch[1]),
     "the banner's z-index should be higher than .nav's, so it renders above the nav it's meant to sit on top of, not underneath it"
   );
-  const offsetFnMatch = source.match(/function updateBannerOffset\(\)\{[\s\S]{0,1000}?\n\}/);
+  const offsetFnMatch = source.match(/function updateBannerOffset\(\)\{[\s\S]{0,1500}?\n\}/);
   assert.ok(offsetFnMatch, "updateBannerOffset() should be defined");
   assert.match(
     offsetFnMatch[0],
@@ -6770,6 +6770,29 @@ test("the sync-conflict banner is position:fixed (so it survives scrolling, unli
   const hideFn = source.match(/function hideSyncConflictBanner\(\)\{[\s\S]{0,200}?\n\}/)?.[0] || "";
   assert.match(showFn, /updateBannerOffset\(\);/, "showing the banner should immediately recompute the nav/body offset, not wait for a resize");
   assert.match(hideFn, /updateBannerOffset\(\);/, "hiding the banner (including via dismiss, which delegates to this) should recompute the offset back down, or nav/body would keep the gap after the banner is gone");
+});
+
+// ── A self-review pass on the fix above caught this: the original guard
+// was `if(!banner||!nav)return` where `banner` is #demo-chip -- an element
+// nothing ever populates with content (always 0 height), an easy target
+// for a future cleanup pass to remove outright. If it were ever removed,
+// that guard would silently short-circuit the whole function on an
+// unrelated null check, breaking the sync-conflict banner's own offset
+// with zero visible connection between the two. Caught before it shipped,
+// not after. ──
+test("updateBannerOffset() only requires .nav to exist -- #demo-chip and the sync-conflict banner are each independently optional, so removing one can't silently break the other's offset", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const offsetFnMatch = source.match(/function updateBannerOffset\(\)\{[\s\S]{0,1500}?\n\}/);
+  assert.ok(offsetFnMatch, "updateBannerOffset() should be defined");
+  assert.match(offsetFnMatch[0], /if\(!nav\)return;/, "the early-return guard should check only nav, not #demo-chip");
+  assert.doesNotMatch(offsetFnMatch[0], /if\(!banner\|\|!nav\)return;/, "should no longer bail the whole function when #demo-chip alone is missing");
+  assert.match(
+    offsetFnMatch[0],
+    /banner&&banner\.style\.display!=='none'\?banner\.offsetHeight:0/,
+    "#demo-chip's own height should be computed independently (0 if missing or hidden), not gate the function's early return"
+  );
 });
 
 // ── Two more #334155-as-text instances found sweeping for the same

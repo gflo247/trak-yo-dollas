@@ -3243,9 +3243,14 @@ function updateBannerOffset(){
   // both banners need the identical nav-top/body-padding treatment.
   const conflictBanner=document.getElementById('sync-conflict-banner');
   const nav=document.querySelector('.nav');
-  if(!banner||!nav)return;
-  const h=(banner.style.display==='none'?0:banner.offsetHeight)
-        + (!conflictBanner||conflictBanner.style.display==='none'?0:conflictBanner.offsetHeight);
+  // Only nav is required -- the two banners are independently optional
+  // (each contributes 0 if missing or hidden) so that removing/refactoring
+  // #demo-chip (dead weight today: nothing ever sets its content, so it
+  // always contributes 0) can't silently break the conflict banner's own
+  // offset by short-circuiting this whole function on an unrelated !banner.
+  if(!nav)return;
+  const h=(banner&&banner.style.display!=='none'?banner.offsetHeight:0)
+        + (conflictBanner&&conflictBanner.style.display!=='none'?conflictBanner.offsetHeight:0);
   nav.style.top=h+'px';
   document.body.style.paddingTop=h+'px';
 }
