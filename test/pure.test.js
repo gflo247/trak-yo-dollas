@@ -6584,6 +6584,41 @@ test("signing out resets _cloudPrefsUpdatedAt/_syncConflictWarned, so a stale ba
   );
 });
 
+// Found from a direct question comparing this modal's confirm-input against
+// the Clear all data modal's ("should we be clear that case does not
+// matter?"), then a follow-up asking for consistency between the two.
+// Originally, confirmForgotPassphraseReset() uppercased the typed value and
+// compared to 'RESET' -- functionally case-insensitive same as
+// validateClearConfirm()'s lowercase-and-compare-to-'clear', but the two
+// modals normalized in opposite directions for no reason, and this one's
+// label/error text prompted "RESET" in caps -- worse, the error text
+// explicitly (and falsely) claimed "(all caps)" was required. Both now
+// lowercase before comparing and prompt lowercase, matching each other,
+// while still silently accepting any case typed.
+test("confirmForgotPassphraseReset(): lowercases before comparing (matching validateClearConfirm()'s style) and prompts/errors in lowercase, with no claim of a case requirement", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/async function confirmForgotPassphraseReset\(\) \{[\s\S]{0,3100}?\n\}/);
+  assert.ok(fnMatch, "confirmForgotPassphraseReset() should exist");
+  assert.match(fnMatch[0], /resetInput\.value\.trim\(\)\.toLowerCase\(\)/, "should lowercase the typed value before comparing, matching validateClearConfirm()'s own normalization direction");
+  assert.match(fnMatch[0], /if \(typed !== 'reset'\) \{ showResetError\('Type reset to confirm\.'\); return; \}/, "should compare against and prompt lowercase 'reset', not uppercase 'RESET'");
+  assert.doesNotMatch(source, /Type RESET to confirm/, "the old uppercase label/error text should be gone from the file entirely");
+  assert.match(source, /<label class="form-label" for="sync-pp-reset-input">Type reset to confirm<\/label>/, "the modal's own label should also prompt lowercase, not just the error text");
+});
+
+test("validateClearConfirm() and confirmForgotPassphraseReset() use the same case-normalization direction (lowercase), not opposite ones", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /function validateClearConfirm\(val\)\{[\s\S]*?val\.trim\(\)\.toLowerCase\(\)===['"]clear['"]/,
+    "validateClearConfirm() should lowercase before comparing to 'clear'"
+  );
+  assert.doesNotMatch(source, /toUpperCase\(\) : '';\s*if \(typed !== 'RESET'\)/, "confirmForgotPassphraseReset() should no longer uppercase-and-compare-to-RESET");
+});
+
 // ── Two more #334155-as-text instances found sweeping for the same
 // contrast-failure shape #475569 turned out to have (both measured well
 // under WCAG AA's 4.5:1: 1.41:1/1.47:1 for the NW-goal milestone chip,
