@@ -13734,6 +13734,24 @@ function openAuthModal(reason) {
   document.getElementById('auth-modal').classList.remove('hidden');
 }
 
+// ── Optimistic-concurrency guard for syncToCloud() — the prefs row is a
+// single full-state blob, upserted wholesale with no merge (see
+// syncToCloud()'s own comment). _awaitingCloudMerge above only guards the
+// one-time window between sign-in and the initial pull; it says nothing
+// about two devices (or two tabs) both signed in and both editing during
+// the same session, where whichever debounced save lands last silently
+// overwrites the other's more recent changes with no warning. This tracks
+// the prefs row's updated_at as of our last successful load or save --
+// syncToCloud() checks it's still current immediately before writing, and
+// skips the write (rather than risking a blind overwrite) if it isn't.
+// null means "no baseline yet" (covers both a brand-new user with no row
+// at all, and not having signed in this session) -- treated as "nothing to
+// conflict with," not as a conflict. _syncConflictWarned avoids re-toasting
+// on every subsequent debounced save while a conflict remains unresolved;
+// it only clears on a fresh successful load (i.e., the user reloaded).
+let _cloudPrefsUpdatedAt = null;
+let _syncConflictWarned = false;
+
 // ── Sync passphrase — gates loadUserData() behind a secret Supabase never
 // sees (see the comment above _deriveKey). A cached passphrase (this
 // device's localStorage) is tried silently first so reloads, new tabs, and
@@ -13994,7 +14012,17 @@ async function loadUserData(uid) {
       state.snapshots.sort(_snapshotSortCompare);
     }
     // Load prefs (full state)
-    const prefs = await window._fb.loadPrefs(uid);
+    const { data: prefs, updatedAt: _loadedUpdatedAt } = await window._fb.loadPrefs(uid);
+    // Baseline for savePrefs()'s optimistic-concurrency check (see the
+    // comment above _cloudPrefsUpdatedAt) -- set unconditionally, including
+    // when prefs itself is null (a brand-new user with no row yet), since
+    // null correctly means "nothing to conflict with" either way.
+    // _syncConflictWarned resets here too: a fresh successful load is
+    // exactly the recovery step the earlier conflict warning asked the
+    // user to take, so the next conflict (if any) deserves its own toast
+    // again rather than staying silently suppressed forever.
+    _cloudPrefsUpdatedAt = _loadedUpdatedAt;
+    _syncConflictWarned = false;
     if (prefs) {
       // _arrOfObj(...) -- the 103rd pass's fix for a null customCategories
       // entry (crashing buildCatColorMap()'s c.name) landed in
@@ -14207,7 +14235,8 @@ async function syncToCloud() {
     const txEdits = state.transactions
       .filter(t => t._edited)
       .map(t => ({ date: t.date, origDesc: t._origDesc||t.desc, desc: t.desc, cat: t.cat, excluded: !!t.excluded }));
-    await window._fb.savePrefs(user.uid, {
+    const newUpdatedAt = new Date().toISOString();
+    const wrote = await window._fb.savePrefs(user.uid, {
       customCategories: state.customCategories,
       budgets: state.budgets,
       catRules: state.catRules,
@@ -14257,7 +14286,26 @@ async function syncToCloud() {
       sourceAlignSkipped: state.sourceAlignSkipped,
       sourceAlignDate: state.sourceAlignDate,
       txEdits
-    });
+    }, _cloudPrefsUpdatedAt, newUpdatedAt);
+    // wrote===false means the row's updated_at had already moved past
+    // _cloudPrefsUpdatedAt -- another device or tab (this account signed
+    // in twice at once) wrote since we last loaded, and pushing our own
+    // state now would silently replace their more recent changes with
+    // ours. Blocking the write is the only safe option without a real
+    // merge (see the comment above _cloudPrefsUpdatedAt) -- local edits
+    // are unaffected, since saveToLocalStorage() in scheduleSave() already
+    // ran before this function was ever called. Warned once, not on every
+    // subsequent debounced attempt while the conflict remains unresolved
+    // (_syncConflictWarned only clears on the next successful load, i.e.
+    // once the user actually reloads).
+    if (!wrote) {
+      if (!_syncConflictWarned) {
+        _syncConflictWarned = true;
+        showToast('⚠ Your synced data changed on another device — reload to see the latest. Your changes here are saved on this device but won\'t sync until you do.', '#FCD34D', 5000);
+      }
+      return;
+    }
+    _cloudPrefsUpdatedAt = newUpdatedAt;
     // Flash "Saved ✓" in auth bar
     const label = document.getElementById('auth-user-label');
     if (label) {
@@ -16446,6 +16494,15 @@ _sb.auth.onAuthStateChange((event, session) => {
     // then fire later under whatever session happens to be signed in when
     // this device next completes a passphrase flow.
     window._awaitingCloudMerge = false;
+    // Not required for correctness -- promptSyncPassphrase() already sets
+    // _awaitingCloudMerge=true as its first line on the next sign-in,
+    // which blocks scheduleSave()'s cloud push until that new user's own
+    // loadUserData() overwrites these anyway (see the comment above
+    // _cloudPrefsUpdatedAt) -- but resetting explicitly here means nobody
+    // has to trace that gate to convince themselves a stale baseline from
+    // whoever was signed in before can't leak into the next session.
+    _cloudPrefsUpdatedAt = null;
+    _syncConflictWarned = false;
     // !state.hasRealData -- without it, a user who picked a demo profile
     // then transitioned to real data (any of the covered first-real-save
     // actions correctly hide this nudge via hideDemoBadge()) and later
@@ -16628,32 +16685,53 @@ window._fb = {
     }
     return results;
   },
-  async savePrefs(uid, prefs) {
+  // expectedUpdatedAt/newUpdatedAt (both caller-supplied, not generated
+  // here) turn this from a blind upsert into an optimistic-concurrency
+  // write -- see the comment above _cloudPrefsUpdatedAt for why a blind
+  // upsert on this particular row (the user's ENTIRE cloud-synced state,
+  // written on every syncToCloud() call) is unsafe the moment two devices
+  // or tabs are both signed in during the same session. When
+  // expectedUpdatedAt is set, this only writes if the row's updated_at
+  // still matches it -- a single atomic conditional UPDATE, not a
+  // separate check-then-write (which would leave its own race window).
+  // Returns false (not an error) if the row had already moved, so the
+  // caller can tell "someone else wrote first" apart from a real failure.
+  // expectedUpdatedAt is null for a brand-new user with no row yet --
+  // nothing to conflict with, so this falls back to the plain upsert the
+  // 37th adversarial pass's fix already established (still keeping its
+  // explicit onConflict target, for the same reason given there).
+  async savePrefs(uid, prefs, expectedUpdatedAt, newUpdatedAt) {
     const encrypted = await _encrypt(prefs, uid);
-    // Explicit onConflict target, found in the 37th adversarial pass --
-    // same gap the 36th pass fixed for saveSnapshot()'s upsert, just here
-    // on the table that holds the user's ENTIRE cloud-synced state
-    // (categories, budgets, rules, accounts, vehicles, all transactions)
-    // and is written on every syncToCloud() call, far more often than a
-    // once-a-month snapshot. Without a conflict target, a second tab/
-    // device whose upsert doesn't resolve against the existing row could
-    // insert a fresh one instead of updating it.
+    if (expectedUpdatedAt) {
+      const { data, error } = await _sb.from('prefs')
+        .update({ data: encrypted, updated_at: newUpdatedAt })
+        .eq('user_id', uid).eq('updated_at', expectedUpdatedAt)
+        .select('updated_at');
+      if (error) throw error;
+      return !!(data && data.length);
+    }
     const { error } = await _sb.from('prefs').upsert({
-      user_id: uid, data: encrypted, updated_at: new Date().toISOString()
+      user_id: uid, data: encrypted, updated_at: newUpdatedAt
     }, { onConflict: 'user_id' });
     if (error) throw error;
+    return true;
   },
+  // Also returns updated_at now (alongside the existing decrypted prefs),
+  // so callers can cache it as the baseline savePrefs()'s optimistic-
+  // concurrency check compares against later -- one query instead of a
+  // second round-trip just to fetch a timestamp already sitting right next
+  // to the data column this was already selecting.
   async loadPrefs(uid) {
     // Ordered + limited to the most recent row, found alongside the
     // onConflict fix above -- without this, if any duplicate rows already
     // exist from the pre-fix window, which one "wins" on load was
     // whatever Postgres/PostgREST happened to return first, unspecified.
-    const { data, error } = await _sb.from('prefs').select('data').eq('user_id', uid).order('updated_at', { ascending: false }).limit(1);
+    const { data, error } = await _sb.from('prefs').select('data, updated_at').eq('user_id', uid).order('updated_at', { ascending: false }).limit(1);
     if (error) throw error;
-    const row = data?.[0]?.data;
-    if (!row) return null;
-    if (row.ct) return await _decrypt(row, uid);
-    return row;
+    const row = data?.[0];
+    if (!row || !row.data) return { data: null, updatedAt: null };
+    const prefs = row.data.ct ? await _decrypt(row.data, uid) : row.data;
+    return { data: prefs, updatedAt: row.updated_at };
   },
 };
 </script>

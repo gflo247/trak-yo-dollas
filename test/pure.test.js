@@ -6449,14 +6449,14 @@ test("syncToCloud()/loadUserData() sync and restore chartGrain/rangeFrom/rangeTo
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
 
-  const syncSrc = source.match(/async function syncToCloud\(\) \{[\s\S]{0,3600}?\n\}/)?.[0] || "";
+  const syncSrc = source.match(/async function syncToCloud\(\) \{[\s\S]{0,4800}?\n\}/)?.[0] || "";
   assert.match(syncSrc, /chartGrain: state\.chartGrain,/, "syncToCloud() should include chartGrain in the savePrefs() payload");
   assert.match(syncSrc, /rangeFrom: state\.rangeFrom,/, "syncToCloud() should include rangeFrom");
   assert.match(syncSrc, /rangeTo: state\.rangeTo,/, "syncToCloud() should include rangeTo");
   assert.match(syncSrc, /sourceAlignSkipped: state\.sourceAlignSkipped,/, "syncToCloud() should include sourceAlignSkipped");
   assert.match(syncSrc, /sourceAlignDate: state\.sourceAlignDate,/, "syncToCloud() should include sourceAlignDate");
 
-  const loadSrc = source.match(/async function loadUserData\(uid\) \{[\s\S]{0,16400}?\n  \} catch/)?.[0] || "";
+  const loadSrc = source.match(/async function loadUserData\(uid\) \{[\s\S]{0,17300}?\n  \} catch/)?.[0] || "";
   assert.match(
     loadSrc,
     /if \(prefs\.chartGrain !== undefined\) state\.chartGrain = prefs\.chartGrain \?\? 'month';/,
@@ -6481,6 +6481,106 @@ test("syncToCloud()/loadUserData() sync and restore chartGrain/rangeFrom/rangeTo
     loadSrc,
     /if \(prefs\.sourceAlignDate !== undefined\) state\.sourceAlignDate = typeof prefs\.sourceAlignDate === 'string' \? prefs\.sourceAlignDate : null;/,
     "loadUserData() should restore sourceAlignDate, type-guarded to a string like the other two restore paths"
+  );
+});
+
+// Found from a direct question about whether two people could safely share
+// one login to get "household" access to the same synced data: the prefs
+// row (the user's ENTIRE cloud-synced state) was a blind upsert with no
+// merge, no version check, nothing -- whichever debounced syncToCloud()
+// landed last silently won, overwriting anyone else's more recent changes
+// with no warning. Not just a hypothetical household-sharing risk: the
+// identical bug already existed for a single person using their own
+// account on two devices (phone + laptop) at once. Fixed with optimistic
+// concurrency: savePrefs() takes expectedUpdatedAt/newUpdatedAt and does
+// one atomic conditional UPDATE (.eq('updated_at', expectedUpdatedAt))
+// instead of a blind upsert -- 0 rows matched means the row moved since
+// our last load, so the caller can tell "someone wrote first" apart from
+// a real error without a separate check-then-write step that would leave
+// its own race window. loadUserData() caches the baseline on every
+// successful load (including null for a brand-new user, which correctly
+// means "nothing to conflict with yet"); syncToCloud() blocks the push and
+// warns once (not on every subsequent debounced attempt) when it's stale.
+test("_fb.savePrefs(): takes an expected/new updated_at pair and does an atomic conditional UPDATE (not a blind upsert) whenever a baseline exists, falling back to upsert only when there isn't one yet", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/async savePrefs\(uid, prefs, expectedUpdatedAt, newUpdatedAt\) \{[\s\S]*?\n  \},/);
+  assert.ok(fnMatch, "savePrefs(uid, prefs, expectedUpdatedAt, newUpdatedAt) should exist with this signature");
+  assert.match(
+    fnMatch[0],
+    /if \(expectedUpdatedAt\) \{/,
+    "should branch on whether a baseline exists"
+  );
+  assert.match(
+    fnMatch[0],
+    /\.update\(\{ data: encrypted, updated_at: newUpdatedAt \}\)\s*\.eq\('user_id', uid\)\.eq\('updated_at', expectedUpdatedAt\)\s*\.select\('updated_at'\);/,
+    "with a baseline, should do one atomic conditional UPDATE scoped to both user_id and the expected updated_at, not a separate check-then-write"
+  );
+  assert.match(
+    fnMatch[0],
+    /return !!\(data && data\.length\);/,
+    "should return false (not throw) when the conditional UPDATE matched 0 rows, so the caller can distinguish 'someone wrote first' from a real error"
+  );
+  assert.match(
+    fnMatch[0],
+    /const \{ error \} = await _sb\.from\('prefs'\)\.upsert\(\{\s*user_id: uid, data: encrypted, updated_at: newUpdatedAt\s*\}, \{ onConflict: 'user_id' \}\);/,
+    "without a baseline (brand-new user, nothing to conflict with), should fall back to the plain upsert, still with its explicit onConflict target"
+  );
+});
+
+test("_fb.loadPrefs(): also selects and returns updated_at alongside the decrypted data, so callers get the sync baseline in the same round-trip instead of a second query", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/async loadPrefs\(uid\) \{[\s\S]*?\n  \},/);
+  assert.ok(fnMatch, "loadPrefs() should exist");
+  assert.match(fnMatch[0], /\.select\('data, updated_at'\)/, "should select updated_at alongside data in the same query");
+  assert.match(fnMatch[0], /return \{ data: null, updatedAt: null \};/, "should return updatedAt:null (not just data:null) when no row exists, matching 'nothing to conflict with' semantics");
+  assert.match(fnMatch[0], /return \{ data: prefs, updatedAt: row\.updated_at \};/, "should return the row's updated_at alongside the decrypted prefs");
+});
+
+test("loadUserData() caches _cloudPrefsUpdatedAt from every successful load (even a null one, for a brand-new user) and resets _syncConflictWarned, so a fresh load is what actually recovers from a detected conflict", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const loadSrc = source.match(/async function loadUserData\(uid\) \{[\s\S]{0,17300}?\n  \} catch/)?.[0] || "";
+  assert.match(
+    loadSrc,
+    /const \{ data: prefs, updatedAt: _loadedUpdatedAt \} = await window\._fb\.loadPrefs\(uid\);/,
+    "should destructure loadPrefs()'s new {data, updatedAt} shape"
+  );
+  assert.match(
+    loadSrc,
+    /_cloudPrefsUpdatedAt = _loadedUpdatedAt;\s*_syncConflictWarned = false;/,
+    "should set the baseline and clear the warned flag unconditionally, before the `if (prefs)` branch -- a brand-new user's null updatedAt is a valid baseline (nothing to conflict with), not a case to skip"
+  );
+});
+
+test("syncToCloud(): passes the cached baseline and a fresh timestamp to savePrefs(), and when it reports the row already moved, blocks the push, warns once (not on every debounced retry), and leaves the local save (already done by scheduleSave()) untouched", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const syncSrc = source.match(/async function syncToCloud\(\) \{[\s\S]{0,4800}?\n\}/)?.[0] || "";
+  assert.match(syncSrc, /const newUpdatedAt = new Date\(\)\.toISOString\(\);/, "should generate the new timestamp itself, not rely on savePrefs() to generate one internally");
+  assert.match(syncSrc, /const wrote = await window\._fb\.savePrefs\(user\.uid, \{/, "should capture savePrefs()'s boolean result");
+  assert.match(syncSrc, /\}, _cloudPrefsUpdatedAt, newUpdatedAt\);/, "should pass the cached baseline and the new timestamp as the trailing arguments");
+  assert.match(
+    syncSrc,
+    /if \(!wrote\) \{\s*if \(!_syncConflictWarned\) \{\s*_syncConflictWarned = true;\s*showToast\('⚠ Your synced data changed on another device/,
+    "should warn only the first time a conflict is detected, not on every subsequent blocked attempt"
+  );
+  assert.match(syncSrc, /return;\s*\}\s*_cloudPrefsUpdatedAt = newUpdatedAt;/, "should return early on conflict (skipping the baseline update and the 'Saved' flash) and only advance the baseline after a confirmed successful write");
+});
+
+test("signing out resets _cloudPrefsUpdatedAt/_syncConflictWarned, so a stale baseline from whoever was signed in before can't leak into the next sign-in on the same tab", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /window\._awaitingCloudMerge = false;\s*\/\/ Not required for correctness[\s\S]{0,700}?_cloudPrefsUpdatedAt = null;\s*_syncConflictWarned = false;/,
+    "the sign-out branch of onAuthStateChange should reset both, right alongside its existing _awaitingCloudMerge reset"
   );
 });
 
