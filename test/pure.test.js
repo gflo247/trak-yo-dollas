@@ -6567,7 +6567,7 @@ test("syncToCloud(): passes the cached baseline and a fresh timestamp to savePre
   assert.match(syncSrc, /\}, _cloudPrefsUpdatedAt, newUpdatedAt\);/, "should pass the cached baseline and the new timestamp as the trailing arguments");
   assert.match(
     syncSrc,
-    /if \(!wrote\) \{\s*if \(!_syncConflictWarned\) \{\s*_syncConflictWarned = true;\s*showToast\('⚠ Your synced data changed on another device/,
+    /if \(!wrote\) \{\s*if \(!_syncConflictWarned\) \{\s*_syncConflictWarned = true;\s*showSyncConflictBanner\(\);/,
     "should warn only the first time a conflict is detected, not on every subsequent blocked attempt"
   );
   assert.match(syncSrc, /return;\s*\}\s*_cloudPrefsUpdatedAt = newUpdatedAt;/, "should return early on conflict (skipping the baseline update and the 'Saved' flash) and only advance the baseline after a confirmed successful write");
@@ -6686,6 +6686,50 @@ test("The sync-passphrase modal's description and warning-box text are 12px, not
     /<span style="font-size:12px;font-weight:700;color:var\(--amber-text-strong\)">We never see this passphrase/,
     "the warning box's own text should be 12px, not the old 11px"
   );
+});
+
+test("syncToCloud()'s conflict guard shows a persistent, dismissible banner instead of an auto-dismissing toast", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<div id="sync-conflict-banner" role="alert" style="display:none[^"]*">/,
+    "the banner should exist in the DOM, hidden by default"
+  );
+  assert.match(
+    source,
+    /<button data-action="reloadForSyncConflict"[^>]*>Reload now<\/button>/,
+    "the banner should offer a one-click reload, the actual recovery step"
+  );
+  assert.match(
+    source,
+    /<button data-action="dismissSyncConflictBanner"[^>]*title="Dismiss"[^>]*>✕<\/button>/,
+    "the banner should be dismissible, unlike the demo-preview banner it sits next to"
+  );
+  const fnMatch = source.match(/function showSyncConflictBanner\(\)\{[\s\S]{0,200}?\n\}/);
+  assert.ok(fnMatch, "showSyncConflictBanner() should be defined");
+  assert.match(fnMatch[0], /style\.display\s*=\s*'block'/, "should unhide the banner element");
+  const dismissMatch = source.match(/function dismissSyncConflictBanner\(\)\{[\s\S]{0,100}?\n\}/);
+  assert.ok(dismissMatch, "dismissSyncConflictBanner() should be defined");
+  assert.match(dismissMatch[0], /hideSyncConflictBanner\(\)/, "dismissing should delegate to the same hide helper used on recovery");
+  assert.doesNotMatch(
+    source,
+    /showToast\('⚠ Your synced data changed on another device/,
+    "the old auto-dismissing toast call should be fully replaced, not left alongside the banner"
+  );
+});
+
+test("the sync-conflict banner is hidden on every recovery path that also resets _syncConflictWarned (a fresh load, and sign-out)", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const resets = [...source.matchAll(/(?<!let )_syncConflictWarned = false;/g)];
+  assert.strictEqual(resets.length, 2, "expected exactly two _syncConflictWarned=false resets (fresh load, sign-out), excluding the initial `let` declaration");
+  for (const m of resets) {
+    const after = source.slice(m.index, m.index + 120);
+    assert.match(after, /hideSyncConflictBanner\(\);/, "every _syncConflictWarned reset should hide the banner too, or a stale conflict warning could survive the exact moment it's meant to be resolved");
+  }
 });
 
 // ── Two more #334155-as-text instances found sweeping for the same

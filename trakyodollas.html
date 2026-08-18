@@ -916,6 +916,14 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   👀 <strong style="color:var(--accent-blue-light)">Previewing demo data</strong> — your saved data is untouched.
   <a id="demo-preview-return" href="" style="color:var(--accent-blue-light);font-weight:700;text-decoration:underline">Return to your data</a>
 </div>
+<!-- Stays up until dismissed or reloaded, unlike a toast -- the underlying
+     "your edits aren't syncing" condition doesn't go away on its own after
+     a few seconds, so the warning shouldn't either. See showSyncConflictBanner(). -->
+<div id="sync-conflict-banner" role="alert" style="display:none;background:rgba(251,191,36,.1);border-bottom:1px solid rgba(251,191,36,.3);padding:8px 1rem;font-size:12px;color:var(--text-secondary);text-align:center;letter-spacing:.01em">
+  ⚠ <strong style="color:var(--amber-text-strong)">Your synced data changed on another device</strong> — your changes here are saved on this device but won't sync until you reload.
+  <button data-action="reloadForSyncConflict" style="background:var(--amber-text-strong);color:#000;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 3px" type="button">Reload now</button>
+  <button data-action="dismissSyncConflictBanner" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:4px 6px;font-family:inherit;vertical-align:middle" title="Dismiss" type="button">✕</button>
+</div>
 <nav class="nav" aria-label="Main navigation" style="position:sticky;top:0;z-index:25">
   <a href="/" class="nav-logo hide-mobile">trak-yo-dolla<span>$</span></a>
   <button class="nav-btn active" data-action="showPageSpending" type="button">Spending <span id="spending-start-here" style="display:none;font-size:9px;font-weight:800;color:var(--accent-green);background:#34D39922;border:1px solid #34D39944;border-radius:3px;padding:1px 5px;vertical-align:middle;letter-spacing:.03em">start here</span></button>
@@ -13782,6 +13790,24 @@ function openAuthModal(reason) {
 // it only clears on a fresh successful load (i.e., the user reloaded).
 let _cloudPrefsUpdatedAt = null;
 let _syncConflictWarned = false;
+// Persistent, dismissible banner for the conflict above -- a toast alone
+// auto-dismisses in a few seconds while the underlying "your edits aren't
+// syncing" condition doesn't, so it's easy to miss the one moment you're
+// warned and keep editing on a tab that's silently local-only from then on.
+function showSyncConflictBanner(){
+  const el = document.getElementById('sync-conflict-banner');
+  if (el) el.style.display = 'block';
+}
+function hideSyncConflictBanner(){
+  const el = document.getElementById('sync-conflict-banner');
+  if (el) el.style.display = 'none';
+}
+function dismissSyncConflictBanner(){
+  hideSyncConflictBanner();
+}
+function reloadForSyncConflict(){
+  location.reload();
+}
 
 // ── Sync passphrase — gates loadUserData() behind a secret Supabase never
 // sees (see the comment above _deriveKey). A cached passphrase (this
@@ -14085,10 +14111,11 @@ async function loadUserData(uid) {
     // null correctly means "nothing to conflict with" either way.
     // _syncConflictWarned resets here too: a fresh successful load is
     // exactly the recovery step the earlier conflict warning asked the
-    // user to take, so the next conflict (if any) deserves its own toast
+    // user to take, so the next conflict (if any) deserves its own banner
     // again rather than staying silently suppressed forever.
     _cloudPrefsUpdatedAt = _loadedUpdatedAt;
     _syncConflictWarned = false;
+    hideSyncConflictBanner();
     if (prefs) {
       // _arrOfObj(...) -- the 103rd pass's fix for a null customCategories
       // entry (crashing buildCatColorMap()'s c.name) landed in
@@ -14363,11 +14390,12 @@ async function syncToCloud() {
     // ran before this function was ever called. Warned once, not on every
     // subsequent debounced attempt while the conflict remains unresolved
     // (_syncConflictWarned only clears on the next successful load, i.e.
-    // once the user actually reloads).
+    // once the user actually reloads). A persistent banner, not a toast --
+    // see showSyncConflictBanner()'s own comment for why.
     if (!wrote) {
       if (!_syncConflictWarned) {
         _syncConflictWarned = true;
-        showToast('⚠ Your synced data changed on another device — reload to see the latest. Your changes here are saved on this device but won\'t sync until you do.', '#FCD34D', 5000);
+        showSyncConflictBanner();
       }
       return;
     }
@@ -16569,6 +16597,7 @@ _sb.auth.onAuthStateChange((event, session) => {
     // whoever was signed in before can't leak into the next session.
     _cloudPrefsUpdatedAt = null;
     _syncConflictWarned = false;
+    hideSyncConflictBanner();
     // !state.hasRealData -- without it, a user who picked a demo profile
     // then transitioned to real data (any of the covered first-real-save
     // actions correctly hide this nudge via hideDemoBadge()) and later
