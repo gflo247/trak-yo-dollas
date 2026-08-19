@@ -6795,6 +6795,34 @@ test("updateBannerOffset() only requires .nav to exist -- #demo-chip and the syn
   );
 });
 
+// ── privacy.html's sync-conflict disclosure described the OLD blind
+// last-write-wins model ("the app keeps whichever save happened last") --
+// found stale only because it was asked about directly, after the
+// optimistic-concurrency guard shipped without anyone circling back to the
+// one piece of user-facing copy describing the behavior it just changed.
+// The new copy needs to survive future edits without silently reverting
+// to a claim the code no longer makes. ──
+test("privacy.html accurately discloses the sync-conflict guard's detect-and-block behavior, not the old silent-overwrite claim", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "privacy.html"), "utf8");
+  assert.match(
+    source,
+    /whichever device saves to the cloud first wins/,
+    "should describe which device's write actually lands"
+  );
+  assert.match(
+    source,
+    /shows a warning that they haven't synced/,
+    "should disclose that the losing device is warned, not silently overwritten"
+  );
+  assert.doesNotMatch(
+    source,
+    /the app keeps whichever save happened last/,
+    "the old copy implied a blind, undisclosed last-write-wins with no warning -- should be fully gone, not left alongside the new copy"
+  );
+});
+
 // ── Two more #334155-as-text instances found sweeping for the same
 // contrast-failure shape #475569 turned out to have (both measured well
 // under WCAG AA's 4.5:1: 1.41:1/1.47:1 for the NW-goal milestone chip,
