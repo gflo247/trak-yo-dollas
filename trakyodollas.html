@@ -916,6 +916,15 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   👀 <strong style="color:var(--accent-blue-light)">Previewing demo data</strong> — your saved data is untouched.
   <a id="demo-preview-return" href="" style="color:var(--accent-blue-light);font-weight:700;text-decoration:underline">Return to your data</a>
 </div>
+<!-- Shown exactly once, ever, per browser -- see maybeShowLocalDataNotice().
+     Most users never read privacy.html, so this is the only place its
+     local-storage-durability disclosure actually reaches them. -->
+<div id="local-data-notice-banner" style="display:none;background:rgba(251,191,36,.1);border-bottom:1px solid rgba(251,191,36,.3);padding:8px 1rem;font-size:12px;color:var(--text-secondary);text-align:center;letter-spacing:.01em">
+  💾 <strong style="color:var(--amber-text-strong)">Your data lives only in this browser</strong> — clearing site data, switching browsers, or losing this device erases it for good.
+  <button data-action="openAuthModal|dismissLocalDataNotice" style="background:var(--amber-text-strong);color:#000;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 3px" type="button">Sign in to sync</button>
+  <button data-action="exportBackup|dismissLocalDataNotice" style="background:none;border:none;color:var(--amber-text-strong);font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Export a backup</button>
+  <button data-action="dismissLocalDataNotice" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:4px 6px;font-family:inherit;vertical-align:middle" title="Dismiss" type="button">✕</button>
+</div>
 <!-- Stays up until dismissed or reloaded, unlike a toast -- the underlying
      "your edits aren't syncing" condition doesn't go away on its own after
      a few seconds, so the warning shouldn't either. See showSyncConflictBanner().
@@ -3024,6 +3033,14 @@ function _clearVendorDayFiltersForDataReplace(){
 // 110th adversarial pass.
 function _replaceDemoDataWithReal(){
   if(state.hasRealData)return;
+  // This guard makes the function body below run exactly once per real
+  // user (returning users' state.hasRealData is already true, so they
+  // never reach this line again) -- the single choke point every one of
+  // the 7 "first real save" entry points shares, so this is also the
+  // exact moment the local-storage-durability tradeoff first applies.
+  // See maybeShowLocalDataNotice()'s own comment for why this needs an
+  // in-app notice at all, not just the privacy.html disclosure.
+  maybeShowLocalDataNotice();
   // saveToLocalStorage()'s transactions-key rewrite is gated specifically
   // on _txsDirty, not on "a save happened" -- confirmTxImport()/saveTx()
   // already set it via their own mutateTransactions() wrapper, but
@@ -10318,6 +10335,27 @@ function hideDemoBadge(){
   if(nudge)nudge.style.display='none';
   const startHere=document.getElementById('spending-start-here');
   if(startHere)startHere.style.display='none';
+}
+// privacy.html discloses that local-only data is unrecoverable if lost --
+// but almost nobody reads a privacy policy before using an app, so that
+// disclosure alone doesn't actually reach most people. This surfaces the
+// same fact in-app, once, at the exact moment it first becomes true: the
+// first real (non-demo) save while not signed in. Skipped entirely for a
+// signed-in user, since sync already covers them from the start. A raw
+// localStorage flag, not a state.* field -- this is per-browser UI chrome
+// about whether THIS browser has shown the notice, not financial data, so
+// it's deliberately excluded from the cloud sync payload (same convention
+// as trakyo_tab/trakyo_show_excl).
+function maybeShowLocalDataNotice(){
+  if(window._fbUser)return;
+  try{if(localStorage.getItem('trakyo_local_data_notice_shown')==='1')return;}catch(e){}
+  try{localStorage.setItem('trakyo_local_data_notice_shown','1');}catch(e){}
+  const el=document.getElementById('local-data-notice-banner');
+  if(el)el.style.display='block';
+}
+function dismissLocalDataNotice(){
+  const el=document.getElementById('local-data-notice-banner');
+  if(el)el.style.display='none';
 }
 function showDemoNudge(){
   if((window._isDemoPreview||window._viewingDemoOverReal)&&window._hadSavedData)return; // viewing demo while real data is saved untouched — skip the "import a CSV" prompt

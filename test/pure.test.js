@@ -2070,7 +2070,7 @@ test("importBackup, confirmTxImport, and loadDemoProfile all call the shared _re
   );
   assert.match(
     source,
-    /function _replaceDemoDataWithReal\(\)\{\s*if\(state\.hasRealData\)return;[\s\S]{0,1700}?_resetSessionFiltersForDataReplace\(\);/,
+    /function _replaceDemoDataWithReal\(\)\{\s*if\(state\.hasRealData\)return;[\s\S]{0,2200}?_resetSessionFiltersForDataReplace\(\);/,
     "_replaceDemoDataWithReal() (110th pass; confirmTxImport()'s first-real-import wipe is now one call to this shared helper instead of its own hand-rolled reset list) should call _resetSessionFiltersForDataReplace() as part of its reset"
   );
   assert.match(
@@ -3917,7 +3917,7 @@ test("_replaceDemoDataWithReal: resets every field loadDemoProfile() seeds to th
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function _replaceDemoDataWithReal\(\)\{[\s\S]{0,2300}?\n\}/);
+  const fnMatch = source.match(/function _replaceDemoDataWithReal\(\)\{[\s\S]{0,2800}?\n\}/);
   assert.ok(fnMatch, "_replaceDemoDataWithReal() should exist");
   assert.match(fnMatch[0], /if\(state\.hasRealData\)return;/, "should no-op once real data already exists, never wiping real data");
   for (const line of [
@@ -4124,7 +4124,7 @@ test("_replaceDemoDataWithReal: calls rebuildMonthly() and rebuildCatSelects(), 
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function _replaceDemoDataWithReal\(\)\{[\s\S]{0,2200}?\n\}/);
+  const fnMatch = source.match(/function _replaceDemoDataWithReal\(\)\{[\s\S]{0,2800}?\n\}/);
   assert.ok(fnMatch, "_replaceDemoDataWithReal() should exist");
   assert.match(fnMatch[0], /rebuildMonthly\(\);/, "should call rebuildMonthly()");
   assert.match(fnMatch[0], /rebuildCatSelects\(\);/, "should call rebuildCatSelects()");
@@ -6850,6 +6850,58 @@ test("privacy.html discloses that local-only data is unrecoverable if lost, not 
     /there's no way for me to recover it since I never had it in the first place/,
     "should make clear this isn't a support gap -- it follows directly from never holding the data at all"
   );
+});
+
+// ── privacy.html's local-durability disclosure only reaches someone who
+// goes looking for it -- almost nobody reads a privacy policy before
+// using an app. This surfaces the same fact in-app, once, at the exact
+// moment it first becomes true. ──
+test("the local-data notice banner exists, is signed-in-aware, and fires exactly once via a device-local (not synced) flag", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /<div id="local-data-notice-banner" style="display:none[^"]*">/,
+    "the banner should exist in the DOM, hidden by default"
+  );
+  assert.match(
+    source,
+    /Your data lives only in this browser/,
+    "should lead with the plain warning, not bury it"
+  );
+  assert.match(
+    source,
+    /<button data-action="openAuthModal\|dismissLocalDataNotice"[^>]*>Sign in to sync<\/button>/,
+    "should offer sign-in as a direct action, not just describe the risk"
+  );
+  assert.match(
+    source,
+    /<button data-action="exportBackup\|dismissLocalDataNotice"[^>]*>Export a backup<\/button>/,
+    "should also offer a one-click backup export as the no-sign-in alternative"
+  );
+  const fnMatch = source.match(/function maybeShowLocalDataNotice\(\)\{[\s\S]{0,500}?\n\}/);
+  assert.ok(fnMatch, "maybeShowLocalDataNotice() should be defined");
+  assert.match(fnMatch[0], /if\(window\._fbUser\)return;/, "should skip entirely for a signed-in user, since sync already covers them");
+  assert.match(
+    fnMatch[0],
+    /localStorage\.getItem\('trakyo_local_data_notice_shown'\)==='1'/,
+    "should gate on a raw localStorage flag, not a state.* field -- this is per-browser UI chrome, not financial data that belongs in the cloud sync payload"
+  );
+  assert.match(
+    fnMatch[0],
+    /localStorage\.setItem\('trakyo_local_data_notice_shown','1'\)/,
+    "should set the flag at show-time, not only on dismiss -- otherwise closing the tab without clicking anything would show it again next session"
+  );
+});
+
+test("_replaceDemoDataWithReal() calls maybeShowLocalDataNotice() right after its own once-only guard, so the notice fires at the same single choke point every 'first real save' entry point already shares", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function _replaceDemoDataWithReal\(\)\{[\s\S]{0,600}?maybeShowLocalDataNotice\(\);/);
+  assert.ok(fnMatch, "_replaceDemoDataWithReal() should call maybeShowLocalDataNotice() near its top");
+  assert.match(fnMatch[0], /if\(state\.hasRealData\)return;/, "the call should come after the existing once-only guard, not before it");
 });
 
 // ── Two more #334155-as-text instances found sweeping for the same
