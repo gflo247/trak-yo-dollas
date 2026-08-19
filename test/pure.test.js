@@ -6823,6 +6823,35 @@ test("privacy.html accurately discloses the sync-conflict guard's detect-and-blo
   );
 });
 
+// ── The local-storage paragraph described persistence ("across refreshes
+// and restarts") without the counterweight -- clearing browser data, a
+// browser switch, or losing the device without ever syncing or exporting
+// means that data is gone permanently, with no copy anywhere else to
+// recover from. Already disclosed this directly for the unrecoverable
+// sync passphrase; the local-only case deserved the same honesty, since
+// durability is a "what happens to your data" fact just as much as
+// confidentiality is. ──
+test("privacy.html discloses that local-only data is unrecoverable if lost, not just reassuringly durable", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "privacy.html"), "utf8");
+  assert.match(
+    source,
+    /it's also the only copy unless you sync or export it/,
+    "should state plainly that local storage is the sole copy absent a deliberate backup/sync action"
+  );
+  assert.match(
+    source,
+    /clearing your browser's site data, switching browsers, or losing the device erases it permanently/,
+    "should name the concrete ways local-only data actually gets lost"
+  );
+  assert.match(
+    source,
+    /there's no way for me to recover it since I never had it in the first place/,
+    "should make clear this isn't a support gap -- it follows directly from never holding the data at all"
+  );
+});
+
 // ── Two more #334155-as-text instances found sweeping for the same
 // contrast-failure shape #475569 turned out to have (both measured well
 // under WCAG AA's 4.5:1: 1.41:1/1.47:1 for the NW-goal milestone chip,
