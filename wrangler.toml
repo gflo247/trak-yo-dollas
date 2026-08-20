@@ -23,3 +23,29 @@ directory = "_cf_deploy"
 # restrictions. If sign-in or API calls misbehave specifically on
 # dev.trakyodollas.com but work fine on the workers.dev URL, check those
 # two dashboards first.
+#
+# --- trak-yo-dollas-dev gated by Cloudflare Access (added 2026-08-19) ---
+# dev.trakyodollas.com and the trak-yo-dollas-dev.workers.dev URL both
+# serve the same trakyodollas.html as prod, which hardcodes prod's own
+# Supabase project URL (search 'pjsvsdiplecoilzttyhd' in
+# trakyodollas.html) -- there's no separate dev database, so dev was a
+# second, fully public, unauthenticated entry point into the real
+# production Supabase project. Gated via the Cloudflare dashboard: Workers
+# & Pages -> trak-yo-dollas-dev -> Access tab -> "Protect this Worker
+# behind Access", scope "All traffic" (not "Previews only", which only
+# covers ephemeral preview-deployment URLs, not the actual live site),
+# policy "Cloudflare account members" (Allow). Worker-level Access covers
+# both hostnames above in one policy -- confirmed via curl that both now
+# redirect to a nicholas-m-garofalo.cloudflareaccess.com login wall, and
+# that prod is unaffected. Entirely dashboard-managed like the Custom
+# Domain note above -- nothing belongs in this file for it to work. If
+# you ever need to add a collaborator, they need to be added as a member
+# of this Cloudflare account (Access controls -> the "Cloudflare account
+# members" policy checks account membership, not an explicit email list).
+#
+# This closes the "who can reach dev" exposure but not the underlying
+# "dev and prod share one database" one -- a real fix for that (a
+# separate Supabase project for dev, with the app's Supabase client
+# picking a URL based on location.hostname) was deliberately deferred as
+# a lower-urgency "someday" item once this gate closed the actual acute
+# risk. See _notes.md's Decisions section for the full reasoning.
