@@ -6831,23 +6831,23 @@ test("privacy.html accurately discloses the sync-conflict guard's detect-and-blo
 // sync passphrase; the local-only case deserved the same honesty, since
 // durability is a "what happens to your data" fact just as much as
 // confidentiality is. ──
-test("privacy.html discloses that local-only data is unrecoverable if lost, not just reassuringly durable", () => {
+test("privacy.html discloses that local-only data is unrecoverable if lost, not just reassuringly durable, in plain (not jargon-y) language", () => {
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "privacy.html"), "utf8");
   assert.match(
     source,
-    /it's also the only copy unless you sync or export it/,
-    "should state plainly that local storage is the sole copy absent a deliberate backup/sync action"
+    /this is also the only copy of your data unless you back it up/,
+    "should state the warning as its own clear sentence, not buried mid-clause after a reassuring lead-in"
   );
   assert.match(
     source,
-    /clearing your browser's site data, switching browsers, or losing the device erases it permanently/,
-    "should name the concrete ways local-only data actually gets lost"
+    /get a new phone or computer, clear your browser's data, or switch browsers/,
+    "should lead with the most relatable real-world cause (a new device) before the more deliberate ones, and say 'browser's data' -- not the more jargon-y 'site data' -- matching the plain wording browsers themselves use (e.g. Chrome's 'Clear browsing data')"
   );
   assert.match(
     source,
-    /there's no way for me to recover it since I never had it in the first place/,
+    /there's no way for me to recover it, since I never had it in the first place/,
     "should make clear this isn't a support gap -- it follows directly from never holding the data at all"
   );
 });
