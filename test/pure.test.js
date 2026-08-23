@@ -2104,6 +2104,7 @@ test("deleteCustomCat: clears state.treemapDrillCat and the _treemapPrevActiveCa
       excludedCats: new Set(),
       activeCats: new Set(),
       treemapDrillCat: "Groceries",
+      simulator: { horizonMonths: 12, overrides: [] },
     },
     window: { _catColorMap: null },
     renderCatManagerList: () => {},
@@ -2131,6 +2132,7 @@ test("confirmRenameCat: updates state.treemapDrillCat and the _treemapPrevActive
       excludedCats: new Set(),
       activeCats: new Set(),
       treemapDrillCat: "Groceries",
+      simulator: { horizonMonths: 12, overrides: [] },
     },
     window: { _catColorMap: null },
     document: { getElementById: (id) => (id === "rename-cat-input" ? inputEl : null) },
@@ -2150,6 +2152,70 @@ test("confirmRenameCat: updates state.treemapDrillCat and the _treemapPrevActive
   assert.equal(ctx._treemapPrevActiveCats.has("Groceries"), false, "the old name should no longer be present in the stash after rename");
   assert.equal(ctx._treemapPrevActiveCats.has("Food"), true, "the stash should hold the new name after rename, matching the live activeCats treatment");
   assert.equal(ctx._treemapPrevActiveCats.has("Other"), true, "the stash's unrelated entries should survive untouched");
+});
+
+// ── Life Changes simulator's own overrides list is a category-name holder
+// of the exact same shape as budgets/catRules/excludedCats/activeCats
+// above -- deleteCustomCat()/confirmRenameCat() must cascade to it too, or
+// a Life Changes override on a renamed/deleted custom category becomes a
+// permanent orphaned entry: invisible in computeSimulatorProjection() (it
+// only iterates getAllCats()) and unreachable through the UI (no row
+// renders for it, so there's no way to remove it). ──
+test("deleteCustomCat: removes a Life Changes override on the deleted category, not just its budget/rule/filter entries", () => {
+  const ctx = {
+    state: {
+      customCategories: [{ name: "Rent", color: null }],
+      transactions: [{ id: 1, cat: "Rent" }],
+      budgets: {},
+      catRules: [],
+      excludedCats: new Set(),
+      activeCats: new Set(),
+      treemapDrillCat: null,
+      simulator: { horizonMonths: 12, overrides: [{ cat: "Rent", newMonthly: 2400 }, { cat: "Groceries", newMonthly: 400 }] },
+    },
+    window: { _catColorMap: null },
+    renderCatManagerList: () => {},
+    rebuildCatSelects: () => {},
+    rebuildMonthly: () => {},
+    renderAll: () => {},
+    scheduleSave: () => {},
+    _treemapPrevActiveCats: new Set(),
+  };
+  const { deleteCustomCat } = loadFunctions(["deleteCustomCat"], ctx);
+  deleteCustomCat("Rent");
+  assert.equal(ctx.state.simulator.overrides.some((o) => o.cat === "Rent"), false, "the deleted category's override should be removed, not orphaned forever");
+  assert.equal(ctx.state.simulator.overrides.some((o) => o.cat === "Groceries"), true, "an unrelated override should survive untouched");
+});
+test("confirmRenameCat: updates a Life Changes override to the new category name instead of orphaning it under the old one", () => {
+  const inputEl = { value: "Mortgage", style: {} };
+  const ctx = {
+    state: {
+      customCategories: [{ name: "Rent", color: null }],
+      transactions: [{ id: 1, cat: "Rent" }],
+      budgets: {},
+      catRules: [],
+      excludedCats: new Set(),
+      activeCats: new Set(),
+      treemapDrillCat: null,
+      simulator: { horizonMonths: 12, overrides: [{ cat: "Rent", newMonthly: 2400 }] },
+    },
+    window: { _catColorMap: null },
+    document: { getElementById: (id) => (id === "rename-cat-input" ? inputEl : null) },
+    isReservedCatName: () => false,
+    getAllCats: () => ["Rent", "Other"],
+    renderCatManagerList: () => {},
+    rebuildCatSelects: () => {},
+    rebuildMonthly: () => {},
+    renderAll: () => {},
+    scheduleSave: () => {},
+    _treemapPrevActiveCats: new Set(),
+  };
+  const { confirmRenameCat } = loadFunctions(["confirmRenameCat"], ctx);
+  confirmRenameCat("Rent");
+  const entry = ctx.state.simulator.overrides.find((o) => o.cat === "Mortgage");
+  assert.ok(entry, "the override should now be keyed under the new category name");
+  assert.equal(entry.newMonthly, 2400, "the override's amount should be preserved across the rename");
+  assert.equal(ctx.state.simulator.overrides.some((o) => o.cat === "Rent"), false, "the old name should no longer hold an override after rename");
 });
 
 // ── 96th adversarial pass: saveToLocalStorage() guards demo-preview sessions
@@ -8985,4 +9051,311 @@ test("Tips & shortcuts' Keyboard section is hidden on mobile -- '?' and Esc need
     /<div class="hide-mobile" style="margin-bottom:1\.25rem">\s*<div class="label-upper" style="margin-bottom:\.5rem">Keyboard<\/div>/,
     "the Keyboard section should use the app's existing .hide-mobile convention, matching every other mobile-irrelevant content elsewhere"
   );
+});
+
+// ── Life Changes simulator — non-destructive "what if this category cost
+// $X/mo instead" projection, added alongside a new tab. avgSpendOverMonths()
+// was extracted out of getBudgetRowMetrics()'s own inline avg12 one-liner so
+// both share the exact same averaging math; computeSimulatorProjection()
+// composes it with getAllCats() into a per-category override preview. ──
+function simulatorTxCtx(entriesByCatMonth) {
+  // entriesByCatMonth: { cat: { 'YYYY-MM': amount, ... }, ... }
+  const transactions = [];
+  let i = 0;
+  for (const [cat, byMonth] of Object.entries(entriesByCatMonth)) {
+    for (const [month, amount] of Object.entries(byMonth)) {
+      transactions.push({
+        id: `tx-${i++}`,
+        date: `${month}-15`,
+        amount,
+        card: "chase",
+        cat,
+        excluded: false,
+        isIncome: false,
+        biz: false,
+      });
+    }
+  }
+  return {
+    state: { transactions, activeSources: new Set(["chase"]) },
+    _bizFilter: "all",
+  };
+}
+
+test("avgSpendOverMonths: averages a category's spend over a given list of months, 0 for an empty list", () => {
+  const ctx = simulatorTxCtx({ Groceries: { "2026-06": 100, "2026-07": 300 } });
+  const { avgSpendOverMonths } = loadFunctions(["avgSpendOverMonths", "getCatMonthSpend", "getTxForMonth"], ctx);
+  assert.equal(avgSpendOverMonths("Groceries", ["2026-06", "2026-07"]), 200);
+  assert.equal(avgSpendOverMonths("Groceries", []), 0);
+  assert.equal(avgSpendOverMonths("Nonexistent", ["2026-06", "2026-07"]), 0);
+});
+
+test("getBudgetHistMonths: defaults to 12 trailing months (unchanged behavior for existing Budget-tab callers), honors a custom count", () => {
+  const months = [];
+  for (let y = 2024; y <= 2026; y++) for (let m = 1; m <= 12; m++) months.push(`${y}-${String(m).padStart(2, "0")}`);
+  const MONTHLY = Object.fromEntries(months.filter((m) => m < "2026-08").map((m) => [m, { chase: 100 }]));
+  const { getBudgetHistMonths } = loadFunctions(["getBudgetHistMonths"], { MONTHLY });
+  const default12 = getBudgetHistMonths("2026-08");
+  assert.equal(default12.length, 12, "should default to 12 months when count is omitted");
+  assert.equal(default12[0], "2025-08", "should be oldest-first");
+  assert.equal(default12[default12.length - 1], "2026-07", "should end strictly before ym");
+  const six = getBudgetHistMonths("2026-08", 6);
+  assert.equal(six.length, 6);
+  assert.equal(six[0], "2026-02");
+  const twentyFour = getBudgetHistMonths("2026-08", 24);
+  assert.equal(twentyFour.length, 24);
+});
+
+test("computeSimulatorProjection: no-override category keeps its real average; overridden category reports the hypothetical amount and correct delta", () => {
+  const ctx = simulatorTxCtx({
+    Groceries: { "2026-06": 100, "2026-07": 300 }, // avg 200
+    "Child Care": {}, // no history at all
+  });
+  ctx.getAllCats = () => ["Groceries", "Child Care"];
+  const { computeSimulatorProjection } = loadFunctions(
+    ["computeSimulatorProjection", "avgSpendOverMonths", "getCatMonthSpend", "getTxForMonth"],
+    ctx
+  );
+  const histMonths = ["2026-06", "2026-07"];
+  const proj = computeSimulatorProjection([{ cat: "Child Care", newMonthly: 1800 }], histMonths);
+  const groceries = proj.rows.find((r) => r.cat === "Groceries");
+  assert.equal(groceries.avg, 200);
+  assert.equal(groceries.hasOverride, false);
+  assert.equal(groceries.projected, 200, "no-override category's projected figure should equal its real average");
+  assert.equal(groceries.delta, 0);
+  const childcare = proj.rows.find((r) => r.cat === "Child Care");
+  assert.equal(childcare.avg, 0, "zero real history");
+  assert.equal(childcare.hasOverride, true);
+  assert.equal(childcare.projected, 1800, "overridden category's projected figure should equal the hypothetical amount, not its (zero) real average");
+  assert.equal(childcare.delta, 1800);
+  assert.equal(proj.baselineTotal, 200, "baseline total sums real averages only");
+  assert.equal(proj.projectedTotal, 200 + 1800, "projected total sums real averages plus overrides");
+  assert.equal(proj.delta, 1800);
+});
+
+test("computeSimulatorProjection: a category with zero real spend and no override is excluded from rows", () => {
+  const ctx = simulatorTxCtx({ Groceries: { "2026-06": 100 } });
+  ctx.getAllCats = () => ["Groceries", "Entertainment"];
+  const { computeSimulatorProjection } = loadFunctions(
+    ["computeSimulatorProjection", "avgSpendOverMonths", "getCatMonthSpend", "getTxForMonth"],
+    ctx
+  );
+  const proj = computeSimulatorProjection([], ["2026-06"]);
+  assert.ok(proj.rows.some((r) => r.cat === "Groceries"));
+  assert.ok(!proj.rows.some((r) => r.cat === "Entertainment"), "Entertainment has no spend and no override, should be dropped");
+});
+
+test("resolveRentMortgageCat: prefers a user's own 'Rent' custom category over the built-in 'Home' fallback", () => {
+  const { resolveRentMortgageCat: withRent } = loadFunctions(["resolveRentMortgageCat"], {
+    getAllCats: () => ["Groceries", "Home", "Rent"],
+  });
+  assert.equal(withRent(), "Rent");
+  const { resolveRentMortgageCat: withoutRent } = loadFunctions(["resolveRentMortgageCat"], {
+    getAllCats: () => ["Groceries", "Home"],
+  });
+  assert.equal(withoutRent(), "Home");
+});
+
+test("resolveCarCat: prefers a user's own 'Transportation' custom category over the built-in 'Automotive' fallback, and never falls back to 'Gas' (fuel-only, not a car-payment proxy)", () => {
+  const { resolveCarCat: withTransportation } = loadFunctions(["resolveCarCat"], {
+    getAllCats: () => ["Groceries", "Gas", "Automotive", "Transportation"],
+  });
+  assert.equal(withTransportation(), "Transportation");
+  const { resolveCarCat: withoutTransportation } = loadFunctions(["resolveCarCat"], {
+    getAllCats: () => ["Groceries", "Gas", "Automotive"],
+  });
+  assert.equal(withoutTransportation(), "Automotive", "should fall back to Automotive (dealer/CarMax/Carvana/auto-loan merchants), not Gas (fuel-only)");
+});
+
+function setSimulatorHorizonCtx() {
+  return {
+    state: { simulator: { horizonMonths: 12, overrides: [] } },
+    scheduleSave: () => {},
+    renderSimulatorTab: () => {},
+  };
+}
+test("setSimulatorHorizon: clamps a numeric value to 1-60, saves, and re-renders", () => {
+  const ctx = setSimulatorHorizonCtx();
+  let saved = false, renders = 0;
+  ctx.scheduleSave = () => { saved = true; };
+  ctx.renderSimulatorTab = () => { renders++; };
+  const { setSimulatorHorizon } = loadFunctions(["setSimulatorHorizon"], ctx);
+  setSimulatorHorizon("9");
+  assert.equal(ctx.state.simulator.horizonMonths, 9);
+  assert.equal(saved, true);
+  assert.equal(renders, 1);
+  setSimulatorHorizon("500");
+  assert.equal(ctx.state.simulator.horizonMonths, 60, "should clamp above the 60-month ceiling");
+  setSimulatorHorizon("0");
+  assert.equal(ctx.state.simulator.horizonMonths, 1, "should clamp below the 1-month floor");
+});
+test("setSimulatorHorizon: picking 'custom' from the dropdown re-renders without touching horizonMonths or saving", () => {
+  const ctx = setSimulatorHorizonCtx();
+  let saved = false, renders = 0;
+  ctx.scheduleSave = () => { saved = true; };
+  ctx.renderSimulatorTab = () => { renders++; };
+  const { setSimulatorHorizon } = loadFunctions(["setSimulatorHorizon"], ctx);
+  setSimulatorHorizon("custom");
+  assert.equal(ctx.state.simulator.horizonMonths, 12, "horizonMonths should be untouched while the custom input is just being revealed");
+  assert.equal(saved, false, "should not schedule a save just for revealing the custom input -- nothing has actually changed yet");
+  assert.equal(renders, 1, "should still re-render so the custom number input appears");
+});
+
+function saveSimulatorOverrideCtx(amountValue, overrides) {
+  const amountEl = { value: amountValue };
+  return {
+    window: { _simulatorCat: "Home" },
+    document: { getElementById: (id) => (id === "simulator-override-amount" ? amountEl : null) },
+    state: { simulator: { horizonMonths: 12, overrides } },
+    closeModals: () => {},
+    scheduleSave: () => {},
+    renderSimulatorTab: () => {},
+  };
+}
+test("saveSimulatorOverride: an explicitly entered 0 is saved as a real $0/mo override, not treated the same as a blank field", () => {
+  const ctx = saveSimulatorOverrideCtx("0", []);
+  const { saveSimulatorOverride } = loadFunctions(["saveSimulatorOverride"], ctx);
+  saveSimulatorOverride();
+  assert.deepEqual(ctx.state.simulator.overrides, [{ cat: "Home", newMonthly: 0 }], "typing 0 should set the override to $0/mo (e.g. modeling canceling something entirely), not delete it");
+});
+test("saveSimulatorOverride: a blank field removes an existing override instead of saving NaN", () => {
+  const ctx = saveSimulatorOverrideCtx("", [{ cat: "Home", newMonthly: 2400 }]);
+  const { saveSimulatorOverride } = loadFunctions(["saveSimulatorOverride"], ctx);
+  saveSimulatorOverride();
+  assert.deepEqual(ctx.state.simulator.overrides, [], "a blank amount should remove the override, matching openBudgetModal's own blank-clears convention");
+});
+test("saveSimulatorOverride: a positive amount still saves/updates normally", () => {
+  const ctx = saveSimulatorOverrideCtx("1800", []);
+  const { saveSimulatorOverride } = loadFunctions(["saveSimulatorOverride"], ctx);
+  saveSimulatorOverride();
+  assert.deepEqual(ctx.state.simulator.overrides, [{ cat: "Home", newMonthly: 1800 }]);
+});
+test("removeSimulatorOverride: removes the right entry even when the dispatcher has coerced a digit-string category name to a Number", () => {
+  const ctx = {
+    state: { simulator: { horizonMonths: 12, overrides: [{ cat: "2024", newMonthly: 500 }, { cat: "Groceries", newMonthly: 400 }] } },
+    scheduleSave: () => {},
+    renderSimulatorTab: () => {},
+  };
+  const { removeSimulatorOverride } = loadFunctions(["removeSimulatorOverride"], ctx);
+  removeSimulatorOverride(2024); // dispatcher would pass the Number 2024, not the string "2024"
+  assert.equal(ctx.state.simulator.overrides.some((o) => o.cat === "2024"), false, "should remove the digit-named category's override despite the Number/string mismatch");
+  assert.equal(ctx.state.simulator.overrides.some((o) => o.cat === "Groceries"), true, "an unrelated override should survive untouched");
+});
+
+test("renderSimulatorTab: sources its income figure from sumIncomeForMonths(histMonths), not computePeriodSpendVsIncome()'s own independently-filtered window", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,6500}?\n\}/);
+  assert.ok(fnMatch, "renderSimulatorTab() should exist");
+  assert.match(
+    fnMatch[0],
+    /const income=histMonths\.length\?sumIncomeForMonths\(histMonths\)/,
+    "income should be computed over this tab's own histMonths (its 'Look back' horizon) via sumIncomeForMonths(), not the Spending tab's separately-filtered date range -- otherwise the displayed income and projected-spend figures can silently come from two different time windows"
+  );
+  assert.doesNotMatch(
+    fnMatch[0],
+    /const\s*\{\s*income\s*\}\s*=\s*computePeriodSpendVsIncome\(\)/,
+    "should no longer derive income from computePeriodSpendVsIncome(), whose totalIncome is scoped to getFilteredMonths() (the Spending tab's own filter), not this tab's horizon -- a mere comment mentioning that function's name for context is fine, an actual call/destructure from it is not"
+  );
+  assert.match(
+    fnMatch[0],
+    /\(a\.avg-b\.avg\)\*sortMul/,
+    "the Amount sort should compare each row's real historical avg, not its (possibly overridden) projected figure -- otherwise adding an override would jump that row to a new position in the list instead of keeping row order stable while you add changes"
+  );
+  assert.match(
+    fnMatch[0],
+    /<option value="custom"\$\{showCustomHorizon\?' selected':''\}>Custom&hellip;<\/option>/,
+    "the horizon dropdown should offer a 'Custom...' option alongside the fixed presets"
+  );
+  assert.match(
+    fnMatch[0],
+    /id="simulator-horizon-custom"/,
+    "picking 'Custom...' should reveal a plain number input for a horizon that doesn't land on one of the fixed presets"
+  );
+  assert.match(
+    fnMatch[0],
+    /data-action="openSimulatorCarPreset"/,
+    "should offer a car-payment preset alongside Rent -> Mortgage and Add Childcare"
+  );
+  assert.match(
+    fnMatch[0],
+    /data-action="openIncomeModal"/,
+    "should link to the existing income modal inline next to the income summary line, not bury it elsewhere"
+  );
+});
+
+// Finding: Nicholas pointed out the "Look back" control and the preset
+// buttons sat in two separate rows despite the select only ever using
+// ~180px of a much wider row -- merged into one flex row (align-items:
+// flex-end so the label-less buttons/custom-input still line up with the
+// select's own bottom edge, flex-wrap so it degrades to multiple lines on
+// a narrow viewport) instead of wasting that vertical space on nothing.
+test("renderSimulatorTab: 'Look back' (select + custom input) and the preset/add buttons share one wrapping flex row instead of two stacked ones", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,6500}?\n\}/);
+  assert.ok(fnMatch, "renderSimulatorTab() should exist");
+  assert.match(
+    fnMatch[0],
+    /<div style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:1rem">\s*<div class="form-group" style="max-width:180px;margin-bottom:0">/,
+    "the horizon form-group and the preset buttons should open inside one shared flex row"
+  );
+  assert.match(
+    fnMatch[0],
+    /<\/select>\s*<\/div>\s*\$\{showCustomHorizon\?`<input type="number" id="simulator-horizon-custom"[^`]*style="width:90px"\/>`:''\}\s*<button class="btn" data-action="openSimulatorRentMortgagePreset"/,
+    "the custom-horizon input should sit inline in the same row as the preset buttons (fixed width, no label), not stacked under the select"
+  );
+});
+
+// Finding: Nicholas pointed out the override list here is the same dense
+// name/avg/button row shape .list-col already targets on Spending/Net
+// Worth/Accounts (see the .list-col CSS comment) -- wrapping it the same
+// way keeps Life Changes consistent with those tabs on a wide monitor
+// instead of stretching its rows full-bleed like Budget's card-based
+// layout (which deliberately stays outside .list-col; its progress-bar
+// cards use extra width well, unlike a plain row).
+test("renderSimulatorTab: wraps the sort controls, override list, and summary box in .list-col, matching Spending/Net Worth/Accounts", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,6500}?\n\}/);
+  assert.ok(fnMatch, "renderSimulatorTab() should exist");
+  assert.match(
+    fnMatch[0],
+    /<div class="list-col">\s*<div style="display:flex;justify-content:flex-end;margin-bottom:\.6rem">/,
+    "the sort-toggle row should be the first thing inside .list-col"
+  );
+  assert.match(
+    fnMatch[0],
+    /\$\{rowsHTML\|\|'<p[\s\S]{0,300}?<\/p>'\}\s*<div style="margin-top:1rem;padding:1rem;border-radius:10px;background:var\(--bg-card\)">/,
+    "the override rows and the summary box should share the same .list-col wrapper as the sort controls"
+  );
+});
+
+test("setSimulatorSort: defaults to Amount descending, and mirrors setBudgetSort()'s toggle-direction-on-repeat-click convention", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /let _simulatorSort='amount'; \/\/ 'amount' \| 'alpha'/,
+    "should default to Amount -- the biggest real categories first, matching the ask"
+  );
+  assert.match(
+    source,
+    /let _simulatorSortDir='desc';/,
+    "should default to descending"
+  );
+  const fnMatch = source.match(/function setSimulatorSort\(s\)\{[\s\S]{0,300}?\n\}/);
+  assert.ok(fnMatch, "setSimulatorSort() should exist");
+  // Same toggle-on-repeat-click / reset-on-new-key shape as setBudgetSort()
+  // (line ~9476): clicking the already-active sort flips its direction;
+  // clicking a different one switches to it and resets direction (alpha
+  // starts ascending, everything else starts descending).
+  assert.match(fnMatch[0], /if\(_simulatorSort===s\)\{/, "re-clicking the active sort should flip direction, not reset it");
+  assert.match(fnMatch[0], /_simulatorSortDir=_simulatorSortDir==='asc'\?'desc':'asc';/, "should flip 'asc'<->'desc' on repeat click");
+  assert.match(fnMatch[0], /_simulatorSort=s;/, "switching to a new sort key should update _simulatorSort");
+  assert.match(fnMatch[0], /_simulatorSortDir=s==='alpha'\?'asc':'desc';/, "switching to a new sort key should reset direction (alpha starts ascending, amount starts descending), not carry over the previous sort's direction");
 });

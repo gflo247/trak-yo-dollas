@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-mKmc+K3Ys11uTzaP+bENJh2WwxsL6bkP0+1imQ5ZvwY=' 'sha256-L33ScU3qvgw8Ts+Of24kyQ7QGzZSFByAqsWuP3TawfQ=' 'sha256-rKnLrcXUCONyzPVhcO+Whn4tO9yrlVmew91o5bsDEz8=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-e5gJjDaYe9mPEsfanlGFxrHipQyF+/VqG3uW8iVWr7U=' 'sha256-rKnLrcXUCONyzPVhcO+Whn4tO9yrlVmew91o5bsDEz8=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -259,7 +259,8 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .nw-section{display:flex;flex-direction:column;gap:6px}
 /* .list-col wraps a section's own header row together with its list
    (Spending's transaction list, Net Worth's breakdown/snapshots,
-   Accounts' Financial assets/Liabilities) -- not the whole page, since
+   Accounts' Financial assets/Liabilities, Life Changes' override list) --
+   not the whole page, since
    charts and the category-tile grid already scale into extra width fine
    and only these row-based areas leave a dead gap on a wide monitor.
    First attempt (capped just the list, left-aligned) just relocated that
@@ -940,6 +941,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <a href="/" class="nav-logo hide-mobile">trak-yo-dolla<span>$</span></a>
   <button class="nav-btn active" data-action="showPageSpending" type="button">Spending <span id="spending-start-here" style="display:none;font-size:9px;font-weight:800;color:var(--accent-green);background:#34D39922;border:1px solid #34D39944;border-radius:3px;padding:1px 5px;vertical-align:middle;letter-spacing:.03em">start here</span></button>
   <button class="nav-btn" data-action="showPageBudget" type="button">Budget</button>
+  <button class="nav-btn" data-action="showPageSimulator" type="button">Life Changes</button>
   <button class="nav-btn" data-action="showPageDashboard" type="button">Net Worth</button>
   <button class="nav-btn" data-action="showPageAccounts" type="button">Accounts</button>
 <div id="auth-bar" style="display:flex;align-items:center;gap:6px;padding:0 10px;margin-left:auto;flex-shrink:0">
@@ -1112,6 +1114,14 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
   <!-- Budget rows -->
   <div id="budget-rows" style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem"></div>
+</div>
+
+<div class="page" id="page-simulator">
+  <div class="flex-between" style="margin-bottom:1rem">
+    <span class="page-title">Life Changes</span>
+  </div>
+  <div style="font-size:12px;color:var(--text-muted);margin-bottom:1rem;line-height:1.5">See what a big change — a move, a new mortgage, a kid — would do to your real spending, based on your actual history, not a generic calculator.</div>
+  <div id="simulator-content"></div>
 </div>
 
 <div class="page active" id="page-spending">
@@ -1856,6 +1866,26 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   </div>
 </div>
 
+<!-- Life Changes simulator: add/edit a hypothetical category override -->
+<div class="modal-overlay hidden" id="simulator-override-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="simulator-override-modal-title" tabindex="-1" style="width:min(360px,95vw)">
+    <h3 id="simulator-override-modal-title">Add a hypothetical change</h3>
+    <div class="form-group">
+      <label class="form-label" for="simulator-override-cat-select">Category</label>
+      <select id="simulator-override-cat-select"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="simulator-override-amount">New monthly amount ($)</label>
+      <input type="number" id="simulator-override-amount" placeholder="e.g. 2400" min="0"/>
+    </div>
+    <div id="simulator-override-modal-context" style="font-size:11px;color:var(--text-muted);margin-bottom:.75rem;line-height:1.5"></div>
+    <div class="modal-footer">
+      <button class="btn" data-action="closeModals" type="button">Cancel</button>
+      <button class="btn btn-primary" data-action="saveSimulatorOverride" type="button">Save change</button>
+    </div>
+  </div>
+</div>
+
 <!-- Save rule prompt (appears after recategorizing) -->
 <div class="modal-overlay hidden" id="save-rule-modal">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="save-rule-modal-title" tabindex="-1" style="width:min(420px,95vw)">
@@ -2280,7 +2310,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   </div>
 </div>
 
-<script>(function(){try{var t=localStorage.getItem('trakyo_tab');if(t&&t!=='spending'&&document.getElementById('page-'+t)){var idx=['spending','budget','dashboard','accounts'].indexOf(t);document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});document.getElementById('page-'+t).classList.add('active');var btns=document.querySelectorAll('.nav-btn');if(btns[idx])btns[idx].classList.add('active');}}catch(e){}}());</script>
+<script>(function(){try{var t=localStorage.getItem('trakyo_tab');if(t&&t!=='spending'&&document.getElementById('page-'+t)){var idx=['spending','budget','simulator','dashboard','accounts'].indexOf(t);document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});document.getElementById('page-'+t).classList.add('active');var btns=document.querySelectorAll('.nav-btn');if(btns[idx])btns[idx].classList.add('active');}}catch(e){}}());</script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" integrity="sha384-dug+JxfBvklEQdJ4AYuBBAIScUz0bVN73xpy273gcAwHjb3qI0fXmuYNaNfdyYJG" crossorigin="anonymous"></script>
 <script>
@@ -2509,6 +2539,19 @@ function _isValidSnapshot(s){return !!(s&&typeof s==='object'&&typeof s.monthKey
 // rather than throwing, matching importBackup()'s existing arr() helper.
 // Found in the 104th adversarial pass.
 function _arrOfObj(v){return Array.isArray(v)?v.filter(x=>x&&typeof x==='object'):[];}
+// Shared shape guard for state.simulator, used by both the local-storage
+// load path and the cloud-sync pull path so a corrupted/legacy/missing
+// value can't crash either -- same defensive-typing convention as every
+// other field restored below.
+function _loadSimulatorState(so){
+  const h=parseInt(so?.horizonMonths,10);
+  return{
+    horizonMonths:Number.isFinite(h)?Math.max(1,Math.min(60,h)):12,
+    overrides:_arrOfObj(so?.overrides)
+      .filter(o=>typeof o.cat==='string'&&Number.isFinite(Number(o.newMonthly)))
+      .map(o=>({cat:o.cat,newMonthly:Number(o.newMonthly)})),
+  };
+}
 // Same reasoning, for an object whose every value must be a string --
 // state.vendorAliases is the one field of this shape. A non-string value
 // (a crafted backup, a corrupted local cache, or a corrupted cloud row)
@@ -2602,6 +2645,7 @@ let state={
   customCategories:[],
   budgets:{},
   budgetWarnPct:80,
+  simulator:{horizonMonths:12,overrides:[]}, // {cat,newMonthly}[] -- Life Changes tab
   includeIncome:false,
   catRules:[],
   income:{method:null,monthlyAmount:0},
@@ -2873,10 +2917,13 @@ function importSuccessAndReopen(){onImportSuccessClose();closeModals();window._p
 function importSuccessAndAlign(){onImportSuccessClose();closeModals();if(window._pendingAlignmentCheck){window._pendingAlignmentCheck=false;setTimeout(checkSourceAlignment,200);}}
 function showPageSpending(arg,el){showPage('spending',el);}
 function showPageBudget(arg,el){showPage('budget',el);}
+function showPageSimulator(arg,el){showPage('simulator',el);}
 function showPageDashboard(arg,el){showPage('dashboard',el);}
 function showPageAccounts(arg,el){showPage('accounts',el);}
 function navToSpending(){showPage('spending',document.querySelectorAll('.nav-btn')[0]);}
-function navToAccounts(){showPage('accounts',document.querySelectorAll('.nav-btn')[3]);}
+// Index 4, not 3 -- the "Life Changes" nav button was inserted between
+// Budget and Net Worth, shifting every nav-btn index after it by one.
+function navToAccounts(){showPage('accounts',document.querySelectorAll('.nav-btn')[4]);}
 function filterToCatAndScroll(cat){
   if(!cat)return;
   toggleCatFilter(cat);
@@ -3070,6 +3117,7 @@ function _replaceDemoDataWithReal(){
   state.excludedCats=new Set(TRANSFER_LIKE_CATS);
   state.catRules=[];
   state.customCategories=[];
+  state.simulator={horizonMonths:12,overrides:[]}; // orphaned demo-category guard, same as budgets{} above
   state.hiddenPills=new Set();
   state.vendorAliases={};
   _resetSessionFiltersForDataReplace();
@@ -3922,6 +3970,7 @@ function renderAll(){
   try{renderSourceChips();}catch(e){console.error('renderSourceChips failed:',e);}
   try{renderHistory();}catch(e){console.error('renderHistory failed:',e);}
   try{renderBudgetTab();}catch(e){console.error('renderBudgetTab failed:',e);}
+  try{renderSimulatorTab();}catch(e){console.error('renderSimulatorTab failed:',e);}
 }
 
 function renderMetrics(){
@@ -9465,14 +9514,23 @@ function getBudgetMonth(){
   return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
 }
 
-// Up to 12 months of MONTHLY data strictly before ym, oldest-first
-function getBudgetHistMonths(ym){
-  return Object.keys(MONTHLY).sort().filter(m=>m<ym).slice(-12);
+// Up to `count` months of MONTHLY data strictly before ym, oldest-first.
+// Defaults to 12 for existing Budget-tab callers; the Life Changes
+// simulator passes its own user-adjustable horizon.
+function getBudgetHistMonths(ym,count=12){
+  return Object.keys(MONTHLY).sort().filter(m=>m<ym).slice(-count);
+}
+
+// Average monthly spend for one category over a given list of months.
+// Extracted out of getBudgetRowMetrics() so the Life Changes simulator can
+// share the exact same averaging math instead of re-deriving it.
+function avgSpendOverMonths(cat,months){
+  return months.length?months.reduce((s,m)=>s+getCatMonthSpend(cat,m),0)/months.length:0;
 }
 
 // Derived "vs average" and "YTD pace" figures for one budgeted category
 function getBudgetRowMetrics(cat,budget,ym,spent,histMonths){
-  const avg12=histMonths.length?histMonths.reduce((s,m)=>s+getCatMonthSpend(cat,m),0)/histMonths.length:0;
+  const avg12=avgSpendOverMonths(cat,histMonths);
   const year=ym.slice(0,4);
   const calendarMonth=parseInt(ym.slice(5,7),10);
   // "YTD" starts from whichever is later: January, or the user's first
@@ -9509,6 +9567,228 @@ function getBudgetRowMetrics(cat,budget,ym,spent,histMonths){
     avgRatio:avg12>0?spent/avg12:null,
     paceRatio:annualTarget>0?projectedAnnual/annualTarget:null,
   };
+}
+
+// ── Life Changes simulator ──────────────────────────────────────────
+// Non-destructive "what if this category cost $X/mo instead" projection.
+// Reuses getBudgetHistMonths()/avgSpendOverMonths() for the real trailing
+// average and computePeriodSpendVsIncome() (read-only) for income context
+// -- no new averaging or income logic, just a new lens on both.
+
+// Prefers a user's own "Rent" custom category (if they've added one) over
+// the built-in "Home" category, which is where rent/mortgage keywords
+// auto-categorize by default when no custom "Rent" category exists.
+function resolveRentMortgageCat(){
+  return getAllCats().includes('Rent')?'Rent':'Home';
+}
+
+// Same "prefer the user's own category" pattern as resolveRentMortgageCat()
+// above -- a custom "Transportation" category is a much better fit for "new
+// car payment" than the built-in "Automotive" category (dealer/CarMax/
+// Carvana/auto-loan-adjacent merchants, per its own keyword list), but
+// Automotive is still the closest built-in proxy when no custom category
+// exists. Not "Gas" -- that only ever holds fuel purchases, so overriding
+// it for a car payment would silently clobber someone's fuel budget
+// instead. Found via a landing-page/roadmap pass, August 2026.
+function resolveCarCat(){
+  return getAllCats().includes('Transportation')?'Transportation':'Automotive';
+}
+
+// overrides: [{cat,newMonthly}], histMonths: trailing months to average
+// over (from getBudgetHistMonths(ym,state.simulator.horizonMonths)).
+// Returns per-category rows plus baseline/projected totals. Drops a
+// category with no real spend and no override from `rows` so the list
+// shows only categories actually in play, not every possible one.
+function computeSimulatorProjection(overrides,histMonths){
+  const overrideMap=new Map(overrides.map(o=>[o.cat,o.newMonthly]));
+  const rows=getAllCats().map(cat=>{
+    const avg=avgSpendOverMonths(cat,histMonths);
+    const hasOverride=overrideMap.has(cat);
+    const projected=hasOverride?overrideMap.get(cat):avg;
+    return{cat,avg,hasOverride,projected,delta:projected-avg};
+  }).filter(r=>r.avg>0||r.hasOverride);
+  const baselineTotal=rows.reduce((s,r)=>s+r.avg,0);
+  const projectedTotal=rows.reduce((s,r)=>s+r.projected,0);
+  return{rows,baselineTotal,projectedTotal,delta:projectedTotal-baselineTotal};
+}
+
+// Session-only, not persisted (matches _budgetSort/_simulatorSort's own
+// precedent) -- true once the user picks "Custom..." from the preset
+// dropdown, so the number input stays visible across re-renders until a
+// real horizon value comes in (which also closes it back down if that
+// value happens to match one of the fixed presets).
+let _simulatorHorizonCustomOpen=false;
+function setSimulatorHorizon(n,el){
+  if(n==='custom'){
+    _simulatorHorizonCustomOpen=true;
+    renderSimulatorTab();
+    return;
+  }
+  const val=parseInt(n,10);
+  if(!Number.isFinite(val))return;
+  state.simulator.horizonMonths=Math.max(1,Math.min(60,val));
+  _simulatorHorizonCustomOpen=false;
+  scheduleSave();
+  renderSimulatorTab();
+}
+
+// Mirrors setBudgetSort()'s toggle-direction-on-repeat-click convention,
+// but only carrying over the two Budget-tab sorts that have a real
+// equivalent here: Amount (this tab's own real per-category average) and
+// A-Z. '% Used' and 'Unusual' are both budget-target/anomaly-vs-history
+// concepts specific to the Budget tab -- most categories here have no
+// budget at all, and this tab isn't about spotting an unusual month, so
+// neither carries over with any real meaning. Not persisted, matching
+// _budgetSort/_budgetSortDir's own session-only precedent.
+let _simulatorSort='amount'; // 'amount' | 'alpha'
+let _simulatorSortDir='desc'; // 'asc' | 'desc' -- meaning depends on _simulatorSort
+function setSimulatorSort(s){
+  if(_simulatorSort===s){
+    _simulatorSortDir=_simulatorSortDir==='asc'?'desc':'asc';
+  }else{
+    _simulatorSort=s;
+    _simulatorSortDir=s==='alpha'?'asc':'desc';
+  }
+  renderSimulatorTab();
+}
+
+// cat undefined -> generic "+ Add another change" flow: defaults to the
+// first category with no override yet, same fallback shape as
+// openBudgetModal()'s "first unbudgeted category with spend" default.
+function openSimulatorOverrideModal(cat){
+  if(cat!==undefined)cat=String(cat);
+  const latest=getLatestDataMonth();
+  const histMonths=latest?getBudgetHistMonths(latest,state.simulator.horizonMonths):[];
+  const existing=new Map(state.simulator.overrides.map(o=>[o.cat,o.newMonthly]));
+  const allCats=getAllCats();
+  if(!cat)cat=allCats.find(c=>!existing.has(c))||allCats[0]||'Other';
+  const sel=document.getElementById('simulator-override-cat-select');
+  sel.innerHTML=allCats.map(c=>`<option value="${esc(c)}"${c===cat?' selected':''}>${esc(c)}</option>`).join('');
+  sel.onchange=()=>_refreshSimulatorModalContext(sel.value,histMonths,existing);
+  _refreshSimulatorModalContext(cat,histMonths,existing);
+  document.getElementById('simulator-override-modal').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('simulator-override-amount').focus(),80);
+}
+function _refreshSimulatorModalContext(cat,histMonths,existing){
+  window._simulatorCat=cat;
+  const avg=avgSpendOverMonths(cat,histMonths);
+  document.getElementById('simulator-override-amount').value=existing.get(cat)??(avg>0?Math.round(avg):'');
+  document.getElementById('simulator-override-modal-context').innerHTML=
+    `Current avg: <strong style="color:var(--text-primary)">${fmt(avg)}/mo</strong> over the last ${histMonths.length} month${histMonths.length===1?'':'s'}`;
+}
+function openSimulatorRentMortgagePreset(){openSimulatorOverrideModal(resolveRentMortgageCat());}
+function openSimulatorChildcarePreset(){openSimulatorOverrideModal('Child Care');}
+function openSimulatorCarPreset(){openSimulatorOverrideModal(resolveCarCat());}
+function saveSimulatorOverride(){
+  const cat=window._simulatorCat;if(!cat)return;
+  const raw=document.getElementById('simulator-override-amount').value;
+  const val=parseFloat(raw);
+  const overrides=state.simulator.overrides;
+  const idx=overrides.findIndex(o=>o.cat===cat);
+  // val>=0, not val>0 -- an explicitly entered 0 is a real hypothetical
+  // (e.g. "what if I cancel this entirely"), not the same as leaving the
+  // field blank. raw.trim()!=='' distinguishes a genuine "0" from
+  // parseFloat('')'s own NaN, both of which would otherwise read as
+  // "not >=0" the same way.
+  if(raw.trim()!==''&&val>=0&&Number.isFinite(val)){
+    const entry={cat,newMonthly:Math.round(val)};
+    if(idx>=0)overrides[idx]=entry;else overrides.push(entry);
+  } else if(idx>=0){
+    overrides.splice(idx,1);
+  }
+  closeModals();
+  scheduleSave();
+  renderSimulatorTab();
+}
+function removeSimulatorOverride(cat){
+  // String(), matching openSimulatorOverrideModal()'s own guard -- a
+  // digit-string category name (e.g. "2024") arrives here pre-coerced to
+  // a Number by dispatch(), which would never match the stored string.
+  cat=String(cat);
+  const overrides=state.simulator.overrides;
+  const idx=overrides.findIndex(o=>o.cat===cat);
+  if(idx>=0)overrides.splice(idx,1);
+  scheduleSave();
+  renderSimulatorTab();
+}
+function renderSimulatorTab(){
+  const el=document.getElementById('simulator-content');
+  if(!el)return;
+  const latest=getLatestDataMonth();
+  if(!latest){
+    el.innerHTML='<p style="font-size:12px;color:var(--text-muted);padding:.4rem 0">Import some transactions first to simulate a life change.</p>';
+    return;
+  }
+  const horizon=state.simulator.horizonMonths;
+  const histMonths=getBudgetHistMonths(latest,horizon);
+  const proj=computeSimulatorProjection(state.simulator.overrides,histMonths);
+  // sumIncomeForMonths(histMonths), not computePeriodSpendVsIncome() --
+  // that reads getFilteredMonths() (the Spending tab's own, independent
+  // date-range filter), which can silently diverge from this tab's own
+  // "Look back" horizon and compare two different time windows against
+  // each other. sumIncomeForMonths() is the same reusable building block
+  // Year in Review already uses for its own independent window.
+  const income=histMonths.length?sumIncomeForMonths(histMonths)/histMonths.length:0;
+  const projectedSurplus=income-proj.projectedTotal;
+  // Sort by each row's real historical average, not its (possibly
+  // overridden) projected figure -- keeps row order stable while adding
+  // overrides instead of having a row jump around the list the moment you
+  // change its hypothetical amount.
+  const sortMul=_simulatorSortDir==='asc'?1:-1;
+  const sortedRows=[...proj.rows].sort((a,b)=>
+    _simulatorSort==='alpha'?a.cat.localeCompare(b.cat)*sortMul:(a.avg-b.avg)*sortMul
+  );
+  const sortLabels={amount:'Amount',alpha:'A–Z'};
+  const sortBtnsHTML=['amount','alpha'].map(k=>{
+    const active=k===_simulatorSort;
+    const arrow=active?(_simulatorSortDir==='asc'?' ↑':' ↓'):'';
+    return`<button data-action="setSimulatorSort" data-arg="${k}" style="padding:3px 10px;border:none;cursor:pointer;font-family:inherit;font-size:10px;font-weight:700;background:${active?'#2563EB':'var(--bg-card)'};color:${active?'#fff':'var(--text-muted)'}" type="button">${sortLabels[k]}${arrow}</button>`;
+  }).join('');
+  // Fixed presets cover the common horizons; "Custom..." reveals a plain
+  // number input (same 1-60 clamp as setSimulatorHorizon's own bound) for
+  // anyone whose real horizon doesn't land on one of them -- e.g. "I moved
+  // 9 months ago," not 6 or 12.
+  const horizonPresets=[3,6,12,24,36];
+  const showCustomHorizon=_simulatorHorizonCustomOpen||!horizonPresets.includes(horizon);
+  const rowsHTML=sortedRows.map(r=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;border-radius:8px;background:var(--bg-card);margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:${getCatColor(r.cat)}"></span>
+        <span>${esc(r.cat)}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="color:var(--text-muted);font-size:12px">${fmt(r.avg)}/mo avg</span>
+        ${r.hasOverride
+          ?`<span style="font-weight:600">&rarr; ${fmt(r.projected)}/mo</span><button data-action="removeSimulatorOverride" data-arg="${esc(r.cat)}" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 4px" title="Remove change" type="button">&times;</button>`
+          :`<button class="btn btn-sm" data-action="openSimulatorOverrideModal" data-arg="${esc(r.cat)}" type="button">+ Change</button>`}
+      </div>
+    </div>`).join('');
+  el.innerHTML=`
+    <div style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:1rem">
+      <div class="form-group" style="max-width:180px;margin-bottom:0">
+        <label class="form-label" for="simulator-horizon-select">Look back</label>
+        <select id="simulator-horizon-select" data-change="setSimulatorHorizon">
+          ${horizonPresets.map(n=>`<option value="${n}"${!showCustomHorizon&&n===horizon?' selected':''}>${n} months</option>`).join('')}
+          <option value="custom"${showCustomHorizon?' selected':''}>Custom&hellip;</option>
+        </select>
+      </div>
+      ${showCustomHorizon?`<input type="number" id="simulator-horizon-custom" min="1" max="60" placeholder="months" value="${horizon}" data-change="setSimulatorHorizon" style="width:90px"/>`:''}
+      <button class="btn" data-action="openSimulatorRentMortgagePreset" type="button">🏠 Rent &rarr; Mortgage</button>
+      <button class="btn" data-action="openSimulatorChildcarePreset" type="button">👶 Add Childcare</button>
+      <button class="btn" data-action="openSimulatorCarPreset" type="button">🚗 New Car Payment</button>
+      <button class="btn" data-action="openSimulatorOverrideModal" type="button">+ Add another change</button>
+    </div>
+    <div class="list-col">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:.6rem">
+        <div style="display:flex;border:1px solid var(--border-mid);border-radius:6px;overflow:hidden">${sortBtnsHTML}</div>
+      </div>
+      ${rowsHTML||'<p style="font-size:12px;color:var(--text-muted);padding:.4rem 0">No spending history yet over this horizon &mdash; add a change to get started.</p>'}
+      <div style="margin-top:1rem;padding:1rem;border-radius:10px;background:var(--bg-card)">
+        <div>Current avg monthly spend: <strong>${fmt(proj.baselineTotal)}</strong></div>
+        <div>Projected monthly spend: <strong>${fmt(proj.projectedTotal)}</strong> (${proj.delta>=0?'+':'&minus;'}${fmt(Math.abs(proj.delta))})</div>
+        ${income>0?`<div>Monthly income: ${fmt(income)} &mdash; projected ${projectedSurplus>=0?'surplus':'deficit'}: <strong style="color:${projectedSurplus>=0?'var(--accent-green)':'var(--accent-red)'}">${fmt(Math.abs(projectedSurplus))}</strong> &nbsp;<button data-action="openIncomeModal" style="background:none;border:none;color:var(--accent-blue-light);cursor:pointer;padding:0;font-size:11px;text-decoration:underline;font-family:inherit" type="button">Edit income</button></div>`:''}
+      </div>
+    </div>`;
 }
 
 // YTD budget ring: single ratio = YTD spend / YTD budget (monthly budget x months elapsed)
@@ -11733,6 +12013,9 @@ function deleteCustomCat(name){
   if(state.budgets[name]!==undefined)delete state.budgets[name];
   state.catRules=state.catRules.filter(r=>r.cat!==name);
   state.excludedCats.delete(name);
+  // Same stale-reference shape as budgets/catRules above, for the Life
+  // Changes simulator's own category-keyed overrides list.
+  state.simulator.overrides=state.simulator.overrides.filter(o=>o.cat!==name);
   // Found in the 26th adversarial pass: without this, filtering by a
   // category then deleting that same category left state.activeCats
   // holding a name nothing matches anymore (every transaction was just
@@ -11791,6 +12074,9 @@ function confirmRenameCat(oldName){
   if(state.budgets[oldName]!==undefined){state.budgets[newName]=state.budgets[oldName];delete state.budgets[oldName];}
   state.catRules.forEach(r=>{if(r.cat===oldName)r.cat=newName;});
   if(state.excludedCats.has(oldName)){state.excludedCats.delete(oldName);state.excludedCats.add(newName);}
+  // Same "update not clear" shape as budgets/catRules above, for the Life
+  // Changes simulator's own category-keyed overrides list.
+  state.simulator.overrides.forEach(o=>{if(o.cat===oldName)o.cat=newName;});
   // Same activeCats-goes-stale shape deleteCustomCat() was fixed for in the
   // 26th pass, just for rename instead of delete. Found in the 27th pass.
   if(state.activeCats.has(oldName)){state.activeCats.delete(oldName);state.activeCats.add(newName);}
@@ -14210,6 +14496,7 @@ async function loadUserData(uid) {
       if (prefs.declaredIncome !== undefined) state.declaredIncome = Number(prefs.declaredIncome)||0;
       if (Array.isArray(prefs.excludedCats)) state.excludedCats = new Set(prefs.excludedCats);
       if (prefs.includeIncome !== undefined) { state.includeIncome = prefs.includeIncome; _bizFilter='all'; }
+      if (prefs.simulator !== undefined) state.simulator = _loadSimulatorState(prefs.simulator);
       if (prefs.nwGoal !== undefined) state.nwGoal = prefs.nwGoal;
       if (prefs.hideNwGoal !== undefined) state.hideNwGoal = prefs.hideNwGoal;
       // budgetWarnPct/currency, found in the 38th adversarial pass -- same
@@ -14435,6 +14722,7 @@ async function syncToCloud() {
       rangeTo: state.rangeTo,
       sourceAlignSkipped: state.sourceAlignSkipped,
       sourceAlignDate: state.sourceAlignDate,
+      simulator: state.simulator,
       txEdits
     }, _cloudPrefsUpdatedAt, newUpdatedAt);
     // wrote===false means the row's updated_at had already moved past
@@ -15443,6 +15731,7 @@ function serializeState(){
       currency: state.currency??'$',
       budgetWarnPct: state.budgetWarnPct??80,
       includeIncome: state.includeIncome??false,
+      simulator: state.simulator,
     });
   }catch(e){console.error('serializeState error:',e);return null;}
 }
@@ -15585,6 +15874,7 @@ function loadFromLocalStorage(){
     state.currency=saved.currency??'$';
     {const n=parseInt(saved.budgetWarnPct,10);state.budgetWarnPct=isNaN(n)?80:Math.min(99,Math.max(50,n));}
     state.includeIncome=saved.includeIncome??false;
+    state.simulator=_loadSimulatorState(saved.simulator);
     state.hiddenPills.delete('spending');
     state.hiddenPills.delete('spending-pill');
     state.nwGoal=saved.nwGoal??null;
@@ -15794,6 +16084,7 @@ function importBackup(file){
       state.currency=saved.currency??'$';
       {const n=parseInt(saved.budgetWarnPct,10);state.budgetWarnPct=isNaN(n)?80:Math.min(99,Math.max(50,n));}
       state.includeIncome=!!saved.includeIncome;
+      state.simulator=_loadSimulatorState(saved.simulator);
       state.nwGoal=saved.nwGoal??null;
       state.hideNwGoal=!!saved.hideNwGoal;
       state.nextId=Number(saved.nextId)||1;
@@ -16061,7 +16352,7 @@ document.addEventListener('DOMContentLoaded',function(){
   try{
     const savedTab=localStorage.getItem('trakyo_tab');
     if(savedTab&&savedTab!=='spending'&&document.getElementById('page-'+savedTab)){
-      const tabBtn=document.querySelectorAll('.nav-btn')[['spending','budget','dashboard','accounts'].indexOf(savedTab)];
+      const tabBtn=document.querySelectorAll('.nav-btn')[['spending','budget','simulator','dashboard','accounts'].indexOf(savedTab)];
       showPage(savedTab,tabBtn);
     }
   }catch(e){}
@@ -16289,6 +16580,7 @@ function showPage(id,eventOrBtn){
 
   if(id==='dashboard')requestAnimationFrame(()=>requestAnimationFrame(()=>renderNwChart()));
   if(id==='budget'){_budgetNavOffset=0;requestAnimationFrame(()=>requestAnimationFrame(()=>renderBudgetTab()));}
+  if(id==='simulator')requestAnimationFrame(()=>requestAnimationFrame(()=>renderSimulatorTab()));
   if(id==='spending')requestAnimationFrame(()=>requestAnimationFrame(()=>{
     renderSpendChart();
     renderBucketGrid();
@@ -16523,6 +16815,10 @@ function loadDemoProfile(n, silent=false, skipRender=false){
   state.hasRealAccounts=false;
   state.hasRealSnapshot=false;
   state.includeIncome=p.includeIncome||false;
+  // No demo profile scripts its own simulator scenario -- always resets to
+  // default so a scenario from a previous demo profile/real session never
+  // leaks in (same reasoning as declaredIncome's reset above).
+  state.simulator={horizonMonths:12,overrides:[]};
   // toggleIncludeIncome() is the only other place _bizFilter resets to
   // 'all' when income tracking turns off -- this assigns state.includeIncome
   // directly, bypassing that, so a Business/Personal filter left active on
