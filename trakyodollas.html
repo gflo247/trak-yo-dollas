@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-WSiePCJYYqhQSFoWYmdHJXFqWfxXszYNl47wR1SneLE=' 'sha256-rKnLrcXUCONyzPVhcO+Whn4tO9yrlVmew91o5bsDEz8=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-u0YDVjWQ+kOk+++6rEDc96LBAm0xvt4tjhJAVidyWYU=' 'sha256-rKnLrcXUCONyzPVhcO+Whn4tO9yrlVmew91o5bsDEz8=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1111,6 +1111,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
   <!-- Unbudgeted categories — shown before rows so it's seen early -->
   <div id="budget-unbudgeted" style="margin-bottom:.6rem"></div>
+
+  <!-- Budgets that no longer match 3 straight months of real spending -->
+  <div id="budget-stale" style="margin-bottom:.6rem"></div>
 
   <!-- Budget rows -->
   <div id="budget-rows" style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem"></div>
@@ -2957,6 +2960,13 @@ function toggleVendorFilterByIdx(idx){const v=window._vendorTiles[Number(idx)];i
 // to a string at each affected call site is the narrow, safe fix.
 function closeModalsSetVendorSearch(v){closeModals();setVendorSearch(String(v));}
 function undoBudgetCat(cat,prev){state.budgets[String(cat)]=Number(prev)||0;scheduleSave();renderBucketGrid();renderBudgetTab();}
+// Shared by every toast that offers to undo a budget change back to a
+// specific prior value (removing one from a category tile, committing a
+// Life Changes override) -- factored out so the two call sites can't drift
+// out of sync with each other the way two copy-pasted inline strings would.
+function undoBudgetButtonHTML(cat,prev){
+  return`<button data-action="undoBudgetCat" data-arg="${esc(cat)}" data-arg2="${prev}" style="background:none;border:none;color:var(--accent-blue-light);font-size:12px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit;pointer-events:all" type="button">Undo</button>`;
+}
 function filterToDateDynamic(date){if(date)filterToDate(date);}
 function toggleDashFilterDynamic(key){if(key)toggleDashFilter(key);}
 function dragOverHighlight(e,el){e.preventDefault();el.style.borderColor='#2563EB';}
@@ -8672,7 +8682,16 @@ function openBudgetModal(cat){
 function _refreshBudgetModalContext(cat){
   window._budgetCat=cat;
   document.getElementById('budget-modal').style.setProperty('--budget-color',getCatColor(cat));
-  const avg=getCatStats()[cat]?.avg||0;
+  // avgSpendOverMonths(cat,getBudgetHistMonths(ym)), not getCatStats()[cat]
+  // -- getCatStats() reads getFilteredMonths() (the Spending tab's own
+  // independently-filtered date range), which can silently disagree with
+  // this exact category's own rowMetrics[cat].avg12 already shown on its
+  // Budget-tab row and in the stale-budget nudge above it. Same class of
+  // bug renderSimulatorTab()'s own income-figure fix closed. Found while
+  // testing the stale-budget nudge: the row read $705/mo, this line read
+  // $624/mo, for the same category, same month.
+  const ym=getBudgetMonth();
+  const avg=ym?avgSpendOverMonths(cat,getBudgetHistMonths(ym)):0;
   // Prefill from the category's own real average when no budget is set yet,
   // instead of leaving the field blank next to the "Avg spend: $X/mo" line
   // right below it -- matches openSimulatorOverrideModal()'s identical
@@ -8712,6 +8731,20 @@ function saveBudget(){
   if(document.getElementById('page-budget').classList.contains('active'))renderBudgetTab();
   scheduleSave();
   if(val>0&&Number.isFinite(val)&&_isLiveDemoSession())showToast('Budget saved (resets once you add real data)','#34D399');
+}
+// Opens the ordinary budget modal (so Cancel/edit-further still works
+// normally), then overrides its just-set prefill -- the existing, already-
+// stale budget -- with this tab's own trailing average (the row's own
+// rowMetrics[cat].avg12, passed in directly), not a fresh getCatStats()
+// lookup. getCatStats() reads getFilteredMonths() (the Spending tab's own
+// independently-filtered window) and can silently disagree with the exact
+// figure the user just saw on the row prompting this click -- same class of
+// bug renderSimulatorTab()'s own income-figure fix closed.
+function openStaleBudgetModal(cat,suggestedAmount){
+  cat=String(cat);
+  openBudgetModal(cat);
+  const amt=parseFloat(suggestedAmount);
+  if(Number.isFinite(amt)&&amt>0)document.getElementById('budget-amount').value=Math.round(amt);
 }
 /* ── Mobile tooltip system ── */
 (function(){
@@ -9402,7 +9435,7 @@ function removeBudget(cat){
   // while modeling a new Undo-in-toast button on this exact call site.
   // tc('#94A3B8','#4B5563') -- see the identical note on confirmCatExclusion()'s
   // toast, ~line 6401. Found in the 75th adversarial pass.
-  showToast(`Budget removed for ${esc(cat)} · <button data-action="undoBudgetCat" data-arg="${esc(cat)}" data-arg2="${prev}" style="background:none;border:none;color:var(--accent-blue-light);font-size:12px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit;pointer-events:all" type="button">Undo</button>`,tc('#94A3B8','#4B5563'),4000);
+  showToast(`Budget removed for ${esc(cat)} · ${undoBudgetButtonHTML(cat,prev)}`,tc('#94A3B8','#4B5563'),4000);
 }
 function buildCondensedDots(months,budgeted,totalBudget,mode,cat,budget){
   const warnPct=state.budgetWarnPct??80;
@@ -9573,6 +9606,20 @@ function getBudgetRowMetrics(cat,budget,ym,spent,histMonths){
   };
 }
 
+// Chronically over for the last 3 straight months, not a one-off or a
+// deliberate stretch goal -- only ever fires on "over," never "under": a
+// budget sitting comfortably below your average might be an intentional
+// target you're trying to hit, not a mistake to correct. Consistently
+// blowing past the number for months running is the one case that's
+// unambiguously just a stale figure, not a choice. *1.05 (not the exact
+// budget) so a trivial few-dollar overage doesn't flag a budget that's
+// still basically on target. last3Months.length===3 (not just non-empty)
+// so a user with less than 3 full tracked months never gets flagged off
+// a partial pattern.
+function isBudgetStale(cat,budget,last3Months){
+  return last3Months.length===3&&last3Months.every(m=>getCatMonthSpend(cat,m)>budget*1.05);
+}
+
 // ── Life Changes simulator ──────────────────────────────────────────
 // Non-destructive "what if this category cost $X/mo instead" projection.
 // Reuses getBudgetHistMonths()/avgSpendOverMonths() for the real trailing
@@ -9715,6 +9762,37 @@ function removeSimulatorOverride(cat){
   scheduleSave();
   renderSimulatorTab();
 }
+// Bridges a hypothetical override into a real budget once someone's
+// decided to actually commit to it -- reuses saveBudget() wholesale
+// (via the same window._budgetCat + #budget-amount contract it already
+// reads) rather than re-deriving its rounding/save/re-render side effects
+// a second time, so any future fix to saveBudget() automatically covers
+// this path too. Offers the same Undo-toast pattern as removing a budget
+// from a category tile (undoBudgetCat()), so committing isn't one-way.
+// entry.newMonthly<=0 is a no-op, not a $0 budget -- saveBudget()'s own
+// val>0 guard treats anything <=0 as "delete the budget," the same as
+// every other budgeted() consumer in this file (budgeted>0 everywhere),
+// so there's no such thing as a real "$0 budget" to commit to. The row
+// template below hides the button for this case rather than relying on
+// this guard alone, but the guard stays as defense in depth for any other
+// caller. Found in the adversarial pass after this feature first shipped.
+function commitSimulatorOverrideAsBudget(cat){
+  cat=String(cat);
+  const entry=state.simulator.overrides.find(o=>o.cat===cat);
+  if(!entry||entry.newMonthly<=0)return;
+  const prev=state.budgets[cat];
+  window._budgetCat=cat;
+  document.getElementById('budget-amount').value=entry.newMonthly;
+  saveBudget();
+  // Re-render so the row immediately reflects state.budgets[cat] now
+  // matching this override's projected amount (flips "Set as budget" to
+  // "Budgeted" below) -- without this the row looked untouched after a
+  // successful commit, inviting a redundant re-click. Found in the same
+  // adversarial pass as the guard above.
+  renderSimulatorTab();
+  const resetNote=_isLiveDemoSession()?' (resets once you add real data)':'';
+  showToast(`${esc(cat)} budget set to ${fmt(entry.newMonthly)}/mo${resetNote} · ${undoBudgetButtonHTML(cat,prev||0)}`,'#34D399',4000);
+}
 function renderSimulatorTab(){
   const el=document.getElementById('simulator-content');
   if(!el)return;
@@ -9763,7 +9841,13 @@ function renderSimulatorTab(){
       <div style="display:flex;align-items:center;gap:10px">
         <span style="color:var(--text-muted);font-size:12px">${fmt(r.avg)}/mo avg</span>
         ${r.hasOverride
-          ?`<span style="font-weight:600">&rarr; ${fmt(r.projected)}/mo</span><button data-action="removeSimulatorOverride" data-arg="${esc(r.cat)}" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 4px" title="Remove change" type="button">&times;</button>`
+          ?`<span style="font-weight:600">&rarr; ${fmt(r.projected)}/mo</span>${
+              state.budgets[r.cat]===r.projected
+                ?`<span style="font-size:10px;font-weight:700;color:var(--accent-green)" title="This is already your real Budget-tab limit">&check; Budgeted</span>`
+                :r.projected>0
+                  ?`<button data-action="commitSimulatorOverrideAsBudget" data-arg="${esc(r.cat)}" style="background:none;border:1px solid #2563EB44;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:var(--accent-blue-light);cursor:pointer" title="Make this your real Budget-tab limit" type="button">Set as budget</button>`
+                  :''
+            }<button data-action="removeSimulatorOverride" data-arg="${esc(r.cat)}" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 4px" title="Remove change" type="button">&times;</button>`
           :`<button class="btn btn-sm" data-action="openSimulatorOverrideModal" data-arg="${esc(r.cat)}" type="button">+ Change</button>`}
       </div>
     </div>`).join('');
@@ -10256,6 +10340,46 @@ function renderBudgetTab(){
     ;
   } else if(unbudgetedEl){
     unbudgetedEl.innerHTML='';
+  }
+
+  // Stale budgets -- chronically over for the last 3 straight months, not a
+  // one-off or a deliberate stretch goal. Only fires on "over," never
+  // "under": a budget sitting comfortably below your average might be an
+  // intentional target you're trying to hit, not a mistake to correct --
+  // consistently blowing past the number for months running is the one
+  // case that's unambiguously just a stale figure, not a choice. *1.05 (not
+  // the exact budget) so a trivial few-dollar overage doesn't flag a budget
+  // that's still basically on target.
+  const staleEl=document.getElementById('budget-stale');
+  if(staleEl){
+    // histMonths.slice(-3), not a second getBudgetHistMonths(ym,3) call --
+    // histMonths (above) is already the same "up to N months strictly
+    // before ym, oldest-first" sequence at count=12, so its last 3 entries
+    // are identical to what a separate count=3 call would return, without
+    // re-scanning Object.keys(MONTHLY) a second time on every render.
+    const last3Months=histMonths.slice(-3);
+    const staleBudgeted=budgeted.filter(([cat,budget])=>isBudgetStale(cat,budget,last3Months));
+    if(staleBudgeted.length){
+      staleEl.innerHTML=`
+        <div style="background:var(--bg-card);border:1px solid #FBBF2433;border-radius:10px;padding:.75rem 1rem;margin-top:.25rem">
+          <div style="font-size:12px;font-weight:700;color:var(--accent-amber);margin-bottom:.5rem">${staleBudgeted.length} budget${staleBudgeted.length===1?'':'s'} ${staleBudgeted.length===1?"hasn't":"haven't"} matched real spending in 3 months</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            ${staleBudgeted.map(([cat,budget])=>{
+              const avg=rowMetrics[cat].avg12;
+              return`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg-page);border:1px solid var(--border-mid);border-radius:8px;padding:6px 10px">
+                <div style="display:flex;align-items:center;gap:8px;min-width:0">
+                  <div style="width:8px;height:8px;border-radius:50%;background:${getCatColor(cat)};flex-shrink:0"></div>
+                  <span style="font-size:12px;font-weight:600;color:var(--text-primary)">${esc(cat)}</span>
+                  <span style="font-size:11px;color:var(--text-muted)">set at ${fmt(budget)}/mo, averaging ${fmt(avg)}/mo</span>
+                </div>
+                <button data-action="openStaleBudgetModal" data-arg="${esc(cat)}" data-arg2="${Math.round(avg)}" style="background:none;border:1px solid #2563EB44;border-radius:6px;padding:3px 9px;font-size:10px;font-weight:700;color:var(--accent-blue-light);cursor:pointer;white-space:nowrap" type="button">Update to ${fmt(avg)}</button>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+    } else {
+      staleEl.innerHTML='';
+    }
   }
 }
 

@@ -1355,7 +1355,9 @@ test("_refreshBudgetModalContext: '% under/above avg' divides by avg, not the bu
       },
     },
     getCatColor: () => "#000",
-    getCatStats: () => ({ Groceries: { avg: 200 } }),
+    getBudgetMonth: () => "2026-07",
+    getBudgetHistMonths: () => [],
+    avgSpendOverMonths: () => 200,
     fmt: (n) => String(n),
     state: { budgets: { Groceries: 100 } },
   };
@@ -1382,7 +1384,9 @@ function refreshBudgetModalContextCtx(budgets, avg) {
         },
       },
       getCatColor: () => "#000",
-      getCatStats: () => ({ Groceries: { avg } }),
+      getBudgetMonth: () => "2026-07",
+      getBudgetHistMonths: () => [],
+      avgSpendOverMonths: () => avg,
       fmt: (n) => String(n),
       state: { budgets },
     },
@@ -1405,6 +1409,124 @@ test("_refreshBudgetModalContext: no budget and no history leaves the field blan
   const { _refreshBudgetModalContext } = loadFunctions(["_refreshBudgetModalContext"], ctx);
   _refreshBudgetModalContext("Groceries");
   assert.equal(amountEl.value, "", "a category with zero spending history should stay blank, not prefill a meaningless $0 budget");
+});
+
+function openStaleBudgetModalCtx(existingBudget) {
+  const amountEl = { value: "", focus: () => {} };
+  return {
+    amountEl,
+    ctx: {
+      window: {},
+      state: { budgets: existingBudget !== undefined ? { Groceries: existingBudget } : {} },
+      getAllCats: () => ["Groceries", "Shopping"],
+      getCatColor: () => "#000",
+      getBudgetMonth: () => "2026-07",
+      getBudgetHistMonths: () => [],
+      avgSpendOverMonths: () => 0,
+      esc: (s) => String(s),
+      fmt: (n) => String(n),
+      MONTHLY: {},
+      document: {
+        getElementById: (id) => {
+          if (id === "budget-amount") return amountEl;
+          if (id === "budget-cat-select") return { innerHTML: "", onchange: null };
+          if (id === "budget-modal") return { classList: { remove: () => {} }, style: { setProperty: () => {} } };
+          if (id === "budget-modal-context") return { set innerHTML(v) {}, get innerHTML() { return ""; } };
+          return null;
+        },
+      },
+    },
+  };
+}
+test("openStaleBudgetModal: overrides the modal's own prefill (the existing stale budget) with the suggested average", () => {
+  const { ctx, amountEl } = openStaleBudgetModalCtx(50);
+  const { openStaleBudgetModal } = loadFunctions(["openStaleBudgetModal", "openBudgetModal", "_refreshBudgetModalContext"], ctx);
+  openStaleBudgetModal("Groceries", 237.6);
+  assert.equal(amountEl.value, 238, "should land on the rounded suggested average, not the stale $50 budget openBudgetModal would have prefilled");
+});
+test("openStaleBudgetModal: a non-finite suggested amount leaves openBudgetModal's own prefill alone", () => {
+  const { ctx, amountEl } = openStaleBudgetModalCtx(50);
+  const { openStaleBudgetModal } = loadFunctions(["openStaleBudgetModal", "openBudgetModal", "_refreshBudgetModalContext"], ctx);
+  openStaleBudgetModal("Groceries", "not-a-number");
+  assert.equal(amountEl.value, 50, "should fall back to whatever openBudgetModal already prefilled rather than clobbering it with garbage");
+});
+test("openStaleBudgetModal: a suggested amount of exactly 0 also leaves openBudgetModal's own prefill alone", () => {
+  const { ctx, amountEl } = openStaleBudgetModalCtx(50);
+  const { openStaleBudgetModal } = loadFunctions(["openStaleBudgetModal", "openBudgetModal", "_refreshBudgetModalContext"], ctx);
+  openStaleBudgetModal("Groceries", 0);
+  assert.equal(amountEl.value, 50, "amt>0 excludes 0 same as it excludes NaN/negative -- must be asserted directly, not assumed from the non-finite case alone");
+});
+
+function commitSimulatorOverrideAsBudgetCtx(overrides, existingBudget) {
+  let toastMsg = "";
+  let simRenders = 0;
+  const amountEl = { value: "" };
+  return {
+    toast: () => toastMsg,
+    simRenders: () => simRenders,
+    ctx: {
+      window: {},
+      state: { simulator: { horizonMonths: 12, overrides }, budgets: existingBudget !== undefined ? { Rent: existingBudget } : {} },
+      document: {
+        getElementById: (id) => {
+          if (id === "budget-amount") return amountEl;
+          if (id === "page-budget") return { classList: { contains: () => false } };
+          return null;
+        },
+      },
+      closeModals: () => {},
+      renderBucketGrid: () => {},
+      renderInsights: () => {},
+      renderBudgetTab: () => {},
+      renderSimulatorTab: () => { simRenders++; },
+      scheduleSave: () => {},
+      _isLiveDemoSession: () => false,
+      esc: (s) => String(s),
+      fmt: (n) => "$" + n,
+      showToast: (msg) => { toastMsg = msg; },
+    },
+  };
+}
+test("commitSimulatorOverrideAsBudget: writes the override's hypothetical amount into state.budgets via saveBudget(), and re-renders the Life Changes tab", () => {
+  const { ctx, simRenders } = commitSimulatorOverrideAsBudgetCtx([{ cat: "Rent", newMonthly: 2400 }]);
+  const { commitSimulatorOverrideAsBudget } = loadFunctions(["commitSimulatorOverrideAsBudget", "saveBudget", "undoBudgetButtonHTML"], ctx);
+  commitSimulatorOverrideAsBudget("Rent");
+  assert.equal(ctx.state.budgets.Rent, 2400);
+  assert.equal(simRenders(), 1, "should re-render the Life Changes tab so the row reflects the now-matching real budget, not look untouched");
+});
+test("commitSimulatorOverrideAsBudget: the confirmation toast offers an Undo back to whatever the budget was before", () => {
+  const { ctx, toast } = commitSimulatorOverrideAsBudgetCtx([{ cat: "Rent", newMonthly: 2400 }], 1350);
+  const { commitSimulatorOverrideAsBudget } = loadFunctions(["commitSimulatorOverrideAsBudget", "saveBudget", "undoBudgetButtonHTML"], ctx);
+  commitSimulatorOverrideAsBudget("Rent");
+  assert.match(toast(), /data-action="undoBudgetCat" data-arg="Rent" data-arg2="1350"/, "Undo should restore the exact prior budget, not just clear it");
+});
+test("commitSimulatorOverrideAsBudget: does nothing if the category has no active override", () => {
+  const { ctx } = commitSimulatorOverrideAsBudgetCtx([{ cat: "Groceries", newMonthly: 500 }]);
+  const { commitSimulatorOverrideAsBudget } = loadFunctions(["commitSimulatorOverrideAsBudget", "saveBudget", "undoBudgetButtonHTML"], ctx);
+  commitSimulatorOverrideAsBudget("Rent");
+  assert.equal(ctx.state.budgets.Rent, undefined, "should be a no-op when there's no override for this category to commit");
+});
+test("commitSimulatorOverrideAsBudget: a $0 override is a no-op, not a fake '$0 budget' -- saveBudget() would delete instead of setting 0, and the toast would lie about what happened", () => {
+  const { ctx, toast, simRenders } = commitSimulatorOverrideAsBudgetCtx([{ cat: "Rent", newMonthly: 0 }], 1350);
+  const { commitSimulatorOverrideAsBudget } = loadFunctions(["commitSimulatorOverrideAsBudget", "saveBudget", "undoBudgetButtonHTML"], ctx);
+  commitSimulatorOverrideAsBudget("Rent");
+  assert.equal(ctx.state.budgets.Rent, 1350, "the existing budget should be left completely untouched, not deleted");
+  assert.equal(toast(), "", "no toast should fire for a no-op -- a $0 override has nothing meaningful to commit to");
+  assert.equal(simRenders(), 0, "no re-render should fire for a no-op");
+});
+
+test("isBudgetStale: flags a category only when every one of the last 3 tracked months ran meaningfully over budget", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const spendByMonth = { Groceries: { "2026-04": 300, "2026-05": 320, "2026-06": 310 } };
+  const ctx = { getCatMonthSpend: (cat, m) => spendByMonth[cat]?.[m] || 0 };
+  const { isBudgetStale } = loadFunctions(["isBudgetStale"], ctx);
+  assert.equal(isBudgetStale("Groceries", 200, ["2026-04", "2026-05", "2026-06"]), true, "consistently ~50% over budget for 3 straight months should flag");
+  assert.equal(isBudgetStale("Groceries", 400, ["2026-04", "2026-05", "2026-06"]), false, "a budget comfortably above real spend should never flag -- that's a deliberate cushion, not a mistake");
+  assert.equal(isBudgetStale("Groceries", 305, ["2026-04", "2026-05", "2026-06"]), false, "a trivial overage (within the 1.05x buffer) shouldn't flag a budget that's still basically on target");
+  assert.equal(isBudgetStale("Groceries", 200, ["2026-05", "2026-06"]), false, "fewer than 3 tracked months should never flag off a partial pattern");
+  assert.ok(source.includes("function isBudgetStale(cat,budget,last3Months){"), "isBudgetStale() should exist as its own named function, not inlined, so this exact behavior stays independently testable");
 });
 
 // ── 72nd adversarial pass: exportBudgetCSV()'s Status column used to judge
@@ -1505,7 +1627,7 @@ test("removeBudget: showToast is called with an explicit color and the intended 
       toastArgs = args;
     },
   };
-  const { removeBudget } = loadFunctions(["removeBudget"], ctx);
+  const { removeBudget } = loadFunctions(["removeBudget", "undoBudgetButtonHTML"], ctx);
   removeBudget("Groceries");
   assert.equal(toastArgs[1], "#94A3B8", "color should be an explicit value, not the number 4000");
   assert.equal(toastArgs[2], 4000, "duration should be 4000ms in its own argument slot");
@@ -9286,7 +9408,7 @@ test("renderSimulatorTab: sources its income figure from sumIncomeForMonths(hist
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,6500}?\n\}/);
+  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,7800}?\n\}/);
   assert.ok(fnMatch, "renderSimulatorTab() should exist");
   assert.match(
     fnMatch[0],
@@ -9323,6 +9445,45 @@ test("renderSimulatorTab: sources its income figure from sumIncomeForMonths(hist
     /data-action="openIncomeModal"/,
     "should link to the existing income modal inline next to the income summary line, not bury it elsewhere"
   );
+  assert.match(
+    fnMatch[0],
+    /data-action="commitSimulatorOverrideAsBudget"/,
+    "an active override should offer a way to commit it as a real Budget-tab limit, not just preview or remove it"
+  );
+});
+
+// Finding (adversarial pass, after this feature first shipped): the "Set as
+// budget" button stayed identically clickable after a successful commit,
+// with no indication anything happened beyond a transient toast, and it
+// was offered even for a $0 override -- which saveBudget() silently treats
+// as "delete," not "set to $0," so committing one would have deleted an
+// existing budget while the toast still claimed "$0/mo" was saved.
+test("renderSimulatorTab: an already-committed override shows 'Budgeted' instead of a re-clickable button, and a $0 override never offers to commit at all", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,7800}?\n\}/);
+  assert.ok(fnMatch, "renderSimulatorTab() should exist");
+  assert.match(
+    fnMatch[0],
+    /state\.budgets\[r\.cat\]===r\.projected/,
+    "should detect that this override already matches the real budget rather than always offering to re-commit it"
+  );
+  assert.match(
+    fnMatch[0],
+    /:r\.projected>0\s*\?`<button data-action="commitSimulatorOverrideAsBudget"/,
+    "the commit button should only ever render for a positive projected amount -- there's no such thing as a real '$0 budget' to commit to"
+  );
+});
+
+test("undoBudgetButtonHTML: produces one shared Undo control, not a copy-pasted string per call site", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const occurrences = source.match(/data-action="undoBudgetCat" data-arg="\$\{esc\(cat\)\}" data-arg2="\$\{prev\}"/g) || [];
+  assert.equal(occurrences.length, 1, "the Undo button markup should be defined exactly once (inside undoBudgetButtonHTML), not duplicated inline at each call site");
+  const { undoBudgetButtonHTML } = loadFunctions(["undoBudgetButtonHTML"], { esc: (s) => String(s) });
+  assert.match(undoBudgetButtonHTML("Groceries", 100), /data-action="undoBudgetCat" data-arg="Groceries" data-arg2="100"/);
 });
 
 // Finding: Nicholas pointed out the "Look back" control and the preset
@@ -9335,7 +9496,7 @@ test("renderSimulatorTab: 'Look back' (select + custom input) and the preset/add
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,6500}?\n\}/);
+  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,7800}?\n\}/);
   assert.ok(fnMatch, "renderSimulatorTab() should exist");
   assert.match(
     fnMatch[0],
@@ -9360,7 +9521,7 @@ test("renderSimulatorTab: wraps the sort controls, override list, and summary bo
   const fs = require("fs");
   const path = require("path");
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
-  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,6500}?\n\}/);
+  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,7800}?\n\}/);
   assert.ok(fnMatch, "renderSimulatorTab() should exist");
   assert.match(
     fnMatch[0],
