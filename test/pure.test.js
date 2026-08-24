@@ -6937,7 +6937,10 @@ test("syncToCloud()'s conflict guard shows a persistent, dismissible banner inst
   );
   const fnMatch = source.match(/function showSyncConflictBanner\(\)\{[\s\S]{0,200}?\n\}/);
   assert.ok(fnMatch, "showSyncConflictBanner() should be defined");
-  assert.match(fnMatch[0], /style\.display\s*=\s*'block'/, "should unhide the banner element");
+  assert.match(fnMatch[0], /setSyncConflictBannerVisible\(true\)/, "should delegate to the shared visibility helper to unhide the banner");
+  const hideMatch = source.match(/function hideSyncConflictBanner\(\)\{[\s\S]{0,200}?\n\}/);
+  assert.ok(hideMatch, "hideSyncConflictBanner() should be defined");
+  assert.match(hideMatch[0], /setSyncConflictBannerVisible\(false\)/, "should delegate to the shared visibility helper to hide the banner");
   const dismissMatch = source.match(/function dismissSyncConflictBanner\(\)\{[\s\S]{0,100}?\n\}/);
   assert.ok(dismissMatch, "dismissSyncConflictBanner() should be defined");
   assert.match(dismissMatch[0], /hideSyncConflictBanner\(\)/, "dismissing should delegate to the same hide helper used on recovery");
@@ -6994,10 +6997,8 @@ test("the sync-conflict banner is position:fixed (so it survives scrolling, unli
     /conflictBanner\.offsetHeight/,
     "should factor the conflict banner's real rendered height into the offset, since fixed positioning takes it out of flow and nothing else would push .nav/body down for it"
   );
-  const showFn = source.match(/function showSyncConflictBanner\(\)\{[\s\S]{0,200}?\n\}/)?.[0] || "";
-  const hideFn = source.match(/function hideSyncConflictBanner\(\)\{[\s\S]{0,200}?\n\}/)?.[0] || "";
-  assert.match(showFn, /updateBannerOffset\(\);/, "showing the banner should immediately recompute the nav/body offset, not wait for a resize");
-  assert.match(hideFn, /updateBannerOffset\(\);/, "hiding the banner (including via dismiss, which delegates to this) should recompute the offset back down, or nav/body would keep the gap after the banner is gone");
+  const setVisFn = source.match(/function setSyncConflictBannerVisible\(visible\)\{[\s\S]{0,300}?\n\}/)?.[0] || "";
+  assert.match(setVisFn, /updateBannerOffset\(\);/, "showing/hiding the banner -- both showSyncConflictBanner and hideSyncConflictBanner delegate here -- should immediately recompute the nav/body offset, not wait for a resize, or nav/body would keep a stale gap after the banner's gone");
 });
 
 // ── A self-review pass on the fix above caught this: the original guard
@@ -8598,7 +8599,7 @@ test("toggleGlobalSettings/closeGlobalSettings mirror toggleSpendingOverflow/clo
       getElementById: (id) => (id === "global-settings-menu" ? { style: menuStyle } : null),
     },
   };
-  const { toggleGlobalSettings, closeGlobalSettings } = loadFunctions(["toggleGlobalSettings", "closeGlobalSettings"], ctx);
+  const { toggleGlobalSettings, closeGlobalSettings } = loadFunctions(["toggleGlobalSettings", "closeGlobalSettings", "toggleOverflowMenu", "closeOverflowMenu"], ctx);
   toggleGlobalSettings();
   assert.equal(menuStyle.display, "block", "first toggle should open the menu");
   toggleGlobalSettings();
@@ -9319,22 +9320,22 @@ test("computeSimulatorProjection: a category with zero real spend and no overrid
 });
 
 test("resolveRentMortgageCat: prefers a user's own 'Rent' custom category over the built-in 'Home' fallback", () => {
-  const { resolveRentMortgageCat: withRent } = loadFunctions(["resolveRentMortgageCat"], {
+  const { resolveRentMortgageCat: withRent } = loadFunctions(["resolveRentMortgageCat", "resolveFallbackCat"], {
     getAllCats: () => ["Groceries", "Home", "Rent"],
   });
   assert.equal(withRent(), "Rent");
-  const { resolveRentMortgageCat: withoutRent } = loadFunctions(["resolveRentMortgageCat"], {
+  const { resolveRentMortgageCat: withoutRent } = loadFunctions(["resolveRentMortgageCat", "resolveFallbackCat"], {
     getAllCats: () => ["Groceries", "Home"],
   });
   assert.equal(withoutRent(), "Home");
 });
 
 test("resolveCarCat: prefers a user's own 'Transportation' custom category over the built-in 'Automotive' fallback, and never falls back to 'Gas' (fuel-only, not a car-payment proxy)", () => {
-  const { resolveCarCat: withTransportation } = loadFunctions(["resolveCarCat"], {
+  const { resolveCarCat: withTransportation } = loadFunctions(["resolveCarCat", "resolveFallbackCat"], {
     getAllCats: () => ["Groceries", "Gas", "Automotive", "Transportation"],
   });
   assert.equal(withTransportation(), "Transportation");
-  const { resolveCarCat: withoutTransportation } = loadFunctions(["resolveCarCat"], {
+  const { resolveCarCat: withoutTransportation } = loadFunctions(["resolveCarCat", "resolveFallbackCat"], {
     getAllCats: () => ["Groceries", "Gas", "Automotive"],
   });
   assert.equal(withoutTransportation(), "Automotive", "should fall back to Automotive (dealer/CarMax/Carvana/auto-loan merchants), not Gas (fuel-only)");

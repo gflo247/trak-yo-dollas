@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-2Pq2fbQiwHrOrYoF6Zo1D4LiW9jTFp0EIHvCdjxrMfg=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-kSSNrmaMXt+f/qqLct0/TSt/VISxTraUAOW7xW96fMk=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -2872,7 +2872,8 @@ function closeShortcutsModal(){hideModalById('shortcuts-modal');}
 function toggleShortcutsModal(){document.getElementById('shortcuts-modal').classList.contains('hidden')?openShortcutsModal():closeShortcutsModal();}
 function closeCommunityRulesModal(){hideModalById('community-rules-modal');}
 function closeAddRuleForm(){document.getElementById('add-rule-form').classList.add('hidden');}
-function triggerCsvFileInput(){document.getElementById('csv-file').click();}
+function triggerFileInput(id){document.getElementById(id).click();}
+function triggerCsvFileInput(){triggerFileInput('csv-file');}
 function selectVenmoCustom(){const i=document.querySelector('input[value=custom]');if(i){i.checked=true;selectVenmoOpt(i);}}
 // _clearAllDataInProgress guard, matching the Escape-handler fix (60th
 // pass) for the same underlying race -- confirmClearAllData()'s signOut()
@@ -2924,10 +2925,11 @@ function showPageBudget(arg,el){showPage('budget',el);}
 function showPageSimulator(arg,el){showPage('simulator',el);}
 function showPageDashboard(arg,el){showPage('dashboard',el);}
 function showPageAccounts(arg,el){showPage('accounts',el);}
-function navToSpending(){showPage('spending',document.querySelectorAll('.nav-btn')[0]);}
+function navToPage(page,navIdx){showPage(page,document.querySelectorAll('.nav-btn')[navIdx]);}
+function navToSpending(){navToPage('spending',0);}
 // Index 4, not 3 -- the "Life Changes" nav button was inserted between
 // Budget and Net Worth, shifting every nav-btn index after it by one.
-function navToAccounts(){showPage('accounts',document.querySelectorAll('.nav-btn')[4]);}
+function navToAccounts(){navToPage('accounts',4);}
 function filterToCatAndScroll(cat){
   if(!cat)return;
   toggleCatFilter(cat);
@@ -2977,8 +2979,9 @@ function dragLeaveDropZone(){document.getElementById('tx-drop-zone').style.borde
 function handleTxDropDelegated(e){handleTxDrop(e);}
 function uppercaseInput(val,el){el.value=val.toUpperCase();}
 function validateClearConfirm(val){const btn=document.getElementById('clear-confirm-btn');const ok=val.trim().toLowerCase()==='clear';if(btn){btn.disabled=!ok;btn.style.opacity=ok?'1':'.5';btn.style.cursor=ok?'pointer':'not-allowed';}}
-function hoverRed(e,el){el.style.color='#F87171';}
-function unhoverRed(e,el){el.style.color='var(--text-muted)';}
+function setRedHover(el,color){el.style.color=color;}
+function hoverRed(e,el){setRedHover(el,'#F87171');}
+function unhoverRed(e,el){setRedHover(el,'var(--text-muted)');}
 function confirmGoalOnEnter(e){if(e.key==='Enter')confirmCustomGoal();}
 function confirmSyncPassphraseOnEnter(e){if(e.key==='Enter')submitSyncPassphrase();}
 
@@ -7555,16 +7558,18 @@ function clearSearch(){
 }
 
 /* ── FILTER / SORT ── */
-function toggleSpendingOverflow(){
-  const menu=document.getElementById('toolbar-overflow-menu');
+function toggleOverflowMenu(id){
+  const menu=document.getElementById(id);
   if(!menu)return;
   const isOpen=menu.style.display!=='none';
   menu.style.display=isOpen?'none':'block';
 }
-function closeSpendingOverflow(){
-  const menu=document.getElementById('toolbar-overflow-menu');
+function closeOverflowMenu(id){
+  const menu=document.getElementById(id);
   if(menu)menu.style.display='none';
 }
+function toggleSpendingOverflow(){toggleOverflowMenu('toolbar-overflow-menu');}
+function closeSpendingOverflow(){closeOverflowMenu('toolbar-overflow-menu');}
 // Close overflow when clicking anywhere outside it
 document.addEventListener('click',function(e){
   const menu=document.getElementById('toolbar-overflow-menu');
@@ -7582,16 +7587,8 @@ document.addEventListener('click',function(e){
 // than merged into it since the two buttons live in different DOM
 // locations (nav vs. Spending's own toolbar) and either one can be open
 // while the other tab is showing.
-function toggleGlobalSettings(){
-  const menu=document.getElementById('global-settings-menu');
-  if(!menu)return;
-  const isOpen=menu.style.display!=='none';
-  menu.style.display=isOpen?'none':'block';
-}
-function closeGlobalSettings(){
-  const menu=document.getElementById('global-settings-menu');
-  if(menu)menu.style.display='none';
-}
+function toggleGlobalSettings(){toggleOverflowMenu('global-settings-menu');}
+function closeGlobalSettings(){closeOverflowMenu('global-settings-menu');}
 document.addEventListener('click',function(e){
   const menu=document.getElementById('global-settings-menu');
   const btn=document.getElementById('global-settings-btn');
@@ -9626,9 +9623,10 @@ function isBudgetStale(cat,budget,last3Months){
 // Prefers a user's own "Rent" custom category (if they've added one) over
 // the built-in "Home" category, which is where rent/mortgage keywords
 // auto-categorize by default when no custom "Rent" category exists.
-function resolveRentMortgageCat(){
-  return getAllCats().includes('Rent')?'Rent':'Home';
+function resolveFallbackCat(preferred,fallback){
+  return getAllCats().includes(preferred)?preferred:fallback;
 }
+function resolveRentMortgageCat(){return resolveFallbackCat('Rent','Home');}
 
 // Same "prefer the user's own category" pattern as resolveRentMortgageCat()
 // above -- a custom "Transportation" category is a much better fit for "new
@@ -9638,9 +9636,7 @@ function resolveRentMortgageCat(){
 // exists. Not "Gas" -- that only ever holds fuel purchases, so overriding
 // it for a car payment would silently clobber someone's fuel budget
 // instead. Found via a landing-page/roadmap pass, August 2026.
-function resolveCarCat(){
-  return getAllCats().includes('Transportation')?'Transportation':'Automotive';
-}
+function resolveCarCat(){return resolveFallbackCat('Transportation','Automotive');}
 
 // overrides: [{cat,newMonthly}], histMonths: trailing months to average
 // over (from getBudgetHistMonths(ym,state.simulator.horizonMonths)).
@@ -11538,16 +11534,13 @@ function getCatFill(cat, color){
 }
 // ── End pattern fills ──────────────────────────────────────────────────
 
-function dismissSavingsNudge(){
-  state.hiddenPills.add('savings');
+function dismissPill(id){
+  state.hiddenPills.add(id);
   scheduleSave();
   renderInsights();
 }
-function dismissBudgetHealthPill(){
-  state.hiddenPills.add('budget-health');
-  scheduleSave();
-  renderInsights();
-}
+function dismissSavingsNudge(){dismissPill('savings');}
+function dismissBudgetHealthPill(){dismissPill('budget-health');}
 
 function disableIncome(){
   state.income={method:null,monthlyAmount:0};
@@ -14260,16 +14253,13 @@ let _syncConflictWarned = false;
 // auto-dismisses in a few seconds while the underlying "your edits aren't
 // syncing" condition doesn't, so it's easy to miss the one moment you're
 // warned and keep editing on a tab that's silently local-only from then on.
-function showSyncConflictBanner(){
+function setSyncConflictBannerVisible(visible){
   const el = document.getElementById('sync-conflict-banner');
-  if (el) el.style.display = 'block';
+  if (el) el.style.display = visible ? 'block' : 'none';
   updateBannerOffset();
 }
-function hideSyncConflictBanner(){
-  const el = document.getElementById('sync-conflict-banner');
-  if (el) el.style.display = 'none';
-  updateBannerOffset();
-}
+function showSyncConflictBanner(){setSyncConflictBannerVisible(true);}
+function hideSyncConflictBanner(){setSyncConflictBannerVisible(false);}
 function dismissSyncConflictBanner(){
   hideSyncConflictBanner();
 }
@@ -16119,9 +16109,7 @@ function exportBackup(){
   }catch(e){console.error('exportBackup error:',e);showToast('Export failed.','#F87171');}
 }
 
-function triggerImportBackup(){
-  document.getElementById('backup-file-input').click();
-}
+function triggerImportBackup(){triggerFileInput('backup-file-input');}
 
 function importBackup(file){
   if(!file)return;
