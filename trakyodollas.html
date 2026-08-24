@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-u0YDVjWQ+kOk+++6rEDc96LBAm0xvt4tjhJAVidyWYU=' 'sha256-rKnLrcXUCONyzPVhcO+Whn4tO9yrlVmew91o5bsDEz8=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-2Pq2fbQiwHrOrYoF6Zo1D4LiW9jTFp0EIHvCdjxrMfg=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -1295,15 +1295,15 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 <!-- Category manager modal -->
 <div class="modal-overlay drawer-overlay hidden" id="cat-modal">
   <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="cat-modal-title" tabindex="-1" style="width:min(400px,94vw)">
-    <h3 id="cat-modal-title">Manage categories</h3>
+    <div class="modal-header">
+      <h3 id="cat-modal-title" style="margin:0">Manage categories</h3>
+      <button data-action="closeCatModal" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0;line-height:1" type="button">×</button>
+    </div>
     <p class="modal-sub">Add custom categories. The app picks colors automatically to keep your categories visually distinct from each other.</p>
     <div id="cat-manager-list" style="max-height:60vh;overflow-y:auto;border:1px solid var(--border-mid);border-radius:8px;margin-bottom:.7rem"></div>
     <div style="display:flex;gap:6px;align-items:center">
       <input type="text" id="new-cat-name" placeholder="Category name…" style="flex:1"/>
       <button class="btn btn-primary btn-sm" data-action="addCustomCat" style="white-space:nowrap;flex-shrink:0" type="button">+ Add category</button>
-    </div>
-    <div class="row" style="justify-content:flex-end;margin-top:.85rem">
-      <button class="btn btn-primary" data-action="closeCatModal" type="button">Done</button>
     </div>
   </div>
 </div>
@@ -2170,7 +2170,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="year-review-modal-title" tabindex="-1" style="width:min(580px,94vw)">
     <div class="modal-header">
       <h3 id="year-review-modal-title" style="margin:0">📅 Year in review</h3>
-      <button class="btn" data-action="closeYearInReview" type="button">Done</button>
+      <button data-action="closeYearInReview" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0;line-height:1" type="button">×</button>
     </div>
     <!-- Start month selector -->
     <div id="yir-start-selector" style="margin-bottom:1rem"></div>
@@ -2867,9 +2867,10 @@ function openShortcutsModal(){
   document.body.style.setProperty('--pp-width','480px');
   el.classList.remove('hidden');
 }
-function closeShortcutsModal(){document.getElementById('shortcuts-modal').classList.add('hidden');document.body.classList.remove('persistent-panel-open');}
+function hideModalById(id){document.getElementById(id).classList.add('hidden');document.body.classList.remove('persistent-panel-open');}
+function closeShortcutsModal(){hideModalById('shortcuts-modal');}
 function toggleShortcutsModal(){document.getElementById('shortcuts-modal').classList.contains('hidden')?openShortcutsModal():closeShortcutsModal();}
-function closeCommunityRulesModal(){document.getElementById('community-rules-modal').classList.add('hidden');document.body.classList.remove('persistent-panel-open');}
+function closeCommunityRulesModal(){hideModalById('community-rules-modal');}
 function closeAddRuleForm(){document.getElementById('add-rule-form').classList.add('hidden');}
 function triggerCsvFileInput(){document.getElementById('csv-file').click();}
 function selectVenmoCustom(){const i=document.querySelector('input[value=custom]');if(i){i.checked=true;selectVenmoOpt(i);}}
@@ -4126,7 +4127,7 @@ function openYearInReview(){
   document.body.style.setProperty('--pp-width','580px');
   el.classList.remove('hidden');
 }
-function closeYearInReview(){document.getElementById('year-review-modal').classList.add('hidden');document.body.classList.remove('persistent-panel-open');}
+function closeYearInReview(){hideModalById('year-review-modal');}
 
 function setYirEndMonth(m){
   _yirEndMonth=m;
@@ -8328,14 +8329,10 @@ function saveEditTx(){
     }
   }
 }
-function confirmDeleteTx(){
-  const el=document.getElementById('delete-tx-confirm');
-  if(el)el.style.display='flex';
-}
-function cancelDeleteTx(){
-  const el=document.getElementById('delete-tx-confirm');
-  if(el)el.style.display='none';
-}
+function showDeleteConfirm(id){const el=document.getElementById(id);if(el)el.style.display='flex';}
+function hideDeleteConfirm(id){const el=document.getElementById(id);if(el)el.style.display='none';}
+function confirmDeleteTx(){showDeleteConfirm('delete-tx-confirm');}
+function cancelDeleteTx(){hideDeleteConfirm('delete-tx-confirm');}
 function deleteTx(){
   if(editTxId==null)return;
   mutateTransactions(()=>{
@@ -8347,8 +8344,8 @@ function deleteTx(){
   // Budget tab/Dashboard/Year in Review too. Found August 2026.
   renderAll();
 }
-function confirmDeleteAcct(){const el=document.getElementById('delete-acct-confirm');if(el)el.style.display='flex';}
-function cancelDeleteAcct(){const el=document.getElementById('delete-acct-confirm');if(el)el.style.display='none';}
+function confirmDeleteAcct(){showDeleteConfirm('delete-acct-confirm');}
+function cancelDeleteAcct(){hideDeleteConfirm('delete-acct-confirm');}
 function deleteAcct(){
   if(!editAcctId)return;
   state.accounts=state.accounts.filter(a=>a.id!==editAcctId);
@@ -8387,8 +8384,8 @@ function isPairedAccount(a,v,exclude){
   if(v.acctId!=null)return a.id===v.acctId;
   return(a.type==='vehicle'||a.type==='other-asset')&&(!exclude||!exclude.has(a.id))&&a.name===v.name;
 }
-function confirmDeleteVehicle(){const el=document.getElementById('delete-vehicle-confirm');if(el)el.style.display='flex';}
-function cancelDeleteVehicle(){const el=document.getElementById('delete-vehicle-confirm');if(el)el.style.display='none';}
+function confirmDeleteVehicle(){showDeleteConfirm('delete-vehicle-confirm');}
+function cancelDeleteVehicle(){hideDeleteConfirm('delete-vehicle-confirm');}
 function deleteVehicle(){
   if(!editVehicleId)return;
   const v=state.vehicles.find(x=>x.id===editVehicleId);
@@ -12036,7 +12033,7 @@ function openCatModal(){
   document.body.style.setProperty('--pp-width','400px');
   el.classList.remove('hidden');
 }
-function closeCatModal(){document.getElementById('cat-modal').classList.add('hidden');document.body.classList.remove('persistent-panel-open');}
+function closeCatModal(){hideModalById('cat-modal');}
 let _editingCatName=null;
 // Category deletion previously had zero confirmation — a single click on
 // the ✕ button immediately deleted, cascading through budgets/rules/
@@ -17222,7 +17219,7 @@ window._fb = {
   sendMagicLink(email) {
     return _sb.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: 'https://trakyodollas.com/trakyodollas' }
+      options: { emailRedirectTo: window.location.origin + '/trakyodollas' }
     }).then(({ error }) => {
       if (error) throw error;
     });

@@ -8998,7 +8998,7 @@ test("Tips & shortcuts opens as a persistent, non-blocking panel on wide viewpor
   assert.match(fnMatch[0], /window\.innerWidth>=900/, "should gate persistent mode on a viewport-width check");
   assert.match(fnMatch[0], /classList\.toggle\('modal-overlay',!persistent\)/, "should drop .modal-overlay in persistent mode -- that's the single lever every other piece of shared modal machinery keys off");
   assert.match(fnMatch[0], /setAttribute\('aria-modal',persistent\?'false':'true'\)/, "aria-modal should track whether it's genuinely blocking, not stay hardcoded true once it isn't");
-  assert.match(source, /function closeShortcutsModal\(\)\{document\.getElementById\('shortcuts-modal'\)\.classList\.add\('hidden'\)/, "needs its own dedicated close function -- the shared closeModals() sweep only finds .modal-overlay elements, which this one no longer is in persistent mode");
+  assert.match(source, /function closeShortcutsModal\(\)\{hideModalById\('shortcuts-modal'\)/, "needs its own dedicated close function -- the shared closeModals() sweep only finds .modal-overlay elements, which this one no longer is in persistent mode");
   assert.match(source, /function toggleShortcutsModal\(\)/, "the '?' key and any other single entry point should toggle rather than only ever open, so re-pressing '?' closes it");
 });
 
@@ -9022,7 +9022,7 @@ for (const [openFn, closeFn, modalId] of [
     assert.match(fnMatch[0], /window\.innerWidth>=900/, "should gate persistent mode on the same viewport-width check as shortcuts-modal");
     assert.match(fnMatch[0], /classList\.toggle\('modal-overlay',!persistent\)/, "should drop .modal-overlay in persistent mode");
     assert.match(fnMatch[0], /setAttribute\('aria-modal',persistent\?'false':'true'\)/, "aria-modal should track whether it's genuinely blocking");
-    const closeRe = new RegExp(`function ${closeFn}\\(\\)\\{document\\.getElementById\\('${modalId}'\\)\\.classList\\.add\\('hidden'\\)`);
+    const closeRe = new RegExp(`function ${closeFn}\\(\\)\\{hideModalById\\('${modalId}'\\)`);
     assert.match(source, closeRe, `needs its own dedicated close function -- the shared closeModals() sweep no longer finds this modal once it drops .modal-overlay`);
   });
 }
@@ -9102,6 +9102,17 @@ test("body.persistent-panel-open adds a >=900px-only margin-right driven by --pp
   );
 });
 
+test("hideModalById(id) hides the given modal and clears persistent-panel-open -- the single source of truth every dedicated close function above delegates to", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  assert.match(
+    source,
+    /function hideModalById\(id\)\{document\.getElementById\(id\)\.classList\.add\('hidden'\);document\.body\.classList\.remove\('persistent-panel-open'\);\}/,
+    "hideModalById() should hide the given modal by id and clear the body's reflow-margin class"
+  );
+});
+
 for (const [openFn, closeFn, width] of [
   ["openShortcutsModal", "closeShortcutsModal", "480px"],
   ["openCommunityRulesModal", "closeCommunityRulesModal", "560px"],
@@ -9128,8 +9139,8 @@ for (const [openFn, closeFn, width] of [
     assert.ok(closeMatch, `${closeFn}() should exist`);
     assert.match(
       closeMatch[0],
-      /classList\.remove\('persistent-panel-open'\)/,
-      `${closeFn}() should remove the body class -- since only one persistent panel can be open at a time, closing it always means the reflow margin should go away too`
+      /hideModalById\(/,
+      `${closeFn}() should delegate to hideModalById(), which clears the body's persistent-panel-open class -- since only one persistent panel can be open at a time, closing it always means the reflow margin should go away too`
     );
   });
 }
