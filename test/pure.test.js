@@ -7,7 +7,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { loadFunctions } = require("../scripts/extract-testable-fns.js");
+const { loadFunctions, readSource } = require("../scripts/extract-testable-fns.js");
 
 // ── esc() — HTML escaping used everywhere user/CSV-supplied text is
 // rendered into innerHTML. The CSV import preview (finding #1, this
@@ -110,9 +110,7 @@ test("classifyBudgetStatus: a sub-cent float-accumulation overshoot doesn't flip
 // pass's near-identical fix for the warnPct boundary). Found in the
 // 142nd adversarial pass, re-verifying the 141st pass's own fix. ──
 test("the 4 sibling dot/pct-color render sites (compact badge, buildCondensedDots/buildPctDots, hero history dots, inline per-cat dots) all use the same float-noise epsilon as classifyBudgetStatus()", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const badgeMatches = source.match(/curAmt>budget\+0\.005\?'#F87171':curAmt\/budget>0\.8\?'#FBBF24':'#34D399'/g) || [];
   assert.equal(badgeMatches.length, 2, "both the compact badge's dot and % text color should use the same epsilon-tolerant comparison");
   const condensedMatches = source.match(/ms>limit\+0\.005\?'#F87171':mp>=warnPct\?'#FBBF24':'#34D399'/g) || [];
@@ -659,9 +657,7 @@ test("toggleCatFilter: a numeric-looking category name (coerced to a Number) is 
 // is inline top-level code, not itself a named function) and asserts the
 // list contains the real mutator and not the modal-opener. ──
 test("auto-save patch list wraps confirmDeleteSnapshot (the real mutator), not deleteSnapshot (the modal-opener)", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const m = source.match(/\/\/ Patch mutating functions to auto-save[\s\S]*?\[([^\]]+)\]\.forEach/);
   assert.ok(m, "could not find the auto-save patch list in trakyodollas.html");
   const patched = m[1];
@@ -915,9 +911,7 @@ test("openBudgetModal: a numeric-looking category name (coerced to a Number by t
 // "AT RISK" badges. Fixed by mirroring setBudgetWarnPct()'s own clamp at
 // both restore sites. ──
 test("all budgetWarnPct restore sites (localStorage load, JSON-backup import, cloud-sync restore) clamp to the same [50,99] range as setBudgetWarnPct()", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const clampPattern = /Math\.min\(99,Math\.max\(50,n\)\)/g;
   const matches = source.match(clampPattern) || [];
   // setBudgetWarnPct() itself, plus 3 restore sites (localStorage load,
@@ -946,9 +940,7 @@ function contrastRatio(hexA, hexB) {
   return (l1 + 0.05) / (l2 + 0.05);
 }
 test("tips-toast color: tc('#CBD5E1','#334155') meets WCAG AA (4.5:1) against both themes' --toast-bg", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /Press <strong style="color:#fff">\?<\/strong> anytime for tips & shortcuts',tc\('#CBD5E1','#334155'\)/,
@@ -1156,9 +1148,7 @@ test("detectDepositIncome: matches a real transaction's shape (isIncome:true, ex
 // card silently dropped the Spending tab's Savings Rate card from a
 // healthy percentage to a blank "Set up" state with no warning either way.
 test("selectIncomeMethod('auto'): shows a toast, distinguishing whether any deposits were actually detected, both demo-aware like every sibling income action", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function selectIncomeMethod\(method\)\{[\s\S]{0,1700}?\n  \}\n  if\(method==='manual'\)/);
   assert.ok(fnMatch, "selectIncomeMethod()'s auto branch should exist");
   assert.match(
@@ -1516,9 +1506,7 @@ test("commitSimulatorOverrideAsBudget: a $0 override is a no-op, not a fake '$0 
 });
 
 test("isBudgetStale: flags a category only when every one of the last 3 tracked months ran meaningfully over budget", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const spendByMonth = { Groceries: { "2026-04": 300, "2026-05": 320, "2026-06": 310 } };
   const ctx = { getCatMonthSpend: (cat, m) => spendByMonth[cat]?.[m] || 0 };
   const { isBudgetStale } = loadFunctions(["isBudgetStale"], ctx);
@@ -1646,9 +1634,7 @@ test("removeBudget: showToast is called with an explicit color and the intended 
 // (verified via a source match below) and checks it against both a
 // negative and a positive series directly. ──
 test("renderNwChart Y-axis padding: pads outward correctly for a negative net worth series, not just positive", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const rawMin=Math\.min\(\.\.\.vals\), rawMax=Math\.max\(\.\.\.vals\), vPad=\(rawMax-rawMin\)\*0\.02;\s*const vMin=rawMin-vPad, vMax=rawMax\+vPad;/,
@@ -1676,9 +1662,7 @@ test("renderNwChart Y-axis padding: pads outward correctly for a negative net wo
 // actual shipped code rather than a hand-derived reimplementation, same
 // intent as loadFunctions() elsewhere in this file. ──
 function loadConstArrowFn(name) {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const re = new RegExp(`^const ${name}=.*;$`, "m");
   const m = source.match(re);
   if (!m) throw new Error(`loadConstArrowFn: could not find 'const ${name}=...' in source`);
@@ -1733,9 +1717,7 @@ test("fmtC: values in the [999500,999999] band show as $1M, not the malformed $1
 // this match. parseImportDate() itself already has full behavioral
 // coverage above (Feb 30, 13/45, missing-year cases). ──
 test("saveEditTx/saveTx: amount validation uses isNaN (0 is a legitimate amount), and date is validated via parseImportDate, not accepted as raw text", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.doesNotMatch(
     source,
     /t\.amount=parseFloat\([^)]*\)\|\|t\.amount/,
@@ -1777,9 +1759,7 @@ test("saveEditTx/saveTx: amount validation uses isNaN (0 is a legitimate amount)
 // precedent for similar chart-math fixes (e.g. the 81st pass's
 // renderNwChart padding test above). ──
 test("renderNwGoalWidget: progress fraction is clamped to [0,1], not just <=1 -- negative net worth can't produce a negative SVG bar width", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const pct=Math\.max\(0,Math\.min\(nw\/goal,1\)\);/,
@@ -1810,9 +1790,7 @@ test("barTicksHTML/ringHTML: fillPct/arcPct both floor at 0 for a net-refunded (
   // body's end) -- a pre-existing loadFunctions() limitation unrelated to
   // this fix. Checking the source pattern directly instead, then
   // re-deriving the same formula to exercise the actual floor behavior.
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const arcPct=ratio==null\?0:Math\.max\(0,Math\.min\(ratio,1\)\)\*100;/,
@@ -1842,9 +1820,7 @@ test("barTicksHTML/ringHTML: fillPct/arcPct both floor at 0 for a net-refunded (
 // backfill for every backup dated exactly on the cutoff, the opposite of
 // this gate's own stated safe-default bias. Fixed to `<=CUTOFF`. ──
 test("importBackup: 'Internal Transfer' backfill is gated on the backup's own exportedAt date, inclusive of the cutoff day itself", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /if\(!state\.excludedCats\.has\('Internal Transfer'\)&&\(!exportedAt\|\|exportedAt<=CUTOFF\)\)state\.excludedCats\.add\('Internal Transfer'\);/,
@@ -1875,9 +1851,7 @@ test("importBackup: 'Internal Transfer' backfill is gated on the backup's own ex
 // in ringHTML()/barTicksHTML() (85th pass). Fourth/fifth instance of the
 // same missing-clamp shape (81st, 84th, 85th x2, now 86th). ──
 test("renderYearInReview: Top categories bar pct is clamped to [0,100] and guarded against totalSpent<=0, not just Math.round with no bounds", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const pct=totalSpent>0\?Math\.max\(0,Math\.min\(100,Math\.round\(amt\/totalSpent\*100\)\)\):0;/,
@@ -1905,9 +1879,7 @@ test("renderYearInReview: Top categories bar pct is clamped to [0,100] and guard
 // parseImportDate() (see its own test block above) combined with the
 // same guard logic normalizeTxRow() uses. ──
 test("normalizeTxRow: an unparseable date is rejected outright, not silently replaced with the original garbage string", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.doesNotMatch(
     source,
     /if\(date\)date=parseImportDate\(date,_importDateFmt\)\|\|date;/,
@@ -1937,9 +1909,7 @@ test("normalizeTxRow: an unparseable date is rejected outright, not silently rep
 // value, just element mutation) -- checking the source pattern directly,
 // matching this suite's precedent for DOM-mutation-only functions. ──
 test("openAddModal: resets #f-type to its first option and #f-source to 'Other' (not the alphabetically-first bank), not leaving editAccount()'s stale selection behind", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /function openAddModal\(\)\{[^}]*const ft=document\.getElementById\('f-type'\);if\(ft\)ft\.selectedIndex=0;updateSourceOptionsForType\(\);const fs=document\.getElementById\('f-source'\);if\(fs\)fs\.value='Other';/,
@@ -1957,9 +1927,7 @@ test("openAddModal: resets #f-type to its first option and #f-source to 'Other' 
 // as openVehicleModal()'s #v-other-cat (45th pass), openAcctCsvModal()
 // (77th pass), and openAddModal() (87th pass). ──
 test("openCatModal: resets _editingCatName, not just _confirmingDeleteCatName, so a category can't reopen stuck in rename mode", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /function openCatModal\(\)\{[\s\S]{0,200}?_confirmingDeleteCatName=null;[\s\S]{0,1200}?_editingCatName=null;\s*renderCatManagerList\(\);/,
@@ -2063,9 +2031,7 @@ test("detectSubscriptions: still detects an ordinary, genuinely consistent posit
 // wrong one -- no warning shown. openTxImportModal() itself is DOM-only
 // (no return value) -- checking the source pattern directly. ──
 test("openTxImportModal: resets #import-source-label and #import-replace, not leaving a prior import session's destructive settings behind", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /function openTxImportModal\(\)\{[\s\S]{0,2000}?const isl=document\.getElementById\('import-source-label'\);if\(isl\)isl\.value='Checking';\s*const irc=document\.getElementById\('import-replace'\);if\(irc\)irc\.checked=false;/,
@@ -2090,9 +2056,7 @@ test("openTxImportModal: resets #import-source-label and #import-replace, not le
 // rely on source-pattern checks + live verification instead), this
 // checks the source pattern directly. ──
 test("loadDemoProfile: resets state.sourceAlignDate/sourceAlignSkipped, not leaving a real user's source-alignment choice bleeding into the demo preview", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /function loadDemoProfile\(n, silent=false, skipRender=false\)\{[\s\S]{0,3700}?state\.sourceAlignDate=null;\s*state\.sourceAlignSkipped=false;/,
@@ -2117,9 +2081,7 @@ test("loadDemoProfile: resets state.sourceAlignDate/sourceAlignSkipped, not leav
 // network-dependent signOut() race -- not a good extraction-test
 // candidate, so this checks the source pattern directly. ──
 test("confirmClearAllData: removes trakyo_show_excl, not leaving a stale data-visibility preference behind after an explicitly-promised irreversible wipe", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /localStorage\.removeItem\('trakyo_tab'\);\s*localStorage\.removeItem\('trakyo_chart'\);[\s\S]{0,1500}?localStorage\.removeItem\('trakyo_show_excl'\);/,
@@ -2188,9 +2150,7 @@ test("renderActiveChart: passes null (top-level view) when no drill is in progre
 // source pattern directly, matching this suite's precedent for similar
 // functions. ──
 test("setChartMode: resets state.treemapDrillCat both when leaving Split mode and when (re-)entering it, keeping it in sync with the always-top-level renderTreemap() call", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /_restoreCatsFromTreemapStash\(\);\s*\/\/ state\.treemapDrillCat \(93rd pass\)[\s\S]{0,200}?state\.treemapDrillCat=null;\s*\}/,
@@ -2212,9 +2172,7 @@ test("setChartMode: resets state.treemapDrillCat both when leaving Split mode an
 // _resetSessionFiltersForDataReplace(), so every wholesale-dataset-replace
 // path calls the exact same reset set instead of four independent copies. ──
 test("_resetSessionFiltersForDataReplace: resets every session-scoped filter field, clears the search DOM, and un-persists showExcluded", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /function _resetSessionFiltersForDataReplace\(\)\{\s*_bizFilter='all';\s*state\.activeCats=new Set\(\);\s*state\.dashFilter=null;\s*state\.searchQuery='';\s*const searchEl=document\.getElementById\('tx-search'\);\s*if\(searchEl\)searchEl\.value='';\s*document\.getElementById\('search-clear-btn'\)\?\.classList\.add\('hidden'\);\s*state\.showExcluded=false;[\s\S]{0,700}?if\(!\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\)\{\s*try\{localStorage\.removeItem\('trakyo_show_excl'\);\}catch\(e\)\{\}\s*\}\s*_clearVendorDayFiltersForDataReplace\(\);\s*\}/,
@@ -2222,9 +2180,7 @@ test("_resetSessionFiltersForDataReplace: resets every session-scoped filter fie
   );
 });
 test("importBackup, confirmTxImport, and loadDemoProfile all call the shared _resetSessionFiltersForDataReplace() helper", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /state\.transactions=arr\(payload\.transactions\)[\s\S]{0,2100}?_resetSessionFiltersForDataReplace\(\);\s*rebuildMonthly\(\);\s*rebuildCatSelects\(\);\s*scheduleSave\(\);\s*renderAll\(\);\s*showToast\('Backup restored\.'/,
@@ -2418,9 +2374,7 @@ test("toggleExcluded: persists to localStorage during a normal session, but not 
 // month lands on Mar 2/3, since Feb has no 31st), even though only the
 // month/year are ever displayed. Fixed by clamping the day to 1 first. ──
 test("renderNwGoalWidget: clamps the ETA date to day 1 before adding months, avoiding month-end overflow", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const eta=new Date\(\);\s*eta\.setDate\(1\);\s*eta\.setMonth\(eta\.getMonth\(\)\+monthsToGoal\);/,
@@ -2435,9 +2389,7 @@ test("renderNwGoalWidget: clamps the ETA date to day 1 before adding months, avo
 // label ("-15% of the way to $100k") with nothing rendering-breaking about
 // it, just visibly wrong. ──
 test("dashboard net-worth pill: clamps the goal percentage to a minimum of 0", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const goalPct=Math\.max\(0,Math\.round\(nwNow\/state\.nwGoal\*100\)\);/,
@@ -2488,9 +2440,7 @@ test("_resetSessionFiltersForDataReplace: DOES remove trakyo_show_excl from loca
   assert.equal(removed, true, "a normal (non-demo-preview) wholesale-replace should still remove the stale localStorage key");
 });
 test("loadDemoProfile: sets window._viewingDemoOverReal before calling _resetSessionFiltersForDataReplace(), not after", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const hadRealData=state\.hasRealData;[\s\S]{0,700}?if\(!silent&&hadRealData\)window\._viewingDemoOverReal=true;[\s\S]{0,6000}?_resetSessionFiltersForDataReplace\(\);/,
@@ -2561,9 +2511,7 @@ test("renderVendorAliasList: counts a chained alias's affected transactions via 
 // reach Settings -> Clear all data and irreversibly wipe their real
 // localStorage while the banner told them their data was untouched. ──
 test("confirmClearAllData: blocks the wipe during an in-app demo-over-real preview, not just the ?demoPreview=1 URL mode", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /async function confirmClearAllData\(\)\{[\s\S]{0,900}?if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{/,
@@ -2585,9 +2533,7 @@ test("_stripCsvFormulaGuard: reverses csvSafeField()'s leading ' only when it gu
   assert.equal(_stripCsvFormulaGuard("Ordinary Store"), "Ordinary Store", "a value with no leading ' at all is untouched");
 });
 test("normalizeTxRow's 'trakyodollas' import branch strips the formula-injection guard from both description and category", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /desc=_stripCsvFormulaGuard\(\(row\['description'\]\|\|''\)\.trim\(\)\);/,
@@ -2625,9 +2571,7 @@ test("parseCSV: preserves a field's genuine trailing quote character instead of 
 // session-only view state never persisted by serializeState(), unlike
 // _bizFilter/activeCats/dashFilter/searchQuery/showExcluded. ──
 test("loadUserData: the transactions-replace branch calls only _clearVendorDayFiltersForDataReplace(), not the full session-filter reset", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /if \(Array\.isArray\(prefs\.transactions\)\) \{[\s\S]{0,4200}?_clearVendorDayFiltersForDataReplace\(\);\s*rebuildMonthly\(\);/,
@@ -2642,9 +2586,7 @@ test("loadUserData: the transactions-replace branch calls only _clearVendorDayFi
 // confirm() dialog, a full success toast/modal) while persisting nothing,
 // silently reverting on the next reload. ──
 test("importBackup: refuses to run during a demo-preview session instead of appearing to succeed and persisting nothing", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /function importBackup\(file\)\{\s*if\(!file\)return;[\s\S]{0,600}?if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{\s*showToast\('Not available while previewing demo data/,
@@ -2652,9 +2594,7 @@ test("importBackup: refuses to run during a demo-preview session instead of appe
   );
 });
 test("confirmTxImport: refuses to run during a demo-preview session instead of appearing to succeed and persisting nothing", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /function confirmTxImport\(\)\{\s*if\(!importParsed\.length\)return;[\s\S]{0,900}?if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{\s*closeModals\(\);\s*showToast\('Not available while previewing demo data/,
@@ -2671,9 +2611,7 @@ test("confirmTxImport: refuses to run during a demo-preview session instead of a
 // source label. confirmTxImport() is DOM-heavy; source-pattern only.
 // Found via a real user report on launch day, August 2026. ──
 test("import-success-modal has a #import-success-no-account nudge box, hidden by default like the existing uncategorized-count nudge", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const modalMatch = source.match(
     /<div class="modal-overlay hidden" id="import-success-modal">[\s\S]{0,1900}?<!-- Community rules modal -->/
   );
@@ -2685,9 +2623,7 @@ test("import-success-modal has a #import-success-no-account nudge box, hidden by
   );
 });
 test("confirmTxImport: shows the no-matching-account nudge only when no account's name matches this import's source label (case-insensitively)", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,11600}?\n}\n/);
   assert.ok(fnMatch, "confirmTxImport() should exist");
   assert.match(
@@ -2711,9 +2647,7 @@ test("confirmTxImport: shows the no-matching-account nudge only when no account'
 // track and nothing to reset on the demo-to-real transition. renderSpending()
 // is DOM-heavy; source-pattern only. Added August 4, 2026. ──
 test("renderSpending: the Import CSV button gets a one-time glow, gated on !state.hasRealData and a sessionStorage flag rather than a persisted state field", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function renderSpending\(\)\{[\s\S]{0,2400}?\n}\n/);
   assert.ok(fnMatch, "renderSpending() should exist");
   assert.match(
@@ -2733,9 +2667,7 @@ test("renderSpending: the Import CSV button gets a one-time glow, gated on !stat
   );
 });
 test("the .import-cta-glow animation respects prefers-reduced-motion, matching the codebase's existing motion-sensitivity awareness elsewhere", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /@keyframes import-cta-glow\{[\s\S]{0,220}?\}\s*\.import-cta-glow\{animation:import-cta-glow[^}]*\}\s*@media \(prefers-reduced-motion:reduce\)\{\.import-cta-glow\{animation:none\}\}/,
@@ -2759,9 +2691,7 @@ test("the .import-cta-glow animation respects prefers-reduced-motion, matching t
 // AFTER lastSnap, inverting both the sign of nwChange and the
 // "firstSnap -> lastSnap" display labels/range. ──
 test("Year in Review: quietestMonth is seeded from the filtered (spent>0) array, not the raw unfiltered byMonth[0]; net-worth change requires firstSnap to be chronologically at or before lastSnap", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const quietestMatches = source.match(/const _positive\w*=byMonth\.filter\(m=>m\.spent>0\);\s*const quietestMonth=_positive\w*\.length\?_positive\w*\.reduce\(\(a,b\)=>b\.spent<a\.spent\?b:a\):null;/g) || [];
   assert.equal(quietestMatches.length, 2, "both renderYearInReview() and copyYirSummary() should seed quietestMonth's reduce from the filtered array (or null if nothing passed the filter), not raw byMonth[0]");
   const nwChangeMatches = source.match(/firstSnap&&lastSnap&&firstSnap!==lastSnap&&firstSnap\.monthKey<=lastSnap\.monthKey\?lastSnap\.nw-firstSnap\.nw:null/g) || [];
@@ -2799,9 +2729,7 @@ test("_vendorAliasChainReaches: detects `from` at the full 10-hop depth resolveV
 // growth banner/deltas) index state.snapshots positionally instead of
 // using the existing getSortedSnaps() helper.
 test("loadUserData: sorts state.snapshots by monthKey after a cloud pull, since the query itself has no ORDER BY", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /state\.snapshots = snaps\.filter\(_isValidSnapshot\)\.map\(s => \(\{[\s\S]{0,300}?\}\)\);[\s\S]{0,1400}?state\.snapshots\.sort\(_snapshotSortCompare\);/,
@@ -2840,9 +2768,7 @@ test("confirmSrcRemove: coerces a numeric-looking source label back to a string 
 // permanently-null/unreachable "%/yr annualized" figure. Fixed to use
 // parseYM() against monthKey, matching renderInsights()'s NW pill.
 test("renderHistory: computes the annualized-rate window from monthKey via parseYM(), not from the locale-formatted .date string", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.doesNotMatch(
     source,
     /const \[_fy2,_fm2,_fd2\]=first\.date\.split\('-'\)/,
@@ -2862,9 +2788,7 @@ test("renderHistory: computes the annualized-rate window from monthKey via parse
 // saveDeclaredIncome()/clearDeclaredIncome() call this function bare
 // (uncaught), so the crash also skipped their own renderInsights() refresh.
 test("renderSankey: shows the income-setup nudge instead of crashing when there's income but no transactions in range", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /if\(!totalIncome\|\|!filteredMonths\.length\)\{\s*wrap\.innerHTML=`<div class="sankey-nudge"/,
@@ -2879,9 +2803,7 @@ test("renderSankey: shows the income-setup nudge instead of crashing when there'
 // DOMContentLoaded runs. Computed at parse time instead, closing the race
 // regardless of the exact microtask/macrotask ordering.
 test("window._isDemoPreview is computed at parse time, before the DOMContentLoaded handler", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /window\._isDemoPreview=new URLSearchParams\(window\.location\.search\)\.get\('demoPreview'\)==='1';\s*\n\s*\/\/ Wire up after DOM ready\s*\ndocument\.addEventListener\('DOMContentLoaded'/,
@@ -2893,9 +2815,7 @@ test("window._isDemoPreview is computed at parse time, before the DOMContentLoad
 // just-rebaselined session-filter/demo-preview cluster. ──
 
 test("renderDailyCal: endDate is anchored to noon (matching how transaction dates are parsed, so the last day of the range isn't silently excluded), and shows a 'No data' state instead of crashing when there are no transaction months in range", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
 
   // endDate defaulted to midnight local time (the numeric Date
   // constructor's default), while every transaction parses at noon -- a
@@ -2928,9 +2848,7 @@ test("renderDailyCal: endDate is anchored to noon (matching how transaction date
 // price/year themselves (cut entirely, August 2026) -- there's no field
 // left to esc(String(...)) coerce.
 test("renderHistory and renderVehicles escape snapshot/vehicle fields that could carry an HTML payload from a crafted backup file", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(source, /\$\{esc\(first\.date\)\} – \$\{esc\(last\.date\)\}/, "renderHistory()'s growth banner should esc() first.date/last.date");
   assert.match(source, /<div class="account-name" style="font-size:12px">\$\{esc\(s\.date\)\}<\/div>/, "renderHistory()'s per-row date should be esc()'d");
   assert.match(source, /\$\{\(Number\(v\.miles\)\|\|0\)\.toLocaleString\(\)\} mi/, "renderVehicles() should Number()-coerce miles before .toLocaleString(), since a string passes through that method unchanged");
@@ -2943,9 +2861,7 @@ test("renderHistory and renderVehicles escape snapshot/vehicle fields that could
 // credit (raw<0) has net=-raw>0 (a real asset-like contribution) but
 // still displayed with a '-' as if it were still net debt.
 test("renderNwBreakdown: the group-header total's sign is driven by net<0, not hardcoded per group type", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /\$\{net<0\?'-':''\}\$\{fmt\(net\)\}<\/span>/,
@@ -2968,9 +2884,7 @@ test("renderNwBreakdown: the group-header total's sign is driven by net<0, not h
 // default) was rejected as "in the future." Fixed with a pure
 // YYYY-MM-DD string comparison, avoiding all time-of-day ambiguity.
 test("saveHistoricalSnapshot: allows today's own date at any time of day, only rejects a date after today", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const todayIso=\(\(\)=>\{const t=new Date\(\);return`\$\{t\.getFullYear\(\)\}-\$\{String\(t\.getMonth\(\)\+1\)\.padStart\(2,'0'\)\}-\$\{String\(t\.getDate\(\)\)\.padStart\(2,'0'\)\}`;\}\)\(\);\s*if\(date>todayIso\)\{showToast\('That date is in the future/,
@@ -2989,9 +2903,7 @@ test("saveHistoricalSnapshot: allows today's own date at any time of day, only r
 // an "Invalid Date" ETA, and a NaN-width progress bar. Fixed with an
 // explicit no-goal-available branch pointing at openCustomNwGoal().
 test("renderNwGoalWidget: shows a custom-goal prompt instead of NaN/Invalid Date when net worth exceeds every built-in milestone", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /if\(!projEl\)return;[\s\S]{0,1100}?if\(!goal\)\{\s*projEl\.innerHTML=`[\s\S]{0,600}?data-action="openCustomNwGoal"[\s\S]{0,400}?return;\s*\}/,
@@ -3006,9 +2918,7 @@ test("renderNwGoalWidget: shows a custom-goal prompt instead of NaN/Invalid Date
 // injection, via (v.model||'').split(' ') -- a crafted backup storing
 // v.model as a truthy non-string bypasses the ||'' fallback.
 test("renderVehicles: escapes v.id and v.year in data-arg attributes, and coerces v.model to a string before .split()", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const idMatches = source.match(/data-action="editVehicle" data-arg="\$\{esc\(String\(v\.id\)\)\}"/g) || [];
   assert.equal(idMatches.length, 2, "both editVehicle buttons (the 'other' asset branch and the regular vehicle branch) should esc(String(v.id))");
   assert.match(
@@ -3030,9 +2940,7 @@ test("renderVehicles: escapes v.id and v.year in data-arg attributes, and coerce
 // state.snapshots trusts that they are (same invariant loadUserData()'s
 // 99th-pass fix restores for the cloud-pull path).
 test("loadFromLocalStorage and importBackup both sort state.snapshots by monthKey after assigning it", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /state\.snapshots=Array\.isArray\(saved\.snapshots\)\?saved\.snapshots\.filter\(_isValidSnapshot\)\.map\(s=>\(\{\.\.\.s,nw:Number\(s\.nw\)\|\|0,assets:Number\(s\.assets\)\|\|0,liab:Number\(s\.liab\)\|\|0\}\)\):state\.snapshots;[\s\S]{0,700}?state\.snapshots\.sort\(_snapshotSortCompare\);/,
@@ -3073,9 +2981,7 @@ test("_snapshotSortCompare: treats a missing or non-string monthKey as an empty 
   assert.deepEqual(validOrder, ["2026-02", "2026-03"], "the genuinely-valid entries should still end up correctly ordered relative to each other");
 });
 test("every state.snapshots sort call site uses the shared _snapshotSortCompare, not a bare inline comparator", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const sortCalls = source.match(/state\.snapshots\.sort\([^)]*\)/g) || [];
   assert.ok(sortCalls.length >= 4, "expected at least 4 direct state.snapshots.sort(...) call sites");
   for (const call of sortCalls) {
@@ -3096,9 +3002,7 @@ test("every state.snapshots sort call site uses the shared _snapshotSortCompare,
 // 101st pass's own fix comment named this exact dead end but only routed
 // around it for the separate !goal case, not this one. ──
 test("renderNwGoalWidget: the 'Goal reached' banner routes to openCustomNwGoal() instead of the dead-end setNwGoalNextMilestone() once no next milestone exists", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /if\(nw>=goal\)\{[\s\S]{0,700}?const hasNextMilestone=MILESTONES\.some\(m=>m>nw\);[\s\S]{0,700}?data-action="\$\{hasNextMilestone\?'setNwGoalNextMilestone':'openCustomNwGoal'\}"/,
@@ -3155,9 +3059,7 @@ test("_isValidSnapshot: rejects a monthKey that isn't YYYY-MM shaped, not just n
   assert.equal(_isValidSnapshot({ monthKey: "2026/03" }), false, "a wrong-separator monthKey should be rejected");
 });
 test("importBackup: filters malformed transactions/customCategories/snapshots entries instead of crashing mid-restore", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /state\.transactions=arr\(payload\.transactions\)\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'&&\/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\$\/\.test\(t\.date\)\?t\.date:'',desc:typeof t\.desc==='string'\?t\.desc:'',cat:typeof t\.cat==='string'\?t\.cat:'Other',card:typeof t\.card==='string'\?t\.card:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
@@ -3175,9 +3077,7 @@ test("importBackup: filters malformed transactions/customCategories/snapshots en
   );
 });
 test("loadFromLocalStorage: filters malformed transactions/customCategories/snapshots entries from the local cache", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /state\.transactions=\(Array\.isArray\(txSource\)\?txSource:state\.transactions\)\s*\.filter\(t=>t&&typeof t==='object'\)\s*\.map\(t=>\(\{\.\.\.t,date:typeof t\.date==='string'&&\/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\$\/\.test\(t\.date\)\?t\.date:'',desc:typeof t\.desc==='string'\?t\.desc:'',cat:typeof t\.cat==='string'\?t\.cat:'Other',card:typeof t\.card==='string'\?t\.card:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset\}\)\);/,
@@ -3204,9 +3104,7 @@ test("loadFromLocalStorage: filters malformed transactions/customCategories/snap
 // own coercion is covered by their own dedicated tests above -- only
 // loadUserData()'s cloud-sync path is novel here.
 test("loadUserData: filters malformed snapshot rows before mapping, not after, and coerces nw/assets/liab to numbers", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /state\.snapshots = snaps\.filter\(_isValidSnapshot\)\.map\(s => \(\{/,
@@ -3226,9 +3124,7 @@ test("loadUserData: filters malformed snapshot rows before mapping, not after, a
 // coercion is unchanged and still worth guarding against a crafted
 // backup's non-numeric payload.
 test("renderVehicles coerces v.value to a number once, reused across every display site", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function renderVehicles\(\)\{[\s\S]{0,5000}?\n\}/);
   assert.ok(fnMatch, "renderVehicles() should exist");
   const fn = fnMatch[0];
@@ -3240,9 +3136,7 @@ test("renderVehicles coerces v.value to a number once, reused across every displ
   assert.doesNotMatch(fn, /v\.purchase/, "renderVehicles() should no longer reference the removed v.purchase/v.purchaseYear fields at all");
 });
 test("renderMetrics: allSnaps is null-safe and uses the shared snapshot sort comparator", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const allSnaps=\[\.\.\.state\.snapshots\]\.filter\(s=>s&&typeof s\.monthKey==='string'\)\.sort\(_snapshotSortCompare\);/,
@@ -3375,9 +3269,7 @@ test("_reconcileNextId: doesn't throw on a very large transactions array (no unb
   assert.doesNotThrow(() => _reconcileNextId(), "should not throw a RangeError on a large transactions array");
   assert.equal(state.nextId, 200000, "should still correctly compute the max id (199999) + 1 across a large array");
 
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const localIdx = source.search(/state\.transactions=\(Array\.isArray\(txSource\)\?txSource:state\.transactions\)/);
   const localReconcileIdx = source.indexOf("_reconcileNextId();", localIdx);
   assert.ok(localIdx >= 0 && localReconcileIdx > localIdx && localReconcileIdx - localIdx < 1200, "loadFromLocalStorage() should call _reconcileNextId() shortly after restoring state.transactions, not before");
@@ -3386,9 +3278,7 @@ test("_reconcileNextId: doesn't throw on a very large transactions array (no unb
   assert.ok(backupIdx >= 0 && backupReconcileIdx > backupIdx && backupReconcileIdx - backupIdx < 1200, "importBackup() should call _reconcileNextId() shortly after restoring state.transactions, not before");
 });
 test("loadFromLocalStorage: accounts/vehicles/catRules/vendorAliases/hiddenPills/activeSources/sourceAlignDate/nextId are all Array.isArray/type-guarded, and accounts routes through _normalizeAccountTypes", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(source, /state\.accounts=Array\.isArray\(saved\.accounts\)\?_normalizeAccountTypes\(saved\.accounts\):state\.accounts;/, "accounts should be Array.isArray-guarded and routed through _normalizeAccountTypes(), which loadFromLocalStorage() never called before");
   assert.match(source, /state\.vehicles=Array\.isArray\(saved\.vehicles\)\?_arrOfObj\(saved\.vehicles\):state\.vehicles;/, "vehicles should be Array.isArray-guarded and entry-filtered");
   assert.match(source, /state\.catRules=_arrOfObj\(saved\.catRules\)\.filter\(r=>typeof r\.keyword==='string'\);/, "catRules should be entry-filtered plus a string-keyword check");
@@ -3401,16 +3291,12 @@ test("loadFromLocalStorage: accounts/vehicles/catRules/vendorAliases/hiddenPills
   assert.match(source, /const txSource=txRaw\?JSON\.parse\(txRaw\):saved\.transactions;[\s\S]{0,900}?state\.transactions=\(Array\.isArray\(txSource\)\?txSource:state\.transactions\)/, "the transactions txSource should be Array.isArray-checked before .filter()");
 });
 test("importBackup/loadUserData: both also call _reconcileNextId() after restoring nextId, matching loadFromLocalStorage()", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const matches = source.match(/_reconcileNextId\(\);/g) || [];
   assert.equal(matches.length, 3, "all 3 restore paths (cloud sync, local storage, backup restore) should call _reconcileNextId() once each");
 });
 test("importBackup and loadUserData both route vehicles/catRules/vendorAliases/customCategories (and, for loadUserData -- the least-guarded of the three ingestion paths -- hiddenPills/transactions/nextId too) through the shared guard helpers", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
 
   assert.match(source, /state\.vehicles=_arrOfObj\(saved\.vehicles\);/, "importBackup: vehicles should route through _arrOfObj()");
   assert.match(source, /state\.catRules=_arrOfObj\(saved\.catRules\)\.filter\(r=>typeof r\.keyword==='string'\);/, "importBackup: catRules should be entry-filtered plus a string-keyword check");
@@ -3437,9 +3323,7 @@ test("importBackup and loadUserData both route vehicles/catRules/vendorAliases/c
 // unrelated fresh-territory findings. ──
 
 test("transaction ingestion: desc/cat/card are string-coerced (with cat defaulting to 'Other') at all 3 ingestion points, not just date/amount -- and resolveVendor/displayVendor's own guards are falsy-only, confirming the fix is necessary", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const pattern = /date:typeof t\.date==='string'&&\/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\$\/\.test\(t\.date\)\?t\.date:'',desc:typeof t\.desc==='string'\?t\.desc:'',cat:typeof t\.cat==='string'\?t\.cat:'Other',card:typeof t\.card==='string'\?t\.card:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset/g;
   const matches = source.match(pattern) || [];
   assert.equal(matches.length, 3, "all 3 ingestion points (loadUserData, loadFromLocalStorage, importBackup) should coerce desc/cat/card the same way -- a truthy non-string desc previously threw in resolveVendor()/displayVendor(), reachable from the Treemap, Spending tab, and the Dashboard's own 'largest charge' card");
@@ -3448,9 +3332,7 @@ test("transaction ingestion: desc/cat/card are string-coerced (with cat defaulti
 });
 
 test("loadUserData and loadFromLocalStorage object-shape-guard state.budgets/state.income, matching importBackup()'s existing obj()-based guard", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(source, /if \(prefs\.budgets && typeof prefs\.budgets === 'object' && !Array\.isArray\(prefs\.budgets\)\) state\.budgets = prefs\.budgets;/, "loadUserData() should object-shape-guard budgets");
   assert.match(source, /if \(prefs\.income && typeof prefs\.income === 'object' && !Array\.isArray\(prefs\.income\)\) state\.income = prefs\.income;/, "loadUserData() should object-shape-guard income");
   assert.match(source, /if\(saved\.budgets&&typeof saved\.budgets==='object'&&!Array\.isArray\(saved\.budgets\)&&Object\.keys\(saved\.budgets\)\.length>0\)state\.budgets=saved\.budgets;/, "loadFromLocalStorage() should object-shape-guard budgets (Object.keys().length>0 alone is true for a non-empty string too)");
@@ -3464,9 +3346,7 @@ test("fmtC: raw=true skips esc(), for D3 .text() SVG contexts that would otherwi
   assert.equal(fmtC(1000, true), "A&B1k", "raw=true should skip esc(), so a D3 .text() node doesn't render a literal '&amp;' instead of '&'");
 });
 test("fmtC(...,true) is used at every D3 .text() call site that renders a currency figure", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(source, /\.text\(d=>fmtC\(d,true\)\);/, "the NW chart's axis-tick labels should use raw fmtC");
   assert.match(source, /\.text\(goalInRange\?`Goal \$\{fmtC\(state\.nwGoal,true\)\}`:`Goal \$\{fmtC\(state\.nwGoal,true\)\} ↑`\);/, "the NW goal chart label should use raw fmtC");
   assert.match(source, /\.text\(fmtC\(d\.data\.value,true\)\+\(drillCat\?'':' · '\+pct\+'%'\)\);/, "the Treemap tile's large-label variant should use raw fmtC");
@@ -3475,9 +3355,7 @@ test("fmtC(...,true) is used at every D3 .text() call site that renders a curren
 });
 
 test("Sankey link tooltip: the third (real-category) branch has a space after </strong>, matching its two sibling branches", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /:`<strong>\$\{esc\(d\.target\.name\)\}<\/strong> \$\{fmtC\(d\.value\)\} · \$\{Math\.round\(d\.value\/totalIncome\*100\)\}% of income`;/,
@@ -3503,9 +3381,7 @@ test("Sankey link tooltip: the third (real-category) branch has a space after </
 // document.getElementById-driven functions), so this checks the source
 // pattern directly. ──
 test("buildRcList: the early-return branch clears #rc-list's innerHTML, not just hides #recategorize-section", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function buildRcList\(tx,origCat,newCat\)\{[\s\S]{0,3000}?\n\}/);
   assert.ok(fnMatch, "buildRcList() should exist");
   assert.match(
@@ -3527,9 +3403,7 @@ test("buildRcList: the early-return branch clears #rc-list's innerHTML, not just
 // state-heavy function with established source-pattern-only test precedent
 // in this suite (see the 87th pass's date-validation test above). ──
 test("normalizeTxRow: chase/debitcredit branches route their raw-category fallback through mapImportedCategory(), not the unvalidated bank string", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const chaseMatch = source.match(/\}\s*else if\(importFmt==='chase'\)\{[\s\S]{0,1400}?\n\n  \} else if\(importFmt==='debitcredit'\)/);
   assert.ok(chaseMatch, "the chase import branch should exist");
   assert.match(
@@ -3554,9 +3428,7 @@ test("normalizeTxRow: chase/debitcredit branches route their raw-category fallba
 // the active filter). Both functions are D3/DOM-heavy; source-pattern only,
 // matching this suite's established precedent. ──
 test("openOtherVendorsModal: the per-vendor average divides by the active time window's period count, not the all-time month count", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /window\._otherVendorsAvgDenom=allPeriods;/,
@@ -3579,9 +3451,7 @@ test("openOtherVendorsModal: the per-vendor average divides by the active time w
 // branch specifically, a second missing space before its leading '·' --
 // mirroring the exact two gaps the 105th pass fixed in the Sankey tooltip.
 test("Treemap tooltip: has a space after </strong>, and the non-drill branch's leading '·' has a space before it too", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /tip\.innerHTML=`<strong>\$\{esc\(tmDisplayName\(d\.data\.name\)\)\}<\/strong> \$\{fmtC\(d\.data\.value\)\}\$\{drillCat\?` · \$\{pct\}% of \$\{esc\(drillCat\)\}`:` · \$\{pct\}% of spend`\}`;/,
@@ -3605,9 +3475,7 @@ test("fmt/fmtD/fmtH: raw=true skips esc(), matching fmtC's existing convention",
   // is needed here instead, same single-line `const NAME=...;` extraction
   // approach.
   const loadWithCtx = (name, state, esc) => {
-    const fs = require("fs");
-    const path = require("path");
-    const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+    const source = readSource();
     const re = new RegExp(`^const ${name}=.*;$`, "m");
     const m = source.match(re);
     if (!m) throw new Error(`loadWithCtx: could not find 'const ${name}=...' in source`);
@@ -3626,9 +3494,7 @@ test("fmt/fmtD/fmtH: raw=true skips esc(), matching fmtC's existing convention",
   assert.equal(fmtHFn(1000, true), "A&B1,000", "fmtH(...,true) should skip esc()");
 });
 test("fmt/fmtD/fmtH raw param is applied at every non-D3, non-innerHTML sink: .textContent assignments and Chart.js canvas callbacks", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   // Chart.js tooltip callbacks (canvas-rendered, no entity decoding)
   assert.doesNotMatch(source, /fmtH\(ctx\.raw\)(?!,true\))/, "every fmtH(ctx.raw) Chart.js tooltip callback should pass raw=true");
   assert.match(source, /\.map\(x=>`\$\{x\.v\}: \$\{fmtC\(x\.val,true\)\}`\)/, "the vendor chart's _otherBreakdown tooltip lines should use raw fmtC");
@@ -3656,9 +3522,7 @@ test("fmt/fmtD/fmtH raw param is applied at every non-D3, non-innerHTML sink: .t
 // first, before any conditional, for the same reason (99th adversarial
 // pass). openBudgetModal() itself is DOM-heavy; source-pattern only. ──
 test("openBudgetModal: coerces cat to a string before checking falsiness, so a category literally named \"0\" isn't mistaken for \"no cat specified\"", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function openBudgetModal\(cat\)\{[\s\S]{0,1600}?\n\}/);
   assert.ok(fnMatch, "openBudgetModal() should exist");
   const coerceIdx = fnMatch[0].search(/if\(cat!==undefined\)cat=String\(cat\);/);
@@ -3679,9 +3543,7 @@ test("openBudgetModal: coerces cat to a string before checking falsiness, so a c
 // all. normalizeTxRow() is DOM/state-heavy with established source-
 // pattern-only precedent in this suite. ──
 test("normalizeTxRow: the generic import branch also routes its raw-category fallback through mapImportedCategory(), matching chase/debitcredit", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /if\(!isIncome&&cat==='Other'\)cat=mapImportedCategory\(row\['category'\]\|\|row\['cat'\]\|\|row\['type'\]\)\|\|'Other';/,
@@ -3703,9 +3565,7 @@ test("normalizeTxRow: the generic import branch also routes its raw-category fal
 // monthly (3x/12x too high to read as "/mo"). Both render functions are
 // D3/DOM-heavy; source-pattern only. ──
 test("openOtherVendorsModal: the per-vendor average's unit label matches the grain the denominator was computed at (not hardcoded '/mo')", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /window\._otherVendorsAvgGrainLabel=grainLabel;/,
@@ -3724,9 +3584,7 @@ test("openOtherVendorsModal: the per-vendor average's unit label matches the gra
 // raw=true), so an esc()'d custom '&' currency symbol rendered as a
 // literal "&amp;" here specifically. ──
 test("Sankey income-node label uses raw fmtC, matching the category-node labels above it", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /\.text\(isOverspend\s*\?`⚠ Spending exceeds income · \$\{fmtC\(totalIncome,true\)\} · \$\{monthCount\}mo\$\{editMark\}`\s*:`Income · \$\{fmtC\(totalIncome,true\)\} · \$\{monthCount\}mo\$\{editMark\}`\);/,
@@ -3741,9 +3599,7 @@ test("Sankey income-node label uses raw fmtC, matching the category-node labels 
 // currency symbol, no %-of-month/MoM/peak context), unlike every sibling
 // branch. renderSpendChart() is D3/Chart.js-heavy; source-pattern only. ──
 test("renderSpendChart: the category-filtered (activeCats) branch has its own tooltip label callback, not Chart.js's bare default", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const branchMatch = source.match(/if\(state\.activeCats\.size>0\)\{\n      const catsToShow[\s\S]{0,2700}?\n    \}/);
   assert.ok(branchMatch, "the activeCats>0 branch should exist");
   assert.match(
@@ -3771,9 +3627,7 @@ test("renderSpendChart: the category-filtered (activeCats) branch has its own to
 // only (saveEditTx() reads the row checkboxes directly), but a real
 // mismatch. buildRcList() is DOM-heavy; source-pattern only. ──
 test("buildRcList: the populate branch syncs #rc-select-all's checked state to match the freshly-rebuilt (all-checked) row list", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function buildRcList\(tx,origCat,newCat\)\{[\s\S]{0,3000}?\n\}/);
   assert.ok(fnMatch, "buildRcList() should exist");
   assert.match(
@@ -3798,9 +3652,7 @@ test("buildRcList: the populate branch syncs #rc-select-all's checked state to m
 // is D3/Chart.js-heavy; source-pattern only, matching this suite's
 // established precedent. ──
 test("renderSpendChart: the activeCats branch's 'Peak month' tooltip flag uses a branch-local peak (only the selected categories), not the shared all-category peakIdx", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const branchMatch = source.match(/if\(state\.activeCats\.size>0\)\{\n      const catsToShow[\s\S]{0,2700}?\n    \}/);
   assert.ok(branchMatch, "the activeCats>0 branch should exist");
   assert.match(
@@ -3836,9 +3688,7 @@ test("renderSpendChart: the activeCats branch's 'Peak month' tooltip flag uses a
 // for the demo profile's own categories. confirmTxImport() is DOM-heavy;
 // source-pattern only. ──
 test("confirmTxImport: auto-registers any imported transaction's category that isn't already in getAllCats() as a new custom category", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/newTxs=importParsed\.map[\s\S]{0,3700}?\n  \}\);/);
   assert.ok(fnMatch, "confirmTxImport()'s mutateTransactions block should exist");
   assert.match(
@@ -3866,9 +3716,7 @@ test("confirmTxImport: auto-registers any imported transaction's category that i
 // tier -- whenever this is a first-real-save transition, before the
 // auto-register step ever sees them.
 test("normalizeTxRow: flags catFromUserRule only when state.catRules is what assigned the category", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /let catFromUserRule=false;/,
@@ -3886,9 +3734,7 @@ test("normalizeTxRow: flags catFromUserRule only when state.catRules is what ass
   );
 });
 test("confirmTxImport: re-derives catFromUserRule categories via community rules on a first-real-save transition, before auto-registering them as permanent custom categories", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const wasFirstRealSave=!state\.hasRealData;/,
@@ -3930,9 +3776,7 @@ test("confirmTxImport: re-derives catFromUserRule categories via community rules
 // nothing behind. loadDemoProfile() is DOM/state-heavy; source-pattern
 // only. ──
 test("loadDemoProfile: vehicles/snapshots/transactions/catRules/customCategories all get per-object copies, matching state.accounts' existing pattern", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(source, /state\.vehicles=\(p\.vehicles\|\|\[\]\)\.map\(v=>\(\{\.\.\.v\}\)\);/, "vehicles should be per-object copied");
   assert.match(source, /state\.snapshots=p\.snapshots\.map\(s=>\(\{\.\.\.s\}\)\);/, "snapshots should be per-object copied");
   assert.match(source, /state\.transactions=p\.transactions\.map\(t=>\(\{\.\.\.t\}\)\);/, "transactions should be per-object copied");
@@ -3951,9 +3795,7 @@ test("loadDemoProfile: vehicles/snapshots/transactions/catRules/customCategories
 // by all 3 prior raw-fmt sweeps (105-107) since those only enumerated DOM
 // sinks. ──
 test("copyYirSummary: every fmt() call feeding the clipboard uses raw=true, not the default esc()'d form", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function copyYirSummary\(\)\{[\s\S]{0,5300}?\n\}/);
   assert.ok(fnMatch, "copyYirSummary() should exist");
   const fmtCalls = fnMatch[0].match(/fmt\((?:[^()]|\([^()]*\))*\)/g) || [];
@@ -3970,9 +3812,7 @@ test("copyYirSummary: every fmt() call feeding the clipboard uses raw=true, not 
 // trap for a future fix landing in the shadowed block. Removed, folding
 // into a single assignment. ──
 test("renderSpendChart: the top5+Other branch's tooltip label callback is assigned exactly once, not shadowed by a second assignment", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const assignmentCount = (source.match(/customOpts\.plugins\.tooltip[.=]/g) || []).length;
   assert.equal(assignmentCount, 1, "customOpts.plugins.tooltip should be referenced exactly once (a single assignment), not assigned then immediately reassigned");
   assert.match(
@@ -4000,9 +3840,7 @@ test("renderSpendChart: the top5+Other branch's tooltip label callback is assign
 // renderSpendChart() is D3/Chart.js-heavy; source-pattern only, matching
 // this suite's established precedent. ──
 test("renderSpendChart: peakIdx is declared let and reassigned from the vendor-filtered monthTotalsForChart when a vendor filter is active", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /let peakIdx=periodSums\.indexOf\(Math\.max\(\.\.\.periodSums\)\);/,
@@ -4033,9 +3871,7 @@ test("renderSpendChart: peakIdx is declared let and reassigned from the vendor-f
 // a historical marker that confirmTxImport() itself no longer hand-rolls
 // this reset.
 test("confirmTxImport: the demo-session-wipe branch delegates to the shared _replaceDemoDataWithReal() helper, not its own hand-rolled reset list", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,2700}?_replaceDemoDataWithReal\(\);/);
   assert.ok(fnMatch, "confirmTxImport() should call _replaceDemoDataWithReal()");
   assert.doesNotMatch(
@@ -4056,9 +3892,7 @@ test("confirmTxImport: the demo-session-wipe branch delegates to the shared _rep
 // insensitive convention, so a category differing only in case
 // ("groceries" vs "Groceries") could register as a second duplicate too. ──
 test("normalizeTxRow: the trakyodollas branch trims its category (matching desc), and confirmTxImport()'s category auto-register is case-insensitive (matching addCustomCat())", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /cat=_stripCsvFormulaGuard\(\(row\['category'\]\|\|'Other'\)\.trim\(\)\)\|\|'Other';/,
@@ -4085,9 +3919,7 @@ test("normalizeTxRow: the trakyodollas branch trims its category (matching desc)
 // old in-memory JS indefinitely" failure this mechanism exists to
 // prevent, one deploy cycle later than intended. ──
 test("Service worker registration: hadController is updated on every controllerchange event, not just read once at page load", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /let hadController=!!navigator\.serviceWorker\.controller;/,
@@ -4109,9 +3941,7 @@ test("Service worker registration: hadController is updated on every controllerc
 // localStorage migration" comment described something that couldn't
 // happen given the reassignment immediately above it. Removed. ──
 test("loadDemoProfile: the dead no-op accounts filter (immediately after a full state.accounts reassignment) is removed", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.doesNotMatch(
     source,
     /state\.accounts = state\.accounts\.filter\(a=>p\.accounts\.some\(pa=>pa\.id===a\.id\)\);/,
@@ -4142,9 +3972,7 @@ test("loadDemoProfile: the dead no-op accounts filter (immediately after a full 
 // hand-rolled (and twice-incomplete: 98th, then 109th pass) version of the
 // same reset. A no-op once state.hasRealData is already true. ──
 test("_replaceDemoDataWithReal: resets every field loadDemoProfile() seeds to the same fresh-state defaults, and no-ops once hasRealData is true", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function _replaceDemoDataWithReal\(\)\{[\s\S]{0,2800}?\n\}/);
   assert.ok(fnMatch, "_replaceDemoDataWithReal() should exist");
   assert.match(fnMatch[0], /if\(state\.hasRealData\)return;/, "should no-op once real data already exists, never wiping real data");
@@ -4161,9 +3989,7 @@ test("_replaceDemoDataWithReal: resets every field loadDemoProfile() seeds to th
   assert.match(fnMatch[0], /_resetSessionFiltersForDataReplace\(\);/, "should also reset session-scoped filters, matching every other wholesale-replace path");
 });
 test("saveAccount: calls _replaceDemoDataWithReal() before adding the account, and falls back to adding as new if editAcctId no longer resolves after the wipe", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function saveAccount\(\)\{[\s\S]{0,4100}?closeModals\(\);renderAll\(\);\}/);
   assert.ok(fnMatch, "saveAccount() should exist");
   const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
@@ -4177,9 +4003,7 @@ test("saveAccount: calls _replaceDemoDataWithReal() before adding the account, a
   );
 });
 test("saveSnapshot: calls _replaceDemoDataWithReal() before the duplicate-month check and before computing netWorth()/totalAssets()/totalLiab()", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function saveSnapshot\(\)\{[\s\S]{0,4500}?\n\}/);
   assert.ok(fnMatch, "saveSnapshot() should exist");
   const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
@@ -4190,9 +4014,7 @@ test("saveSnapshot: calls _replaceDemoDataWithReal() before the duplicate-month 
   assert.ok(wipeIdx < netWorthIdx, "the wipe must run before netWorth()/totalAssets()/totalLiab() are computed, so the snapshot reflects real (possibly zero) account data, not fake demo balances");
 });
 test("parseCsvAccounts: only calls _replaceDemoDataWithReal() once at least one row parses successfully, not unconditionally", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function parseCsvAccounts\(text\)\{[\s\S]{0,2400}?\n\}/);
   assert.ok(fnMatch, "parseCsvAccounts() should exist");
   const ifImportedIdx = fnMatch[0].search(/if\(imported>0\)\{/);
@@ -4204,9 +4026,7 @@ test("parseCsvAccounts: only calls _replaceDemoDataWithReal() once at least one 
   );
 });
 test("saveTx: sets state.hasRealData and calls _replaceDemoDataWithReal(), unlike before when it never set hasRealData at all", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function saveTx\(\)\{[\s\S]{0,3900}?\n\}/);
   assert.ok(fnMatch, "saveTx() should exist");
   assert.match(fnMatch[0], /_replaceDemoDataWithReal\(\);/, "saveTx() should call the shared wipe helper");
@@ -4219,9 +4039,7 @@ test("saveTx: sets state.hasRealData and calls _replaceDemoDataWithReal(), unlik
 // other tab kept showing the old symbol until an unrelated renderAll() or
 // a reload. ──
 test("applyCurrency and applyCustomCurrency both call renderAll(), not just renderSpending()", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const acMatch = source.match(/function applyCurrency\(sym,btn\)\{[\s\S]{0,900}?\n\}/);
   assert.ok(acMatch, "applyCurrency() should exist");
   assert.match(acMatch[0], /renderAll\(\);/, "applyCurrency() should call renderAll()");
@@ -4243,9 +4061,7 @@ test("applyCurrency and applyCustomCurrency both call renderAll(), not just rend
 // directly off getBaseTxs() once, rather than adding a third branch-local
 // patch. ──
 test("renderSpendChart: the shared peakIdx is computed from getBaseTxs() (respects state.showExcluded), not from MONTHLY/getAggregatedData() (which never did)", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const _peakBaseTxs=getBaseTxs\(\)\.filter\(t=>!t\.isIncome&&\(state\.activeCats\.size===0\|\|state\.activeCats\.has\(t\.cat\)\)\);\s*const monthSumsFn=m=>_peakBaseTxs\.reduce\(\(s,t\)=>t\.date\.slice\(0,7\)===m\?s\+t\.amount:s,0\);/,
@@ -4276,9 +4092,7 @@ test("renderSpendChart: the shared peakIdx is computed from getBaseTxs() (respec
 // and hasRealData together, so this guard also means the wipe below it is
 // always already a no-op by the time it's reached. ──
 test("saveSnapshot: requires state.hasRealAccounts before wiping demo data or computing netWorth()/totalAssets()/totalLiab(), and the old mid-function demo-preview branch it made unreachable is gone", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function saveSnapshot\(\)\{[\s\S]{0,4500}?\n\}/);
   assert.ok(fnMatch, "saveSnapshot() should exist");
   const guardIdx = fnMatch[0].search(/if\(!state\.hasRealAccounts\)\{/);
@@ -4304,9 +4118,7 @@ test("saveSnapshot: requires state.hasRealAccounts before wiping demo data or co
 // tracking on and month-to-month income variation, the peak sum could
 // include a paycheck that none of the actually-plotted bars do. ──
 test("renderSpendChart: the shared peak computation excludes income transactions, matching every one of its own getBaseTxs() consumers", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const _peakBaseTxs=getBaseTxs\(\)\.filter\(t=>!t\.isIncome&&\(state\.activeCats\.size===0\|\|state\.activeCats\.has\(t\.cat\)\)\);/,
@@ -4325,9 +4137,7 @@ test("renderSpendChart: the shared peak computation excludes income transactions
 // imported categories (108th pass); saveTx(), the 5th "first real save"
 // entry point the 110th pass added, never got the equivalent. ──
 test("saveTx: auto-registers the selected category as a real custom category if it isn't already registered (matching confirmTxImport()'s equivalent fix)", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function saveTx\(\)\{[\s\S]{0,3900}?\n\}/);
   assert.ok(fnMatch, "saveTx() should exist");
   const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
@@ -4349,9 +4159,7 @@ test("saveTx: auto-registers the selected category as a real custom category if 
 // saveTx()/confirmTxImport(), so those 3 call sites rendered against
 // caches describing data that no longer existed. ──
 test("_replaceDemoDataWithReal: calls rebuildMonthly() and rebuildCatSelects(), matching loadDemoProfile()'s own wholesale-replace pattern", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function _replaceDemoDataWithReal\(\)\{[\s\S]{0,2800}?\n\}/);
   assert.ok(fnMatch, "_replaceDemoDataWithReal() should exist");
   assert.match(fnMatch[0], /rebuildMonthly\(\);/, "should call rebuildMonthly()");
@@ -4371,9 +4179,7 @@ test("_replaceDemoDataWithReal: calls rebuildMonthly() and rebuildCatSelects(), 
 // disappears, a normal success toast fires) that silently reverted on
 // the next reload with no warning it was never actually saved. ──
 test("saveAccount, saveSnapshot, saveTx, handleCsv, and importCsvText all refuse to run during a demo-preview-over-real session", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const guardPattern = /if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{\s*closeModals\(\);\s*showToast\('Not available while previewing demo data — your real data is untouched here',tc\('#94A3B8','#4B5563'\),9000\);\s*return;\s*\}/;
   const fns = [
     ["saveAccount", /function saveAccount\(\)\{[\s\S]{0,900}/],
@@ -4397,9 +4203,7 @@ test("saveAccount, saveSnapshot, saveTx, handleCsv, and importCsvText all refuse
 // 110th pass's own comment claimed this computation now matches "the same
 // base data … all plot below," which wasn't quite true until this fix. ──
 test("renderSpendChart: the shared peak computation respects state.activeCats, matching Source/Trend mode's own plotted-data filter", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const _peakBaseTxs=getBaseTxs\(\)\.filter\(t=>!t\.isIncome&&\(state\.activeCats\.size===0\|\|state\.activeCats\.has\(t\.cat\)\)\);/,
@@ -4411,9 +4215,7 @@ test("renderSpendChart: the shared peak computation respects state.activeCats, m
 // to inside confirmTxImport()'s own guard, but never read anywhere else
 // in the file. Removed along with the dead guard. ──
 test("confirmTxImport: the dead write-only SOURCES global and its guard are removed", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.doesNotMatch(source, /\bconst SOURCES=/, "the dead SOURCES const should be removed");
   assert.doesNotMatch(source, /SOURCES\.push\(source\)/, "the dead write-only guard should be removed");
 });
@@ -4438,9 +4240,7 @@ test("confirmTxImport: the dead write-only SOURCES global and its guard are remo
 // saveAccount(). saveVehicle() is DOM-heavy; source-pattern only,
 // matching this suite's established precedent. ──
 test("saveVehicle: has the demo-preview guard, calls _replaceDemoDataWithReal() after validation, and falls back editVehicleId to null if it no longer resolves post-wipe", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function saveVehicle\(\)\{[\s\S]{0,7900}?closeModals\(\);renderAll\(\);\n\}/);
   assert.ok(fnMatch, "saveVehicle() should exist");
   const guardIdx = fnMatch[0].search(/if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{/);
@@ -4463,9 +4263,7 @@ test("saveVehicle: has the demo-preview guard, calls _replaceDemoDataWithReal() 
 // snapshots" notice visible over fully real history for anyone whose
 // first snapshot came from this "+ Add historical" flow instead. ──
 test("saveHistoricalSnapshot: has the demo-preview guard, wipes demo data before the duplicate-month checks, and sets hasRealData/hasRealSnapshot", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,7700}?_editingSnapshotMonthKey=null;[\s\S]{0,300}?closeModals\(\);renderAll\(\);scheduleSave\(\);/);
   assert.ok(fnMatch, "saveHistoricalSnapshot() should exist");
   const guardIdx = fnMatch[0].search(/if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{/);
@@ -4500,9 +4298,7 @@ test("saveHistoricalSnapshot: has the demo-preview guard, wipes demo data before
 // don't have this problem. Fixed by widening all 4 to renderAll(),
 // matching those three. Found and fixed August 2026. ──
 test("confirmTxImport()/saveTx()/saveSnapshot()/saveHistoricalSnapshot() all call renderAll() after their demo-to-real wipe, not a narrower render subset that omits the Accounts tab", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const confirmTxImportSrc = source.match(/function confirmTxImport\(\)\{[\s\S]{0,11600}?\n}\n/)[0];
   assert.match(
     confirmTxImportSrc,
@@ -4545,9 +4341,7 @@ test("confirmTxImport()/saveTx()/saveSnapshot()/saveHistoricalSnapshot() all cal
 // mutateTransactions() already; only the DOM re-render was too narrow.
 // Found August 2026. ──
 test("applyRulesToExisting()/saveEditTx()/deleteTx()/toggleTxBiz()/applyVenmoOpt() all call renderAll(), not just renderSpending(), after mutating state.transactions", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
 
   const applyRulesSrc = source.match(/function applyRulesToExisting\(\)\{[\s\S]{0,1900}?\n\}/)?.[0] || "";
   assert.match(
@@ -4592,9 +4386,7 @@ test("applyRulesToExisting()/saveEditTx()/deleteTx()/toggleTxBiz()/applyVenmoOpt
 // one-time "did they ever open the demo picker this session" flag, never
 // reset by the demo-to-real transition. ──
 test("Sign-out handler: only re-shows the demo nudge if the user hasn't transitioned to real data (state.hasRealData is false)", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /if \(window\._demoPicked && !state\.hasRealData\) \{/,
@@ -4625,9 +4417,7 @@ test("Sign-out handler: only re-shows the demo nudge if the user hasn't transiti
 // Supabase-heavy; source-pattern only, matching this suite's established
 // precedent. ──
 test("loadUserData: derives hasRealAccounts/hasRealSnapshot/hasRealData from what was actually restored", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/\/\/ Ensure activeSources is populated after cloud restore[\s\S]{0,2500}?renderAll\(\);/);
   assert.ok(fnMatch, "the post-restore block in loadUserData() should exist");
   assert.match(fnMatch[0], /if\(state\.accounts\.length>0\)state\.hasRealAccounts=true;/, "should set hasRealAccounts when real accounts were restored");
@@ -4651,9 +4441,7 @@ test("loadUserData: derives hasRealAccounts/hasRealSnapshot/hasRealData from wha
 // 111th pass fixed (saveSnapshot()'s guard checks the flag, not the
 // account list itself). ──
 test("deleteAcct and deleteVehicle: reset hasRealAccounts=false when state.accounts becomes empty, matching confirmDeleteSnapshot()'s existing pattern", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const daMatch = source.match(/function deleteAcct\(\)\{[\s\S]{0,1000}?\n\}/);
   assert.ok(daMatch, "deleteAcct() should exist");
   assert.match(daMatch[0], /if\(!state\.accounts\.length\)state\.hasRealAccounts=false;/, "deleteAcct() should reset hasRealAccounts when the last account is deleted");
@@ -4674,9 +4462,7 @@ test("deleteAcct and deleteVehicle: reset hasRealAccounts=false when state.accou
 // 2 dead-code references to a #demo-notice-history element that doesn't
 // exist anywhere in the DOM. ──
 test("renderAll: per-tab demo notices also hide once state.hasRealData is true, not just their own more-specific flag", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function renderAll\(\)\{[\s\S]{0,2400}?\n\}/);
   assert.ok(fnMatch, "renderAll() should exist");
   assert.match(fnMatch[0], /if\(da\)da\.style\.display=\(state\.hasRealAccounts\|\|state\.hasRealData\)\?'none':'';/, "the accounts notice should hide once hasRealData is true too");
@@ -4688,9 +4474,7 @@ test("renderAll: per-tab demo notices also hide once state.hasRealData is true, 
   );
 });
 test("The dead #demo-notice-history DOM references are removed (the element doesn't exist anywhere in the DOM)", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.doesNotMatch(source, /demo-notice-history/, "no reference to the nonexistent #demo-notice-history element should remain");
 });
 
@@ -4720,9 +4504,7 @@ test("check-demo-transition-coverage.py exists and reports 0 candidates against 
 // that stale bound silently hidden -- directly contradicting the link's
 // own label. ──
 test("resetSourceAlign: also clears state.rangeTo, not just sourceAlignDate/rangeFrom", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /function resetSourceAlign\(\)\{state\.sourceAlignDate=null;state\.rangeFrom=null;state\.rangeTo=null;scheduleSave\(\);renderSpending\(\);\}/,
@@ -4737,9 +4519,7 @@ test("resetSourceAlign: also clears state.rangeTo, not just sourceAlignDate/rang
 // first one found. checkSourceAlignment() is DOM-heavy; source-pattern
 // only, matching this suite's established precedent. ──
 test("checkSourceAlignment: removes any existing #source-align-modal before creating a new one", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function checkSourceAlignment\(\)\{[\s\S]{0,5000}?document\.body\.appendChild\(modal\);/);
   assert.ok(fnMatch, "checkSourceAlignment() should exist");
   const removeIdx = fnMatch[0].search(/const existing=document\.getElementById\('source-align-modal'\);[\s\S]{0,800}?if\(existing\)existing\.remove\(\);/);
@@ -4755,9 +4535,7 @@ test("checkSourceAlignment: removes any existing #source-align-modal before crea
 // subscriptions resolving to the same vendor key) undercounted both its
 // own displayed amount and the aggregate subTotal pill. ──
 test("detectSubscriptions: sums ALL of a vendor's entries in the latest month, not just the first match", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function detectSubscriptions\(allMonths,latestFullM\)\{[\s\S]{0,5500}?return\{subVendors,subTotal\};/);
   assert.ok(fnMatch, "detectSubscriptions() should exist");
   assert.match(
@@ -4775,9 +4553,7 @@ test("detectSubscriptions: sums ALL of a vendor's entries in the latest month, n
 // extrapolates to several times a typical month's total, false-alarming
 // "would be your highest" off essentially no signal. ──
 test("renderInsights: the spend-pace projection requires at least 3 days elapsed before showing (falls back to the stable last-month comparison otherwise)", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /if\(currentSpendSoFar>0&&dayOfMonth>=3&&dayOfMonth<daysInCurrentM\)\{/,
@@ -4793,9 +4569,7 @@ test("renderInsights: the spend-pace projection requires at least 3 days elapsed
 // otherwise leave a user with real vehicles but zero accounts stuck
 // demo-armed. ──
 test("loadUserData: hasRealData derivation also includes state.vehicles.length as a defensive fallback", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /if\(state\.hasRealAccounts\|\|state\.hasRealSnapshot\|\|state\.vehicles\.length>0\|\|state\.transactions\.length>0\)state\.hasRealData=true;/,
@@ -4815,9 +4589,7 @@ test("loadUserData: hasRealData derivation also includes state.vehicles.length a
 // until later in the same function, so it can't be trusted safe at this
 // point either) -- replaced with a locally-computed collision-safe id. ──
 test("showAllPills and togglePill: no longer repeat classList.remove('hidden') after openPillCustomizer() already does it, and the unused labels query is removed", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const saMatch = source.match(/function showAllPills\(\)\{[\s\S]{0,400}?\n\}/);
   assert.ok(saMatch, "showAllPills() should exist");
   assert.doesNotMatch(saMatch[0], /document\.getElementById\('pill-customizer-modal'\)\.classList\.remove\('hidden'\);/, "showAllPills() should not repeat the redundant classList.remove('hidden')");
@@ -4827,15 +4599,11 @@ test("showAllPills and togglePill: no longer repeat classList.remove('hidden') a
   assert.doesNotMatch(tpMatch[0], /querySelectorAll\('#pill-toggle-list label span'\)/, "the unused labels query should be removed");
 });
 test("checkSourceAlignment: longMonths reuses monthDiff instead of recomputing the identical formula", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(source, /const longMonths=monthDiff;/, "longMonths should reuse monthDiff, not recompute the same date-diff formula a second time");
 });
 test("loadFromLocalStorage: the legacy College-Fund migration uses a locally-computed collision-safe id, not a hardcoded literal", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const safeId=Math\.max\(0,\.\.\.state\.accounts\.map\(a=>a\.id\|\|0\)\)\+1;\s*state\.accounts\.push\(\{id:safeId,name:'College Fund\(s\)'/,
@@ -4855,9 +4623,7 @@ test("loadFromLocalStorage: the legacy College-Fund migration uses a locally-com
 // pass, confirming the account/vehicle restore-path area otherwise
 // converged after the 130th/131st passes. ──
 test("loadFromLocalStorage: the legacy College-Fund migration's saved.collegeFund branch also uses a locally-computed collision-safe id, matching its sibling branch", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const collegeFundSafeId=Math\.max\(0,\.\.\.state\.accounts\.map\(a=>a\.id\|\|0\)\)\+1;/,
@@ -4897,9 +4663,7 @@ test("loadFromLocalStorage: the legacy College-Fund migration's saved.collegeFun
 //
 // Found in the 133rd adversarial pass. ──
 test("loadUserData/loadFromLocalStorage: declaredIncome is Number()-coerced on restore, matching importBackup()'s existing coercion", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /if \(prefs\.declaredIncome !== undefined\) state\.declaredIncome = Number\(prefs\.declaredIncome\)\|\|0;/,
@@ -4914,16 +4678,12 @@ test("loadUserData/loadFromLocalStorage: declaredIncome is Number()-coerced on r
   assert.equal(matches.length, 2, "both loadFromLocalStorage() and importBackup() should share the identical Number()-coerced declaredIncome line");
 });
 test("importBackup: income restore is array-guarded, matching loadFromLocalStorage()/loadUserData()", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const matches = source.match(/\(saved\.income&&typeof saved\.income==='object'&&!Array\.isArray\(saved\.income\)\)\?saved\.income:\{method:null,monthlyAmount:0\}/g) || [];
   assert.equal(matches.length, 2, "both loadFromLocalStorage() and importBackup() should share the identical array-guarded income restore expression");
 });
 test("loadFromLocalStorage: the College-Fund migration's balance is coerced the same way _normalizeAccountTypes() coerces every other account's balance", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const collegeFundParsedBalance=parseFloat\(String\(saved\.collegeFund\.balance\)\.replace\(\/,\/g,''\)\);\s*const collegeFundBalance=Number\.isFinite\(collegeFundParsedBalance\)\?collegeFundParsedBalance:0;/,
@@ -4950,9 +4710,7 @@ test("loadFromLocalStorage: the College-Fund migration's balance is coerced the 
 // address bar/an installed PWA's status bar stayed dark blue even when
 // a returning user's saved preference (or a live toggle) was light. ──
 test("theme-color meta tag updates on both initial load and toggleTheme(), matching the active theme's --bg-page color", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const bootMatch = source.match(/\/\/ Restore theme before CSS renders to prevent flash[\s\S]{0,1100}?\}\)\(\);/);
   assert.ok(bootMatch, "the boot-time theme-restore IIFE should exist");
   assert.match(
@@ -4975,9 +4733,7 @@ test("theme-color meta tag updates on both initial load and toggleTheme(), match
 // check earlier in the same function, just wasn't a field any consumer
 // used once summed into the object. ──
 test("detectSubscriptions: no longer pushes an unused median field into subVendors", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /subVendors\.push\(\{vendor,amt:curAmt,cat:curEntries\[0\]\.cat,months:uniqueMonths\.size\}\);/,
@@ -4995,9 +4751,7 @@ test("detectSubscriptions: no longer pushes an unused median field into subVendo
 // (which runs first, before CSS renders) already set it correctly,
 // including its own localStorage-throws fallback. ──
 test("body-script theme IIFE no longer redundantly re-sets data-theme (the head IIFE already did)", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const match = source.match(/\/\/ Apply saved theme and preferences on load\n\(function\(\)\{[\s\S]{0,500}/);
   assert.ok(match, "the body-script theme-apply IIFE should exist");
   assert.doesNotMatch(
@@ -5026,9 +4780,7 @@ test("body-script theme IIFE no longer redundantly re-sets data-theme (the head 
 // Found in the 117th adversarial pass, a regression escaped from the
 // 112th pass's own demo-transition fix. ──
 test("saveHistoricalSnapshot: only clears _editingSnapshotMonthKey when the demo-data wipe actually ran, not unconditionally", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,5000}?if\(_wasDemoData\)_editingSnapshotMonthKey=null;/);
   assert.ok(fnMatch, "saveHistoricalSnapshot() should exist and reach the fixed clear site");
   assert.match(
@@ -5056,9 +4808,7 @@ test("saveHistoricalSnapshot: only clears _editingSnapshotMonthKey when the demo
 // coercion turns null back into 0) -- so not a crash, but a real
 // silent-data-corruption path. Found in the 119th adversarial pass. ──
 test("the 8 manual-entry save functions (saveTx, saveEditTx, saveAccount, saveVehicle, saveBudget, saveHistoricalSnapshot, saveDeclaredIncome, saveManualIncome) all reject non-finite (Infinity/1e400) values, not just falsy/NaN ones", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
 
   const saveTxMatch = source.match(/function saveTx\(\)\{[\s\S]{0,1600}/);
   assert.ok(saveTxMatch, "saveTx() should exist");
@@ -5131,9 +4881,7 @@ test("the 8 manual-entry save functions (saveTx, saveEditTx, saveAccount, saveVe
 // type="number" field accepts scientific notation like '1e400'). Found
 // in the 120th adversarial pass. ──
 test("parseCsvAccounts and confirmCustomGoal (the 120th pass's extension of the 119th pass's Number.isFinite sweep) both reject non-finite (Infinity/1e400) values, not just NaN", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /if\(!name\.trim\(\)\|\|!normType\|\|!Number\.isFinite\(balance\)\)\{skipped\+\+;return;\}/,
@@ -5158,9 +4906,7 @@ test("parseCsvAccounts and confirmCustomGoal (the 120th pass's extension of the 
 // falling back to the file-level label only when the column is absent or
 // blank. Found in the 121st adversarial pass. ──
 test("normalizeTxRow's 'trakyodollas' import branch reads the per-row Source column back, instead of collapsing every row onto the file-level source label", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /card=_stripCsvFormulaGuard\(\(row\['source'\]\|\|''\)\.trim\(\)\)\|\|undefined;/,
@@ -5185,9 +4931,7 @@ test("normalizeTxRow's 'trakyodollas' import branch reads the per-row Source col
 // one level broader (a substring conflict, not just an exact one). Found
 // in the 122nd adversarial pass. ──
 test("_checkSrpKeywordConflict: also warns when the new keyword would shadow (not just exactly duplicate) an existing rule", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function _checkSrpKeywordConflict\(keyword\)\{[\s\S]{0,1600}?\n\}/);
   assert.ok(fnMatch, "_checkSrpKeywordConflict() should exist");
   assert.match(
@@ -5208,9 +4952,7 @@ test("_checkSrpKeywordConflict: also warns when the new keyword would shadow (no
 // are the only signal a save/import was rejected. Found in the 123rd
 // adversarial pass. ──
 test("#toast carries role=\"status\" and aria-live=\"polite\" so its messages are announced to screen readers", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<div id="toast" role="status" aria-live="polite" aria-atomic="true" style=/,
@@ -5225,9 +4967,7 @@ test("#toast carries role=\"status\" and aria-live=\"polite\" so its messages ar
 // inside it, but assistive tech didn't recognize it as a dialog. Found in
 // the 123rd adversarial pass. ──
 test("checkSourceAlignment's dynamically-built modal carries the same dialog semantics as every static modal", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="source-align-title" tabindex="-1" style="max-width:420px">/,
@@ -5252,9 +4992,7 @@ test("checkSourceAlignment's dynamically-built modal carries the same dialog sem
 // up. Found in the 124th adversarial pass (re-verifying the 123rd pass's
 // own fix). ──
 test("checkSourceAlignment's modal is wired into the shared a11y focus-management system (registered with the observer, opens/closes via the same handlers as static modals)", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /_a11yModalObserver\.observe\(modal,\{attributes:true,attributeFilter:\['class'\]\}\);\s*if\(_a11yOpenModalEl!==modal\)_a11yHandleOpen\(modal\);/,
@@ -5279,9 +5017,7 @@ test("checkSourceAlignment's modal is wired into the shared a11y focus-managemen
 // a prior edit gets their near-limit warning threshold silently altered
 // with zero intent. Found in the 124th adversarial pass. ──
 test("a focused <input type=number> is blurred on wheel scroll, preventing the browser's native scroll-to-change behavior", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /document\.addEventListener\('wheel',function\(e\)\{\s*if\(e\.target\.tagName==='INPUT'&&e\.target\.type==='number'&&document\.activeElement===e\.target\)e\.target\.blur\(\);\s*\},\{passive:true\}\);/,
@@ -5302,9 +5038,7 @@ test("a focused <input type=number> is blurred on wheel scroll, preventing the b
 // returning focus to <body> instead of the trigger on the new modal's
 // eventual close. Found in the 125th adversarial pass. ──
 test("checkSourceAlignment: re-opening while a prior instance is already tracked-open preserves the ORIGINAL pre-modal return-focus target", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function checkSourceAlignment\(\)\{[\s\S]{0,5000}?document\.body\.appendChild\(modal\);/);
   assert.ok(fnMatch, "checkSourceAlignment() should exist");
   assert.match(
@@ -5328,9 +5062,7 @@ test("checkSourceAlignment: re-opening while a prior instance is already tracked
 // passphrase mid-entry), which was silently destroyed by a reload the
 // user never asked for. Found in the 125th adversarial pass. ──
 test("service-worker controllerchange defers location.reload() while a modal is open, instead of forcing it immediately", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const reloadWhenIdle=\(\)=>\{\s*if\(document\.querySelector\('\.modal-overlay:not\(\.hidden\)'\)\)setTimeout\(reloadWhenIdle,1000\);\s*else location\.reload\(\);\s*\};\s*reloadWhenIdle\(\);/,
@@ -5353,9 +5085,7 @@ test("service-worker controllerchange defers location.reload() while a modal is 
 // (not just the breakdown) is consistent. Found in the 127th adversarial
 // pass. ──
 test("Year in Review: Total spent/month figures/savings rate exclude transfer-like categories, not just the category breakdown", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const matches = source.match(/state\.transactions\.filter\(t=>months\.includes\(t\.date\.slice\(0,7\)\)&&isRealSpend\(t\)&&!YIR_EXCLUDE_CATS\.has\(t\.cat\)&&state\.activeSources\.has\(t\.card\)&&\(_bizFilter!=='biz'\|\|t\.biz\)&&\(_bizFilter!=='personal'\|\|!t\.biz\)\);/g) || [];
   assert.equal(matches.length, 2, "both renderYearInReview() and copyYirSummary() should apply YIR_EXCLUDE_CATS directly to the txs filter, not only to the separate txsFiltered used for the category/vendor breakdown");
 });
@@ -5368,9 +5098,7 @@ test("Year in Review: Total spent/month figures/savings rate exclude transfer-li
 // 128th adversarial pass, a fresh-territory re-verification of the 127th
 // pass's fix. ──
 test("copyYirSummary: footer note reflects that transfer-like categories are excluded throughout, not just from categories/vendors", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /'\(Transfers, CC payments & investments excluded throughout\)',/,
@@ -5390,9 +5118,7 @@ test("copyYirSummary: footer note reflects that transfer-like categories are exc
 // and no way to enter the app at all. Found in the 136th adversarial
 // pass. ──
 test(".demo-picker carries the same max-height/overflow-y scroll cap as .modal, so it can't clip unreachable content on a short viewport", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /\.demo-picker\{background:var\(--bg-card\);border:1px solid var\(--border-mid\);border-radius:16px;padding:1\.75rem;width:min\(420px,100%\);max-height:90vh;overflow-y:auto;box-shadow:/,
@@ -5410,9 +5136,7 @@ test(".demo-picker carries the same max-height/overflow-y scroll cap as .modal, 
 // unreachable-content gap the 136th pass fixed for the demo picker, just
 // horizontal instead of vertical. Found in the 137th adversarial pass. ──
 test("#toast carries a max-width and wraps long messages, instead of overflowing past both edges of a narrow viewport", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<div id="toast" role="status" aria-live="polite" aria-atomic="true" style="[^"]*max-width:92vw;white-space:normal;text-align:center"><\/div>/,
@@ -5428,9 +5152,7 @@ test("#toast carries a max-width and wraps long messages, instead of overflowing
 // demo-picker fix since tapping anywhere (including the clipped area)
 // dismisses this overlay. Found in the 137th adversarial pass. ──
 test("showPillTip: the tip content box carries max-height/overflow-y, matching .modal's own scroll cap", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /max-width:320px;width:100%;max-height:80vh;overflow-y:auto;font-size:12px;color:#94A3B8;line-height:1\.6;white-space:pre-line/,
@@ -5447,9 +5169,7 @@ test("showPillTip: the tip content box carries max-height/overflow-y, matching .
 // theme equivalent (~4.2:1) was already fine. Found in the 138th
 // adversarial pass. ──
 test("dark theme's --pill-info-border/--pill-info-color reach at least 3:1 contrast against --pill-info-bg, matching --text-muted", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /--pill-info-border:#8595A8;\s*--pill-info-color:#8595A8;/,
@@ -5466,9 +5186,7 @@ test("dark theme's --pill-info-border/--pill-info-color reach at least 3:1 contr
 // keyboard user can focus and open it with Enter, then has no keyboard
 // route to close it. Found in the 138th adversarial pass. ──
 test("Escape key handler dismisses the pill-tip overlay, matching every other dismissible surface it walks", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const escMatch = source.match(/if\(e\.key==='Escape'\)\{[\s\S]{0,1000}/);
   assert.ok(escMatch, "the Escape key handler should exist");
   assert.match(
@@ -5488,9 +5206,7 @@ test("Escape key handler dismisses the pill-tip overlay, matching every other di
 // dark theme, the app's default -- light theme's own #6B7280 (~4.8:1)
 // was already fine. Found in the 139th adversarial pass. ──
 test("dark theme's --text-dim reaches at least WCAG AA contrast against --bg-card (matching --text-muted's already-verified-safe value), and the fully-dead --text-faint token is removed", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /--text-dim:#8595A8;/,
@@ -5519,9 +5235,7 @@ test("dark theme's --text-dim reaches at least WCAG AA contrast against --bg-car
 // JS either) -- the same class pass 139 only partially cleaned up when
 // it removed --text-faint. Found in the 140th adversarial pass. ──
 test("dead CSS custom properties from the 140th pass's sweep are removed from both theme blocks", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const deadTokens = [
     "--bg-elevated", "--chart-bg", "--chart-grid", "--chart-tick",
     "--card-nudge-border", "--info-box-bg", "--info-box-border",
@@ -5552,9 +5266,7 @@ test("dead CSS custom properties from the 140th pass's sweep are removed from bo
 // (saveTx() bumps state.nextId, which IS serialized). Found in the 143rd
 // adversarial pass. ──
 test("cross-tab storage warning also fires for LS_TXS_KEY, not just LS_KEY -- transaction edits/deletes wouldn't otherwise trigger a storage event at all", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /if\(\(e\.key===LS_KEY\|\|e\.key===LS_TXS_KEY\)&&!window\._isDemoPreview&&!window\._viewingDemoOverReal\)\{/,
@@ -5574,9 +5286,7 @@ test("cross-tab storage warning also fires for LS_TXS_KEY, not just LS_KEY -- tr
 // expose navigator.clipboard but deny writes. Found in the 146th
 // adversarial pass. ──
 test("copyYirSummary()'s clipboard write has a .catch() so a permission-denied rejection surfaces a toast instead of failing silently", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /navigator\.clipboard\.writeText\(lines\)\.then\(\(\)=>showToast\('📋 Copied to clipboard','#34D399'\)\)\.catch\(\(\)=>showToast\('Could not copy','#FCD34D'\)\);/,
@@ -5604,9 +5314,7 @@ test("copyYirSummary()'s clipboard write has a .catch() so a permission-denied r
 // actual <button>/<a> elements, which already get Enter/Space for free.
 // Found in the 148th adversarial pass. ──
 test("category/vendor bucket-card tiles and active-filter pills are keyboard-focusable and keyboard-activatable, with a visible focus outline that isn't silently overridden by the unconditional .active-bucket outline", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /data-action="toggleVendorFilterByIdx" data-arg="\$\{vi\}" tabindex="0" role="button" aria-pressed="\$\{isActive\}"/,
@@ -5675,9 +5383,7 @@ test("category/vendor bucket-card tiles and active-filter pills are keyboard-foc
 // (Tab reaches the row, Enter opens the edit modal; Tab reaches the pill,
 // Enter/Space toggles biz/personal without opening the modal). ──
 test("transaction rows and their nested BIZ/PERS toggle pill are keyboard-focusable and keyboard-activatable", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /data-action="openEditTxModal" data-arg="\$\{t\.id\}" tabindex="0" role="button" aria-label="\$\{fmtDate\(t\.date\)\}/,
@@ -5722,9 +5428,7 @@ test("transaction rows and their nested BIZ/PERS toggle pill are keyboard-focusa
 // established elsewhere in the file (editSnapshot()'s _normDateToISO()).
 // Found in the 153rd adversarial pass. ──
 test("transaction date is format-validated (not just type-guarded) at all 3 restore paths, closing the one unescaped tx render sink", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const matches = source.match(/date:typeof t\.date==='string'&&\/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\$\/\.test\(t\.date\)\?t\.date:''/g) || [];
   assert.equal(matches.length, 3, "all 3 transaction restore paths (importBackup/loadUserData/loadFromLocalStorage) should format-validate date, not just type-guard it");
 });
@@ -5747,9 +5451,7 @@ test("transaction date is format-validated (not just type-guarded) at all 3 rest
 // "Remaining/saved" calc, where a refund SHOULD increase savings) is
 // deliberately left untouched. Found in the 156th adversarial pass. ──
 test("renderTreemap and renderSankey drop non-positive-net categories/vendors immediately after aggregation, before any total/percentage math reads them", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /Object\.keys\(catTotals\)\.forEach\(cat=>\{if\(catTotals\[cat\]<=0\)delete catTotals\[cat\];\}\);\s*Object\.keys\(catVendors\)\.forEach\(cat=>\{\s*Object\.keys\(catVendors\[cat\]\)\.forEach\(v=>\{if\(catVendors\[cat\]\[v\]<=0\)delete catVendors\[cat\]\[v\];\}\);\s*\}\);/,
@@ -5774,9 +5476,7 @@ test("renderTreemap and renderSankey drop non-positive-net categories/vendors im
 // adversarial pass) -- this sibling in renderHistory() never got the
 // matching guard. Found in the 158th adversarial pass. ──
 test("renderHistory()'s annualized growth-rate guard checks both first.nw>0 and last.nw>0, matching renderInsights()'s already-correct sibling formula", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const annRate=first\.nw>0&&last\.nw>0&&days>=60\?Math\.min\(999,Math\.round\(\(Math\.pow\(last\.nw\/first\.nw,365\/days\)-1\)\*100\)\):null;/,
@@ -5798,14 +5498,14 @@ test("renderHistory()'s annualized growth-rate guard checks both first.nw>0 and 
 // `git log -S 'trakyo_last_import'`, commit cb67285's removal diff).
 // Found in the 163rd adversarial pass. ──
 test("confirmTxImport() writes trakyo_last_import to localStorage, which index.html's landing-page nudge depends on", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /try\{localStorage\.setItem\('trakyo_last_import',new Date\(\)\.toISOString\(\)\);\}catch\(e\)\{\}/,
     "confirmTxImport() should write trakyo_last_import on every successful import"
   );
+  const fs = require("fs");
+  const path = require("path");
   const indexSource = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
   assert.match(
     indexSource,
@@ -5831,9 +5531,7 @@ test("confirmTxImport() writes trakyo_last_import to localStorage, which index.h
 // contained with a truncated, hover-titled name matching every sibling
 // site's convention. Found in the 166th adversarial pass. ──
 test("Year-in-Review's top-categories/top-vendors rows truncate long names with ellipsis + a title tooltip, matching every sibling vendor/category render site", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<div style="flex:1;min-width:0;font-size:12px;color:var\(--text-primary\);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="\$\{esc\(cat\)\}">\$\{esc\(cat\)\}<\/div>/,
@@ -5863,9 +5561,7 @@ test("Year-in-Review's top-categories/top-vendors rows truncate long names with 
 // overflow:hidden;text-overflow:ellipsis;white-space:nowrap and a title
 // tooltip on each name element). Found in the 167th adversarial pass. ──
 test("the top-5-categories inline panel truncates long category names, matching its already-fixed top-5-vendors sibling 12 lines below", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<span style="color:\$\{state\.activeCats\.has\(cat\)\?'var\(--text-primary\)':'var\(--text-secondary\)'\};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px" title="\$\{esc\(cat\)\}">\$\{esc\(cat\)\}<\/span>/,
@@ -5873,9 +5569,7 @@ test("the top-5-categories inline panel truncates long category names, matching 
   );
 });
 test("nw-item-name and account-name CSS classes truncate overlong text, and their render sites give the flex chain min-width:0 so the truncation can actually take effect", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /\.nw-item-name\{font-size:13px;font-weight:500;color:var\(--text-primary\);overflow:hidden;text-overflow:ellipsis;white-space:nowrap\}/,
@@ -5908,9 +5602,7 @@ test("nw-item-name and account-name CSS classes truncate overlong text, and thei
 // vehicle "other asset" card's name. Found in the 168th adversarial
 // pass. ──
 test("the .truncate utility class exists and is applied to the 5 sites the 168th pass's systematic search found sharing the overflow/ellipsis gap", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /\.truncate\{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0\}/,
@@ -5963,9 +5655,7 @@ test("the .truncate utility class exists and is applied to the 5 sites the 168th
 // no-op -- each also gets an explicit max-width so the ellipsis has
 // something to actually truncate against.
 test("the rules-manager keyword chip and vendor-alias chips truncate with the same .truncate+title pattern as the 168th pass's 5 sites", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<span class="truncate" style="font-family:monospace;font-size:12px;font-weight:700;color:var\(--accent-blue-light\);background:var\(--bg-card\);padding:2px 8px;border-radius:4px;max-width:220px" title="\$\{esc\(r\.keyword\)\}">\$\{esc\(r\.keyword\)\}<\/span>/,
@@ -5993,9 +5683,7 @@ test("the rules-manager keyword chip and vendor-alias chips truncate with the sa
 // this suite (see the chase/debitcredit test above) since it's a 280+ line
 // DOM/state-heavy function.
 test("normalizeTxRow: ANZ NZ/BNZ/Westpac NZ branches read the correct real column names, and ING Australia's Credit/Debit Amount columns are recognized by the debitcredit branch", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
 
   const debitcreditMatch = source.match(/\}\s*else if\(importFmt==='debitcredit'\)\{[\s\S]{0,1400}?\n\n  \} else if\(importFmt==='anznz'\)/);
   assert.ok(debitcreditMatch, "the debitcredit import branch should exist and be immediately followed by the new anznz branch");
@@ -6045,9 +5733,7 @@ test("normalizeTxRow: ANZ NZ/BNZ/Westpac NZ branches read the correct real colum
 });
 
 test("parseTxFile: UK midata auto-detect is checked before the generic debit+credit check (its header contains both substrings), uses the right delimiter, and normalizeTxRow reads its real column names", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
 
   assert.match(
     source,
@@ -6082,9 +5768,7 @@ test("parseTxFile: UK midata auto-detect is checked before the generic debit+cre
 // stale data -- but the UI kept claiming a file was "ready to import" when
 // nothing had actually parsed.
 test("showImportPreview: the zero-transactions branch hides any stale preview/Import button left over from an earlier file in the same modal session", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "showImportPreview() should exist");
   const zeroBranch = fnMatch[0].match(/if\(!importParsed\.length\)\{[\s\S]*?\n {4}return;\n {2}\}/);
@@ -6107,9 +5791,7 @@ test("showImportPreview: the zero-transactions branch hides any stale preview/Im
 // a user expected (or the wrong account's history) wasn't obvious until
 // after the data was already merged in.
 test("showImportPreview: the preview stats line includes the imported date range, computed the same way confirmTxImport()'s post-import success modal already does", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "showImportPreview() should exist");
   assert.match(
@@ -6158,9 +5840,7 @@ test("showImportPreview's date-range formula: single-month imports show one labe
 // date range without trusting the summary line -- the 8-row sample only
 // ever showed whichever end the file happened to list first.
 test("showImportPreview: the Detected badge no longer repeats the transaction count already shown in the PREVIEW stats line", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "showImportPreview() should exist");
   assert.match(
@@ -6175,9 +5855,7 @@ test("showImportPreview: the Detected badge no longer repeats the transaction co
   );
 });
 test("showImportPreview: the stats line's date-range/total spans use --text-muted, not the hardcoded #475569 hex removed elsewhere for failing WCAG AA; preview row dates use the higher-contrast --text-secondary", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "showImportPreview() should exist");
 
@@ -6204,9 +5882,7 @@ test("showImportPreview: the stats line's date-range/total spans use --text-mute
 // #import-preview to sit right next to the Detected badge near the top of
 // the modal, instead of below the format-picker/reset links.
 test("setImportPreviewSort(): clicking a new column sorts by it with a sensible default direction; clicking the same column again flips direction", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function setImportPreviewSort\(col\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "setImportPreviewSort() should exist");
   assert.match(fnMatch[0], /if\(_importPreviewSortCol===col\)\{\s*_importPreviewSortAsc=!_importPreviewSortAsc;/, "clicking the already-active column should flip direction");
@@ -6226,9 +5902,7 @@ test("setImportPreviewSort(): clicking a new column sorts by it with a sensible 
   assert.match(parseFileFn[0], /_importPreviewSortCol='date';\s*_importPreviewSortAsc=false;/, "loading a new file into an already-open modal should also reset the sort, not carry over the prior file's setting");
 });
 test("showImportPreview: the 8-row sample is sorted by whichever column/direction is active, over the full importParsed set, with visible sort-direction arrows", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "showImportPreview() should exist");
   assert.match(
@@ -6249,9 +5923,7 @@ test("showImportPreview: the 8-row sample is sorted by whichever column/directio
   );
 });
 test("the import-preview column headers exist for all 4 sortable fields, width-aligned with the row template below them", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   ["date", "desc", "cat", "amount"].forEach((col) => {
     assert.match(
       source,
@@ -6261,9 +5933,7 @@ test("the import-preview column headers exist for all 4 sortable fields, width-a
   });
 });
 test("the import summary line (#import-preview-stats) now sits right after the Detected badge, not nested inside #import-preview below the format-picker/reset links", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const detectedBadgeMatch = source.match(/<div id="import-detected-fmt"[\s\S]*?<\/div>[\s\S]{0,600}?<div id="import-preview-stats"/);
   assert.ok(detectedBadgeMatch, "#import-preview-stats should immediately follow the #import-detected-fmt block in the markup");
   const previewStatsMatch = source.match(/<div id="import-preview-stats" class="hidden"/);
@@ -6282,9 +5952,7 @@ test("the import summary line (#import-preview-stats) now sits right after the D
 // Two findings from the adversarial pass run immediately after the
 // relocation/column-sort work above, both fixed same day.
 test("openTxImportModal() also hides the relocated #import-preview-stats on a fresh modal open, not just #import-preview/#import-confirm-btn", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function openTxImportModal\(\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "openTxImportModal() should exist");
   // Moving #import-preview-stats out of #import-preview (so it could sit
@@ -6303,9 +5971,7 @@ test("openTxImportModal() also hides the relocated #import-preview-stats on a fr
   );
 });
 test("the import-preview category pill truncates with the shared .truncate class, so an unusually long custom category name can't blow out the row or misalign the new Amount column header", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   // addCustomCat() enforces no max length on category names, and the new
   // column-sort header (added same day) made any resulting misalignment
   // visually noticeable for the first time -- previously an unbounded-
@@ -6319,9 +5985,7 @@ test("the import-preview category pill truncates with the shared .truncate class
 });
 
 test("parseTxFile: ANZ NZ/BNZ/Westpac NZ/Starling/midata have mutually-exclusive auto-detect signatures, and force DD/MM date parsing when a sample is otherwise ambiguous", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /firstLine\.includes\('particulars'\)&&firstLine\.includes\('foreign'\)\)\{\s*importFmt='anznz';/,
@@ -6364,9 +6028,7 @@ test("parseTxFile: ANZ NZ/BNZ/Westpac NZ/Starling/midata have mutually-exclusive
 // drifting copies. Shared toggle/sync/export functions (below) replace
 // what was originally Flow-only bespoke code (toggleSankeyTableView()).
 test("_chartTableView/TABLE_VIEW_LS_KEYS: all 4 modes persist independently, sankey keeps its original localStorage key", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const TABLE_VIEW_LS_KEYS=\{sankey:'trakyo_sankey_table',split:'trakyo_split_table',trend:'trakyo_trend_table',daily:'trakyo_daily_table'\};/,
@@ -6380,9 +6042,7 @@ test("_chartTableView/TABLE_VIEW_LS_KEYS: all 4 modes persist independently, san
 });
 
 test("toggleChartTableView(): flips the current mode's own boolean, persists it, resyncs the button, and re-renders via the existing renderActiveChart() dispatcher", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function toggleChartTableView\(\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "toggleChartTableView() should exist");
   assert.match(fnMatch[0], /if\(!\(mode in TABLE_VIEW_LS_KEYS\)\)return;/, "should no-op outside the 4 eligible modes as a safety net");
@@ -6393,9 +6053,7 @@ test("toggleChartTableView(): flips the current mode's own boolean, persists it,
 });
 
 test("_syncChartTableBtn(): shows/hides #chart-table-btn and #chart-table-export-btn together based on mode eligibility, syncs the toggle button's label/color to the current mode's own state", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function _syncChartTableBtn\(\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "_syncChartTableBtn() should exist");
   assert.match(fnMatch[0], /const eligible=mode in TABLE_VIEW_LS_KEYS;/, "eligibility should be derived from the same TABLE_VIEW_LS_KEYS map toggleChartTableView() uses, not a separate hardcoded list that could drift out of sync");
@@ -6416,9 +6074,7 @@ for (const [renderFn, tableViewKey, tableVarName] of [
   ["renderDailyCal", "daily", "dailyTableHtml"],
 ]) {
   test(`${renderFn}(): swaps its table between sr-only and .chart-data-table based on _chartTableView.${tableViewKey}, and skips its own visual chart entirely in table-view mode`, () => {
-    const fs = require("fs");
-    const path = require("path");
-    const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+    const source = readSource();
     const fnMatch = source.match(new RegExp(`function ${renderFn}\\([^)]*\\)\\{[\\s\\S]*?\\n\\}`));
     assert.ok(fnMatch, `${renderFn}() should exist`);
     assert.match(
@@ -6447,9 +6103,7 @@ for (const [renderFn, tableViewKey, tableVarName] of [
 // lives on the Income node's own label ("Nmo income"), independent of
 // the title. Removed rather than added to the other 6.
 test("renderSankey() no longer builds a standalone period/title label above the diagram -- the Income node's own '${monthCount}mo income' label already carries the duration context a title provided", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function renderSankey\(\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "renderSankey() should exist");
   assert.doesNotMatch(fnMatch[0], /periodLabelHtml/, "periodLabelHtml (the standalone title div) should no longer exist");
@@ -6459,9 +6113,7 @@ test("renderSankey() no longer builds a standalone period/title label above the 
 });
 
 test("renderSpendChart()'s trend branch: same table/skip-chart pattern as the other 3, but writes into #trend-table-wrap rather than replacing its own wrap (Trend's canvas is a persistent element, unlike the other 3's self-owned wrap divs)", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const trendMatch = source.match(/\} else if\(state\.chartMode==='trend'\)\{[\s\S]*?\n  \} else if\(state\.chartMode==='vendor'\)\{/);
   assert.ok(trendMatch, "the trend branch of renderSpendChart() should exist");
   assert.match(trendMatch[0], /class="\$\{_chartTableView\.trend\?'chart-data-table':'sr-only'\}"/, "the trend table should swap classes based on _chartTableView.trend");
@@ -6471,9 +6123,7 @@ test("renderSpendChart()'s trend branch: same table/skip-chart pattern as the ot
 });
 
 test("Daily's table lists only days with spend (matching the stats bar's own 'N days with spend'), not one row per calendar day", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function renderDailyCal\(\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "renderDailyCal() should exist");
   assert.match(
@@ -6494,9 +6144,7 @@ test("Daily's table lists only days with spend (matching the stats bar's own 'N 
 // behind the Weekends stat card above the table without cross-referencing
 // a calendar themselves.
 test("Daily's table splits Date (raw YYYY-MM-DD, matching every other CSV export in this file) and Day (weekday name) into their own columns, not one combined human-readable string", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function renderDailyCal\(\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "renderDailyCal() should exist");
   assert.match(
@@ -6517,9 +6165,7 @@ test("Daily's table splits Date (raw YYYY-MM-DD, matching every other CSV export
 });
 
 test("Split's table reflects whichever level the treemap itself is currently on (top-level categories vs. drillCat's vendors), matching the breadcrumb", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function renderTreemap\(drillCat\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "renderTreemap() should exist");
   assert.match(
@@ -6540,9 +6186,7 @@ test("Split's table reflects whichever level the treemap itself is currently on 
 // export always matches exactly what's on screen (or what a screen
 // reader hears), with no separate data-shaping code to keep in sync.
 test("exportChartTable()/exportTableCSV(): maps each of the 4 modes to the wrapper its table actually lives in, and reuses the existing downloadCSVFile()/csvSafeField()/todayDateStr() helpers rather than reinventing CSV escaping", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const CHART_TABLE_WRAP_IDS=\{sankey:'sankey-wrap',split:'treemap-wrap',trend:'trend-table-wrap',daily:'daily-cal-wrap'\};/,
@@ -6559,18 +6203,14 @@ test("exportChartTable()/exportTableCSV(): maps each of the 4 modes to the wrapp
 });
 
 test("HTML: #chart-table-btn and #chart-table-export-btn exist, dispatch through the standard data-action mechanism, and #trend-table-wrap exists as Trend's dedicated table container", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(source, /id="chart-table-btn" data-action="toggleChartTableView"/, "the toggle button should exist with the generalized id/action");
   assert.match(source, /id="chart-table-export-btn" data-action="exportChartTable"/, "the export button should exist alongside it");
   assert.match(source, /<div id="trend-table-wrap" style="display:none"><\/div>/, "trend-table-wrap should exist as its own sibling container, separate from spend-chart-wrap's persistent <canvas>");
 });
 
 test("setChartMode(): calls _syncChartTableBtn() in all 4 branches (daily/split/sankey/fallthrough) instead of the old hardcoded per-branch button visibility, and shows trend-table-wrap whenever mode is trend", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function setChartMode\(mode\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "setChartMode() should exist");
   const syncCount = (fnMatch[0].match(/_syncChartTableBtn\(\);/g) || []).length;
@@ -6592,9 +6232,7 @@ test("setChartMode(): calls _syncChartTableBtn() in all 4 branches (daily/split/
 // redundant once renderSpendChart() (called synchronously right after)
 // became the actual source of truth.
 test("renderSpendChart()'s trend branch owns chartBorder/chartWrap/chart-texture-btn's visibility itself (not just setChartMode()), so toggling table view while already on Trend actually hides the empty canvas underneath", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const trendMatch = source.match(/\} else if\(state\.chartMode==='trend'\)\{[\s\S]*?\n  \} else if\(state\.chartMode==='vendor'\)\{/);
   assert.ok(trendMatch, "the trend branch of renderSpendChart() should exist");
   assert.match(trendMatch[0], /trendChartBorder\.style\.display=_chartTableView\.trend\?'none':'';/, "should hide spend-chart-border based on the CURRENT _chartTableView.trend, not a value computed once elsewhere");
@@ -6619,9 +6257,7 @@ test("renderSpendChart()'s trend branch owns chartBorder/chartWrap/chart-texture
 // tab. Now shares _syncChartTableBtn() with setChartMode() itself rather
 // than hand-duplicating the sync logic a 3rd time.
 test("the page-load chart-mode restore block also syncs chart-texture-btn/cal-transfers-btn/the table-view buttons (via the shared _syncChartTableBtn()), and trend-table-wrap/trendTableActive, not just the wrapper divs", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const restoreBlockMatch = source.match(/\/\/ Restore last chart mode \(spending tab\)[\s\S]{0,3000}?\n  \}catch\(e\)\{\}/);
   assert.ok(restoreBlockMatch, "the chart-mode restore block should exist");
   const block = restoreBlockMatch[0];
@@ -6640,9 +6276,7 @@ test("the page-load chart-mode restore block also syncs chart-texture-btn/cal-tr
 // sw.js's own cache-version pattern, guarded so it can never touch real
 // user data.
 test("demo data is version-stamped, persisted, and silently refreshed on load if stale", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(source, /const DEMO_DATA_VERSION='\d{4}-\d{2}-\d{2}';/, "DEMO_DATA_VERSION should be declared as a dated constant");
   assert.match(source, /demoDataVersion: state\.demoDataVersion\?\?null,\s*activeDemoProfileNum: state\.activeDemoProfileNum\?\?null,/, "serializeState() should persist both new fields");
   assert.match(source, /state\.demoDataVersion=saved\.demoDataVersion\?\?null;\s*state\.activeDemoProfileNum=saved\.activeDemoProfileNum\?\?null;/, "loadFromLocalStorage() should restore both new fields");
@@ -6673,9 +6307,7 @@ test("demo data is version-stamped, persisted, and silently refreshed on load if
 // state, and loadFromLocalStorage()/importBackup() already restored all 5 --
 // only the cloud-sync path was missing them. Found August 2026. ──
 test("syncToCloud()/loadUserData() sync and restore chartGrain/rangeFrom/rangeTo/sourceAlignSkipped/sourceAlignDate, closing check-cloudsync-coverage.py's advisory", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
 
   const syncSrc = source.match(/async function syncToCloud\(\) \{[\s\S]{0,4800}?\n\}/)?.[0] || "";
   assert.match(syncSrc, /chartGrain: state\.chartGrain,/, "syncToCloud() should include chartGrain in the savePrefs() payload");
@@ -6730,9 +6362,7 @@ test("syncToCloud()/loadUserData() sync and restore chartGrain/rangeFrom/rangeTo
 // means "nothing to conflict with yet"); syncToCloud() blocks the push and
 // warns once (not on every subsequent debounced attempt) when it's stale.
 test("_fb.savePrefs(): takes an expected/new updated_at pair and does an atomic conditional UPDATE (not a blind upsert) whenever a baseline exists, falling back to upsert only when there isn't one yet", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/async savePrefs\(uid, prefs, expectedUpdatedAt, newUpdatedAt\) \{[\s\S]*?\n  \},/);
   assert.ok(fnMatch, "savePrefs(uid, prefs, expectedUpdatedAt, newUpdatedAt) should exist with this signature");
   assert.match(
@@ -6758,9 +6388,7 @@ test("_fb.savePrefs(): takes an expected/new updated_at pair and does an atomic 
 });
 
 test("_fb.loadPrefs(): also selects and returns updated_at alongside the decrypted data, so callers get the sync baseline in the same round-trip instead of a second query", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/async loadPrefs\(uid\) \{[\s\S]*?\n  \},/);
   assert.ok(fnMatch, "loadPrefs() should exist");
   assert.match(fnMatch[0], /\.select\('data, updated_at'\)/, "should select updated_at alongside data in the same query");
@@ -6769,9 +6397,7 @@ test("_fb.loadPrefs(): also selects and returns updated_at alongside the decrypt
 });
 
 test("loadUserData() caches _cloudPrefsUpdatedAt from every successful load (even a null one, for a brand-new user) and resets _syncConflictWarned, so a fresh load is what actually recovers from a detected conflict", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const loadSrc = source.match(/async function loadUserData\(uid\) \{[\s\S]{0,17300}?\n  \} catch/)?.[0] || "";
   assert.match(
     loadSrc,
@@ -6786,9 +6412,7 @@ test("loadUserData() caches _cloudPrefsUpdatedAt from every successful load (eve
 });
 
 test("syncToCloud(): passes the cached baseline and a fresh timestamp to savePrefs(), and when it reports the row already moved, blocks the push, warns once (not on every debounced retry), and leaves the local save (already done by scheduleSave()) untouched", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const syncSrc = source.match(/async function syncToCloud\(\) \{[\s\S]{0,4800}?\n\}/)?.[0] || "";
   assert.match(syncSrc, /const newUpdatedAt = new Date\(\)\.toISOString\(\);/, "should generate the new timestamp itself, not rely on savePrefs() to generate one internally");
   assert.match(syncSrc, /const wrote = await window\._fb\.savePrefs\(user\.uid, \{/, "should capture savePrefs()'s boolean result");
@@ -6802,9 +6426,7 @@ test("syncToCloud(): passes the cached baseline and a fresh timestamp to savePre
 });
 
 test("signing out resets _cloudPrefsUpdatedAt/_syncConflictWarned, so a stale baseline from whoever was signed in before can't leak into the next sign-in on the same tab", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /window\._awaitingCloudMerge = false;\s*\/\/ Not required for correctness[\s\S]{0,700}?_cloudPrefsUpdatedAt = null;\s*_syncConflictWarned = false;/,
@@ -6824,9 +6446,7 @@ test("signing out resets _cloudPrefsUpdatedAt/_syncConflictWarned, so a stale ba
 // lowercase before comparing and prompt lowercase, matching each other,
 // while still silently accepting any case typed.
 test("confirmForgotPassphraseReset(): lowercases before comparing (matching validateClearConfirm()'s style) and prompts/errors in lowercase, with no claim of a case requirement", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/async function confirmForgotPassphraseReset\(\) \{[\s\S]{0,3100}?\n\}/);
   assert.ok(fnMatch, "confirmForgotPassphraseReset() should exist");
   assert.match(fnMatch[0], /resetInput\.value\.trim\(\)\.toLowerCase\(\)/, "should lowercase the typed value before comparing, matching validateClearConfirm()'s own normalization direction");
@@ -6871,9 +6491,7 @@ test("confirmForgotPassphraseReset(): lowercases before comparing (matching vali
 // Reset to hidden every time the modal freshly opens (promptSyncPassphrase()),
 // so a previous session's "revealed" state can't linger into the next.
 test("toggleSyncPassphraseVisibility(): renders as an icon button inside the input (not a text link above it), toggles sync-pp-input and sync-pp-confirm together, updates the accessible label to reflect the next action, and promptSyncPassphrase() resets everything on every fresh open", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<div style="position:relative">\s*<input type="password" id="sync-pp-input"[\s\S]{0,400}?<button type="button" id="sync-pp-visibility-btn" data-action="toggleSyncPassphraseVisibility" aria-label="Show passphrase" title="Show passphrase"[\s\S]{0,200}?>👁<\/button>/,
@@ -6901,9 +6519,7 @@ test("toggleSyncPassphraseVisibility(): renders as an icon button inside the inp
 // reviewed here. Found from a direct question about the modal's text
 // feeling small overall.
 test("The sync-passphrase modal's description and warning-box text are 12px, not 11px, matching this app's established legibility floor", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<p class="modal-sub" id="sync-pp-desc" style="margin-bottom:\.75rem;font-size:12px"><\/p>/,
@@ -6917,9 +6533,7 @@ test("The sync-passphrase modal's description and warning-box text are 12px, not
 });
 
 test("syncToCloud()'s conflict guard shows a persistent, dismissible banner instead of an auto-dismissing toast", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<div id="sync-conflict-banner" role="alert" style="display:none[^"]*">/,
@@ -6952,9 +6566,7 @@ test("syncToCloud()'s conflict guard shows a persistent, dismissible banner inst
 });
 
 test("the sync-conflict banner is hidden on every recovery path that also resets _syncConflictWarned (a fresh load, and sign-out)", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const resets = [...source.matchAll(/(?<!let )_syncConflictWarned = false;/g)];
   assert.strictEqual(resets.length, 2, "expected exactly two _syncConflictWarned=false resets (fresh load, sign-out), excluding the initial `let` declaration");
   for (const m of resets) {
@@ -6972,9 +6584,7 @@ test("the sync-conflict banner is hidden on every recovery path that also resets
 // scroll tick, same as any other normal-flow element, defeating the whole
 // point of making it persistent instead of a toast in the first place. ──
 test("the sync-conflict banner is position:fixed (so it survives scrolling, unlike every other top banner) and pushes .nav/body down via updateBannerOffset() to avoid overlapping it", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const bannerMatch = source.match(/<div id="sync-conflict-banner" role="alert" style="([^"]+)">/);
   assert.ok(bannerMatch, "the banner element should exist");
   assert.match(bannerMatch[1], /position:fixed;top:0;left:0;right:0;/, "should be taken out of normal document flow so scrolling can't carry it away");
@@ -7010,9 +6620,7 @@ test("the sync-conflict banner is position:fixed (so it survives scrolling, unli
 // with zero visible connection between the two. Caught before it shipped,
 // not after. ──
 test("updateBannerOffset() only requires .nav to exist -- #demo-chip and the sync-conflict banner are each independently optional, so removing one can't silently break the other's offset", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const offsetFnMatch = source.match(/function updateBannerOffset\(\)\{[\s\S]{0,1500}?\n\}/);
   assert.ok(offsetFnMatch, "updateBannerOffset() should be defined");
   assert.match(offsetFnMatch[0], /if\(!nav\)return;/, "the early-return guard should check only nav, not #demo-chip");
@@ -7086,9 +6694,7 @@ test("privacy.html discloses that local-only data is unrecoverable if lost, not 
 // using an app. This surfaces the same fact in-app, once, at the exact
 // moment it first becomes true. ──
 test("the local-data notice banner exists, is signed-in-aware, and fires exactly once via a device-local (not synced) flag", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<div id="local-data-notice-banner" style="display:none[^"]*">/,
@@ -7125,9 +6731,7 @@ test("the local-data notice banner exists, is signed-in-aware, and fires exactly
 });
 
 test("_replaceDemoDataWithReal() calls maybeShowLocalDataNotice() right after its own once-only guard, so the notice fires at the same single choke point every 'first real save' entry point already shares", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function _replaceDemoDataWithReal\(\)\{[\s\S]{0,600}?maybeShowLocalDataNotice\(\);/);
   assert.ok(fnMatch, "_replaceDemoDataWithReal() should call maybeShowLocalDataNotice() near its top");
   assert.match(fnMatch[0], /if\(state\.hasRealData\)return;/, "the call should come after the existing once-only guard, not before it");
@@ -7140,9 +6744,7 @@ test("_replaceDemoDataWithReal() calls maybeShowLocalDataNotice() right after it
 // neither was ever part of the #475569 sweep since #334155 is a distinct
 // hex value. Found August 2026. ──
 test("the NW-goal milestone chip and pill-customizer hidden-pill label no longer use #334155 as text color", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /color:\$\{isReached\?tc\('#8595A8','#64748B'\):isSelected\?'#fff':tc\('#64748B','#374151'\)\};/,
@@ -7172,9 +6774,7 @@ test("the NW-goal milestone chip and pill-customizer hidden-pill label no longer
 // netWorth()/totalAssets() (both just sum state.accounts). Found from a
 // direct question about why "Vehicle" appeared in both flows, August 2026. ──
 test("the Add Account modal's Type dropdown no longer offers \"Vehicle\", which had no working render path outside the dedicated vehicle modal", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fTypeMatch = source.match(/<select id="f-type"[^>]*>([\s\S]*?)<\/select>/);
   assert.ok(fTypeMatch, "the f-type select should exist");
   assert.doesNotMatch(
@@ -7218,9 +6818,7 @@ test("_reclassifyOrphanedVehicleAccounts: reclassifies a vehicle-type account wi
   assert.equal(state.accounts.find(a => a.id === 4).type, "cash", "an unrelated account type should be untouched");
 });
 test("_reclassifyOrphanedVehicleAccounts() is called after both state.accounts and state.vehicles are restored, in loadUserData()/loadFromLocalStorage()/importBackup()", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /if \(Array\.isArray\(prefs\.vehicles\)\) state\.vehicles = _arrOfObj\(prefs\.vehicles\);\s*\n\s*_reclassifyOrphanedVehicleAccounts\(\);/,
@@ -7249,9 +6847,7 @@ test("_reclassifyOrphanedVehicleAccounts() is called after both state.accounts a
 // "Home Value Estimator") and SRX/its "X-Value" tool (Singapore, used to
 // price 1.8m+ homes/year). Found August 2026. ──
 test("#f-source includes Zoopla/Domain/homes.co.nz/Zolo/SRX alongside Zillow/Redfin, each with a matching SC_M color pair and SA_M abbreviation", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fSourceMatch = source.match(/<select id="f-source">([\s\S]*?)<\/select>/);
   assert.ok(fSourceMatch, "the f-source select should exist");
   for (const name of ["Zoopla", "Domain", "homes.co.nz", "Zolo", "SRX"]) {
@@ -7286,9 +6882,7 @@ test("#f-source includes Zoopla/Domain/homes.co.nz/Zolo/SRX alongside Zillow/Red
 // openAddModal(), 87th adversarial pass). Requested directly by Nicholas,
 // August 2026. ──
 test("updateSourceOptionsForType() filters #f-source to real-estate sources only when #f-type is Home, wired via data-change and called from both openAddModal() and editAccount()", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<select id="f-type" data-change="updateSourceOptionsForType">/,
@@ -7336,9 +6930,7 @@ test("updateSourceOptionsForType() filters #f-source to real-estate sources only
 // paths and saveVehicle()'s persistence. Requested directly by Nicholas,
 // August 2026. ──
 test("vehicle valuation links are region-aware (US/CA/AU/UK) and persistently visible in the modal, not just after a fresh VIN lookup", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<select id="v-region" data-change="updateVehicleValuationLink"><option value="US" selected>United States<\/option><option value="CA">Canada<\/option><option value="AU">Australia<\/option><option value="UK">United Kingdom<\/option><option value="Other">Other<\/option><\/select>/,
@@ -7390,9 +6982,7 @@ test("vehicle valuation links are region-aware (US/CA/AU/UK) and persistently vi
 // own) -- that now falls back to the current year instead. Requested
 // directly by Nicholas, August 2026. ──
 test("Purchase price/year fields are gone from the vehicle modal; Other-asset entries fall back to the current year instead of a removed Purchase Year field", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.doesNotMatch(source, /id="v-purchase"/, "#v-purchase should no longer exist");
   assert.doesNotMatch(source, /id="v-purchase-year"/, "#v-purchase-year should no longer exist");
   assert.doesNotMatch(source, /\.depn-bg|\.depn-fill/, "the now-meaningless depreciation progress bar's CSS should be removed too, not left dead");
@@ -7422,9 +7012,7 @@ test("Purchase price/year fields are gone from the vehicle modal; Other-asset en
 // desktop) for no reason -- removed so it just inherits .btn-sm like its
 // sibling. Requested directly by Nicholas, August 2026. ──
 test("Dashboard tier of the legibility sweep: demo notices and the trend-chart explanation are at least 12px, and the '+ Add historical' button matches its sibling's size", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const dashMatch = source.match(/<div class="page" id="page-dashboard">[\s\S]*?\n<\/div>\n\n<!-- ACCOUNTS -->/);
   assert.ok(dashMatch, "the Dashboard page block should exist");
   const dash = dashMatch[0];
@@ -7451,9 +7039,7 @@ test("Dashboard tier of the legibility sweep: demo notices and the trend-chart e
 // alone -- same deliberate small-label design chrome excluded from the
 // Dashboard tier. Requested directly by Nicholas, August 2026. ──
 test("Legibility sweep Tier 1: Spending tab's Insights sub-lines and the Accounts tab's remaining demo notice are at least 12px", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /id="demo-notice-accounts"[\s\S]{0,200}?<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.5">Demo accounts/,
@@ -7479,9 +7065,7 @@ test("Legibility sweep Tier 1: Spending tab's Insights sub-lines and the Account
 // the live savings-rate preview's stat line were all still 11px. Bumped
 // all 5 to 12px, matching the floor the rest of this sweep settled on. ──
 test("Legibility sweep Tier 2: every remaining 11px paragraph line in the Income Setup modal is at least 12px", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const modalMatch = source.match(/<div class="modal-overlay hidden" id="income-modal">[\s\S]*?\n<\/div>\n\n<!-- Flow chart declared income modal -->/);
   assert.ok(modalMatch, "the Income Setup modal block should exist");
   const modal = modalMatch[0];
@@ -7558,9 +7142,7 @@ test("renderAccountLists: zero accounts shows 'No financial accounts yet'/'No li
 // why Save wasn't working. Confirmed live: clicking Save on an empty Add
 // Account form left the modal open with zero visible feedback.
 test("saveAccount: shows an error toast when name or type is missing, instead of failing silently", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function saveAccount\(\)\{[\s\S]{0,4100}?closeModals\(\);renderAll\(\);\}/);
   assert.ok(fnMatch, "saveAccount() should exist");
   assert.match(
@@ -7576,9 +7158,7 @@ test("saveAccount: shows an error toast when name or type is missing, instead of
 // -- $0" header with nothing under it, reading like something was broken
 // rather than "you have none of these."
 test("renderNwBreakdown: skips empty groups instead of rendering a bare '$0' header with no accounts under it", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function renderNwBreakdown\(\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "renderNwBreakdown() should exist");
   assert.match(
@@ -7595,9 +7175,7 @@ test("renderNwBreakdown: skips empty groups instead of rendering a bare '$0' hea
 // CSV without adding any accounts and the Net Worth tab shows this exact
 // state.
 test("renderNwBreakdown: a fully-empty accounts list shows 'No accounts yet' instead of a blank body under 'Where your wealth lives'", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function renderNwBreakdown\(\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "renderNwBreakdown() should exist");
   assert.match(
@@ -7614,9 +7192,7 @@ test("renderNwBreakdown: a fully-empty accounts list shows 'No accounts yet' ins
 // scrollWidth (1069px) exceeded clientWidth (842px), with a "4/10" stat
 // visibly cut to "4/1" and a whole pill's caption clipped off-screen.
 test("#insights-pills uses auto-fit/minmax on desktop instead of a rigid 4-column grid with no minimum width", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /@media\(min-width:601px\)\{#insights-pills\{grid-template-columns:repeat\(auto-fit,minmax\(300px,1fr\)\)!important\}\}/,
@@ -7630,9 +7206,7 @@ test("#insights-pills uses auto-fit/minmax on desktop instead of a rigid 4-colum
 // proper confirmation dialogs and title tooltips, so not a safety issue,
 // just an inconsistent visual language for the same action across tabs.
 test("deleteSnapshot's button uses the same 🗑️ delete icon as removeBudget, not a mismatched ✕", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /data-action="deleteSnapshot" data-arg="\$\{i\}"[^>]*title="Delete snapshot" type="button">🗑️<\/button>/,
@@ -7645,9 +7219,7 @@ test("deleteSnapshot's button uses the same 🗑️ delete icon as removeBudget,
 // (which shows "E.G. 1FMCU9J96NUB12345") -- an inconsistency within the
 // same modal.
 test("the Add Vehicle modal's Year/Make/Model fields have example placeholder text, matching the VIN field's convention", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(source, /id="v-year" placeholder="e\.g\. 2020"/, "#v-year should have example placeholder text");
   assert.match(source, /id="v-make" placeholder="e\.g\. Honda"/, "#v-make should have example placeholder text");
   assert.match(source, /id="v-model" placeholder="e\.g\. Civic EX"/, "#v-model should have example placeholder text");
@@ -7674,9 +7246,7 @@ test("the Add Vehicle modal's Year/Make/Model fields have example placeholder te
 // (.list-col wraps only their inner content), so the divider itself
 // doesn't also shrink and float in the middle. ──
 test("list-col wraps each area's header together with its list, centered, instead of leaving one relocated to the right or left orphaned from the other", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /\.list-col\{max-width:800px;margin-left:auto;margin-right:auto\}/,
@@ -7719,9 +7289,7 @@ test("list-col wraps each area's header together with its list, centered, instea
 // stayed capped at 800px and centered -- the exact "same tab, two
 // different widths" inconsistency this whole sweep was meant to fix.
 test("Outside net worth and Physical assets are also wrapped in .list-col, matching Financial assets/Liabilities right above them", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<div class="list-col">\s*<div id="acct-excluded-header" class="sh"[^>]*>Outside net worth<\/div>\s*<div id="excluded-accounts-list"><\/div>\s*<\/div>/,
@@ -7739,9 +7307,7 @@ test("Outside net worth and Physical assets are also wrapped in .list-col, match
 // below it were both 11px, under the 12px legibility floor established
 // earlier this session for genuine reading/instructional text.
 test("Budget tab's subtitle and gate notice meet the 12px legibility floor, not 11px", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<div id="budget-view-subtitle" style="font-size:12px;/,
@@ -7761,9 +7327,7 @@ test("Budget tab's subtitle and gate notice meet the 12px legibility floor, not 
 // ✕ conventionally signals "close/dismiss", but all 6 of these actions are
 // permanent deletions, so standardized every one on 🗑️.
 test("deleteRule, startDeleteCat, deleteVendorAlias, and the source chip's remove button all use 🗑️, not a mismatched ✕/×", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /data-action="deleteRule" data-arg="\$\{i\}"[^>]*title="Delete rule" type="button">🗑️<\/button>/,
@@ -7793,9 +7357,7 @@ test("deleteRule, startDeleteCat, deleteVendorAlias, and the source chip's remov
 // to $750k...") was 10px -- both are genuine reading sentences, not short
 // badge labels, so both were under this session's 12px legibility floor.
 test("the insights card's month narrative and pill sub-lines meet the 12px legibility floor, not 10-11px", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<div style="font-size:12px;color:\$\{_narrativeExpanded\?'var\(--text-secondary\)':'var\(--text-muted\)'\};line-height:\$\{_narrativeExpanded\?'1\.7':'1\.5'\}">\$\{_narrativeExpanded\?full:preview\}<\/div>/,
@@ -7830,9 +7392,7 @@ test("the insights card's month narrative and pill sub-lines meet the 12px legib
 // Writt…" at the old cap -- caught live via scrollWidth vs clientWidth
 // before it shipped.
 test("Top 5 Categories stays screen-right on mobile, matching desktop's side-by-side layout (Top 5 Vendors still hides), and both lists' rows are 12px with room for their longest names", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /\.spend-total-card\{gap:12px\}/,
@@ -7894,9 +7454,7 @@ test("Top 5 Categories stays screen-right on mobile, matching desktop's side-by-
 // hint directly via state -- no wrapping/clipping in the now-taller
 // category tiles.
 test("Spending tab's category tile name/meta/budget line, both empty states, the no-source hint, calendar hint, and hidden-transactions note are all 12px, not 9-11px", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /\.bucket-name\{font-size:12px;font-weight:700;margin-bottom:\.3rem;line-height:1\.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical\}/,
@@ -7954,9 +7512,7 @@ test("Spending tab's category tile name/meta/budget line, both empty states, the
 // its own tooltip, and its position under a budget-tracking header
 // already carry that context.
 test("the in-tile budget line uses a compact '$X / $Y' fraction instead of '$X of $Y budget', preventing 4-digit budgets from wrapping to 2 lines", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<span style="font-size:12px;color:var\(--text-muted\)">\$\{fmt\(curAmt\)\} \/ \$\{fmt\(budget\)\}<\/span>/,
@@ -7985,9 +7541,7 @@ test("the in-tile budget line uses a compact '$X / $Y' fraction instead of '$X o
 // this becomes) may want to remove, left untouched here since only the
 // display was in scope.
 test("category tiles no longer show 'Peak: 'YY Mon' in the meta line, since it stayed 2-line-wrapped even with the amount added and had no consumer worth the space", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<div class="bucket-meta">\$\{signal\?`\$\{signal\} · `:''\}Avg: \$\{fmt\(Math\.round\(s\.total\/Math\.max\(grainedPeriods\.length,1\)\)\)\}\$\{grainLabel\}<\/div>/,
@@ -8017,9 +7571,7 @@ test("category tiles no longer show 'Peak: 'YY Mon' in the meta line, since it s
 // was dropped from that rule (kept the padding/min-height, which are
 // still mobile-specific for touch-target sizing).
 test("the Spending breakdown tab strip, the Patterns toggle, and both range-chip rows are unified at 11px on desktop, matching what mobile already had", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /\.h-btn\{flex:1;background:none;border:none;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;color:var\(--text-muted\);cursor:pointer;white-space:nowrap\}/,
@@ -8048,9 +7600,7 @@ test("the Spending breakdown tab strip, the Patterns toggle, and both range-chip
 // than the 28px this exact row hit during the earlier Peak-line
 // wrapping investigation).
 test("the in-tile '% of budget' badge is 12px, matching the '$X / $Y' fraction next to it instead of being smaller than its own less-important neighbor", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<span style="font-size:12px;font-weight:700;color:\$\{curAmt>budget\+0\.005\?'#F87171':curAmt\/budget>0\.8\?'#FBBF24':'#34D399'\}">\$\{Math\.round\(curAmt\/budget\*100\)\}%<\/span>/,
@@ -8072,9 +7622,7 @@ test("the in-tile '% of budget' badge is 12px, matching the '$X / $Y' fraction n
 // Savings/Net worth, matching what their scores actually say should be
 // most notable.
 test("the insights card's 2 visible regular pills are chosen by score, not by which pill happened to be pushed first in the function", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /const regularPills=pillsArr\.filter\(p=>p\.key!==leadPill\.key\)\.sort\(\(a,b\)=>b\.score-a\.score\);/,
@@ -8145,9 +7693,7 @@ test("detectDuplicateCharges: clusters an exact same-vendor/same-amount charge w
 // Finding: the pill and its modal should be registered/wired the same
 // way Subscriptions (its closest sibling) already is.
 test("Possible duplicates pill is registered in PILL_DEFS and its modal is wired to openDuplicateChargesModal", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /\{key:'duplicates', icon:'⚠️', label:'Possible duplicates', note:'Same vendor \+ amount charged within 2 days, in the last 35 days'\},/,
@@ -8175,9 +7721,7 @@ test("Possible duplicates pill is registered in PILL_DEFS and its modal is wired
 // this: both pairs cluster correctly and nothing else in the profile's
 // ~35-day lookback window does.
 test("Demo Profile 2's ALL_TX_RAW includes two genuine duplicate-charge pairs, so the Possible duplicates pill has something to show on a fresh demo load", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /\{"date":"2026-07-09","desc":"BEST BUY","cat":"Shopping","card":"Checking","amount":89\.97,"excluded":false\},\{"date":"2026-07-10","desc":"BEST BUY","cat":"Shopping","card":"Checking","amount":89\.97,"excluded":false\}/,
@@ -8284,9 +7828,7 @@ test("detectSubscriptions: excludes Gas and Home categories entirely (mortgage/r
 // picker) after it, on a genuinely fresh boot (cleared localStorage,
 // not just an in-memory state mutation).
 test("#demo-nav-badge is reliably shown by showDemoNudge() (not just loadDemoProfile()'s callback) with an explicit visible display value (not the no-op '')", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function showDemoNudge\(\)\{[\s\S]{0,2500}?\n\}/);
   assert.ok(fnMatch, "showDemoNudge() should exist");
   assert.match(
@@ -8313,9 +7855,7 @@ test("#demo-nav-badge is reliably shown by showDemoNudge() (not just loadDemoPro
 // profiles even after the top banner scrolls out of view or gets
 // dismissed.
 test("#demo-nudge's banner text uses 'Switch profiles' in place of 'explore them', positioned well before Import a CSV rather than adjacent to it", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /Demo data fills all 5 tabs —\s*<button data-action="openDemoPicker" data-arg="false" style="background:none;border:none;color:#D97706;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Switch profiles<\/button>\s*to explore, then\s*<button data-action="openTxImportModal"/,
@@ -8361,9 +7901,7 @@ test("#demo-nudge's banner text uses 'Switch profiles' in place of 'explore them
 // (document.documentElement.scrollWidth still equals clientWidth),
 // confirming the original horizontal-overflow protection still holds.
 test("html/body use overflow-x:clip, not :hidden, so position:sticky (.nav and everything in it) isn't silently broken by the overflow-y auto-compute side effect", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /html\{overflow-x:clip;max-width:100%\}/,
@@ -8394,9 +7932,7 @@ test("html/body use overflow-x:clip, not :hidden, so position:sticky (.nav and e
 // reusing the shared classes directly, since vehicles carry a second
 // sub-row (valuation link + VIN) a single flex row can't hold.
 test("Outside net worth (Accounts tab) uses the tight .account-row-grouped format, not the older, bulkier .account-row-529 card", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /acctEl\.innerHTML=`<div class="nw-group">\$\{excluded\.map\(a=>`\s*<div class="account-row account-row-grouped">/,
@@ -8410,9 +7946,7 @@ test("Outside net worth (Accounts tab) uses the tight .account-row-grouped forma
 });
 
 test("renderVehicles() (Physical assets) wraps entries in one shared .nw-group with border-top dividers, not each getting its own standalone bordered card", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function renderVehicles\(\)\{[\s\S]{0,3500}?\n\}/);
   assert.ok(fnMatch, "renderVehicles() should exist");
   assert.match(
@@ -8536,9 +8070,7 @@ test("exportNetWorthCSV: exports snapshot history as Date/Net Worth/Assets/Liabi
 });
 
 test("Export all transactions (CSV) and Export CSV (Net Worth snapshots) are wired into the UI", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /data-action="exportAllTransactionsCSV\|closeGlobalSettings"/,
@@ -8571,9 +8103,7 @@ test("Export all transactions (CSV) and Export CSV (Net Worth snapshots) are wir
 // duplication avoided -- the two menus live in different DOM locations
 // and either can be open while the other tab is showing.
 test("The nav has a global ⚙ settings menu with the cross-tab items, and Spending's own overflow menu no longer duplicates them", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const navMatch = source.match(/<nav class="nav"[\s\S]{0,6000}?<\/nav>/);
   assert.ok(navMatch, "the main <nav> element should exist");
   assert.match(navMatch[0], /id="global-settings-btn" data-action="toggleGlobalSettings"/, "nav should have a ⚙ button that opens the global settings menu");
@@ -8620,9 +8150,7 @@ test("toggleGlobalSettings/closeGlobalSettings mirror toggleSpendingOverflow/clo
 // Form URL used everywhere else in the app (README, index.html,
 // privacy.html, the two existing in-app links) -- not a new destination.
 test("Spending's overflow menu includes a direct link to suggest a merchant category", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const overflowMatch = source.match(/<div id="toolbar-overflow-menu"[\s\S]{0,1600}?<\/div>\s*<\/div>/);
   assert.ok(overflowMatch, "Spending's own overflow menu should exist");
   assert.match(
@@ -8639,9 +8167,7 @@ test("Spending's overflow menu includes a direct link to suggest a merchant cate
 // The real runtime order (traced through parseTxRow's shared block) is
 // rules -> built-in keywords -> community patterns -> MCC.
 test("The import-fresh blurb states the categorization order as rules -> built-in keywords -> community patterns -> MCC, matching the real runtime order", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /Categorization uses your rules, built-in keywords, community patterns, and.*MCC codes.*— in that order\./,
@@ -8659,9 +8185,7 @@ test("The import-fresh blurb states the categorization order as rules -> built-i
 // top of the existing "Confirm passphrase" field -- just fixing the color
 // so the existing text actually lands.
 test("The sync-passphrase warning uses amber (warning) styling, not green (success) styling", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const warningMatch = source.match(/<div style="margin-top:\.75rem;[^"]*">\s*<span style="[^"]*">We never see this passphrase[\s\S]*?<\/span>\s*<\/div>/);
   assert.ok(warningMatch, "the sync-passphrase warning box should exist");
   assert.match(warningMatch[0], /var\(--amber-bg-mid\)/, "background should use the amber warning token, not a green success token");
@@ -8682,9 +8206,7 @@ test("The sync-passphrase warning uses amber (warning) styling, not green (succe
 // "Export CSV" text collapses under 600px, button stays a real, visible,
 // explicitly-labeled control at every width.
 test("The Spending tab's Export CSV button collapses to icon-only on mobile via .hide-mobile, not by folding into the Transactions label", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search" class="tx-icon-btn" type="button"><span class="tx-icon">⬇<\/span><span class="hide-mobile"> Export CSV<\/span><\/button>/,
@@ -8707,9 +8229,7 @@ test("The Spending tab's Export CSV button collapses to icon-only on mobile via 
 // drift apart the way the file's own comments warn duplicated styling has
 // drifted before.
 test("The +Add and Export CSV buttons match the Date/Amount/Category sort pills' scale via .tx-icon-btn, with just the glyph sized up via .tx-icon", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /\.tx-icon-btn\{background:none;border:1px solid #2563EB44;border-radius:5px;padding:3px 9px;font-size:11px;font-weight:600;color:var\(--accent-blue-light\);cursor:pointer\}/,
@@ -8742,9 +8262,7 @@ test("The +Add and Export CSV buttons match the Date/Amount/Category sort pills'
 // touches its innerHTML/textContent, so restructuring its contents into
 // two spans doesn't risk that logic silently wiping the icon back out.
 test("#auth-sign-in-btn shows '👤 Sign in' on desktop and just 👤 on mobile, matching the Privacy button's hide-mobile/show-mobile pattern", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<button id="auth-sign-in-btn"[^>]*><span class="hide-mobile">👤 Sign in<\/span><span class="show-mobile">👤<\/span><\/button>/,
@@ -8786,9 +8304,7 @@ test("#auth-sign-in-btn shows '👤 Sign in' on desktop and just 👤 on mobile,
 //     text-color tuning fixes a low-contrast icon on a strong fill; only
 //     removing the fill does. ──
 test("The nav's mobile-shrink and desktop-bump rules for #demo-nav-badge/#theme-toggle-btn/#global-settings-btn/#auth-sign-in-btn use !important so they actually beat inline styles and source-order ties, and Sign In no longer has a solid blue fill", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /#demo-nav-badge\{font-size:8px!important;padding:4px 5px!important;letter-spacing:\.03em!important/,
@@ -8823,9 +8339,7 @@ test("The nav's mobile-shrink and desktop-bump rules for #demo-nav-badge/#theme-
 // blue-accented) reads as one consistent row instead of three ghost
 // buttons and one solid-filled one.
 test("#global-settings-btn has a mobile-shrink rule matching #theme-toggle-btn, and Privacy no longer has a solid blue fill either", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /#global-settings-btn\{padding:2px 5px!important;font-size:11px!important\}\s*\n\s*#theme-toggle-btn\{padding:2px 5px!important;font-size:11px!important\}/,
@@ -8849,9 +8363,7 @@ test("#global-settings-btn has a mobile-shrink rule matching #theme-toggle-btn, 
 // drawer) so existing selectors still find them, with .drawer-overlay's
 // later cascade position doing the actual positioning override.
 test("The 4 drawer-converted modals (cat/community-rules/year-review/shortcuts) keep the modal-overlay/modal classes alongside the new drawer classes, so closeModals() and the a11y observer still find them", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   for (const id of ["cat-modal", "community-rules-modal", "year-review-modal", "shortcuts-modal"]) {
     const overlayRe = new RegExp(`<div class="modal-overlay drawer-overlay hidden" id="${id}">`);
     assert.match(source, overlayRe, `#${id}'s overlay should carry both modal-overlay and drawer-overlay`);
@@ -8861,9 +8373,7 @@ test("The 4 drawer-converted modals (cat/community-rules/year-review/shortcuts) 
 });
 
 test("The .drawer-overlay/.drawer CSS variant docks right, fills viewport height, and overrides the global .hidden{display:none!important} with an !important of its own so the slide transition can run", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /\.drawer-overlay\{[^}]*justify-content:flex-end/,
@@ -8900,9 +8410,7 @@ test("The .drawer-overlay/.drawer CSS variant docks right, fills viewport height
 // close silently snapped shut. Caught live-testing the close specifically,
 // not something a static screenshot right after the click could show.
 test("The drawer's close animation actually plays -- visibility has a matching transition-delay so it stays painted through the slide-out instead of vanishing instantly", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /\.drawer-overlay\{[^}]*transition:background-color \.25s ease,visibility 0s linear 0s/,
@@ -8926,9 +8434,7 @@ test("The drawer's close animation actually plays -- visibility has a matching t
 // the drawer rendered taller than the real viewport and its top (title,
 // close button) got pushed off-screen.
 test("The drawer backdrop is a lighter, unblurred tint (not .modal-overlay's opaque blur) so the app stays visible behind it, and height falls back from 100vh to 100dvh to avoid the mobile-address-bar cutoff", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const overlayMatch = source.match(/\.drawer-overlay\{[^}]*\}/);
   assert.ok(overlayMatch, "the base .drawer-overlay rule should exist");
   assert.match(overlayMatch[0], /background:rgba\(0,0,0,\.15\)/, "backdrop should be meaningfully lighter than .modal-overlay's rgba(0,0,0,.7) -- .35 alone (an earlier pass) still wasn't enough per live user feedback, lightened further to .15");
@@ -8951,9 +8457,7 @@ test("The drawer backdrop is a lighter, unblurred tint (not .modal-overlay's opa
 // action buttons at all -- with a wide, awkward blank gap on the right
 // that the old 440px modal never had room to expose.
 test("Manage categories: the '(built-in)' tag meets the 12px legibility floor, built-in and custom rows share one text color instead of a brightness gap that read as a boldness/size difference, and the drawer is narrowed to fit its actual content", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /\(built-in\)<\/span>/,
@@ -8991,9 +8495,7 @@ test("Manage categories: the '(built-in)' tag meets the 12px legibility floor, b
 // (<900px) is completely unchanged -- there's no room for simultaneous
 // side-by-side use on a phone regardless.
 test("Tips & shortcuts opens as a persistent, non-blocking panel on wide viewports (drops .modal-overlay, flips aria-modal) instead of always being a blocking modal", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function openShortcutsModal\(\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "openShortcutsModal() should exist");
   assert.match(fnMatch[0], /window\.innerWidth>=900/, "should gate persistent mode on a viewport-width check");
@@ -9015,9 +8517,7 @@ for (const [openFn, closeFn, modalId] of [
   ["openCatModal", "closeCatModal", "cat-modal"],
 ]) {
   test(`${openFn}() opens as a persistent, non-blocking panel on wide viewports (drops .modal-overlay, flips aria-modal), matching shortcuts-modal's mechanism`, () => {
-    const fs = require("fs");
-    const path = require("path");
-    const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+    const source = readSource();
     const fnMatch = source.match(new RegExp(`function ${openFn}\\(\\)\\{[\\s\\S]*?\\n\\}`));
     assert.ok(fnMatch, `${openFn}() should exist`);
     assert.match(fnMatch[0], /window\.innerWidth>=900/, "should gate persistent mode on the same viewport-width check as shortcuts-modal");
@@ -9029,9 +8529,7 @@ for (const [openFn, closeFn, modalId] of [
 }
 
 test("Every one of the 4 persistent panels' Done/×/Got it buttons uses its own dedicated close function, not the generic closeModals() -- a real regression risk once .modal-overlay can be dropped at runtime", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const catBlock = source.match(/<!-- Category manager modal -->[\s\S]*?<\/div>\s*<\/div>\s*<\/div>\s*\n\n<!-- Transaction CSV import modal -->/);
   assert.ok(catBlock, "cat-modal's markup block should exist");
   assert.match(catBlock[0], /data-action="closeCatModal"/, "cat-modal's Done button should use the dedicated close function");
@@ -9054,9 +8552,7 @@ test("Every one of the 4 persistent panels' Done/×/Got it buttons uses its own 
 // effect of the persistence feature itself, not something the original
 // blocking-modal design ever had to guard against.
 test("_closeOtherPersistentPanels() is called at the start of all 4 open functions, so opening one persistent panel closes any other that's already open instead of silently stacking on top of it", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /function _closeOtherPersistentPanels\(exceptId\)\{\s*\['shortcuts-modal','community-rules-modal','year-review-modal','cat-modal'\]\.forEach/,
@@ -9088,9 +8584,7 @@ test("_closeOtherPersistentPanels() is called at the start of all 4 open functio
 // narrow by the panel's width (via a body class + CSS custom property)
 // instead of just being overlaid.
 test("body.persistent-panel-open adds a >=900px-only margin-right driven by --pp-width, so the app genuinely narrows instead of just being overlaid", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /@media\(min-width:900px\)\{body\.persistent-panel-open\{margin-right:var\(--pp-width,480px\)/,
@@ -9104,9 +8598,7 @@ test("body.persistent-panel-open adds a >=900px-only margin-right driven by --pp
 });
 
 test("hideModalById(id) hides the given modal and clears persistent-panel-open -- the single source of truth every dedicated close function above delegates to", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /function hideModalById\(id\)\{document\.getElementById\(id\)\.classList\.add\('hidden'\);document\.body\.classList\.remove\('persistent-panel-open'\);\}/,
@@ -9121,9 +8613,7 @@ for (const [openFn, closeFn, width] of [
   ["openCatModal", "closeCatModal", "400px"],
 ]) {
   test(`${openFn}()/${closeFn}() set and clear persistent-panel-open + --pp-width:${width}, matching this panel's own drawer width`, () => {
-    const fs = require("fs");
-    const path = require("path");
-    const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+    const source = readSource();
     const openMatch = source.match(new RegExp(`function ${openFn}\\(\\)\\{[\\s\\S]*?\\n\\}`));
     assert.ok(openMatch, `${openFn}() should exist`);
     assert.match(
@@ -9147,9 +8637,7 @@ for (const [openFn, closeFn, width] of [
 }
 
 test("The .drawer-overlay:not(.modal-overlay) CSS lets clicks pass through to the app everywhere except the panel itself, and no other drawer's markup can accidentally match it", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /\.drawer-overlay:not\(\.modal-overlay\)\{background:transparent;pointer-events:none\}/,
@@ -9167,9 +8655,7 @@ test("The .drawer-overlay:not(.modal-overlay) CSS lets clicks pass through to th
 });
 
 test("Escape closes whichever persistent panel is open (shortcuts, community-rules, year-review, cat) -- all four checks sit after any real modal closes, before falling through to Clear filters, since none of them match the generic .modal-overlay:not(.hidden) close check anymore once persistent", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const blockMatch = source.match(/closeModals\(\);return;\s*\}\s*\/\/ Persistent panels[\s\S]{0,3000}?\/\/ Clear active filters/);
   assert.ok(blockMatch, "the persistent-panels Escape block should sit between the real-modal-closing branch and the 'Clear active filters' fallback");
   const order = ["closeShortcutsModal", "closeCommunityRulesModal", "closeYearInReview", "closeCatModal"];
@@ -9183,9 +8669,7 @@ test("Escape closes whichever persistent panel is open (shortcuts, community-rul
 });
 
 test("community-rules-modal's Escape handling moved out of its old, much-earlier bespoke check (which closed ahead of a real modal even when both were open) into the same consolidated, correctly-ordered block as the other three persistent panels", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.doesNotMatch(
     source,
     /if\(pillTip\)\{pillTip\.remove\(\);return;\}\s*\/\/ Close community rules modal/,
@@ -9206,9 +8690,7 @@ test("community-rules-modal's Escape handling moved out of its old, much-earlier
 // different kind of content than every other row (a behavioral suggestion
 // vs. "what does clicking this do").
 test("Tips & shortcuts: 'Clear all data' correctly points at the ⚙ menu (not the stale '···' Spending-overflow reference), and the redundant monthly-snapshot reminder row is gone", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const modalMatch = source.match(/<!-- Keyboard shortcuts \/ tips modal -->[\s\S]*?<div class="modal-footer">/);
   assert.ok(modalMatch, "the shortcuts-modal block should exist");
   assert.match(modalMatch[0], />⚙ → Clear all data</, "should point at the ⚙ menu, where Clear all data actually lives");
@@ -9217,9 +8699,7 @@ test("Tips & shortcuts: 'Clear all data' correctly points at the ⚙ menu (not t
 });
 
 test("Tips & shortcuts' Keyboard section is hidden on mobile -- '?' and Esc need an actual keyboard, which a typical touchscreen phone doesn't have", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /<div class="hide-mobile" style="margin-bottom:1\.25rem">\s*<div class="label-upper" style="margin-bottom:\.5rem">Keyboard<\/div>/,
@@ -9417,9 +8897,7 @@ test("removeSimulatorOverride: removes the right entry even when the dispatcher 
 });
 
 test("renderSimulatorTab: sources its income figure from sumIncomeForMonths(histMonths), not computePeriodSpendVsIncome()'s own independently-filtered window", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,7800}?\n\}/);
   assert.ok(fnMatch, "renderSimulatorTab() should exist");
   assert.match(
@@ -9471,9 +8949,7 @@ test("renderSimulatorTab: sources its income figure from sumIncomeForMonths(hist
 // as "delete," not "set to $0," so committing one would have deleted an
 // existing budget while the toast still claimed "$0/mo" was saved.
 test("renderSimulatorTab: an already-committed override shows 'Budgeted' instead of a re-clickable button, and a $0 override never offers to commit at all", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,7800}?\n\}/);
   assert.ok(fnMatch, "renderSimulatorTab() should exist");
   assert.match(
@@ -9489,9 +8965,7 @@ test("renderSimulatorTab: an already-committed override shows 'Budgeted' instead
 });
 
 test("undoBudgetButtonHTML: produces one shared Undo control, not a copy-pasted string per call site", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const occurrences = source.match(/data-action="undoBudgetCat" data-arg="\$\{esc\(cat\)\}" data-arg2="\$\{prev\}"/g) || [];
   assert.equal(occurrences.length, 1, "the Undo button markup should be defined exactly once (inside undoBudgetButtonHTML), not duplicated inline at each call site");
   const { undoBudgetButtonHTML } = loadFunctions(["undoBudgetButtonHTML"], { esc: (s) => String(s) });
@@ -9505,9 +8979,7 @@ test("undoBudgetButtonHTML: produces one shared Undo control, not a copy-pasted 
 // select's own bottom edge, flex-wrap so it degrades to multiple lines on
 // a narrow viewport) instead of wasting that vertical space on nothing.
 test("renderSimulatorTab: 'Look back' (select + custom input) and the preset/add buttons share one wrapping flex row instead of two stacked ones", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,7800}?\n\}/);
   assert.ok(fnMatch, "renderSimulatorTab() should exist");
   assert.match(
@@ -9530,9 +9002,7 @@ test("renderSimulatorTab: 'Look back' (select + custom input) and the preset/add
 // layout (which deliberately stays outside .list-col; its progress-bar
 // cards use extra width well, unlike a plain row).
 test("renderSimulatorTab: wraps the sort controls, override list, and summary box in .list-col, matching Spending/Net Worth/Accounts", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,7800}?\n\}/);
   assert.ok(fnMatch, "renderSimulatorTab() should exist");
   assert.match(
@@ -9548,9 +9018,7 @@ test("renderSimulatorTab: wraps the sort controls, override list, and summary bo
 });
 
 test("setSimulatorSort: defaults to Amount descending, and mirrors setBudgetSort()'s toggle-direction-on-repeat-click convention", () => {
-  const fs = require("fs");
-  const path = require("path");
-  const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  const source = readSource();
   assert.match(
     source,
     /let _simulatorSort='amount'; \/\/ 'amount' \| 'alpha'/,

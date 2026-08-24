@@ -13,6 +13,18 @@
 const fs = require("fs");
 const path = require("path");
 
+// Cached — trakyodollas.html doesn't change mid test-run, and this file
+// gets read once per test rather than once per test file this way (267+
+// tests each did their own fs.readFileSync of the same ~1.2MB file before
+// this was added, August 2026).
+let _cachedSource = null;
+function readSource() {
+  if (_cachedSource === null) {
+    _cachedSource = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
+  }
+  return _cachedSource;
+}
+
 function extractFunctions(source, names) {
   const wanted = new Set(names);
   const found = {};
@@ -53,8 +65,7 @@ function extractFunctions(source, names) {
 // deepStrictEqual (same shape, different prototype identity) even though
 // they're functionally identical.
 function loadFunctions(names, context) {
-  const htmlPath = path.join(__dirname, "..", "trakyodollas.html");
-  const source = fs.readFileSync(htmlPath, "utf8");
+  const source = readSource();
   const fns = extractFunctions(source, names);
   const ctxKeys = Object.keys(context || {});
   const body = Object.values(fns).join("\n") + "\nreturn {" + names.join(",") + "};";
@@ -62,4 +73,4 @@ function loadFunctions(names, context) {
   return factory(...ctxKeys.map((k) => context[k]));
 }
 
-module.exports = { extractFunctions, loadFunctions };
+module.exports = { extractFunctions, loadFunctions, readSource };
