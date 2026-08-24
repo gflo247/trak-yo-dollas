@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-kSSNrmaMXt+f/qqLct0/TSt/VISxTraUAOW7xW96fMk=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-I+lVPClt/d9BcoJr3QpL9YpLXANbvloZpXGBZCbiAws=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -568,6 +568,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 /* Modal structure */
 .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
 .modal-header h3{font-size:15px;font-weight:700;margin:0;color:var(--text-bright)}
+.panel-close-btn{background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0;line-height:1}
 .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:.85rem}
 .modal-body-text{font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:.75rem}
 
@@ -1297,7 +1298,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="cat-modal-title" tabindex="-1" style="width:min(400px,94vw)">
     <div class="modal-header">
       <h3 id="cat-modal-title" style="margin:0">Manage categories</h3>
-      <button data-action="closeCatModal" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0;line-height:1" type="button">×</button>
+      <button data-action="closeCatModal" class="panel-close-btn" type="button">×</button>
     </div>
     <p class="modal-sub">Add custom categories. The app picks colors automatically to keep your categories visually distinct from each other.</p>
     <div id="cat-manager-list" style="max-height:60vh;overflow-y:auto;border:1px solid var(--border-mid);border-radius:8px;margin-bottom:.7rem"></div>
@@ -1837,7 +1838,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
         <h3 id="community-rules-modal-title" style="font-size:16px;margin:0">Community patterns</h3>
         <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Keyword→category mappings that run on every import</div>
       </div>
-      <button data-action="closeCommunityRulesModal" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-muted);padding:0" type="button">✕</button>
+      <button data-action="closeCommunityRulesModal" class="panel-close-btn" type="button">×</button>
     </div>
     <input type="text" id="cr-search" placeholder="Search merchant or category…" data-input="filterCommunityRules" style="width:100%;padding:.45rem .7rem;border:1px solid var(--border-mid);border-radius:7px;background:var(--bg-deep);color:var(--text-primary);font-size:12px;font-family:inherit;margin-bottom:.6rem;flex-shrink:0">
     <div id="cr-table" style="overflow-y:auto;flex:1;border:1px solid var(--border);border-radius:8px;font-size:11px"></div>
@@ -2170,7 +2171,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="year-review-modal-title" tabindex="-1" style="width:min(580px,94vw)">
     <div class="modal-header">
       <h3 id="year-review-modal-title" style="margin:0">📅 Year in review</h3>
-      <button data-action="closeYearInReview" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0;line-height:1" type="button">×</button>
+      <button data-action="closeYearInReview" class="panel-close-btn" type="button">×</button>
     </div>
     <!-- Start month selector -->
     <div id="yir-start-selector" style="margin-bottom:1rem"></div>
@@ -2201,7 +2202,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="shortcuts-modal-title" tabindex="-1">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
       <h3 id="shortcuts-modal-title" style="margin:0">Tips & shortcuts</h3>
-      <button data-action="closeShortcutsModal" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0;line-height:1" type="button">×</button>
+      <button data-action="closeShortcutsModal" class="panel-close-btn" type="button">×</button>
     </div>
 
     <div class="hide-mobile" style="margin-bottom:1.25rem">
@@ -4737,6 +4738,7 @@ function renderNwGoalWidget(){
   });
 }
 
+// ── Net Worth widget: goal setting + chart rendering ────────────────────
 function setNwGoal(amount){
   if(netWorth()>=amount)return;
   state.nwGoal=amount;
@@ -5025,6 +5027,7 @@ function renderNwChart(){
 
 
 
+/* ── SPENDING TAB ──────────────────────────────────────────── */
 function getFilteredMonths(){
   const from=state.rangeFrom||ALL_MONTHS[0]||'';
   const to=state.rangeTo||ALL_MONTHS[ALL_MONTHS.length-1]||'';
@@ -8816,6 +8819,7 @@ function openStaleBudgetModal(cat,suggestedAmount){
   // Hide on scroll or second tap anywhere
   document.addEventListener('touchmove',hideTip,{passive:true});
 })();
+// ── Vendor & historical snapshot management ──────────────────────────────
 function openOtherVendorsModal(){
   const vendors=window._otherVendors||[];
   const list=document.getElementById('other-vendors-list');
@@ -11542,6 +11546,7 @@ function dismissPill(id){
 function dismissSavingsNudge(){dismissPill('savings');}
 function dismissBudgetHealthPill(){dismissPill('budget-health');}
 
+// ── Income handling ───────────────────────────────────────────────────────
 function disableIncome(){
   state.income={method:null,monthlyAmount:0};
   selectIncomeMethodUI(null);
@@ -11691,6 +11696,7 @@ function computePeriodSpendVsIncome(){
   return{months,monthCount,income,totalIncome,totalSpend,isOverspend,over,avgMonthlySpend};
 }
 
+// ── Auto-categorization rules ─────────────────────────────────────────────
 function openRulesModal(){
   renderRulesList();
   document.getElementById('add-rule-form').classList.add('hidden');
@@ -13789,6 +13795,7 @@ function confirmTxImport(){
   window._pendingAlignmentCheck=true;
 }
 
+// ── Shared state-mutation helpers (used across tabs, not import-specific) ──
 function rebuildMonthly(){
   // Recompute MONTHLY from current transactions (used by chart when showExcluded=false)
   const m={};
@@ -14036,6 +14043,7 @@ function applyVenmoOpt(skip){
   showToast('✓ Venmo cashouts updated');
 }
 
+// ── Vehicle valuation & excluded accounts ────────────────────────────────
 // Region-specific vehicle valuation destinations. Only kbb.com (US) has a
 // confirmed, working /make/model/year/ deep-link pattern -- verified via
 // web search before shipping, matching this app's own established caution
@@ -14983,6 +14991,7 @@ function closeModals(){
   if(mlSent)mlSent.style.display='none';
   if(mlEmail)mlEmail.value='';
 }
+// ── Accounts & Transactions: add/edit modals ──────────────────────────────
 // Filters #f-source down to just the real-estate valuation sources when
 // Type is set to Home, so a user adding/editing a home doesn't have to
 // scroll past ~40 banks that will never apply to a property. Every other
