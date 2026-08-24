@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-e5gJjDaYe9mPEsfanlGFxrHipQyF+/VqG3uW8iVWr7U=' 'sha256-rKnLrcXUCONyzPVhcO+Whn4tO9yrlVmew91o5bsDEz8=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-WSiePCJYYqhQSFoWYmdHJXFqWfxXszYNl47wR1SneLE=' 'sha256-rKnLrcXUCONyzPVhcO+Whn4tO9yrlVmew91o5bsDEz8=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -8672,8 +8672,12 @@ function openBudgetModal(cat){
 function _refreshBudgetModalContext(cat){
   window._budgetCat=cat;
   document.getElementById('budget-modal').style.setProperty('--budget-color',getCatColor(cat));
-  document.getElementById('budget-amount').value=state.budgets[cat]||'';
   const avg=getCatStats()[cat]?.avg||0;
+  // Prefill from the category's own real average when no budget is set yet,
+  // instead of leaving the field blank next to the "Avg spend: $X/mo" line
+  // right below it -- matches openSimulatorOverrideModal()'s identical
+  // convention on the Life Changes tab.
+  document.getElementById('budget-amount').value=state.budgets[cat]||(avg>0?Math.round(avg):'');
   const ctx=document.getElementById('budget-modal-context');
   if(avg>0){
     const cur=state.budgets[cat];

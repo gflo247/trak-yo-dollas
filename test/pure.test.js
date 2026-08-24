@@ -1367,6 +1367,46 @@ test("_refreshBudgetModalContext: '% under/above avg' divides by avg, not the bu
   assert.doesNotMatch(contextHTML, /100% under avg/);
 });
 
+function refreshBudgetModalContextCtx(budgets, avg) {
+  const amountEl = { value: "" };
+  return {
+    amountEl,
+    ctx: {
+      window: {},
+      document: {
+        getElementById: (id) => {
+          if (id === "budget-modal") return { style: { setProperty: () => {} } };
+          if (id === "budget-amount") return amountEl;
+          if (id === "budget-modal-context") return { set innerHTML(v) {}, get innerHTML() { return ""; } };
+          return null;
+        },
+      },
+      getCatColor: () => "#000",
+      getCatStats: () => ({ Groceries: { avg } }),
+      fmt: (n) => String(n),
+      state: { budgets },
+    },
+  };
+}
+test("_refreshBudgetModalContext: prefills the amount field from the category's real average when no budget is set yet", () => {
+  const { ctx, amountEl } = refreshBudgetModalContextCtx({}, 237.6);
+  const { _refreshBudgetModalContext } = loadFunctions(["_refreshBudgetModalContext"], ctx);
+  _refreshBudgetModalContext("Groceries");
+  assert.equal(amountEl.value, 238, "should prefill with the rounded average, matching openSimulatorOverrideModal()'s identical convention");
+});
+test("_refreshBudgetModalContext: an existing budget still wins over the average", () => {
+  const { ctx, amountEl } = refreshBudgetModalContextCtx({ Groceries: 100 }, 237.6);
+  const { _refreshBudgetModalContext } = loadFunctions(["_refreshBudgetModalContext"], ctx);
+  _refreshBudgetModalContext("Groceries");
+  assert.equal(amountEl.value, 100, "an already-set budget should never be silently overwritten by the average");
+});
+test("_refreshBudgetModalContext: no budget and no history leaves the field blank rather than prefilling 0", () => {
+  const { ctx, amountEl } = refreshBudgetModalContextCtx({}, 0);
+  const { _refreshBudgetModalContext } = loadFunctions(["_refreshBudgetModalContext"], ctx);
+  _refreshBudgetModalContext("Groceries");
+  assert.equal(amountEl.value, "", "a category with zero spending history should stay blank, not prefill a meaningless $0 budget");
+});
+
 // ── 72nd adversarial pass: exportBudgetCSV()'s Status column used to judge
 // "AT RISK" against pct>=warnPct with no isCurrentMonth gate at all -- a
 // fully-completed PAST month (the only one with any spend, e.g. exporting
