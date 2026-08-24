@@ -8155,7 +8155,7 @@ test("#demo-nudge's banner text uses 'Switch profiles' in place of 'explore them
   const source = fs.readFileSync(path.join(__dirname, "..", "trakyodollas.html"), "utf8");
   assert.match(
     source,
-    /Demo data fills all 4 tabs —\s*<button data-action="openDemoPicker" data-arg="false" style="background:none;border:none;color:#D97706;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Switch profiles<\/button>\s*to explore, then\s*<button data-action="openTxImportModal"/,
+    /Demo data fills all 5 tabs —\s*<button data-action="openDemoPicker" data-arg="false" style="background:none;border:none;color:#D97706;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Switch profiles<\/button>\s*to explore, then\s*<button data-action="openTxImportModal"/,
     "the banner should read 'Switch profiles' (as a secondary text-link button) positioned before 'Import a CSV', not adjacent to it at the end"
   );
   assert.doesNotMatch(
