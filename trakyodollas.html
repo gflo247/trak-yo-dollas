@@ -8906,6 +8906,22 @@ function editSnapshot(i){
   setTimeout(()=>document.getElementById('hist-snap-nw').focus(),80);
 }
 
+// Shared by saveAccount()/saveSnapshot()/saveTx()/saveVehicle()/
+// saveHistoricalSnapshot()/handleCsv()/importCsvText()/confirmTxImport() --
+// each is a "first real save" entry point that must refuse to run during a
+// demo-preview-over-real session, since scheduleSave()/cloud sync are hard
+// no-ops in that state and would otherwise silently revert on next reload
+// with no warning. Consolidated from 8 byte-identical inline copies, August
+// 2026.
+function blockedInDemoPreview(){
+  if(window._isDemoPreview||window._viewingDemoOverReal){
+    closeModals();
+    showToast('Not available while previewing demo data — your real data is untouched here',tc('#94A3B8','#4B5563'),9000);
+    return true;
+  }
+  return false;
+}
+
 function saveHistoricalSnapshot(){
   // Matches saveAccount()/saveSnapshot()/saveTx()/saveVehicle()'s existing
   // guard (111th/112th adversarial passes) -- without it, backfilling
@@ -8913,11 +8929,7 @@ function saveHistoricalSnapshot(){
   // a normal-looking success UI, but scheduleSave()/cloud sync are hard
   // no-ops during a demo preview -- everything silently reverts on the
   // next reload with no warning. Found in the 112th adversarial pass.
-  if(window._isDemoPreview||window._viewingDemoOverReal){
-    closeModals();
-    showToast('Not available while previewing demo data — your real data is untouched here',tc('#94A3B8','#4B5563'),9000);
-    return;
-  }
+  if(blockedInDemoPreview())return;
   const date=document.getElementById('hist-snap-date').value;
   const nw=parseFloat(document.getElementById('hist-snap-nw').value);
   // Number.isFinite, not the `||nw`/`||0` fallback alone -- parseFloat
@@ -11930,11 +11942,7 @@ function saveSnapshot(){
   // no-ops during a demo preview -- the "saved" snapshot silently
   // reverts on the next reload with no warning. Found in the 111th
   // adversarial pass.
-  if(window._isDemoPreview||window._viewingDemoOverReal){
-    closeModals();
-    showToast('Not available while previewing demo data — your real data is untouched here',tc('#94A3B8','#4B5563'),9000);
-    return;
-  }
+  if(blockedInDemoPreview())return;
   const d=new Date(),ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
   // A snapshot saved before any real account exists would just record
   // netWorth()=0 -- meaningless as net-worth history, and (before this
@@ -13617,11 +13625,7 @@ function confirmTxImport(){
   // import-success UI -- none of it persisted, all of it silently reverted
   // on the next reload. Matches confirmClearAllData()'s guard (97th
   // adversarial pass). Found in the 98th adversarial pass.
-  if(window._isDemoPreview||window._viewingDemoOverReal){
-    closeModals();
-    showToast('Not available while previewing demo data — your real data is untouched here',tc('#94A3B8','#4B5563'),9000);
-    return;
-  }
+  if(blockedInDemoPreview())return;
   const source=document.getElementById('import-source-label').value.trim()||'Imported';
   const replace=document.getElementById('import-replace').checked;
   // Captured before _replaceDemoDataWithReal() runs below (state.hasRealData
@@ -15193,11 +15197,7 @@ function saveAccount(){
   // sync are hard no-ops during a demo preview -- everything silently
   // reverts on the next reload with no warning it was never saved. Found
   // in the 111th adversarial pass.
-  if(window._isDemoPreview||window._viewingDemoOverReal){
-    closeModals();
-    showToast('Not available while previewing demo data — your real data is untouched here',tc('#94A3B8','#4B5563'),9000);
-    return;
-  }
+  if(blockedInDemoPreview())return;
   const name=document.getElementById('f-name').value.trim(),
         source=document.getElementById('f-source').value,
         type=document.getElementById('f-type').value,
@@ -15289,11 +15289,7 @@ function saveVehicle(){
   // UI, but saveToLocalStorage()/cloud sync are hard no-ops during a demo
   // preview -- everything silently reverts on the next reload with no
   // warning. Found in the 112th adversarial pass.
-  if(window._isDemoPreview||window._viewingDemoOverReal){
-    closeModals();
-    showToast('Not available while previewing demo data — your real data is untouched here',tc('#94A3B8','#4B5563'),9000);
-    return;
-  }
+  if(blockedInDemoPreview())return;
   const value=parseFloat(document.getElementById('v-value').value)||0;
   // value<0, not just !value -- a negative "Est. value" is truthy so it
   // passed straight through the old check, was written directly into the
@@ -15423,11 +15419,7 @@ function saveTx(){
   // showed a normal success UI, but saveToLocalStorage()/cloud sync are
   // hard no-ops during a demo preview -- everything silently reverts on
   // the next reload with no warning. Found in the 111th adversarial pass.
-  if(window._isDemoPreview||window._viewingDemoOverReal){
-    closeModals();
-    showToast('Not available while previewing demo data — your real data is untouched here',tc('#94A3B8','#4B5563'),9000);
-    return;
-  }
+  if(blockedInDemoPreview())return;
   const dateVal=parseImportDate(document.getElementById('t-date').value),desc=document.getElementById('t-desc').value.trim(),card=document.getElementById('t-card').value,cat=document.getElementById('t-cat').value,amount=parseFloat(document.getElementById('t-amount').value)||0;
   if(!dateVal){showToast('⚠ Invalid date — transaction not added','#F87171',4000);return;}
   // !Number.isFinite(amount), not just !amount -- parseFloat('Infinity')/
@@ -15477,11 +15469,7 @@ function handleCsv(input){
   // (111th adversarial pass) -- parseCsvAccounts() is the same class of
   // "first real save" entry point (calls _replaceDemoDataWithReal()),
   // reachable here via the bulk-account-CSV upload.
-  if(window._isDemoPreview||window._viewingDemoOverReal){
-    closeModals();
-    showToast('Not available while previewing demo data — your real data is untouched here',tc('#94A3B8','#4B5563'),9000);
-    return;
-  }
+  if(blockedInDemoPreview())return;
   const file=input.files[0];if(!file)return;
   const r=new FileReader();
   r.onload=e=>{
@@ -15496,11 +15484,7 @@ function importCsvText(){
   // Same demo-preview guard as handleCsv() above -- the pasted-text
   // variant of the same bulk-account-CSV entry point. Found in the 111th
   // adversarial pass.
-  if(window._isDemoPreview||window._viewingDemoOverReal){
-    closeModals();
-    showToast('Not available while previewing demo data — your real data is untouched here',tc('#94A3B8','#4B5563'),9000);
-    return;
-  }
+  if(blockedInDemoPreview())return;
   const el=document.getElementById('csv-text');
   const t=el.value.trim();
   if(!t){closeModals();renderAll();return;}

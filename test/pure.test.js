@@ -2597,7 +2597,7 @@ test("confirmTxImport: refuses to run during a demo-preview session instead of a
   const source = readSource();
   assert.match(
     source,
-    /function confirmTxImport\(\)\{\s*if\(!importParsed\.length\)return;[\s\S]{0,900}?if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{\s*closeModals\(\);\s*showToast\('Not available while previewing demo data/,
+    /function confirmTxImport\(\)\{\s*if\(!importParsed\.length\)return;[\s\S]{0,900}?if\(blockedInDemoPreview\(\)\)return;/,
     "confirmTxImport() should early-return with the standard demo-preview toast before touching state.transactions"
   );
 });
@@ -4180,7 +4180,7 @@ test("_replaceDemoDataWithReal: calls rebuildMonthly() and rebuildCatSelects(), 
 // the next reload with no warning it was never actually saved. ──
 test("saveAccount, saveSnapshot, saveTx, handleCsv, and importCsvText all refuse to run during a demo-preview-over-real session", () => {
   const source = readSource();
-  const guardPattern = /if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{\s*closeModals\(\);\s*showToast\('Not available while previewing demo data — your real data is untouched here',tc\('#94A3B8','#4B5563'\),9000\);\s*return;\s*\}/;
+  const guardPattern = /if\(blockedInDemoPreview\(\)\)return;/;
   const fns = [
     ["saveAccount", /function saveAccount\(\)\{[\s\S]{0,900}/],
     ["saveSnapshot", /function saveSnapshot\(\)\{[\s\S]{0,900}/],
@@ -4243,7 +4243,7 @@ test("saveVehicle: has the demo-preview guard, calls _replaceDemoDataWithReal() 
   const source = readSource();
   const fnMatch = source.match(/function saveVehicle\(\)\{[\s\S]{0,7900}?closeModals\(\);renderAll\(\);\n\}/);
   assert.ok(fnMatch, "saveVehicle() should exist");
-  const guardIdx = fnMatch[0].search(/if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{/);
+  const guardIdx = fnMatch[0].search(/if\(blockedInDemoPreview\(\)\)return;/);
   const valueGuardIdx = fnMatch[0].search(/if\(value<0\|\|!Number\.isFinite\(value\)\)return;/);
   const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
   const fallbackIdx = fnMatch[0].search(/if\(editVehicleId&&!state\.vehicles\.find\(x=>x\.id===editVehicleId\)\)editVehicleId=null;/);
@@ -4266,7 +4266,7 @@ test("saveHistoricalSnapshot: has the demo-preview guard, wipes demo data before
   const source = readSource();
   const fnMatch = source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,7700}?_editingSnapshotMonthKey=null;[\s\S]{0,300}?closeModals\(\);renderAll\(\);scheduleSave\(\);/);
   assert.ok(fnMatch, "saveHistoricalSnapshot() should exist");
-  const guardIdx = fnMatch[0].search(/if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{/);
+  const guardIdx = fnMatch[0].search(/if\(blockedInDemoPreview\(\)\)return;/);
   const dateGuardIdx = fnMatch[0].search(/if\(!date\|\|!Number\.isFinite\(nw\)\)/);
   const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
   const dupCheckIdx = fnMatch[0].search(/if\(!_editingSnapshotMonthKey&&state\.snapshots\.some/);
