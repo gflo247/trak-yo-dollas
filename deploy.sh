@@ -45,6 +45,17 @@ python3 scripts/check-connect-src.py
 echo "=== Checking WCAG AA text contrast on theme-aware color tokens ==="
 python3 scripts/check-contrast.py
 
+# Hard gate — added after the pre-launch modal-accessibility initiative
+# (focus trap, ARIA dialog semantics, return-focus-on-close) added
+# role="dialog"/aria-modal="true"/aria-labelledby/tabindex="-1" to all 28
+# .modal-overlay dialogs plus #demo-picker-overlay. Like check-contrast.py
+# above (and unlike the heuristic advisory scanners below), this verifies a
+# deterministic invariant — either the attributes are present and
+# aria-labelledby resolves to a real id, or it doesn't — so a future modal
+# added without them fails the deploy instead of just getting flagged.
+echo "=== Checking modals for ARIA dialog attributes ==="
+python3 scripts/check-modal-aria.py
+
 # Advisory only (not a hard gate — has known false positives, e.g. a
 # risky-named field used in a hardcoded/internal object rather than
 # rendered user data). Review the output; don't just wait for it to fail.
@@ -130,19 +141,6 @@ python3 scripts/check-rebuild-coverage.py || true
 # derives it fresh from restored transactions, never reads a synced value).
 echo "=== Scanning for fields persisted locally but missing from cloud sync (advisory) ==="
 python3 scripts/check-cloudsync-coverage.py || true
-
-# Advisory only, same posture as the scanners above -- added after the
-# pre-launch modal-accessibility initiative (focus trap, ARIA dialog
-# semantics, return-focus-on-close) added role="dialog"/aria-modal="true"/
-# aria-labelledby/tabindex="-1" to all 28 .modal-overlay dialogs plus
-# #demo-picker-overlay. Unlike the other scanners here, this one verifies a
-# deterministic invariant (either the attributes are present and
-# aria-labelledby resolves to a real id, or it doesn't), so it's a real
-# PASS/FAIL check, not fuzzy heuristic triage material -- kept advisory
-# (|| true) here anyway so a future modal added without these attributes
-# doesn't block a deploy, just gets flagged.
-echo "=== Scanning modals for ARIA dialog attributes (advisory) ==="
-python3 scripts/check-modal-aria.py || true
 
 python3 scripts/update-csp-hashes.py
 # Git-based, not mtime-based (unlike update-sitemap-dates.py below) --

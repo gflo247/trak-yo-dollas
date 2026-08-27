@@ -145,13 +145,14 @@ trak-yo-dollas/
     check-contrast.py               ← every --accent-*/--clr-*/--amber-text* token clears 4.5:1 in the
                                        theme(s) it's actually used as text in, and no hardcoded hex bypasses
                                        one of them
+    check-modal-aria.py             ← every modal has role="dialog"/aria-modal="true"/tabindex="-1" and a
+                                       resolvable aria-labelledby
     extract-testable-fns.js         ← pulls named functions out of trakyodollas.html for the test suite
     check-escaping.py               ← advisory: flags ${...} interpolations of risky fields missing esc()
     check-*-coverage.py (6 files)   ← advisory: app-specific data-integrity scanners (state fields that
                                        should but don't sync to the cloud, source/business filters missing
                                        from a spend loop, and similar cross-cutting invariants specific to
                                        this app's state model)
-    check-modal-aria.py             ← advisory: flags modals missing required ARIA attributes
   test/
     pure.test.js           ← node --test suite (see "Tests" below)
   .github/
@@ -192,7 +193,7 @@ npm test
 ./deploy.sh prod
 ```
 
-`deploy.sh` is a hard gate, not just a build script. It runs, in order: a syntax check, the full `node --test` suite (`npm test`), an inline-event-handler lint, a CSP `connect-src` completeness check, and a WCAG AA text-contrast check — any failure aborts before anything is touched. Only then does it recompute CSP hashes (`update-csp-hashes.py`) and sitemap dates (`update-sitemap-dates.py`), build a clean deploy directory via rsync (excluding dev-only files), and run `wrangler deploy`. A further set of advisory scanners (data-integrity/coverage checks specific to this app's state model — see `scripts/`) run after and report but don't block. Never run `wrangler deploy` directly — skipping straight to it bypasses every one of these gates, which is exactly how it's caught real bugs before they shipped.
+`deploy.sh` is a hard gate, not just a build script. It runs, in order: a syntax check, the full `node --test` suite (`npm test`), an inline-event-handler lint, a CSP `connect-src` completeness check, a WCAG AA text-contrast check, and a modal ARIA-attributes check — any failure aborts before anything is touched. Only then does it recompute CSP hashes (`update-csp-hashes.py`) and sitemap dates (`update-sitemap-dates.py`), build a clean deploy directory via rsync (excluding dev-only files), and run `wrangler deploy`. A further set of advisory scanners (data-integrity/coverage checks specific to this app's state model — see `scripts/`) run after and report but don't block. Never run `wrangler deploy` directly — skipping straight to it bypasses every one of these gates, which is exactly how it's caught real bugs before they shipped.
 
 The app uses a hash-based Content Security Policy — SHA-256 hashes allowlist inline scripts. `update-csp-hashes.py` recomputes all hashes automatically before every deploy.
 
