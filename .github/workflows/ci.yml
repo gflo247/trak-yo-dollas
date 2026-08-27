@@ -1,0 +1,39 @@
+name: CI
+
+# Safety net only — mirrors deploy.sh's hard gates so a push to main that
+# skipped a local ./deploy.sh run still gets caught. Doesn't deploy anything
+# and never touches Cloudflare credentials. If deploy.sh's gate sequence
+# changes, update this workflow to match.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Check JavaScript syntax
+        run: python3 scripts/check-syntax.py
+
+      - name: Run tests
+        run: npm test
+
+      - name: Check for inline event handlers
+        run: bash scripts/check-no-inline-handlers.sh
+
+      - name: Check connect-src covers every network destination
+        run: python3 scripts/check-connect-src.py
+
+      - name: Check WCAG AA text contrast on theme-aware color tokens
+        run: python3 scripts/check-contrast.py
+
+      - name: Check modals for ARIA dialog attributes
+        run: python3 scripts/check-modal-aria.py
