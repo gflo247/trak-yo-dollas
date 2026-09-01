@@ -4463,7 +4463,7 @@ test("deleteAcct and deleteVehicle: reset hasRealAccounts=false when state.accou
 // exist anywhere in the DOM. ──
 test("renderAll: per-tab demo notices also hide once state.hasRealData is true, not just their own more-specific flag", () => {
   const source = readSource();
-  const fnMatch = source.match(/function renderAll\(\)\{[\s\S]{0,2400}?\n\}/);
+  const fnMatch = source.match(/function renderAll\(\)\{[\s\S]{0,2700}?\n\}/);
   assert.ok(fnMatch, "renderAll() should exist");
   assert.match(fnMatch[0], /if\(da\)da\.style\.display=\(state\.hasRealAccounts\|\|state\.hasRealData\)\?'none':'';/, "the accounts notice should hide once hasRealData is true too");
   assert.match(fnMatch[0], /if\(sdn\)sdn\.style\.display=\(state\.hasRealSnapshot\|\|state\.hasRealData\)\?'none':'';/, "the snapshot notice should hide once hasRealData is true too");
@@ -6888,7 +6888,7 @@ test("updateSourceOptionsForType() filters #f-source to real-estate sources only
     /<select id="f-type" data-change="updateSourceOptionsForType">/,
     "#f-type should call updateSourceOptionsForType() on change, so switching Type live re-filters #f-source"
   );
-  const fnMatch = source.match(/function updateSourceOptionsForType\(\)\{[\s\S]{0,700}?\n\}/);
+  const fnMatch = source.match(/function updateSourceOptionsForType\(\)\{[\s\S]{0,1100}?\n\}/);
   assert.ok(fnMatch, "updateSourceOptionsForType() should exist");
   assert.match(
     fnMatch[0],
@@ -9039,4 +9039,49 @@ test("setSimulatorSort: defaults to Amount descending, and mirrors setBudgetSort
   assert.match(fnMatch[0], /_simulatorSortDir=_simulatorSortDir==='asc'\?'desc':'asc';/, "should flip 'asc'<->'desc' on repeat click");
   assert.match(fnMatch[0], /_simulatorSort=s;/, "switching to a new sort key should update _simulatorSort");
   assert.match(fnMatch[0], /_simulatorSortDir=s==='alpha'\?'asc':'desc';/, "switching to a new sort key should reset direction (alpha starts ascending, amount starts descending), not carry over the previous sort's direction");
+});
+
+// ── isRetirementSustainable() / computeRetirementRunwayMonths() — Net
+// Worth tab's retirement-runway widget. Adversarial review of the first
+// version caught a real bug before it shipped: the sustainable check
+// compared liquid balance against 25x *monthly* spend instead of 25x
+// *annual* spend, understating the real 4%-rule bar by 12x -- someone
+// with only ~2 years of expenses saved would have been told their money
+// lasts indefinitely. These tests pin the corrected, annualized math so
+// that exact regression can't silently come back. ──
+test("isRetirementSustainable: requires 25x ANNUAL spend, not 25x monthly spend", () => {
+  const { isRetirementSustainable } = loadFunctions(["isRetirementSustainable"]);
+  const monthlySpend = 2000;
+  // The bug this guards against: 25x monthly spend ($50,000) is nowhere
+  // near enough to sustain $2,000/mo indefinitely -- that's about 25
+  // months of runway, not 25 years.
+  assert.equal(isRetirementSustainable(50000, monthlySpend), false,
+    "25x monthly spend alone must NOT be marked sustainable");
+  // Just under the real (annualized) bar: 25 * 12 * 2000 = $600,000.
+  assert.equal(isRetirementSustainable(599999, monthlySpend), false);
+  // At and above the real bar.
+  assert.equal(isRetirementSustainable(600000, monthlySpend), true);
+  assert.equal(isRetirementSustainable(900000, monthlySpend), true);
+});
+
+test("computeRetirementRunwayMonths: a draining balance (growth < spend) hits zero in bounded time", () => {
+  const { computeRetirementRunwayMonths } = loadFunctions(["computeRetirementRunwayMonths"]);
+  // $24,000 liquid, no growth, spending $2,000/mo -> exactly 12 months.
+  assert.equal(computeRetirementRunwayMonths(24000, 2000, 0), 12);
+});
+
+test("computeRetirementRunwayMonths: a balance that outgrows spend never hits zero, returns null instead of a huge/wrong month count", () => {
+  const { computeRetirementRunwayMonths } = loadFunctions(["computeRetirementRunwayMonths"]);
+  assert.equal(computeRetirementRunwayMonths(10000, 1000, 1500), null);
+});
+
+test("computeRetirementRunwayMonths: a slow-but-real drain past the 50yr cap returns null rather than an unbounded loop", () => {
+  const { computeRetirementRunwayMonths } = loadFunctions(["computeRetirementRunwayMonths"]);
+  // Draining by $1/mo net: takes far longer than 600 months to reach zero.
+  assert.equal(computeRetirementRunwayMonths(100000, 1001, 1000), null);
+});
+
+test("computeRetirementRunwayMonths: no spend history (avgSpend<=0) returns null rather than dividing by zero / looping forever", () => {
+  const { computeRetirementRunwayMonths } = loadFunctions(["computeRetirementRunwayMonths"]);
+  assert.equal(computeRetirementRunwayMonths(50000, 0, 500), null);
 });
