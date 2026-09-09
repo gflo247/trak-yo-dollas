@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-n/bOqdPlVsr/ZTKjFb9nL4llaGF95WpuuLRT+/DCCFY=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-n0OkjZpADHwal6dvMhv2hz4H4i6p8snQEgY5+GyhI8s=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -14526,7 +14526,13 @@ async function promptSyncPassphrase(uid, { isFirstTime } = {}) {
   // isFirstTime can be forced true by callers that already know the answer
   // (e.g. confirmForgotPassphraseReset, which just deleted user_keys) to
   // avoid a Supabase read that may hit replica lag and return the old row.
-  _pendingSyncIsFirstTime = isFirstTime === true ? true : !(await _syncPassphraseAlreadySet(uid));
+  // postReset catches the page-load path after a reset: if the user hard-
+  // refreshes before setting a new passphrase, the UID-scoped localStorage
+  // flag skips the replica read without consuming it on the immediate post-
+  // reset call (which already has isFirstTime=true and doesn't need it).
+  const _postResetFlag = isFirstTime !== true && localStorage.getItem('trakyo_post_reset') === uid;
+  if (_postResetFlag) try { localStorage.removeItem('trakyo_post_reset'); } catch(e) {}
+  _pendingSyncIsFirstTime = (isFirstTime === true || _postResetFlag) ? true : !(await _syncPassphraseAlreadySet(uid));
   const title = document.getElementById('sync-pp-title');
   const desc = document.getElementById('sync-pp-desc');
   const confirmGroup = document.getElementById('sync-pp-confirm-group');
@@ -14736,6 +14742,12 @@ async function confirmForgotPassphraseReset() {
       return;
     }
     clearSyncPassphrase();
+    // Survives a hard refresh: if the user reloads before setting a new
+    // passphrase, the page-load path (onAuthStateChange → promptSyncPassphrase
+    // without isFirstTime) would otherwise hit the DB replica, which may still
+    // see the deleted row and show returning-user copy. UID-scoped so a
+    // different user signing in on the same device isn't affected.
+    try { localStorage.setItem('trakyo_post_reset', uid); } catch(e) {}
     showToast('✓ Synced data cleared — set a new passphrase');
     await promptSyncPassphrase(uid, { isFirstTime: true });
   } catch(e) {

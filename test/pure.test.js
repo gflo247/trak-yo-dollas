@@ -6447,7 +6447,7 @@ test("signing out resets _cloudPrefsUpdatedAt/_syncConflictWarned, so a stale ba
 // while still silently accepting any case typed.
 test("confirmForgotPassphraseReset(): lowercases before comparing (matching validateClearConfirm()'s style) and prompts/errors in lowercase, with no claim of a case requirement", () => {
   const source = readSource();
-  const fnMatch = source.match(/async function confirmForgotPassphraseReset\(\) \{[\s\S]{0,3100}?\n\}/);
+  const fnMatch = source.match(/async function confirmForgotPassphraseReset\(\) \{[\s\S]{0,3500}?\n\}/);
   assert.ok(fnMatch, "confirmForgotPassphraseReset() should exist");
   assert.match(fnMatch[0], /resetInput\.value\.trim\(\)\.toLowerCase\(\)/, "should lowercase the typed value before comparing, matching validateClearConfirm()'s own normalization direction");
   assert.match(fnMatch[0], /if \(typed !== 'reset'\) \{ showResetError\('Type reset to confirm\.'\); return; \}/, "should compare against and prompt lowercase 'reset', not uppercase 'RESET'");
