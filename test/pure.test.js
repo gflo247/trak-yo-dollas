@@ -6494,7 +6494,7 @@ test("toggleSyncPassphraseVisibility(): renders as an icon button inside the inp
   const source = readSource();
   assert.match(
     source,
-    /<div style="position:relative">\s*<input type="password" id="sync-pp-input"[\s\S]{0,400}?<button type="button" id="sync-pp-visibility-btn" data-action="toggleSyncPassphraseVisibility" aria-label="Show passphrase" title="Show passphrase"[\s\S]{0,200}?><svg[\s\S]{0,500}?<\/svg><\/button>/,
+    /<div style="position:relative">\s*<input type="password" id="sync-pp-input"[\s\S]{0,400}?<button type="button" id="sync-pp-visibility-btn" data-action="toggleSyncPassphraseVisibility" aria-label="Show passphrase" title="Show passphrase"[\s\S]{0,200}?><svg[\s\S]{0,600}?<\/svg><\/button>/,
     "the toggle should be an icon button absolutely positioned inside the same wrapper as sync-pp-input, not a text link in the label row above it"
   );
   const fnMatch = source.match(/function toggleSyncPassphraseVisibility\(_, btn\) \{[\s\S]*?\n\}/);
@@ -6502,7 +6502,7 @@ test("toggleSyncPassphraseVisibility(): renders as an icon button inside the inp
   assert.match(fnMatch[0], /input\.type = newType;/, "should set sync-pp-input's type");
   assert.match(fnMatch[0], /if \(confirmInput\) confirmInput\.type = newType;/, "should set sync-pp-confirm's type too, in the same call -- not a separate toggle a user has to click twice");
   assert.match(fnMatch[0], /btn\.setAttribute\('aria-label', label\);/, "should update the accessible label to reflect whichever action comes next");
-  const promptMatch = source.match(/async function promptSyncPassphrase\(uid\) \{[\s\S]{0,3000}?visBtn\.setAttribute\('title', 'Show passphrase'\); \}/);
+  const promptMatch = source.match(/async function promptSyncPassphrase\(uid\) \{[\s\S]{0,3500}?visBtn\.setAttribute\('aria-label', 'Show passphrase'\);[\s\S]{0,500}?\}/);
   assert.ok(promptMatch, "promptSyncPassphrase() should exist");
   assert.match(promptMatch[0], /input\.type = 'password';/, "should reset the main field to hidden on every fresh open");
   assert.match(promptMatch[0], /if \(confirmInput\) confirmInput\.type = 'password';/, "should reset the confirm field to hidden too");
