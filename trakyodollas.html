@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-BBjNa9e0N6COMmlm0mx/SF0hDvwrljavBGNOoNqAYVE=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-n/bOqdPlVsr/ZTKjFb9nL4llaGF95WpuuLRT+/DCCFY=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -14499,7 +14499,7 @@ function reloadForSyncConflict(){
 // value or it turns out to be wrong. ──
 let _pendingSyncUid = null;
 let _pendingSyncIsFirstTime = false;
-async function promptSyncPassphrase(uid) {
+async function promptSyncPassphrase(uid, { isFirstTime } = {}) {
   if (window._isDemoPreview||window._viewingDemoOverReal) return;
   // Blocks scheduleSave()'s cloud push (not the local save) until the initial
   // pull-and-merge below actually completes — window._fbUser is set the
@@ -14523,7 +14523,10 @@ async function promptSyncPassphrase(uid) {
     }
   }
   _pendingSyncUid = uid;
-  _pendingSyncIsFirstTime = !(await _syncPassphraseAlreadySet(uid));
+  // isFirstTime can be forced true by callers that already know the answer
+  // (e.g. confirmForgotPassphraseReset, which just deleted user_keys) to
+  // avoid a Supabase read that may hit replica lag and return the old row.
+  _pendingSyncIsFirstTime = isFirstTime === true ? true : !(await _syncPassphraseAlreadySet(uid));
   const title = document.getElementById('sync-pp-title');
   const desc = document.getElementById('sync-pp-desc');
   const confirmGroup = document.getElementById('sync-pp-confirm-group');
@@ -14734,7 +14737,7 @@ async function confirmForgotPassphraseReset() {
     }
     clearSyncPassphrase();
     showToast('✓ Synced data cleared — set a new passphrase');
-    await promptSyncPassphrase(uid);
+    await promptSyncPassphrase(uid, { isFirstTime: true });
   } catch(e) {
     showResetError('Something went wrong — please try again.');
   } finally {
