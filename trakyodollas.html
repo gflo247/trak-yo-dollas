@@ -3855,8 +3855,18 @@ function renderInsights(){
     // S2 — biggest category mover
     if(movers.length>0&&prevFullM){
       const t=movers[0];
-      if(t.delta>0)sentences.push(`The biggest shift was ${esc(t.cat)}, up ${fmtC(t.delta)} from ${prevLbl}'s ${fmtC(t.prev||0)}${t.prev===0?' — first appearance this period':''}.`);
-      else sentences.push(`${esc(t.cat)} dropped ${fmtC(Math.abs(t.delta))} from ${prevLbl} — a solid save.`);
+      const catAvg=avgMs.length>=3?avgMs.reduce((s,m)=>s+(nCats(m)[t.cat]||0),0)/avgMs.length:0;
+      const catCtx=catAvg>50
+        ?(t.cur>catAvg*1.2?`, above your ${avgMs.length}-month average of ${fmtC(catAvg)}`
+          :t.cur<catAvg*0.8?`, below your ${avgMs.length}-month average of ${fmtC(catAvg)}`
+          :`, within your typical range for this category`)
+        :'';
+      if(t.delta>0){
+        const suffix=t.prev===0?' — first appearance this period':catCtx;
+        sentences.push(`The biggest shift was ${esc(t.cat)}, up ${fmtC(t.delta)} from ${prevLbl}'s ${fmtC(t.prev||0)}${suffix}.`);
+      } else {
+        sentences.push(`${esc(t.cat)} dropped ${fmtC(Math.abs(t.delta))} from ${prevLbl} — a solid save${catCtx}.`);
+      }
     }
     // S3 — other notable movers (max 2, one sentence)
     if(movers.length>1&&prevFullM){
