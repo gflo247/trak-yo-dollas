@@ -5060,14 +5060,16 @@ test("checkSourceAlignment: re-opening while a prior instance is already tracked
 // location.reload()'s own pagehide handler only flushes committed state,
 // not typed-but-not-yet-saved DOM input (a half-entered transaction, a
 // passphrase mid-entry), which was silently destroyed by a reload the
-// user never asked for. Found in the 125th adversarial pass. ──
-test("service-worker controllerchange defers location.reload() while a modal is open, instead of forcing it immediately", () => {
+// user never asked for. Found in the 125th adversarial pass. Expanded
+// to also block on focused inputs and in-flight cloud merges, and to
+// reload immediately when the tab goes to the background. ──
+test("service-worker controllerchange defers location.reload() until safe: no open modal, no focused input, no in-flight cloud merge", () => {
   const source = readSource();
-  assert.match(
-    source,
-    /const reloadWhenIdle=\(\)=>\{\s*if\(document\.querySelector\('\.modal-overlay:not\(\.hidden\)'\)\)setTimeout\(reloadWhenIdle,1000\);\s*else location\.reload\(\);\s*\};\s*reloadWhenIdle\(\);/,
-    "should poll for an open modal and defer the reload until none is open, rather than reloading unconditionally"
-  );
+  assert.match(source, /document\.querySelector\('\.modal-overlay:not\(\.hidden\)'\)/, "should still check for open modals");
+  assert.match(source, /\['INPUT','TEXTAREA','SELECT'\]\.includes\(document\.activeElement\?\.tagName\)/, "should block reload when an input is focused");
+  assert.match(source, /document\.activeElement\?\.isContentEditable/, "should block reload when a contenteditable is focused");
+  assert.match(source, /window\._awaitingCloudMerge/, "should block reload during in-flight cloud merge");
+  assert.match(source, /document\.hidden&&_swRefreshing/, "should reload immediately when the tab is hidden");
 });
 
 // ── 127th adversarial pass ──────────────────────────────────────────────
