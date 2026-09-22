@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-yAOhbXD1XOa9XKk8KYlPA0KNyT47bDANG/K3G3WO/94=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-dhoRLDfC+mNCvWfmeWFWo+rn13Prw8xc4n6RrwgrkjQ=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-ijBNAb9vWcUiSiAC6nF/V3+GYm7jRjTCHEh0j1nrMmo=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -17588,19 +17588,31 @@ window.d3Sankey = (typeof d3 !== 'undefined' && typeof d3.sankey === 'function')
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
     if(_swRefreshing||!hadController){hadController=true;return;}
     _swRefreshing=true;
-    // Don't force-reload out from under a user with an open modal --
-    // location.reload()'s own pagehide handler only flushes committed
-    // state, not typed-but-not-yet-saved DOM input (a half-entered
-    // transaction, a passphrase mid-entry), which would otherwise be
-    // silently destroyed by a deploy-triggered reload the user never
-    // asked for. Poll rather than block indefinitely -- a tab left open
-    // with a modal open in the background still eventually picks up the
-    // new version once it's closed. Found in the 125th adversarial pass.
-    const reloadWhenIdle=()=>{
-      if(document.querySelector('.modal-overlay:not(.hidden)'))setTimeout(reloadWhenIdle,1000);
-      else location.reload();
+    // Reload only when it's genuinely safe -- no in-progress user work that
+    // location.reload() would silently destroy. Three conditions gate this:
+    // (1) no open modal (a half-entered transaction, a passphrase mid-entry),
+    // (2) no focused input/textarea/select (catches mid-entry outside modals),
+    // (3) no in-flight cloud merge (_awaitingCloudMerge). If the tab is hidden
+    // (user switched away) it's always safe to reload immediately -- that's the
+    // cleanest possible moment and requires no polling at all. Found in the
+    // 125th adversarial pass (modal check); input/cloud/visibility hardening
+    // added alongside paths-and-proofs alignment.
+    const safe=()=>
+      !document.querySelector('.modal-overlay:not(.hidden)')&&
+      !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)&&
+      !document.activeElement?.isContentEditable&&
+      !window._awaitingCloudMerge;
+    const reloadWhenSafe=()=>{
+      if(document.hidden||safe()){location.reload();return;}
+      setTimeout(reloadWhenSafe,1000);
     };
-    reloadWhenIdle();
+    // Also reload the moment the tab goes to the background -- visibilitychange
+    // fires on hide (document.hidden true) AND on show (false), so guard for
+    // hide only to avoid reloading when the user returns to the tab.
+    document.addEventListener('visibilitychange',()=>{
+      if(document.hidden&&_swRefreshing)location.reload();
+    });
+    reloadWhenSafe();
   });
 }</script>
 </body></html>
