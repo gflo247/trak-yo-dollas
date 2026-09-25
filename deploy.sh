@@ -180,7 +180,7 @@ rsync -a \
   --exclude='package-lock.json' \
   . _cf_deploy/
 
-# Stamp sw.js with a deploy timestamp so every deploy busts the cache.
+# Stamp sw.js with a version string so every deploy busts the cache.
 # CRITICAL regression found in the 14th adversarial pass: the portability
 # fix below (temp-file form instead of BSD-only `sed -i ''`) was made in the
 # same commit that accidentally deleted the DEPLOY_TS assignment that used
@@ -192,7 +192,31 @@ rsync -a \
 # from whenever a user first got the service worker, indefinitely, across
 # every deploy since -- almost certainly the real cause of the "stale
 # service worker" false leads that cost debugging time earlier this cycle.
-DEPLOY_TS=$(date -u +%Y%m%d%H%M%S)
+#
+# Version format: YYYY-MM-DDa, YYYY-MM-DDb, … — date plus a lowercase letter
+# that increments with each deploy on the same day. State is kept in
+# .deploy-version at the repo root (committed, not gitignored) so the counter
+# stays consistent across machines.
+_TODAY=$(date -u +%Y-%m-%d)
+_VER_FILE=".deploy-version"
+if [ -f "$_VER_FILE" ]; then
+  _LAST=$(cat "$_VER_FILE")
+  _LAST_DATE="${_LAST:0:10}"
+  _LAST_LETTER="${_LAST:10:1}"
+  if [ "$_LAST_DATE" = "$_TODAY" ]; then
+    if [ "$_LAST_LETTER" = "z" ]; then
+      echo "ERROR: exhausted all 26 version letters for $_TODAY — set $_VER_FILE manually to continue." >&2
+      exit 1
+    fi
+    _NEXT_LETTER=$(printf '%s' "$_LAST_LETTER" | tr 'a-y' 'b-z')
+    DEPLOY_TS="${_TODAY}${_NEXT_LETTER}"
+  else
+    DEPLOY_TS="${_TODAY}a"
+  fi
+else
+  DEPLOY_TS="${_TODAY}a"
+fi
+printf '%s' "$DEPLOY_TS" > "$_VER_FILE"
 # Portable temp-file form, not `sed -i ''` — that's BSD-only syntax (works on
 # this Mac) that GNU sed on Linux interprets differently (would silently
 # treat '' as the sed script, not an empty in-place backup suffix). Same

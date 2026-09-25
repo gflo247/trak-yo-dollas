@@ -836,7 +836,7 @@ test("deploy.sh assigns DEPLOY_TS before using it in the CACHE_VERSION sed subst
   const source = fs.readFileSync(path.join(__dirname, "..", "deploy.sh"), "utf8");
   const sedIdx = source.indexOf("__CACHE_VERSION__/$DEPLOY_TS");
   assert.notEqual(sedIdx, -1, "could not find the CACHE_VERSION sed line in deploy.sh");
-  const assignIdx = source.search(/^DEPLOY_TS=/m);
+  const assignIdx = source.search(/^\s*DEPLOY_TS=/m);
   assert.notEqual(assignIdx, -1, "DEPLOY_TS is never assigned in deploy.sh");
   assert.ok(assignIdx < sedIdx, "DEPLOY_TS must be assigned before the sed line that substitutes it");
 });
