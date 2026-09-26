@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-H0Cx5z7zokUuJ7X7dkwr5Tbs0CRsPSJXWDBq+Q5Byeg=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-VRBh7kgkhA7ISa0EPBmKqsUPoExdZj3B8KMS7PlHgCg=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cloud.umami.is;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -353,6 +353,9 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .hidden-popover-empty{font-size:12px;color:var(--text-muted);text-align:center;padding:.5rem 0}
 .tx-row.tx-excluded{opacity:.45;border-color:var(--border)}
 .tx-row.tx-excluded:hover{opacity:.7}
+.tx-selected{background:var(--bg-card)!important;outline:2px solid #2563EB44;outline-offset:-1px}
+#tx-bulk-bar{position:sticky;bottom:8px;left:0;right:0;display:none;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.5rem .75rem;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:10;margin-top:6px}
+#tx-bulk-bar.visible{display:flex}
 .excl-pill{font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px;background:#7C3AED22;color:var(--accent-purple);border:1px solid #7C3AED33;flex-shrink:0}
 .h-btn{flex:1;background:none;border:none;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--text-muted);cursor:pointer;white-space:nowrap}
 .h-btn.active{background:var(--bg-deep);color:var(--accent-blue-light);box-shadow:0 1px 4px rgba(0,0,0,.4)}
@@ -1296,6 +1299,13 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div id="cat-filter-badge" class="hidden"></div>
     <div id="tx-list"></div>
     <div style="text-align:center;margin:.6rem 0" id="tx-more"></div>
+    <div id="tx-bulk-bar">
+      <span id="tx-bulk-count" style="font-size:12px;font-weight:700;color:var(--text-primary);flex:1"></span>
+      <button class="btn btn-sm" data-action="selectAllTx" type="button" style="font-size:11px">Select all</button>
+      <button class="btn btn-sm" data-action="clearTxSelection" type="button" style="font-size:11px">Clear</button>
+      <button class="btn btn-sm btn-primary" data-action="bulkMarkBiz" type="button" style="font-size:11px;background:#2563EB;color:#fff;border-color:#2563EB">Mark BIZ</button>
+      <button class="btn btn-sm" data-action="bulkMarkPers" type="button" style="font-size:11px">Mark PERS</button>
+    </div>
   </div>
 </div>
 
@@ -7730,7 +7740,9 @@ function renderTxList(){
     const monthTotal=monthTotals[monthKey]||0;
     const monthCatTotal=activeCatMonthTotals?(activeCatMonthTotals[monthKey]||0):monthTotal;
     const pctOfMonth=monthCatTotal>0&&isRealSpend(t)?Math.round(t.amount/monthCatTotal*100):null;
-    return`<div class="tx-row ${t.excluded?'tx-excluded':''}" data-action="openEditTxModal" data-arg="${t.id}" tabindex="0" role="button" aria-label="${fmtDate(t.date)}, ${esc(displayVendor(t.desc))}, ${t.isIncome||t.is_offset?'+':'-'}${esc(fmtD(Math.abs(t.amount)))}">
+    const isSel=_selectedTxIds.has(t.id);
+    return`<div class="tx-row ${t.excluded?'tx-excluded':''}${isSel?' tx-selected':''}" data-action="openEditTxModal" data-arg="${t.id}" tabindex="0" role="button" aria-label="${fmtDate(t.date)}, ${esc(displayVendor(t.desc))}, ${t.isIncome||t.is_offset?'+':'-'}${esc(fmtD(Math.abs(t.amount)))}">
+      ${state.includeIncome&&!t.excluded?`<input type="checkbox" class="tx-select-cb" data-action="toggleTxSelect" data-arg="${t.id}" data-stop="1" aria-label="Select ${esc(displayVendor(t.desc))} – ${fmtD(t.amount)}"${isSel?' checked':''} style="flex-shrink:0;cursor:pointer;accent-color:#2563EB">`:''}
       <div class="tx-date">${fmtDate(t.date)}</div>
       <div class="tx-desc" title="${esc(t.desc)}">${highlight(displayVendor(t.desc))}</div>
       ${t.excluded?'<span class="excl-pill" title="Hidden from spending — click to edit">hidden</span>':''}
@@ -7763,6 +7775,7 @@ function renderTxList(){
         </div>`;
   }
   updateSortButtons();
+  _updateTxBulkBar();
 }
 
 /* ── SEARCH ── */
@@ -11646,17 +11659,19 @@ function _ensureBusinessCategories(){
   window._catColorMap=null;
 }
 let _bizFilter='all';
+let _selectedTxIds=new Set();
 function toggleIncludeIncome(){
   state.includeIncome=!state.includeIncome;
   if(state.includeIncome)_ensureBusinessCategories();
   const btn=document.getElementById('include-income-btn');
   if(btn)btn.textContent=state.includeIncome?'✓ 💼 Include income & business categories':'💼 Include income & business categories';
-  if(!state.includeIncome)_bizFilter='all';
+  if(!state.includeIncome){_bizFilter='all';_selectedTxIds.clear();}
   showToast(state.includeIncome?('Income tracking enabled — deposits will import, business categories added'+(_isLiveDemoSession()?' (resets once you add real data)':'')):'Income tracking disabled','#34D399',3500);
   scheduleSave();rebuildMonthly();renderAll();
 }
 function setBizFilter(val){
   _bizFilter=val||'all';
+  _selectedTxIds.clear();
   const bizRow=document.getElementById('biz-filter-inline');
   if(bizRow)bizRow.querySelectorAll('.biz-chip').forEach(b=>b.classList.toggle('active',b.getAttribute('data-arg')===_bizFilter));
   rebuildMonthly();
@@ -11672,6 +11687,61 @@ function toggleTxBiz(id){
   // matching comment; Budget tab's own Business/Personal filter
   // (_bizFilter) reads this same flag. Found August 2026.
   renderAll();
+}
+function toggleTxSelect(id){
+  if(_selectedTxIds.has(id))_selectedTxIds.delete(id);
+  else _selectedTxIds.add(id);
+  _updateTxBulkBar();
+  // querySelectorAll — same id can appear twice if a transaction shows in
+  // both the main list and the excluded-transaction dimmed section.
+  document.querySelectorAll('.tx-row[data-arg="'+id+'"]').forEach(function(row){
+    row.classList.toggle('tx-selected',_selectedTxIds.has(id));
+    const cb=row.querySelector('.tx-select-cb');
+    if(cb)cb.checked=_selectedTxIds.has(id);
+  });
+}
+function selectAllTx(){
+  // Drive from rendered rows only — getSortedTxs() can include transactions
+  // beyond the current showTxN page that have no DOM node yet; adding their
+  // IDs to _selectedTxIds without a matching row update would leave the
+  // visual state inconsistent with the internal set.
+  document.querySelectorAll('.tx-row[data-arg]:not(.tx-excluded)').forEach(function(row){
+    _selectedTxIds.add(row.dataset.arg);
+    row.classList.add('tx-selected');
+    const cb=row.querySelector('.tx-select-cb');
+    if(cb)cb.checked=true;
+  });
+  _updateTxBulkBar();
+}
+function clearTxSelection(){
+  _selectedTxIds.clear();
+  _updateTxBulkBar();
+  document.querySelectorAll('.tx-row.tx-selected').forEach(function(row){
+    row.classList.remove('tx-selected');
+    const cb=row.querySelector('.tx-select-cb');
+    if(cb)cb.checked=false;
+  });
+}
+function bulkMarkBiz(){bulkSetTxBiz(true);}
+function bulkMarkPers(){bulkSetTxBiz(false);}
+function bulkSetTxBiz(biz){
+  if(!_selectedTxIds.size)return;
+  const ids=new Set(_selectedTxIds);
+  mutateTransactions(function(){
+    state.transactions.forEach(function(t){
+      if(ids.has(t.id))t.biz=biz;
+    });
+  });
+  _selectedTxIds.clear();
+  renderAll();
+}
+function _updateTxBulkBar(){
+  const bar=document.getElementById('tx-bulk-bar');
+  if(!bar)return;
+  const n=_selectedTxIds.size;
+  bar.classList.toggle('visible',n>0);
+  const lbl=document.getElementById('tx-bulk-count');
+  if(lbl)lbl.textContent=n+' selected';
 }
 
 // Vendor chart patterns — same 8 patterns as vendorColors array order
@@ -16908,6 +16978,7 @@ function showPage(id,eventOrBtn){
       // adversarial pass.
       _restoreCatsFromTreemapStash();
     }
+    _selectedTxIds.clear();
   }
 
   // Save current tab's scroll position before switching
