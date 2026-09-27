@@ -73,12 +73,17 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Track direct app opens (bookmark, typed URL) — landing page click-throughs
-  // are already tracked via data-umami-event on the CTA links in index.html.
-  // Runs in the SW so it has no access to the page's JS heap or financial data.
+  // Track direct app opens (bookmark, typed URL, external link). Skip when the
+  // referrer is our own domain — those click-throughs already fire via
+  // data-umami-event on the landing page CTAs and would otherwise double-count.
+  // Plain fire-and-forget (no e.waitUntil) — analytics shouldn't extend the
+  // SW's lifetime. Runs in the SW so it has no access to the page's JS heap
+  // or financial data.
   if (e.request.mode === 'navigate' &&
       (url.pathname === '/trakyodollas' || url.pathname === '/trakyodollas.html')) {
-    e.waitUntil(
+    const ref = e.request.referrer || '';
+    const fromOwnSite = ref.includes('trakyodollas.com');
+    if (!fromOwnSite) {
       fetch('https://cloud.umami.is/api/send', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -86,7 +91,7 @@ self.addEventListener('fetch', e => {
           payload: {
             hostname: 'trakyodollas.com',
             language: '',
-            referrer: e.request.referrer || '',
+            referrer: ref,
             screen: '',
             title: 'trak-yo-dolla\u0024',
             url: '/trakyodollas',
@@ -94,8 +99,8 @@ self.addEventListener('fetch', e => {
           },
           type: 'pageview'
         })
-      }).catch(() => {})
-    );
+      }).catch(() => {});
+    }
   }
 
   // community-rules.json updates independently of a full app deploy (no
