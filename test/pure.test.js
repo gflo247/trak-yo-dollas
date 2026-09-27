@@ -3348,7 +3348,7 @@ test("fmtC: raw=true skips esc(), for D3 .text() SVG contexts that would otherwi
 test("fmtC(...,true) is used at every D3 .text() call site that renders a currency figure", () => {
   const source = readSource();
   assert.match(source, /\.text\(d=>fmtC\(d,true\)\);/, "the NW chart's axis-tick labels should use raw fmtC");
-  assert.match(source, /\.text\(goalInRange\?`Goal \$\{fmtC\(state\.nwGoal,true\)\}`:`Goal \$\{fmtC\(state\.nwGoal,true\)\} ↑`\);/, "the NW goal chart label should use raw fmtC");
+  assert.match(source, /\.text\(`Goal \$\{fmtC\(state\.nwGoal,true\)\}`\);/, "the NW goal chart label should use raw fmtC");
   assert.match(source, /\.text\(fmtC\(d\.data\.value,true\)\+\(drillCat\?'':' · '\+pct\+'%'\)\);/, "the Treemap tile's large-label variant should use raw fmtC");
   assert.match(source, /\.text\(fmtC\(d\.data\.value,true\)\);/, "the Treemap tile's small-label variant should use raw fmtC");
   assert.match(source, /return`\$\{d\.name\} \$\{fmtC\(d\.value,true\)\} · \$\{pct\}%`;/, "the Sankey node label should use raw fmtC");

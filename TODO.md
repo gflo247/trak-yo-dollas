@@ -6,9 +6,9 @@ Roughly in priority order. Stop and re-evaluate after each item ships.
 
 ## 1. Fix Net Worth credibility issues (do now)
 
-- [ ] **Goal line axis scaling** — $750k goal pinned at top of a ~$395k axis looks nearly reached. Scale chart to data; show goal progress as a separate bar (the "52% there" text already exists).
-- [ ] **Rename "Retirement runway" → "Emergency cushion"** — current figure is cash ÷ spending, not a retirement projection. One-liner rename.
-- [ ] **Demo snapshot math** — Established profile claims ~47% savings rate / ~$4.5k/mo saved, but NW grows only ~$1k/mo. Verify whether the model is at fault or the snapshots need adjustment before touching either.
+- [x] **Goal line axis scaling** — $750k goal pinned at top of a ~$395k axis looks nearly reached. Scale chart to data; show goal progress as a separate bar (the "52% there" text already exists).
+- [x] **Rename "Retirement runway" → "Emergency cushion"** — current figure is cash ÷ spending, not a retirement projection. One-liner rename.
+- [x] **Demo snapshot math** — Established profile claims ~47% savings rate / ~$4.5k/mo saved, but NW grows only ~$1k/mo. Verify whether the model is at fault or the snapshots need adjustment before touching either.
 
 ---
 
