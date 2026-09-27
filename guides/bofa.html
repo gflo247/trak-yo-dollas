@@ -16,13 +16,13 @@
 ">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>How to download Chase transactions as a CSV file</title>
-<meta name="description" content="Step-by-step guide to exporting your Chase checking, savings, or credit card transactions as a CSV file. Works for all Chase accounts.">
-<link rel="canonical" href="https://trakyodollas.com/guides/chase">
+<title>How to download Bank of America transactions as a CSV file</title>
+<meta name="description" content="Step-by-step guide to exporting your Bank of America checking, savings, or credit card transactions as a CSV file.">
+<link rel="canonical" href="https://trakyodollas.com/guides/bofa">
 <meta property="og:type" content="article">
-<meta property="og:title" content="How to download Chase transactions as a CSV file">
-<meta property="og:description" content="Step-by-step guide to exporting your Chase checking, savings, or credit card transactions as a CSV file. Works for all Chase accounts.">
-<meta property="og:url" content="https://trakyodollas.com/guides/chase">
+<meta property="og:title" content="How to download Bank of America transactions as a CSV file">
+<meta property="og:description" content="Step-by-step guide to exporting your Bank of America checking, savings, or credit card transactions as a CSV file.">
+<meta property="og:url" content="https://trakyodollas.com/guides/bofa">
 <meta property="og:image" content="https://trakyodollas.com/og.png">
 <meta name="twitter:card" content="summary">
 <style>
@@ -38,14 +38,12 @@
   --text-bright:#0F172A;--text-primary:#1E293B;--text-secondary:#4B5563;--text-muted:#4B5563;
   --accent-blue-light:#1D4ED8;--accent-green:#047857;--accent-red:#B91C1C;
 }
-
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg-page);color:var(--text-primary);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
 a{color:var(--accent-blue-light);text-decoration:none}
 a:hover{text-decoration:underline}
 a:focus-visible,button:focus-visible{outline:2px solid var(--accent-blue-light);outline-offset:2px}
-
 nav{display:flex;align-items:center;justify-content:space-between;padding:.75rem 2rem;background:var(--bg-page);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
 .nav-logo{font-family:'DM Mono',monospace;font-size:14px;color:var(--text-bright);text-decoration:none;letter-spacing:.02em}
 .nav-logo span{color:var(--accent-blue-light)}
@@ -53,34 +51,27 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:.75rem
 .btn-ghost{background:none;border:1px solid var(--border-mid);border-radius:7px;padding:6px 14px;font-size:13px;color:var(--text-secondary);cursor:pointer;text-decoration:none;font-family:inherit;transition:border-color .15s,color .15s}
 .btn-ghost:hover{border-color:var(--accent-blue-light);color:var(--text-bright)}
 .theme-btn{background:none;border:1px solid var(--border-mid);border-radius:6px;padding:5px 8px;font-size:13px;cursor:pointer;color:var(--text-muted)}
-
 .page{max-width:680px;margin:0 auto;padding:4rem 2rem 6rem}
 .back{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--text-muted);text-decoration:none;margin-bottom:2rem;transition:color .15s}
 .back:hover{color:var(--text-secondary);text-decoration:none}
-
 h1{font-size:1.85rem;font-weight:800;color:var(--text-bright);letter-spacing:-.02em;line-height:1.2;margin-bottom:.75rem}
 .verified{font-size:13px;color:var(--text-muted);font-style:italic;margin-bottom:2rem}
 .intro{font-size:1rem;color:var(--text-secondary);margin-bottom:2.5rem;line-height:1.7}
-
 h2{font-size:1rem;font-weight:700;color:var(--text-bright);margin-bottom:1rem;margin-top:2.5rem}
 h2:first-of-type{margin-top:0}
-
 .steps{display:flex;flex-direction:column;gap:.75rem;margin-bottom:2.5rem}
 .step{display:flex;gap:1rem;align-items:flex-start}
 .step-num{flex:0 0 28px;height:28px;border-radius:50%;background:var(--accent-blue);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:.15rem}
 .step-body{font-size:15px;color:var(--text-primary);line-height:1.65}
 .step-body strong{color:var(--text-bright)}
 .step-body code{font-family:'DM Mono',monospace;font-size:13px;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:4px;padding:1px 5px;color:var(--text-secondary)}
-
 .note{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:1rem 1.25rem;font-size:14px;color:var(--text-muted);line-height:1.65;margin-bottom:1.25rem}
 .note strong{color:var(--text-secondary)}
 .note-label{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.35rem}
-
 .cta{background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:1.5rem;margin-top:3rem;text-align:center}
 .cta p{font-size:14px;color:var(--text-secondary);margin-bottom:1rem;line-height:1.6}
 .btn-primary{display:inline-block;background:var(--accent-blue);color:#fff;border-radius:8px;padding:10px 22px;font-size:14px;font-weight:700;text-decoration:none;transition:opacity .15s}
 .btn-primary:hover{opacity:.88;text-decoration:none}
-
 footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:12px}
 .footer-logo{font-family:'DM Mono',monospace;font-size:13px;color:var(--text-muted);text-decoration:none;letter-spacing:.02em}
 .footer-logo span{color:var(--accent-blue-light)}
@@ -88,7 +79,6 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 .footer-links{display:flex;gap:16px;flex-wrap:wrap;margin-left:auto}
 .footer-links a,.footer-support{font-size:13px;color:var(--text-muted);text-decoration:none}
 .footer-links a:hover,.footer-support:hover{color:var(--text-secondary)}
-
 @media(max-width:640px){
   .page{padding:2.5rem 1.25rem 4rem}
   nav{padding:.65rem 1rem}
@@ -118,56 +108,50 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <div class="page">
   <a href="/guides" class="back">← Export guides</a>
 
-  <h1>How to download your Chase transactions as a CSV file</h1>
-  <p class="verified">Last verified: September 2026 &mdash; Chase's interface changes periodically. If a step looks different, the function is usually still there, just moved.</p>
+  <h1>How to download your Bank of America transactions as a CSV file</h1>
+  <p class="verified">Last verified: September 2026 &mdash; Bank of America's interface changes periodically. If a step looks different, the function is usually still there, just moved.</p>
 
-  <p class="intro">Works for Chase checking accounts, savings accounts, and all Chase credit cards &mdash; Freedom, Sapphire, Ink, and others. You'll get a <code>.CSV</code> file you can import directly into trak-yo-dolla$ or any spreadsheet.</p>
+  <p class="intro">Works for Bank of America checking accounts, savings accounts, and credit cards. You&rsquo;ll get a <code>.CSV</code> file you can import directly into trak-yo-dolla$ or any spreadsheet.</p>
 
   <h2>Steps</h2>
   <div class="steps">
     <div class="step">
       <div class="step-num">1</div>
-      <div class="step-body">Sign in at <strong>chase.com</strong>.</div>
+      <div class="step-body">Sign in at <strong>bankofamerica.com</strong>.</div>
     </div>
     <div class="step">
       <div class="step-num">2</div>
-      <div class="step-body">Click on the <strong>specific account</strong> you want to export &mdash; for example, your Freedom card, your Sapphire card, or your checking account. Each account exports separately, so pick one to start. You'll repeat these steps for each additional account.</div>
+      <div class="step-body">Click on the <strong>specific account</strong> you want to export &mdash; checking, savings, or a credit card. Each account exports separately, so pick one to start. You&rsquo;ll repeat these steps for each additional account.</div>
     </div>
     <div class="step">
       <div class="step-num">3</div>
-      <div class="step-body">Scroll to your transaction list. Next to the &ldquo;Showing&rdquo; dropdown, look for a row of small icons. Click the <strong>download icon</strong> on the right end of the row &mdash; it looks like a down arrow pointing into a horizontal line. Its tooltip reads <strong>&ldquo;Download account activity.&rdquo;</strong></div>
+      <div class="step-body">On the account page, look for a <strong>Download</strong> link or button near your transaction list. It&rsquo;s typically in the upper area of the transaction section.</div>
     </div>
     <div class="step">
       <div class="step-num">4</div>
-      <div class="step-body">A <strong>&ldquo;Download Account Activity&rdquo;</strong> dialog opens with three fields:
-        <ul style="margin-top:.5rem;padding-left:1.1rem;line-height:1.8">
-          <li><strong>Account</strong> &mdash; pre-filled with your current account. Change it here if needed.</li>
-          <li><strong>File type</strong> &mdash; select <strong>Spreadsheet (Excel, CSV)</strong>. The other options (QFX, QIF, QBO) are for Quicken, Microsoft Money, or QuickBooks and won&rsquo;t work here.</li>
-          <li><strong>Activity</strong> &mdash; choose your date range. &ldquo;All transactions&rdquo; covers everything available. Note: Chase limits exports to 1,200 transactions at a time &mdash; if you have years of history, use a narrower date range and download in batches.</li>
-        </ul>
-      </div>
+      <div class="step-body">A dialog opens. Set your date range, then select <strong>Microsoft Excel format (.csv)</strong> as the file type. The other options (Quicken, Microsoft Money) won&rsquo;t work here.</div>
     </div>
     <div class="step">
       <div class="step-num">5</div>
-      <div class="step-body">Click <strong>Download</strong>. The file saves to your Downloads folder with a name like <code>Chase1234_Activity_20240101_20241231.CSV</code>.</div>
+      <div class="step-body">Click <strong>Download</strong>. The file saves to your Downloads folder.</div>
     </div>
   </div>
 
   <h2>What&rsquo;s in the file</h2>
   <div class="note" style="margin-bottom:2.5rem">
     <div class="note-label">Columns</div>
-    The CSV includes transaction date, post date, description, category, type, and amount. trak-yo-dolla$ uses the date, description, and amount &mdash; everything else is ignored on import.<br><br>
-    <strong>Amounts:</strong> For checking and savings, withdrawals are negative and deposits are positive. For credit cards, charges are negative and payments are positive. The app handles both correctly.
+    The CSV includes date, description, amount, and running balance. trak-yo-dolla$ uses the date, description, and amount &mdash; the balance column is ignored on import.<br><br>
+    <strong>Amounts:</strong> Withdrawals are negative, deposits are positive. For credit cards, charges are negative and payments are positive.
   </div>
 
   <h2>Exporting multiple accounts</h2>
   <div class="note" style="margin-bottom:2.5rem">
-    Each account exports separately. If you have a Chase checking account and a Chase Sapphire card, download two files and import each one &mdash; the app merges them automatically and shows everything together.
+    Each account exports separately. If you have a checking account and a credit card, download two files and import each one &mdash; the app merges them automatically and shows everything together.
   </div>
 
   <h2>Keeping it current</h2>
   <div class="note" style="margin-bottom:1rem">
-    Chase only exports <strong>posted</strong> transactions &mdash; pending ones aren't included yet. Re-export every month or so to stay current. Overlapping date ranges are fine; the app skips duplicates.
+    Re-export every month or so to stay current. Overlapping date ranges are fine; the app skips duplicates.
   </div>
 
   <div class="cta">
