@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-5VaKMpHxVQI5ZRhj/LUobn7wWGkDKIWGflsGXfpSAzA=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-TLc/meJvu0ove46KK+YdrJirhZNDJETLDtVJYkLoDrg=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3620,6 +3620,13 @@ function renderInsights(){
     // Found in the 58th adversarial pass.
     const annualPct=lastSnap.nw>0&&nw>0&&daysSince>=60?Math.min(999,Math.round((Math.pow(nw/lastSnap.nw,365/daysSince)-1)*100)):null;
     const snapShort=fmtMonthShort(lastSnap.monthKey);
+    // snapRef: show the exact snapshot date (e.g. "Aug 31") so "vs Aug 31" is
+    // unambiguous even when the snapshot month matches the current month.
+    // Strips the 4-digit year from the stored date string; falls back to
+    // snapShort if the date field is missing or in an unexpected format.
+    const snapRef=lastSnap.date
+      ?lastSnap.date.replace(/,?\s*(19|20)\d{2}$/,'').trim()||snapShort
+      :snapShort;
     const tooltip=`${nwUp?'↑':'↓'} ${fmt(nwDiff)} over ${daysSince} days${annualPct!==null?' · '+Math.abs(annualPct)+'%/yr annualized':''}&#10;Now: ${fmt(nw)} · Snapshot (${snapShort}): ${fmt(lastSnap.nw)}`;
     const pillValue=`${nwUp?'↑':'↓'} ${fmtC(Math.abs(nwDiff))}`;
     const snapsForGoal=getSortedSnaps();
@@ -3651,15 +3658,15 @@ function renderInsights(){
       nwSubLine=`<span style="color:var(--accent-blue-light)">🎯 ${goalPct}% of the way to ${fmtC(state.nwGoal)}${etaStr}</span>`;
     } else if(nwUp){
       nwSubLine=annualPct!==null
-        ?`+${Math.abs(annualPct)}%/yr · vs ${snapShort}`
+        ?`+${Math.abs(annualPct)}%/yr · vs ${snapRef}`
         :`↑ ${fmt(nwMonthlyRate)}/mo avg`;
     } else {
       nwSubLine=annualPct!==null
-        ?`-${Math.abs(annualPct)}%/yr · vs ${snapShort} — worth a look`
+        ?`-${Math.abs(annualPct)}%/yr · vs ${snapRef} — worth a look`
         :`↓ ${fmt(Math.abs(nwDiff))} over ${daysSince} days — worth a look`;
     }
     const nwSub=nwSubLine;
-    addPill('networth','Net worth',pillWithTip(nwUp?'📊':'📉',`Net worth vs ${snapShort}`,pillValue,nwUp?'#34D399':'#F87171',nwSub,tooltip,{label:'Go to Net Worth tab',action:'showPageDashboard'}),nwUp?10:55);
+    addPill('networth','Net worth',pillWithTip(nwUp?'📊':'📉',`Net worth vs ${snapRef}`,pillValue,nwUp?'#34D399':'#F87171',nwSub,tooltip,{label:'Go to Net Worth tab',action:'showPageDashboard'}),nwUp?10:55);
   }
 
   // Pill 3 — Subscriptions
@@ -3686,7 +3693,7 @@ function renderInsights(){
           <span style="font-size:16px;flex-shrink:0">🔄</span>
           <span style="font-size:10px;font-weight:700;color:var(--text-secondary);white-space:nowrap">Recurring</span>
         </div>
-        <div style="font-size:18px;font-weight:900;color:var(--accent-purple);line-height:1;letter-spacing:-.02em;white-space:nowrap;flex-shrink:0">${fmtC(subTotal)} · ${subCount} recurring</div>
+        <div style="font-size:18px;font-weight:900;color:var(--accent-purple);line-height:1;letter-spacing:-.02em;white-space:nowrap;flex-shrink:0">${fmtC(subTotal)} · ${subCount} charges</div>
       </div>
       <div style="font-size:12px;color:var(--text-muted);line-height:1.35">That's ${fmtC(subTotal*12)}/yr · largest: ${esc(displayVendor(topSub.vendor))} at ${fmtC(topSub.amt)}/mo · <span style="color:var(--accent-purple);font-weight:600">view all →</span></div>
     </div>`,subScore);
@@ -5563,7 +5570,7 @@ function renderHorizonTabs(){renderDateRange();}
 function renderSpendSummary(){
   const baseTxs=getBaseTxs(),filtTxs=getFilteredTxs();
   const isBizFiltered=_bizFilter!=='all';
-  let total,months;
+  let total,months,_monthlyWithSpend=null;
   if(isBizFiltered){
     const bizSpend=baseTxs.filter(isRealSpend);
     total=bizSpend.reduce((s,t)=>s+t.amount,0);
@@ -5571,7 +5578,8 @@ function renderSpendSummary(){
   } else {
     const monthly=getMonthlyFiltered();
     total=monthly.reduce((s,m)=>s+m.total,0);
-    months=monthly.filter(m=>m.total>0).length||1;
+    _monthlyWithSpend=monthly.filter(m=>m.total>0);
+    months=_monthlyWithSpend.length||1;
   }
   // bucketMode==='vendor' with activeVendors set is a real, active filter
   // -- getFilteredTxs() (filtTxs, above) already restricts by it -- but was
@@ -5600,7 +5608,12 @@ function renderSpendSummary(){
   } else if(state.searchQuery){
     avgLabel=`${filtTxs.length} transactions`;
   } else {
-    avgLabel=`${fmt(total/months)}/mo avg · ${months} mo`;
+    if(_monthlyWithSpend&&_monthlyWithSpend.length>1){
+      const prior=_monthlyWithSpend.slice(0,-1);
+      avgLabel=`${fmt(Math.round(prior.reduce((s,m)=>s+m.total,0)/prior.length))}/mo avg · ${prior.length} mo`;
+    } else {
+      avgLabel=`${fmt(total/months)}/mo avg · ${months} mo`;
+    }
   }
 
   let label;
