@@ -184,8 +184,8 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       </div>
       <div class="mr-card">
         <div class="mr-event">Signing in with Google</div>
-        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val" style="color:var(--clr-warn);font-weight:700">Financial data (encrypted)</span></div>
-        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Supabase's servers (encrypted)</span></div>
+        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val">Google account identity<br><span style="font-size:13px;color:var(--clr-warn);font-weight:600">+ financial data after sign-in (encrypted)</span></span></div>
+        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Google (authentication) + Supabase's servers (encrypted)</span></div>
         <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-warn);font-weight:700">Don't sign in</span></div>
       </div>
       <div class="mr-card">
@@ -310,7 +310,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
     <div class="card card-neutral">
       <div class="card-label" id="analytics" style="scroll-margin-top:72px">📊 Analytics — what's collected</div>
-      <p>This site uses <a href="https://umami.is" target="_blank" rel="noopener noreferrer">Umami</a>, a privacy-respecting analytics tool. It records <strong>page views, referrer, browser type, operating system, and country</strong> (it infers this from your IP address, which it never stores). Umami sets no cookies, collects no personal data, and never identifies or tracks individual visitors across sessions. You can block it with any privacy extension — the app works fine without it.</p>
+      <p>This site uses <a href="https://umami.is" target="_blank" rel="noopener noreferrer">Umami</a>, a privacy-respecting analytics tool, on the landing page and this privacy page only — not inside the budgeting app. It records <strong>page views, referrer, browser type, operating system, and country</strong> (it infers this from your IP address, which it never stores). Umami sets no cookies, collects no personal data, and never identifies or tracks individual visitors across sessions. You can block it with any privacy extension — the site works fine without it.</p>
     </div>
   </div>
 
@@ -432,7 +432,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
         </div>
         <div style="display:flex;gap:.75rem;font-size:13px">
           <span style="color:var(--text-secondary);flex-shrink:0;min-width:180px;font-weight:600">Umami analytics</span>
-          <span style="color:var(--text-muted);font-weight:400">Umami collects no personal data — GDPR doesn't apply to this processing. No cookies set, no identifiers stored. Block it with any privacy extension.</span>
+          <span style="color:var(--text-muted);font-weight:400">Legitimate interest — aggregate, anonymous traffic data to understand how the site is used. No cookies set, no personal identifiers stored. Block it with any privacy extension.</span>
         </div>
         <div style="display:flex;gap:.75rem;font-size:13px">
           <span style="color:var(--text-secondary);flex-shrink:0;min-width:180px;font-weight:600">Account sync</span>

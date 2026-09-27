@@ -5945,9 +5945,9 @@ function renderBucketGrid(){
   };
   const otherCatBreakdown=hiddenCats.slice(0,10).map(([c,d])=>`${esc(c)}: ${fmt(d.total)}`).join('&#10;');
   const otherCatTile=hiddenCount>0&&!showAllBucketCats?`<div class="bucket-card" style="border-color:var(--border-mid);background:var(--bg-deep);cursor:pointer;opacity:.75" data-action="showPillTip" data-tip="${hiddenCount} categories:&#10;${otherCatBreakdown}" tabindex="0" role="button">
-    <div class="bucket-name" style="color:var(--text-muted)">+ ${hiddenCount} other categories</div>
+    <div class="bucket-name" style="color:var(--text-muted)">+ ${hiddenCount} other ${hiddenCount===1?'category':'categories'}</div>
     <div class="bucket-total" style="color:var(--text-muted)">${fmt(hiddenTotal)}</div>
-    <div class="bucket-meta">${grandCatTotal>0?Math.round(hiddenTotal/grandCatTotal*100):0}% of spend · tap for list</div>
+    <div class="bucket-meta">${grandCatTotal>0?(Math.round(hiddenTotal/grandCatTotal*100)||'<1')+'%':'0%'} of spend · tap for list</div>
   </div>`:'';
   const bucketCatNames=visibleCats.map(([cat])=>cat);
   // Use global catColorMap (built from lifetime spend) for consistency across all tabs
