@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-0/Ql0xHztspZMD5uJTyo/I4123IOSH8WN8YymeoiMz0=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-j9P3nycLMswcuUFPtfNwFFAt78Cn/OThgJq25NGaMHs=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -3520,8 +3520,11 @@ function renderInsights(){
 
   // ── Spend pill pre-computation ────────────────────────────────
   const spendTooltip=`${latestLabel}: ${fmtH(latestSpend)}&#10;Prior month: ${fmtH(prevSpend)}&#10;Change: ${spendUp?'+':'−'}${fmtH(Math.abs(spendDiff))} (${spendUp?'+':'−'}${spendPct}%)&#10;&#10;Tap Spending → Trend for month-by-month`;
-  const avgSpend=allMonths.filter(m=>m!==currentM).length>0
-    ?Math.round(allMonths.filter(m=>m!==currentM).reduce((s,m)=>s+sumMonth(m),0)/allMonths.filter(m=>m!==currentM).length)
+  // Exclude both currentM (partial) and latestFullM (the month being evaluated) so
+  // the baseline isn't self-referential — same logic the narrative card uses via
+  // fullMonths.slice(0,-1).
+  const avgSpend=allMonths.filter(m=>m!==currentM&&m!==latestFullM).length>0
+    ?Math.round(allMonths.filter(m=>m!==currentM&&m!==latestFullM).reduce((s,m)=>s+sumMonth(m),0)/allMonths.filter(m=>m!==currentM&&m!==latestFullM).length)
     :latestSpend;
   let spendSub='';
   // dayOfMonth>=3 -- projectedCurrentSpend extrapolates linearly from
@@ -3765,7 +3768,9 @@ function renderInsights(){
     const sortedCatVendors=Object.entries(catVendors).sort((a,b)=>b[1]-a[1]);
     const topVendors=sortedCatVendors.slice(0,3);
     const vendorTooltipLines=sortedCatVendors.map(([v,a])=>`${esc(displayVendor(v))}: ${fmt(a)} (${biggestCat.cur>0?Math.round(a/biggestCat.cur*100):0}%)`).join('&#10;');
-    const catMonthlyAmts=allMonths.filter(m=>m!==currentM).map(m=>{
+    // Exclude latestFullM (the month being evaluated) so catAvg isn't self-referential —
+    // mirrors the category tile's priorCatMonths=catMonths.slice(0,-1) pattern.
+    const catMonthlyAmts=allMonths.filter(m=>m!==currentM&&m!==latestFullM).map(m=>{
       let s=0;state.transactions.filter(t=>t.date.slice(0,7)===m&&t.cat===biggestCat.cat&&isRealSpend(t)&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).forEach(t=>s+=t.amount);return s;
     }).filter(v=>v>0);
     const catAvg=catMonthlyAmts.length?Math.round(catMonthlyAmts.reduce((a,b)=>a+b,0)/catMonthlyAmts.length):0;
