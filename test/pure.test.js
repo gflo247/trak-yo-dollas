@@ -7546,12 +7546,12 @@ test("category tiles no longer show 'Peak: 'YY Mon' in the meta line, since it s
   const source = readSource();
   assert.match(
     source,
-    /<div class="bucket-meta">\$\{signal\?`\$\{signal\} · `:''\}Avg: \$\{fmt\(Math\.round\(s\.total\/Math\.max\(grainedPeriods\.length,1\)\)\)\}\$\{grainLabel\}<\/div>/,
-    "the tile's meta line should end after the average, with no trailing Peak text"
+    /<div class="bucket-meta">\$\{signal\?`\$\{signal\} · `:''\}Avg: \$\{fmt\(periodAvg\)\}\$\{grainLabel\}<\/div>/,
+    "the tile's meta line should use periodAvg (prior months only) and end after the average, with no trailing Peak text"
   );
   assert.doesNotMatch(
     source,
-    /Avg: \$\{fmt\(Math\.round\(s\.total\/Math\.max\(grainedPeriods\.length,1\)\)\)\}\$\{grainLabel\} · Peak:/,
+    /Avg: \$\{fmt\(periodAvg\)\}\$\{grainLabel\} · Peak:/,
     "the meta line should no longer append '· Peak: ...'"
   );
 });
