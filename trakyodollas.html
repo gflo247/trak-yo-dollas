@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-0/7va9OQvve6+99ohF1UCTZWhFmLogDo5+cwz2ibOK0=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-3YlgrUxsmgG3HwqFNwfj9D1b6u/cQFjF2cSS2nW1z4Q=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
@@ -10076,6 +10076,28 @@ function renderSimulatorTab(){
   // Year in Review already uses for its own independent window.
   const income=histMonths.length?sumIncomeForMonths(histMonths)/histMonths.length:0;
   const projectedSurplus=income-proj.projectedTotal;
+  // Goal date delta -- cash-flow projection, shown only when overrides are
+  // set, income is known, and the goal is still in range. Uses surplus
+  // (income - spend) as a proxy for monthly NW growth. Stage 1 keeps this
+  // to a single line; Stage 2 will add an assumed investment return rate.
+  let goalLineHTML='';
+  const nwNow=netWorth();
+  if(state.nwGoal&&state.nwGoal>nwNow&&income>0&&state.simulator.overrides.length>0){
+    const remaining=state.nwGoal-nwNow;
+    const baselineSurplus=income-proj.baselineTotal;
+    if(baselineSurplus>0&&projectedSurplus>0){
+      const bMonths=Math.ceil(remaining/baselineSurplus);
+      const pMonths=Math.ceil(remaining/projectedSurplus);
+      const delta=bMonths-pMonths; // positive = sooner, negative = later
+      if(Math.abs(delta)>=1){
+        const sooner=delta>0;
+        const absD=Math.abs(delta);
+        goalLineHTML=`<div style="margin-top:.5rem;font-size:12px;color:${sooner?'var(--accent-green)':'var(--accent-red)'}">Goal preview: moves your ${fmtC(state.nwGoal)} goal ~${absD} month${absD===1?'':'s'} ${sooner?'sooner':'later'} (cash-flow estimate)</div>`;
+      }
+    }else if(baselineSurplus>0&&projectedSurplus<=0){
+      goalLineHTML=`<div style="margin-top:.5rem;font-size:12px;color:var(--accent-red)">Goal preview: goal unreachable at projected spending rate</div>`;
+    }
+  }
   // Sort by each row's real historical average, not its (possibly
   // overridden) projected figure -- keeps row order stable while adding
   // overrides instead of having a row jump around the list the moment you
@@ -10131,15 +10153,16 @@ function renderSimulatorTab(){
       <button class="btn" data-action="openSimulatorOverrideModal" type="button">+ Add another change</button>
     </div>
     <div class="list-col">
+      <div style="padding:1rem;border-radius:10px;background:var(--bg-card);margin-bottom:.75rem">
+        <div>Current avg monthly spend: <strong>${fmt(proj.baselineTotal)}</strong></div>
+        <div>Projected monthly spend: <strong>${fmt(proj.projectedTotal)}</strong> (${proj.delta>=0?'+':'&minus;'}${fmt(Math.abs(proj.delta))})</div>
+        ${income>0?`<div>Monthly income: ${fmt(income)} &mdash; projected ${projectedSurplus>=0?'surplus':'deficit'}: <strong style="color:${projectedSurplus>=0?'var(--accent-green)':'var(--accent-red)'}">${fmt(Math.abs(projectedSurplus))}</strong> &nbsp;<button data-action="openIncomeModal" style="background:none;border:none;color:var(--accent-blue-light);cursor:pointer;padding:0;font-size:11px;text-decoration:underline;font-family:inherit" type="button">Edit income</button></div>`:''}
+        ${goalLineHTML}
+      </div>
       <div style="display:flex;justify-content:flex-end;margin-bottom:.6rem">
         <div style="display:flex;border:1px solid var(--border-mid);border-radius:6px;overflow:hidden">${sortBtnsHTML}</div>
       </div>
       ${rowsHTML||'<p style="font-size:12px;color:var(--text-muted);padding:.4rem 0">No spending history yet over this horizon &mdash; add a change to get started.</p>'}
-      <div style="margin-top:1rem;padding:1rem;border-radius:10px;background:var(--bg-card)">
-        <div>Current avg monthly spend: <strong>${fmt(proj.baselineTotal)}</strong></div>
-        <div>Projected monthly spend: <strong>${fmt(proj.projectedTotal)}</strong> (${proj.delta>=0?'+':'&minus;'}${fmt(Math.abs(proj.delta))})</div>
-        ${income>0?`<div>Monthly income: ${fmt(income)} &mdash; projected ${projectedSurplus>=0?'surplus':'deficit'}: <strong style="color:${projectedSurplus>=0?'var(--accent-green)':'var(--accent-red)'}">${fmt(Math.abs(projectedSurplus))}</strong> &nbsp;<button data-action="openIncomeModal" style="background:none;border:none;color:var(--accent-blue-light);cursor:pointer;padding:0;font-size:11px;text-decoration:underline;font-family:inherit" type="button">Edit income</button></div>`:''}
-      </div>
     </div>`;
 }
 
