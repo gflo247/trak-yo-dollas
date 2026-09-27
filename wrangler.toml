@@ -4,6 +4,7 @@ compatibility_date = "2025-01-01"
 
 [assets]
 directory = "_cf_deploy"
+not_found_handling = "404-page"
 
 # --- dev.trakyodollas.com (attached, confirmed live 2026-08-09) ---
 # The dev worker (deployed via `./deploy.sh dev` -> `wrangler deploy --name

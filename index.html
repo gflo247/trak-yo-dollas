@@ -284,8 +284,8 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       <p>Your browser reads the file locally and sends nothing anywhere unless you sync. Transactions categorize automatically, and most land correctly on the first import.</p>
     </div>
     <div class="step opt">
-      <div class="step-num">3</div>
-      <h3>Sync across devices <span style="font-size:11px;font-weight:400">(optional)</span></h3>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem"><div class="step-num" style="margin-bottom:0">3</div><span style="font-size:11px;color:var(--text-muted);font-weight:500">optional</span></div>
+      <h3>Sync across devices</h3>
       <p>Everything already works without an account. Sign in only if you want it, then set a separate sync passphrase to encrypt everything before it syncs — <a href="#sync-optional" style="color:var(--accent-blue-light)">more in Privacy below</a>.</p>
     </div>
   </div>
@@ -613,7 +613,7 @@ function toggleTheme() {
 // Live community rules count — always fetches latest so the number stays current
 fetch('/community-rules.json',{cache:'no-cache'})
   .then(r=>r.ok?r.json():null).then(d=>{
-    if(Array.isArray(d))document.querySelectorAll('.community-rules-count').forEach(el=>el.textContent=d.length);
+    if(Array.isArray(d))document.querySelectorAll('.community-rules-count').forEach(el=>el.textContent=d.length.toLocaleString());
   }).catch(()=>{});
 
 // Scroll-triggered fade-in
