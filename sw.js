@@ -67,9 +67,36 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
+const UMAMI_WEBSITE_ID = 'e7ab8f18-2279-4b07-a0b4-cd497a4766ff';
+
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.origin !== self.location.origin) return;
+
+  // Track direct app opens (bookmark, typed URL) — landing page click-throughs
+  // are already tracked via data-umami-event on the CTA links in index.html.
+  // Runs in the SW so it has no access to the page's JS heap or financial data.
+  if (e.request.mode === 'navigate' &&
+      (url.pathname === '/trakyodollas' || url.pathname === '/trakyodollas.html')) {
+    e.waitUntil(
+      fetch('https://cloud.umami.is/api/send', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          payload: {
+            hostname: 'trakyodollas.com',
+            language: '',
+            referrer: e.request.referrer || '',
+            screen: '',
+            title: 'trak-yo-dolla\u0024',
+            url: '/trakyodollas',
+            website: UMAMI_WEBSITE_ID
+          },
+          type: 'pageview'
+        })
+      }).catch(() => {})
+    );
+  }
 
   // community-rules.json updates independently of a full app deploy (no
   // CACHE_VERSION bump), but the cache-first strategy below would otherwise
