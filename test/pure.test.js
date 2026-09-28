@@ -8900,7 +8900,7 @@ test("removeSimulatorOverride: removes the right entry even when the dispatcher 
 
 test("renderSimulatorTab: sources its income figure from sumIncomeForMonths(histMonths), not computePeriodSpendVsIncome()'s own independently-filtered window", () => {
   const source = readSource();
-  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,9500}?\n\}/);
+  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,14000}?\n\}/);
   assert.ok(fnMatch, "renderSimulatorTab() should exist");
   assert.match(
     fnMatch[0],
@@ -8952,7 +8952,7 @@ test("renderSimulatorTab: sources its income figure from sumIncomeForMonths(hist
 // existing budget while the toast still claimed "$0/mo" was saved.
 test("renderSimulatorTab: an already-committed override shows 'Budgeted' instead of a re-clickable button, and a $0 override never offers to commit at all", () => {
   const source = readSource();
-  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,9500}?\n\}/);
+  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,14000}?\n\}/);
   assert.ok(fnMatch, "renderSimulatorTab() should exist");
   assert.match(
     fnMatch[0],
@@ -8982,7 +8982,7 @@ test("undoBudgetButtonHTML: produces one shared Undo control, not a copy-pasted 
 // a narrow viewport) instead of wasting that vertical space on nothing.
 test("renderSimulatorTab: 'Look back' (select + custom input) and the preset/add buttons share one wrapping flex row instead of two stacked ones", () => {
   const source = readSource();
-  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,9500}?\n\}/);
+  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,14000}?\n\}/);
   assert.ok(fnMatch, "renderSimulatorTab() should exist");
   assert.match(
     fnMatch[0],
@@ -9005,7 +9005,7 @@ test("renderSimulatorTab: 'Look back' (select + custom input) and the preset/add
 // cards use extra width well, unlike a plain row).
 test("renderSimulatorTab: wraps the sort controls, override list, and summary box in .list-col, matching Spending/Net Worth/Accounts", () => {
   const source = readSource();
-  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,9500}?\n\}/);
+  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,14000}?\n\}/);
   assert.ok(fnMatch, "renderSimulatorTab() should exist");
   assert.match(
     fnMatch[0],
@@ -9014,7 +9014,7 @@ test("renderSimulatorTab: wraps the sort controls, override list, and summary bo
   );
   assert.match(
     fnMatch[0],
-    /\$\{goalLineHTML\}\s*<\/div>\s*<div style="display:flex;justify-content:flex-end;margin-bottom:\.6rem">[\s\S]{0,500}?\$\{rowsHTML\|\|/,
+    /\$\{goalLineHTML\}\s*<\/div>\s*\$\{simChartHTML\}\s*<div style="display:flex;justify-content:flex-end;margin-bottom:\.6rem">[\s\S]{0,500}?\$\{rowsHTML\|\|/,
     "the summary box (with goal line) should come before the sort controls and override rows inside .list-col"
   );
 });

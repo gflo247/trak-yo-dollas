@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-xEV9lJQt/S6636SXFed8mwjfLfpzAvloRqMnRHDrgTA=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-IoOT7pGC+3U7+5/Nh1pQ9iELvezBkW9A7VI1bTgzF94=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -10076,6 +10076,7 @@ function renderSimulatorTab(){
   // Year in Review already uses for its own independent window.
   const income=histMonths.length?sumIncomeForMonths(histMonths)/histMonths.length:0;
   const projectedSurplus=income-proj.projectedTotal;
+  const baselineSurplus=income-proj.baselineTotal;
   // Goal date delta -- cash-flow projection, shown only when overrides are
   // set, income is known, and the goal is still in range. Uses surplus
   // (income - spend) as a proxy for monthly NW growth. Stage 1 keeps this
@@ -10084,7 +10085,6 @@ function renderSimulatorTab(){
   const nwNow=netWorth();
   if(state.nwGoal&&state.nwGoal>nwNow&&income>0&&state.simulator.overrides.length>0){
     const remaining=state.nwGoal-nwNow;
-    const baselineSurplus=income-proj.baselineTotal;
     // fmtMonths: converts a raw month count to a human string.
     // Caps at 50 years (600 months) since beyond that the estimate is noise.
     const fmtMonths=n=>n>600?'50+ years'
@@ -10106,6 +10106,55 @@ function renderSimulatorTab(){
       const pMonths=Math.ceil(remaining/projectedSurplus);
       goalLineHTML=`<div style="margin-top:.5rem;font-size:12px;color:var(--accent-green)">Goal preview: this change makes your ${fmtC(state.nwGoal)} goal reachable &mdash; ${fmtMonths(pMonths)} at the projected rate</div>`;
     }
+  }
+  // Before/after NW projection chart -- only shown when overrides are set
+  // and income is known. Pure SVG math (two linear projections from nwNow),
+  // no D3 needed. Horizon: enough months to show divergence, capped at 60.
+  let simChartHTML='';
+  if(state.simulator.overrides.length>0&&income>0){
+    const W=600,H=150,ML=60,MR=12,MT=12,MB=22;
+    const iW=W-ML-MR,iH=H-MT-MB;
+    // Determine horizon
+    let nM=36;
+    if(state.nwGoal&&state.nwGoal>nwNow){
+      const rem=state.nwGoal-nwNow;
+      if(projectedSurplus>0)nM=Math.min(60,Math.ceil(rem/projectedSurplus)+4);
+      else if(baselineSurplus>0)nM=Math.min(60,Math.ceil(rem/baselineSurplus)+4);
+    }
+    nM=Math.max(12,nM);
+    // Project both lines
+    const bLine=Array.from({length:nM+1},(_,t)=>nwNow+t*baselineSurplus);
+    const pLine=Array.from({length:nM+1},(_,t)=>nwNow+t*projectedSurplus);
+    // Y domain with padding
+    const allV=[...bLine,...pLine];
+    if(state.nwGoal&&state.nwGoal>nwNow){const mv=Math.max(...allV);if(state.nwGoal<=mv*1.1)allV.push(state.nwGoal);}
+    let vMin=Math.min(...allV),vMax=Math.max(...allV);
+    if(vMin===vMax){vMin-=500;vMax+=500;}
+    const rng=vMax-vMin;vMin-=rng*0.07;vMax+=rng*0.07;
+    const xS=t=>ML+(t/nM)*iW;
+    const yS=v=>MT+iH*(1-(v-vMin)/(vMax-vMin));
+    const xyPts=line=>line.map((v,t)=>`${xS(t).toFixed(1)},${yS(v).toFixed(1)}`).join(' ');
+    const delta=projectedSurplus-baselineSurplus;
+    const pColor=Math.abs(delta)<0.01?'var(--text-muted)':delta>0?'var(--accent-green)':'var(--accent-red)';
+    // Goal line
+    let goalSVG='';
+    if(state.nwGoal&&state.nwGoal>vMin&&state.nwGoal<vMax){
+      const gy=yS(state.nwGoal).toFixed(1);
+      goalSVG=`<line x1="${ML}" y1="${gy}" x2="${W-MR}" y2="${gy}" stroke="var(--accent-blue-light)" stroke-width="1" stroke-dasharray="3,3" opacity="0.45"/><text x="${ML+4}" y="${(parseFloat(gy)-3).toFixed(1)}" font-size="9" fill="var(--accent-blue-light)" opacity="0.7">${fmtC(state.nwGoal)} goal</text>`;
+    }
+    // Zero line if range crosses zero
+    let zeroSVG='';
+    if(vMin<0&&vMax>0){const zy=yS(0).toFixed(1);zeroSVG=`<line x1="${ML}" y1="${zy}" x2="${W-MR}" y2="${zy}" stroke="var(--border-mid)" stroke-width="0.5" opacity="0.4"/>`;}
+    // Y-axis ticks (compact format)
+    const fmtY=v=>{const a=Math.abs(v),s=v<0?'-':'';return a>=1e6?s+'$'+(a/1e6).toFixed(1)+'M':a>=1000?s+'$'+Math.round(a/1000)+'k':s+'$'+Math.round(a);};
+    const yTicksSVG=[0.15,0.5,0.85].map(f=>{const v=vMin+f*(vMax-vMin);return`<text x="${ML-4}" y="${(yS(v)+3).toFixed(1)}" font-size="9" text-anchor="end" fill="var(--text-muted)">${fmtY(v)}</text>`;}).join('');
+    // X-axis ticks
+    const xTicksSVG=[0,Math.round(nM/2),nM].map(t=>`<text x="${xS(t).toFixed(1)}" y="${H-5}" font-size="9" text-anchor="${t===0?'start':t===nM?'end':'middle'}" fill="var(--text-muted)">${t===0?'Now':t+'mo'}</text>`).join('');
+    // End labels — offset if lines are close together at the right edge
+    const bEY=yS(bLine[nM]),pEY=yS(pLine[nM]),gap=bEY-pEY;
+    const close=Math.abs(gap)<14;
+    const bLblY=(bEY+(close?9:4)).toFixed(1),pLblY=(pEY-(close?9:3)).toFixed(1);
+    simChartHTML=`<div style="margin-bottom:.75rem;padding:.65rem .75rem .5rem;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px"><div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.3rem">Projected net worth</div><svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;overflow:visible" role="img" aria-label="Projected net worth: baseline vs with changes">${zeroSVG}${goalSVG}<polyline points="${xyPts(bLine)}" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.45"/><polyline points="${xyPts(pLine)}" fill="none" stroke="${pColor}" stroke-width="2"/>${yTicksSVG}${xTicksSVG}<text x="${W-MR-2}" y="${bLblY}" font-size="9" text-anchor="end" fill="var(--text-muted)" opacity="0.6">baseline</text><text x="${W-MR-2}" y="${pLblY}" font-size="9" text-anchor="end" fill="${pColor}">projected</text></svg></div>`;
   }
   // Sort by each row's real historical average, not its (possibly
   // overridden) projected figure -- keeps row order stable while adding
@@ -10171,6 +10220,7 @@ function renderSimulatorTab(){
           :`<div style="font-size:12px;color:var(--text-muted)">No income set &mdash; <button data-action="openIncomeModal" style="background:none;border:none;color:var(--accent-blue-light);cursor:pointer;padding:0;font-size:12px;text-decoration:underline;font-family:inherit" type="button">Add income estimate</button> to see surplus and goal projection</div>`}
         ${goalLineHTML}
       </div>
+      ${simChartHTML}
       <div style="display:flex;justify-content:flex-end;margin-bottom:.6rem">
         <div style="display:flex;border:1px solid var(--border-mid);border-radius:6px;overflow:hidden">${sortBtnsHTML}</div>
       </div>
