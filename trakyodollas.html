@@ -9,11 +9,11 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-xEV9lJQt/S6636SXFed8mwjfLfpzAvloRqMnRHDrgTA=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-xEV9lJQt/S6636SXFed8mwjfLfpzAvloRqMnRHDrgTA=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
-  img-src 'self' data: https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
-  connect-src 'self' https://pjsvsdiplecoilzttyhd.supabase.co https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
+  img-src 'self' data: https://vpic.nhtsa.dot.gov;
+  connect-src 'self' https://pjsvsdiplecoilzttyhd.supabase.co https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
   frame-src https://accounts.google.com https://pjsvsdiplecoilzttyhd.supabase.co;
   worker-src 'self';
   object-src 'none';
@@ -26,7 +26,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <meta name="color-scheme" content="light dark">
-<link rel="preconnect" href="https://cdnjs.cloudflare.com">
 <link rel="preconnect" href="https://pjsvsdiplecoilzttyhd.supabase.co">
 <link rel="dns-prefetch" href="https://pjsvsdiplecoilzttyhd.supabase.co">
 <script>
@@ -2343,7 +2342,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 <script>(function(){try{var t=localStorage.getItem('trakyo_tab');if(t&&t!=='spending'&&document.getElementById('page-'+t)){var idx=['spending','budget','simulator','dashboard','accounts'].indexOf(t);document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});document.getElementById('page-'+t).classList.add('active');var btns=document.querySelectorAll('.nav-btn');if(btns[idx])btns[idx].classList.add('active');}}catch(e){}}());</script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" integrity="sha384-dug+JxfBvklEQdJ4AYuBBAIScUz0bVN73xpy273gcAwHjb3qI0fXmuYNaNfdyYJG" crossorigin="anonymous"></script>
+<script src="/lib/chart.umd.js"></script>
 <script>
 // Apply banner offset immediately before any rendering
 // Banner offset applied after DOM ready - see DOMContentLoaded below
@@ -17667,8 +17666,8 @@ window._fb = {
 };
 </script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js" integrity="sha384-su5kReKyYlIFrI62mbQRKXHzFobMa7BHp1cK6julLPbnYcCW9NIZKJiTODjLPeDh" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js" integrity="sha384-SM54CE5h+qdDI046d2Y5ym7wq1kq4uxcQ1cqGq5/+5jrE5tPLeDJSq711Q8sIska" crossorigin="anonymous"></script>
+<script src="/lib/d3.min.js"></script>
+<script src="/lib/d3-sankey.min.js"></script>
 <script>
 // d3-sankey merges sankey() and sankeyLinkHorizontal() into the d3 global
 window.d3Sankey = (typeof d3 !== 'undefined' && typeof d3.sankey === 'function') ? d3 : null;

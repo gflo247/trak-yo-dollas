@@ -14,8 +14,8 @@ Roughly in priority order. Stop and re-evaluate after each item ships.
 
 ## 2. Verify offline / make privacy provable
 
-- [ ] Load demo, turn off Wi-Fi, confirm charts render. Chart.js comes from CDN and is **not** in the SW PRECACHE list — if charts fail offline, cache the library first.
-- [ ] Once confirmed working, add "Load the demo, turn off Wi-Fi, keep using it" to the landing page. Don't claim it until it's true.
+- [x] Load demo, turn off Wi-Fi, confirm charts render. Chart.js comes from CDN and is **not** in the SW PRECACHE list — if charts fail offline, cache the library first.
+- [x] Once confirmed working, add "Load the demo, turn off Wi-Fi, keep using it" to the landing page. Don't claim it until it's true.
 
 ---
 

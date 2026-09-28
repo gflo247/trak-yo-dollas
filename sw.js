@@ -19,6 +19,9 @@ const PRECACHE = [
   '/fonts/dm-mono-400-ext.woff2',
   '/fonts/dm-mono-500.woff2',
   '/fonts/dm-mono-500-ext.woff2',
+  '/lib/chart.umd.js',
+  '/lib/d3.min.js',
+  '/lib/d3-sankey.min.js',
 ];
 
 // Cloudflare 307s .html → clean URL. Map so the SW can serve from cache
