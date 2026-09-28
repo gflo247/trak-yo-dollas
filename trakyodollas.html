@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-IoOT7pGC+3U7+5/Nh1pQ9iELvezBkW9A7VI1bTgzF94=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-lvlypLehIHY5OX0mr8Boni94ilhOFND5V8ehUZdHbXI=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -1084,6 +1084,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div id="vehicle-list"></div>
   </div>
 
+  <div id="tx-sources-panel"></div>
+
 </div>
 
 <!-- VEHICLES -->
@@ -1338,6 +1340,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div class="form-group">
       <label class="form-label" for="import-source-label">Label these transactions as</label>
       <input type="text" id="import-source-label" placeholder="e.g. Checking, Visa Rewards…" value="Checking"/>
+      <div id="import-source-hint" style="font-size:11px;color:var(--text-muted);margin-top:.3rem;min-height:1em"></div>
     </div>
 
     <!-- Drop zone — hero -->
@@ -8738,6 +8741,77 @@ function renderAccountLists(){
   // headers with nothing under them, no different from a rendering bug.
   document.getElementById('asset-list').innerHTML=baseAssets.length?ASSET_GROUPS.map(g=>group(g,baseAssets.filter(g.match))).join(''):'<p style="font-size:12px;color:var(--text-muted);padding:.4rem 0">No financial accounts yet — add one above.</p>';
   document.getElementById('liability-list').innerHTML=liabAccts.length?group({label:'Liabilities',color:'#F87171',hdr:'#7F1D1D18'},liabAccts):'<p style="font-size:12px;color:var(--text-muted);padding:.4rem 0">No liabilities yet.</p>';
+  renderTxSourcesPanel();
+}
+
+// Maps a free-text source label to its export guide slug. Substring match so
+// "Chase Checking", "Chase Visa", etc. all resolve to /guides/chase.
+function guideSlugForSource(name){
+  const l=name.toLowerCase();
+  if(l.includes('chase'))return'chase';
+  if(l.includes('ally'))return'ally';
+  if(l.includes('bank of america')||l.includes('bofa'))return'bofa';
+  if(l.includes('wells fargo')||l.includes('wellsfargo'))return'wellsfargo';
+  if(l.includes('capital one')||l.includes('capitalone'))return'capitalone';
+  if(l.includes('citi'))return'citi';
+  if(l.includes('discover'))return'discover';
+  if(l.includes('us bank')||l.includes('usbank')||l.includes('u.s. bank'))return'usbank';
+  if(l.includes('fidelity'))return'fidelity';
+  if(l.includes('vanguard'))return'vanguard';
+  return null;
+}
+// Renders the "Transaction sources" panel on the Accounts tab: one row per
+// distinct source label (t.card), showing the latest transaction date and
+// how stale it is. The amber threshold matches the landing page's "25+ days"
+// nudge, rounded up to a more natural 35 so it fires roughly monthly.
+function renderTxSourcesPanel(){
+  const el=document.getElementById('tx-sources-panel');
+  if(!el)return;
+  if(!state.hasRealData||!state.transactions.length){el.innerHTML='';return;}
+  const sourceMax={};
+  state.transactions.forEach(t=>{
+    if(!t.card||t.excluded||t.isIncome)return;
+    if(!sourceMax[t.card]||t.date>sourceMax[t.card])sourceMax[t.card]=t.date;
+  });
+  const sources=Object.keys(sourceMax).sort();
+  if(!sources.length){el.innerHTML='';return;}
+  const todayMs=Date.now();
+  const rows=sources.map(card=>{
+    const maxDate=sourceMax[card];
+    // Anchor at noon to reduce timezone-shift off-by-ones; clamp at 0 so a
+    // transaction dated today never produces a negative count in UTC+ zones.
+    const days=Math.max(0,Math.floor((todayMs-new Date(maxDate+'T12:00:00').getTime())/864e5));
+    const stale=days>=35;
+    const slug=guideSlugForSource(card);
+    const guideLink=slug?`<a href="/guides/${slug}" target="_blank" rel="noopener" style="font-size:11px;color:var(--accent-blue-light);white-space:nowrap;text-decoration:none">Update →</a>`:'';
+    return`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:.45rem 0;border-bottom:1px solid var(--border-dim)">
+      <div style="min-width:0;flex:1">
+        <div style="font-size:13px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(card)}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:1px">Last data: ${fmtDate(maxDate)}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+        <span style="font-size:11px;font-weight:700;color:${stale?'var(--amber-text-strong)':'var(--text-muted)'}">${days}d old</span>
+        ${guideLink}
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div class="list-col" style="margin-top:1rem"><div class="sh">Transaction sources</div>${rows}</div>`;
+}
+// Updates the source-hint line below the source label input in the import
+// modal. Called on modal open and on every keystroke in the label field.
+function updateImportSourceHint(){
+  const hint=document.getElementById('import-source-hint');
+  if(!hint)return;
+  const src=(document.getElementById('import-source-label')?.value||'').trim();
+  if(!src||!state.hasRealData){hint.innerHTML='';return;}
+  const srcLower=src.toLowerCase();
+  const txsForSrc=state.transactions.filter(t=>t.card&&t.card.toLowerCase()===srcLower&&!t.isIncome);
+  if(!txsForSrc.length){hint.innerHTML='';return;}
+  const maxDate=txsForSrc.reduce((best,t)=>t.date>best?t.date:best,'');
+  const days=Math.floor((Date.now()-new Date(maxDate+'T12:00:00').getTime())/864e5);
+  const stale=days>=35;
+  const col=stale?'var(--amber-text-strong)':'var(--text-muted)';
+  hint.innerHTML=`Last data from this source: <strong style="color:${stale?'var(--amber-text-strong)':'var(--text-primary)'}">${fmtDate(maxDate)}</strong> <span style="color:${col}">(${days}d old)</span>`;
 }
 
 // v.id/v.year/v.model are esc(String(...))'d/coerced below -- importBackup()
@@ -12831,6 +12905,11 @@ function openTxImportModal(){
   // 87th, 88th passes each found a different one).
   const isl=document.getElementById('import-source-label');if(isl)isl.value='Checking';
   const irc=document.getElementById('import-replace');if(irc)irc.checked=false;
+  // Show staleness hint for the default "Checking" source, and refresh it on
+  // every keystroke. removeEventListener first so repeated modal opens don't
+  // stack listeners on the same element.
+  updateImportSourceHint();
+  if(isl){isl.removeEventListener('input',updateImportSourceHint);isl.addEventListener('input',updateImportSourceHint);}
   const _dfRow=document.getElementById('import-date-fmt-row');
   if(_dfRow)_dfRow.style.display='none';
   fetchCommunityRules(); // kick off once per session, non-blocking
@@ -14032,6 +14111,7 @@ function confirmTxImport(){
   const wasFirstRealSave=!state.hasRealData;
 
   let newTxs;
+  let skippedDupCount=0;
   mutateTransactions(()=>{
     // If this is the first real import on a demo session, wipe all demo
     // data first -- previously this hand-rolled its own reset list here
@@ -14056,8 +14136,17 @@ function confirmTxImport(){
     // Auto-activate new source
     state.activeSources.add(source);
 
+    // Skip already-present transactions so re-importing an overlapping CSV
+    // (the common monthly pattern: download Jan-Aug, import; next month
+    // download Feb-Sep, import) doesn't create duplicates. Key is
+    // date|desc|amount without card so relabeling a source still dedupes
+    // correctly. Rows already removed by the replace-mode filter above are
+    // not in the Set, so they can always be re-imported cleanly.
+    const _existingKeys=new Set(state.transactions.map(t=>`${t.date}|${t.desc}|${t.amount}`));
+    const _dedupedParsed=importParsed.filter(t=>!_existingKeys.has(`${t.date}|${t.desc}|${t.amount}`));
+    skippedDupCount=importParsed.length-_dedupedParsed.length;
     // Assign IDs and stamp current source label onto card (user may have edited it after parsing)
-    newTxs=importParsed.map(t=>({...t,card:source,id:state.nextId++}));
+    newTxs=_dedupedParsed.map(t=>({...t,card:source,id:state.nextId++}));
     // On a first-real-save transition, normalizeTxRow() categorized these
     // rows (during the file preview, before _replaceDemoDataWithReal() ran
     // above) using the demo profile's own state.catRules -- e.g. Demo
@@ -14122,7 +14211,7 @@ function confirmTxImport(){
   });
 
   closeModals();
-  showToast(`✓ Imported ${newTxs.length} transactions from ${esc(source)}`);
+  showToast(`✓ Imported ${newTxs.length} transaction${newTxs.length===1?'':'s'} from ${esc(source)}${skippedDupCount>0?` (${skippedDupCount} already existed, skipped)`:''}`);
   // Restored -- the 88th adversarial pass removed this as "dead code" after
   // grepping trakyodollas.html and finding zero read sites in THIS file,
   // but index.html's "Time for a refresh" landing-page nudge (same origin,
@@ -14161,7 +14250,7 @@ function confirmTxImport(){
   const months=[...new Set(newTxs.map(t=>t.date.slice(0,7)))].sort();
   const monthRange=months.length>1?`${fmtMonthShort(months[0])} – ${fmtMonthShort(months[months.length-1])}`:(months[0]?fmtMonthShort(months[0]):'');
   const summaryEl=document.getElementById('import-success-summary');
-  if(summaryEl)summaryEl.innerHTML=`<strong style="color:var(--text-primary)">${newTxs.length} transactions</strong> from ${esc(source)}${monthRange?` · ${esc(monthRange)}`:''}`;
+  if(summaryEl)summaryEl.innerHTML=`<strong style="color:var(--text-primary)">${newTxs.length} transaction${newTxs.length===1?'':'s'}</strong> from ${esc(source)}${monthRange?` · ${esc(monthRange)}`:''}${skippedDupCount>0?` · <span style="color:var(--text-muted)">${skippedDupCount} already existed, skipped</span>`:''}`;
   const uncatEl=document.getElementById('import-success-uncategorized');
   if(uncatEl){
     if(uncatCount>0){uncatEl.textContent=`⚠️ ${uncatCount} transaction${uncatCount===1?'':'s'} landed in "Other" — click them in the Spending tab to recategorize.`;uncatEl.classList.remove('hidden');}

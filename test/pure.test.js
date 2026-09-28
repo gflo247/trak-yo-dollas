@@ -1306,6 +1306,7 @@ function renderAccountListsCtx(vehicles, accounts) {
       ],
       esc: (s) => String(s),
       fmt: (n) => String(n),
+      renderTxSourcesPanel: () => {},
       document: {
         getElementById: (id) => {
           if (id === "asset-list") return { set innerHTML(v) { assetHTML = v; }, get innerHTML() { return assetHTML; } };
@@ -2624,7 +2625,7 @@ test("import-success-modal has a #import-success-no-account nudge box, hidden by
 });
 test("confirmTxImport: shows the no-matching-account nudge only when no account's name matches this import's source label (case-insensitively)", () => {
   const source = readSource();
-  const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,11600}?\n}\n/);
+  const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,12500}?\n}\n/);
   assert.ok(fnMatch, "confirmTxImport() should exist");
   assert.match(
     fnMatch[0],
@@ -3689,7 +3690,7 @@ test("renderSpendChart: the activeCats branch's 'Peak month' tooltip flag uses a
 // source-pattern only. ──
 test("confirmTxImport: auto-registers any imported transaction's category that isn't already in getAllCats() as a new custom category", () => {
   const source = readSource();
-  const fnMatch = source.match(/newTxs=importParsed\.map[\s\S]{0,3700}?\n  \}\);/);
+  const fnMatch = source.match(/_existingKeys=new Set[\s\S]{0,4100}?\n  \}\);/);
   assert.ok(fnMatch, "confirmTxImport()'s mutateTransactions block should exist");
   assert.match(
     fnMatch[0],
@@ -3740,7 +3741,7 @@ test("confirmTxImport: re-derives catFromUserRule categories via community rules
     /const wasFirstRealSave=!state\.hasRealData;/,
     "confirmTxImport() should capture whether this is a first-real-save transition before _replaceDemoDataWithReal() runs"
   );
-  const fnMatch = source.match(/newTxs=importParsed\.map[\s\S]{0,3700}?\n  \}\);/);
+  const fnMatch = source.match(/_existingKeys=new Set[\s\S]{0,4100}?\n  \}\);/);
   assert.ok(fnMatch, "confirmTxImport()'s mutateTransactions block should exist");
   assert.match(
     fnMatch[0],
@@ -3875,7 +3876,7 @@ test("confirmTxImport: the demo-session-wipe branch delegates to the shared _rep
   const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,2700}?_replaceDemoDataWithReal\(\);/);
   assert.ok(fnMatch, "confirmTxImport() should call _replaceDemoDataWithReal()");
   assert.doesNotMatch(
-    source.match(/function confirmTxImport\(\)\{[\s\S]{0,6600}?\n  closeModals\(\);/)[0],
+    source.match(/function confirmTxImport\(\)\{[\s\S]{0,7200}?\n  closeModals\(\);/)[0],
     /state\.income=\{method:null,monthlyAmount:0\};/,
     "confirmTxImport() itself should no longer hand-roll the income reset -- it's now inside the shared helper"
   );
@@ -4299,7 +4300,7 @@ test("saveHistoricalSnapshot: has the demo-preview guard, wipes demo data before
 // matching those three. Found and fixed August 2026. ──
 test("confirmTxImport()/saveTx()/saveSnapshot()/saveHistoricalSnapshot() all call renderAll() after their demo-to-real wipe, not a narrower render subset that omits the Accounts tab", () => {
   const source = readSource();
-  const confirmTxImportSrc = source.match(/function confirmTxImport\(\)\{[\s\S]{0,11600}?\n}\n/)[0];
+  const confirmTxImportSrc = source.match(/function confirmTxImport\(\)\{[\s\S]{0,12500}?\n}\n/)[0];
   assert.match(
     confirmTxImportSrc,
     /state\.hasRealData=true;\s*hideDemoBadge\(\);\s*\/\/[\s\S]{0,1400}?renderAll\(\);\s*\/\/ Show post-import success modal/,
