@@ -86,6 +86,8 @@ self.addEventListener('fetch', e => {
       (url.pathname === '/trakyodollas' || url.pathname === '/trakyodollas.html')) {
     const ref = e.request.referrer || '';
     const fromOwnSite = ref.includes('trakyodollas.com');
+    // Trim to origin only — don't send search terms or campaign parameters.
+    const refOrigin = ref ? (()=>{try{return new URL(ref).origin;}catch(e){return '';}})() : '';
     if (!fromOwnSite) {
       fetch('https://cloud.umami.is/api/send', {
         method: 'POST',
@@ -94,7 +96,7 @@ self.addEventListener('fetch', e => {
           payload: {
             hostname: 'trakyodollas.com',
             language: '',
-            referrer: ref,
+            referrer: refOrigin,
             screen: '',
             title: 'trak-yo-dolla\u0024',
             url: '/trakyodollas',
