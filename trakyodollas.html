@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-lvlypLehIHY5OX0mr8Boni94ilhOFND5V8ehUZdHbXI=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-RCoE+nglff1NP95a3lrzS1Btvpkc9/YGW2+VwYcwDng=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -5990,9 +5990,17 @@ function renderBucketGrid(){
     const catMonths=filteredMs.filter(m=>state.transactions.some(t=>t.date.slice(0,7)===m&&t.cat===cat&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)));
     const latestCatM=catMonths.length?catMonths[catMonths.length-1]:null;
     const curAmt=latestCatM?(state.transactions||[]).filter(t=>t.date.slice(0,7)===latestCatM&&t.cat===cat&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0):0;
-    // Average only over months with actual spend (excluding latest)
+    // Average: sum prior spend months, divide by ALL months before the latest
+    // spend month (not just spend months). Using only spend months inflates
+    // the avg for irregular categories like Travel or Gifts -- e.g. $7k
+    // across 10 travel months ÷ 9 prior spend months = $753/mo when the
+    // user expects $7k ÷ 18 total months ≈ $400/mo. s.avg (total / all
+    // filtered months) already does this correctly and is used as the
+    // fallback when there are no prior months; the main path now matches it.
     const priorCatMonths=catMonths.slice(0,-1);
-    const periodAvg=priorCatMonths.length>0?Math.round(priorCatMonths.map(m=>(state.transactions||[]).filter(t=>t.date.slice(0,7)===m&&t.cat===cat&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0)).reduce((a,b)=>a+b,0)/priorCatMonths.length):s.avg;
+    const priorAllMonthCount=latestCatM?filteredMs.indexOf(latestCatM):0;
+    const priorSpendTotal=priorCatMonths.map(m=>(state.transactions||[]).filter(t=>t.date.slice(0,7)===m&&t.cat===cat&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0)).reduce((a,b)=>a+b,0);
+    const periodAvg=priorAllMonthCount>0?Math.round(priorSpendTotal/priorAllMonthCount):s.avg;
     const vsAvg=periodAvg>0?Math.round((curAmt-periodAvg)/periodAvg*100):0;
     const signal=curAmt>0?(vsAvg>=20?`<span class="text-danger">↑${vsAvg}%</span>`:vsAvg<=-20?`<span class="text-success">↓${Math.abs(vsAvg)}%</span>`:(Math.abs(vsAvg)>=5?`<span style="color:#64748B">${vsAvg>=0?'+':''}${vsAvg}%</span>`:'')):'';
     // Compact budget badge — replaces progress bar
