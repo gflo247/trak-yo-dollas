@@ -209,6 +209,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
   .footer-left{justify-content:center}
   .footer-links{margin-left:0;justify-content:center;gap:14px}
   .footer-links a,.footer-support{font-size:11px;padding:5px 2px;color:var(--text-muted)}
+  .also-includes-grid{grid-template-columns:1fr!important}
 }
 </style>
 <link rel="stylesheet" href="/fonts/fonts.css">
@@ -295,33 +296,6 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <section class="section">
   <h2>What's inside.</h2>
   <div class="feature-list">
-    <div class="fi"><div class="fi-icon">📊</div><div>
-      <h3>Several ways to see your spending</h3>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:.4rem">
-        <span style="font-size:12px;color:var(--text-secondary);background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:6px;padding:3px 10px">📊 Bar charts</span>
-        <span style="font-size:12px;color:var(--text-secondary);background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:6px;padding:3px 10px">📈 Trend</span>
-        <span style="font-size:12px;color:var(--text-secondary);background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:6px;padding:3px 10px">📅 Daily heatmap</span>
-        <span style="font-size:12px;color:var(--text-secondary);background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:6px;padding:3px 10px">🏦 Flow</span>
-        <span style="font-size:12px;color:var(--text-secondary);background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:6px;padding:3px 10px">⊞ Split</span>
-      </div>
-      <p style="margin-top:.5rem">Click any category tile to filter transactions instantly across all views.</p>
-    </div></div>
-    <div class="fi"><div class="fi-icon">📋</div><div>
-      <h3>Your month in plain English</h3>
-      <p>A short summary of what changed and why — lighter month, biggest mover, savings rate — sounds like a human wrote it, not a report.</p>
-    </div></div>
-    <div class="fi"><div class="fi-icon">⬇</div><div>
-      <h3>Export your data anytime</h3>
-      <p>Download transactions or budget history as a CSV, or a full JSON backup — every tab in one file: transactions, accounts, net worth snapshots, budgets, categories, and settings. Import it back anytime to restore everything.</p>
-    </div></div>
-    <div class="fi"><div class="fi-icon">📲</div><div>
-      <h3>Works offline. Installs as an app.</h3>
-      <p>Install it on any device — add to your home screen on Android or iPhone, or install from the address bar in Chrome on your computer. It runs in its own window like a regular app, no tabs or toolbar in the way. Works without internet too; your data lives on your device. Try it: load the demo, turn off Wi-Fi, keep using it.</p>
-    </div></div>
-    <div class="fi"><div class="fi-icon">🏦</div><div>
-      <h3>Full picture net worth</h3>
-      <p>Checking, savings, investments, loans, real estate, and vehicles in one place. Save monthly snapshots and watch your trajectory toward a goal.</p>
-    </div></div>
     <div class="fi"><div class="fi-icon">🧹</div><div>
       <h3>Four-layer auto-categorization</h3>
       <div style="display:flex;flex-direction:column;gap:5px;margin:.6rem 0">
@@ -331,9 +305,13 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
         <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:#2563EB;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">4</span><span style="color:var(--text-secondary)"><strong style="color:var(--text-primary)"><a href="https://en.wikipedia.org/wiki/Merchant_category_code" target="_blank" rel="noopener noreferrer" style="color:var(--text-primary);text-decoration:underline">Merchant category codes (MCC)</a></strong> — your bank or credit union's merchant codes, if present</span></div>
       </div>
     </div></div>
-    <div class="fi"><div class="fi-icon">🌍</div><div>
-      <h3>Built for the US, Canada, UK, Australia, New Zealand, and Singapore</h3>
-      <p>The app auto-detects CSV formats from any bank or credit union, with named support for several US banks, ANZ, BNZ, and Westpac in New Zealand, ING in Australia, and Starling, HSBC, Nationwide, Santander, Barclays, Lloyds, and Halifax in the UK. Auto-categorization covers local merchants — groceries, telecoms, transport, energy, dining, and retail — in each market. Configure your currency symbol in settings: $ · C$ · £ · A$ · NZ$ · S$ · or any custom symbol.</p>
+    <div class="fi"><div class="fi-icon">📲</div><div>
+      <h3>Works offline. Installs as an app.</h3>
+      <p>Install it on any device — add to your home screen on Android or iPhone, or install from the address bar in Chrome on your computer. It runs in its own window like a regular app, no tabs or toolbar in the way. Works without internet too; your data lives on your device. Try it: load the demo, turn off Wi-Fi, keep using it.</p>
+    </div></div>
+    <div class="fi"><div class="fi-icon">🏦</div><div>
+      <h3>Full picture net worth</h3>
+      <p>Checking, savings, investments, loans, real estate, and vehicles in one place. Save monthly snapshots and watch your trajectory toward a goal.</p>
     </div></div>
     <div class="fi"><div class="fi-icon">🎯</div><div>
       <h3>Budgets that learn your patterns</h3>
@@ -343,14 +321,27 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       <h3>See a big decision before you make it</h3>
       <p>The Life Changes tab takes your real spending history and previews a hypothetical — rent becoming a mortgage, a car payment, childcare starting — against your real income. Nothing changes until you decide it should.</p>
     </div></div>
-    <div class="fi"><div class="fi-icon">🔄</div><div>
-      <h3>Recurring charge detection</h3>
-      <p>Surfaces subscriptions and regular charges automatically — including that trial you forgot to cancel. Also flags possible duplicate charges, like a purchase that hit your card twice.</p>
-    </div></div>
-    <div class="fi"><div class="fi-icon">💼</div><div>
-      <h3>Freelancer-friendly</h3>
-      <p>Track income alongside spending, tag transactions as business or personal, and filter your whole view by either — all without a separate bookkeeping app.</p>
-    </div></div>
+    <div style="margin-top:.5rem;padding-top:.75rem;border-top:1px solid var(--border-mid)">
+      <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.4rem">Also includes</p>
+      <div class="also-includes-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+        <div class="fi" style="padding:.7rem 1rem"><div class="fi-icon" style="font-size:16px;width:28px">📊</div><div>
+          <h3 style="font-size:var(--text-sm)">Several ways to see your spending</h3>
+          <p style="font-size:12px">Bar charts, trend, heatmap, flow, and split views. Click any category to filter across all.</p>
+        </div></div>
+        <div class="fi" style="padding:.7rem 1rem"><div class="fi-icon" style="font-size:16px;width:28px">⬇</div><div>
+          <h3 style="font-size:var(--text-sm)">Export your data anytime</h3>
+          <p style="font-size:12px">CSV or full JSON backup — every tab in one file. Import it back anytime to restore everything.</p>
+        </div></div>
+        <div class="fi" style="padding:.7rem 1rem"><div class="fi-icon" style="font-size:16px;width:28px">🔄</div><div>
+          <h3 style="font-size:var(--text-sm)">Recurring charge detection</h3>
+          <p style="font-size:12px">Surfaces subscriptions automatically — including that trial you forgot to cancel. Also flags possible duplicate charges.</p>
+        </div></div>
+        <div class="fi" style="padding:.7rem 1rem"><div class="fi-icon" style="font-size:16px;width:28px">💼</div><div>
+          <h3 style="font-size:var(--text-sm)">Freelancer-friendly</h3>
+          <p style="font-size:12px">Tag transactions as business or personal and filter your whole view by either.</p>
+        </div></div>
+      </div>
+    </div>
   </div>
 </section>
 
