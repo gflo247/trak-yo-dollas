@@ -23,9 +23,9 @@ Roughly in priority order. Stop and re-evaluate after each item ships.
 
 Stop after each stage and evaluate whether it justifies the next one.
 
-- [ ] **Stage 1 (cheap):** Move result to top of the tab. Add one line showing how the change moves the net worth goal date. This tests whether anyone cares.
-- [ ] **Stage 2:** Real per-preset inputs — car (price, rate, term); childcare (start/end dates); mortgage replacing rent (price, down payment, rate). Hide Rent→Mortgage preset when profile already has a mortgage.
-- [ ] **Stage 3:** Before/after chart.
+- [x] **Stage 1 (cheap):** Move result to top of the tab. Add one line showing how the change moves the net worth goal date. This tests whether anyone cares.
+- [~] **Stage 2:** Real per-preset inputs — car (price, rate, term); childcare (start/end dates); mortgage replacing rent (price, down payment, rate). Hide Rent→Mortgage preset when profile already has a mortgage. *(skipped — doesn't unlock anything not already easily available; doesn't fit the spirit of the site)*
+- [x] **Stage 3:** Before/after chart.
 
 Notes: project NW using savings from cash flow + editable assumed return on invested assets (not cash flow alone). Keep copy as "preview," never "advice." Only lead the landing page with this after Stage 1 ships and shows traction.
 
@@ -33,34 +33,35 @@ Notes: project NW using savings from cash flow + editable assumed return on inve
 
 ## 4. Bank export guides (one page per bank)
 
-- [ ] Write text-first guides: "How to download your [Bank] transactions as a CSV file." Start with Chase, BofA, Wells Fargo, Capital One, Ally.
-- [ ] Stamp each with "last verified [month]" — bank UIs change, screenshots go stale.
-- [ ] SEO latency is months, not weeks. Start early.
+- [x] Write text-first guides: "How to download your [Bank] transactions as a CSV file." Start with Chase, BofA, Wells Fargo, Capital One, Ally.
+- [x] Stamp each with "last verified [month]" — bank UIs change, screenshots go stale.
+- [x] SEO latency is months, not weeks. Start early.
 
 ---
 
 ## 5. Monthly re-import habit — "Accounts to update" panel
 
-- [ ] **First:** confirm whether overlapping imports already skip duplicates. If yes, surface "12 already imported, skipped" on screen. If no, fix duplicate detection before building the panel.
-- [ ] Add panel showing each account's last import date, linking to that bank's guide (item 4).
+- [x] **First:** confirm whether overlapping imports already skip duplicates. If yes, surface "12 already imported, skipped" on screen. If no, fix duplicate detection before building the panel.
+- [x] Add panel showing each account's last import date, linking to that bank's guide (item 4).
 
 ---
 
 ## 6. Monthly recap (print / save as PDF)
 
-- [ ] Plain-English summary, top movers, budget status, NW change — one page for a monthly money check-in with a partner.
-- [ ] No sync or account required.
-- [ ] Gets meaningfully stronger after Life Changes (item 3) can add "on track for [goal] by [date]."
+- [~] Plain-English summary, top movers, budget status, NW change — one page for a monthly money check-in with a partner.
+- [~] No sync or account required.
+- [~] Gets meaningfully stronger after Life Changes (item 3) can add "on track for [goal] by [date]."
+
 
 ---
 
 ## 7. Trim landing page feature list
 
-- [ ] Cut from eleven cards to ~five. Let the demo show the rest.
-- [ ] Do after items 1–3 settle so the kept cards reflect what actually matters.
+- [x] Cut from eleven cards to ~five. Let the demo show the rest.
+- [x] Do after items 1–3 settle so the kept cards reflect what actually matters.
 
 ---
 
 ## Bug to verify
 
-- [ ] **Travel tile avg** — was seen once showing "Avg: $753/mo" where $7,232 ÷ 17–18 months ≈ $425. The old all-months avg formula could explain it; the recent `periodAvg` fix may have resolved it. Verify on current demo data after SW cache clears.
+- [x] **Travel tile avg** — was seen once showing "Avg: $753/mo" where $7,232 ÷ 17–18 months ≈ $425. Fixed: denominator changed to all-months count (not just spend-months). Verified on demo data.
