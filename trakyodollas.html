@@ -6020,7 +6020,7 @@ function renderBucketGrid(){
     // filtered months) already does this correctly and is used as the
     // fallback when there are no prior months; the main path now matches it.
     const priorCatMonths=catMonths.slice(0,-1);
-    const priorAllMonthCount=latestCatM?filteredMs.indexOf(latestCatM):0;
+    const priorAllMonthCount=filteredMs.length>1?filteredMs.length-1:0;
     const priorSpendTotal=priorCatMonths.map(m=>(state.transactions||[]).filter(t=>t.date.slice(0,7)===m&&t.cat===cat&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0)).reduce((a,b)=>a+b,0);
     const periodAvg=priorAllMonthCount>0?Math.round(priorSpendTotal/priorAllMonthCount):s.avg;
     const vsAvg=periodAvg>0?Math.round((curAmt-periodAvg)/periodAvg*100):0;
