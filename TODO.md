@@ -25,7 +25,7 @@ Stop after each stage and evaluate whether it justifies the next one.
 
 - [x] **Stage 1 (cheap):** Move result to top of the tab. Add one line showing how the change moves the net worth goal date. This tests whether anyone cares.
 - [~] **Stage 2:** Real per-preset inputs — car (price, rate, term); childcare (start/end dates); mortgage replacing rent (price, down payment, rate). Hide Rent→Mortgage preset when profile already has a mortgage. *(skipped — doesn't unlock anything not already easily available; doesn't fit the spirit of the site)*
-- [x] **Stage 3:** Before/after chart.
+- [x] **Stage 3:** Before/after chart. *(chart was cut after repeated model-consistency issues; goal-delta text uses cash-flow surplus and is labeled "(cash-flow estimate)")*
 
 Notes: project NW using savings from cash flow + editable assumed return on invested assets (not cash flow alone). Keep copy as "preview," never "advice." Only lead the landing page with this after Stage 1 ships and shows traction.
 

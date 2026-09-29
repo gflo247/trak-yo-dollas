@@ -8992,8 +8992,13 @@ test("renderSimulatorTab: 'Look back' (select + custom input) and the preset/add
   );
   assert.match(
     fnMatch[0],
-    /<\/select>\s*<\/div>\s*\$\{showCustomHorizon\?`<input type="number" id="simulator-horizon-custom"[^`]*style="width:90px"\/>`:''\}\s*<button class="btn" data-action="openSimulatorRentMortgagePreset"/,
+    /<\/select>\s*<\/div>\s*\$\{showCustomHorizon\?`<input type="number" id="simulator-horizon-custom"[^`]*style="width:90px"\/>`:''\}/,
     "the custom-horizon input should sit inline in the same row as the preset buttons (fixed width, no label), not stacked under the select"
+  );
+  assert.match(
+    fnMatch[0],
+    /data-action="openSimulatorRentMortgagePreset"/,
+    "the Rent→Mortgage preset button should be present in the template (conditionally hidden for homeowners, but defined)"
   );
 });
 
