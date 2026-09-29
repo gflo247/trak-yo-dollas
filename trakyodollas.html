@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-s8/TGkm4htaWq0T896fhqlE9NCxhCGOpV5VEqYjhur0=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-n5QsDTK9M6blejiXjghvqKu9BG9TFPfKSupHLN84UXk=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -10361,8 +10361,9 @@ function renderSimNwChart(nwNow,baselineRate,projectedRate){
   const bProjData=projKeys.map((m,t)=>({i:histKeys.length+t,v:nwNow+(t+1)*baselineRate,m}));
   const pProjData=projKeys.map((m,t)=>({i:histKeys.length+t,v:nwNow+(t+1)*projectedRate,m}));
 
+  // Goal excluded from scale — same as renderNwChart. Goal line only draws
+  // if it falls within the natural data range (checked below after vMax is set).
   const allVals=[...histVals,...bProjData.map(d=>d.v),...pProjData.map(d=>d.v)];
-  if(state.nwGoal&&state.nwGoal>nwNow)allVals.push(state.nwGoal);
 
   const isDark=getIsDark();
   const W=svgEl.parentElement.getBoundingClientRect().width||600;
