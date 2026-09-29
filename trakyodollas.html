@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-n5QsDTK9M6blejiXjghvqKu9BG9TFPfKSupHLN84UXk=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-fbpOykcGiAP39tElQFXQhAVcr25nizQM/YyzVj9M5FE=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -10400,14 +10400,14 @@ function renderSimNwChart(nwNow,baselineRate,projectedRate){
     .attr('stroke',gridColor).attr('stroke-width',1);
   g.selectAll('.syt').data(yScale.ticks(4)).join('text').attr('class','syt')
     .attr('x',-6).attr('y',d=>yScale(d)).attr('text-anchor','end').attr('dominant-baseline','middle')
-    .attr('font-size',10).attr('fill',textColor).text(d=>fmtC(d,true));
+    .attr('font-size',11).attr('fill',textColor).text(d=>fmtC(d,true));
 
   // "now" divider
   const nowX=xScale(nowIdx);
   g.append('line').attr('x1',nowX).attr('x2',nowX).attr('y1',0).attr('y2',iH)
     .attr('stroke','var(--border-mid)').attr('stroke-width',1).attr('stroke-dasharray','3,3').attr('opacity',.5);
   g.append('text').attr('x',nowX+3).attr('y',8)
-    .attr('font-size',10).attr('fill',textColor).attr('opacity',.6).text('now');
+    .attr('font-size',11).attr('fill',textColor).attr('opacity',.6).text('now');
 
   // Goal line (only when within chart range)
   if(state.nwGoal&&state.nwGoal>nwNow&&!state.hideNwGoal&&state.nwGoal<=vMax){
@@ -10459,7 +10459,7 @@ function renderSimNwChart(nwNow,baselineRate,projectedRate){
   const step=Math.max(1,Math.ceil(allKeys.length/(iW/55)));
   g.selectAll('.sxt').data(allKeys.filter((_,i)=>i%step===0)).join('text').attr('class','sxt')
     .attr('x',d=>xScale(allKeys.indexOf(d)))
-    .attr('y',iH+24).attr('text-anchor','middle').attr('font-size',10).attr('fill',textColor)
+    .attr('y',iH+24).attr('text-anchor','middle').attr('font-size',11).attr('fill',textColor)
     .text(d=>fmtMonthShort(d));
 }
 
