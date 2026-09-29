@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-w6ZA3bD/aST0tNl2qqgBE079Wv3aT9Wm7P8liXDA8MQ=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-t8jsEnYFmMz3EtcxMED1YX+gw6mWyIYR8/bOGNZMywc=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -10366,9 +10366,7 @@ function renderSimNwChart(nwNow,baselineRate,projectedRate){
 
   const isDark=getIsDark();
   const W=svgEl.parentElement.getBoundingClientRect().width||600;
-  const H=185;
   const pad={t:12,r:16,b:32,l:52};
-  const iW=W-pad.l-pad.r,iH=H-pad.t-pad.b;
 
   const rawMin=Math.min(...allVals),rawMax=Math.max(...allVals);
   const vPad=rawMin===rawMax?(rawMin*0.05||500):(rawMax-rawMin)*0.05;
@@ -10384,6 +10382,8 @@ function renderSimNwChart(nwNow,baselineRate,projectedRate){
   const rateDelta=projectedRate-baselineRate;
   const projColor=Math.abs(rateDelta)<0.01?textColor:rateDelta>0?'#34D399':'#F87171';
 
+  const H=220;
+  const iW=W-pad.l-pad.r,iH=H-pad.t-pad.b;
   const svg=d3.select(svgEl);
   svg.selectAll('*').remove();
   svg.attr('viewBox',`0 0 ${W} ${H}`).attr('width',W).attr('height',H);
@@ -10400,14 +10400,14 @@ function renderSimNwChart(nwNow,baselineRate,projectedRate){
     .attr('stroke',gridColor).attr('stroke-width',1);
   g.selectAll('.syt').data(yScale.ticks(4)).join('text').attr('class','syt')
     .attr('x',-6).attr('y',d=>yScale(d)).attr('text-anchor','end').attr('dominant-baseline','middle')
-    .attr('font-size',9).attr('fill',textColor).text(d=>fmtC(d,true));
+    .attr('font-size',10).attr('fill',textColor).text(d=>fmtC(d,true));
 
   // "now" divider
   const nowX=xScale(nowIdx);
   g.append('line').attr('x1',nowX).attr('x2',nowX).attr('y1',0).attr('y2',iH)
     .attr('stroke','var(--border-mid)').attr('stroke-width',1).attr('stroke-dasharray','3,3').attr('opacity',.5);
   g.append('text').attr('x',nowX+3).attr('y',8)
-    .attr('font-size',8).attr('fill',textColor).attr('opacity',.6).text('now');
+    .attr('font-size',10).attr('fill',textColor).attr('opacity',.6).text('now');
 
   // Goal line (only when within chart range)
   if(state.nwGoal&&state.nwGoal>nwNow&&!state.hideNwGoal&&state.nwGoal<=vMax){
@@ -10439,10 +10439,10 @@ function renderSimNwChart(nwNow,baselineRate,projectedRate){
   const bEndY=yScale(bProjData[bProjData.length-1].v);
   const pEndY=yScale(pProjData[pProjData.length-1].v);
   const close=Math.abs(bEndY-pEndY)<14;
-  g.append('text').attr('x',iW-2).attr('y',(bEndY+(close?9:4)).toFixed(1))
-    .attr('font-size',9).attr('text-anchor','end').attr('fill',textColor).attr('opacity',.6).text('baseline');
-  g.append('text').attr('x',iW-2).attr('y',(pEndY-(close?9:3)).toFixed(1))
-    .attr('font-size',9).attr('text-anchor','end').attr('fill',projColor).text('projected');
+  g.append('text').attr('x',iW-2).attr('y',(bEndY+(close?11:4)).toFixed(1))
+    .attr('font-size',11).attr('text-anchor','end').attr('fill',textColor).attr('opacity',.6).text('baseline');
+  g.append('text').attr('x',iW-2).attr('y',(pEndY-(close?11:3)).toFixed(1))
+    .attr('font-size',11).attr('text-anchor','end').attr('fill',projColor).text('projected');
 
   // Snapshot dots (same style as NW tab)
   histData.forEach(d=>{
@@ -10459,7 +10459,7 @@ function renderSimNwChart(nwNow,baselineRate,projectedRate){
   const step=Math.max(1,Math.ceil(allKeys.length/(iW/55)));
   g.selectAll('.sxt').data(allKeys.filter((_,i)=>i%step===0)).join('text').attr('class','sxt')
     .attr('x',d=>xScale(allKeys.indexOf(d)))
-    .attr('y',iH+24).attr('text-anchor','middle').attr('font-size',9).attr('fill',textColor)
+    .attr('y',iH+24).attr('text-anchor','middle').attr('font-size',10).attr('fill',textColor)
     .text(d=>fmtMonthShort(d));
 }
 
