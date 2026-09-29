@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-fbpOykcGiAP39tElQFXQhAVcr25nizQM/YyzVj9M5FE=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-ovkNxO2iDNc5Kd3HdyG3xvH54s1TdxT/R28Y+krwULo=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -5111,8 +5111,10 @@ function renderNwChart(){
       span.push(`${cy}-${String(cm).padStart(2,'0')}`);
       cm++;if(cm>12){cm=1;cy++;}
     }
-    // Merge with txMonths so extrapolated section still uses real data months
-    const merged=new Set([...span,...txMonths]);
+    // Merge with txMonths so extrapolated section still uses real data months.
+    // Filter to >= startKey so pre-snapshot tx months don't add a spurious
+    // flat stub before the first green dot.
+    const merged=new Set([...span,...txMonths.filter(m=>m>=startKey)]);
     mKeys=[...merged].sort();
   } else {
     mKeys=txMonths;
