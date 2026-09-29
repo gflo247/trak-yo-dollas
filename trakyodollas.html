@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-t8jsEnYFmMz3EtcxMED1YX+gw6mWyIYR8/bOGNZMywc=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-s8/TGkm4htaWq0T896fhqlE9NCxhCGOpV5VEqYjhur0=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -10366,7 +10366,9 @@ function renderSimNwChart(nwNow,baselineRate,projectedRate){
 
   const isDark=getIsDark();
   const W=svgEl.parentElement.getBoundingClientRect().width||600;
+  const H=220;
   const pad={t:12,r:16,b:32,l:52};
+  const iW=W-pad.l-pad.r,iH=H-pad.t-pad.b;
 
   const rawMin=Math.min(...allVals),rawMax=Math.max(...allVals);
   const vPad=rawMin===rawMax?(rawMin*0.05||500):(rawMax-rawMin)*0.05;
@@ -10381,9 +10383,6 @@ function renderSimNwChart(nwNow,baselineRate,projectedRate){
   const gridColor=isDark?'rgba(255,255,255,.05)':'rgba(0,0,0,.05)';
   const rateDelta=projectedRate-baselineRate;
   const projColor=Math.abs(rateDelta)<0.01?textColor:rateDelta>0?'#34D399':'#F87171';
-
-  const H=220;
-  const iW=W-pad.l-pad.r,iH=H-pad.t-pad.b;
   const svg=d3.select(svgEl);
   svg.selectAll('*').remove();
   svg.attr('viewBox',`0 0 ${W} ${H}`).attr('width',W).attr('height',H);
