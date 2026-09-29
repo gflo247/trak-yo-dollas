@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-RXF/cbbI1bmWkZk5wvJSBpRqVbtSNfTwj6NVJDJTVeg=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-5p/VYxoDwpRebmICiPdbVYjXsQEtFeg1jMBm1D+ToNk=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -10188,79 +10188,40 @@ function renderSimulatorTab(){
   // to a single line; Stage 2 will add an assumed investment return rate.
   let goalLineHTML='';
   const nwNow=netWorth();
-  if(state.nwGoal&&state.nwGoal>nwNow&&income>0&&state.simulator.overrides.length>0){
+  // Use snapshot-based growth rate (same as the NW tab) as the baseline so
+  // goal-delta here stays consistent with the NW tab's own projection.
+  // The override only shifts the rate by its cash-flow delta -- it doesn't
+  // claim to predict a different investment or appreciation return.
+  const {monthlyGrowth:baselineRate}=computeMonthlyGrowth(nwNow);
+  const projectedRate=baselineRate-(proj.projectedTotal-proj.baselineTotal);
+  if(state.nwGoal&&state.nwGoal>nwNow&&baselineRate>0&&state.simulator.overrides.length>0){
     const remaining=state.nwGoal-nwNow;
-    // fmtMonths: converts a raw month count to a human string.
-    // Caps at 50 years (600 months) since beyond that the estimate is noise.
     const fmtMonths=n=>n>600?'50+ years'
       :n>=24?(()=>{const y=Math.round(n/12*10)/10;return`~${y} yr${y!==1?'s':''}`})()
       :`~${n} month${n===1?'':'s'}`;
-    if(baselineSurplus>0&&projectedSurplus>0){
-      const bMonths=Math.ceil(remaining/baselineSurplus);
-      const pMonths=Math.ceil(remaining/projectedSurplus);
+    if(baselineRate>0&&projectedRate>0){
+      const bMonths=Math.ceil(remaining/baselineRate);
+      const pMonths=Math.ceil(remaining/projectedRate);
       const delta=bMonths-pMonths; // positive = sooner, negative = later
       if(Math.abs(delta)>=1){
         const sooner=delta>0;
-        goalLineHTML=`<div style="margin-top:.5rem;font-size:12px;color:${sooner?'var(--accent-green)':'var(--accent-red)'}">Goal preview: moves your ${fmtC(state.nwGoal)} goal ${fmtMonths(Math.abs(delta))} ${sooner?'sooner':'later'} (cash-flow estimate)</div>`;
+        goalLineHTML=`<div style="margin-top:.5rem;font-size:12px;color:${sooner?'var(--accent-green)':'var(--accent-red)'}">Goal preview: moves your ${fmtC(state.nwGoal)} goal ${fmtMonths(Math.abs(delta))} ${sooner?'sooner':'later'} (estimate)</div>`;
       }
-    }else if(baselineSurplus>0&&projectedSurplus<=0){
+    }else if(baselineRate>0&&projectedRate<=0){
       goalLineHTML=`<div style="margin-top:.5rem;font-size:12px;color:var(--accent-red)">Goal preview: goal unreachable at projected spending rate</div>`;
-    }else if(baselineSurplus<=0&&projectedSurplus>0){
-      // Currently overspending at baseline; this change would make the goal
-      // reachable for the first time -- the most motivating case to surface.
-      const pMonths=Math.ceil(remaining/projectedSurplus);
+    }else if(baselineRate<=0&&projectedRate>0){
+      const pMonths=Math.ceil(remaining/projectedRate);
       goalLineHTML=`<div style="margin-top:.5rem;font-size:12px;color:var(--accent-green)">Goal preview: this change makes your ${fmtC(state.nwGoal)} goal reachable &mdash; ${fmtMonths(pMonths)} at the projected rate</div>`;
     }
   }
-  // Before/after NW projection chart -- only shown when overrides are set
-  // and income is known. Pure SVG math (two linear projections from nwNow),
-  // no D3 needed. Horizon: enough months to show divergence, capped at 60.
-  let simChartHTML='';
-  if(state.simulator.overrides.length>0&&income>0){
-    const W=600,H=150,ML=60,MR=12,MT=12,MB=22;
-    const iW=W-ML-MR,iH=H-MT-MB;
-    // Determine horizon
-    let nM=36;
-    if(state.nwGoal&&state.nwGoal>nwNow){
-      const rem=state.nwGoal-nwNow;
-      if(projectedSurplus>0)nM=Math.min(60,Math.ceil(rem/projectedSurplus)+4);
-      else if(baselineSurplus>0)nM=Math.min(60,Math.ceil(rem/baselineSurplus)+4);
-    }
-    nM=Math.max(12,nM);
-    // Project both lines
-    const bLine=Array.from({length:nM+1},(_,t)=>nwNow+t*baselineSurplus);
-    const pLine=Array.from({length:nM+1},(_,t)=>nwNow+t*projectedSurplus);
-    // Y domain with padding
-    const allV=[...bLine,...pLine];
-    if(state.nwGoal&&state.nwGoal>nwNow){const mv=Math.max(...allV);if(state.nwGoal<=mv*1.1)allV.push(state.nwGoal);}
-    let vMin=Math.min(...allV),vMax=Math.max(...allV);
-    if(vMin===vMax){vMin-=500;vMax+=500;}
-    const rng=vMax-vMin;vMin-=rng*0.07;vMax+=rng*0.07;
-    const xS=t=>ML+(t/nM)*iW;
-    const yS=v=>MT+iH*(1-(v-vMin)/(vMax-vMin));
-    const xyPts=line=>line.map((v,t)=>`${xS(t).toFixed(1)},${yS(v).toFixed(1)}`).join(' ');
-    const delta=projectedSurplus-baselineSurplus;
-    const pColor=Math.abs(delta)<0.01?'var(--text-muted)':delta>0?'var(--accent-green)':'var(--accent-red)';
-    // Goal line
-    let goalSVG='';
-    if(state.nwGoal&&state.nwGoal>vMin&&state.nwGoal<vMax){
-      const gy=yS(state.nwGoal).toFixed(1);
-      goalSVG=`<line x1="${ML}" y1="${gy}" x2="${W-MR}" y2="${gy}" stroke="var(--accent-blue-light)" stroke-width="1" stroke-dasharray="3,3" opacity="0.45"/><text x="${ML+4}" y="${(parseFloat(gy)-3).toFixed(1)}" font-size="9" fill="var(--accent-blue-light)" opacity="0.7">${fmtC(state.nwGoal)} goal</text>`;
-    }
-    // Zero line if range crosses zero
-    let zeroSVG='';
-    if(vMin<0&&vMax>0){const zy=yS(0).toFixed(1);zeroSVG=`<line x1="${ML}" y1="${zy}" x2="${W-MR}" y2="${zy}" stroke="var(--border-mid)" stroke-width="0.5" opacity="0.4"/>`;}
-    // Y-axis ticks (compact format)
-    const fmtY=v=>{const a=Math.abs(v),s=v<0?'-':'';return a>=1e6?s+'$'+(a/1e6).toFixed(1)+'M':a>=1000?s+'$'+Math.round(a/1000)+'k':s+'$'+Math.round(a);};
-    const yTicksSVG=[0.15,0.5,0.85].map(f=>{const v=vMin+f*(vMax-vMin);return`<text x="${ML-4}" y="${(yS(v)+3).toFixed(1)}" font-size="9" text-anchor="end" fill="var(--text-muted)">${fmtY(v)}</text>`;}).join('');
-    // X-axis ticks
-    const xTicksSVG=[0,Math.round(nM/2),nM].map(t=>`<text x="${xS(t).toFixed(1)}" y="${H-5}" font-size="9" text-anchor="${t===0?'start':t===nM?'end':'middle'}" fill="var(--text-muted)">${t===0?'Now':t+'mo'}</text>`).join('');
-    // End labels — offset if lines are close together at the right edge
-    const bEY=yS(bLine[nM]),pEY=yS(pLine[nM]),gap=bEY-pEY;
-    const close=Math.abs(gap)<14;
-    const bLblY=(bEY+(close?9:4)).toFixed(1),pLblY=(pEY-(close?9:3)).toFixed(1);
-    simChartHTML=`<div style="margin-bottom:.75rem;padding:.65rem .75rem .5rem;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px"><div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.3rem">Projected net worth</div><svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;overflow:visible" role="img" aria-label="Projected net worth: baseline vs with changes">${zeroSVG}${goalSVG}<polyline points="${xyPts(bLine)}" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.45"/><polyline points="${xyPts(pLine)}" fill="none" stroke="${pColor}" stroke-width="2"/>${yTicksSVG}${xTicksSVG}<text x="${W-MR-2}" y="${bLblY}" font-size="9" text-anchor="end" fill="var(--text-muted)" opacity="0.6">baseline</text><text x="${W-MR-2}" y="${pLblY}" font-size="9" text-anchor="end" fill="${pColor}">projected</text></svg></div>`;
-  }
+  const showSimChart=state.simulator.overrides.length>0&&baselineRate>0;
+  // Before/after NW projection chart -- rendered by renderSimNwChart() after
+  // el.innerHTML is set, using the same D3 visual vocabulary as the NW tab:
+  // historical snapshots + interpolation on the left, two projection lines
+  // forking from "now" on the right. showSimChart flag controls visibility.
+  const simChartHTML=showSimChart
+    ?`<div style="margin-bottom:.75rem;padding:.65rem .75rem .5rem;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px"><div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.3rem">Projected net worth</div><svg id="simNwChart" style="width:100%;display:block;overflow:visible" role="img" aria-label="Projected net worth: history and baseline vs with changes"></svg></div>`
+    :'';
   // Sort by each row's real historical average, not its (possibly
   // overridden) projected figure -- keeps row order stable while adding
   // overrides instead of having a row jump around the list the moment you
@@ -10331,6 +10292,175 @@ function renderSimulatorTab(){
       </div>
       ${rowsHTML||'<p style="font-size:12px;color:var(--text-muted);padding:.4rem 0">No spending history yet over this horizon &mdash; add a change to get started.</p>'}
     </div>`;
+  if(showSimChart)renderSimNwChart(nwNow,baselineRate,projectedRate);
+}
+
+function renderSimNwChart(nwNow,baselineRate,projectedRate){
+  const svgEl=document.getElementById('simNwChart');
+  if(!svgEl||!window.d3)return;
+
+  const snapsorted=getSortedSnaps();
+  const today=new Date();
+  const currentMonthKey=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+
+  // Build historical month keys spanning oldest snapshot → now
+  let histKeys=[];
+  if(snapsorted.length>=1){
+    const startKey=snapsorted[0].monthKey;
+    let[cy,cm]=[parseInt(startKey.slice(0,4)),parseInt(startKey.slice(5,7))];
+    const[ey,em]=[parseInt(currentMonthKey.slice(0,4)),parseInt(currentMonthKey.slice(5,7))];
+    while(cy<ey||(cy===ey&&cm<=em)){
+      histKeys.push(`${cy}-${String(cm).padStart(2,'0')}`);
+      cm++;if(cm>12){cm=1;cy++;}
+    }
+  }else{
+    histKeys=[currentMonthKey];
+  }
+
+  // Projection horizon: enough to reach goal (or show meaningful divergence)
+  let nM=36;
+  if(state.nwGoal&&state.nwGoal>nwNow){
+    const rem=state.nwGoal-nwNow;
+    if(projectedRate>0)nM=Math.min(60,Math.ceil(rem/projectedRate)+4);
+    else if(baselineRate>0)nM=Math.min(60,Math.ceil(rem/baselineRate)+4);
+  }
+  nM=Math.max(12,nM);
+
+  // Projection month keys (start the month after currentMonthKey)
+  const projKeys=[];
+  let[pcy,pcm]=[parseInt(currentMonthKey.slice(0,4)),parseInt(currentMonthKey.slice(5,7))];
+  pcm++;if(pcm>12){pcm=1;pcy++;}
+  for(let t=1;t<=nM;t++){
+    projKeys.push(`${pcy}-${String(pcm).padStart(2,'0')}`);
+    pcm++;if(pcm>12){pcm=1;pcy++;}
+  }
+
+  const allKeys=[...histKeys,...projKeys];
+  const nowIdx=histKeys.length-1;
+
+  // Build interpolated historical values (same logic as renderNwChart)
+  const knownPoints={};
+  state.snapshots.forEach(s=>{const i=histKeys.indexOf(s.monthKey);if(i>=0)knownPoints[i]=s.nw;});
+  knownPoints[histKeys.length-1]=nwNow;
+  if(!state.snapshots.length)knownPoints[0]=Math.round(nwNow*0.90);
+  const sortedK=Object.keys(knownPoints).map(Number).sort((a,b)=>a-b);
+  const histVals=histKeys.map((_,i)=>{
+    if(knownPoints[i]!==undefined)return knownPoints[i];
+    const before=sortedK.filter(k=>k<i),after=sortedK.filter(k=>k>i);
+    if(!before.length)return knownPoints[sortedK[0]];
+    if(!after.length)return knownPoints[sortedK[sortedK.length-1]];
+    const lo=before[before.length-1],hi=after[0],t=(i-lo)/(hi-lo);
+    return Math.round(knownPoints[lo]+(knownPoints[hi]-knownPoints[lo])*t);
+  });
+
+  const realSnaps={};
+  state.snapshots.forEach(s=>{realSnaps[s.monthKey]=true;});
+  realSnaps[currentMonthKey]=true;
+
+  const histData=histKeys.map((m,i)=>({i,v:histVals[i],m,snap:!!realSnaps[m]}));
+  const bProjData=projKeys.map((m,t)=>({i:histKeys.length+t,v:nwNow+(t+1)*baselineRate,m}));
+  const pProjData=projKeys.map((m,t)=>({i:histKeys.length+t,v:nwNow+(t+1)*projectedRate,m}));
+
+  const allVals=[...histVals,...bProjData.map(d=>d.v),...pProjData.map(d=>d.v)];
+  if(state.nwGoal&&state.nwGoal>nwNow)allVals.push(state.nwGoal);
+
+  const isDark=getIsDark();
+  const W=svgEl.parentElement.getBoundingClientRect().width||600;
+  const H=185;
+  const pad={t:12,r:16,b:32,l:52};
+  const iW=W-pad.l-pad.r,iH=H-pad.t-pad.b;
+
+  const rawMin=Math.min(...allVals),rawMax=Math.max(...allVals);
+  const vPad=(rawMax-rawMin)*0.05;
+  const vMin=rawMin-vPad,vMax=rawMax+vPad;
+
+  const xScale=d3.scaleLinear().domain([0,allKeys.length-1]).range([0,iW]);
+  const yScale=d3.scaleLinear().domain([vMin,vMax]).range([iH,0]);
+
+  const lineColor='#34D399';
+  const goalColor=isDark?'#60A5FA':'#2563EB';
+  const textColor=isDark?'#94A3B8':'#64748B';
+  const gridColor=isDark?'rgba(255,255,255,.05)':'rgba(0,0,0,.05)';
+  const rateDelta=projectedRate-baselineRate;
+  const projColor=Math.abs(rateDelta)<0.01?textColor:rateDelta>0?'#34D399':'#F87171';
+
+  const svg=d3.select(svgEl);
+  svg.selectAll('*').remove();
+  svg.attr('viewBox',`0 0 ${W} ${H}`).attr('width',W).attr('height',H);
+
+  const defs=svg.append('defs');
+  const grad=defs.append('linearGradient').attr('id','sim-area-grad').attr('x1','0').attr('y1','0').attr('x2','0').attr('y2','1');
+  grad.append('stop').attr('offset','0%').attr('stop-color',lineColor).attr('stop-opacity',.22);
+  grad.append('stop').attr('offset','100%').attr('stop-color',lineColor).attr('stop-opacity',.01);
+
+  const g=svg.append('g').attr('transform',`translate(${pad.l},${pad.t})`);
+
+  g.selectAll('.sg').data(yScale.ticks(4)).join('line').attr('class','sg')
+    .attr('x1',0).attr('x2',iW).attr('y1',d=>yScale(d)).attr('y2',d=>yScale(d))
+    .attr('stroke',gridColor).attr('stroke-width',1);
+  g.selectAll('.syt').data(yScale.ticks(4)).join('text').attr('class','syt')
+    .attr('x',-6).attr('y',d=>yScale(d)).attr('text-anchor','end').attr('dominant-baseline','middle')
+    .attr('font-size',9).attr('fill',textColor).text(d=>fmtC(d,true));
+
+  // "now" divider
+  const nowX=xScale(nowIdx);
+  g.append('line').attr('x1',nowX).attr('x2',nowX).attr('y1',0).attr('y2',iH)
+    .attr('stroke','var(--border-mid)').attr('stroke-width',1).attr('stroke-dasharray','3,3').attr('opacity',.5);
+  g.append('text').attr('x',nowX+3).attr('y',8)
+    .attr('font-size',8).attr('fill',textColor).attr('opacity',.6).text('now');
+
+  // Goal line (only when within chart range)
+  if(state.nwGoal&&state.nwGoal>nwNow&&!state.hideNwGoal&&state.nwGoal<=vMax){
+    const gy=yScale(state.nwGoal);
+    g.append('line').attr('x1',0).attr('x2',iW).attr('y1',gy).attr('y2',gy)
+      .attr('stroke',goalColor).attr('stroke-width',1).attr('stroke-dasharray','4,3').attr('opacity',.7);
+    g.append('text').attr('x',iW-2).attr('y',gy-5).attr('text-anchor','end')
+      .attr('font-size',11).attr('font-weight',700).attr('fill',goalColor).attr('opacity',1)
+      .text(`Goal ${fmtC(state.nwGoal,true)}`);
+  }
+
+  // Historical line + area (same style as NW tab)
+  const areaGen=d3.area().x(d=>xScale(d.i)).y0(iH).y1(d=>yScale(d.v)).curve(d3.curveCatmullRom.alpha(0.5));
+  const lineGen=d3.line().x(d=>xScale(d.i)).y(d=>yScale(d.v)).curve(d3.curveCatmullRom.alpha(0.5));
+  const projLineGen=d3.line().x(d=>xScale(d.i)).y(d=>yScale(d.v));
+
+  g.append('path').datum(histData).attr('d',areaGen).attr('fill','url(#sim-area-grad)');
+  g.append('path').datum(histData).attr('d',lineGen).attr('fill','none').attr('stroke',lineColor).attr('stroke-width',2);
+
+  // Projection lines — both start at nwNow at nowIdx
+  const connBaseline=[{i:nowIdx,v:nwNow},...bProjData];
+  const connProjected=[{i:nowIdx,v:nwNow},...pProjData];
+  g.append('path').datum(connBaseline).attr('d',projLineGen).attr('fill','none')
+    .attr('stroke',textColor).attr('stroke-width',1.5).attr('stroke-dasharray','5,3').attr('opacity',.45);
+  g.append('path').datum(connProjected).attr('d',projLineGen).attr('fill','none')
+    .attr('stroke',projColor).attr('stroke-width',2);
+
+  // End labels
+  const bEndY=yScale(bProjData[bProjData.length-1].v);
+  const pEndY=yScale(pProjData[pProjData.length-1].v);
+  const close=Math.abs(bEndY-pEndY)<14;
+  g.append('text').attr('x',iW-2).attr('y',(bEndY+(close?9:4)).toFixed(1))
+    .attr('font-size',9).attr('text-anchor','end').attr('fill',textColor).attr('opacity',.6).text('baseline');
+  g.append('text').attr('x',iW-2).attr('y',(pEndY-(close?9:3)).toFixed(1))
+    .attr('font-size',9).attr('text-anchor','end').attr('fill',projColor).text('projected');
+
+  // Snapshot dots (same style as NW tab)
+  histData.forEach(d=>{
+    if(d.snap){
+      g.append('circle').attr('cx',xScale(d.i)).attr('cy',yScale(d.v)).attr('r',5)
+        .attr('fill',lineColor).attr('stroke',isDark?'#0F172A':'#fff').attr('stroke-width',2);
+    }else{
+      g.append('circle').attr('cx',xScale(d.i)).attr('cy',yScale(d.v)).attr('r',2.5)
+        .attr('fill',textColor).attr('opacity',.4);
+    }
+  });
+
+  // X-axis ticks
+  const step=Math.max(1,Math.ceil(allKeys.length/(iW/55)));
+  g.selectAll('.sxt').data(allKeys.filter((_,i)=>i%step===0)).join('text').attr('class','sxt')
+    .attr('x',d=>xScale(allKeys.indexOf(d)))
+    .attr('y',iH+24).attr('text-anchor','middle').attr('font-size',9).attr('fill',textColor)
+    .text(d=>fmtMonthShort(d));
 }
 
 // YTD budget ring: single ratio = YTD spend / YTD budget (monthly budget x months elapsed)
