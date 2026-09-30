@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-0r0kofUvBuINBu9gzde5gSsCC9IXV7Iox96qvnAzzNg=' 'sha256-UIoxA/pdAfsh4g/hBGJ9GFhm/LfC8qIPS0k9dKy7v+I=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-qif7aKV3p87Cf9acSZCKTD7wn+N4kGz6kFnkIz66+6w=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -57,6 +57,8 @@
   --bg-deep:#111720;
   --bg-input:#111720;
   --bg-hover:#1E293B;
+  --row-stripe:#1E293B;
+  --row-hover:#263448;
 
   /* Borders */
   --border:#1E293B;
@@ -151,6 +153,8 @@
   --bg-deep:#EDF0F4;
   --bg-input:#FFFEFB;
   --bg-hover:#EDF0F4;
+  --row-stripe:#EDF0F4;
+  --row-hover:#E3E7EF;
 
   /* Borders */
   --border:#D1D9E0;
@@ -235,7 +239,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .nav-btn{flex:1;background:none;border:none;border-bottom:3px solid transparent;padding:13px 4px 10px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);cursor:pointer;transition:all .15s}
 .nav-btn.active{color:var(--accent-blue-light);border-bottom-color:var(--accent-blue-light)}
 .nav-btn:hover:not(.active){color:var(--text-secondary);background:var(--bg-hover);border-bottom-color:#2563EB55}
-.page{display:none;padding:1rem;min-height:calc(100vh - 86px);background:var(--bg-page)}
+.page{display:none;padding:1rem;padding-bottom:3rem;background:var(--bg-page)}
 .page.active{display:block}
 .sh{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin:1.2rem 0 .5rem;border-bottom:1px solid var(--border);padding-bottom:.3rem}
 /* metrics */
@@ -276,6 +280,9 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .nw-group{border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .nw-group-header{display:flex;justify-content:space-between;align-items:center;padding:.5rem .85rem}
 .nw-item{display:flex;align-items:center;justify-content:space-between;padding:.38rem .85rem .38rem 1.1rem;border-top:1px solid var(--border)}
+.nw-item:hover{background:var(--row-hover)}
+.nw-item.row-alt+.nw-bar-row{background:var(--row-stripe)}
+.nw-item:hover+.nw-bar-row,.nw-item.row-alt:hover+.nw-bar-row{background:var(--row-hover)}
 .nw-item-name{font-size:13px;font-weight:500;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nw-item-sub{font-size:11px;color:var(--text-secondary)}
 .nw-bar-row{padding:.22rem .85rem .45rem 1.1rem;border-top:1px solid var(--border)}
@@ -289,8 +296,6 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 /* accounts */
 .account-row{display:flex;align-items:center;justify-content:space-between;padding:.55rem .85rem;border:1px solid var(--border);border-radius:9px;margin-bottom:5px;background:var(--bg-page)}
 .account-row:hover{background:var(--bg-card)}
-.account-row-529{border-color:var(--amber-border-strong);background:var(--amber-bg)}
-.account-row-529:hover{background:var(--amber-bg-mid)}
 .acct-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
 .account-name{font-size:13px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Type-grouped account rows (Financial assets/Liabilities, matching the
@@ -301,7 +306,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
    name's own line (see .account-inst) since the group header already
    states the type, freeing the row down to one line instead of two. */
 .account-row-grouped{border:none;border-top:1px solid var(--border);border-radius:0;margin-bottom:0;background:transparent}
-.account-row-grouped:hover{background:var(--bg-hover)}
+.account-row-grouped:hover{background:var(--row-hover)}
 .account-inst{font-size:12px;font-weight:400;color:var(--text-muted);margin-left:6px}
 /* buttons */
 .btn{background:none;border:1px solid var(--border-mid);border-radius:7px;padding:6px 12px;font-size:12px;font-weight:500;color:var(--text-secondary);cursor:pointer}
@@ -448,8 +453,15 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .bucket-meta{font-size:12px;color:var(--text-muted);margin-top:3px;line-height:1.4}
 /* tx */
 .tx-row{display:flex;align-items:center;gap:7px;padding:.4rem .75rem;border:1px solid var(--border);border-radius:8px;margin-bottom:3px;background:var(--bg-page);cursor:pointer}
-.tx-row:hover{background:var(--bg-card)}
+.tx-row:hover{background:var(--row-hover)}
 .tx-row:focus-visible{outline:2px solid #2563EB;outline-offset:1px}
+/* Alternating row stripe -- helps visually track rows in dense lists */
+.row-alt,.sim-row{background:var(--bg-page)}
+.row-alt{background:var(--row-stripe)}
+.row-alt:hover,.sim-row:hover{background:var(--row-hover)}
+.sim-row:focus-visible{outline:2px solid #2563EB;outline-offset:1px}
+#tx-list .tx-row:nth-child(even){background:var(--row-stripe)}
+#tx-list .tx-row:nth-child(even):hover{background:var(--row-hover)}
 .tx-row .pill[role="button"]:focus-visible{outline:2px solid #2563EB;outline-offset:2px}
 .tx-date{font-size:10px;color:var(--text-muted);min-width:70px;font-variant-numeric:tabular-nums}
 .tx-desc{font-size:11px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-primary)}
@@ -888,7 +900,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 <div id="demo-picker-overlay" class="demo-picker-overlay" style="display:none">
   <div class="demo-picker" role="dialog" aria-modal="true" aria-labelledby="demo-picker-title" tabindex="-1">
     <h2 id="demo-picker-title">Try the app with demo data</h2>
-    <p>Pick a profile and explore all five tabs with realistic sample data. Switch profiles anytime.</p>
+    <p>Pick a profile and explore all four tabs with realistic sample data. Switch profiles anytime.</p>
     <button class="demo-profile-btn" data-action="loadDemoProfile" data-arg="1" type="button">
       <div class="demo-profile-icon">🌱</div>
       <div>
@@ -909,7 +921,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <span style="color:rgba(251,191,36,.8)">●</span> You're offline — your data is saved locally. Sync resumes when you reconnect.
 </div>
 <div id="demo-nudge" style="display:none;background:rgba(217,119,6,.1);border-bottom:1px solid rgba(217,119,6,.2);padding:8px 1rem;font-size:12px;color:var(--text-secondary);text-align:center;letter-spacing:.01em">
-  Demo data fills all 5 tabs —
+  Demo data fills all 4 tabs —
   <button data-action="openDemoPicker" data-arg="false" style="background:none;border:none;color:#D97706;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Switch profiles</button>
   to explore, then
   <button data-action="openTxImportModal" style="background:#D97706;color:#000;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 3px" type="button">Import a CSV</button>
@@ -945,7 +957,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <button class="nav-btn" data-action="showPageBudget" type="button">Budget</button>
   <button class="nav-btn" data-action="showPageSimulator" type="button">Life Changes</button>
   <button class="nav-btn" data-action="showPageDashboard" type="button">Net Worth</button>
-  <button class="nav-btn" data-action="showPageAccounts" type="button">Accounts</button>
 <div id="auth-bar" style="display:flex;align-items:center;gap:6px;padding:0 10px;margin-left:auto;flex-shrink:0">
   <button id="demo-nav-badge" data-action="openDemoPicker" data-arg="false" title="Switch demo profile" type="button">DEMO DATA</button>
   <div style="position:relative">
@@ -980,7 +991,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 <main>
 <div class="page" id="page-dashboard">
   <div id="demo-notice-dash" style="background:transparent;border:1px solid var(--border-dim);border-radius:8px;padding:.3rem .75rem;margin-bottom:.75rem;opacity:.6">
-    <div style="font-size:12px;color:var(--text-muted);line-height:1.5">Demo data — add your real balances in <button data-action="navToAccounts" style="background:none;border:none;color:var(--text-muted);font-size:12px;cursor:pointer;text-decoration:underline;padding:0" type="button">Accounts</button>, then <strong style="color:var(--text-secondary)">+ Save snapshot</strong> at the bottom of this tab to start tracking your net worth over time.</div>
+    <div style="font-size:12px;color:var(--text-muted);line-height:1.5">Demo data — add your real balances in the <strong style="color:var(--text-secondary)">Accounts</strong> section below, then hit <strong style="color:var(--text-secondary)">+ Save snapshot</strong> above to start tracking your net worth over time.</div>
   </div>
 
   <!-- Hero: NW total + assets/liabilities -->
@@ -1017,13 +1028,30 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <!-- The border-top divider stays full width (a section rule spanning the
        whole tab); .list-col wraps just the content inside it, so the line
        itself doesn't also shrink to 800px and float oddly in the middle. -->
+  <!-- #acct-csv-modal, openAcctCsvModal(), and the whole parseCsvAccounts()/
+       handleCsv()/importCsvText() chain behind it were fully built but had no
+       trigger anywhere in the UI — dead since the modal was first written,
+       missed by 76 straight passes. Found in the 77th adversarial pass. -->
   <div style="margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--border)">
    <div class="list-col">
-    <div class="sh" style="margin-bottom:.5rem">Where your wealth lives</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+      <div class="sh" style="margin:0">Where your wealth lives</div>
+      <div class="flex-center gap-8">
+        <button class="btn btn-sm" data-action="openAcctCsvModal" type="button">⬆ Import CSV</button>
+        <button class="btn btn-sm btn-primary" data-action="openAddModal" type="button">+ Add account</button>
+      </div>
+    </div>
+    <div id="demo-notice-accounts" style="background:transparent;border:1px solid var(--border-dim);border-radius:8px;padding:.3rem .75rem;margin-bottom:.75rem;opacity:.6">
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.5">Demo accounts — add or edit your real balances to replace these.</div>
+    </div>
     <div class="nw-section" id="nw-breakdown"></div>
     <div id="nw-excluded-header" class="sh" style="margin-top:1.1rem;color:var(--amber-text-strong);border-bottom-color:var(--amber-border);display:none">Outside net worth</div>
     <div id="nw-excluded-row"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.6rem;margin-bottom:.5rem"><div class="sh" style="margin:0">Physical assets</div><button class="btn btn-sm btn-primary" data-action="openVehicleModal" type="button">+ Add asset</button></div>
+    <div class="info-box">💡 Track vehicles, boats, jewelry, collectibles — any physical asset with real value. Own a home, condo, apartment, or flat? Use <strong style="color:var(--text-secondary)">+ Add account</strong> above instead (Type: Home) — it'll net out against a Mortgage liability in your net worth either way.</div>
+    <div id="vehicle-list"></div>
    </div>
+   <div id="tx-sources-panel"></div>
   </div>
 
   <div style="margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--border)">
@@ -1044,47 +1072,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
    </div>
   </div>
 
-</div>
-
-<!-- ACCOUNTS -->
-<div class="page" id="page-accounts">
-  <div id="demo-notice-accounts" style="background:transparent;border:1px solid var(--border-dim);border-radius:8px;padding:.3rem .75rem;margin-bottom:.75rem;opacity:.6">
-    <div style="font-size:12px;color:var(--text-muted);line-height:1.5">Demo accounts — add or edit your real balances to replace these.</div>
-  </div>
-  <div class="flex-between">
-    <span class="page-title">Accounts</span>
-    <div class="flex-center gap-8">
-      <!-- #acct-csv-modal, openAcctCsvModal(), and the whole
-      parseCsvAccounts()/handleCsv()/importCsvText() chain behind it were
-      fully built (including the 62nd adversarial pass's own net-worth-
-      corrupting-bug fixes to parseCsvAccounts() specifically) but had no
-      trigger anywhere in the UI -- dead since the modal was first written,
-      missed by 76 straight passes since dead-code sweeps check for zero
-      call sites on a *function*, and this one's opener function existed
-      and was itself correctly written, just never invoked by anything.
-      Found in the 77th adversarial pass. -->
-      <button class="btn btn-sm" data-action="openAcctCsvModal" type="button">⬆ Import CSV</button>
-      <button class="btn btn-sm btn-primary" data-action="openAddModal" type="button">+ Add account</button>
-    </div>
-  </div>
-  <div class="info-box">
-    💡 Balances are manually maintained. Tap <strong style="color:var(--text-secondary)">Edit</strong> on any account to update, then save a snapshot on the <strong style="color:var(--text-secondary)">Net Worth</strong> tab to record today's net worth.
-  </div>
-  <div class="list-col"><div class="sh">Financial assets</div><div id="asset-list" class="nw-section"></div></div>
-  <div class="list-col"><div class="sh">Liabilities</div><div id="liability-list" class="nw-section"></div></div>
-  <!-- 529 in accounts -->
-  <div class="list-col">
-  <div id="acct-excluded-header" class="sh" style="color:var(--amber-text-strong);border-bottom-color:var(--amber-border);display:none">Outside net worth</div>
-  <div id="excluded-accounts-list"></div>
-  </div>
-
-  <div class="list-col">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;margin-bottom:.5rem"><div class="sh" style="margin:0">Physical assets</div><button class="btn btn-sm btn-primary" data-action="openVehicleModal" type="button">+ Add asset</button></div>
-  <div class="info-box">💡 Track vehicles, boats, jewelry, collectibles — any physical asset with real value. Own a home, condo, apartment, or flat? Use <strong style="color:var(--text-secondary)">+ Add account</strong> above instead (Type: Home) — it'll net out against a Mortgage liability in your net worth either way.</div>
-  <div id="vehicle-list"></div>
-  </div>
-
-  <div id="tx-sources-panel"></div>
 
 </div>
 
@@ -1854,7 +1841,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <button class="btn" style="width:100%;justify-content:center;font-size:14px;padding:.65rem" data-action="importSuccessAndReopen" type="button">Import another CSV</button>
     </div>
 
-    <div style="font-size:12px;color:var(--text-muted);text-align:center;line-height:1.6">Nothing here is required — set up income from the Spending tab, balances from the Accounts tab, or budgets from the Budget tab, anytime.</div>
+    <div style="font-size:12px;color:var(--text-muted);text-align:center;line-height:1.6">Nothing here is required — set up income from the Spending tab, balances from the Net Worth tab, or budgets from the Budget tab, anytime.</div>
     <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:.5rem;font-style:italic;opacity:.7">Don't obsess over money. Understand it.</div>
   </div>
 </div>
@@ -2354,7 +2341,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   </div>
 </div>
 
-<script>(function(){try{var t=localStorage.getItem('trakyo_tab');if(t&&t!=='spending'&&document.getElementById('page-'+t)){var idx=['spending','budget','simulator','dashboard','accounts'].indexOf(t);document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});document.getElementById('page-'+t).classList.add('active');var btns=document.querySelectorAll('.nav-btn');if(btns[idx])btns[idx].classList.add('active');}}catch(e){}}());</script>
+<script>(function(){try{var t=localStorage.getItem('trakyo_tab');if(t==='accounts')t='dashboard';if(t&&t!=='spending'&&document.getElementById('page-'+t)){var idx=['spending','budget','simulator','dashboard'].indexOf(t);document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});document.getElementById('page-'+t).classList.add('active');var btns=document.querySelectorAll('.nav-btn');if(btns[idx])btns[idx].classList.add('active');}}catch(e){}}());</script>
 
 <script src="/lib/chart.umd.js"></script>
 <script>
@@ -2965,12 +2952,10 @@ function showPageSpending(arg,el){showPage('spending',el);}
 function showPageBudget(arg,el){showPage('budget',el);}
 function showPageSimulator(arg,el){showPage('simulator',el);}
 function showPageDashboard(arg,el){showPage('dashboard',el);}
-function showPageAccounts(arg,el){showPage('accounts',el);}
+function showPageAccounts(arg,el){showPage('dashboard',el);}
 function navToPage(page,navIdx){showPage(page,document.querySelectorAll('.nav-btn')[navIdx]);}
 function navToSpending(){navToPage('spending',0);}
-// Index 4, not 3 -- the "Life Changes" nav button was inserted between
-// Budget and Net Worth, shifting every nav-btn index after it by one.
-function navToAccounts(){navToPage('accounts',4);}
+function navToAccounts(){navToPage('dashboard',3);}
 function filterToCatAndScroll(cat){
   if(!cat)return;
   toggleCatFilter(cat);
@@ -4143,12 +4128,12 @@ function renderNwBreakdown(){
   const assets=totalAssets(),f=state.dashFilter;
   const TL={cash:'Cash',investment:'Investment',home:'Real estate',vehicle:'Vehicle',mortgage:'Mortgage',credit:'Credit card','other-asset':'Other','other-liability':'Other liab'};
   const GROUPS=[
-    {label:'Investments',color:'#34D399',hdr:'#065F4618',accts:state.accounts.filter(a=>a.type==='investment'&&a.balance!==0&&!a.excludeFromNW)},
-    {label:'Real estate',color:'#A78BFA',hdr:'#4C1D9518',accts:state.accounts.filter(a=>a.type==='home'&&!a.excludeFromNW),deduct:0},
-    {label:'Cash',color:'#60A5FA',hdr:'#1E40AF18',accts:state.accounts.filter(a=>a.type==='cash'&&a.balance!==0&&!a.excludeFromNW)},
-    {label:'Vehicles',color:'#2DD4BF',hdr:'#0D4A4418',accts:state.accounts.filter(a=>a.type==='vehicle'&&a.balance!==0&&!a.excludeFromNW)},
-    {label:'Other assets',color:'#FBBF24',hdr:'#78350F18',accts:state.accounts.filter(a=>a.type==='other-asset'&&a.balance!==0&&!a.excludeFromNW)},
-    {label:'Liabilities',color:'#F87171',hdr:'#7F1D1D18',accts:state.accounts.filter(a=>isLiab(a.type)&&a.balance!==0&&!a.excludeFromNW),isLiab:true},
+    {label:'Investments',color:'#34D399',hdr:'#065F4618',type:'investment',accts:state.accounts.filter(a=>a.type==='investment'&&a.balance!==0&&!a.excludeFromNW)},
+    {label:'Real estate',color:'#A78BFA',hdr:'#4C1D9518',type:'home',accts:state.accounts.filter(a=>a.type==='home'&&!a.excludeFromNW),deduct:0},
+    {label:'Cash',color:'#60A5FA',hdr:'#1E40AF18',type:'cash',accts:state.accounts.filter(a=>a.type==='cash'&&a.balance!==0&&!a.excludeFromNW)},
+    {label:'Vehicles',color:'#2DD4BF',hdr:'#0D4A4418',type:'vehicle',accts:state.accounts.filter(a=>a.type==='vehicle'&&a.balance!==0&&!a.excludeFromNW)},
+    {label:'Other assets',color:'#FBBF24',hdr:'#78350F18',type:'other-asset',accts:state.accounts.filter(a=>a.type==='other-asset'&&a.balance!==0&&!a.excludeFromNW)},
+    {label:'Liabilities',color:'#F87171',hdr:'#7F1D1D18',type:'other-liability',accts:state.accounts.filter(a=>isLiab(a.type)&&a.balance!==0&&!a.excludeFromNW),isLiab:true},
   ];
   // .filter(g=>g.accts.length) -- previously absent, so a user with zero
   // accounts of a given type (e.g. no 'other-asset' entries) still saw an
@@ -4163,16 +4148,16 @@ function renderNwBreakdown(){
   // filtered out, so "Where your wealth lives" rendered with nothing
   // under it -- the header, but no explanation.
   if(!visible.length){
-    document.getElementById('nw-breakdown').innerHTML='<p style="font-size:12px;color:var(--text-muted);padding:.4rem 0">No accounts yet — add one from the Accounts tab.</p>';
+    document.getElementById('nw-breakdown').innerHTML='<p style="font-size:12px;color:var(--text-muted);padding:.4rem 0">No accounts yet — add one below.</p>';
     return;
   }
   document.getElementById('nw-breakdown').innerHTML=visible.map(g=>{
     const raw=g.accts.reduce((s,a)=>s+a.balance,0),net=g.isLiab?-raw:raw-(g.deduct||0);
     const pct=assets>0?Math.abs(net)/assets*100:0;
-    const items=g.accts.map(a=>{
+    const items=g.accts.map((a,i)=>{
       const aPct=raw!==0?Math.abs(a.balance/raw)*100:0;
       const isNeg=(g.isLiab?-a.balance:a.balance)<0;
-      return`<div class="nw-item">
+      return`<div class="nw-item${i%2===1?' row-alt':''}" data-action="editAccount" data-arg="${a.id}" role="button" tabindex="0" aria-label="Edit ${esc(a.name)}" style="cursor:pointer">
         <div class="flex-center gap-8" style="min-width:0">
           <div style="width:8px;height:8px;border-radius:50%;background:${g.color}88;flex-shrink:0"></div>
           <div style="min-width:0"><div class="nw-item-name" title="${esc(a.name)}">${esc(a.name)}</div><div class="nw-item-sub">${esc(a.source)} · ${esc(TL[a.type]||a.type)}</div></div>
@@ -4201,6 +4186,7 @@ function renderNwBreakdown(){
           <span style="font-size:11px;font-weight:700;color:${g.isLiab?'#F87171':g.color}">${g.label}</span>
         </div>
         <div class="flex-center gap-8">
+          <button class="btn btn-sm" data-action="openAddModal" data-arg="${g.type}" style="font-size:10px;padding:1px 8px;color:var(--text-muted);border-color:var(--border-mid)" title="Add ${g.label.toLowerCase()} account" type="button">+</button>
           ${g.isLiab
             // assets>0 guard, matching pct's own guard above -- a user with
             // only liability-type accounts (tracking debt before adding any
@@ -8741,9 +8727,9 @@ const ASSET_GROUPS=[
   {label:'Other assets',color:'#FBBF24',hdr:'#78350F18',match:a=>!['investment','home','cash'].includes(a.type)},
 ];
 function renderAccountLists(){
-  const row=a=>{const sc=SC_M[a.source]||SC_M.Other,tc=TC_M[a.type]||'var(--text-muted)';
+  const row=(a,i)=>{const sc=SC_M[a.source]||SC_M.Other,tc=TC_M[a.type]||'var(--text-muted)';
     const bal=isLiab(a.type)?-a.balance:a.balance;
-    return`<div class="account-row account-row-grouped"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="acct-icon" style="background:${sc.bg};color:${sc.fg};flex-shrink:0">${SA_M[a.source]||'??'}</div><div class="account-name" title="${esc(a.name)} — ${esc(a.source)}">${esc(a.name)}<span class="account-inst">${esc(a.source)}</span></div></div>
+    return`<div class="account-row account-row-grouped${i%2===1?' row-alt':''}"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="acct-icon" style="background:${sc.bg};color:${sc.fg};flex-shrink:0">${SA_M[a.source]||'??'}</div><div class="account-name" title="${esc(a.name)} — ${esc(a.source)}">${esc(a.name)}<span class="account-inst">${esc(a.source)}</span></div></div>
       <div class="flex-center gap-8"><div style="font-size:13px;font-weight:700;color:${bal<0?'#F87171':tc}">${bal<0?'-':''}${fmt(a.balance)}</div><button class="btn btn-sm" data-action="editAccount" data-arg="${a.id}" type="button">Edit</button></div></div>`;};
   const group=(g,accts)=>accts.length?`<div class="nw-group">
     <div class="nw-group-header" style="background:${g.hdr}"><div style="display:flex;align-items:center;gap:7px"><div style="width:9px;height:9px;border-radius:2px;background:${g.color}"></div><span style="font-size:11px;font-weight:700;color:${g.color}">${g.label}</span></div></div>${accts.map(row).join('')}</div>`:'';
@@ -8782,8 +8768,10 @@ function renderAccountLists(){
   // accounts (a normal, encouraged path: the import-success modal explicitly
   // calls adding an account "totally optional") landed on two section
   // headers with nothing under them, no different from a rendering bug.
-  document.getElementById('asset-list').innerHTML=baseAssets.length?ASSET_GROUPS.map(g=>group(g,baseAssets.filter(g.match))).join(''):'<p style="font-size:12px;color:var(--text-muted);padding:.4rem 0">No financial accounts yet — add one above.</p>';
-  document.getElementById('liability-list').innerHTML=liabAccts.length?group({label:'Liabilities',color:'#F87171',hdr:'#7F1D1D18'},liabAccts):'<p style="font-size:12px;color:var(--text-muted);padding:.4rem 0">No liabilities yet.</p>';
+  const assetEl=document.getElementById('asset-list');
+  if(assetEl)assetEl.innerHTML=baseAssets.length?ASSET_GROUPS.map(g=>group(g,baseAssets.filter(g.match))).join(''):'<p style="font-size:12px;color:var(--text-muted);padding:.4rem 0">No financial accounts yet — add one above.</p>';
+  const liabEl=document.getElementById('liability-list');
+  if(liabEl)liabEl.innerHTML=liabAccts.length?group({label:'Liabilities',color:'#F87171',hdr:'#7F1D1D18'},liabAccts):'<p style="font-size:12px;color:var(--text-muted);padding:.4rem 0">No liabilities yet.</p>';
   renderTxSourcesPanel();
 }
 
@@ -8803,7 +8791,7 @@ function guideSlugForSource(name){
   if(l.includes('vanguard'))return'vanguard';
   return null;
 }
-// Renders the "Transaction sources" panel on the Accounts tab: one row per
+// Renders the "Transaction sources" panel on the Net Worth tab: one row per
 // distinct source label (t.card), showing the latest transaction date and
 // how stale it is. The amber threshold matches the landing page's "25+ days"
 // nudge, rounded up to a more natural 35 so it fires roughly monthly.
@@ -9398,7 +9386,7 @@ function saveHistoricalSnapshot(){
   const sdn=document.getElementById('snap-demo-notice');if(sdn)sdn.style.display='none';
   _editingSnapshotMonthKey=null;
   // renderAll() -- see saveSnapshot()'s matching comment; that quartet
-  // never actually covered the Accounts tab (renderAccountLists() is
+  // never actually covered the Net Worth tab (renderAccountLists() is
   // only reachable via renderAll()), and this entry point wipes
   // state.accounts via _replaceDemoDataWithReal() above too. Found
   // August 2026.
@@ -10274,8 +10262,8 @@ function renderSimulatorTab(){
   // 9 months ago," not 6 or 12.
   const horizonPresets=[3,6,12,24,36];
   const showCustomHorizon=_simulatorHorizonCustomOpen||!horizonPresets.includes(horizon);
-  const rowsHTML=sortedRows.map(r=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;border-radius:8px;background:var(--bg-card);margin-bottom:6px">
+  const rowsHTML=sortedRows.map((r,i)=>`
+    <div class="sim-row${i%2===1?' row-alt':''}" data-action="openSimulatorOverrideModal" data-arg="${esc(r.cat)}" tabindex="0" aria-label="Edit spending change for ${esc(r.cat)}" style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;border-radius:8px;margin-bottom:6px;cursor:pointer">
       <div style="display:flex;align-items:center;gap:8px">
         <span style="width:8px;height:8px;border-radius:50%;background:${getCatColor(r.cat)}"></span>
         <span>${esc(r.cat)}</span>
@@ -10290,8 +10278,8 @@ function renderSimulatorTab(){
                 :r.projected>0
                   ?`<button data-action="commitSimulatorOverrideAsBudget" data-arg="${esc(r.cat)}" style="background:none;border:1px solid #2563EB44;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:var(--accent-blue-light);cursor:pointer" title="Make this your real Budget-tab limit" type="button">Set as budget</button>`
                   :''
-            }<button data-action="removeSimulatorOverride" data-arg="${esc(r.cat)}" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 4px" title="Remove change" type="button">&times;</button>`
-          :`<button class="btn btn-sm" data-action="openSimulatorOverrideModal" data-arg="${esc(r.cat)}" type="button">+ Change</button>`}
+            }<button data-action="removeSimulatorOverride" data-arg="${esc(r.cat)}" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:6px 8px;font-size:14px;line-height:1" title="Remove change" type="button">&times;</button>`
+          :`<button class="btn btn-sm" data-action="openSimulatorOverrideModal" data-arg="${esc(r.cat)}" style="background:none;border:1px solid var(--border-mid);color:var(--text-muted);font-weight:600" type="button">Change</button>`}
       </div>
     </div>`).join('');
   el.innerHTML=`
@@ -12484,7 +12472,7 @@ function saveSnapshot(){
   // wiping state.accounts on a demo-to-real transition (see the
   // original version of this comment, preserved in git history), but
   // never actually included renderAccountLists() -- only reachable via
-  // renderAll() -- so the Accounts tab kept showing stale demo rows
+  // renderAll() -- so the Net Worth tab kept showing stale demo rows
   // this whole time too, the identical gap found live in
   // confirmTxImport()/saveTx() via a real production report. Widened
   // to renderAll() rather than adding a 5th name to the list, matching
@@ -14254,13 +14242,13 @@ function confirmTxImport(){
   // renderAll(), not just renderSpending() -- a first-real-import wipes
   // state.accounts via _replaceDemoDataWithReal() above (like every
   // other "first real save" entry point), but only Spending got
-  // re-rendered here, so the Accounts tab kept showing stale demo
+  // re-rendered here, so the Net Worth tab kept showing stale demo
   // account rows -- with dead click handlers, since editAccount(id)
   // correctly finds nothing for a demo id against the now-empty
   // state.accounts -- until an unrelated renderAll() or a full reload.
   // Confirmed live from a real production report: a user's own
   // DevTools showed accounts:[] and hasRealData:true immediately after
-  // import, while the Accounts tab still rendered full demo data one
+  // import, while the Net Worth tab still rendered full demo data one
   // screen over. Same bug class the 110th pass already fixed for
   // applyCurrency()/applyCustomCurrency() (see their matching comment).
   // Must run AFTER state.hasRealData=true above, not right after
@@ -14285,7 +14273,7 @@ function confirmTxImport(){
   }
   // Importing a transaction CSV only tags each row with a source label
   // (state.activeSources/t.card) -- it never creates a state.accounts
-  // entry, which is what actually shows up on the Accounts tab and feeds
+  // entry, which is what actually shows up on the Net Worth tab and feeds
   // netWorth()/History snapshots. A user who only ever imports never sees
   // that gap until they go looking for an account to edit and find the
   // tab empty, with nothing in the flow that told them balances need a
@@ -14302,7 +14290,7 @@ function confirmTxImport(){
   const noAcctEl=document.getElementById('import-success-no-account');
   if(noAcctEl){
     const hasMatchingAccount=state.accounts.some(a=>a.name.trim().toLowerCase()===source.trim().toLowerCase());
-    if(!hasMatchingAccount){noAcctEl.textContent=`💡 This is now in your Spending tab. Net Worth won't include it until you add an account named "${source}" — totally optional, from the Accounts tab.`;noAcctEl.classList.remove('hidden');}
+    if(!hasMatchingAccount){noAcctEl.textContent=`💡 This is now in your Spending tab. Net Worth won't include it until you add an account named "${source}" — totally optional, from the Net Worth tab.`;noAcctEl.classList.remove('hidden');}
     else{noAcctEl.classList.add('hidden');}
   }
   document.getElementById('import-success-modal').classList.remove('hidden');
@@ -14652,7 +14640,7 @@ function renderExcludedAccounts(){
     } // end else
   }
 
-  // Accounts tab — render excluded accounts list. Matches the tight
+  // Net Worth tab — render excluded accounts list. Matches the tight
   // .account-row-grouped format Financial assets/Liabilities already use
   // (renderAccountLists()) instead of the older, bulkier .account-row-529
   // card style -- this section is its own single group (no further
@@ -15571,7 +15559,7 @@ function onLiquidManualToggle(){_liquidTouchedByUser=true;}
 // random institution assigned, with nothing prompting them to check it.
 // Defaults to "Other" instead, matching what that option already exists
 // for. Found via a user-friendliness pass, August 2026.
-function openAddModal(){editAcctId=null;_liquidTouchedByUser=false;document.getElementById('add-modal-title').textContent='Add account';['f-name','f-balance'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-exclude').checked=false;const ft=document.getElementById('f-type');if(ft)ft.selectedIndex=0;updateSourceOptionsForType();const fs=document.getElementById('f-source');if(fs)fs.value='Other';const db=document.getElementById('delete-acct-btn');if(db)db.style.display='none';const dc=document.getElementById('delete-acct-confirm');if(dc)dc.style.display='none';document.getElementById('add-modal').classList.remove('hidden');}
+function openAddModal(type){editAcctId=null;_liquidTouchedByUser=false;document.getElementById('add-modal-title').textContent='Add account';['f-name','f-balance'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-exclude').checked=false;const ft=document.getElementById('f-type');if(ft){ft.selectedIndex=0;if(type)ft.value=type;}updateSourceOptionsForType();const fs=document.getElementById('f-source');if(fs)fs.value='Other';const db=document.getElementById('delete-acct-btn');if(db)db.style.display='none';const dc=document.getElementById('delete-acct-confirm');if(dc)dc.style.display='none';document.getElementById('add-modal').classList.remove('hidden');}
 function openAcctCsvModal(){
   // Reset stale state from a prior open/cancel, matching openAddModal()'s
   // own reset-on-open convention immediately above -- this modal had no
@@ -15999,7 +15987,7 @@ function saveTx(){
   // renderAll(), not just renderSpending() -- see confirmTxImport()'s
   // matching comment; a demo-to-real transition here wipes
   // state.accounts too, and only re-rendering Spending left the
-  // Accounts tab showing stale demo rows until an unrelated renderAll()
+  // Net Worth tab showing stale demo rows until an unrelated renderAll()
   // or a reload. Found alongside that same gap, August 2026.
   closeModals();renderAll();
 }
@@ -16989,9 +16977,10 @@ document.addEventListener('DOMContentLoaded',function(){
 
   // Restore last active tab
   try{
-    const savedTab=localStorage.getItem('trakyo_tab');
+    let savedTab=localStorage.getItem('trakyo_tab');
+    if(savedTab==='accounts')savedTab='dashboard';
     if(savedTab&&savedTab!=='spending'&&document.getElementById('page-'+savedTab)){
-      const tabBtn=document.querySelectorAll('.nav-btn')[['spending','budget','simulator','dashboard','accounts'].indexOf(savedTab)];
+      const tabBtn=document.querySelectorAll('.nav-btn')[['spending','budget','simulator','dashboard'].indexOf(savedTab)];
       showPage(savedTab,tabBtn);
     }
   }catch(e){}
@@ -17324,7 +17313,7 @@ const DEMO_PROFILE_2 = {
   // silently left the paired $22,000 account (accounts[7], id:8) behind as
   // an orphan uncounted-for-deletion but still summed into net worth, with
   // no UI path to remove it afterward (invisible in both the Vehicles tab,
-  // which reads state.vehicles, and the Accounts tab, which explicitly
+  // which reads state.vehicles, and the Net Worth tab, which explicitly
   // excludes type:'vehicle' rows). Reachable by clicking Delete on this
   // demo vehicle without editing it first (editing would have self-healed
   // acctId via saveVehicle()'s own fallback match). name matches what

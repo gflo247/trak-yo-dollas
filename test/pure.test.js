@@ -1913,8 +1913,8 @@ test("openAddModal: resets #f-type to its first option and #f-source to 'Other' 
   const source = readSource();
   assert.match(
     source,
-    /function openAddModal\(\)\{[^}]*const ft=document\.getElementById\('f-type'\);if\(ft\)ft\.selectedIndex=0;updateSourceOptionsForType\(\);const fs=document\.getElementById\('f-source'\);if\(fs\)fs\.value='Other';/,
-    "openAddModal() should reset #f-type to selectedIndex=0 and #f-source to 'Other' -- a neutral default, not the alphabetically-first bank a user might silently leave selected"
+    /function openAddModal\(type\)\{[\s\S]{0,300}?const ft=document\.getElementById\('f-type'\);if\(ft\)\{ft\.selectedIndex=0;if\(type\)ft\.value=type;\}updateSourceOptionsForType\(\);const fs=document\.getElementById\('f-source'\);if\(fs\)fs\.value='Other';/,
+    "openAddModal(type) should reset #f-type to selectedIndex=0 (then optionally set the passed type), call updateSourceOptionsForType(), and set #f-source to 'Other'"
   );
 });
 
@@ -2605,8 +2605,8 @@ test("confirmTxImport: refuses to run during a demo-preview session instead of a
 
 // ── Importing a transaction CSV only tags rows with a source label
 // (state.activeSources/t.card) -- it never creates a state.accounts entry,
-// which is what the Accounts tab and netWorth()/History snapshots actually
-// read. A real user imported 3 CSVs, found the Accounts tab empty, and
+// which is what the Net Worth tab and netWorth()/History snapshots actually
+// read. A real user imported 3 CSVs, found the Net Worth tab empty, and
 // nothing in the import-success flow explained why. Nudge on the one
 // success modal that knows for certain no account matches this import's
 // source label. confirmTxImport() is DOM-heavy; source-pattern only.
@@ -4280,12 +4280,12 @@ test("saveHistoricalSnapshot: has the demo-preview guard, wipes demo data before
 });
 
 // ── A real production report (a user's own DevTools showed accounts:[] and
-// hasRealData:true immediately after a CSV import, while the Accounts tab
+// hasRealData:true immediately after a CSV import, while the Net Worth tab
 // still rendered full demo data one screen over) traced back to
 // confirmTxImport() only calling renderSpending() after
 // _replaceDemoDataWithReal() wipes state.accounts -- renderAccountLists()
 // is only reachable via renderAll() (confirmed by checking every call
-// site), so the Accounts tab kept showing stale, no-longer-backed demo
+// site), so the Net Worth tab kept showing stale, no-longer-backed demo
 // rows (with dead Edit buttons -- editAccount(id) correctly finds nothing
 // for a demo id against the now-empty state.accounts) until an unrelated
 // renderAll() or a full reload. The same gap existed in 3 sibling "first
@@ -4298,7 +4298,7 @@ test("saveHistoricalSnapshot: has the demo-preview guard, wipes demo data before
 // saveAccount()/saveVehicle()/handleCsv() already called renderAll() and
 // don't have this problem. Fixed by widening all 4 to renderAll(),
 // matching those three. Found and fixed August 2026. ──
-test("confirmTxImport()/saveTx()/saveSnapshot()/saveHistoricalSnapshot() all call renderAll() after their demo-to-real wipe, not a narrower render subset that omits the Accounts tab", () => {
+test("confirmTxImport()/saveTx()/saveSnapshot()/saveHistoricalSnapshot() all call renderAll() after their demo-to-real wipe, not a narrower render subset that omits the Net Worth tab", () => {
   const source = readSource();
   const confirmTxImportSrc = source.match(/function confirmTxImport\(\)\{[\s\S]{0,12500}?\n}\n/)[0];
   assert.match(
@@ -4324,7 +4324,7 @@ test("confirmTxImport()/saveTx()/saveSnapshot()/saveHistoricalSnapshot() all cal
   assert.match(
     source.match(/function saveSnapshot\(\)\{[\s\S]{0,4500}?\n\}/)?.[0] || "",
     /hideDemoBadge\(\);[\s\S]{0,900}?renderAll\(\);/,
-    "saveSnapshot() should call renderAll(), not the old renderMetrics()/renderNwBreakdown()/renderHistory()/renderNwChart() quartet that omitted the Accounts tab"
+    "saveSnapshot() should call renderAll(), not the old renderMetrics()/renderNwBreakdown()/renderHistory()/renderNwChart() quartet that omitted the Net Worth tab"
   );
   assert.match(
     source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,7700}?_editingSnapshotMonthKey=null;[\s\S]{0,300}?closeModals\(\);renderAll\(\);scheduleSave\(\);/)[0],
@@ -5553,7 +5553,7 @@ test("Year-in-Review's top-categories/top-vendors rows truncate long names with 
 // top-5 CATEGORIES inline panel, 12 lines above its already-fixed top-5
 // VENDORS twin) had the identical no-overflow-handling gap, plus two more
 // structurally identical sites: the dashboard net-worth breakdown's
-// account name (.nw-item-name) and the Accounts tab's account name
+// account name (.nw-item-name) and the Net Worth tab's account name
 // (.account-name, 2 call sites sharing one CSS class). All three render
 // user-controlled, unbounded-length text (category/account names have no
 // maxlength anywhere) inside a flex row with no min-width:0/ellipsis
@@ -5612,11 +5612,11 @@ test("the .truncate utility class exists and is applied to the 5 sites the 168th
     "the shared .truncate utility class should be defined"
   );
   const truncateUsages = source.match(/class="truncate"/g) || [];
-  assert.equal(truncateUsages.length, 8, "the .truncate class should be applied at the 5 sites this pass fixed, plus 3 more added in a later small-fixes round (see the dedicated test below), plus the CSV import preview's category pill (an unbounded-length custom category name could otherwise misalign the new column-sort header, found in the adversarial pass right after that header was added), minus 1: renderVehicles()'s 'other asset' row switched from a bare class=\"truncate\" div to .account-name (which already carries the identical overflow:hidden;text-overflow:ellipsis;white-space:nowrap truncation, plus the account-row-grouped layout this row was rebuilt around), when Physical assets was rebuilt to match the rest of the Accounts tab's tighter row format");
+  assert.equal(truncateUsages.length, 8, "the .truncate class should be applied at the 5 sites this pass fixed, plus 3 more added in a later small-fixes round (see the dedicated test below), plus the CSV import preview's category pill (an unbounded-length custom category name could otherwise misalign the new column-sort header, found in the adversarial pass right after that header was added), minus 1: renderVehicles()'s 'other asset' row switched from a bare class=\"truncate\" div to .account-name (which already carries the identical overflow:hidden;text-overflow:ellipsis;white-space:nowrap truncation, plus the account-row-grouped layout this row was rebuilt around), when Physical assets was rebuilt to match the rest of the Net Worth tab's tighter row format");
   assert.match(
     source,
     /<div class="truncate" style="font-size:12px;font-weight:700;color:var\(--amber-text\)" title="\$\{esc\(a\.name\)\}">\$\{esc\(a\.name\)\}<\/div>/,
-    "the NW-tab excluded-account block should truncate the account name, matching its already-fixed Accounts-tab twin"
+    "the NW-tab excluded-account block should truncate the account name, matching its already-fixed NW-tab twin"
   );
   assert.match(
     source,
@@ -6905,8 +6905,8 @@ test("updateSourceOptionsForType() filters #f-source to real-estate sources only
   );
   assert.match(
     source,
-    /const ft=document\.getElementById\('f-type'\);if\(ft\)ft\.selectedIndex=0;updateSourceOptionsForType\(\);const fs=document\.getElementById\('f-source'\);if\(fs\)fs\.value='Other';/,
-    "openAddModal() should set #f-type first, then filter #f-source, so a fresh Add-account open isn't left showing a stale filtered list from a prior Home-type session"
+    /const ft=document\.getElementById\('f-type'\);if\(ft\)\{ft\.selectedIndex=0;if\(type\)ft\.value=type;\}updateSourceOptionsForType\(\);const fs=document\.getElementById\('f-source'\);if\(fs\)fs\.value='Other';/,
+    "openAddModal(type) should reset #f-type (with optional type pre-fill), then call updateSourceOptionsForType(), then set #f-source — so a fresh open isn't left showing a stale filtered list from a prior Home-type session"
   );
   assert.match(
     source,
@@ -7005,7 +7005,7 @@ test("Purchase price/year fields are gone from the vehicle modal; Other-asset en
 // extrapolate explanation, and the snapshot section's own demo/monthly-
 // nudge notices were all still sitting at 10-11px, the same class of
 // "genuine reading paragraph, not a badge/label" issue the shared
-// .info-box fix (Accounts tab) addressed. Left short link/button labels
+// .info-box fix (Net Worth tab) addressed. Left short link/button labels
 // ("Track a goal →", "Hide goal tracking") and the metric cards'
 // deliberately-small uppercase eyebrow labels alone -- those are a
 // different, legitimate small-text category the earlier sweep also never
@@ -7016,7 +7016,7 @@ test("Purchase price/year fields are gone from the vehicle modal; Other-asset en
 // sibling. Requested directly by Nicholas, August 2026. ──
 test("Dashboard tier of the legibility sweep: demo notices and the trend-chart explanation are at least 12px, and the '+ Add historical' button matches its sibling's size", () => {
   const source = readSource();
-  const dashMatch = source.match(/<div class="page" id="page-dashboard">[\s\S]*?\n<\/div>\n\n<!-- ACCOUNTS -->/);
+  const dashMatch = source.match(/<div class="page" id="page-dashboard">[\s\S]*?\n<\/div>\n\n<!-- VEHICLES -->/);
   assert.ok(dashMatch, "the Dashboard page block should exist");
   const dash = dashMatch[0];
   assert.match(dash, /id="demo-notice-dash"[\s\S]{0,200}?<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.5">Demo data/, "#demo-notice-dash's paragraph text should be at least 12px");
@@ -7041,7 +7041,7 @@ test("Dashboard tier of the legibility sweep: demo notices and the trend-chart e
 // labels ("Savings rate", "Subscriptions", "⚑/✓ Worth your attention")
 // alone -- same deliberate small-label design chrome excluded from the
 // Dashboard tier. Requested directly by Nicholas, August 2026. ──
-test("Legibility sweep Tier 1: Spending tab's Insights sub-lines and the Accounts tab's remaining demo notice are at least 12px", () => {
+test("Legibility sweep Tier 1: Spending tab's Insights sub-lines and the Net Worth tab's remaining demo notice are at least 12px", () => {
   const source = readSource();
   assert.match(
     source,
@@ -7081,7 +7081,7 @@ test("Legibility sweep Tier 2: every remaining 11px paragraph line in the Income
   assert.match(previewFnMatch[0], /<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.6">\$\{fmt\(saved\)\} kept of \$\{fmt\(incomeVal\)\} take-home/, "the live preview's stat line should be at least 12px");
 });
 
-// ── The Accounts tab's Financial assets/Liabilities lists were flat --
+// ── The Net Worth tab's Financial assets/Liabilities lists were flat --
 // every row repeated its type in a "Institution · Type" sub-line (e.g.
 // "Zillow · Real estate") even though the Net Worth tab's own "Where your
 // wealth lives" breakdown already groups the exact same accounts by that
@@ -7123,7 +7123,7 @@ test("renderAccountLists: groups Financial assets/Liabilities by type (matching 
 
 // Finding: a first-time user who imports a CSV without adding any accounts
 // (a normal path -- the import-success modal explicitly calls adding an
-// account "totally optional") landed on the Accounts tab with "Financial
+// account "totally optional") landed on the Net Worth tab with "Financial
 // assets" and "Liabilities" headers rendering with nothing under them --
 // no different-looking from a rendering bug. renderVehicles()'s "No
 // physical assets yet." already handled this correctly one panel over.
@@ -7263,7 +7263,7 @@ test("list-col wraps each area's header together with its list, centered, instea
   );
   assert.match(
     source,
-    /<div class="list-col">\s*<div class="sh" style="margin-bottom:\.5rem">Where your wealth lives<\/div>\s*<div class="nw-section" id="nw-breakdown"><\/div>/,
+    /<div class="list-col">[\s\S]{0,400}?<div class="sh" style="margin:0">Where your wealth lives<\/div>[\s\S]{0,1000}?<div class="nw-section" id="nw-breakdown"><\/div>/,
     "the Net Worth breakdown's header and #nw-breakdown should share one .list-col wrapper"
   );
   assert.match(
@@ -7271,15 +7271,17 @@ test("list-col wraps each area's header together with its list, centered, instea
     /<div class="list-col">\s*<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:\.45rem">\s*<div class="sh" style="margin:0">Net worth snapshots<\/div>/,
     "the Net Worth snapshots header and #snapshot-list should share one .list-col wrapper"
   );
+  // Account management is now inline in the breakdown list-col — #nw-breakdown
+  // is the rendered target; static Financial assets/Liabilities headers are gone.
   assert.match(
     source,
-    /<div class="list-col"><div class="sh">Financial assets<\/div><div id="asset-list" class="nw-section"><\/div><\/div>/,
-    "Financial assets' header and #asset-list should share one .list-col wrapper"
+    /<div class="nw-section" id="nw-breakdown"><\/div>/,
+    "#nw-breakdown should exist inside the list-col"
   );
   assert.match(
     source,
-    /<div class="list-col"><div class="sh">Liabilities<\/div><div id="liability-list" class="nw-section"><\/div><\/div>/,
-    "Liabilities' header and #liability-list should share one .list-col wrapper"
+    /<div id="vehicle-list"><\/div>/,
+    "#vehicle-list should exist for physical assets"
   );
 });
 
@@ -7291,17 +7293,15 @@ test("list-col wraps each area's header together with its list, centered, instea
 // wide monitor while Financial assets/Liabilities right above them
 // stayed capped at 800px and centered -- the exact "same tab, two
 // different widths" inconsistency this whole sweep was meant to fix.
-test("Outside net worth and Physical assets are also wrapped in .list-col, matching Financial assets/Liabilities right above them", () => {
+test("Account management is inline in the NW breakdown list-col: breakdown, excluded accounts, and physical assets share one .list-col wrapper", () => {
   const source = readSource();
+  // Account management is now inline with the NW breakdown — no separate Accounts
+  // tab. The breakdown list-col contains the + Add account button, #nw-breakdown,
+  // outside-NW row, and the Physical assets section with #vehicle-list.
   assert.match(
     source,
-    /<div class="list-col">\s*<div id="acct-excluded-header" class="sh"[^>]*>Outside net worth<\/div>\s*<div id="excluded-accounts-list"><\/div>\s*<\/div>/,
-    "Outside net worth's header and #excluded-accounts-list should share one .list-col wrapper"
-  );
-  assert.match(
-    source,
-    /<div class="list-col">\s*<div style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;margin-bottom:\.5rem"><div class="sh" style="margin:0">Physical assets<\/div>[\s\S]{0,500}?<div id="vehicle-list"><\/div>\s*<\/div>/,
-    "Physical assets' header, info-box, and #vehicle-list should share one .list-col wrapper"
+    /<div class="list-col">[\s\S]{0,1200}?<div class="nw-section" id="nw-breakdown">[\s\S]{0,300}?<div id="nw-excluded-header"[\s\S]{0,200}?<div id="nw-excluded-row">[\s\S]{0,700}?<div id="vehicle-list"><\/div>\s*<\/div>/,
+    "#nw-breakdown → #nw-excluded-row → #vehicle-list should all be inside a single .list-col in that order"
   );
 });
 
@@ -7861,7 +7861,7 @@ test("#demo-nudge's banner text uses 'Switch profiles' in place of 'explore them
   const source = readSource();
   assert.match(
     source,
-    /Demo data fills all 5 tabs —\s*<button data-action="openDemoPicker" data-arg="false" style="background:none;border:none;color:#D97706;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Switch profiles<\/button>\s*to explore, then\s*<button data-action="openTxImportModal"/,
+    /Demo data fills all 4 tabs —\s*<button data-action="openDemoPicker" data-arg="false" style="background:none;border:none;color:#D97706;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Switch profiles<\/button>\s*to explore, then\s*<button data-action="openTxImportModal"/,
     "the banner should read 'Switch profiles' (as a secondary text-link button) positioned before 'Import a CSV', not adjacent to it at the end"
   );
   assert.doesNotMatch(
@@ -7923,7 +7923,7 @@ test("html/body use overflow-x:clip, not :hidden, so position:sticky (.nav and e
 });
 
 // Finding: Nicholas pointed out that Outside net worth and Physical
-// assets, on the Accounts tab, still used older, bulkier row/card
+// assets, on the Net Worth tab, still used older, bulkier row/card
 // styles -- each entry as its own full standalone bordered box -- while
 // Financial assets/Liabilities had already been rebuilt (August 6) into
 // tight .account-row-grouped rows sharing one .nw-group border. Rebuilt
@@ -7934,17 +7934,17 @@ test("html/body use overflow-x:clip, not :hidden, so position:sticky (.nav and e
 // just in amber. Physical assets does the same, but by hand rather than
 // reusing the shared classes directly, since vehicles carry a second
 // sub-row (valuation link + VIN) a single flex row can't hold.
-test("Outside net worth (Accounts tab) uses the tight .account-row-grouped format, not the older, bulkier .account-row-529 card", () => {
+test("Outside net worth (Net Worth tab) uses the tight .account-row-grouped format, not the older, bulkier .account-row-529 card", () => {
   const source = readSource();
   assert.match(
     source,
     /acctEl\.innerHTML=`<div class="nw-group">\$\{excluded\.map\(a=>`\s*<div class="account-row account-row-grouped">/,
-    "the Accounts tab's excluded-accounts list should wrap rows in .nw-group using .account-row-grouped"
+    "the Net Worth tab's excluded-accounts list should wrap rows in .nw-group using .account-row-grouped"
   );
   assert.doesNotMatch(
     source,
     /acctEl\.innerHTML=excluded\.map\(a=>`\s*<div class="account-row account-row-529">/,
-    "the old .account-row-529 card style should be gone from the Accounts tab's excluded-accounts list"
+    "the old .account-row-529 card style should be gone from the Net Worth tab's excluded-accounts list"
   );
 });
 
