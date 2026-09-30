@@ -9049,47 +9049,36 @@ test("setSimulatorSort: defaults to Amount descending, and mirrors setBudgetSort
   assert.match(fnMatch[0], /_simulatorSortDir=s==='alpha'\?'asc':'desc';/, "switching to a new sort key should reset direction (alpha starts ascending, amount starts descending), not carry over the previous sort's direction");
 });
 
-// ── isRetirementSustainable() / computeRetirementRunwayMonths() — Net
-// Worth tab's retirement-runway widget. Adversarial review of the first
-// version caught a real bug before it shipped: the sustainable check
-// compared liquid balance against 25x *monthly* spend instead of 25x
-// *annual* spend, understating the real 4%-rule bar by 12x -- someone
-// with only ~2 years of expenses saved would have been told their money
-// lasts indefinitely. These tests pin the corrected, annualized math so
-// that exact regression can't silently come back. ──
-test("isRetirementSustainable: requires 25x ANNUAL spend, not 25x monthly spend", () => {
-  const { isRetirementSustainable } = loadFunctions(["isRetirementSustainable"]);
-  const monthlySpend = 2000;
-  // The bug this guards against: 25x monthly spend ($50,000) is nowhere
-  // near enough to sustain $2,000/mo indefinitely -- that's about 25
-  // months of runway, not 25 years.
-  assert.equal(isRetirementSustainable(50000, monthlySpend), false,
-    "25x monthly spend alone must NOT be marked sustainable");
-  // Just under the real (annualized) bar: 25 * 12 * 2000 = $600,000.
-  assert.equal(isRetirementSustainable(599999, monthlySpend), false);
-  // At and above the real bar.
-  assert.equal(isRetirementSustainable(600000, monthlySpend), true);
-  assert.equal(isRetirementSustainable(900000, monthlySpend), true);
+// ── computeEmergencyCushionMonths() — Net Worth tab's emergency cushion
+// widget. Pure division: liquid savings ÷ average monthly spending. No
+// growth offset -- growth is paycheck deposits, and a cushion is for when
+// those stop. ──
+test("computeEmergencyCushionMonths: basic division — $24k liquid, $2k/mo spend = 12 months", () => {
+  const { computeEmergencyCushionMonths } = loadFunctions(["computeEmergencyCushionMonths"]);
+  assert.equal(computeEmergencyCushionMonths(24000, 2000), 12);
 });
 
-test("computeRetirementRunwayMonths: a draining balance (growth < spend) hits zero in bounded time", () => {
-  const { computeRetirementRunwayMonths } = loadFunctions(["computeRetirementRunwayMonths"]);
-  // $24,000 liquid, no growth, spending $2,000/mo -> exactly 12 months.
-  assert.equal(computeRetirementRunwayMonths(24000, 2000, 0), 12);
+test("computeEmergencyCushionMonths: floors to whole months — $25k liquid, $2k/mo = 12 (not 12.5)", () => {
+  const { computeEmergencyCushionMonths } = loadFunctions(["computeEmergencyCushionMonths"]);
+  assert.equal(computeEmergencyCushionMonths(25000, 2000), 12);
 });
 
-test("computeRetirementRunwayMonths: a balance that outgrows spend never hits zero, returns null instead of a huge/wrong month count", () => {
-  const { computeRetirementRunwayMonths } = loadFunctions(["computeRetirementRunwayMonths"]);
-  assert.equal(computeRetirementRunwayMonths(10000, 1000, 1500), null);
+test("computeEmergencyCushionMonths: no spend history (avgSpend<=0) returns null rather than dividing by zero", () => {
+  const { computeEmergencyCushionMonths } = loadFunctions(["computeEmergencyCushionMonths"]);
+  assert.equal(computeEmergencyCushionMonths(50000, 0), null);
 });
 
-test("computeRetirementRunwayMonths: a slow-but-real drain past the 50yr cap returns null rather than an unbounded loop", () => {
-  const { computeRetirementRunwayMonths } = loadFunctions(["computeRetirementRunwayMonths"]);
-  // Draining by $1/mo net: takes far longer than 600 months to reach zero.
-  assert.equal(computeRetirementRunwayMonths(100000, 1001, 1000), null);
+test("computeEmergencyCushionMonths: negative or zero liquid balance returns 0, not a negative duration", () => {
+  const { computeEmergencyCushionMonths } = loadFunctions(["computeEmergencyCushionMonths"]);
+  // Overdrawn checking account: negative liquid balance.
+  assert.equal(computeEmergencyCushionMonths(-500, 2000), 0);
+  assert.equal(computeEmergencyCushionMonths(0, 2000), 0);
 });
 
-test("computeRetirementRunwayMonths: no spend history (avgSpend<=0) returns null rather than dividing by zero / looping forever", () => {
-  const { computeRetirementRunwayMonths } = loadFunctions(["computeRetirementRunwayMonths"]);
-  assert.equal(computeRetirementRunwayMonths(50000, 0, 500), null);
+test("computeEmergencyCushionMonths: a balance > 600 months of expenses returns null (don't show a specific 50+ year count)", () => {
+  const { computeEmergencyCushionMonths } = loadFunctions(["computeEmergencyCushionMonths"]);
+  // 601 months of expenses: $1,202,000 liquid at $2,000/mo.
+  assert.equal(computeEmergencyCushionMonths(1202000, 2000), null);
+  // Right at the cap is still fine.
+  assert.equal(computeEmergencyCushionMonths(1200000, 2000), 600);
 });

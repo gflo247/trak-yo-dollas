@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-qif7aKV3p87Cf9acSZCKTD7wn+N4kGz6kFnkIz66+6w=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-P0qnOOpQesE0HIdRrrZDfO2YQj7XsmThqaU+qK5j0nk=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -4679,7 +4679,7 @@ function renderNwGoalWidget(){
   const timeLabel=monthsToGoal>=12?(mos>0?`${yrs}y ${mos}m`:`${yrs}y`):`${monthsToGoal}mo`;
   const isClose=monthsToGoal<=3;
   // 600mo (50yr) cap, same threshold and same reasoning as
-  // computeRetirementRunwayMonths()'s own cap below: a specific calendar
+  // computeEmergencyCushionMonths()'s own cap below: a specific calendar
   // date/year-count this far out isn't a real prediction -- monthlyGrowth
   // is a recent-months average that will almost certainly have changed
   // long before a pace this slow (or a goal this far off) actually
@@ -4873,7 +4873,7 @@ function computeMonthlyGrowth(nw){
   return{monthlyGrowth,growthSource};
 }
 
-// ── Retirement runway widget ─────────────────────────────────────────
+// ── Emergency cushion widget ──────────────────────────────────────────
 // Type-based default for a new account's liquidity, overridable per-account
 // via #f-liquid. 'investment' defaults liquid (assumes a taxable brokerage
 // -- the more common case for money someone can actually spend on demand
@@ -4900,8 +4900,8 @@ const liquidAssets=()=>state.accounts.filter(a=>!isLiab(a.type)&&!a.excludeFromN
 // categories) -- the same MONTHLY-based total computeMonthlyGrowth()'s own
 // income-minus-spend fallback already trusts, just over a longer, steadier
 // window (12mo, matching the Budget tab's own getBudgetHistMonths()
-// convention) rather than that fallback's 3mo pace estimate -- a runway
-// projection is exactly the kind of use a single noisy month of spend
+// convention) rather than that fallback's 3mo pace estimate -- a cushion
+// estimate is exactly the kind of use a single noisy month of spend
 // shouldn't drive.
 function avgTotalMonthlySpend(){
   const today=new Date();
@@ -4910,43 +4910,17 @@ function avgTotalMonthlySpend(){
   return months.length?months.map(m=>{const row=MONTHLY[m]||{};return[...state.activeSources].reduce((s,src)=>s+(row[src]||0),0);}).reduce((a,b)=>a+b,0)/months.length:0;
 }
 
-// Simulates the liquid balance forward month by month -- applying the same
-// flat $/mo monthlyGrowth computeMonthlyGrowth() already derives (not a
-// compounding %, matching how the goal widget above already treats that
-// figure) and withdrawing avgSpend every month -- until it hits zero.
-// Capped at 600 months (50yr) so a slow bleed or a near-break-even pace
-// can't spin a huge loop or display something silly like "9,000 years";
-// returns null past the cap, meaning "don't show a specific number."
-function computeRetirementRunwayMonths(liquid,avgSpend,monthlyGrowth){
+// How many full months liquid savings alone could cover expenses if income
+// stopped -- pure division, no growth offset. Growth is paycheck deposits;
+// a cushion is for when those stop. Capped at 600 months (50yr): a specific
+// count past that isn't a meaningful number, returns null instead.
+// Clamped at 0: a negative liquid balance (e.g. an overdrawn checking
+// account) means no cushion, not a negative duration.
+function computeEmergencyCushionMonths(liquid,avgSpend){
   if(avgSpend<=0)return null;
-  const CAP_MONTHS=600;
-  let bal=liquid,months=0;
-  while(bal>0&&months<CAP_MONTHS){
-    bal+=monthlyGrowth-avgSpend;
-    months++;
-  }
-  return bal>0?null:months;
-}
-
-// The 4% rule, stated as a liquid-balance multiple of *annual* spend: a
-// portfolio can sustain 4%/yr withdrawals indefinitely (rule of thumb, not
-// a guarantee) once it's >= 25x what you spend in a year. avgMonthlySpend
-// is monthly, so it's annualized (*12) before applying the 25x multiple --
-// comparing liquid directly against 25x *monthly* spend (an earlier
-// version of this function did exactly that) answers "do you have 25
-// months saved," not "do you have 25 years saved," understating the real
-// bar by a factor of 12. Extracted as its own function specifically so
-// this exact ratio has one place to be tested against, not just inline
-// arithmetic inside the render function nothing else checks. Found in
-// adversarial review, before this shipped.
-function isRetirementSustainable(liquid,avgMonthlySpend){
-  const SAFE_WITHDRAWAL_MULTIPLE=25;
-  return liquid>=avgMonthlySpend*12*SAFE_WITHDRAWAL_MULTIPLE;
-}
-
-function toggleRunwayDetail(){
-  const d=document.getElementById('nw-runway-detail');
-  if(d)d.classList.toggle('hidden');
+  const months=Math.floor(liquid/avgSpend);
+  if(months<=0)return 0;
+  return months>600?null:months;
 }
 
 function renderRetirementRunway(){
@@ -4956,51 +4930,24 @@ function renderRetirementRunway(){
   const avgSpend=avgTotalMonthlySpend();
 
   if(avgSpend<=0){
-    el.innerHTML=`<div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem 1rem"><div class="text-muted-sm">Not enough spending history yet to estimate a runway.</div></div>`;
+    el.innerHTML=`<div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem 1rem"><div class="text-muted-sm">Not enough spending history yet to estimate a cushion.</div></div>`;
     return;
   }
 
-  if(isRetirementSustainable(liquid,avgSpend)){
-    el.innerHTML=`
-      <div style="background:var(--bg-card);border:1px solid #05996933;border-radius:10px;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-        <div>
-          <div style="font-size:13px;font-weight:700;color:var(--accent-green);margin-bottom:2px">🏖️ Your liquid assets could sustain this indefinitely</div>
-          <div class="text-muted-sm">${fmtC(liquid)} liquid, spending ${fmtC(Math.round(avgSpend))}/mo. 4% of that covers ${fmtC(Math.round(liquid*0.04/12))}/mo.</div>
-        </div>
-        <button data-action="toggleRunwayDetail" style="background:none;color:var(--accent-blue-light);border:1px solid var(--border-mid);border-radius:7px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap" type="button">See the math →</button>
-      </div>
-      <div id="nw-runway-detail" class="hidden" style="font-size:11.5px;color:var(--text-muted);line-height:1.6;margin-top:.55rem;padding:0 2px">
-        Based on your <strong style="color:var(--text-secondary)">liquid</strong> accounts only (checking, savings, brokerage — not real estate, vehicles, or accounts you've marked illiquid) and your real 12-month average spend, not an assumed rate. A 4% withdrawal rate is a rule of thumb, not a guarantee — market returns vary year to year, and this doesn't model sequence-of-returns risk or taxes.
-      </div>`;
+  const months=computeEmergencyCushionMonths(liquid,avgSpend);
+  if(months===0){
+    el.innerHTML=`<div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem 1rem"><div class="text-muted-sm">No cushion — liquid balance is at or below zero.</div></div>`;
     return;
   }
-
-  const{monthlyGrowth}=computeMonthlyGrowth();
-  const months=computeRetirementRunwayMonths(liquid,avgSpend,monthlyGrowth);
-  // months===null covers two different situations that shouldn't share one
-  // label: monthlyGrowth>=avgSpend means the balance never shrinks at this
-  // modeled pace at all (not "a long time" -- indefinitely, at least until
-  // something about the pace changes), while monthlyGrowth<avgSpend but
-  // still hitting the 600mo cap means it IS draining, just slowly enough
-  // that a specific year count past 50 isn't worth displaying as precise.
-  // Conflating these under one vague "50+ years" undersells the first case
-  // and overstates the precision of the second. Found in adversarial
-  // review, before this shipped.
-  const neverDepletes=months===null&&monthlyGrowth>=avgSpend;
-  const headline=neverDepletes
-    ?"🏖️ At this pace, you're growing faster than you're spending"
-    :`🛟 Cushion: about ${months===null?'50+ years':(()=>{const y=Math.floor(months/12),m=months%12;return y>0?(m>0?`${y}y ${m}mo`:`${y}y`):`${months}mo`;})()} at this rate`;
+  const cushionLabel=months===null?'50+ years':(()=>{const y=Math.floor(months/12),m=months%12;return y>0?(m>0?`${y}y ${m}mo`:`${y}y`):`${months}mo`;})();
 
   el.innerHTML=`
-    <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-      <div>
-        <div style="font-size:13px;font-weight:700;color:var(--accent-blue-light);margin-bottom:2px">${headline}</div>
-        <div class="text-muted-sm">${fmtC(liquid)} liquid, spending ${fmtC(Math.round(avgSpend))}/mo${monthlyGrowth>0?`, growing ~${fmtC(Math.round(monthlyGrowth))}/mo`:''}.</div>
+    <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem 1rem;display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+      <div style="flex-shrink:0">
+        <div style="font-size:13px;font-weight:700;color:var(--accent-blue-light);margin-bottom:.25rem">🛟 Cushion: about ${cushionLabel} of expenses</div>
+        <div class="text-muted-sm">${fmtC(liquid)} liquid ÷ ${fmtC(Math.round(avgSpend))}/mo spend</div>
       </div>
-      <button data-action="toggleRunwayDetail" style="background:none;color:var(--accent-blue-light);border:1px solid var(--border-mid);border-radius:7px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap" type="button">See the math →</button>
-    </div>
-    <div id="nw-runway-detail" class="hidden" style="font-size:11.5px;color:var(--text-muted);line-height:1.6;margin-top:.55rem;padding:0 2px">
-      Assumes your liquid balance keeps growing at the same pace your overall net worth recently has (the same figure the goal tracker above uses), while you withdraw your real 12-month average spend every month${neverDepletes?', which at this pace never brings the balance to zero':', until it hits zero'}. Not a real retirement plan — no taxes, no Social Security, no sequence-of-returns modeling, and no way to know yet whether this pace still holds once income actually stops.
+      <div style="font-size:11.5px;color:var(--text-muted);line-height:1.6;text-align:right">Liquid = checking + savings + brokerage — (real estate + vehicles + anything you've marked illiquid). Uses your 12-month average spend. Assumes income stops, because that's the role of a cushion.</div>
     </div>`;
 }
 
