@@ -18,7 +18,7 @@ Import a CSV from your bank, credit union, or credit card. Your browser translat
 - **"At a Glance" insights** — curated monthly insights surfaced by urgency: savings rate, budget health, top mover, largest charge, subscriptions, possible duplicate charges, weekend spending patterns. Each compares against your own history.
 - **Budget tab** — set monthly limits and see them alongside your 12-month average and year-to-date pace in one view, with AT RISK warnings before you go over. Every category row shows 12-month history. Sort by % used, amount, how unusual vs. your average, or A–Z — each ascending or descending. Flags a budget that's run over for 3 straight months so a stale limit doesn't sit there quietly out of date.
 - **Life Changes tab** — preview a hypothetical against your real spending history and income: rent becoming a mortgage, a new car payment, childcare starting. Non-destructive until you decide to make it real — one click turns a preview into your actual Budget-tab limit.
-- **Full picture net worth** — checking, savings, investments, loans, real estate, and vehicles in one place. Save monthly snapshots and track your trajectory toward a goal. Shows annualized growth rate alongside dollar change.
+- **Full picture net worth** — checking, savings, investments, loans, real estate, and vehicles in one place. Save monthly snapshots and track your trajectory toward a goal. Shows annualized growth rate alongside dollar change. Includes an emergency cushion estimate (liquid assets ÷ 12-month average spending) so you can see how many months of expenses you're holding.
 - **Smart auto-categorization** — four-tier system: your keyword rules → built-in merchant keywords → community-contributed patterns → MCC codes from your bank. Vendor names display in proper case (Starbucks, not STARBUCKS) without changing your underlying data. You can rename categories (including your own custom ones) in-place anytime — updates every transaction, budget, rule, and exclusion that referenced the old name.
 - **Multi-source import** — import from multiple banks and credit cards. Sources with different date ranges prompt optional alignment to overlapping coverage.
 - **Spending exclusions** — hide categories like transfers and CC payments from spending totals. Reversible, per-category or per-transaction.
@@ -97,7 +97,7 @@ Keywords match case-insensitively against transaction descriptions. I review all
 
 ## Tech stack
 
-Single HTML file app — no build step, no dependencies to install, no server required.
+Single HTML file app — no dependencies to install, no server required. The deploy pipeline minifies the app shell at deploy time (comments stripped, inline JS/CSS compressed via Terser); the source file stays readable for local development.
 
 | Library | Used for |
 |---|---|
@@ -193,9 +193,9 @@ npm test
 ./deploy.sh prod
 ```
 
-`deploy.sh` is a hard gate, not just a build script. It runs, in order: a syntax check, the full `node --test` suite (`npm test`), an inline-event-handler lint, a CSP `connect-src` completeness check, a WCAG AA text-contrast check, and a modal ARIA-attributes check — any failure aborts before anything is touched. Only then does it recompute CSP hashes (`update-csp-hashes.py`) and sitemap dates (`update-sitemap-dates.py`), build a clean deploy directory via rsync (excluding dev-only files), and run `wrangler deploy`. A further set of advisory scanners (data-integrity/coverage checks specific to this app's state model — see `scripts/`) run after and report but don't block. Never run `wrangler deploy` directly — skipping straight to it bypasses every one of these gates, which is exactly how it's caught real bugs before they shipped.
+`deploy.sh` is a hard gate, not just a build script. It runs, in order: a syntax check, the full `node --test` suite (`npm test`), an inline-event-handler lint, a CSP `connect-src` completeness check, a WCAG AA text-contrast check, and a modal ARIA-attributes check — any failure aborts before anything is touched. Only then does it recompute CSP hashes (`update-csp-hashes.py`) and sitemap dates (`update-sitemap-dates.py`), build a clean deploy directory via rsync (excluding dev-only files), minify the app shell (`html-minifier-terser` — ~1.2 MB source → ~714 KB deployed, comments stripped, inline JS/CSS compressed), re-run the syntax check and recompute CSP hashes on the minified output, then run `wrangler deploy`. A further set of advisory scanners (data-integrity/coverage checks specific to this app's state model — see `scripts/`) run after and report but don't block. Never run `wrangler deploy` directly — skipping straight to it bypasses every one of these gates, which is exactly how it's caught real bugs before they shipped.
 
-The app uses a hash-based Content Security Policy — SHA-256 hashes allowlist inline scripts. `update-csp-hashes.py` recomputes all hashes automatically before every deploy.
+The app uses a hash-based Content Security Policy — SHA-256 hashes allowlist inline scripts. `update-csp-hashes.py` recomputes hashes twice per deploy: once on the source (for local development) and once on the minified output (for the deployed file).
 
 ---
 
