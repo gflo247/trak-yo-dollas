@@ -7214,11 +7214,11 @@ test("renderNwBreakdown: skips empty groups instead of rendering a bare '$0' hea
 
 // Finding: the group-skipping fix above still left one gap -- a user with
 // ZERO accounts of any type (every group empty, not just one) saw the
-// "Where your wealth lives" section header with a fully blank body under
+// "Accounts &amp; assets" section header with a fully blank body under
 // it, since visible.map([]).join('') is just ''. Confirmed live: import a
 // CSV without adding any accounts and the Net Worth tab shows this exact
 // state.
-test("renderNwBreakdown: a fully-empty accounts list shows 'No accounts yet' instead of a blank body under 'Where your wealth lives'", () => {
+test("renderNwBreakdown: a fully-empty accounts list shows 'No accounts yet' instead of a blank body under 'Accounts &amp; assets'", () => {
   const source = readSource();
   const fnMatch = source.match(/function renderNwBreakdown\(\)\{[\s\S]*?\n\}/);
   assert.ok(fnMatch, "renderNwBreakdown() should exist");
@@ -7304,7 +7304,7 @@ test("list-col wraps each area's header together with its list, centered, instea
   );
   assert.match(
     source,
-    /<div class="list-col">[\s\S]{0,400}?<div class="sh" style="margin:0">Where your wealth lives<\/div>[\s\S]{0,1000}?<div class="nw-section" id="nw-breakdown"><\/div>/,
+    /<div class="list-col">[\s\S]{0,400}?<div class="sh" style="margin:0">Accounts &amp; assets<\/div>[\s\S]{0,1000}?<div class="nw-section" id="nw-breakdown"><\/div>/,
     "the Net Worth breakdown's header and #nw-breakdown should share one .list-col wrapper"
   );
   assert.match(
