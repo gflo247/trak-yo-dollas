@@ -99,17 +99,17 @@ test("classifyBudgetStatus: a sub-cent float-accumulation overshoot doesn't flip
 
 // ── 142nd adversarial pass ──────────────────────────────────────────────
 // LOW: the 141st pass added the float-noise epsilon only INSIDE
-// classifyBudgetStatus() -- 5 sibling sites (the compact budget badge,
-// buildCondensedDots(), buildPctDots(), the hero 12-month history dots,
-// and the inline per-cat condensed dots) all read the identical
-// unrounded getCatMonthSpend()/spendByCat-style float sums via their own
-// bare > comparisons, so a category exactly at budget could now show
-// green in classifyBudgetStatus()'s own callers but red in every one of
-// these -- the exact cross-UI inconsistency classifyBudgetStatus() was
-// extracted to eliminate (see its own header comment and the 44th
-// pass's near-identical fix for the warnPct boundary). Found in the
-// 142nd adversarial pass, re-verifying the 141st pass's own fix. ──
-test("the 4 sibling dot/pct-color render sites (compact badge, buildCondensedDots/buildPctDots, hero history dots, inline per-cat dots) all use the same float-noise epsilon as classifyBudgetStatus()", () => {
+// classifyBudgetStatus() -- sibling sites (the compact budget badge,
+// buildCondensedDots(), buildPctDots(), and the hero 12-month history
+// dots) all read the identical unrounded getCatMonthSpend()/spendByCat-
+// style float sums via their own bare > comparisons, so a category
+// exactly at budget could now show green in classifyBudgetStatus()'s
+// own callers but red in every one of these -- the exact cross-UI
+// inconsistency classifyBudgetStatus() was extracted to eliminate (see
+// its own header comment and the 44th pass's near-identical fix for the
+// warnPct boundary). Found in the 142nd adversarial pass, re-verifying
+// the 141st pass's own fix. ──
+test("the 3 sibling dot/pct-color render sites (compact badge, buildCondensedDots/buildPctDots, hero history dots) all use the same float-noise epsilon as classifyBudgetStatus()", () => {
   const source = readSource();
   const badgeMatches = source.match(/curAmt>budget\+0\.005\?'#F87171':curAmt\/budget>0\.8\?'#FBBF24':'#34D399'/g) || [];
   assert.equal(badgeMatches.length, 2, "both the compact badge's dot and % text color should use the same epsilon-tolerant comparison");
@@ -119,11 +119,6 @@ test("the 4 sibling dot/pct-color render sites (compact badge, buildCondensedDot
     source,
     /mSpent>totalBudget\+0\.005\?'#F87171':mPct>=warnPct\?'#FBBF24':'#34D399'/,
     "the hero history dots should use the same epsilon-tolerant comparison"
-  );
-  assert.match(
-    source,
-    /ms>budget\+0\.005\?'#F87171':mp>=warnPct\?'#FBBF24':'#34D399'/,
-    "the inline per-cat condensed dots should use the same epsilon-tolerant comparison"
   );
 });
 test("classifyBudgetStatus: comfortably under budget is on-track", () => {

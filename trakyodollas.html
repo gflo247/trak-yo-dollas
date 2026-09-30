@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-3keJ7zpnT9M8dBdbB43GSsZYM0tHQe1VFkYckbU4FmQ=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-kL6ZMP4hHoNJ8YOuSsquVvpnkQnQvmJpYtJJZUAgyok=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -452,8 +452,13 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .bucket-total{font-size:15px;font-weight:800;line-height:1}
 .bucket-meta{font-size:12px;color:var(--text-muted);margin-top:3px;line-height:1.4}
 /* tx */
-.tx-row{display:flex;align-items:center;gap:7px;padding:.4rem .75rem;border:1px solid var(--border);border-radius:8px;margin-bottom:3px;background:var(--bg-page);cursor:pointer}
-.tx-row:hover{background:var(--row-hover)}
+/* touch-action:manipulation on all [data-action] elements eliminates the
+   300ms tap delay on iOS/Android without disabling scroll. Does not
+   inherit, so must be on the element the finger actually touches -- the
+   tx-row pill children are the main reason .tx-row alone wasn't enough. */
+[data-action]{touch-action:manipulation}
+.tx-row{display:flex;align-items:center;gap:7px;padding:.55rem .75rem;border:1px solid var(--border);border-radius:8px;margin-bottom:3px;background:var(--bg-page);cursor:pointer}
+.tx-row:hover,.tx-row:active{background:var(--row-hover)}
 .tx-row:focus-visible{outline:2px solid #2563EB;outline-offset:1px}
 /* Alternating row stripe -- helps visually track rows in dense lists */
 .row-alt,.sim-row{background:var(--bg-page)}
@@ -463,11 +468,11 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 #tx-list .tx-row:nth-child(even){background:var(--row-stripe)}
 #tx-list .tx-row:nth-child(even):hover{background:var(--row-hover)}
 .tx-row .pill[role="button"]:focus-visible{outline:2px solid #2563EB;outline-offset:2px}
-.tx-date{font-size:10px;color:var(--text-muted);min-width:70px;font-variant-numeric:tabular-nums}
-.tx-desc{font-size:11px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-primary)}
-.pill{font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;white-space:nowrap}
-.tx-amount{font-size:11px;font-weight:800;min-width:55px;text-align:right;color:var(--accent-red)}
-.tx-pct{font-size:9px;color:var(--text-muted);min-width:35px;text-align:right}
+.tx-date{font-size:10px;color:var(--text-muted);min-width:70px;font-variant-numeric:tabular-nums;touch-action:manipulation}
+.tx-desc{font-size:11px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-primary);touch-action:manipulation}
+.pill{font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;white-space:nowrap;touch-action:manipulation}
+.tx-amount{font-size:11px;font-weight:800;min-width:55px;text-align:right;color:var(--accent-red);touch-action:manipulation}
+.tx-pct{font-size:9px;color:var(--text-muted);min-width:35px;text-align:right;touch-action:manipulation}
 .cat-badge{display:flex;align-items:center;gap:6px;margin-bottom:.5rem;padding:.3rem .7rem;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-mid)}
 /* modals */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(4px)}
@@ -1094,7 +1099,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div id="budget-view-gate" style="display:none;background:var(--bg-card);border:1px solid var(--border-mid);border-left:3px solid #FBBF24;border-radius:6px;padding:.5rem .75rem;margin-bottom:.5rem;font-size:12px;color:var(--text-secondary);line-height:1.5"></div>
 
   <!-- Summary bar -->
-  <div id="budget-summary-bar" data-action="cycleBudgetHeroHist" tabindex="0" role="button" aria-label="Expand or collapse 12-month history" style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:.85rem 1rem;margin-bottom:.4rem;cursor:pointer"></div>
+  <div id="budget-summary-bar" style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:.85rem 1rem;margin-bottom:.4rem"></div>
 
   <!-- Dot legend -->
   <div id="budget-dot-legend" style="display:flex;gap:12px;padding:0 2px;margin-bottom:.6rem;flex-wrap:wrap"></div>
@@ -1879,7 +1884,16 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
     <div id="budget-modal-context" style="font-size:11px;color:var(--text-muted);margin-bottom:.75rem;line-height:1.5"></div>
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:.75rem">Don't see a category? Add it in the Spending tab, then come back here to budget for it.</div>
+    <div id="budget-remove-confirm" class="hidden" style="background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);border-radius:8px;padding:10px 12px;margin-bottom:.75rem">
+      <div style="font-size:12px;font-weight:700;color:var(--accent-red);margin-bottom:4px">Remove this budget?</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">You can undo via the toast that appears.</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" data-action="cancelBudgetRemoval" type="button">Keep it</button>
+        <button class="btn btn-sm" data-action="confirmBudgetRemoval" type="button" style="background:rgba(248,113,113,.15);border-color:rgba(248,113,113,.4);color:var(--accent-red)">Yes, remove</button>
+      </div>
+    </div>
     <div class="modal-footer">
+      <button id="budget-remove-btn" class="btn hidden" data-action="promptBudgetRemoval" type="button" style="margin-right:auto;color:var(--accent-red);border-color:rgba(248,113,113,.4)">Remove budget</button>
       <button class="btn" data-action="closeModals" type="button">Cancel</button>
       <button class="btn btn-primary" data-action="saveBudget" type="button">Save budget</button>
     </div>
@@ -2944,8 +2958,6 @@ function resetSourceAlign(){state.sourceAlignDate=null;state.rangeFrom=null;stat
 // otherwise incorrectly resurrect on some later, unrelated Treemap
 // vendor-select/deselect cycle. Found in the 49th adversarial pass.
 function resetTreemapToCategories(){state.activeVendors=new Set();state.bucketMode='category';state.treemapDrillCat=null;_treemapPrevActiveCats=null;renderTxList();renderSpendSummary();renderTreemap();}
-function cycleBudgetHeroHist(){const h=document.getElementById('budget-hero-hist');if(h)cycleHistState(h,'bhh');}
-function cycleBudgetRowHist(arg,el){const card=el.closest('[data-card]');if(!card)return;const h=card.querySelector('[data-hist]');if(h)cycleHistState(h,'rh');}
 function importSuccessAndReopen(){onImportSuccessClose();closeModals();window._pendingAlignmentCheck=false;setTimeout(()=>openTxImportModal(),80);}
 function importSuccessAndAlign(){onImportSuccessClose();closeModals();if(window._pendingAlignmentCheck){window._pendingAlignmentCheck=false;setTimeout(checkSourceAlignment,200);}}
 function showPageSpending(arg,el){showPage('spending',el);}
@@ -9001,6 +9013,10 @@ function _refreshBudgetModalContext(cat){
   // right below it -- matches openSimulatorOverrideModal()'s identical
   // convention on the Life Changes tab.
   document.getElementById('budget-amount').value=state.budgets[cat]||(avg>0?Math.round(avg):'');
+  const removeBtn=document.getElementById('budget-remove-btn');
+  const removeConfirm=document.getElementById('budget-remove-confirm');
+  if(removeBtn)removeBtn.classList.toggle('hidden',!state.budgets[cat]);
+  if(removeConfirm)removeConfirm.classList.add('hidden');
   const ctx=document.getElementById('budget-modal-context');
   if(avg>0){
     const cur=state.budgets[cat];
@@ -9725,6 +9741,19 @@ async function confirmClearAllData(){
   closeModals();
   location.reload();
 }
+function promptBudgetRemoval(){
+  const el=document.getElementById('budget-remove-confirm');
+  if(el)el.classList.remove('hidden');
+}
+function cancelBudgetRemoval(){
+  const el=document.getElementById('budget-remove-confirm');
+  if(el)el.classList.add('hidden');
+}
+function confirmBudgetRemoval(){
+  const cat=window._budgetCat;
+  if(cat){removeBudget(cat);}
+  closeModals();
+}
 function removeBudget(cat){
   const prev=state.budgets[cat];
   delete state.budgets[cat];
@@ -9797,11 +9826,11 @@ function buildPctDots(months,getSpend,limit){
     // for the same reason. Found in the 142nd adversarial pass.
     const mc=ms>limit+0.005?'#F87171':mp>=warnPct?'#FBBF24':'#34D399';
     const ml=fmtMonthShort(m);
-    const topLabel=_labelIdxs.has(i)?(ml.slice(0,3)+' \''+m.slice(2,4)):'';
+    const topLabel=_labelIdxs.has(i)?ml.slice(0,3):'';
     const bottomText=ms>0?mp+'%':'–';
     const bottomColor=ms>0?mc:'var(--text-muted)';
     return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;padding:0" title="'+ml+': '+fmtC(ms)+' ('+mp+'%)">'
-      +'<div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:14px;line-height:14px">'+(topLabel||'')+'</div>'
+      +'<div style="font-size:9px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:13px;line-height:13px">'+(topLabel||'')+'</div>'
       +'<div style="width:100%;height:11px;border-radius:5px;background:'+(ms>0?mc:'#1E293B')+';min-width:0"></div>'
       +'<div style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;color:'+bottomColor+'">'+bottomText+'</div>'
       +'</div>';
@@ -9813,21 +9842,7 @@ function buildHeroPctDots(months,budgeted,totalBudget){
 function buildRowPctDots(months,cat,budget){
   return buildPctDots(months,m=>getCatMonthSpend(cat,m),budget);
 }
-function cycleHistState(el,prefix){
-  const s=el.dataset.state;
-  const next=s==='condensed'?'expanded':'condensed';
-  el.dataset.state=next;
-  const condensed=el.querySelector('.'+prefix+'-condensed');
-  const expanded=el.querySelector('.'+prefix+'-expanded');
-  if(condensed)condensed.style.display=next==='condensed'?'flex':'none';
-  if(expanded)expanded.style.display=next==='expanded'?'flex':'none';
-  if(prefix==='rh'){
-    const arrow=condensed&&condensed.querySelector('.hist-arrow');
-    if(arrow)arrow.textContent=next==='condensed'?'▸':'▾';
-    const card=el.closest('[data-card]');
-    if(card){const tl=card.querySelector('.bar-tick-labels');const bw=card.querySelector('.bar-tick-wrap');if(tl){const show=next==='expanded';tl.style.display=show?'block':'none';if(bw)bw.style.marginBottom=show?'20px':'4px';}}
-  }
-}
+
 function setBudgetSort(s){
   if(_budgetSort===s){
     _budgetSortDir=_budgetSortDir==='asc'?'desc':'asc';
@@ -10296,7 +10311,7 @@ function ringHTML({ytd,ytdPace},size='',bg='var(--bg-card)'){
 // Fixed-scale (~1.15x max of budget/avg/spend) bar fill + ticks: budget (white) + your average (blue).
 // When the two ticks land within COMBO_TICK_PCT of each other, merge them into one marker with a
 // combined tooltip — otherwise their hover/tap tooltips overlap and become hard to read individually.
-const COMBO_TICK_PCT=6;
+const COMBO_TICK_PCT=18;
 function barTicksHTML(budget,avg12,spent,showAvg){
   const scaleMax=Math.max(budget,showAvg?avg12:0,spent)*1.15;
   // Math.max(0,...), not just Math.min(...,1) -- spent can be negative
@@ -10452,7 +10467,11 @@ function renderBudgetTab(){
 
     const showAvg=!gated&&totalAvg>0;
     const{fillPct,ticksHTML}=barTicksHTML(totalBudget,totalAvg,totalSpent,showAvg);
-    const legendHTML=`<span class="tick-swatch budget-tick"></span> budget · ${fmt(totalBudget)}`+(showAvg?` &nbsp; <span class="tick-swatch avg-tick"></span> average · ${fmt(totalAvg)}`:'');
+    const _budLegend=`<span class="tick-swatch budget-tick"></span> budget · ${fmt(totalBudget)}`;
+    const _avgLegend=showAvg?`<span class="tick-swatch avg-tick"></span> average · ${fmt(totalAvg)}`:'';
+    const legendHTML=showAvg
+      ?(totalAvg<totalBudget?_avgLegend+' &nbsp; '+_budLegend:_budLegend+' &nbsp; '+_avgLegend)
+      :_budLegend;
 
     // 12-month overall history dots — always label first, mid, last for max spacing
     const _hLen=histMonths.length;
@@ -10465,11 +10484,11 @@ function renderBudgetTab(){
       // adversarial pass.
       const mColor=mSpent>totalBudget+0.005?'#F87171':mPct>=warnPct?'#FBBF24':'#34D399';
       const mLabel=fmtMonthShort(m);
-      const topLabel=_labelIdxs.has(i)?(mLabel.slice(0,3)+' \''+m.slice(2,4)):'';
+      const topLabel=_labelIdxs.has(i)?mLabel.slice(0,3):'';
       const mBottomText=mSpent>0?mPct+'%':'–';
       const mBottomColor=mSpent>0?mColor:'var(--text-muted)';
       return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;padding:0" title="'+mLabel+': '+fmt(mSpent)+' ('+mPct+'%)">'
-        +'<div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:14px;line-height:14px">'+(topLabel||'')+'</div>'
+        +'<div style="font-size:9px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:13px;line-height:13px">'+(topLabel||'')+'</div>'
         +'<div style="width:100%;height:11px;border-radius:5px;background:'+mColor+';min-width:0"></div>'
         +'<div style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;color:'+mBottomColor+'">'+mBottomText+'</div>'
         +'</div>';
@@ -10477,14 +10496,8 @@ function renderBudgetTab(){
 
     const heroHistHTML=histDots
       ?'<div style="margin-top:.75rem;border-top:1px solid var(--border);padding-top:.65rem">'
-        +'<div id="budget-hero-hist" data-state="condensed" style="min-height:44px;display:flex;flex-direction:column;justify-content:center">'
-          +'<div class="bhh-condensed" style="display:flex;align-items:center;flex-wrap:nowrap;padding:4px 0;gap:6px">'
-            +'<div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;flex-shrink:0">12-MO HISTORY <span style="font-weight:400;opacity:.6;text-transform:none">tap to expand · see amounts</span></div>'
-            +'<div style="display:flex;align-items:center;flex-wrap:nowrap;flex:1;gap:4px">'+buildCondensedDots(histMonths,budgeted,totalBudget,'hero')+'</div>'
-            +'<div style="font-size:9px;color:var(--text-muted);flex-shrink:0">▸</div>'
-          +'</div>'
-          +'<div class="bhh-expanded" style="display:none;gap:0;flex-wrap:nowrap;align-items:flex-end;width:100%;padding:2px 0">'+buildHeroPctDots(histMonths,budgeted,totalBudget)+'</div>'
-        +'</div>'
+        +'<div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">12-MO HISTORY</div>'
+        +'<div style="display:flex;gap:0;flex-wrap:nowrap;align-items:flex-end;width:100%">'+buildHeroPctDots(histMonths,budgeted,totalBudget)+'</div>'
       +'</div>'
       :'';
 
@@ -10590,20 +10603,11 @@ function renderBudgetTab(){
       const{over,atRisk}=getRowFlags(cat,budget);
       const accentColor=over?'#F87171':atRisk?'#FBBF24':null;
 
-      // budget+0.005 -- same epsilon fix as buildCondensedDots()/
-      // buildPctDots() above, same reason. Found in the 142nd adversarial
-      // pass.
-      const condensedDots=histMonths.map(mo=>{const ms=getCatMonthSpend(cat,mo);const mp=budget>0?Math.round(ms/budget*100):0;const mc=ms>budget+0.005?'#F87171':mp>=warnPct?'#FBBF24':'#34D399';const ml=fmtMonthShort(mo);return`<div style="flex:1;height:9px;border-radius:4px;background:${ms>0?mc:tc('#1E293B','#E2E8F0')};min-width:0" title="${ml}: ${fmt(ms)} (${mp}%)"></div>`;}).join('');
       const pctDots=buildRowPctDots(histMonths,cat,budget);
-      const uid=esc(`hist-${cat.replace(/\s+/g,'_')}`);
       const histHTML=histMonths.length
-        ?'<div id="'+uid+'" data-state="condensed" style="margin-top:4px;min-height:44px;display:flex;flex-direction:column;justify-content:center">'
-          +'<div class="rh-condensed" style="display:flex;align-items:center;flex-wrap:nowrap;width:100%;padding:4px 0">'
-            +'<div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;flex-shrink:0">12-MO HISTORY <span style="font-weight:400;opacity:.6;text-transform:none">· tap to see amounts</span></div>'
-            +'<div style="display:flex;align-items:center;flex-wrap:nowrap;flex:1;margin-left:8px;gap:4px">'+condensedDots+'</div>'
-            +'<div class="hist-arrow" style="font-size:9px;color:var(--text-muted);margin-left:4px;flex-shrink:0">▸</div>'
-          +'</div>'
-          +'<div class="rh-expanded" style="display:none;gap:0;flex-wrap:nowrap;align-items:flex-end;width:100%;padding:2px 0">'+pctDots+'</div>'
+        ?'<div style="margin-top:6px">'
+          +'<div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">12-MO HISTORY</div>'
+          +'<div style="display:flex;gap:0;flex-wrap:nowrap;align-items:flex-end;width:100%">'+pctDots+'</div>'
         +'</div>'
         :'';
 
@@ -10632,7 +10636,7 @@ function renderBudgetTab(){
       // Fixed-scale bar: actual spend (uncapped) + budget/average ticks (merged when close together)
       const showAvg=!gated&&m.avg12>0;
       const{fillPct,ticksHTML,tickLabelsHTML}=barTicksHTML(budget,m.avg12,spent,showAvg);
-      const barTickLabelsHTML=`<div class="bar-tick-labels" style="display:none">${tickLabelsHTML}</div>`;
+      const barTickLabelsHTML=`<div class="bar-tick-labels">${tickLabelsHTML}</div>`;
 
       // Pre-build all HTML snippets to avoid nested template literals
       const accentDiv=accentColor
@@ -10642,7 +10646,7 @@ function renderBudgetTab(){
 
       return`<div data-card style="background:${tc('#0F172A','#FFFFFF')};border:1px solid ${borderColor};border-radius:10px;display:flex">
         ${accentDiv}
-        <div data-action="cycleBudgetRowHist" tabindex="0" role="button" aria-label="${esc(cat)}, expand or collapse 12-month history" style="flex:1;padding:.75rem 1rem;min-width:0;cursor:pointer">
+        <div data-action="openBudgetModal" data-arg="${esc(cat)}" tabindex="0" role="button" aria-label="Edit ${esc(cat)} budget" style="flex:1;padding:.75rem 1rem;min-width:0;cursor:pointer">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:.4rem" data-stop="1">
             <div class="flex-center gap-8" style="min-width:0">
               <div style="width:10px;height:10px;border-radius:2px;background:${catColor};flex-shrink:0"></div>
@@ -10656,11 +10660,9 @@ function renderBudgetTab(){
               <div style="text-align:right">
                 ${amountHTML}
               </div>
-              <button data-action="openBudgetModal" data-arg="${esc(cat)}" data-stop="1" style="background:none;border:1px solid var(--border-mid);border-radius:5px;color:var(--text-muted);cursor:pointer;font-size:13px;padding:3px 6px;line-height:1;flex-shrink:0" title="Edit budget" type="button">✏️</button>
-              <button data-action="removeBudget" data-arg="${esc(cat)}" data-stop="1" style="background:none;border:1px solid var(--border-mid);border-radius:5px;color:var(--text-muted);cursor:pointer;font-size:13px;padding:3px 6px;line-height:1;flex-shrink:0" title="Remove budget" type="button">🗑️</button>
             </div>
           </div>
-          <div class="bar-tick-wrap" style="position:relative;margin-bottom:4px">
+          <div class="bar-tick-wrap" style="position:relative;margin-bottom:20px">
             <div style="background:${tc('#334155','#E2E8F0')};border-radius:4px;height:7px;overflow:hidden">
               <div style="height:100%;width:${fillPct}%;background:${color};border-radius:4px;transition:width .3s"></div>
             </div>
@@ -10671,7 +10673,7 @@ function renderBudgetTab(){
             <div style="font-size:11px;color:${bottomLeftColor};">${bottomLeftHTML}</div>
             <div style="font-size:12px;font-weight:700;color:${bottomRightColor}">${bottomRightHTML}</div>
           </div>
-          ${histHTML.replace('data-state=','data-hist data-state=')}
+          ${histHTML}
         </div>
       </div>`;
   }
