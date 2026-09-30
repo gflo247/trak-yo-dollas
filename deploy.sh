@@ -180,6 +180,32 @@ rsync -a \
   --exclude='package-lock.json' \
   . _cf_deploy/
 
+# Minify the app shell — strips comments (including internal dev notes) and
+# whitespace, and runs Terser on the inline JS/CSS. mangle:false is required:
+# the dispatch layer calls functions by name via window[fn], so renaming them
+# would silently break every data-action handler. CSP hashes are recomputed
+# on the minified output below — this must come BEFORE the hash step, not after.
+echo "=== Minifying trakyodollas.html ==="
+node_modules/.bin/html-minifier-terser _cf_deploy/trakyodollas.html \
+  --collapse-whitespace \
+  --remove-comments \
+  --minify-css true \
+  --minify-js '{"mangle":false,"compress":true}' \
+  -o _cf_deploy/trakyodollas.html
+
+# Verify the minified output parses — Terser can theoretically emit broken JS
+# for edge-case inputs (nested template literals, unusual regex), so check
+# before it reaches prod rather than finding out in the browser.
+echo "=== Checking minified output syntax ==="
+python3 scripts/check-syntax.py _cf_deploy/trakyodollas.html
+
+# Recompute CSP hashes on the minified file — the hashes computed above on the
+# source no longer match after minification, so the deployed file needs its own
+# hash set. index.html and privacy.html are not minified, so their hashes
+# (already updated in the source above) survive rsync unchanged.
+echo "=== Recomputing CSP hashes on minified trakyodollas.html ==="
+python3 scripts/update-csp-hashes.py _cf_deploy/trakyodollas.html
+
 # Stamp sw.js with a version string so every deploy busts the cache.
 # CRITICAL regression found in the 14th adversarial pass: the portability
 # fix below (temp-file form instead of BSD-only `sed -i ''`) was made in the

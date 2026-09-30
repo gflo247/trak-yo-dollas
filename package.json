@@ -5,5 +5,8 @@
   "description": "trak-yo-dolla$ — private, local-first money tracking",
   "scripts": {
     "test": "node --test"
+  },
+  "devDependencies": {
+    "html-minifier-terser": "^7.2.0"
   }
 }
