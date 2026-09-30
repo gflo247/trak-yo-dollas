@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-P0qnOOpQesE0HIdRrrZDfO2YQj7XsmThqaU+qK5j0nk=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-AAgO9ldHZKblUWieplmolXPTcc0uZ4yKO4TeI6G1Who=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -14104,8 +14104,23 @@ function confirmTxImport(){
     // date|desc|amount without card so relabeling a source still dedupes
     // correctly. Rows already removed by the replace-mode filter above are
     // not in the Set, so they can always be re-imported cleanly.
-    const _existingKeys=new Set(state.transactions.map(t=>`${t.date}|${t.desc}|${t.amount}`));
-    const _dedupedParsed=importParsed.filter(t=>!_existingKeys.has(`${t.date}|${t.desc}|${t.amount}`));
+    // Count-based rather than Set-based: if state already has N copies of a
+    // key (e.g. two identical $4.50 coffees on the same day), an overlapping
+    // reimport with N+1 copies correctly imports 1 new one instead of
+    // skipping all N+1. A Set would collapse the count to 1 and skip all.
+    const _existingCounts=new Map();
+    for(const t of state.transactions){
+      const k=`${t.date}|${t.desc}|${t.amount}`;
+      _existingCounts.set(k,(_existingCounts.get(k)||0)+1);
+    }
+    const _seenInBatch=new Map();
+    const _dedupedParsed=importParsed.filter(t=>{
+      const k=`${t.date}|${t.desc}|${t.amount}`;
+      const already=_existingCounts.get(k)||0;
+      const seen=_seenInBatch.get(k)||0;
+      if(seen<already){_seenInBatch.set(k,seen+1);return false;}
+      return true;
+    });
     skippedDupCount=importParsed.length-_dedupedParsed.length;
     // Assign IDs and stamp current source label onto card (user may have edited it after parsing)
     newTxs=_dedupedParsed.map(t=>({...t,card:source,id:state.nextId++}));

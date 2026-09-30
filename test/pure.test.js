@@ -2625,7 +2625,7 @@ test("import-success-modal has a #import-success-no-account nudge box, hidden by
 });
 test("confirmTxImport: shows the no-matching-account nudge only when no account's name matches this import's source label (case-insensitively)", () => {
   const source = readSource();
-  const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,12500}?\n}\n/);
+  const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,13000}?\n}\n/);
   assert.ok(fnMatch, "confirmTxImport() should exist");
   assert.match(
     fnMatch[0],
@@ -3690,7 +3690,7 @@ test("renderSpendChart: the activeCats branch's 'Peak month' tooltip flag uses a
 // source-pattern only. ──
 test("confirmTxImport: auto-registers any imported transaction's category that isn't already in getAllCats() as a new custom category", () => {
   const source = readSource();
-  const fnMatch = source.match(/_existingKeys=new Set[\s\S]{0,4100}?\n  \}\);/);
+  const fnMatch = source.match(/_existingCounts=new Map[\s\S]{0,4400}?\n  \}\);/);
   assert.ok(fnMatch, "confirmTxImport()'s mutateTransactions block should exist");
   assert.match(
     fnMatch[0],
@@ -3741,7 +3741,7 @@ test("confirmTxImport: re-derives catFromUserRule categories via community rules
     /const wasFirstRealSave=!state\.hasRealData;/,
     "confirmTxImport() should capture whether this is a first-real-save transition before _replaceDemoDataWithReal() runs"
   );
-  const fnMatch = source.match(/_existingKeys=new Set[\s\S]{0,4100}?\n  \}\);/);
+  const fnMatch = source.match(/_existingCounts=new Map[\s\S]{0,4400}?\n  \}\);/);
   assert.ok(fnMatch, "confirmTxImport()'s mutateTransactions block should exist");
   assert.match(
     fnMatch[0],
@@ -3762,6 +3762,47 @@ test("confirmTxImport: re-derives catFromUserRule categories via community rules
   const registerIdx = fnMatch[0].indexOf("const knownCats=");
   assert.ok(rederiveIdx > -1 && stripIdx > -1 && registerIdx > -1, "all three steps should exist");
   assert.ok(rederiveIdx < registerIdx && stripIdx < registerIdx, "re-derivation and stripping must both happen before the auto-register step reads t.cat");
+});
+
+// ── confirmTxImport() dedup behavior ─────────────────────────────────
+// Verifies the count-based dedup logic (not just Set membership) so that
+// two identical charges on the same day both survive a first import, and
+// a reimport of an overlapping CSV with N+1 copies correctly imports 1.
+// Source-pattern only -- confirmTxImport() is DOM-heavy.
+test("confirmTxImport dedup: uses count-based Map, not a Set, so N existing + N+1 incoming imports exactly 1 new row", () => {
+  const source = readSource();
+  // Count-based approach: _existingCounts tracks how many of each key exist
+  // in state, _seenInBatch tracks how many of that key have already been
+  // allowed through in this import pass.
+  assert.match(
+    source,
+    /_existingCounts=new Map\(\);\s*for\(const t of state\.transactions\)\{[\s\S]{0,200}?_existingCounts\.set\(k,\(_existingCounts\.get\(k\)\|\|0\)\+1\)/,
+    "dedup should build a count Map from state.transactions, not a Set"
+  );
+  assert.match(
+    source,
+    /_seenInBatch=new Map\(\);\s*const _dedupedParsed=importParsed\.filter/,
+    "dedup should track how many of each key have been let through in the current batch"
+  );
+  assert.match(
+    source,
+    /const seen=_seenInBatch\.get\(k\)\|\|0;\s*if\(seen<already\)\{_seenInBatch\.set\(k,seen\+1\);return false;\}/,
+    "a row should be skipped only if the batch has not yet consumed all existing copies of that key"
+  );
+});
+
+test("confirmTxImport dedup: key is date|desc|amount with no card field, so relabeling a source does not create duplicates", () => {
+  const source = readSource();
+  assert.match(
+    source,
+    /const k=`\$\{t\.date\}\|\$\{t\.desc\}\|\$\{t\.amount\}`/,
+    "dedup key must be date|desc|amount — no card/source field"
+  );
+  // Confirm the key format is used consistently in both the count-build
+  // loop and the filter.
+  const keyPattern = /const k=`\$\{t\.date\}\|\$\{t\.desc\}\|\$\{t\.amount\}`/g;
+  const matches = source.match(keyPattern) || [];
+  assert.ok(matches.length >= 2, "the same key expression should appear in both the count-build loop and the filter (found " + matches.length + ")");
 });
 
 // Finding 3 (MEDIUM-LOW): loadDemoProfile() deep-copies state.accounts
@@ -3876,7 +3917,7 @@ test("confirmTxImport: the demo-session-wipe branch delegates to the shared _rep
   const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,2700}?_replaceDemoDataWithReal\(\);/);
   assert.ok(fnMatch, "confirmTxImport() should call _replaceDemoDataWithReal()");
   assert.doesNotMatch(
-    source.match(/function confirmTxImport\(\)\{[\s\S]{0,7200}?\n  closeModals\(\);/)[0],
+    source.match(/function confirmTxImport\(\)\{[\s\S]{0,7800}?\n  closeModals\(\);/)[0],
     /state\.income=\{method:null,monthlyAmount:0\};/,
     "confirmTxImport() itself should no longer hand-roll the income reset -- it's now inside the shared helper"
   );
@@ -4300,7 +4341,7 @@ test("saveHistoricalSnapshot: has the demo-preview guard, wipes demo data before
 // matching those three. Found and fixed August 2026. ──
 test("confirmTxImport()/saveTx()/saveSnapshot()/saveHistoricalSnapshot() all call renderAll() after their demo-to-real wipe, not a narrower render subset that omits the Net Worth tab", () => {
   const source = readSource();
-  const confirmTxImportSrc = source.match(/function confirmTxImport\(\)\{[\s\S]{0,12500}?\n}\n/)[0];
+  const confirmTxImportSrc = source.match(/function confirmTxImport\(\)\{[\s\S]{0,13000}?\n}\n/)[0];
   assert.match(
     confirmTxImportSrc,
     /state\.hasRealData=true;\s*hideDemoBadge\(\);\s*\/\/[\s\S]{0,1400}?renderAll\(\);\s*\/\/ Show post-import success modal/,
