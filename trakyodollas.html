@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-OvptPISfrlLkh6l0t15LSY7EwEGzjBGmAivH/ZkE3R8=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-6JnUHrhbpccIcky6LTPgK5Pd3049KHyDLsNRYUc/2a4=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -10733,7 +10733,11 @@ function renderBudgetTab(){
         projColor=projected>budget?'#F87171':'#34D39988';
       }
       const amountHTML=`<span style="font-size:14px;font-weight:800;color:${color}">${fmt(spent)}</span><span class="text-muted-sm"> / ${fmt(budget)}</span>${projFmt?`<span style="font-size:10px;font-weight:600;color:${projColor};margin-left:6px">${projFmt}</span>`:''}`;
-      const badgeHTML=over?`<span style="font-size:10px;font-weight:700;color:var(--accent-red);background:#F8717118;border:1px solid #F8717133;border-radius:4px;padding:1px 5px">${fmt(spent-budget)} over</span>`
+      // Math.max(...,1) -- classifyBudgetStatus's epsilon guard fires at spent>budget+0.005,
+      // so spent-budget can be as small as ~$0.006. fmt() rounds to whole dollars, so any
+      // overspend under $0.50 would display as "$0 over". Clamp to $1 so the badge never
+      // reads nonsensically -- a real overspend, however small, shows at least "$1 over".
+      const badgeHTML=over?`<span style="font-size:10px;font-weight:700;color:var(--accent-red);background:#F8717118;border:1px solid #F8717133;border-radius:4px;padding:1px 5px">${fmt(Math.max(spent-budget,1))} over</span>`
         :atRisk?`<span style="font-size:10px;font-weight:700;color:var(--accent-amber);background:#FBBF2418;border:1px solid #FBBF2433;border-radius:4px;padding:1px 5px">${fmt(left)} left</span>`:'';
       // Fixed-scale bar: actual spend (uncapped) + budget/average ticks (merged when close together)
       const showAvg=!gated&&m.avg12>0;
