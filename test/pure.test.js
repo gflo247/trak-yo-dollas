@@ -3521,7 +3521,7 @@ test("fmt/fmtD/fmtH raw param is applied at every non-D3, non-innerHTML sink: .t
 // pass). openBudgetModal() itself is DOM-heavy; source-pattern only. ──
 test("openBudgetModal: coerces cat to a string before checking falsiness, so a category literally named \"0\" isn't mistaken for \"no cat specified\"", () => {
   const source = readSource();
-  const fnMatch = source.match(/function openBudgetModal\(cat\)\{[\s\S]{0,1600}?\n\}/);
+  const fnMatch = source.match(/function openBudgetModal\(cat\)\{[\s\S]{0,2000}?\n\}/);
   assert.ok(fnMatch, "openBudgetModal() should exist");
   const coerceIdx = fnMatch[0].search(/if\(cat!==undefined\)cat=String\(cat\);/);
   const falsyCheckIdx = fnMatch[0].search(/if\(!cat\)\{/);

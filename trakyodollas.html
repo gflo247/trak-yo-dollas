@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-sqKX9QIjvtSv3Sj1aotqSsRxlEPsmqXYKqs5dKudGeU=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-NhFB085nmhwBKK7Q+JtRLIssFIlZOheYGwcXyTWSr6k=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -9067,7 +9067,7 @@ function openBudgetModal(cat){
   if(cat!==undefined)cat=String(cat);
   // If no cat specified, pick the first unbudgeted category with spend, or first category
   if(!cat){
-    const withSpend=allCats.filter(c=>!state.budgets[c]&&Object.keys(MONTHLY).some(m=>getCatMonthSpend(c,m)>0));
+    const withSpend=allCats.filter(c=>!state.budgets[c]&&!state.excludedCats.has(c)&&Object.keys(MONTHLY).some(m=>getCatMonthSpend(c,m)>0));
     cat=withSpend[0]||allCats.find(c=>!state.budgets[c])||allCats[0]||'Other';
   }
   // Populate category select
@@ -10516,7 +10516,6 @@ function renderBudgetTab(){
   const summaryColor=overallPct>100?'#F87171':overallPct>=warnPct?'#FBBF24':'#34D399';
 
   const totalUnbudgeted=unbudgetedCats.reduce((s,c)=>s+(spendByCat[c]||0),0);
-  const totalAllSpent=totalSpent+totalUnbudgeted;
 
   // 12-month trailing history — "Unusual" sort and the "your average" tick need 12mo of prior data
   const histMonths=getBudgetHistMonths(ym);
@@ -10805,12 +10804,15 @@ function renderBudgetTab(){
   }
   rows.innerHTML=rowsHTML;
   const unbudgetedEl=document.getElementById('budget-unbudgeted');
-  if(unbudgetedEl&&unbudgetedCats.length){
-    const unbudgetedTotal=unbudgetedCats.reduce((s,c)=>s+(spendByCat[c]||0),0);
+  // Gate on totalUnbudgeted>0, not unbudgetedCats.length -- a category with a net
+  // refund month has length>0 but a negative total, producing a confusing
+  // "−$X unbudgeted" header. Using the same gate as the hero chip keeps both
+  // consistent and avoids showing the section when actual spend is zero/negative.
+  if(unbudgetedEl&&totalUnbudgeted>0){
     unbudgetedEl.innerHTML=`
       <div style="background:var(--bg-card);border:1px solid #FBBF2433;border-radius:10px;padding:.75rem 1rem;margin-top:.25rem">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
-          <div style="font-size:12px;font-weight:700;color:var(--accent-amber)">${fmt(unbudgetedTotal)} unbudgeted this month</div>
+          <div style="font-size:12px;font-weight:700;color:var(--accent-amber)">${fmt(totalUnbudgeted)} unbudgeted this month</div>
           <div style="font-size:10px;color:var(--text-muted)">${unbudgetedCats.length} ${unbudgetedCats.length===1?'category':'categories'} · click to set a limit</div>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:6px">
