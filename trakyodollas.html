@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-NhFB085nmhwBKK7Q+JtRLIssFIlZOheYGwcXyTWSr6k=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-8K+QhKJirqzKur/EtC4uhIFUw7UTD/Xumi8r4BCBeBM=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -9101,8 +9101,17 @@ function _refreshBudgetModalContext(cat){
   if(removeBtn)removeBtn.classList.toggle('hidden',!state.budgets[cat]);
   if(removeConfirm)removeConfirm.classList.add('hidden');
   const ctx=document.getElementById('budget-modal-context');
+  // Current-month spend -- shown in the modal so mobile users (who can't hover
+  // the bar tooltip) still see where they stand this month when they tap to edit.
+  const thisMonthSpent=ym?getCatMonthSpend(cat,ym):0;
+  const cur=state.budgets[cat];
+  const thisPct=cur&&thisMonthSpent>0?Math.min(Math.round(thisMonthSpent/cur*100),999):null;
+  const thisMonthLine=thisMonthSpent>0
+    ?(cur
+      ?`<br><span style="font-size:11px;color:var(--text-muted)">This month: <strong style="color:var(--text-primary)">${fmt(thisMonthSpent)}</strong> of ${fmt(cur)} — ${thisPct}% used</span>`
+      :`<br><span style="font-size:11px;color:var(--text-muted)">This month: <strong style="color:var(--text-primary)">${fmt(thisMonthSpent)}</strong></span>`)
+    :'';
   if(avg>0){
-    const cur=state.budgets[cat];
     // Divides by avg, not cur -- matches the identical "% above/below avg"
     // phrasing's convention elsewhere in the file (the Trend chart's
     // tooltip, ~line 5656: (totals[i]-rolling[i])/rolling[i]). Dividing by
@@ -9111,10 +9120,10 @@ function _refreshBudgetModalContext(cat){
     // under avg" via the old formula, vs. the correct/consistent "50%
     // under avg"). Found in the 71st adversarial pass.
     ctx.innerHTML=cur
-      ?`Avg spend: <strong style="color:var(--text-primary)">${fmt(avg)}/mo</strong> · current budget is ${avg>cur?`<span style="color:var(--accent-red)">${Math.round((avg-cur)/avg*100)}% under avg</span>`:`<span style="color:var(--accent-green)">${Math.round((cur-avg)/avg*100)}% above avg</span>`}`
-      :`Avg spend: <strong style="color:var(--text-primary)">${fmt(avg)}/mo</strong>`;
+      ?`Avg spend: <strong style="color:var(--text-primary)">${fmt(avg)}/mo</strong> · current budget is ${avg>cur?`<span style="color:var(--accent-red)">${Math.round((avg-cur)/avg*100)}% under avg</span>`:`<span style="color:var(--accent-green)">${Math.round((cur-avg)/avg*100)}% above avg</span>`}${thisMonthLine}`
+      :`Avg spend: <strong style="color:var(--text-primary)">${fmt(avg)}/mo</strong>${thisMonthLine}`;
   } else {
-    ctx.innerHTML='No spending history yet for this category.';
+    ctx.innerHTML=`No spending history yet for this category.${thisMonthLine}`;
   }
 }
 function saveBudget(){
@@ -10728,8 +10737,6 @@ function renderBudgetTab(){
         :atRisk?'<span style="font-size:10px;font-weight:700;color:var(--accent-amber);background:#FBBF2418;border:1px solid #FBBF2433;border-radius:4px;padding:1px 5px">AT RISK</span>':'';
       const bottomLeftHTML=over?(fmt(spent-budget)+" over budget"):(fmt(left)+" remaining");
       const bottomLeftColor=over?'#F87171':'var(--text-muted)';
-      const bottomRightHTML=`${pct}%`;
-      const bottomRightColor=color;
 
       // Fixed-scale bar: actual spend (uncapped) + budget/average ticks (merged when close together)
       const showAvg=!gated&&m.avg12>0;
@@ -10760,17 +10767,14 @@ function renderBudgetTab(){
               </div>
             </div>
           </div>
-          <div class="bar-tick-wrap" style="position:relative;margin-bottom:20px">
+          <div class="bar-tick-wrap" title="${pct}% of budget used this month" style="position:relative;margin-bottom:20px">
             <div style="background:${tc('#334155','#E2E8F0')};border-radius:4px;height:7px;overflow:hidden">
               <div style="height:100%;width:${fillPct}%;background:${color};border-radius:4px;transition:width .3s"></div>
             </div>
             ${ticksHTML}
             ${barTickLabelsHTML}
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
-            <div style="font-size:11px;color:${bottomLeftColor};">${bottomLeftHTML}</div>
-            <div style="font-size:12px;font-weight:700;color:${bottomRightColor}">${bottomRightHTML}</div>
-          </div>
+          <div style="font-size:11px;color:${bottomLeftColor};margin-bottom:2px">${bottomLeftHTML}</div>
           ${histHTML}
         </div>
       </div>`;

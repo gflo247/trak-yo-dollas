@@ -1344,6 +1344,7 @@ test("_refreshBudgetModalContext: '% under/above avg' divides by avg, not the bu
     getBudgetMonth: () => "2026-07",
     getBudgetHistMonths: () => [],
     avgSpendOverMonths: () => 200,
+    getCatMonthSpend: () => 0,
     fmt: (n) => String(n),
     state: { budgets: { Groceries: 100 } },
   };
@@ -1373,6 +1374,7 @@ function refreshBudgetModalContextCtx(budgets, avg) {
       getBudgetMonth: () => "2026-07",
       getBudgetHistMonths: () => [],
       avgSpendOverMonths: () => avg,
+      getCatMonthSpend: () => 0,
       fmt: (n) => String(n),
       state: { budgets },
     },
@@ -1409,6 +1411,7 @@ function openStaleBudgetModalCtx(existingBudget) {
       getBudgetMonth: () => "2026-07",
       getBudgetHistMonths: () => [],
       avgSpendOverMonths: () => 0,
+      getCatMonthSpend: () => 0,
       esc: (s) => String(s),
       fmt: (n) => String(n),
       MONTHLY: {},
@@ -1418,6 +1421,8 @@ function openStaleBudgetModalCtx(existingBudget) {
           if (id === "budget-cat-select") return { innerHTML: "", onchange: null };
           if (id === "budget-modal") return { classList: { remove: () => {} }, style: { setProperty: () => {} } };
           if (id === "budget-modal-context") return { set innerHTML(v) {}, get innerHTML() { return ""; } };
+          if (id === "budget-remove-btn") return { classList: { toggle: () => {} } };
+          if (id === "budget-remove-confirm") return { classList: { add: () => {} } };
           return null;
         },
       },
