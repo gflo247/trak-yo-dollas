@@ -190,7 +190,7 @@ node_modules/.bin/html-minifier-terser _cf_deploy/trakyodollas.html \
   --collapse-whitespace \
   --remove-comments \
   --minify-css true \
-  --minify-js '{"mangle":false,"compress":true}' \
+  --minify-js '{"mangle":false,"compress":true,"format":{"comments":false}}' \
   -o _cf_deploy/trakyodollas.html
 
 # Verify the minified output parses — Terser can theoretically emit broken JS

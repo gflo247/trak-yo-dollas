@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-oZHESSLmtLgEKFUJip4AbX8bet9YJb1O9S2oW/lb+64=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-orOr1OZyiYIZbpTaom3tgEEKzWjw6jFAw8ko1Xsdq2E=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -1034,10 +1034,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <!-- The border-top divider stays full width (a section rule spanning the
        whole tab); .list-col wraps just the content inside it, so the line
        itself doesn't also shrink to 800px and float oddly in the middle. -->
-  <!-- #acct-csv-modal, openAcctCsvModal(), and the whole parseCsvAccounts()/
-       handleCsv()/importCsvText() chain behind it were fully built but had no
-       trigger anywhere in the UI — dead since the modal was first written,
-       missed by 76 straight passes. Found in the 77th adversarial pass. -->
+
   <div style="margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--border)">
    <div class="list-col">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
@@ -4955,11 +4952,15 @@ function renderRetirementRunway(){
   }
   const cushionLabel=months===null?'50+ years':(()=>{const y=Math.floor(months/12),m=months%12;return y>0?(m>0?`${y}y ${m}mo`:`${y}y`):`${months}mo`;})();
 
+  // One decimal place for spend so the division visibly checks out
+  // (fmtC rounds to the nearest $1k, which can make "$31k ÷ $5k = 5mo" look wrong)
+  const sym=esc(state.currency||'$');
+  const avgSpendFmt=avgSpend>=1e3?sym+parseFloat((avgSpend/1e3).toFixed(1))+'k':sym+Math.round(avgSpend);
   el.innerHTML=`
     <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem 1rem;display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
       <div style="flex-shrink:0">
         <div style="font-size:13px;font-weight:700;color:var(--accent-blue-light);margin-bottom:.25rem">🛟 Cushion: about ${cushionLabel} of expenses</div>
-        <div class="text-muted-sm">${fmtC(liquid)} liquid ÷ ${fmtC(Math.round(avgSpend))}/mo spend</div>
+        <div class="text-muted-sm">${fmtC(liquid)} liquid ÷ ${avgSpendFmt}/mo spend</div>
       </div>
       <div style="font-size:11.5px;color:var(--text-muted);line-height:1.6;text-align:right">Counts checking, savings, and brokerage; excludes real estate, vehicles, and anything you've marked illiquid. Uses your 12-month average spend. Assumes income stops.</div>
     </div>`;
