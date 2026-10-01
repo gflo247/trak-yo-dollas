@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-6JnUHrhbpccIcky6LTPgK5Pd3049KHyDLsNRYUc/2a4=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-wrbBhH2PrlZYpWLDwV5grGMgcmZyEb+7W8/WK5kuFIk=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -10739,6 +10739,11 @@ function renderBudgetTab(){
       // reads nonsensically -- a real overspend, however small, shows at least "$1 over".
       const badgeHTML=over?`<span style="font-size:10px;font-weight:700;color:var(--accent-red);background:#F8717118;border:1px solid #F8717133;border-radius:4px;padding:1px 5px">${fmt(Math.max(spent-budget,1))} over</span>`
         :atRisk?`<span style="font-size:10px;font-weight:700;color:var(--accent-amber);background:#FBBF2418;border:1px solid #FBBF2433;border-radius:4px;padding:1px 5px">${fmt(left)} left</span>`:'';
+      // On-track current-month runway — plain text, no pill, so it reads as
+      // informational rather than an alert. isCurrent-gated: for a past month
+      // the number isn't actionable and the bar already tells the story.
+      const leftTextHTML=(!over&&!atRisk&&isCurrent&&left>0)
+        ?`<span style="font-size:10px;font-weight:600;color:#34D39988">${fmt(left)} left</span>`:'';
       // Fixed-scale bar: actual spend (uncapped) + budget/average ticks (merged when close together)
       const showAvg=!gated&&m.avg12>0;
       const{fillPct,ticksHTML,tickLabelsHTML}=barTicksHTML(budget,m.avg12,spent,showAvg);
@@ -10757,7 +10762,7 @@ function renderBudgetTab(){
             <div class="flex-center gap-8" style="min-width:0">
               <div style="width:10px;height:10px;border-radius:2px;background:${catColor};flex-shrink:0"></div>
               <span class="truncate" style="font-size:13px;font-weight:700;color:var(--text-primary)" title="${esc(cat)}">${esc(cat)}</span>
-              ${badgeHTML}
+              ${badgeHTML}${leftTextHTML}
               ${avgBadgeHTML}
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0" data-stop="1">
