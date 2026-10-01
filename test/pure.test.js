@@ -2171,8 +2171,8 @@ test("_resetSessionFiltersForDataReplace: resets every session-scoped filter fie
   const source = readSource();
   assert.match(
     source,
-    /function _resetSessionFiltersForDataReplace\(\)\{\s*_bizFilter='all';\s*state\.activeCats=new Set\(\);\s*state\.dashFilter=null;\s*state\.searchQuery='';\s*const searchEl=document\.getElementById\('tx-search'\);\s*if\(searchEl\)searchEl\.value='';\s*document\.getElementById\('search-clear-btn'\)\?\.classList\.add\('hidden'\);\s*state\.showExcluded=false;[\s\S]{0,700}?if\(!\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\)\{\s*try\{localStorage\.removeItem\('trakyo_show_excl'\);\}catch\(e\)\{\}\s*\}\s*_clearVendorDayFiltersForDataReplace\(\);\s*\}/,
-    "_resetSessionFiltersForDataReplace() should reset _bizFilter/activeCats/dashFilter/searchQuery (+ DOM), showExcluded (+ localStorage key), and call _clearVendorDayFiltersForDataReplace()"
+    /function _resetSessionFiltersForDataReplace\(\)\{\s*_bizFilter='all';\s*state\.activeCats=new Set\(\);\s*state\.dashFilter=null;\s*state\.searchQuery='';\s*const searchEl=document\.getElementById\('tx-search'\);\s*if\(searchEl\)searchEl\.value='';\s*document\.getElementById\('search-clear-btn'\)\?\.classList\.add\('hidden'\);\s*state\.showExcluded=false;[\s\S]{0,700}?if\(!\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\)\{\s*try\{localStorage\.removeItem\('trakyo_show_excl'\);\}catch\(e\)\{\}\s*\}\s*_clearVendorDayFiltersForDataReplace\(\);\s*_expandedIncomeMonths\.clear\(\);\s*\}/,
+    "_resetSessionFiltersForDataReplace() should reset _bizFilter/activeCats/dashFilter/searchQuery (+ DOM), showExcluded (+ localStorage key), call _clearVendorDayFiltersForDataReplace(), and clear _expandedIncomeMonths"
   );
 });
 test("importBackup, confirmTxImport, and loadDemoProfile all call the shared _resetSessionFiltersForDataReplace() helper", () => {
@@ -2412,6 +2412,7 @@ test("_resetSessionFiltersForDataReplace: does NOT remove trakyo_show_excl from 
     document: { getElementById: () => null },
     localStorage: { removeItem: () => { removed = true; } },
     _treemapPrevActiveCats: null,
+    _expandedIncomeMonths: new Set(["2026-09"]),
   };
   const { _resetSessionFiltersForDataReplace } = loadFunctions(["_resetSessionFiltersForDataReplace", "_clearVendorDayFiltersForDataReplace"], ctx);
   _resetSessionFiltersForDataReplace();
@@ -2430,6 +2431,7 @@ test("_resetSessionFiltersForDataReplace: DOES remove trakyo_show_excl from loca
     document: { getElementById: () => null },
     localStorage: { removeItem: () => { removed = true; } },
     _treemapPrevActiveCats: null,
+    _expandedIncomeMonths: new Set(["2026-09"]),
   };
   const { _resetSessionFiltersForDataReplace } = loadFunctions(["_resetSessionFiltersForDataReplace", "_clearVendorDayFiltersForDataReplace"], ctx);
   _resetSessionFiltersForDataReplace();

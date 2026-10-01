@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-ZxJKAeyACw847YCx2ANwKKvuIxmSBY1V1w8VE2ODQsM=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-oZHESSLmtLgEKFUJip4AbX8bet9YJb1O9S2oW/lb+64=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -379,7 +379,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .search-icon{flex-shrink:0;color:var(--text-muted);opacity:.55;line-height:0;padding-right:8px}
 .search-input{flex:1;background:none;border:none;padding:8px 0;font-size:12px;color:var(--text-primary);outline:none;min-width:0}
 .search-input::placeholder{color:var(--text-dim)}
-.search-clear{flex-shrink:0;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:15px;padding:2px 4px;line-height:1}
+.search-clear{flex-shrink:0;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:15px;padding:2px 4px 2px 10px;line-height:1}
 .search-clear:hover{color:var(--text-secondary)}
 /* sort */
 .sort-btn{border:1px solid var(--border-mid);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:600;cursor:pointer;background:none;color:var(--text-muted)}
@@ -3092,6 +3092,7 @@ function _resetSessionFiltersForDataReplace(){
     try{localStorage.removeItem('trakyo_show_excl');}catch(e){}
   }
   _clearVendorDayFiltersForDataReplace();
+  _expandedIncomeMonths.clear();
 }
 function _clearVendorDayFiltersForDataReplace(){
   if(state.activeDate){
@@ -7677,7 +7678,50 @@ function updateSortButtons(){
 }
 
 function renderTxList(){
-  const txs=getSortedTxs(),shown=txs.slice(0,showTxN);
+  const txs=getSortedTxs();
+
+  // When income is included, group all income transactions for a given month
+  // into a single collapsible summary row that appears at the position of the
+  // first income transaction for that month. showTxN counts display rows, not
+  // raw transactions, so a collapsed group counts as 1 toward the limit.
+  function buildDisplayList(rawTxs){
+    // Pre-collect income groups by month
+    const incomeByMonth={};
+    rawTxs.forEach(t=>{
+      if(!t.isIncome)return;
+      const m=t.date.slice(0,7);
+      if(!incomeByMonth[m])incomeByMonth[m]=[];
+      incomeByMonth[m].push(t);
+    });
+    // Months that auto-expand because the search matches an income transaction
+    const autoExpand=new Set();
+    if(state.searchQuery){
+      const q=state.searchQuery.toLowerCase();
+      Object.entries(incomeByMonth).forEach(([m,mTxs])=>{
+        if(mTxs.some(t=>t.desc.toLowerCase().includes(q)||resolveVendor(t.desc).toLowerCase().includes(q)))autoExpand.add(m);
+      });
+    }
+    const seen=new Set();
+    const display=[];
+    rawTxs.forEach(t=>{
+      if(!t.isIncome){display.push({type:'tx',tx:t});return;}
+      const m=t.date.slice(0,7);
+      if(seen.has(m))return; // non-first income for this month — handled by group
+      seen.add(m);
+      const group=incomeByMonth[m];
+      if(_expandedIncomeMonths.has(m)||autoExpand.has(m)){
+        // Header row lets the user collapse the group back
+        display.push({type:'income-header',month:m,txs:group,total:group.reduce((s,gt)=>s+gt.amount,0)});
+        group.forEach(gt=>display.push({type:'tx',tx:gt}));
+      } else {
+        display.push({type:'income-group',month:m,txs:group,total:group.reduce((s,gt)=>s+gt.amount,0)});
+      }
+    });
+    return display;
+  }
+
+  const displayList=buildDisplayList(txs);
+  const shown=displayList.slice(0,showTxN);
   // Always show individually-excluded transactions dimmed at bottom, independent of global toggle
   const ms=new Set(getFilteredMonths());
   const shownIds=new Set(txs.map(t=>t.id));
@@ -7764,11 +7808,33 @@ function renderTxList(){
       <div class="tx-amount" style="color:${t.isIncome?'#34D399':t.is_offset?'#34D399':'#F87171'}">${t.isIncome?'+':t.is_offset?'+':'-'}${fmtD(Math.abs(t.amount))}</div>
     </div>`;
   }
+  function buildIncomeGroupRow({month,txs:grpTxs,total}){
+    const[y,m]=month.split('-');
+    const dateLabel=`${y} ${MON3[parseInt(m)-1]}`;
+    const label=`Income · ${grpTxs.length} deposit${grpTxs.length===1?'':'s'}`;
+    return`<div class="tx-row" data-action="toggleIncomeGroup" data-arg="${month}" tabindex="0" role="button" aria-label="${dateLabel} income, ${grpTxs.length} deposit${grpTxs.length===1?'':'s'}, +${fmtD(total)}" style="opacity:.8">
+      <div class="tx-date" style="color:var(--text-muted)">${dateLabel}</div>
+      <div class="tx-desc" style="color:var(--text-muted);font-style:italic">${label} <span style="font-size:10px;opacity:.6">▶ expand</span></div>
+      <div class="tx-pct"></div>
+      <div class="tx-amount" style="color:var(--accent-green)">+${fmtD(total)}</div>
+    </div>`;
+  }
+  function buildIncomeHeaderRow({month,txs:grpTxs,total}){
+    const[y,m]=month.split('-');
+    const dateLabel=`${y} ${MON3[parseInt(m)-1]}`;
+    const label=`Income · ${grpTxs.length} deposit${grpTxs.length===1?'':'s'}`;
+    return`<div class="tx-row" data-action="toggleIncomeGroup" data-arg="${month}" tabindex="0" role="button" aria-label="Collapse ${dateLabel} income" style="opacity:.8">
+      <div class="tx-date" style="color:var(--text-muted)">${dateLabel}</div>
+      <div class="tx-desc" style="color:var(--text-muted);font-style:italic">${label} <span style="font-size:10px;opacity:.6">▼ collapse</span></div>
+      <div class="tx-pct"></div>
+      <div class="tx-amount" style="color:var(--accent-green)">+${fmtD(total)}</div>
+    </div>`;
+  }
   const exclDivider=alwaysShowExcl.length>0
     ?`<div style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase;padding:.5rem .25rem .25rem;opacity:.6">Hidden from spending (${alwaysShowExcl.length}) — click to edit &amp; restore</div>`
     :'';
-  document.getElementById('tx-list').innerHTML=shown.map(buildTxRow).join('')+exclDivider+alwaysShowExcl.map(buildTxRow).join('');
-  document.getElementById('tx-more').innerHTML=txs.length>showTxN?`<button class="btn" data-action="showMoreTx" type="button">${txs.length-showTxN} more ↓</button>`:'';
+  document.getElementById('tx-list').innerHTML=shown.map(item=>item.type==='income-group'?buildIncomeGroupRow(item):item.type==='income-header'?buildIncomeHeaderRow(item):buildTxRow(item.tx)).join('')+exclDivider+alwaysShowExcl.map(buildTxRow).join('');
+  document.getElementById('tx-more').innerHTML=displayList.length>showTxN?`<button class="btn" data-action="showMoreTx" type="button">${displayList.length-showTxN} more ↓</button>`:'';
   if(!txs.length){
     const noSources=state.transactions.length>0&&state.activeSources.size===0;
     document.getElementById('tx-list').innerHTML=noSources
@@ -7805,6 +7871,21 @@ function clearSearch(){
   state.searchQuery='';
   document.getElementById('search-clear-btn').classList.add('hidden');
   showTxN=50;renderSpendSummary();renderTxList();
+}
+
+function toggleIncomeGroup(month){
+  if(_expandedIncomeMonths.has(month)){
+    _expandedIncomeMonths.delete(month);
+  } else {
+    _expandedIncomeMonths.add(month);
+    // Expanding replaces 1 group row with (1 header + N individual) rows.
+    // If the group straddles the showTxN cutoff, the header renders but some
+    // individual rows are silently cut off. Bump showTxN by the group size so
+    // the full expansion is always visible.
+    const groupSize=getSortedTxs().filter(t=>t.isIncome&&t.date.slice(0,7)===month).length;
+    showTxN+=groupSize;
+  }
+  renderTxList();
 }
 
 /* ── FILTER / SORT ── */
@@ -11803,6 +11884,9 @@ function _ensureBusinessCategories(){
 }
 let _bizFilter='all';
 let _selectedTxIds=new Set();
+// Month keys ("2026-09") whose income group is currently expanded.
+// Session-only — no persistence needed.
+let _expandedIncomeMonths=new Set();
 function toggleIncludeIncome(){
   state.includeIncome=!state.includeIncome;
   if(state.includeIncome)_ensureBusinessCategories();
