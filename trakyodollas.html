@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-bcYjF/ippr5xPUZ2wJLvLYhVJ4dSqQUlSh9ah53WoL8=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-B4p8ETgNKq8BAfDr2bmgw+Um4Oe8Eac0d1enZgkzQzw=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -4950,7 +4950,10 @@ function renderRetirementRunway(){
     el.innerHTML=`<div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem 1rem"><div class="text-muted-sm">No cushion — liquid balance is at or below zero.</div></div>`;
     return;
   }
-  const cushionLabel=months===null?'50+ years':(()=>{const y=Math.floor(months/12),m=months%12;return y>0?(m>0?`${y}y ${m}mo`:`${y}y`):`${months}mo`;})();
+  // "+" suffix on finite values: cushion is computed by floor(), so the true
+  // value is always >= the displayed figure. "5mo+" reads as "at least 5 months",
+  // which is the right framing for a conservative emergency estimate.
+  const cushionLabel=months===null?'50+ years':(()=>{const y=Math.floor(months/12),m=months%12;return y>0?(m>0?`${y}y ${m}mo+`:`${y}y+`):`${months}mo+`;})();
 
   // One decimal place for spend so the division visibly checks out
   // (fmtC rounds to the nearest $1k, which can make "$31k ÷ $5k = 5mo" look wrong)
@@ -4959,7 +4962,7 @@ function renderRetirementRunway(){
   el.innerHTML=`
     <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem 1rem;display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
       <div style="flex-shrink:0">
-        <div style="font-size:13px;font-weight:700;color:var(--accent-blue-light);margin-bottom:.25rem">🛟 Cushion: about ${cushionLabel} of expenses</div>
+        <div style="font-size:13px;font-weight:700;color:var(--accent-blue-light);margin-bottom:.25rem" title="Rounded down to whole months — understating your cushion is the safer direction">🛟 Cushion: ${cushionLabel} of expenses</div>
         <div class="text-muted-sm">${fmtC(liquid)} liquid ÷ ${avgSpendFmt}/mo spend</div>
       </div>
       <div style="font-size:11.5px;color:var(--text-muted);line-height:1.6;text-align:right">Counts checking, savings, and brokerage; excludes real estate, vehicles, and anything you've marked illiquid. Uses your 12-month average spend. Assumes income stops.</div>
@@ -10362,8 +10365,8 @@ function renderSimulatorTab(){
     <div class="list-col">
       <div style="padding:1rem;border-radius:10px;background:var(--bg-card);margin-bottom:.75rem">
         <div>${state.simulator.overrides.length>0
-          ?`Avg monthly spend: <strong>${fmt(proj.baselineTotal)}</strong> &rarr; <strong>${fmt(proj.projectedTotal)}</strong> (${proj.delta>=0?'+':'&minus;'}${fmt(Math.abs(proj.delta))})`
-          :`Avg monthly spend: <strong>${fmt(proj.baselineTotal)}</strong>`}</div>
+          ?`${histMonths.length}-mo avg spend: <strong>${fmt(proj.baselineTotal)}</strong> &rarr; <strong>${fmt(proj.projectedTotal)}</strong> (${proj.delta>=0?'+':'&minus;'}${fmt(Math.abs(proj.delta))})`
+          :`${histMonths.length}-mo avg spend: <strong>${fmt(proj.baselineTotal)}</strong>`}</div>
         ${income>0
           ?`<div>Monthly income: ${fmt(income)} &mdash; ${state.simulator.overrides.length>0?'projected ':''} ${projectedSurplus>=0?'surplus':'deficit'}: <strong style="color:${projectedSurplus>=0?'var(--accent-green)':'var(--accent-red)'}">${fmt(Math.abs(projectedSurplus))}</strong> &nbsp;<button data-action="openIncomeModal" style="background:none;border:none;color:var(--accent-blue-light);cursor:pointer;padding:0;font-size:11px;text-decoration:underline;font-family:inherit" type="button">Edit income</button></div>`
           :`<div style="font-size:12px;color:var(--text-muted)">No income set &mdash; <button data-action="openIncomeModal" style="background:none;border:none;color:var(--accent-blue-light);cursor:pointer;padding:0;font-size:12px;text-decoration:underline;font-family:inherit" type="button">Add income estimate</button> to see surplus and goal projection</div>`}
