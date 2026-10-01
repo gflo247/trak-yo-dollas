@@ -8772,7 +8772,7 @@ function simulatorTxCtx(entriesByCatMonth) {
     }
   }
   return {
-    state: { transactions, activeSources: new Set(["chase"]) },
+    state: { transactions, activeSources: new Set(["chase"]), excludedCats: new Set() },
     _bizFilter: "all",
   };
 }
@@ -8838,6 +8838,30 @@ test("computeSimulatorProjection: a category with zero real spend and no overrid
   const proj = computeSimulatorProjection([], ["2026-06"]);
   assert.ok(proj.rows.some((r) => r.cat === "Groceries"));
   assert.ok(!proj.rows.some((r) => r.cat === "Entertainment"), "Entertainment has no spend and no override, should be dropped");
+});
+
+test("computeSimulatorProjection: excludedCats categories are dropped from baseline rows unless the user explicitly overrides them", () => {
+  const ctx = simulatorTxCtx({
+    Groceries: { "2026-06": 200 },
+    "Investment Contributions": { "2026-06": 500 },
+    Transfers: { "2026-06": 1000 },
+  });
+  ctx.getAllCats = () => ["Groceries", "Investment Contributions", "Transfers"];
+  ctx.state.excludedCats = new Set(["Investment Contributions", "Transfers"]);
+  const { computeSimulatorProjection } = loadFunctions(
+    ["computeSimulatorProjection", "avgSpendOverMonths", "getCatMonthSpend", "getTxForMonth"],
+    ctx
+  );
+  const projNoOverride = computeSimulatorProjection([], ["2026-06"]);
+  assert.ok(projNoOverride.rows.some((r) => r.cat === "Groceries"), "Groceries is not excluded, should appear");
+  assert.ok(!projNoOverride.rows.some((r) => r.cat === "Investment Contributions"), "excluded with no override — should be dropped");
+  assert.ok(!projNoOverride.rows.some((r) => r.cat === "Transfers"), "excluded with no override — should be dropped");
+  assert.equal(projNoOverride.baselineTotal, 200, "baseline should only sum non-excluded categories");
+
+  // An explicit override brings an excluded category back into rows
+  const projWithOverride = computeSimulatorProjection([{ cat: "Investment Contributions", newMonthly: 750 }], ["2026-06"]);
+  assert.ok(projWithOverride.rows.some((r) => r.cat === "Investment Contributions"), "excluded but overridden — should appear so the user can model the hypothetical");
+  assert.equal(projWithOverride.projectedTotal, 200 + 750, "projected total includes the overridden excluded category");
 });
 
 test("resolveRentMortgageCat: prefers a user's own 'Rent' custom category over the built-in 'Home' fallback", () => {

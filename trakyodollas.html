@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-orOr1OZyiYIZbpTaom3tgEEKzWjw6jFAw8ko1Xsdq2E=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-sqKX9QIjvtSv3Sj1aotqSsRxlEPsmqXYKqs5dKudGeU=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -10071,7 +10071,14 @@ function computeSimulatorProjection(overrides,histMonths){
     const hasOverride=overrideMap.has(cat);
     const projected=hasOverride?overrideMap.get(cat):avg;
     return{cat,avg,hasOverride,projected,delta:projected-avg};
-  }).filter(r=>r.avg>0||r.hasOverride);
+  // Exclude categories the user has flagged as non-spend (excludedCats: Transfers,
+  // CC Payment, Investment Contributions, Internal Transfer by default) unless the
+  // user has explicitly added an override for one -- an override means "I want to
+  // model what happens if this category costs $X/mo", which is a deliberate choice
+  // even for a transfer-like category (e.g. "what if I raise my 401k contribution?").
+  // Without this, the baseline total inflates: CC payments double-count real purchases,
+  // and Transfers/IC make "monthly spend" diverge from what the Spending tab shows.
+  }).filter(r=>(r.avg>0||r.hasOverride)&&(!state.excludedCats.has(r.cat)||r.hasOverride));
   const baselineTotal=rows.reduce((s,r)=>s+r.avg,0);
   const projectedTotal=rows.reduce((s,r)=>s+r.projected,0);
   return{rows,baselineTotal,projectedTotal,delta:projectedTotal-baselineTotal};
@@ -10460,11 +10467,12 @@ function renderBudgetTab(){
 
   // Also drop Income rows — without this, Income showed up as "unbudgeted spending" (with a
   // nonsensical "+ set limit" offer) any time Include Income was on, since only individually-
-  // excluded transactions (t.excluded) were filtered. Deliberately narrower than excluding all
-  // of state.excludedCats: Transfers/CC Payment/Investment Contributions are excluded from the
-  // Spending tab's charts but are still real outgoing spend a user may legitimately want to
-  // budget (the demo data itself ships a real budget on "Transfers") — only Income is never
-  // spend under any circumstance, so it's the one category this tab must always exclude.
+  // excluded transactions (t.excluded) were filtered. monthTx intentionally still includes
+  // Transfers/CC Payment/Investment Contributions so that a user who explicitly budgets one
+  // of those categories (e.g. a Transfers budget in the demo data) still sees their spend
+  // tracked here. The "unbudgeted spending" display section separately filters out
+  // state.excludedCats below — excluding them from the unbudgeted chip avoids a "+ set limit"
+  // nudge on savings/transfers, while leaving explicitly-budgeted rows unaffected.
   // state.activeSources check added in the 35th adversarial pass -- this
   // drives the whole tab's spendByCat/totalSpent/overallPct; was silently
   // including deselected sources' spend.
@@ -10490,7 +10498,15 @@ function renderBudgetTab(){
   const daysPct=daysPassed/daysInMonth;
 
   const budgeted=Object.entries(state.budgets).filter(([,v])=>v>0);
-  const unbudgetedCats=Object.keys(spendByCat).filter(c=>!state.budgets[c]||state.budgets[c]<=0);
+  // Exclude transfer-like categories (Transfers, CC Payment, Investment Contributions,
+  // Internal Transfer — the state.excludedCats default set) from "unbudgeted spending"
+  // unless the user has explicitly set a budget for one. Those categories are already
+  // excluded from the Spending tab's charts; surfacing them here as "unbudgeted spending"
+  // with a "+ set limit" offer prompts users to cap their savings/transfers, which is the
+  // wrong nudge. A user who deliberately wants to budget Investment Contributions can still
+  // do so via + Add budget — their explicitly-set budget row then appears in `budgeted`
+  // above and is unaffected by this filter.
+  const unbudgetedCats=Object.keys(spendByCat).filter(c=>(!state.budgets[c]||state.budgets[c]<=0)&&!state.excludedCats.has(c));
 
   const totalBudget=budgeted.reduce((s,[,v])=>s+v,0);
   const totalSpent=budgeted.reduce((s,[c])=>s+(spendByCat[c]||0),0);
