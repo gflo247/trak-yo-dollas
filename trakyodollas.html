@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-T1GVBZykwNcrXeDw+kZRxHS8k2fSXMhQWo40QOJ5Zp4=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-vvudm5vN4QGh0zoQfAIPuXPYsEBgFHjHeDM51+5WlLY=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -4976,12 +4976,41 @@ function renderRetirementRunway(){
   el.innerHTML=`
     <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem 1rem;display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
       <div style="flex-shrink:0">
-        <div style="font-size:13px;font-weight:700;color:var(--accent-blue-light);margin-bottom:.25rem" title="Rounded down to whole months — understating your cushion is the safer direction">🛟 Cushion: ${cushionLabel} of expenses</div>
+        <div style="position:relative;font-size:13px;font-weight:700;color:var(--accent-blue-light);margin-bottom:.25rem">🛟 Cushion: ${cushionLabel} of expenses <button data-action="toggleCushionRoundingTip" data-stop="1" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;padding:0 2px;vertical-align:middle;line-height:1;font-family:inherit" type="button">ⓘ</button></div>
         <div class="text-muted-sm">${fmtC(liquid)} liquid ÷ ${avgSpendFmt}/mo spend</div>
         ${windowNote}
       </div>
-      <div style="font-size:11.5px;color:var(--text-muted);line-height:1.6;text-align:right">Counts checking, savings, and brokerage; excludes real estate, vehicles, and anything you've marked illiquid. Uses your 12-month average spend. Assumes income stops.</div>
+      <div style="font-size:11.5px;color:var(--text-muted);line-height:1.6;text-align:right">Counts checking, savings, and brokerage; excludes real estate, vehicles, and anything you've marked illiquid. Assumes income stops.</div>
     </div>`;
+}
+function toggleCushionRoundingTip(undefined,btn){
+  const existing=document.getElementById('cushion-rounding-tip-pop');
+  if(existing){closeCushionRoundingTip();return;}
+  const pop=document.createElement('div');
+  pop.id='cushion-rounding-tip-pop';
+  pop.style.cssText='position:absolute;z-index:300;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:8px;padding:.5rem .75rem;min-width:200px;box-shadow:0 6px 20px #00000055;font-size:12px;color:var(--text-muted);line-height:1.5';
+  pop.innerHTML='Rounded down to whole months (safer to understate).';
+  const anchor=btn.parentElement;
+  anchor.appendChild(pop);
+  const btnRect=btn.getBoundingClientRect();
+  const anchorRect=anchor.getBoundingClientRect();
+  pop.style.top=(btnRect.bottom-anchorRect.top+4)+'px';
+  pop.style.left='0';
+  requestAnimationFrame(()=>{
+    const popRect=pop.getBoundingClientRect();
+    if(popRect.right>window.innerWidth-8){pop.style.left='auto';pop.style.right='0';}
+  });
+  setTimeout(()=>document.addEventListener('click',_cushionTipOutside,{once:true}),0);
+}
+function _cushionTipOutside(e){
+  const pop=document.getElementById('cushion-rounding-tip-pop');
+  if(pop&&!pop.contains(e.target))closeCushionRoundingTip();
+  else setTimeout(()=>document.addEventListener('click',_cushionTipOutside,{once:true}),0);
+}
+function closeCushionRoundingTip(){
+  const pop=document.getElementById('cushion-rounding-tip-pop');
+  if(pop)pop.remove();
+  document.removeEventListener('click',_cushionTipOutside);
 }
 
 // ── Net Worth widget: goal setting + chart rendering ────────────────────
@@ -10158,7 +10187,9 @@ function setSimulatorSort(s){
 function openSimulatorOverrideModal(cat){
   if(cat!==undefined)cat=String(cat);
   const latest=getLatestDataMonth();
-  const histMonths=latest?getBudgetHistMonths(latest,state.simulator.horizonMonths):[];
+  const _today=new Date();
+  const _ck=`${_today.getFullYear()}-${String(_today.getMonth()+1).padStart(2,'0')}`;
+  const histMonths=latest?getBudgetHistMonths(_ck,state.simulator.horizonMonths):[];
   const existing=new Map(state.simulator.overrides.map(o=>[o.cat,o.newMonthly]));
   const allCats=getAllCats();
   if(!cat)cat=allCats.find(c=>!existing.has(c))||allCats[0]||'Other';
@@ -10261,7 +10292,13 @@ function renderSimulatorTab(){
     return;
   }
   const horizon=state.simulator.horizonMonths;
-  const histMonths=getBudgetHistMonths(latest,horizon);
+  // Anchor to today's calendar month (same as the cushion widget) so that
+  // "12-mo avg spend" here and the cushion's avg use the same window.
+  // Using latest (last month with data) instead shifts the window one month
+  // earlier and produces a ~$200-300 divergence even when both claim "12 months".
+  const today=new Date();
+  const currentMonthKey=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+  const histMonths=getBudgetHistMonths(currentMonthKey,horizon);
   const proj=computeSimulatorProjection(state.simulator.overrides,histMonths);
   // sumIncomeForMonths(histMonths), not computePeriodSpendVsIncome() --
   // that reads getFilteredMonths() (the Spending tab's own, independent
