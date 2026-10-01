@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-B4p8ETgNKq8BAfDr2bmgw+Um4Oe8Eac0d1enZgkzQzw=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-T1GVBZykwNcrXeDw+kZRxHS8k2fSXMhQWo40QOJ5Zp4=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -4959,11 +4959,26 @@ function renderRetirementRunway(){
   // (fmtC rounds to the nearest $1k, which can make "$31k ÷ $5k = 5mo" look wrong)
   const sym=esc(state.currency||'$');
   const avgSpendFmt=avgSpend>=1e3?sym+parseFloat((avgSpend/1e3).toFixed(1))+'k':sym+Math.round(avgSpend);
+
+  // Show a note when the cushion's fixed 12-month window differs from whatever
+  // the Spending tab currently has filtered -- the cushion always uses the last
+  // 12 regardless, but a user comparing the two figures deserves to know why
+  // they don't match. Compare month sets directly (not a heuristic).
+  const today2=new Date();
+  const currentMonthKey2=`${today2.getFullYear()}-${String(today2.getMonth()+1).padStart(2,'0')}`;
+  const cushionMonths=getBudgetHistMonths(currentMonthKey2,12);
+  const spendingMonths=getFilteredMonths().filter(m=>m<currentMonthKey2);
+  const windowNote=(()=>{
+    if(cushionMonths.length===spendingMonths.length&&cushionMonths.every((m,i)=>m===spendingMonths[i]))return'';
+    return`<div style="font-size:11px;color:var(--text-muted);margin-top:4px">Cushion uses ${cushionMonths.length} months (Spending tab: ${spendingMonths.length}).</div>`;
+  })();
+
   el.innerHTML=`
     <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem 1rem;display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
       <div style="flex-shrink:0">
         <div style="font-size:13px;font-weight:700;color:var(--accent-blue-light);margin-bottom:.25rem" title="Rounded down to whole months — understating your cushion is the safer direction">🛟 Cushion: ${cushionLabel} of expenses</div>
         <div class="text-muted-sm">${fmtC(liquid)} liquid ÷ ${avgSpendFmt}/mo spend</div>
+        ${windowNote}
       </div>
       <div style="font-size:11.5px;color:var(--text-muted);line-height:1.6;text-align:right">Counts checking, savings, and brokerage; excludes real estate, vehicles, and anything you've marked illiquid. Uses your 12-month average spend. Assumes income stops.</div>
     </div>`;
