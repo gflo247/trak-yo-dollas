@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-wrbBhH2PrlZYpWLDwV5grGMgcmZyEb+7W8/WK5kuFIk=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-bcYjF/ippr5xPUZ2wJLvLYhVJ4dSqQUlSh9ah53WoL8=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -10742,8 +10742,13 @@ function renderBudgetTab(){
       // On-track current-month runway — plain text, no pill, so it reads as
       // informational rather than an alert. isCurrent-gated: for a past month
       // the number isn't actionable and the bar already tells the story.
-      const leftTextHTML=(!over&&!atRisk&&isCurrent&&left>0)
-        ?`<span style="font-size:10px;font-weight:600;color:#34D39988">${fmt(left)} left</span>`:'';
+      // left>=0.5: fmt() rounds to whole dollars, so sub-50-cent left values
+      // would display "$0 left" (same class of artifact the $0-over clamp fixes
+      // above). var(--accent-green) not a raw hex -- 8-digit hex opacity aliases
+      // (#34D39988) bypass the contrast gate's 6-digit regex and fail WCAG AA
+      // against both card backgrounds.
+      const leftTextHTML=(!over&&!atRisk&&isCurrent&&left>=0.5)
+        ?`<span style="font-size:10px;font-weight:600;color:var(--accent-green)">${fmt(left)} left</span>`:'';
       // Fixed-scale bar: actual spend (uncapped) + budget/average ticks (merged when close together)
       const showAvg=!gated&&m.avg12>0;
       const{fillPct,ticksHTML,tickLabelsHTML}=barTicksHTML(budget,m.avg12,spent,showAvg);
