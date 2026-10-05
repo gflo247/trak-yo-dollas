@@ -16,13 +16,13 @@
 ">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>How to download Fidelity transactions as a CSV file</title>
-<meta name="description" content="Step-by-step guide to exporting your Fidelity brokerage or Cash Management Account transactions as a CSV file.">
-<link rel="canonical" href="https://trakyodollas.com/guides/fidelity">
+<title>How to add investment accounts to your net worth in trak-yo-dolla$</title>
+<meta name="description" content="No CSV needed. Read your balance off any brokerage dashboard and add it to your net worth in trak-yo-dolla$ in under a minute.">
+<link rel="canonical" href="https://trakyodollas.com/guides/investment-accounts">
 <meta property="og:type" content="article">
-<meta property="og:title" content="How to download Fidelity transactions as a CSV file">
-<meta property="og:description" content="Step-by-step guide to exporting your Fidelity brokerage or Cash Management Account transactions as a CSV file.">
-<meta property="og:url" content="https://trakyodollas.com/guides/fidelity">
+<meta property="og:title" content="How to add investment accounts to your net worth in trak-yo-dolla$">
+<meta property="og:description" content="No CSV needed. Read your balance off any brokerage dashboard and add it to your net worth in trak-yo-dolla$ in under a minute.">
+<meta property="og:url" content="https://trakyodollas.com/guides/investment-accounts">
 <meta property="og:image" content="https://trakyodollas.com/og.png">
 <meta name="twitter:card" content="summary">
 <style>
@@ -55,7 +55,6 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:.75rem
 .back{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--text-muted);text-decoration:none;margin-bottom:2rem;transition:color .15s}
 .back:hover{color:var(--text-secondary);text-decoration:none}
 h1{font-size:1.85rem;font-weight:800;color:var(--text-bright);letter-spacing:-.02em;line-height:1.2;margin-bottom:.75rem}
-.verified{font-size:13px;color:var(--text-muted);font-style:italic;margin-bottom:2rem}
 .intro{font-size:1rem;color:var(--text-secondary);margin-bottom:2.5rem;line-height:1.7}
 h2{font-size:1rem;font-weight:700;color:var(--text-bright);margin-bottom:1rem;margin-top:2.5rem}
 h2:first-of-type{margin-top:0}
@@ -106,58 +105,40 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
 <main>
 <div class="page">
-  <a href="/guides" class="back">← Export guides</a>
+  <a href="/guides" class="back">← Guides</a>
 
-  <h1>How to download your Fidelity transactions as a CSV file</h1>
-  <p class="verified">Last verified: September 2026 &mdash; Fidelity's interface changes periodically. If a step looks different, the function is usually still there, just moved.</p>
+  <h1>How to add investment accounts to your net worth</h1>
 
-  <p class="intro">Works for Fidelity brokerage accounts, IRAs, and the Fidelity Cash Management Account (CMA). You&rsquo;ll get a <code>.CSV</code> file you can import directly into trak-yo-dolla$ or any spreadsheet.</p>
+  <p class="intro">Works for any brokerage &mdash; Vanguard, Fidelity, Schwab, E*Trade, Robinhood, or anything else. No CSV needed. Open your brokerage dashboard, read the total balance, type it in. That&rsquo;s it.</p>
 
   <h2>Steps</h2>
   <div class="steps">
     <div class="step">
       <div class="step-num">1</div>
-      <div class="step-body">Sign in at <strong>fidelity.com</strong>.</div>
+      <div class="step-body">Log in to your brokerage and find the <strong>current balance</strong> for the account you want to add.</div>
     </div>
     <div class="step">
       <div class="step-num">2</div>
-      <div class="step-body">Go to <strong>Accounts &amp; Trade</strong> in the top navigation, then select <strong>Portfolio</strong> (or go directly to the account you want).</div>
+      <div class="step-body"><a href="/trakyodollas#add-account=investment" class="btn-primary" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-bottom:.5rem">Add investment account</a><br>Opens the app on the Net Worth tab with the Add Account modal ready &mdash; Type already set to Investment.</div>
     </div>
     <div class="step">
       <div class="step-num">3</div>
-      <div class="step-body">Click on the <strong>specific account</strong> you want to export. Each account exports separately.</div>
+      <div class="step-body">Enter a <strong>Name</strong> (e.g. &ldquo;Vanguard Roth IRA&rdquo;) and the <strong>Balance</strong> you just looked up.</div>
     </div>
     <div class="step">
       <div class="step-num">4</div>
-      <div class="step-body">Look for a <strong>Download</strong> link or icon near your transaction history. On some views it&rsquo;s labeled <strong>Download History</strong> or appears as a download icon next to the activity section.</div>
+      <div class="step-body">Set <strong>Counts as liquid</strong>: leave it <strong>on</strong> for a taxable brokerage account, turn it <strong>off</strong> for a 401(k), IRA, or any retirement account you can&rsquo;t access penalty-free.</div>
     </div>
     <div class="step">
       <div class="step-num">5</div>
-      <div class="step-body">Select <strong>CSV</strong> as the format, set your date range, and click <strong>Download</strong>. The file saves to your Downloads folder.</div>
+      <div class="step-body">Click <strong>Save</strong>. The account shows up in your net worth immediately.</div>
     </div>
-  </div>
-
-  <h2>What&rsquo;s in the file</h2>
-  <div class="note" style="margin-bottom:2.5rem">
-    <div class="note-label">Columns</div>
-    The CSV includes run date, account, action, symbol, description, type, quantity, price, commission, fees, accrued interest, amount, settlement date, and more. trak-yo-dolla$ reads the date, description, and amount &mdash; investment-specific columns are ignored on import.<br><br>
-    <strong>Amounts:</strong> Deposits and dividends are positive. Withdrawals, purchases, and fees are negative.<br><br>
-    <strong>Note:</strong> The file includes all activity for the account &mdash; trades, dividends, transfers, and cash transactions. The app imports everything; you can delete rows that aren&rsquo;t relevant after import.
-  </div>
-
-  <h2>Exporting multiple accounts</h2>
-  <div class="note" style="margin-bottom:2.5rem">
-    Each account exports separately. Download one file per account and import each one &mdash; the app merges them automatically.
   </div>
 
   <h2>Keeping it current</h2>
   <div class="note" style="margin-bottom:1rem">
-    Re-export every month or so to stay current. Overlapping date ranges are fine; the app skips duplicates.
-  </div>
-
-  <div class="cta">
-    <p>Once you have the file, import it in trak-yo-dolla$ &mdash; open the app, click <strong>Import a CSV</strong>, and select your file. Nothing leaves your device.</p>
-    <a href="/trakyodollas" class="btn-primary">Open trak-yo-dolla$</a>
+    Once a month, open your brokerage, read the new balance, edit the account in the Net Worth tab, and then click <strong>+ Save snapshot</strong>. That snapshot anchors a real data point on your trend line &mdash; without it the chart won&rsquo;t update.<br><br>
+    Add each brokerage account separately &mdash; keeping them distinct lets you track each one over time.
   </div>
 </div>
 </main>

@@ -109,9 +109,9 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
   <a href="/guides" class="back">← Export guides</a>
 
   <h1>How to download your Ally Bank transactions as a CSV file</h1>
-  <p class="verified">Last verified: September 2026 &mdash; Ally's interface changes periodically. If a step looks different, the function is usually still there, just moved.</p>
+  <p class="verified">Last verified: October 2026 &mdash; Ally's interface changes periodically. If a step looks different, the function is usually still there, just moved.</p>
 
-  <p class="intro">Works for Ally Interest Checking and Online Savings accounts. You&rsquo;ll get a <code>.CSV</code> file you can import directly into trak-yo-dolla$ or any spreadsheet.</p>
+  <p class="intro">Works for Ally checking and savings accounts (Spending Account, Money Market Savings, and Savings Account). You&rsquo;ll get a <code>.CSV</code> file you can import directly into trak-yo-dolla$ or any spreadsheet.</p>
 
   <h2>Steps</h2>
   <div class="steps">
@@ -121,26 +121,35 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
     </div>
     <div class="step">
       <div class="step-num">2</div>
-      <div class="step-body">Click on the <strong>specific account</strong> you want to export. Each account exports separately &mdash; repeat these steps for each one.</div>
+      <div class="step-body">Click the <strong>specific account</strong> you want to export. Each account exports separately &mdash; repeat these steps for each one.</div>
     </div>
     <div class="step">
       <div class="step-num">3</div>
-      <div class="step-body">In your transaction history, look for a <strong>Download transactions</strong> link or button. It&rsquo;s typically near the top of the transaction list.</div>
+      <div class="step-body">Scroll to the <strong>Transaction History</strong> section. Click the <strong>Download</strong> link in the top right of that section.</div>
     </div>
     <div class="step">
       <div class="step-num">4</div>
-      <div class="step-body">A dialog opens. Select <strong>CSV</strong> as the file format. Set your date range &mdash; for a first import, grab as much history as Ally offers.</div>
+      <div class="step-body">A <strong>Download Account Activity</strong> panel opens. Under <strong>Select File Format</strong>, choose <strong>CSV</strong> (the other option is Quicken).</div>
     </div>
     <div class="step">
       <div class="step-num">5</div>
-      <div class="step-body">Click <strong>Download</strong>. The file saves to your Downloads folder.</div>
+      <div class="step-body">Under <strong>Date Range</strong>, choose your range. For a first import, select <strong>All available dates</strong> &mdash; Ally exports up to 18 months this way. If you need a specific window, choose <strong>Custom</strong> and enter From and To dates.</div>
     </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">Click the blue <strong>Download</strong> button. The file saves to your Downloads folder.</div>
+    </div>
+  </div>
+
+  <div class="note" style="margin-bottom:2.5rem">
+    <div class="note-label">Need more than 18 months?</div>
+    The Download panel covers up to 18 months. For older transactions, use the <strong>Statements</strong> link in the panel &mdash; Ally keeps up to 7 years there.
   </div>
 
   <h2>What&rsquo;s in the file</h2>
   <div class="note" style="margin-bottom:2.5rem">
     <div class="note-label">Columns</div>
-    The CSV includes date, description, and amount. trak-yo-dolla$ detects Ally&rsquo;s format automatically on import.<br><br>
+    The CSV includes five columns: <code>Date</code>, <code>Time</code>, <code>Amount</code>, <code>Type</code>, and <code>Description</code>. trak-yo-dolla$ detects Ally&rsquo;s format automatically on import.<br><br>
     <strong>Amounts:</strong> Withdrawals are negative, deposits are positive.
   </div>
 

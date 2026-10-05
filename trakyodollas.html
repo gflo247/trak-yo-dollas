@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-vvudm5vN4QGh0zoQfAIPuXPYsEBgFHjHeDM51+5WlLY=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-jLwHYmjMzKoB7ywtcHDjEbME8O6gh2v2dK/Lq5y2tq0=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -911,14 +911,14 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <div class="demo-profile-icon">🌱</div>
       <div>
         <div class="demo-profile-label">Early career, building up</div>
-        <div class="demo-profile-desc">Renting, student loan, Roth IRA started. Net worth growing from ~$10k toward $50k.</div>
+        <div class="demo-profile-desc">Renting, student loan, Roth IRA started. Net worth <span id="demo-nw-1"></span>.</div>
       </div>
     </button>
     <button class="demo-profile-btn" data-action="loadDemoProfile" data-arg="2" type="button">
       <div class="demo-profile-icon">🌳</div>
       <div>
         <div class="demo-profile-label">Established, tracking it all</div>
-        <div class="demo-profile-desc">Home, investments, multiple accounts. Net worth in the $300–400k range.</div>
+        <div class="demo-profile-desc">Home, investments, multiple accounts. Net worth <span id="demo-nw-2"></span>.</div>
       </div>
     </button>
   </div>
@@ -17300,6 +17300,21 @@ document.addEventListener('DOMContentLoaded',function(){
     showToast(window._pendingAuthLinkErrorMsg,'#F87171',6000);
     window._pendingAuthLinkErrorMsg=null;
   }
+
+  // Deep link: #add-account (or #add-account=<type>) navigates to the Net
+  // Worth tab and opens the Add Account modal. Used by export guides so a
+  // "Add this account" CTA can land the user in exactly the right place.
+  // Supports optional type: #add-account=investment, #add-account=cash, etc.
+  // The hash is stripped from the URL immediately so it doesn't persist on
+  // refresh or confuse the Supabase auth hash handler above.
+  (function(){
+    const h=window.location.hash;
+    if(h!=='#add-account'&&!h.startsWith('#add-account='))return;
+    window.history.replaceState({},'',(window.location.pathname+window.location.search));
+    const type=h.includes('=')&&h.split('=')[1]||undefined;
+    showPage('dashboard');
+    setTimeout(()=>openAddModal(type),150);
+  })();
 });
 
 const _tabScroll={};
@@ -17497,6 +17512,17 @@ const DEMO_PROFILE_2 = {
   vendorAliases:{'AMAZON.COM':'Amazon','MORTGAGE PAYMENT':'Mortgage','WASTE MGMT':'Utilities'},
   transactions:ALL_TX_RAW.map((t,i)=>({...t,id:i,amount:parseFloat(t.amount),excluded:!!t.excluded,is_offset:!!t.is_offset})),
 };
+
+// Populate demo picker net worth labels from the actual profile data so the
+// copy can never drift when account balances change.
+(function(){
+  const LIAB=new Set(['credit','mortgage','other-liability']);
+  function nw(p){let a=0,l=0;for(const acc of p.accounts){if(acc.excludeFromNW)continue;LIAB.has(acc.type)?l+=acc.balance:a+=acc.balance;}return a-l;}
+  function fmt(n){const r=Math.round(n/1000)*1000;return'~$'+(r>=1000?r/1000+'k':r);}
+  const e1=document.getElementById('demo-nw-1');const e2=document.getElementById('demo-nw-2');
+  if(e1)e1.textContent=fmt(nw(DEMO_PROFILE_1));
+  if(e2)e2.textContent=fmt(nw(DEMO_PROFILE_2));
+})();
 
 function openDemoPicker(firstVisit=true){
   document.getElementById('demo-picker-overlay').style.display='flex';
