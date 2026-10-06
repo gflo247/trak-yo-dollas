@@ -4897,17 +4897,27 @@ function _requestStoragePersist(){
 }
 
 // Real trailing-12-month average total spend (all imported sources, all
-// categories) -- deliberately ignores state.activeSources (the Spending tab's
-// current source filter) because a cushion estimates how long liquid assets
-// would last if income stopped, which is a whole-picture number. Using only
-// the Spending tab's selected sources would silently inflate the runway for
-// anyone who has filtered to one account. Uses all sources that actually have
-// spend data in MONTHLY instead.
+// categories) -- deliberately ignores both state.activeSources (the Spending
+// tab's source filter) and _bizFilter (the Spending tab's business/personal
+// filter) because a cushion estimates how long liquid assets would last if
+// income stopped, which is a whole-picture number. Computes directly from
+// state.transactions rather than reading the shared MONTHLY cache, which
+// rebuildMonthly() builds with _bizFilter already baked in -- reading MONTHLY
+// would silently halve the cushion for anyone who has Spending set to Business.
 function avgTotalMonthlySpend(){
   const today=new Date();
   const currentMonthKey=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
-  const months=getBudgetHistMonths(currentMonthKey,12);
-  return months.length?months.map(m=>{const row=MONTHLY[m]||{};return Object.values(row).reduce((s,v)=>s+(typeof v==='number'?v:0),0);}).reduce((a,b)=>a+b,0)/months.length:0;
+  const m={};
+  state.transactions.forEach(t=>{
+    if(t.excluded||t.isIncome)return;
+    if(state.excludedCats&&state.excludedCats.has(t.cat))return;
+    const mo=t.date.slice(0,7);
+    if(mo>=currentMonthKey)return;
+    m[mo]=m[mo]||{};
+    m[mo][t.card]=Math.max(0,((m[mo][t.card]||0)+t.amount));
+  });
+  const months=Object.keys(m).sort().slice(-12);
+  return months.length?months.map(mo=>Object.values(m[mo]).reduce((s,v)=>s+v,0)).reduce((a,b)=>a+b,0)/months.length:0;
 }
 
 // How many full months liquid savings alone could cover expenses if income

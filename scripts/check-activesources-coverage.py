@@ -117,6 +117,10 @@ KNOWN_FALSE_POSITIVES = {
     # activeSources here would be wrong: the source being imported may not
     # be in activeSources yet (it's brand new).
     't=>t.card&&t.card.toLowerCase()===srcLower&&!t.isIncome',
+    # avgTotalMonthlySpend() -- intentionally omits activeSources; the cushion
+    # is a whole-picture number and must not change based on the Spending tab's
+    # current source filter. Same reasoning as the _bizFilter suppression above.
+    't=>{ if(t.excluded||t.isIncome)return; if(state.excludedCats&&state.excludedCats.has(t.cat))return; const mo=t.date.slice(0,7); if(mo>=curre',
 }
 
 

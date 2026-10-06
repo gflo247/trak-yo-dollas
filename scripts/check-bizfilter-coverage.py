@@ -86,6 +86,11 @@ KNOWN_FALSE_POSITIVES = {
     # this source: X days ago"). Looks up a named source directly; applying
     # _bizFilter here would give wrong results for a biz-only source.
     't=>t.card&&t.card.toLowerCase()===srcLower&&!t.isIncome',
+    # avgTotalMonthlySpend() -- intentionally omits _bizFilter; the cushion is
+    # a whole-picture number and must not change based on the Spending tab's
+    # current business/personal filter. Computes directly from transactions
+    # instead of reading the shared MONTHLY cache precisely to avoid this leak.
+    't=>{ if(t.excluded||t.isIncome)return; if(state.excludedCats&&state.excludedCats.has(t.cat))return; const mo=t.date.slice(0,7); if(mo>=curre',
 }
 
 
