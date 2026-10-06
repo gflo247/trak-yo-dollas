@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-GNMAeh4wKhd8R6lursVAjST/y8Svs861pv3pt+indKo=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-3chXCo7xknln7ez2fTvE+uOX3RVSJiSIZIfJoC9RcdU=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -1101,6 +1101,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <button id="bsort-unusual" data-action="setBudgetSort" data-arg="unusual" style="padding:3px 10px;border:none;cursor:pointer;font-family:inherit;font-size:10px;font-weight:700;background:var(--bg-card);color:var(--text-muted)" type="button">Unusual</button>
       <button id="bsort-alpha" data-action="setBudgetSort" data-arg="alpha" style="padding:3px 10px;border:none;cursor:pointer;font-family:inherit;font-size:10px;font-weight:700;background:var(--bg-card);color:var(--text-muted)" type="button">A–Z</button>
     </div>
+  </div>
+  <!-- Business/Personal filter — only shown when Include Income is on (same as Spending tab) -->
+  <div id="budget-biz-filter-inline" class="row" style="display:none;gap:5px;margin:-.15rem 0 .6rem">
+    <button data-action="setBudgetBizFilter" data-arg="all" class="chip biz-chip active" type="button">All</button>
+    <button data-action="setBudgetBizFilter" data-arg="biz" class="chip biz-chip" type="button">Business</button>
+    <button data-action="setBudgetBizFilter" data-arg="personal" class="chip biz-chip" type="button">Personal</button>
   </div>
 
   <!-- Unbudgeted categories — shown before rows so it's seen early -->
@@ -2609,7 +2615,14 @@ function getSortedSnaps(){
 // "Unusual" sort). Deselecting a card/source left its spend still counted
 // here, silently disagreeing with the Spending tab's chart, which already
 // respects the same toggle.
-function getTxForMonth(m,extraFilter){
+function getTxForMonth(m,extraFilter,bizFilter){
+  // bizFilter param — pass 'all'/'biz'/'personal' explicitly to override the
+  // global _bizFilter. Used by Budget tab (which has its own _budgetBizFilter),
+  // Life Changes, and Budget Health pill (both always unfiltered). When omitted,
+  // falls back to Spending's global _bizFilter for callers that intentionally
+  // follow the Spending tab's current filter (e.g. Insights Pill 5 "Top mover"
+  // and "Largest charge" via getTxForMonth, which are in the Spending context).
+  if(bizFilter===undefined)bizFilter=_bizFilter;
   // !t.isIncome, not just !t.excluded -- every other spend-aggregating
   // function in the file (isRealSpend()/getBaseTxs(), and rebuildMonthly()
   // since an earlier pass) already excludes income this way rather than
@@ -2622,12 +2635,12 @@ function getTxForMonth(m,extraFilter){
   // silently counted as spend in all of them, contradicting the
   // currently-displayed month's correctly-filtered hero figure. Found in
   // the 57th adversarial pass.
-  return state.transactions.filter(t=>t.date.slice(0,7)===m&&!t.excluded&&!t.isIncome&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)&&(!extraFilter||extraFilter(t)));
+  return state.transactions.filter(t=>t.date.slice(0,7)===m&&!t.excluded&&!t.isIncome&&state.activeSources.has(t.card)&&(bizFilter!=='biz'||t.biz)&&(bizFilter!=='personal'||!t.biz)&&(!extraFilter||extraFilter(t)));
 }
 
 // Get spend total for a category in a given month
-function getCatMonthSpend(cat,m){
-  return getTxForMonth(m,t=>t.cat===cat).reduce((s,t)=>s+t.amount,0);
+function getCatMonthSpend(cat,m,bizFilter){
+  return getTxForMonth(m,t=>t.cat===cat,bizFilter).reduce((s,t)=>s+t.amount,0);
 }
 
 // NW goal milestones — single source of truth
@@ -3059,6 +3072,7 @@ function _restoreCatsFromTreemapStash(){
 // file already extracted _clearVendorDayFiltersForDataReplace() to prevent.
 function _resetSessionFiltersForDataReplace(){
   _bizFilter='all';
+  _budgetBizFilter='all';
   state.activeCats=new Set();
   state.dashFilter=null;
   state.searchQuery='';
@@ -3748,7 +3762,7 @@ function renderInsights(){
     let worstCat='',worstPct=0,worstSpend=0,worstBudget=0;
     budgetCats.forEach(cat=>{
       const budget=state.budgets[cat];
-      const spend=getTxForMonth(effectiveM).filter(t=>t.cat===cat).reduce((s,t)=>s+t.amount,0);
+      const spend=getTxForMonth(effectiveM,null,'all').filter(t=>t.cat===cat).reduce((s,t)=>s+t.amount,0);
       const{over:isOver,atRisk:isAtRisk,pct}=classifyBudgetStatus(spend,budget,effectiveM>=currentM,daysPctForPill,state.budgetWarnPct??80);
       if(isOver){over++;if(pct>worstPct){worstPct=pct;worstCat=cat;worstSpend=spend;worstBudget=budget;}}
       else if(isAtRisk){under++;}
@@ -3763,7 +3777,7 @@ function renderInsights(){
     const worstStr=worstCat?`<br><span style="color:var(--accent-red)">${esc(worstCat)}: ${fmt(worstSpend)} of ${fmt(worstBudget)} (${worstPct}%)</span>`:'';
     const tooltip=budgetCats.map(cat=>{
       const budget=state.budgets[cat];
-      const spend=getTxForMonth(effectiveM).filter(t=>t.cat===cat).reduce((s,t)=>s+t.amount,0);
+      const spend=getTxForMonth(effectiveM,null,'all').filter(t=>t.cat===cat).reduce((s,t)=>s+t.amount,0);
       const pct=budget>0?Math.round(spend/budget*100):0;
       return `${cat}: ${fmt(spend)} / ${fmt(budget)} (${pct}%)`;
     }).join('&#10;');
@@ -4975,7 +4989,7 @@ function renderRetirementRunway(){
   // they don't match. Compare month sets directly (not a heuristic).
   const today2=new Date();
   const currentMonthKey2=`${today2.getFullYear()}-${String(today2.getMonth()+1).padStart(2,'0')}`;
-  const cushionMonths=getBudgetHistMonths(currentMonthKey2,12);
+  const cushionMonths=getBudgetHistMonths(currentMonthKey2,12,'all');
   const spendingMonths=getFilteredMonths().filter(m=>m<currentMonthKey2);
   const windowNote=(()=>{
     if(cushionMonths.length===spendingMonths.length&&cushionMonths.every((m,i)=>m===spendingMonths[i]))return'';
@@ -9131,7 +9145,7 @@ function openBudgetModal(cat){
   if(cat!==undefined)cat=String(cat);
   // If no cat specified, pick the first unbudgeted category with spend, or first category
   if(!cat){
-    const withSpend=allCats.filter(c=>!state.budgets[c]&&!state.excludedCats.has(c)&&Object.keys(MONTHLY).some(m=>getCatMonthSpend(c,m)>0));
+    const withSpend=allCats.filter(c=>!state.budgets[c]&&!state.excludedCats.has(c)&&Object.keys(MONTHLY).some(m=>getCatMonthSpend(c,m,_budgetBizFilter)>0));
     cat=withSpend[0]||allCats.find(c=>!state.budgets[c])||allCats[0]||'Other';
   }
   // Populate category select
@@ -9154,7 +9168,7 @@ function _refreshBudgetModalContext(cat){
   // testing the stale-budget nudge: the row read $705/mo, this line read
   // $624/mo, for the same category, same month.
   const ym=getBudgetMonth();
-  const avg=ym?avgSpendOverMonths(cat,getBudgetHistMonths(ym)):0;
+  const avg=ym?avgSpendOverMonths(cat,getBudgetHistMonths(ym,12,_budgetBizFilter),_budgetBizFilter):0;
   // Prefill from the category's own real average when no budget is set yet,
   // instead of leaving the field blank next to the "Avg spend: $X/mo" line
   // right below it -- matches openSimulatorOverrideModal()'s identical
@@ -9167,7 +9181,7 @@ function _refreshBudgetModalContext(cat){
   const ctx=document.getElementById('budget-modal-context');
   // Current-month spend -- shown in the modal so mobile users (who can't hover
   // the bar tooltip) still see where they stand this month when they tap to edit.
-  const thisMonthSpent=ym?getCatMonthSpend(cat,ym):0;
+  const thisMonthSpent=ym?getCatMonthSpend(cat,ym,_budgetBizFilter):0;
   const cur=state.budgets[cat];
   const thisPct=cur&&thisMonthSpent>0?Math.min(Math.round(thisMonthSpent/cur*100),999):null;
   const thisMonthLine=thisMonthSpent>0
@@ -9993,11 +10007,11 @@ function buildPctDots(months,getSpend,limit){
       +'</div>';
   }).join('');
 }
-function buildHeroPctDots(months,budgeted,totalBudget){
-  return buildPctDots(months,m=>budgeted.reduce((s,[c])=>s+getCatMonthSpend(c,m),0),totalBudget);
+function buildHeroPctDots(months,budgeted,totalBudget,bizFilter){
+  return buildPctDots(months,m=>budgeted.reduce((s,[c])=>s+getCatMonthSpend(c,m,bizFilter),0),totalBudget);
 }
-function buildRowPctDots(months,cat,budget){
-  return buildPctDots(months,m=>getCatMonthSpend(cat,m),budget);
+function buildRowPctDots(months,cat,budget,bizFilter){
+  return buildPctDots(months,m=>getCatMonthSpend(cat,m,bizFilter),budget);
 }
 
 function setBudgetSort(s){
@@ -10040,23 +10054,37 @@ function getBudgetMonth(){
   return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
 }
 
-// Up to `count` months of MONTHLY data strictly before ym, oldest-first.
-// Defaults to 12 for existing Budget-tab callers; the Life Changes
-// simulator passes its own user-adjustable horizon.
-function getBudgetHistMonths(ym,count=12){
-  return Object.keys(MONTHLY).sort().filter(m=>m<ym).slice(-count);
+// Up to `count` months with spend strictly before ym, oldest-first.
+// Defaults to 12 for Budget-tab callers; Life Changes passes its own
+// user-adjustable horizon. bizFilter defaults to 'all' — Budget passes
+// _budgetBizFilter, Life Changes and the cushion widget pass 'all'.
+// Scans transactions directly instead of reading MONTHLY (which is
+// baked with Spending's _bizFilter) so Budget's own independent filter
+// doesn't inherit Spending's current selection.
+function getBudgetHistMonths(ym,count=12,bizFilter){
+  if(bizFilter===undefined)bizFilter='all';
+  const set=new Set();
+  state.transactions.forEach(t=>{
+    if(t.excluded||t.isIncome)return;
+    if(!state.activeSources.has(t.card))return;
+    if(bizFilter==='biz'&&!t.biz)return;
+    if(bizFilter==='personal'&&t.biz)return;
+    const mo=t.date.slice(0,7);
+    if(mo<ym)set.add(mo);
+  });
+  return[...set].sort().slice(-count);
 }
 
 // Average monthly spend for one category over a given list of months.
 // Extracted out of getBudgetRowMetrics() so the Life Changes simulator can
 // share the exact same averaging math instead of re-deriving it.
-function avgSpendOverMonths(cat,months){
-  return months.length?months.reduce((s,m)=>s+getCatMonthSpend(cat,m),0)/months.length:0;
+function avgSpendOverMonths(cat,months,bizFilter){
+  return months.length?months.reduce((s,m)=>s+getCatMonthSpend(cat,m,bizFilter),0)/months.length:0;
 }
 
 // Derived "vs average" and "YTD pace" figures for one budgeted category
-function getBudgetRowMetrics(cat,budget,ym,spent,histMonths){
-  const avg12=avgSpendOverMonths(cat,histMonths);
+function getBudgetRowMetrics(cat,budget,ym,spent,histMonths,bizFilter){
+  const avg12=avgSpendOverMonths(cat,histMonths,bizFilter);
   const year=ym.slice(0,4);
   const calendarMonth=parseInt(ym.slice(5,7),10);
   // "YTD" starts from whichever is later: January, or the user's first
@@ -10078,7 +10106,7 @@ function getBudgetRowMetrics(cat,budget,ym,spent,histMonths){
   let ytdSpend=0;
   for(let mo=startMo;mo<=calendarMonth;mo++){
     const m=`${year}-${String(mo).padStart(2,'0')}`;
-    ytdSpend+=m===ym?spent:getCatMonthSpend(cat,m);
+    ytdSpend+=m===ym?spent:getCatMonthSpend(cat,m,bizFilter);
   }
   const ytdPace=budget*monthsElapsed;
   const annualTarget=budget*12;
@@ -10105,8 +10133,8 @@ function getBudgetRowMetrics(cat,budget,ym,spent,histMonths){
 // still basically on target. last3Months.length===3 (not just non-empty)
 // so a user with less than 3 full tracked months never gets flagged off
 // a partial pattern.
-function isBudgetStale(cat,budget,last3Months){
-  return last3Months.length===3&&last3Months.every(m=>getCatMonthSpend(cat,m)>budget*1.05);
+function isBudgetStale(cat,budget,last3Months,bizFilter){
+  return last3Months.length===3&&last3Months.every(m=>getCatMonthSpend(cat,m,bizFilter)>budget*1.05);
 }
 
 // ── Life Changes simulator ──────────────────────────────────────────
@@ -10138,10 +10166,11 @@ function resolveCarCat(){return resolveFallbackCat('Transportation','Automotive'
 // Returns per-category rows plus baseline/projected totals. Drops a
 // category with no real spend and no override from `rows` so the list
 // shows only categories actually in play, not every possible one.
-function computeSimulatorProjection(overrides,histMonths){
+function computeSimulatorProjection(overrides,histMonths,bizFilter){
+  if(bizFilter===undefined)bizFilter='all';
   const overrideMap=new Map(overrides.map(o=>[o.cat,o.newMonthly]));
   const rows=getAllCats().map(cat=>{
-    const avg=avgSpendOverMonths(cat,histMonths);
+    const avg=avgSpendOverMonths(cat,histMonths,bizFilter);
     const hasOverride=overrideMap.has(cat);
     const projected=hasOverride?overrideMap.get(cat):avg;
     return{cat,avg,hasOverride,projected,delta:projected-avg};
@@ -10207,7 +10236,7 @@ function openSimulatorOverrideModal(cat){
   const latest=getLatestDataMonth();
   const _today=new Date();
   const _ck=`${_today.getFullYear()}-${String(_today.getMonth()+1).padStart(2,'0')}`;
-  const histMonths=latest?getBudgetHistMonths(_ck,state.simulator.horizonMonths):[];
+  const histMonths=latest?getBudgetHistMonths(_ck,state.simulator.horizonMonths,'all'):[];
   const existing=new Map(state.simulator.overrides.map(o=>[o.cat,o.newMonthly]));
   const allCats=getAllCats();
   if(!cat)cat=allCats.find(c=>!existing.has(c))||allCats[0]||'Other';
@@ -10228,7 +10257,7 @@ function openSimulatorOverrideModal(cat){
 }
 function _refreshSimulatorModalContext(cat,histMonths,existing){
   window._simulatorCat=cat;
-  const avg=avgSpendOverMonths(cat,histMonths);
+  const avg=avgSpendOverMonths(cat,histMonths,'all');
   document.getElementById('simulator-override-amount').value=existing.get(cat)??(avg>0?Math.round(avg):'');
   document.getElementById('simulator-override-modal-context').innerHTML=
     `Current avg: <strong style="color:var(--text-primary)">${fmt(avg)}/mo</strong> over the last ${histMonths.length} month${histMonths.length===1?'':'s'}`;
@@ -10316,8 +10345,8 @@ function renderSimulatorTab(){
   // earlier and produces a ~$200-300 divergence even when both claim "12 months".
   const today=new Date();
   const currentMonthKey=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
-  const histMonths=getBudgetHistMonths(currentMonthKey,horizon);
-  const proj=computeSimulatorProjection(state.simulator.overrides,histMonths);
+  const histMonths=getBudgetHistMonths(currentMonthKey,horizon,'all');
+  const proj=computeSimulatorProjection(state.simulator.overrides,histMonths,'all');
   // sumIncomeForMonths(histMonths), not computePeriodSpendVsIncome() --
   // that reads getFilteredMonths() (the Spending tab's own, independent
   // date-range filter), which can silently diverge from this tab's own
@@ -10547,6 +10576,13 @@ function renderBudgetTab(){
   const prevBtn=document.getElementById('budget-prev-month');
   if(prevBtn){const earliest=Object.keys(MONTHLY).sort()[0];prevBtn.disabled=!!earliest&&ym<=earliest;}
 
+  // Budget biz/personal filter row — independent of Spending's _bizFilter
+  const budgetBizRow=document.getElementById('budget-biz-filter-inline');
+  if(budgetBizRow){
+    budgetBizRow.style.display=state.includeIncome?'flex':'none';
+    budgetBizRow.querySelectorAll('.biz-chip').forEach(b=>b.classList.toggle('active',b.getAttribute('data-arg')===_budgetBizFilter));
+  }
+
   // Also drop Income rows — without this, Income showed up as "unbudgeted spending" (with a
   // nonsensical "+ set limit" offer) any time Include Income was on, since only individually-
   // excluded transactions (t.excluded) were filtered. monthTx intentionally still includes
@@ -10558,7 +10594,7 @@ function renderBudgetTab(){
   // state.activeSources check added in the 35th adversarial pass -- this
   // drives the whole tab's spendByCat/totalSpent/overallPct; was silently
   // including deselected sources' spend.
-  const monthTx=state.transactions.filter(t=>t.date.slice(0,7)===ym&&isRealSpend(t)&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz));
+  const monthTx=state.transactions.filter(t=>t.date.slice(0,7)===ym&&isRealSpend(t)&&state.activeSources.has(t.card)&&(_budgetBizFilter!=='biz'||t.biz)&&(_budgetBizFilter!=='personal'||!t.biz));
   const spendByCat={};
   monthTx.forEach(t=>{spendByCat[t.cat]=(spendByCat[t.cat]||0)+t.amount;});
   // Per-source latest date → use earliest across active sources (most conservative)
@@ -10600,7 +10636,7 @@ function renderBudgetTab(){
   const totalUnbudgeted=unbudgetedCats.reduce((s,c)=>s+(spendByCat[c]||0),0);
 
   // 12-month trailing history — "Unusual" sort and the "your average" tick need 12mo of prior data
-  const histMonths=getBudgetHistMonths(ym);
+  const histMonths=getBudgetHistMonths(ym,12,_budgetBizFilter);
   const gated=histMonths.length<12;
   if(gated&&_budgetSort==='unusual'){_budgetSort='pct';_budgetSortDir='desc';}
 
@@ -10631,7 +10667,7 @@ function renderBudgetTab(){
   // Per-category "vs your average" and "YTD budget" figures
   const rowMetrics={};
   budgeted.forEach(([cat,budget])=>{
-    rowMetrics[cat]=getBudgetRowMetrics(cat,budget,ym,spendByCat[cat]||0,histMonths);
+    rowMetrics[cat]=getBudgetRowMetrics(cat,budget,ym,spendByCat[cat]||0,histMonths,_budgetBizFilter);
   });
 
   const summaryBar=document.getElementById('budget-summary-bar');
@@ -10657,7 +10693,7 @@ function renderBudgetTab(){
     const _hLen=histMonths.length;
     const _labelIdxs=new Set(_hLen<=3?[...Array(_hLen).keys()]:[0,Math.round((_hLen-1)/2),_hLen-1]);
     const histDots=histMonths.map((m,i)=>{
-      const mSpent=budgeted.reduce((s,[c])=>s+getCatMonthSpend(c,m),0);
+      const mSpent=budgeted.reduce((s,[c])=>s+getCatMonthSpend(c,m,_budgetBizFilter),0);
       const mPct=totalBudget>0?Math.round(mSpent/totalBudget*100):0;
       // totalBudget+0.005 -- same epsilon fix as buildCondensedDots()/
       // buildPctDots() above, same reason. Found in the 142nd
@@ -10677,7 +10713,7 @@ function renderBudgetTab(){
     const heroHistHTML=histDots
       ?'<div style="margin-top:.75rem;border-top:1px solid var(--border);padding-top:.65rem">'
         +'<div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">12-MO HISTORY</div>'
-        +'<div style="display:flex;gap:0;flex-wrap:nowrap;align-items:flex-end;width:100%">'+buildHeroPctDots(histMonths,budgeted,totalBudget)+'</div>'
+        +'<div style="display:flex;gap:0;flex-wrap:nowrap;align-items:flex-end;width:100%">'+buildHeroPctDots(histMonths,budgeted,totalBudget,_budgetBizFilter)+'</div>'
       +'</div>'
       :'';
 
@@ -10783,7 +10819,7 @@ function renderBudgetTab(){
       const{over,atRisk}=getRowFlags(cat,budget);
       const accentColor=over?'#F87171':atRisk?'#FBBF24':null;
 
-      const pctDots=buildRowPctDots(histMonths,cat,budget);
+      const pctDots=buildRowPctDots(histMonths,cat,budget,_budgetBizFilter);
       const histHTML=histMonths.length
         ?'<div style="margin-top:6px">'
           +'<div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">12-MO HISTORY</div>'
@@ -10933,7 +10969,7 @@ function renderBudgetTab(){
     // are identical to what a separate count=3 call would return, without
     // re-scanning Object.keys(MONTHLY) a second time on every render.
     const last3Months=histMonths.slice(-3);
-    const staleBudgeted=budgeted.filter(([cat,budget])=>isBudgetStale(cat,budget,last3Months));
+    const staleBudgeted=budgeted.filter(([cat,budget])=>isBudgetStale(cat,budget,last3Months,_budgetBizFilter));
     if(staleBudgeted.length){
       staleEl.innerHTML=`
         <div style="background:var(--bg-card);border:1px solid #FBBF2433;border-radius:10px;padding:.75rem 1rem;margin-top:.25rem">
@@ -11512,7 +11548,17 @@ function exportNetWorthCSV(){
 function exportBudgetCSV(){
   const budgeted=Object.entries(state.budgets).filter(([,v])=>v>0);
   if(!budgeted.length){showToast('No budgets set to export','#FCD34D');return;}
-  const months=Object.keys(MONTHLY).sort();
+  // Build month list from transactions so it respects _budgetBizFilter —
+  // MONTHLY is baked with Spending's _bizFilter, not Budget's own.
+  const monthSet=new Set();
+  state.transactions.forEach(t=>{
+    if(t.excluded||t.isIncome)return;
+    if(!state.activeSources.has(t.card))return;
+    if(_budgetBizFilter==='biz'&&!t.biz)return;
+    if(_budgetBizFilter==='personal'&&t.biz)return;
+    monthSet.add(t.date.slice(0,7));
+  });
+  const months=[...monthSet].sort();
   if(!months.length){showToast('No spending data to export','#FCD34D');return;}
 
   // Header row: Category, Budget, then one col per month
@@ -11538,12 +11584,12 @@ function exportBudgetCSV(){
   const warnPct=state.budgetWarnPct??80;
 
   const rows=budgeted.map(([cat,budget])=>{
-    const monthSpends=months.map(m=>getCatMonthSpend(cat,m));
+    const monthSpends=months.map(m=>getCatMonthSpend(cat,m,_budgetBizFilter));
     const totalSpent=monthSpends.reduce((s,v)=>s+v,0);
     const activeMonths=monthSpends.filter(v=>v>0).length||1;
     const avg=totalSpent/activeMonths;
-    const latestM=months.filter(m=>getCatMonthSpend(cat,m)>0).slice(-1)[0];
-    const latestSpent=latestM?getCatMonthSpend(cat,latestM):0;
+    const latestM=months.filter(m=>getCatMonthSpend(cat,m,_budgetBizFilter)>0).slice(-1)[0];
+    const latestSpent=latestM?getCatMonthSpend(cat,latestM,_budgetBizFilter):0;
     const {over,atRisk}=classifyBudgetStatus(latestSpent,budget,latestM===todayYM,daysPct,warnPct);
     const status=over?'OVER':atRisk?'AT RISK':'On track';
     return [
@@ -12009,6 +12055,13 @@ function _ensureBusinessCategories(){
   window._catColorMap=null;
 }
 let _bizFilter='all';
+// Spending tab and Budget tab maintain independent biz/personal filters.
+// _budgetBizFilter drives all Budget-tab getCatMonthSpend() calls so that
+// switching Personal/Business on the Spending tab doesn't silently change
+// what the Budget tab counts. Reset alongside _bizFilter on data replace
+// and when Include Income is turned off (since Biz/Personal is only
+// visible when includeIncome is on for both tabs).
+let _budgetBizFilter='all';
 let _selectedTxIds=new Set();
 // Month keys ("2026-09") whose income group is currently expanded.
 // Session-only — no persistence needed.
@@ -12018,7 +12071,7 @@ function toggleIncludeIncome(){
   if(state.includeIncome)_ensureBusinessCategories();
   const btn=document.getElementById('include-income-btn');
   if(btn)btn.textContent=state.includeIncome?'✓ 💼 Include income & business categories':'💼 Include income & business categories';
-  if(!state.includeIncome){_bizFilter='all';_selectedTxIds.clear();}
+  if(!state.includeIncome){_bizFilter='all';_budgetBizFilter='all';_selectedTxIds.clear();}
   showToast(state.includeIncome?('Income tracking enabled — deposits will import, business categories added'+(_isLiveDemoSession()?' (resets once you add real data)':'')):'Income tracking disabled','#34D399',3500);
   scheduleSave();rebuildMonthly();renderAll();
 }
@@ -12029,6 +12082,12 @@ function setBizFilter(val){
   if(bizRow)bizRow.querySelectorAll('.biz-chip').forEach(b=>b.classList.toggle('active',b.getAttribute('data-arg')===_bizFilter));
   rebuildMonthly();
   renderSpending();
+}
+function setBudgetBizFilter(val){
+  _budgetBizFilter=val||'all';
+  const bizRow=document.getElementById('budget-biz-filter-inline');
+  if(bizRow)bizRow.querySelectorAll('.biz-chip').forEach(b=>b.classList.toggle('active',b.getAttribute('data-arg')===_budgetBizFilter));
+  renderBudgetTab();
 }
 function toggleTxBiz(id){
   const t=state.transactions.find(tx=>tx.id===id);
@@ -15314,7 +15373,7 @@ async function loadUserData(uid) {
       // 133rd adversarial pass.
       if (prefs.declaredIncome !== undefined) state.declaredIncome = Number(prefs.declaredIncome)||0;
       if (Array.isArray(prefs.excludedCats)) state.excludedCats = new Set(prefs.excludedCats);
-      if (prefs.includeIncome !== undefined) { state.includeIncome = prefs.includeIncome; _bizFilter='all'; }
+      if (prefs.includeIncome !== undefined) { state.includeIncome = prefs.includeIncome; _bizFilter='all'; _budgetBizFilter='all'; }
       if (prefs.simulator !== undefined) state.simulator = _loadSimulatorState(prefs.simulator);
       if (prefs.nwGoal !== undefined) state.nwGoal = prefs.nwGoal;
       if (prefs.hideNwGoal !== undefined) state.hideNwGoal = prefs.hideNwGoal;
