@@ -39,9 +39,9 @@ Every flagged line needs a human look, not blind trust. Run manually:
     python3 scripts/check-bizfilter-coverage.py [file ...]
 Defaults to trakyodollas.html if no args given (the other HTML files
 don't have a transactions model).
-Exits 0 always (reporting tool, not a hard deploy gate) — same posture as
-check-escaping.py, and for the same reason: false-positive rate isn't
-known to be low enough yet to block deploys on.
+Exits non-zero when findings > 0 (hard deploy gate). False positives are
+handled via KNOWN_FALSE_POSITIVES; add an entry there with a reason rather
+than suppressing the exit.
 """
 import re, sys
 from pathlib import Path
@@ -76,6 +76,16 @@ KNOWN_FALSE_POSITIVES = {
     # applyVenmoOpt() -- deliberate bulk-recategorization action, named
     # explicitly in this scanner's deploy.sh comment.
     "t=>{ if(!ids||!ids.has(t.id))return; if(opt==='exclude'){ t.excluded=true;t.is_offset=false; } else { const cat=opt==='custom'?customCat:'Sh",
+    # renderTxSourcesPanel() -- finds latest transaction date per card/source
+    # to show "last imported X days ago" for each account. Intentionally
+    # looks at all sources, not just _bizFilter'd ones -- you want to see
+    # when every account was last updated, not just the currently filtered view.
+    't=>{ if(!t.card||t.excluded||t.isIncome)return; if(!sourceMax[t.card]||t.date>sourceMax[t.card])sourceMax[t.card]=t.date; }',
+    # updateImportSourceHint() -- finds most recent transaction for the
+    # specific source name being typed in the import modal ("Last data from
+    # this source: X days ago"). Looks up a named source directly; applying
+    # _bizFilter here would give wrong results for a biz-only source.
+    't=>t.card&&t.card.toLowerCase()===srcLower&&!t.isIncome',
 }
 
 
@@ -139,6 +149,7 @@ def main():
             print(f"    {snippet}")
         total += len(findings)
     print(f"\n{total} candidate site(s) across {len(targets)} file(s) — heuristic only, review each one manually.")
+    sys.exit(total > 0)
 
 
 if __name__ == '__main__':

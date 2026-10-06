@@ -52,8 +52,9 @@ Every flagged line needs a human look, not blind trust. Run manually:
     python3 scripts/check-persistence-coverage.py [file ...]
 Defaults to trakyodollas.html if no args given (the other HTML files
 don't have a state/save model).
-Exits 0 always (reporting tool, not a hard deploy gate) -- same posture as
-check-escaping.py and check-bizfilter-coverage.py.
+Exits non-zero when findings > 0 (hard deploy gate). False positives are
+handled via CHECK_B_KNOWN_FALSE_POSITIVES; add an entry there with a reason
+rather than suppressing the exit.
 """
 import re, sys
 from pathlib import Path
@@ -222,6 +223,7 @@ def main():
             print(f"  line {line}: function {fn_name}() mutates '{matched}' but never calls scheduleSave() and isn't in the auto-save patch list")
         total += len(findings_a) + len(findings_b)
     print(f"\n{total} candidate site(s) across {len(targets)} file(s) — heuristic only, review each one manually.")
+    sys.exit(total > 0)
 
 
 if __name__ == '__main__':

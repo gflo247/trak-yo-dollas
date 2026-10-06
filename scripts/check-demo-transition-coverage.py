@@ -43,8 +43,9 @@ This is a heuristic, not a JS parser -- it WILL have false positives:
 Every flagged line needs a human look, not blind trust. Run manually:
     python3 scripts/check-demo-transition-coverage.py [file ...]
 Defaults to trakyodollas.html if no args given.
-Exits 0 always (reporting tool, not a hard deploy gate) -- same posture as
-check-persistence-coverage.py and check-cloudsync-coverage.py.
+Exits non-zero when findings > 0 (hard deploy gate). False positives are
+handled via KNOWN_FALSE_POSITIVES; add an entry there with a reason rather
+than suppressing the exit.
 """
 import re, sys
 from pathlib import Path
@@ -125,6 +126,7 @@ def main():
             print(f"  line {line}: function {fn_name}() calls '{matched}' but never references _replaceDemoDataWithReal( -- new 'first real save' entry point?")
         total += len(findings)
     print(f"\n{total} candidate site(s) across {len(targets)} file(s) — heuristic only, review each one manually.")
+    sys.exit(total > 0)
 
 
 if __name__ == '__main__':

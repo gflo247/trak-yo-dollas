@@ -62,9 +62,9 @@ Every flagged line needs a human look, not blind trust. Run manually:
     python3 scripts/check-activesources-coverage.py [file ...]
 Defaults to trakyodollas.html if no args given (the other HTML files
 don't have a transactions model).
-Exits 0 always (reporting tool, not a hard deploy gate) — same posture as
-check-bizfilter-coverage.py, and for the same reason: false-positive rate
-isn't known to be low enough yet to block deploys on.
+Exits non-zero when findings > 0 (hard deploy gate). False positives are
+handled via KNOWN_FALSE_POSITIVES; add an entry there with a reason rather
+than suppressing the exit.
 """
 import re, sys
 from pathlib import Path
@@ -107,6 +107,16 @@ KNOWN_FALSE_POSITIVES = {
     # the "deletion/count/id-lookup rather than a spend total" false-
     # positive shape named above.
     "t=>{ if(!ids||!ids.has(t.id))return; if(opt==='exclude'){ t.excluded=true;t.is_offset=false; } else { const cat=opt==='custom'?customCat:'Sh",
+    # renderTxSourcesPanel() -- finds latest transaction date per card/source
+    # to show "last imported X days ago" for each account. Must look at ALL
+    # sources, not just activeSources -- the point is to show when each
+    # account was last updated regardless of what the Spending tab has filtered.
+    't=>{ if(!t.card||t.excluded||t.isIncome)return; if(!sourceMax[t.card]||t.date>sourceMax[t.card])sourceMax[t.card]=t.date; }',
+    # updateImportSourceHint() -- finds most recent transaction for the
+    # specific source name being typed in the import modal. Filtering by
+    # activeSources here would be wrong: the source being imported may not
+    # be in activeSources yet (it's brand new).
+    't=>t.card&&t.card.toLowerCase()===srcLower&&!t.isIncome',
 }
 
 
@@ -170,6 +180,7 @@ def main():
             print(f"    {snippet}")
         total += len(findings)
     print(f"\n{total} candidate site(s) across {len(targets)} file(s) — heuristic only, review each one manually.")
+    sys.exit(total > 0)
 
 
 if __name__ == '__main__':

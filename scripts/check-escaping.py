@@ -18,9 +18,9 @@ This is a heuristic, not a JS parser — it WILL have false positives
 Every flagged line needs a human look, not blind trust. Run manually:
     python3 scripts/check-escaping.py [file ...]
 Defaults to trakyodollas.html, index.html, privacy.html if no args given.
-Exits 0 always (reporting tool, not a hard deploy gate) — the false-positive
-rate isn't low enough yet to block deploys automatically; see the bottom
-of the output for a summary count.
+Exits non-zero when findings > 0 (hard deploy gate). False positives are
+handled via TRAKYODOLLAS_KNOWN_FALSE_POSITIVES; add an entry there with a
+reason rather than suppressing the exit.
 """
 import re, sys
 from pathlib import Path
@@ -234,6 +234,33 @@ TRAKYODOLLAS_KNOWN_FALSE_POSITIVES = {
     # a deterministic stringToColor() hash otherwise -- genuinely
     # validated in both code paths, not just documented as such.
     ('getCatColor(t.cat)', '.cat'),
+
+    # renderNwBreakdown()'s GROUPS array is hardcoded -- g.label is a
+    # literal like 'Investments'/'Cash', g.type is 'investment'/'cash'/etc.
+    # Neither comes from user input.
+    ('g.label.toLowerCase()', '.label'),
+    ('g.type', '.type'),
+
+    # getCatColor(r.cat) in renderSimulatorTab() -- same validated-color
+    # path as the getCatColor(t.cat) entry above; r.cat is used as a lookup
+    # key into the color map, not rendered as text.
+    ('getCatColor(r.cat)', '.cat'),
+
+    # renderSimulatorTab() -- r.cat used only in JS comparisons inside an
+    # IIFE (o.cat===r.cat) and as a getCatColor() argument. The actual
+    # r.cat value going into HTML text is at the esc(r.cat) call a line
+    # earlier in the same template; these are different expressions inside
+    # the same ${...} block.
+    ('r.hasOverride\n          ?(()=>{const ov=state.simulator.overrides.find(o=>o.cat===r.cat);const durStr=ov?.durationMonths', '.cat'),
+
+    # renderSimulatorTab() -- state.accounts.some(a=>a.type==='mortgage')
+    # is a boolean check; the string 'mortgage' is never rendered, only
+    # compared against.
+    ("state.accounts.some(a=>a.type==='mortgage')?'':\n        `<button class=\"btn\" data-action=\"openSimulatorRentMortgagePrese", '.type'),
+
+    # confirmTxImport() dedup-key construction -- `${t.date}|${t.desc}|
+    # ${t.amount}` builds a Map key string, not an innerHTML assignment.
+    ('t.desc', '.desc'),
 }
 
 
@@ -282,6 +309,7 @@ def main():
             print(f"  line {line}: matched '{matched}' in ${{{expr}}}")
         total += len(findings)
     print(f"\n{total} candidate site(s) across {len(targets)} file(s) — heuristic only, review each one manually.")
+    sys.exit(total > 0)
 
 
 if __name__ == '__main__':

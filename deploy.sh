@@ -56,68 +56,23 @@ python3 scripts/check-contrast.py
 echo "=== Checking modals for ARIA dialog attributes ==="
 python3 scripts/check-modal-aria.py
 
-# Advisory only (not a hard gate — has known false positives, e.g. a
-# risky-named field used in a hardcoded/internal object rather than
-# rendered user data). Review the output; don't just wait for it to fail.
-echo "=== Scanning for unescaped user-data interpolations (advisory) ==="
-python3 scripts/check-escaping.py || true
+echo "=== Scanning for unescaped user-data interpolations ==="
+python3 scripts/check-escaping.py
 
-# Advisory only, same posture as check-escaping.py above — added after
-# passes 15/16/17 each independently found a function that hand-rolled its
-# own state.transactions loop instead of calling getBaseTxs(), and so
-# silently missed the _bizFilter (Business/Personal) guard getBaseTxs()
-# has. Known false positives: loops deliberately searching for excluded/
-# income transactions rather than filtering them out, and loops that are
-# lifetime-scoped by design.
-echo "=== Scanning for spend loops missing the _bizFilter guard (advisory) ==="
-python3 scripts/check-bizfilter-coverage.py || true
+echo "=== Scanning for spend loops missing the _bizFilter guard ==="
+python3 scripts/check-bizfilter-coverage.py
 
-# Advisory only, same posture and same underlying pattern as the
-# _bizFilter scanner above — added after passes 34/35/36 found 13+ sites
-# where a hand-rolled state.transactions loop reimplemented getBaseTxs()'s
-# exclusion logic but dropped state.activeSources (the deselected card/
-# account filter) instead of _bizFilter. Kept as a separate script since
-# the two guards are dropped independently. Known false positives:
-# lifetime/unfiltered-by-design loops (buildCatColorMap()), count badges
-# that aren't spend totals, datalist population, deliberate excluded-
-# transaction scans, per-source cache builders whose readers already
-# filter (rebuildMonthly()), and deliberate bulk-recategorization actions
-# (applyVenmoOpt()/checkForVenmoCashouts()).
-echo "=== Scanning for spend loops missing the activeSources guard (advisory) ==="
-python3 scripts/check-activesources-coverage.py || true
+echo "=== Scanning for spend loops missing the activeSources guard ==="
+python3 scripts/check-activesources-coverage.py
 
-# Advisory only, same posture as the scanners above — added after passes
-# 14, 16, and 20 each independently found a function that mutated
-# persisted state (transactions, or another synced field) without
-# actually triggering a save for it, including a CRITICAL bug (saveTx())
-# where the function WAS in the auto-save patch list and scheduleSave()
-# genuinely fired, but the transactions key still never got rewritten
-# because _txsDirty was never set. Known false positives: a mutator whose
-# only caller already handles the save itself (this scanner only looks
-# one level deep) and load-path functions that read data into state
-# rather than a user action that needs saving.
-echo "=== Scanning for state mutations missing a save trigger (advisory) ==="
-python3 scripts/check-persistence-coverage.py || true
+echo "=== Scanning for state mutations missing a save trigger ==="
+python3 scripts/check-persistence-coverage.py
 
-# Advisory only, same posture as the scanners above — added after 5
-# consecutive adversarial passes (108-112) each found a "first real save"
-# entry point (a function that adds real data to state.accounts/vehicles/
-# snapshots/transactions) missing _replaceDemoDataWithReal(), the shared
-# helper that wipes demo-scripted data on a user's first genuinely real
-# action. Written by the 113th pass's dedicated systematic audit, which
-# also confirmed this scanner reports 0 candidates against the 7 sites
-# fixed so far — its value is catching the 8th one a future pass writes.
-echo "=== Scanning for demo-to-real 'first real save' entry points missing _replaceDemoDataWithReal() (advisory) ==="
-python3 scripts/check-demo-transition-coverage.py || true
+echo "=== Scanning for demo-to-real 'first real save' entry points missing _replaceDemoDataWithReal() ==="
+python3 scripts/check-demo-transition-coverage.py
 
-# Advisory only, same posture as the scanners above — added after the
-# 21st pass found saveTx()/saveEditTx()/deleteTx() mutated transactions
-# without calling rebuildMonthly(), leaving the MONTHLY/ALL_MONTHS caches
-# (and everything downstream: the date-range dropdown, chart x-axes, the
-# Budget tab's default month, the Spending tab's headline total) stale
-# until an unrelated action happened to rebuild them.
-echo "=== Scanning for transaction mutations missing rebuildMonthly() (advisory) ==="
-python3 scripts/check-rebuild-coverage.py || true
+echo "=== Scanning for transaction mutations missing rebuildMonthly() ==="
+python3 scripts/check-rebuild-coverage.py
 
 # Advisory only, same posture as the scanners above — added after a field
 # added to local persistence (serializeState()) recurred without also
