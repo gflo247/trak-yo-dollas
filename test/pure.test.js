@@ -676,6 +676,7 @@ test("parseCsvAccounts: a zero balance is imported, not silently dropped", () =>
     state: { accounts: [], nextId: 1, hasRealAccounts: false, hasRealData: false },
     hideDemoBadge: () => {},
     _replaceDemoDataWithReal: () => {},
+    _requestStoragePersist: () => {},
     document: { getElementById: () => null },
     ACCT_TYPE_ALIASES: {
       cash: "cash", "cash/savings": "cash", checking: "cash", savings: "cash",
@@ -699,6 +700,7 @@ test("parseCsvAccounts: a quoted name containing a comma doesn't shift the balan
     state: { accounts: [], nextId: 1, hasRealAccounts: false, hasRealData: false },
     hideDemoBadge: () => {},
     _replaceDemoDataWithReal: () => {},
+    _requestStoragePersist: () => {},
     document: { getElementById: () => null },
     ACCT_TYPE_ALIASES: {
       cash: "cash", "cash/savings": "cash", checking: "cash", savings: "cash",
@@ -722,6 +724,7 @@ test("parseCsvAccounts: a successful import sets hasRealAccounts/hasRealData, ma
     state: { accounts: [], nextId: 1, hasRealAccounts: false, hasRealData: false },
     hideDemoBadge: () => {},
     _replaceDemoDataWithReal: () => {},
+    _requestStoragePersist: () => {},
     document: { getElementById: () => null },
     ACCT_TYPE_ALIASES: {
       cash: "cash", "cash/savings": "cash", checking: "cash", savings: "cash",
@@ -756,6 +759,7 @@ function acctAliasCtx() {
     state: { accounts: [], nextId: 1, hasRealAccounts: false, hasRealData: false },
     hideDemoBadge: () => {},
     _replaceDemoDataWithReal: () => {},
+    _requestStoragePersist: () => {},
     document: { getElementById: () => null },
     ACCT_TYPE_ALIASES: {
       cash: "cash", "cash/savings": "cash", checking: "cash", savings: "cash",
@@ -2184,7 +2188,7 @@ test("importBackup, confirmTxImport, and loadDemoProfile all call the shared _re
   const source = readSource();
   assert.match(
     source,
-    /state\.transactions=arr\(payload\.transactions\)[\s\S]{0,2100}?_resetSessionFiltersForDataReplace\(\);\s*rebuildMonthly\(\);\s*rebuildCatSelects\(\);\s*scheduleSave\(\);\s*renderAll\(\);\s*showToast\('Backup restored\.'/,
+    /state\.transactions=arr\(payload\.transactions\)[\s\S]{0,2100}?_resetSessionFiltersForDataReplace\(\);\s*rebuildMonthly\(\);\s*rebuildCatSelects\(\);\s*scheduleSave\(\);[\s\S]{0,100}?renderAll\(\);\s*showToast\('Backup restored\.'/,
     "importBackup() should call _resetSessionFiltersForDataReplace() before rebuildMonthly(), right before its final 'Backup restored.' toast"
   );
   assert.match(
@@ -4346,7 +4350,7 @@ test("confirmTxImport()/saveTx()/saveSnapshot()/saveHistoricalSnapshot() all cal
   const confirmTxImportSrc = source.match(/function confirmTxImport\(\)\{[\s\S]{0,13000}?\n}\n/)[0];
   assert.match(
     confirmTxImportSrc,
-    /state\.hasRealData=true;\s*hideDemoBadge\(\);\s*\/\/[\s\S]{0,1400}?renderAll\(\);\s*\/\/ Show post-import success modal/,
+    /state\.hasRealData=true;\s*hideDemoBadge\(\);[\s\S]{0,1600}?renderAll\(\);\s*\/\/ Show post-import success modal/,
     "confirmTxImport() should call renderAll() (not renderSpending()) right after state.hasRealData=true/hideDemoBadge() -- renderAll() itself reads state.hasRealData to decide whether to hide demo notices, so it must run after that flag flips, not right after closeModals() where an earlier version of this fix mistakenly placed it (caught live-testing: the 'Demo accounts' banner stayed stuck visible)"
   );
   assert.doesNotMatch(

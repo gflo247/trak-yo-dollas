@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-8T+YDGEQb3JtpluYni/oUDRTbkrf1IiPIWvl7he3OQU=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-AY2xVCKurwVLSQc9oaE8Tz6zdKXdERsMY6ZnRZrc3t4=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -4907,6 +4907,16 @@ const isLiquidAccount=a=>a.liquid!==undefined?a.liquid:defaultLiquidForType(a.ty
 // "liquid assets minus liquid liabilities."
 const liquidAssets=()=>state.accounts.filter(a=>!isLiab(a.type)&&!a.excludeFromNW&&isLiquidAccount(a)).reduce((s,a)=>s+a.balance,0);
 
+// Ask the browser to protect this origin's storage from eviction. Called
+// once per "first real save" entry point (confirmTxImport, saveTx,
+// saveAccount, saveSnapshot, saveHistoricalSnapshot, importBackup) so any
+// path that creates real data triggers it. Fire-and-forget: browsers that
+// don't support the API or deny the request are silently ignored. Calling
+// it multiple times is safe -- the browser returns the existing grant.
+function _requestStoragePersist(){
+  if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+}
+
 // Real trailing-12-month average total spend (all imported sources, all
 // categories) -- deliberately ignores state.activeSources (the Spending tab's
 // current source filter) because a cushion estimates how long liquid assets
@@ -9484,6 +9494,7 @@ function saveHistoricalSnapshot(){
   // indefinitely. Found in the 112th adversarial pass.
   state.hasRealData=true;
   state.hasRealSnapshot=true;
+  _requestStoragePersist();
   hideDemoBadge();
   const sdn=document.getElementById('snap-demo-notice');if(sdn)sdn.style.display='none';
   _editingSnapshotMonthKey=null;
@@ -12586,6 +12597,7 @@ function saveSnapshot(){
   state.snapshots.push(snap);
   state.hasRealData=true;
   state.hasRealSnapshot=true;
+  _requestStoragePersist();
   hideDemoBadge();
   const sdn=document.getElementById('snap-demo-notice');if(sdn)sdn.style.display='none';
   // renderAll(), not the renderMetrics()/renderNwBreakdown()/
@@ -14376,6 +14388,7 @@ function confirmTxImport(){
   // Hide demo notices — real data is now loaded
   state.hasRealData=true;
   hideDemoBadge();
+  if(wasFirstRealSave)_requestStoragePersist();
   // renderAll(), not just renderSpending() -- a first-real-import wipes
   // state.accounts via _replaceDemoDataWithReal() above (like every
   // other "first real save" entry point), but only Spending got
@@ -15904,6 +15917,7 @@ function saveAccount(){
   _replaceDemoDataWithReal();
   state.hasRealAccounts=true;
   state.hasRealData=true;
+  _requestStoragePersist();
   hideDemoBadge();
   // editAcctId may reference a demo account _replaceDemoDataWithReal() just
   // wiped -- fall back to adding as new rather than silently dropping the
@@ -16008,6 +16022,7 @@ function saveVehicle(){
   _replaceDemoDataWithReal();
   state.hasRealAccounts=true;
   state.hasRealData=true;
+  _requestStoragePersist();
   hideDemoBadge();
   // editVehicleId may reference a demo vehicle the wipe just cleared --
   // fall back to adding as new rather than silently dropping the edit,
@@ -16105,6 +16120,7 @@ function saveTx(){
   // pass.
   _replaceDemoDataWithReal();
   state.hasRealData=true;
+  _requestStoragePersist();
   hideDemoBadge();
   // cat was captured above, before the wipe just cleared
   // state.customCategories -- the #t-cat <select> was populated from
@@ -16345,6 +16361,7 @@ function parseCsvAccounts(text){
     parsed.forEach(a=>state.accounts.push({id:state.nextId++,...a}));
     state.hasRealAccounts=true;
     state.hasRealData=true;
+    _requestStoragePersist();
     hideDemoBadge();
     const da=document.getElementById('demo-notice-accounts');if(da)da.style.display='none';
     const dn=document.getElementById('demo-notice-dash');if(dn)dn.style.display='none';
@@ -16940,6 +16957,7 @@ function importBackup(file){
       rebuildMonthly();
       rebuildCatSelects();
       scheduleSave();
+      _requestStoragePersist();
       renderAll();
       showToast('Backup restored.','#34D399',5000);
     }catch(err){console.error('importBackup error:',err);showToast('Failed to read backup file.','#F87171');}
