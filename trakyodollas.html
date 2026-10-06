@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-StzsNorqNmPwCReptZfKddAkQZMOvoHe/+Tc9ML22ZQ=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-GNMAeh4wKhd8R6lursVAjST/y8Svs861pv3pt+indKo=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -925,6 +925,16 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <button data-action="openAuthModal|dismissLocalDataNotice" style="background:var(--amber-text-strong);color:#000;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 3px" type="button">Sign in to sync</button>
   <button data-action="exportBackup|dismissLocalDataNotice" style="background:none;border:none;color:var(--amber-text-strong);font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Export a backup</button>
   <button data-action="dismissLocalDataNotice" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:4px 6px;font-family:inherit;vertical-align:middle" title="Dismiss" type="button">✕</button>
+</div>
+<!-- Shown exactly once on iPhone/iPad Safari -- see maybeShowLocalDataNotice().
+     Safari deletes localStorage after 7 days without a visit; home-screen web
+     apps are exempt. Safari never fires beforeinstallprompt so the settings-
+     panel install button never surfaces for these users. -->
+<div id="ios-home-screen-banner" style="display:none;background:rgba(251,191,36,.1);border-bottom:1px solid rgba(251,191,36,.3);padding:8px 1rem;font-size:12px;color:var(--text-secondary);text-align:center;letter-spacing:.01em">
+  📱 <strong style="color:var(--amber-text-strong)">On iOS, Safari may delete your data after 7 days</strong> — tap <strong>Share ↗</strong> then <strong>"Add to Home Screen"</strong> to keep it safe.
+  <button data-action="openAuthModal|dismissIosHomeBanner" style="background:var(--amber-text-strong);color:#000;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 3px" type="button">Sign in to sync instead</button>
+  <button data-action="exportBackup|dismissIosHomeBanner" style="background:none;border:none;color:var(--amber-text-strong);font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Export a backup</button>
+  <button data-action="dismissIosHomeBanner" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:4px 6px;font-family:inherit;vertical-align:middle" title="Dismiss" type="button">✕</button>
 </div>
 <!-- Stays up until dismissed or reloaded, unlike a toast -- the underlying
      "your edits aren't syncing" condition doesn't go away on its own after
@@ -11319,15 +11329,35 @@ function hideDemoBadge(){
 // about whether THIS browser has shown the notice, not financial data, so
 // it's deliberately excluded from the cloud sync payload (same convention
 // as trakyo_tab/trakyo_show_excl).
+// Detects iOS Safari in the browser (not already running as a home-screen
+// web app). navigator.standalone is an iOS Safari extension: true when
+// running from the home screen (hint no longer needed), false in the browser,
+// undefined elsewhere. CriOS/FxiOS guard excludes Chrome/Firefox on iOS,
+// which use their own storage and don't have the 7-day Safari deletion rule.
+function _isIosSafari(){
+  return /iP(hone|ad|od)/.test(navigator.userAgent)&&
+         /WebKit/.test(navigator.userAgent)&&
+         !/CriOS|FxiOS/.test(navigator.userAgent)&&
+         !navigator.standalone;
+}
 function maybeShowLocalDataNotice(){
   if(window._fbUser)return;
   try{if(localStorage.getItem('trakyo_local_data_notice_shown')==='1')return;}catch(e){}
   try{localStorage.setItem('trakyo_local_data_notice_shown','1');}catch(e){}
+  if(_isIosSafari()){
+    const el=document.getElementById('ios-home-screen-banner');
+    if(el)el.style.display='block';
+    return;
+  }
   const el=document.getElementById('local-data-notice-banner');
   if(el)el.style.display='block';
 }
 function dismissLocalDataNotice(){
   const el=document.getElementById('local-data-notice-banner');
+  if(el)el.style.display='none';
+}
+function dismissIosHomeBanner(){
+  const el=document.getElementById('ios-home-screen-banner');
   if(el)el.style.display='none';
 }
 function showDemoNudge(){
