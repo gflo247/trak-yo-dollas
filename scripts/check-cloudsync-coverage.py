@@ -195,7 +195,7 @@ def main():
             for k in never_restored:
                 print(f"    - {k}")
         total += len(never_synced) + len(never_restored)
-    print(f"\n{total} candidate field(s) — heuristic only, review each one manually.")
+    print(f"\n{total} candidate field(s) — heuristic only; for each finding, either fix the underlying code or add a justified suppression to NEVER_SYNCED_KNOWN_FALSE_POSITIVES.")
     sys.exit(total > 0)
 
 

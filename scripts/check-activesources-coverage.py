@@ -179,7 +179,7 @@ def main():
             print(f"  line {line}: .{method}(...) reimplements exclusion via '{signal}' with no activeSources guard")
             print(f"    {snippet}")
         total += len(findings)
-    print(f"\n{total} candidate site(s) across {len(targets)} file(s) — heuristic only, review each one manually.")
+    print(f"\n{total} candidate site(s) across {len(targets)} file(s) — heuristic only; for each finding, either fix the underlying code or add a justified suppression to KNOWN_FALSE_POSITIVES.")
     sys.exit(total > 0)
 
 

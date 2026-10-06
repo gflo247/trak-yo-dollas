@@ -308,7 +308,7 @@ def main():
         for line, expr, matched in findings:
             print(f"  line {line}: matched '{matched}' in ${{{expr}}}")
         total += len(findings)
-    print(f"\n{total} candidate site(s) across {len(targets)} file(s) — heuristic only, review each one manually.")
+    print(f"\n{total} candidate site(s) across {len(targets)} file(s) — heuristic only; for each finding, either fix the underlying code or add a justified suppression to TRAKYODOLLAS_KNOWN_FALSE_POSITIVES.")
     sys.exit(total > 0)
 
 

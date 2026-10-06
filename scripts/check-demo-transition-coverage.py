@@ -125,7 +125,7 @@ def main():
         for line, fn_name, matched in findings:
             print(f"  line {line}: function {fn_name}() calls '{matched}' but never references _replaceDemoDataWithReal( -- new 'first real save' entry point?")
         total += len(findings)
-    print(f"\n{total} candidate site(s) across {len(targets)} file(s) — heuristic only, review each one manually.")
+    print(f"\n{total} candidate site(s) across {len(targets)} file(s) — heuristic only; for each finding, either fix the underlying code or add a justified suppression to KNOWN_FALSE_POSITIVES.")
     sys.exit(total > 0)
 
 

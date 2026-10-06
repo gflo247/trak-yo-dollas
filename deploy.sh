@@ -74,26 +74,6 @@ python3 scripts/check-demo-transition-coverage.py
 echo "=== Scanning for transaction mutations missing rebuildMonthly() ==="
 python3 scripts/check-rebuild-coverage.py
 
-# Advisory only, same posture as the scanners above — added after a field
-# added to local persistence (serializeState()) recurred without also
-# being added to the cloud sync payload (syncToCloud()) and restore logic
-# (loadUserData()): nwGoal/hideNwGoal, then excludedCats/declaredIncome
-# (37th pass), then budgetWarnPct/currency (38th pass, found via this
-# scanner's own first run — currency turned out to be a security-relevant
-# miss too, unsanitized at every write site and unescaped at every
-# render site; fixed by escaping it at its one shared point of entry
-# into HTML instead). excludedCats/currency gate/appear in dozens of
-# call sites app-wide, so this class isn't cosmetic — a customized value
-# on one device silently disagreed with another. Known false positives:
-# transactions/snapshots (deliberately separate sync paths, not part of
-# the prefs payload at all), hasRealData/hasRealAccounts/hasRealSnapshot
-# (loadUserData() derives them itself from what it just restored, rather
-# than trusting a synced copy — this comment previously claimed they were
-# already "re-derived" when nothing anywhere actually did that; fixed in
-# the 113th adversarial pass after that exact gap let a signed-in user's
-# real cloud-restored dataset get silently wiped by their own next
-# action), activeSources (confirmed device-local by design — loadUserData()
-# derives it fresh from restored transactions, never reads a synced value).
 echo "=== Scanning for fields persisted locally but missing from cloud sync ==="
 python3 scripts/check-cloudsync-coverage.py
 
