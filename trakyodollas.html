@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-F1grvwt5U1XuA96JIscTbSKAwL3tIgJwuChzKfr3h0w=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-StzsNorqNmPwCReptZfKddAkQZMOvoHe/+Tc9ML22ZQ=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -72,14 +72,11 @@
   --text-secondary:#94A3B8;
   --text-muted:#8595A8;
   /* Was #475569 (~1.9:1 against --bg-card, ~2.4:1 against --bg-input) --
-     the exact color pass 138 already flagged as too dark when it was
-     --pill-info-color, still in use here as --text-dim, which drives
-     .form-label (32 uses, including the sync-passphrase modal's
-     "Passphrase"/"Confirm passphrase" labels), .modal-sub, .fmt-btn, and
-     the search placeholder. Failed WCAG AA (4.5:1 for this size of text)
-     in dark theme, the app's default -- light theme's own #6B7280
-     (~4.8:1) was already fine. Matches --text-muted's already-verified-
-     safe value (~4.8:1). Found in the 139th adversarial pass. */
+     failed WCAG AA (4.5:1 for this size of text) in dark theme for
+     .form-label, .modal-sub, .fmt-btn, and the search placeholder.
+     Light theme's own #6B7280 (~4.8:1) was already fine. Matches
+     --text-muted's already-verified-safe value (~4.8:1). Found in the
+     139th adversarial pass. */
   --text-dim:#8595A8;
   /* --text-faint removed here (was #334155) -- had zero
      var(--text-faint) consumers anywhere in the file, and its light-
@@ -100,17 +97,6 @@
   --bar-marker-halo:rgba(0,0,0,.45);
 
   /* Semantic component tokens */
-  --pill-info-bg:#1E293B;
-  /* border/color both #8595A8 (was #334155/#475569, ~1.4:1/~1.9:1 against
-     this bg) -- the (i) info-pill trigger is the ONLY affordance
-     signaling an inline explanation exists (see its use at the label-row
-     ⓘ button), and dark is the app's default theme most users see, so
-     this failed WCAG AA (3:1 UI-component / 4.5:1 text) for the audience
-     that hits it most. #8595A8 reaches ~4.8:1, matching this file's own
-     --text-muted token and comfortably exceeding the light theme's own
-     equivalent (~4.2:1). Found in the 138th adversarial pass. */
-  --pill-info-border:#8595A8;
-  --pill-info-color:#8595A8;
   --card-nudge-bg:#1E293B;
   /* --card-nudge-border/--info-box-bg/--info-box-border/--tab-strip-bg/
      --analytics-title/--bg-elevated/--chart-bg/--chart-grid/--chart-tick
@@ -170,9 +156,6 @@
   --text-dim:#6B7280;
 
   /* Semantic component tokens */
-  --pill-info-bg:#EDF0F4;
-  --pill-info-border:#CBD5E1;
-  --pill-info-color:#64748B;
   --card-nudge-bg:#F8FAFC;
   --toast-bg:#FFFEFB;
   --toast-border:#D1D9E0;
@@ -869,9 +852,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 /* Modal overlays stay dark */
 [data-theme="light"] .modal-overlay{background:rgba(15,23,42,.6)!important}
-
-/* Pill info (ⓘ) buttons */
-[data-theme="light"] #insights-pills button[data-tip]{background:var(--bg-deep)!important;border-color:var(--border-mid)!important;color:var(--text-muted)!important}
 
 /* Savings nudge pill */
 [data-theme="light"] #insights-pills div[style*="#1E293B"]{background:var(--bg-card)!important;border-color:var(--border-mid)!important}
@@ -3526,18 +3506,15 @@ function renderInsights(){
 
   // ── Pill template with sub-label ─────────────────────────────
   const pillWithTip=(icon,label,value,color,sub,tip,cta='')=>`
-    <div style="position:relative;display:flex;flex-direction:column;justify-content:center;background:${color}15;border:1.5px solid ${color}55;border-radius:12px;padding:.75rem .9rem;gap:.4rem">
+    <div data-action="showPillTip" data-tip="${tip.replace(/"/g,'&quot;')}" style="position:relative;cursor:pointer;display:flex;flex-direction:column;justify-content:center;background:${color}15;border:1.5px solid ${color}55;border-radius:12px;padding:.75rem .9rem;gap:.4rem">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
         <div style="display:flex;align-items:center;gap:7px;flex-shrink:1;min-width:0;overflow:hidden">
           <span style="font-size:16px;flex-shrink:0">${icon}</span>
           <span style="font-size:11px;font-weight:700;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${label}</span>
         </div>
-        <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
-          <div style="font-size:18px;font-weight:900;color:${color};line-height:1;letter-spacing:-.02em;white-space:nowrap">${value}</div>
-          <button data-action="showPillTip" data-stop="1" data-tip="${tip.replace(/"/g,'&quot;')}" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--pill-info-bg);color:var(--pill-info-color);font-size:10px;cursor:pointer;border:1px solid var(--pill-info-border);padding:0;flex-shrink:0" type="button">ⓘ</button>
-        </div>
+        <div style="font-size:18px;font-weight:900;color:${color};line-height:1;letter-spacing:-.02em;white-space:nowrap;flex-shrink:0">${value}</div>
       </div>
-      ${(sub||cta)?`<div style="font-size:12px;color:var(--text-muted);line-height:1.35">${sub}${cta?` · <button data-action="${_ctaAction(cta)}"${_ctaArg(cta)!==null?` data-arg="${esc(_ctaArg(cta))}"`:''} style="background:none;border:none;color:${color};font-size:12px;font-weight:700;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">${cta.label} →</button>`:''}</div>`:''}
+      ${(sub||cta)?`<div style="font-size:12px;color:var(--text-muted);line-height:1.35">${sub}${cta?` · <button data-action="${_ctaAction(cta)}"${_ctaArg(cta)!==null?` data-arg="${esc(_ctaArg(cta))}"`:''} data-stop="1" style="background:none;border:none;color:${color};font-size:12px;font-weight:700;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">${cta.label} →</button>`:''}</div>`:''}
     </div>`;
 
   // ── Spend pill pre-computation ────────────────────────────────

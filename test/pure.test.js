@@ -5462,22 +5462,6 @@ test("showPillTip: the tip content box carries max-height/overflow-y, matching .
 });
 
 // ── 138th adversarial pass ──────────────────────────────────────────────
-// MEDIUM: the (i) info-pill trigger's dark-theme (default theme) glyph
-// (#475569 on #1E293B, ~1.9:1) and border (#334155 on #1E293B, ~1.4:1)
-// both failed WCAG AA (3:1 UI-component / 4.5:1 text). The pill is the
-// ONLY affordance signaling an inline explanation exists, so this was a
-// real usability gap for the theme most users see by default. The light-
-// theme equivalent (~4.2:1) was already fine. Found in the 138th
-// adversarial pass. ──
-test("dark theme's --pill-info-border/--pill-info-color reach at least 3:1 contrast against --pill-info-bg, matching --text-muted", () => {
-  const source = readSource();
-  assert.match(
-    source,
-    /--pill-info-border:#8595A8;\s*--pill-info-color:#8595A8;/,
-    "dark theme's pill-info border/color should both be #8595A8 (matching --text-muted, ~4.8:1 against the #1E293B bg), not the old #334155/#475569 (~1.4:1/~1.9:1)"
-  );
-});
-
 // LOW: showPillTip()'s overlay is styled exactly like a modal (full-
 // screen, dark backdrop, centered box) but was dismissible only via its
 // own onclick handler -- never wired into the global Escape handler,
