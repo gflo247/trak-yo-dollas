@@ -4096,7 +4096,258 @@ test("applyCurrency and applyCustomCurrency both call renderAll(), not just rend
   assert.match(accMatch[0], /renderAll\(\);/, "applyCustomCurrency() should call renderAll()");
 });
 
-// Finding 5 (LOW): the shared peakIdx (renderSpendChart()'s "Peak month"
+// ── getBaseTxs() parameter contract ──────────────────────────────────────
+// Phase 1: signature extended with optional params; zero-arg call must stay
+// identical to the old behavior so no existing caller breaks silently.
+test("getBaseTxs: zero-arg call behaves identically to the pre-param version", () => {
+  const txs = [
+    {id:1,date:'2026-01-15',card:'Chase',cat:'Food',amount:50,excluded:false,isIncome:false,biz:false},
+    {id:2,date:'2026-01-20',card:'Chase',cat:'Income',amount:3000,excluded:false,isIncome:true,biz:false},
+    {id:3,date:'2026-01-10',card:'Chase',cat:'Food',amount:20,excluded:true,isIncome:false,biz:false},
+    {id:4,date:'2025-12-01',card:'Chase',cat:'Food',amount:99,excluded:false,isIncome:false,biz:false},
+  ];
+  const ctx = {
+    state: {
+      transactions: txs,
+      activeSources: new Set(['Chase']),
+      showExcluded: false,
+      includeIncome: false,
+      excludedCats: new Set(['Income']),
+    },
+    _bizFilter: 'all',
+    getFilteredMonths: () => ['2026-01'],
+  };
+  const { getBaseTxs } = loadFunctions(['getBaseTxs'], ctx);
+  const result = getBaseTxs();
+  // id:1 passes (normal spend, correct month, correct source)
+  // id:2 filtered by excludedCats (Income is excluded, includeIncome=false)
+  // id:3 filtered by t.excluded (showExcluded=false)
+  // id:4 filtered by month (outside getFilteredMonths)
+  assert.deepStrictEqual(result.map(t=>t.id), [1]);
+});
+
+test("getBaseTxs: income='normal' passes income through excludedCats when includeIncome=true", () => {
+  const txs = [
+    {id:1,date:'2026-01-15',card:'Chase',cat:'Food',amount:50,excluded:false,isIncome:false,biz:false},
+    {id:2,date:'2026-01-20',card:'Chase',cat:'Income',amount:3000,excluded:false,isIncome:true,biz:false},
+  ];
+  const ctx = {
+    state: {
+      transactions: txs,
+      activeSources: new Set(['Chase']),
+      showExcluded: false,
+      includeIncome: true, // on — income should pass through excludedCats
+      excludedCats: new Set(['Income']), // Income IS in excludedCats
+    },
+    _bizFilter: 'all',
+    getFilteredMonths: () => ['2026-01'],
+  };
+  const { getBaseTxs } = loadFunctions(['getBaseTxs'], ctx);
+  // Both pass: id:2 gets the includeIncome exception in the excludedCats check
+  assert.deepStrictEqual(getBaseTxs().map(t=>t.id), [1,2]);
+  // Confirm default (includeIncome=false) still filters income via excludedCats
+  ctx.state.includeIncome = false;
+  assert.deepStrictEqual(getBaseTxs().map(t=>t.id), [1]);
+});
+
+test("getBaseTxs: months param restricts to an explicit set instead of the UI range", () => {
+  const txs = [
+    {id:1,date:'2026-01-15',card:'Chase',cat:'Food',amount:50,excluded:false,isIncome:false,biz:false},
+    {id:2,date:'2026-02-10',card:'Chase',cat:'Food',amount:30,excluded:false,isIncome:false,biz:false},
+    {id:3,date:'2026-03-05',card:'Chase',cat:'Food',amount:20,excluded:false,isIncome:false,biz:false},
+  ];
+  const ctx = {
+    state: {
+      transactions: txs,
+      activeSources: new Set(['Chase']),
+      showExcluded: false,
+      includeIncome: false,
+      excludedCats: new Set(),
+    },
+    _bizFilter: 'all',
+    getFilteredMonths: () => ['2026-01'], // UI range is Jan only
+  };
+  const { getBaseTxs } = loadFunctions(['getBaseTxs'], ctx);
+  // Without months param: only Jan
+  assert.deepStrictEqual(getBaseTxs().map(t=>t.id), [1]);
+  // With explicit months Set: Jan+Feb
+  assert.deepStrictEqual(getBaseTxs({months:new Set(['2026-01','2026-02'])}).map(t=>t.id), [1,2]);
+  // With months Array: same result
+  assert.deepStrictEqual(getBaseTxs({months:['2026-02','2026-03']}).map(t=>t.id), [2,3]);
+});
+
+test("getBaseTxs: income='only' returns only income txs and bypasses excludedCats for them", () => {
+  const txs = [
+    {id:1,date:'2026-01-15',card:'Chase',cat:'Food',amount:50,excluded:false,isIncome:false,biz:false},
+    {id:2,date:'2026-01-20',card:'Chase',cat:'Income',amount:3000,excluded:false,isIncome:true,biz:false},
+  ];
+  const ctx = {
+    state: {
+      transactions: txs,
+      activeSources: new Set(['Chase']),
+      showExcluded: false,
+      includeIncome: false,
+      excludedCats: new Set(['Income']), // Income is excluded by default
+    },
+    _bizFilter: 'all',
+    getFilteredMonths: () => ['2026-01'],
+  };
+  const { getBaseTxs } = loadFunctions(['getBaseTxs'], ctx);
+  const result = getBaseTxs({income:'only'});
+  // id:2 passes even though 'Income' is in excludedCats — income='only' bypasses that check
+  assert.deepStrictEqual(result.map(t=>t.id), [2]);
+});
+
+test("getBaseTxs: income='include' passes income txs through regardless of state.includeIncome", () => {
+  const txs = [
+    {id:1,date:'2026-01-15',card:'Chase',cat:'Food',amount:50,excluded:false,isIncome:false,biz:false},
+    {id:2,date:'2026-01-20',card:'Chase',cat:'Income',amount:3000,excluded:false,isIncome:true,biz:false},
+  ];
+  const ctx = {
+    state: {
+      transactions: txs,
+      activeSources: new Set(['Chase']),
+      showExcluded: false,
+      includeIncome: false, // off — would normally exclude income via excludedCats
+      excludedCats: new Set(['Income']),
+    },
+    _bizFilter: 'all',
+    getFilteredMonths: () => ['2026-01'],
+  };
+  const { getBaseTxs } = loadFunctions(['getBaseTxs'], ctx);
+  assert.deepStrictEqual(getBaseTxs({income:'include'}).map(t=>t.id), [1,2]);
+});
+
+test("getBaseTxs: income='exclude' filters income via !t.isIncome directly, and still applies excludedCats to non-income", () => {
+  const txs = [
+    {id:1,date:'2026-01-15',card:'Chase',cat:'Food',amount:50,excluded:false,isIncome:false,biz:false},
+    // income tx whose category was removed from excludedCats by the user
+    {id:2,date:'2026-01-20',card:'Chase',cat:'Income',amount:3000,excluded:false,isIncome:true,biz:false},
+    // non-income tx in an excluded category (e.g. Internal Transfer)
+    {id:3,date:'2026-01-22',card:'Chase',cat:'Internal Transfer',amount:500,excluded:false,isIncome:false,biz:false},
+  ];
+  const ctx = {
+    state: {
+      transactions: txs,
+      activeSources: new Set(['Chase']),
+      showExcluded: false,
+      includeIncome: true, // on, but user removed 'Income' from excludedCats
+      excludedCats: new Set(['Internal Transfer']), // 'Income' removed, 'Internal Transfer' still there
+    },
+    _bizFilter: 'all',
+    getFilteredMonths: () => ['2026-01'],
+  };
+  const { getBaseTxs } = loadFunctions(['getBaseTxs'], ctx);
+  // income='normal': id:2 passes (Income not in excludedCats); id:3 filtered (Internal Transfer is)
+  assert.deepStrictEqual(getBaseTxs().map(t=>t.id), [1,2]);
+  // income='exclude': id:2 filtered via !t.isIncome; id:3 still filtered via excludedCats
+  assert.deepStrictEqual(getBaseTxs({income:'exclude'}).map(t=>t.id), [1]);
+});
+
+test("getBaseTxs: bypassShowExcluded=true always excludes t.excluded txs regardless of the toggle", () => {
+  const txs = [
+    {id:1,date:'2026-01-15',card:'Chase',cat:'Food',amount:50,excluded:false,isIncome:false,biz:false},
+    {id:2,date:'2026-01-20',card:'Chase',cat:'Food',amount:20,excluded:true,isIncome:false,biz:false},
+  ];
+  const ctx = {
+    state: {
+      transactions: txs,
+      activeSources: new Set(['Chase']),
+      showExcluded: true, // toggle is ON — normally id:2 would pass
+      includeIncome: false,
+      excludedCats: new Set(),
+    },
+    _bizFilter: 'all',
+    getFilteredMonths: () => ['2026-01'],
+  };
+  const { getBaseTxs } = loadFunctions(['getBaseTxs'], ctx);
+  // Without bypassShowExcluded: showExcluded=true means id:2 passes
+  assert.deepStrictEqual(getBaseTxs().map(t=>t.id), [1,2]);
+  // With bypassShowExcluded=true: id:2 is always excluded regardless of toggle
+  assert.deepStrictEqual(getBaseTxs({bypassShowExcluded:true}).map(t=>t.id), [1]);
+});
+
+test("getBaseTxs: respectBizFilter=false skips the _bizFilter check", () => {
+  const txs = [
+    {id:1,date:'2026-01-15',card:'Chase',cat:'Food',amount:50,excluded:false,isIncome:false,biz:false},
+    {id:2,date:'2026-01-20',card:'Chase',cat:'Income',amount:3000,excluded:false,isIncome:true,biz:false},
+  ];
+  const ctx = {
+    state: {
+      transactions: txs,
+      activeSources: new Set(['Chase']),
+      showExcluded: false,
+      includeIncome: true,
+      excludedCats: new Set(),
+    },
+    _bizFilter: 'biz', // only biz transactions
+    getFilteredMonths: () => ['2026-01'],
+  };
+  const { getBaseTxs } = loadFunctions(['getBaseTxs'], ctx);
+  // With default respectBizFilter=true: both filtered out (neither has biz:true)
+  assert.deepStrictEqual(getBaseTxs().map(t=>t.id), []);
+  // With respectBizFilter=false: biz filter skipped, both pass
+  assert.deepStrictEqual(getBaseTxs({respectBizFilter:false}).map(t=>t.id), [1,2]);
+});
+
+test("getBaseTxs: income='exclude' + bypassShowExcluded=true filters income, t.excluded, and excludedCats regardless of the showExcluded toggle", () => {
+  // This combination is used by analytics aggregations (weekday/weekend insight,
+  // savings-rate per-month, narrative nTx) which must always exclude these
+  // transactions regardless of the UI toggle. The display rendering paths
+  // (renderTreemap, renderSankey) intentionally omit bypassShowExcluded so
+  // excluded transactions CAN appear when the toggle is on.
+  const txs = [
+    {id:1,date:'2026-01-15',card:'Chase',cat:'Food',amount:50,excluded:false,isIncome:false,biz:false},
+    {id:2,date:'2026-01-20',card:'Chase',cat:'Income',amount:3000,excluded:false,isIncome:true,biz:false},
+    {id:3,date:'2026-01-22',card:'Chase',cat:'Food',amount:20,excluded:true,isIncome:false,biz:false},
+    {id:4,date:'2026-01-25',card:'Chase',cat:'Internal Transfer',amount:500,excluded:false,isIncome:false,biz:false},
+  ];
+  const ctx = {
+    state: {
+      transactions: txs,
+      activeSources: new Set(['Chase']),
+      showExcluded: true, // toggle is ON — without bypassShowExcluded, ids 2,3,4 might pass
+      includeIncome: true,
+      excludedCats: new Set(['Internal Transfer','Income']),
+    },
+    _bizFilter: 'all',
+    getFilteredMonths: () => ['2026-01'],
+  };
+  const { getBaseTxs } = loadFunctions(['getBaseTxs'], ctx);
+  // Without bypassShowExcluded: showExcluded=true means id:3 passes; income='exclude'
+  // still filters id:2; id:4 passes because showExcluded lets excludedCats through
+  assert.deepStrictEqual(getBaseTxs({income:'exclude'}).map(t=>t.id), [1,3,4]);
+  // With bypassShowExcluded=true: all three non-normal-spend ids are always filtered
+  assert.deepStrictEqual(getBaseTxs({income:'exclude',bypassShowExcluded:true}).map(t=>t.id), [1]);
+});
+
+// ── Phase 2 migration: display vs analytics bifurcation ──────────────────
+// renderTreemap and renderSankey are *display* paths: they use
+// getBaseTxs({income:'exclude'}) WITHOUT bypassShowExcluded so excluded
+// transactions still appear when the "Show in totals" toggle is on.
+// The analytics aggregations (weekday/weekend insight, savings-rate
+// per-month, narrative nTx) use bypassShowExcluded:true because analytics
+// should always filter excluded transactions regardless of the toggle.
+// If these are accidentally swapped the behavior changes silently.
+test("Phase 2 migration: renderTreemap and renderSankey use getBaseTxs({income:'exclude'}) without bypassShowExcluded (display mode respects showExcluded toggle)", () => {
+  const source = readSource();
+  // Match the bare form: getBaseTxs({income:'exclude'}) with no other keys —
+  // specifically the two display-mode call sites that must NOT have bypassShowExcluded.
+  const displayMatches = source.match(/getBaseTxs\(\{income:'exclude'\}\)/g) || [];
+  assert.equal(displayMatches.length, 2,
+    "exactly 2 display-mode calls: renderTreemap (activeTx=...) and renderSankey (forEach) — both omit bypassShowExcluded so excluded txs still show when the toggle is on");
+});
+
+test("Phase 2 migration: analytics aggregations use bypassShowExcluded:true so excluded txs are always filtered regardless of the showExcluded toggle", () => {
+  const source = readSource();
+  // Weekday/weekend insight (months:recentMonths), savings-rate per-month
+  // (months:[m]), and narrative nTx (months:[m]) all require bypassShowExcluded:true.
+  const analyticsMatches = source.match(/getBaseTxs\(\{months:[^}]+,income:'exclude',bypassShowExcluded:true\}\)/g) || [];
+  assert.equal(analyticsMatches.length, 3,
+    "exactly 3 analytics-mode calls with bypassShowExcluded:true: weekday/weekend insight, savings-rate per-month, and narrative nTx helper");
+});
+
+// ── Finding 5 (LOW): the shared peakIdx (renderSpendChart()'s "Peak month"
 // tooltip/canvas highlight, used by all 3 chart branches) was computed
 // from MONTHLY (rebuildMonthly()'s own comment: "used by chart when
 // showExcluded=false") and getAggregatedData() (also MONTHLY-based) --

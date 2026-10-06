@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-AY2xVCKurwVLSQc9oaE8Tz6zdKXdERsMY6ZnRZrc3t4=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-F1grvwt5U1XuA96JIscTbSKAwL3tIgJwuChzKfr3h0w=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -3508,7 +3508,7 @@ function renderInsights(){
   if(allMonths.filter(m=>m<=effectiveM).length>=3){
     const recentMonths=allMonths.filter(m=>m<=effectiveM).slice(-6);
     let wkendTotal=0,wkendDays=new Set(),wkdayTotal=0,wkdayDays=new Set();
-    state.transactions.filter(t=>isRealSpend(t)&&!state.excludedCats.has(t.cat)&&state.activeSources.has(t.card)&&recentMonths.includes(t.date.slice(0,7))&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).forEach(t=>{
+    getBaseTxs({months:recentMonths,income:'exclude',bypassShowExcluded:true}).forEach(t=>{
       const dow=new Date(t.date+'T12:00:00').getDay();
       if(dow===0||dow===6){wkendTotal+=t.amount;wkendDays.add(t.date);}
       else{wkdayTotal+=t.amount;wkdayDays.add(t.date);}
@@ -3526,13 +3526,16 @@ function renderInsights(){
 
   // ── Pill template with sub-label ─────────────────────────────
   const pillWithTip=(icon,label,value,color,sub,tip,cta='')=>`
-    <div style="display:flex;flex-direction:column;justify-content:center;background:${color}15;border:1.5px solid ${color}55;border-radius:12px;padding:.75rem .9rem;gap:.4rem">
+    <div style="position:relative;display:flex;flex-direction:column;justify-content:center;background:${color}15;border:1.5px solid ${color}55;border-radius:12px;padding:.75rem .9rem;gap:.4rem">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <div style="display:flex;align-items:center;gap:7px;flex-shrink:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:7px;flex-shrink:1;min-width:0;overflow:hidden">
           <span style="font-size:16px;flex-shrink:0">${icon}</span>
-          <span style="font-size:11px;font-weight:700;color:var(--text-secondary);white-space:nowrap">${label} <button data-action="showPillTip" data-stop="1" data-tip="${tip.replace(/"/g,'&quot;')}" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--pill-info-bg);color:var(--pill-info-color);font-size:10px;cursor:pointer;vertical-align:middle;border:1px solid var(--pill-info-border);padding:0;flex-shrink:0" type="button">ⓘ</button></span>
+          <span style="font-size:11px;font-weight:700;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${label}</span>
         </div>
-        <div style="font-size:18px;font-weight:900;color:${color};line-height:1;letter-spacing:-.02em;white-space:nowrap;flex-shrink:0">${value}</div>
+        <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+          <div style="font-size:18px;font-weight:900;color:${color};line-height:1;letter-spacing:-.02em;white-space:nowrap">${value}</div>
+          <button data-action="showPillTip" data-stop="1" data-tip="${tip.replace(/"/g,'&quot;')}" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--pill-info-bg);color:var(--pill-info-color);font-size:10px;cursor:pointer;border:1px solid var(--pill-info-border);padding:0;flex-shrink:0" type="button">ⓘ</button>
+        </div>
       </div>
       ${(sub||cta)?`<div style="font-size:12px;color:var(--text-muted);line-height:1.35">${sub}${cta?` · <button data-action="${_ctaAction(cta)}"${_ctaArg(cta)!==null?` data-arg="${esc(_ctaArg(cta))}"`:''} style="background:none;border:none;color:${color};font-size:12px;font-weight:700;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">${cta.label} →</button>`:''}</div>`:''}
     </div>`;
@@ -3597,7 +3600,7 @@ function renderInsights(){
     // Build emotionally resonant savings sub-label
     const allSavingsRates=allMonths.filter(m=>m!==currentM).map(m=>{
       const mInc=getEffectiveIncome(m);
-      const mSpent=state.transactions.filter(t=>t.date.slice(0,7)===m&&isRealSpend(t)&&!state.excludedCats.has(t.cat)&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((s,t)=>s+t.amount,0);
+      const mSpent=getBaseTxs({months:[m],income:'exclude',bypassShowExcluded:true}).reduce((s,t)=>s+t.amount,0);
       return mInc>0?Math.round(Math.max(0,mInc-mSpent)/mInc*100):null;
     }).filter(v=>v!==null);
     const avgSavingsRate=allSavingsRates.length?Math.round(allSavingsRates.reduce((a,b)=>a+b,0)/allSavingsRates.length):null;
@@ -3780,7 +3783,6 @@ function renderInsights(){
     const dismissBtn=`<button data-action="dismissBudgetHealthPill" data-stop="1" style="position:absolute;top:6px;right:8px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:4px 6px;z-index:10" title="Dismiss" type="button">✕</button>`;
     const basePill=pillWithTip(statusIcon,'Budget health',pillValue,statusColor,`${statusLabel}${worstStr}`,tooltip,over>0?{label:'Go to Budget tab',action:'showPageBudget'}:'');
     const pillHtml=basePill
-      .replace('display:flex;flex-direction:column;','position:relative;display:flex;flex-direction:column;')
       .replace(/<\/div>\s*$/,dismissBtn+'</div>');
     addPill('budget-health','Budget health',pillHtml,over>0?90:under>0?40:5);
   }
@@ -3853,7 +3855,7 @@ function renderInsights(){
   let _narHtml='';
   if(!state.hiddenPills.has('narrative')&&allMonths.filter(m=>m<=effectiveM).length>=2){
     const MON_FULL=['January','February','March','April','May','June','July','August','September','October','November','December'];
-    const nTx=m=>state.transactions.filter(t=>t.date.slice(0,7)===m&&isRealSpend(t)&&!state.excludedCats.has(t.cat)&&!YIR_EXCLUDE_CATS.has(t.cat)&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz));
+    const nTx=m=>getBaseTxs({months:[m],income:'exclude',bypassShowExcluded:true}).filter(t=>!YIR_EXCLUDE_CATS.has(t.cat));
     const nSpend=m=>nTx(m).reduce((s,t)=>s+t.amount,0);
     const nCats=m=>{const r={};nTx(m).forEach(t=>{r[t.cat]=(r[t.cat]||0)+t.amount;});return r;};
     const narSpend=nSpend(effectiveM);
@@ -5385,15 +5387,36 @@ function getAggregatedData(){
 function isRealSpend(t){
   return !t.excluded&&!t.isIncome;
 }
-function getBaseTxs(){
-  const ms=new Set(getFilteredMonths());
+// Optional opts object — all params default to existing behavior, so zero-arg
+// callers are unaffected:
+//   months: null=current UI range; Set/Array of 'YYYY-MM'=explicit window
+//   income: 'normal'(default)=filter via excludedCats only (old behavior, used by display paths);
+//           'exclude'=explicit !t.isIncome guard (for spending aggregations — safe even if the
+//             user removes 'Income' from excludedCats via the Hidden-from-spending popover);
+//           'include'=pass income through regardless of excludedCats;
+//           'only'=only income transactions
+//   bypassShowExcluded: true=always exclude t.excluded regardless of the toggle (for aggregations)
+//   respectBizFilter: false=skip _bizFilter (for income detection with its own opt-in)
+function getBaseTxs(opts){
+  const {months=null,income='normal',bypassShowExcluded=false,respectBizFilter=true}=opts||{};
+  const ms=months?new Set(months):new Set(getFilteredMonths());
+  const showExcl=bypassShowExcluded?false:state.showExcluded;
   return state.transactions.filter(t=>{
     if(!ms.has(t.date.slice(0,7)))return false;
     if(!state.activeSources.has(t.card))return false;
-    if(t.excluded&&!state.showExcluded)return false;
-    if(state.excludedCats.has(t.cat)&&!state.showExcluded&&!(state.includeIncome&&t.isIncome))return false;
-    if(_bizFilter==='biz'&&!t.biz)return false;
-    if(_bizFilter==='personal'&&t.biz)return false;
+    if(income==='only'&&!t.isIncome)return false;
+    if(income==='exclude'&&t.isIncome)return false;
+    if(t.excluded&&!showExcl)return false;
+    // excludedCats check — varies by mode:
+    // 'normal': original behavior, income passes through when includeIncome=true
+    if(income==='normal'&&state.excludedCats.has(t.cat)&&!showExcl&&!(state.includeIncome&&t.isIncome))return false;
+    // 'exclude': income already filtered above; still apply excludedCats to non-income
+    if(income==='exclude'&&state.excludedCats.has(t.cat)&&!showExcl)return false;
+    // 'include': income passes through excludedCats; non-income still filtered
+    if(income==='include'&&state.excludedCats.has(t.cat)&&!showExcl&&!t.isIncome)return false;
+    // 'only': income transactions pass through excludedCats regardless (they're in there by default)
+    if(respectBizFilter&&_bizFilter==='biz'&&!t.biz)return false;
+    if(respectBizFilter&&_bizFilter==='personal'&&t.biz)return false;
     return true;
   });
 }
@@ -6220,14 +6243,7 @@ function renderTreemap(drillCat){
   if(!wrap)return;
 
   // Respect active sources, horizon, category filter
-  const filteredMonths=getFilteredMonths();
-  const activeTx=state.transactions.filter(t=>
-    !t.isIncome&&
-    (state.showExcluded||!t.excluded)&&state.activeSources.has(t.card)&&
-    filteredMonths.includes(t.date.slice(0,7))&&
-    (state.showExcluded||!state.excludedCats.has(t.cat))&&
-    (_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)
-  );
+  const activeTx=getBaseTxs({income:'exclude'});
 
   // Build cat totals and vendor breakdown
   const catTotals={};
@@ -6524,13 +6540,7 @@ function renderSankey(){
   // pass.
   let totalSpendAll=0;
   const filteredOutCatTotals={};
-  state.transactions.filter(t=>
-    !t.isIncome&&
-    (state.showExcluded||!t.excluded)&&state.activeSources.has(t.card)&&
-    filteredMonths.includes(t.date.slice(0,7))&&
-    (state.showExcluded||!state.excludedCats.has(t.cat))&&
-    (_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)
-  ).forEach(t=>{
+  getBaseTxs({income:'exclude'}).forEach(t=>{
     totalSpendAll+=t.amount;
     if(state.activeCats.size===0||state.activeCats.has(t.cat))catTotals[t.cat]=(catTotals[t.cat]||0)+t.amount;
     else filteredOutCatTotals[t.cat]=(filteredOutCatTotals[t.cat]||0)+t.amount;
