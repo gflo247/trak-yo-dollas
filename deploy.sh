@@ -94,8 +94,8 @@ python3 scripts/check-rebuild-coverage.py
 # real cloud-restored dataset get silently wiped by their own next
 # action), activeSources (confirmed device-local by design — loadUserData()
 # derives it fresh from restored transactions, never reads a synced value).
-echo "=== Scanning for fields persisted locally but missing from cloud sync (advisory) ==="
-python3 scripts/check-cloudsync-coverage.py || true
+echo "=== Scanning for fields persisted locally but missing from cloud sync ==="
+python3 scripts/check-cloudsync-coverage.py
 
 python3 scripts/update-csp-hashes.py
 # Git-based, not mtime-based (unlike update-sitemap-dates.py below) --

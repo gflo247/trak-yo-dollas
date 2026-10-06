@@ -70,8 +70,9 @@ it's still just a cosmetic sync gap without re-checking.
 Every flagged key needs a human look, not blind trust. Run manually:
     python3 scripts/check-cloudsync-coverage.py [file ...]
 Defaults to trakyodollas.html if no args given.
-Exits 0 always (reporting tool, not a hard deploy gate) -- same posture
-as the other advisory scanners in this directory.
+Exits non-zero when findings > 0 (hard deploy gate). False positives are
+handled via NEVER_SYNCED_KNOWN_FALSE_POSITIVES; add an entry there with a
+reason rather than suppressing the exit.
 """
 import re, sys
 from pathlib import Path
@@ -195,6 +196,7 @@ def main():
                 print(f"    - {k}")
         total += len(never_synced) + len(never_restored)
     print(f"\n{total} candidate field(s) — heuristic only, review each one manually.")
+    sys.exit(total > 0)
 
 
 if __name__ == '__main__':
