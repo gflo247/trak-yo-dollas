@@ -1350,6 +1350,7 @@ test("_refreshBudgetModalContext: '% under/above avg' divides by avg, not the bu
     avgSpendOverMonths: () => 200,
     getCatMonthSpend: () => 0,
     fmt: (n) => String(n),
+    _budgetBizFilter: 'all',
     state: { budgets: { Groceries: 100 } },
   };
   const { _refreshBudgetModalContext } = loadFunctions(["_refreshBudgetModalContext"], ctx);
@@ -1380,6 +1381,7 @@ function refreshBudgetModalContextCtx(budgets, avg) {
       avgSpendOverMonths: () => avg,
       getCatMonthSpend: () => 0,
       fmt: (n) => String(n),
+      _budgetBizFilter: 'all',
       state: { budgets },
     },
   };
@@ -1418,6 +1420,7 @@ function openStaleBudgetModalCtx(existingBudget) {
       getCatMonthSpend: () => 0,
       esc: (s) => String(s),
       fmt: (n) => String(n),
+      _budgetBizFilter: 'all',
       MONTHLY: {},
       document: {
         getElementById: (id) => {
@@ -1519,7 +1522,7 @@ test("isBudgetStale: flags a category only when every one of the last 3 tracked 
   assert.equal(isBudgetStale("Groceries", 400, ["2026-04", "2026-05", "2026-06"]), false, "a budget comfortably above real spend should never flag -- that's a deliberate cushion, not a mistake");
   assert.equal(isBudgetStale("Groceries", 305, ["2026-04", "2026-05", "2026-06"]), false, "a trivial overage (within the 1.05x buffer) shouldn't flag a budget that's still basically on target");
   assert.equal(isBudgetStale("Groceries", 200, ["2026-05", "2026-06"]), false, "fewer than 3 tracked months should never flag off a partial pattern");
-  assert.ok(source.includes("function isBudgetStale(cat,budget,last3Months){"), "isBudgetStale() should exist as its own named function, not inlined, so this exact behavior stays independently testable");
+  assert.ok(source.includes("function isBudgetStale(cat,budget,last3Months,bizFilter){"), "isBudgetStale() should exist as its own named function, not inlined, so this exact behavior stays independently testable");
 });
 
 // ── 72nd adversarial pass: exportBudgetCSV()'s Status column used to judge
@@ -1539,8 +1542,15 @@ test("exportBudgetCSV: a completed PAST month landing in the warn-to-100% band r
 
   let capturedCsv = null;
   const ctx = {
-    state: { budgets: { Groceries: 100 }, budgetWarnPct: 80 },
-    MONTHLY: { [pastYM]: {} }, // no entry for todayYM -- this category has no spend yet this month
+    state: {
+      budgets: { Groceries: 100 }, budgetWarnPct: 80,
+      // exportBudgetCSV now builds the month list from transactions instead
+      // of Object.keys(MONTHLY); one transaction in pastYM is enough to
+      // produce the expected single-month column list.
+      transactions: [{ date: `${pastYM}-15`, card: "chase", excluded: false, isIncome: false, biz: false, cat: "Groceries", amount: 85 }],
+      activeSources: new Set(["chase"]),
+    },
+    _budgetBizFilter: 'all',
     getCatMonthSpend: (cat, m) => (m === pastYM ? 85 : 0), // 85% of $100 budget -- inside the warn-to-100% band
     csvSafeField: (s) => s,
     showToast: () => {},
@@ -2180,8 +2190,8 @@ test("_resetSessionFiltersForDataReplace: resets every session-scoped filter fie
   const source = readSource();
   assert.match(
     source,
-    /function _resetSessionFiltersForDataReplace\(\)\{\s*_bizFilter='all';\s*state\.activeCats=new Set\(\);\s*state\.dashFilter=null;\s*state\.searchQuery='';\s*const searchEl=document\.getElementById\('tx-search'\);\s*if\(searchEl\)searchEl\.value='';\s*document\.getElementById\('search-clear-btn'\)\?\.classList\.add\('hidden'\);\s*state\.showExcluded=false;[\s\S]{0,700}?if\(!\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\)\{\s*try\{localStorage\.removeItem\('trakyo_show_excl'\);\}catch\(e\)\{\}\s*\}\s*_clearVendorDayFiltersForDataReplace\(\);\s*_expandedIncomeMonths\.clear\(\);\s*\}/,
-    "_resetSessionFiltersForDataReplace() should reset _bizFilter/activeCats/dashFilter/searchQuery (+ DOM), showExcluded (+ localStorage key), call _clearVendorDayFiltersForDataReplace(), and clear _expandedIncomeMonths"
+    /function _resetSessionFiltersForDataReplace\(\)\{\s*_bizFilter='all';\s*_budgetBizFilter='all';\s*state\.activeCats=new Set\(\);\s*state\.dashFilter=null;\s*state\.searchQuery='';\s*const searchEl=document\.getElementById\('tx-search'\);\s*if\(searchEl\)searchEl\.value='';\s*document\.getElementById\('search-clear-btn'\)\?\.classList\.add\('hidden'\);\s*state\.showExcluded=false;[\s\S]{0,700}?if\(!\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\)\{\s*try\{localStorage\.removeItem\('trakyo_show_excl'\);\}catch\(e\)\{\}\s*\}\s*_clearVendorDayFiltersForDataReplace\(\);\s*_expandedIncomeMonths\.clear\(\);\s*\}/,
+    "_resetSessionFiltersForDataReplace() should reset _bizFilter/_budgetBizFilter/activeCats/dashFilter/searchQuery (+ DOM), showExcluded (+ localStorage key), call _clearVendorDayFiltersForDataReplace(), and clear _expandedIncomeMonths"
   );
 });
 test("importBackup, confirmTxImport, and loadDemoProfile all call the shared _resetSessionFiltersForDataReplace() helper", () => {
@@ -2413,6 +2423,7 @@ test("_resetSessionFiltersForDataReplace: does NOT remove trakyo_show_excl from 
   let removed = false;
   const ctx = {
     _bizFilter: "business",
+    _budgetBizFilter: "biz",
     state: {
       activeCats: new Set(["Foo"]), dashFilter: "x", searchQuery: "starbucks", showExcluded: true,
       activeDate: null, activeVendors: new Set(), bucketMode: "category", treemapDrillCat: null,
@@ -2432,6 +2443,7 @@ test("_resetSessionFiltersForDataReplace: DOES remove trakyo_show_excl from loca
   let removed = false;
   const ctx = {
     _bizFilter: "business",
+    _budgetBizFilter: "biz",
     state: {
       activeCats: new Set(["Foo"]), dashFilter: "x", searchQuery: "starbucks", showExcluded: true,
       activeDate: null, activeVendors: new Set(), bucketMode: "category", treemapDrillCat: null,
@@ -9029,20 +9041,37 @@ test("avgSpendOverMonths: averages a category's spend over a given list of month
   assert.equal(avgSpendOverMonths("Nonexistent", ["2026-06", "2026-07"]), 0);
 });
 
-test("getBudgetHistMonths: defaults to 12 trailing months (unchanged behavior for existing Budget-tab callers), honors a custom count", () => {
-  const months = [];
-  for (let y = 2024; y <= 2026; y++) for (let m = 1; m <= 12; m++) months.push(`${y}-${String(m).padStart(2, "0")}`);
-  const MONTHLY = Object.fromEntries(months.filter((m) => m < "2026-08").map((m) => [m, { chase: 100 }]));
-  const { getBudgetHistMonths } = loadFunctions(["getBudgetHistMonths"], { MONTHLY });
+test("getBudgetHistMonths: defaults to 12 trailing months, honors a custom count, respects bizFilter", () => {
+  // Build one transaction per month (2024-01 through 2026-07), plus a
+  // biz-flagged variant for each month so the bizFilter='biz' path can be
+  // tested independently.
+  const allMonths = [];
+  for (let y = 2024; y <= 2026; y++) for (let m = 1; m <= 12; m++) allMonths.push(`${y}-${String(m).padStart(2, "0")}`);
+  const txMonths = allMonths.filter((m) => m < "2026-08"); // 31 months
+  const transactions = [
+    ...txMonths.map((m) => ({ date: `${m}-15`, card: "chase", excluded: false, isIncome: false, biz: false, amount: 100, cat: "Groceries" })),
+    // One biz=true transaction per month for the last 6 months only
+    ...txMonths.slice(-6).map((m) => ({ date: `${m}-20`, card: "chase", excluded: false, isIncome: false, biz: true, amount: 50, cat: "Office" })),
+  ];
+  const ctx = { state: { transactions, activeSources: new Set(["chase"]) } };
+  const { getBudgetHistMonths } = loadFunctions(["getBudgetHistMonths"], ctx);
+
   const default12 = getBudgetHistMonths("2026-08");
   assert.equal(default12.length, 12, "should default to 12 months when count is omitted");
   assert.equal(default12[0], "2025-08", "should be oldest-first");
   assert.equal(default12[default12.length - 1], "2026-07", "should end strictly before ym");
+
   const six = getBudgetHistMonths("2026-08", 6);
   assert.equal(six.length, 6);
   assert.equal(six[0], "2026-02");
+
   const twentyFour = getBudgetHistMonths("2026-08", 24);
   assert.equal(twentyFour.length, 24);
+
+  // bizFilter='biz' — only the last 6 months have biz transactions
+  const bizSix = getBudgetHistMonths("2026-08", 12, "biz");
+  assert.equal(bizSix.length, 6, "bizFilter='biz' should only return months that have at least one biz transaction");
+  assert.equal(bizSix[0], "2026-02");
 });
 
 test("computeSimulatorProjection: no-override category keeps its real average; overridden category reports the hypothetical amount and correct delta", () => {
