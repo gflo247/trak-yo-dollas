@@ -12,8 +12,14 @@ fi
 # record of what actually went out. Both checks run before the expensive gates
 # below so the failure is instant.
 echo "=== Checking git state ==="
-if ! git diff --quiet || ! git diff --cached --quiet; then
-  echo "ERROR: Working tree has uncommitted changes. Commit or stash before deploying." >&2
+# .deploy-version and sitemap.xml are written by this script itself on every
+# run; excluding them so their presence doesn't block the guard's real purpose
+# (catching uncommitted source edits). Everything else must be clean.
+_DIRTY=$({ git diff --name-only; git diff --cached --name-only; } | grep -v '^\.deploy-version$' | grep -v '^sitemap\.xml$')
+if [ -n "$_DIRTY" ]; then
+  echo "ERROR: Working tree has uncommitted changes:" >&2
+  echo "$_DIRTY" >&2
+  echo "Commit or stash before deploying." >&2
   exit 1
 fi
 _UNPUSHED=$(git rev-list --count "@{u}..HEAD" 2>/dev/null || echo "0")
