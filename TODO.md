@@ -4,64 +4,63 @@ Roughly in priority order. Stop and re-evaluate after each item ships.
 
 ---
 
-## 1. Fix Net Worth credibility issues (do now)
+## ✅ Done (this session and prior)
 
-- [x] **Goal line axis scaling** — $750k goal pinned at top of a ~$395k axis looks nearly reached. Scale chart to data; show goal progress as a separate bar (the "52% there" text already exists).
-- [x] **Rename "Retirement runway" → "Emergency cushion"** — current figure is cash ÷ spending, not a retirement projection. One-liner rename.
-- [x] **Demo snapshot math** — Established profile claims ~47% savings rate / ~$4.5k/mo saved, but NW grows only ~$1k/mo. Verify whether the model is at fault or the snapshots need adjustment before touching either.
-
----
-
-## 2. Verify offline / make privacy provable
-
-- [x] Load demo, turn off Wi-Fi, confirm charts render. Chart.js comes from CDN and is **not** in the SW PRECACHE list — if charts fail offline, cache the library first.
-- [x] Once confirmed working, add "Load the demo, turn off Wi-Fi, keep using it" to the landing page. Don't claim it until it's true.
-
----
-
-## 3. Life Changes → "can we afford this?" (staged)
-
-Stop after each stage and evaluate whether it justifies the next one.
-
-- [x] **Stage 1 (cheap):** Move result to top of the tab. Add one line showing how the change moves the net worth goal date. This tests whether anyone cares.
-- [~] **Stage 2:** Real per-preset inputs — car (price, rate, term); childcare (start/end dates); mortgage replacing rent (price, down payment, rate). Hide Rent→Mortgage preset when profile already has a mortgage. *(skipped — doesn't unlock anything not already easily available; doesn't fit the spirit of the site)*
-- [x] **Stage 3:** Before/after chart. *(chart was cut after repeated model-consistency issues; goal-delta text uses cash-flow surplus and is labeled "(cash-flow estimate)")*
-
-Notes: project NW using savings from cash flow + editable assumed return on invested assets (not cash flow alone). Keep copy as "preview," never "advice." Only lead the landing page with this after Stage 1 ships and shows traction.
+- Goal line axis scaling, Emergency cushion rename, demo snapshot math
+- Offline verified; "load demo, turn off Wi-Fi" on landing page
+- Life Changes Stage 1 (result to top + goal-date line); Stage 3 (before/after cut)
+- Bank export guides (Chase, BofA, Wells Fargo, Capital One, Ally)
+- Monthly re-import panel ("last imported X days ago" per source)
+- Landing page trimmed to ~5 cards
+- Travel tile avg denominator fix
+- iOS Safari 7-day data-loss banner (shows on first real import; home-screen exempt)
+- avgTotalMonthlySpend() fix (cushion reads from transactions, unfiltered)
+- Budget tab: independent _budgetBizFilter toggle (shown when Include Income is on)
+- Life Changes + Budget Health pill: always unfiltered ('all')
+- getBudgetHistMonths: reads transactions directly (not MONTHLY)
+- getLatestDataMonth: reads transactions directly (not MONTHLY)
+- getBudgetRowMetrics YTD start: uses histMonths[0] not ALL_MONTHS[0]
+- NW goal widget avgSpend: reads transactions directly (not MONTHLY)
+- All 7 deploy gate scanners hardened to hard gates
 
 ---
 
-## 4. Bank export guides (one page per bank)
+## 1. Monthly recap (print / save as PDF)
 
-- [x] Write text-first guides: "How to download your [Bank] transactions as a CSV file." Start with Chase, BofA, Wells Fargo, Capital One, Ally.
-- [x] Stamp each with "last verified [month]" — bank UIs change, screenshots go stale.
-- [x] SEO latency is months, not weeks. Start early.
+Plain-English summary, top movers, budget status, NW change — one page for a monthly money check-in with a partner. No sync or account required. Gets stronger once Life Changes can add "on track for [goal] by [date]."
 
 ---
 
-## 5. Monthly re-import habit — "Accounts to update" panel
+## 2. Schema version on user data
 
-- [x] **First:** confirm whether overlapping imports already skip duplicates. If yes, surface "12 already imported, skipped" on screen. If no, fix duplicate detection before building the panel.
-- [x] Add panel showing each account's last import date, linking to that bank's guide (item 4).
+Add a version field to `serializeState()`/`savePrefs()` before the next change to the data shape. No migration needed yet — just the version stamp so future changes have a safe upgrade path.
 
----
-
-## 6. Monthly recap (print / save as PDF)
-
-- [~] Plain-English summary, top movers, budget status, NW change — one page for a monthly money check-in with a partner.
-- [~] No sync or account required.
-- [~] Gets meaningfully stronger after Life Changes (item 3) can add "on track for [goal] by [date]."
-
+**When:** before the next deploy that changes any field in the saved state.
 
 ---
 
-## 7. Trim landing page feature list
+## 3. Deploy guard + visible build ID
 
-- [x] Cut from eleven cards to ~five. Let the demo show the rest.
-- [x] Do after items 1–3 settle so the kept cards reflect what actually matters.
+`deploy.sh` doesn't currently block uncommitted or unpushed changes. The app shows no build ID. Two small additions:
+- Block deploy if `git status` is dirty or branch is behind remote
+- Inject a build timestamp/commit hash into the page (footer or `<meta>`)
 
 ---
 
-## Bug to verify
+## 4. Browser-level test suite (Playwright)
 
-- [x] **Travel tile avg** — was seen once showing "Avg: $753/mo" where $7,232 ÷ 17–18 months ≈ $425. Fixed: denominator changed to all-months count (not just spend-months). Verified on demo data.
+The existing pure.test.js suite catches logic bugs but can't catch render/interaction bugs. A ~30-line Playwright harness covering:
+- Cushion stays constant while biz filter changes
+- Import → reload round-trip
+- Backup round-trip
+- Demo-to-real switch
+- Sync encrypt/decrypt round-trip
+
+This is the highest-leverage process improvement. Enables retiring some scanners.
+
+---
+
+## Structural (post-launch, no rush)
+
+- `rebuildMonthly()` still bakes `_bizFilter` into MONTHLY. Every reader that should be unfiltered has been individually fixed (cushion, Budget, Life Changes, getLatestDataMonth, NW goal widget). The structural fix (keep MONTHLY unfiltered; apply filter at read in renderSpending/renderInsights only) is cleaner long-term but not urgent — all user-visible paths are correct.
+- Function/global count (497 fns, 127 globals) — module split and rendering cleanup, after launch.
