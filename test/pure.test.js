@@ -7492,7 +7492,7 @@ test("#insights-pills uses auto-fit/minmax on desktop instead of a rigid 4-colum
   const source = readSource();
   assert.match(
     source,
-    /@media\(min-width:601px\)\{#insights-pills\{grid-template-columns:repeat\(auto-fit,minmax\(300px,1fr\)\)!important\}\}/,
+    /@media\(min-width:601px\)\{#insights-pills\{grid-template-columns:repeat\(auto-fit,minmax\(min\(300px,100%\),1fr\)\)!important\}\}/,
     "the desktop breakpoint should use auto-fit/minmax so column count adapts to available width instead of forcing exactly 4"
   );
   assert.doesNotMatch(source, /grid-template-columns:repeat\(4,1fr\)/, "the rigid 4-equal-column rule should be gone entirely");
