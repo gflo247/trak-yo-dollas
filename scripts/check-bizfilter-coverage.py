@@ -110,6 +110,14 @@ KNOWN_FALSE_POSITIVES = {
     # exportBudgetCSV() -- same _budgetBizFilter rationale as renderBudgetTab()
     # above; the CSV export follows Budget's own filter, not Spending's.
     't=>{ if(t.excluded||t.isIncome)return; if(!state.activeSources.has(t.card))return; if(_budgetBizFilter===\'biz\'&&!t.biz)return; if(_budgetBiz',
+    # getLatestDataMonth() -- intentionally reads all transactions unfiltered;
+    # the fix for the MONTHLY filter-leak class. Reading _bizFilter here would
+    # reintroduce exactly the bug being fixed (Budget tab navigating to the
+    # wrong month when Business is active).
+    't=>{ if(t.excluded||t.isIncome)return; if(!state.activeSources.has(t.card))return; const mo=t.date.slice(0,7); if(mo>latest)latest=mo; }',
+    # NW goal widget avgSpend -- intentionally reads all transactions unfiltered;
+    # the NW tab must never follow Spending's _bizFilter, same class of fix.
+    't=>{ if(t.excluded||t.isIncome)return; if(!state.activeSources.has(t.card))return; const mo=t.date.slice(0,7); if(mo>=curMo)return; moSpend[',
 }
 
 
