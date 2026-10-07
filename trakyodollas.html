@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-hK/aCHVWb4w03y0R19bfzodKXEXshFUkWTH9NVhsvXU=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-+ZWicfcsUTqULU2brMWXJYbbCr1hk75uDlctbZJkCro=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -3847,7 +3847,7 @@ function renderInsights(){
     const wkSub=higher
       ?`You spend ${Math.abs(pct)}% more per day on weekends — that's ~${fmt(Math.round(latestSpend*0.3*(pct/100)/4))} extra/month if it holds`
       :`You actually spend ${Math.abs(pct)}% less per day on weekends — your week is where the money goes`;
-    addPill('weekend','Weekend spending',pillWithTip('🗓','Weekend spending',`${Math.abs(pct)}% ${higher?'higher':'lower'}/day`,wkColor,
+    addPill('weekend','Weekend spending',pillWithTip('🗓','Weekend spending',`${higher?'↑':'↓'} ${Math.abs(pct)}%/day`,wkColor,
       wkSub,
       `Based on last 6 months · avg spend per weekend day vs weekday&#10;Only shows when difference is 15%+`,
       {label:'See Daily chart',action:'navToDailyChart'}),higher?20:5);
