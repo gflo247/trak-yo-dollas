@@ -15,7 +15,7 @@ echo "=== Checking git state ==="
 # .deploy-version and sitemap.xml are written by this script itself on every
 # run; excluding them so their presence doesn't block the guard's real purpose
 # (catching uncommitted source edits). Everything else must be clean.
-_DIRTY=$({ git diff --name-only; git diff --cached --name-only; } | grep -v '^\.deploy-version$' | grep -v '^sitemap\.xml$')
+_DIRTY=$({ git diff --name-only; git diff --cached --name-only; } | grep -v '^\.deploy-version$' | grep -v '^sitemap\.xml$' || true)
 if [ -n "$_DIRTY" ]; then
   echo "ERROR: Working tree has uncommitted changes:" >&2
   echo "$_DIRTY" >&2
