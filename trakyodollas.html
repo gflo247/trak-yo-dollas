@@ -761,7 +761,14 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
    count regardless of width, matching the same pattern already used
    elsewhere (e.g. the privacy page's .mr-grid). Found via a
    user-friendliness pass, August 2026. */
-@media(min-width:601px){#insights-pills{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))!important}}
+@media(min-width:601px){#insights-pills{grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr))!important}}
+/* Grid items need min-width:0 so their content can't force the column wider
+   than the available track (the default min-width:auto can cause overflow). */
+#insights-pills>*{min-width:0}
+/* On phones ≤414px the demo-nav-badge alongside 4 nav buttons overflows the
+   header. The demo state is already clear from the nudge banner; hiding the
+   badge on these widths is the minimal fix with no information loss. */
+@media(max-width:414px){#demo-nav-badge{display:none!important}}
 @media(min-width:601px){.range-select{padding:5px 10px;font-size:12px;min-width:90px}.range-sep{font-size:12px}.range-dropdowns{gap:6px}.grain-row .h-btn{padding:4px 16px}}
 /* The ⚙ settings icon and 🌙 theme toggle share one inline 12px base size
    (mobile's own @media(max-width:600px) block above shrinks it further,
@@ -1137,7 +1144,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
         <button data-action="openPillCustomizer" title="Show or hide insight pills" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:var(--text-muted);cursor:pointer" type="button">⚙ Customize</button>
       </div>
     </div>
-    <div id="insights-pills" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:8px"></div>
+    <div id="insights-pills" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:8px"></div>
   </div>
   <!-- Empty state nudge — shown only before first import, sits above controls -->
   <div class="flex-between" style="margin-bottom:.5rem">
@@ -17399,7 +17406,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
     // One-time hint for keyboard shortcuts — shows after 4s on first ever visit
     try{
-      if(!localStorage.getItem('trakyo_tips_seen')){
+      if(!localStorage.getItem('trakyo_tips_seen')&&window.matchMedia('(hover: hover) and (pointer: fine)').matches){
         setTimeout(()=>{
           // tc(), not a bare hardcoded '#334155' -- #1E293B is dark theme's
           // --toast-bg, and #334155 text against it computes to ~1.41:1
