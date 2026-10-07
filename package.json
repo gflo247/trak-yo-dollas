@@ -4,9 +4,11 @@
   "version": "1.0.0",
   "description": "trak-yo-dolla$ — private, local-first money tracking",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "html-minifier-terser": "^7.2.0"
   }
 }

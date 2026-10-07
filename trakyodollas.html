@@ -14598,9 +14598,22 @@ function rebuildMonthly(){
   // Mutate the MONTHLY object in place
   Object.keys(MONTHLY).forEach(k=>delete MONTHLY[k]);
   Object.assign(MONTHLY,m);
-  // Keep ALL_MONTHS in sync — it's used everywhere for horizon/chart ranges
+  // Keep ALL_MONTHS in sync — it's used everywhere for horizon/chart ranges.
+  // Must be derived from transactions directly (not Object.keys(MONTHLY)) so
+  // it represents all months with any spend regardless of _bizFilter. Deriving
+  // from MONTHLY would empty ALL_MONTHS when Business filter is active and no
+  // biz-tagged transactions exist, crashing every call site that indexes into
+  // ALL_MONTHS[0] / ALL_MONTHS[length-1] for chart/date-range bounds.
+  // Filter set matches rebuildMonthly's (excluded, isIncome, excludedCats)
+  // but intentionally omits _bizFilter.
   ALL_MONTHS.length=0;
-  Object.keys(MONTHLY).sort().forEach(k=>ALL_MONTHS.push(k));
+  const _allMonthSet=new Set();
+  state.transactions.forEach(t=>{
+    if(t.excluded||t.isIncome)return;
+    if(state.excludedCats&&state.excludedCats.has(t.cat))return;
+    _allMonthSet.add(t.date.slice(0,7));
+  });
+  [..._allMonthSet].sort().forEach(k=>ALL_MONTHS.push(k));
   // Rebuild color map so all tabs stay in sync
   window._catColorMap=null;
   buildCatColorMap();
