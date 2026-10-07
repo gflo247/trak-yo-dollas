@@ -105,6 +105,17 @@ NEVER_SYNCED_KNOWN_FALSE_POSITIVES = {
         # the nudge again on a second device; not worth the sync-payload weight for that.
 }
 
+# Fields present in syncToCloud()'s payload but not yet read by loadUserData().
+# Legitimate cases: a write-only stamp whose read side will be added with the
+# first migration that needs it. Any entry here should have a clear explanation
+# of why there's no read side yet.
+NEVER_RESTORED_KNOWN_FALSE_POSITIVES = {
+    'schemaVersion',  # write-only for now — no migration needed until the data
+        # shape actually changes. The stamp must land in saved blobs before that
+        # change so the future migration has a safe anchor. loadUserData() will
+        # read it once a migration is written.
+}
+
 
 def extract_balanced(text, open_idx, open_ch='{', close_ch='}'):
     """Given the index of an opening brace, return (end_idx, inner_text)
@@ -182,6 +193,8 @@ def main():
             print(f"\n=== {name}: serializeState()/syncToCloud()/loadUserData() not found in expected shape — skipped ===")
             continue
         never_synced, never_restored, suppressed = result
+        never_restored_suppressed = sorted(set(never_restored) & NEVER_RESTORED_KNOWN_FALSE_POSITIVES)
+        never_restored_findings = sorted(set(never_restored) - NEVER_RESTORED_KNOWN_FALSE_POSITIVES)
         print(f"\n=== {name} ===")
         if never_synced:
             print(f"  In serializeState() but missing from syncToCloud()'s savePrefs() payload ({len(never_synced)}"
@@ -190,11 +203,14 @@ def main():
                 print(f"    - {k}")
         elif suppressed:
             print(f"  In serializeState() but missing from syncToCloud()'s savePrefs() payload (0, {len(suppressed)} already-reviewed suppressed)")
-        if never_restored:
-            print(f"  In syncToCloud()'s payload but never read as prefs.X in loadUserData() ({len(never_restored)}):")
-            for k in never_restored:
+        if never_restored_findings:
+            print(f"  In syncToCloud()'s payload but never read as prefs.X in loadUserData() ({len(never_restored_findings)}"
+                  f"{f', {len(never_restored_suppressed)} already-reviewed suppressed' if never_restored_suppressed else ''}):")
+            for k in never_restored_findings:
                 print(f"    - {k}")
-        total += len(never_synced) + len(never_restored)
+        elif never_restored_suppressed:
+            print(f"  In syncToCloud()'s payload but never read as prefs.X in loadUserData() (0, {len(never_restored_suppressed)} already-reviewed suppressed)")
+        total += len(never_synced) + len(never_restored_findings)
     print(f"\n{total} candidate field(s) — heuristic only; for each finding, either fix the underlying code or add a justified suppression to NEVER_SYNCED_KNOWN_FALSE_POSITIVES.")
     sys.exit(total > 0)
 
