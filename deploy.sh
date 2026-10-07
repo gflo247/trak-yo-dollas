@@ -7,6 +7,23 @@ if [ "$target" != "dev" ] && [ "$target" != "prod" ]; then
   exit 1
 fi
 
+# Block deploys from a dirty working tree or with unpushed commits — shipping
+# uncommitted edits means the deployed code diverges from git history with no
+# record of what actually went out. Both checks run before the expensive gates
+# below so the failure is instant.
+echo "=== Checking git state ==="
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  echo "ERROR: Working tree has uncommitted changes. Commit or stash before deploying." >&2
+  exit 1
+fi
+_UNPUSHED=$(git rev-list --count "@{u}..HEAD" 2>/dev/null || echo "0")
+if [ "$_UNPUSHED" != "0" ]; then
+  echo "ERROR: Branch has $_UNPUSHED unpushed commit(s). Push to remote before deploying." >&2
+  exit 1
+fi
+_BUILD_ID=$(git rev-parse --short HEAD)
+echo "Build: $_BUILD_ID (clean, fully pushed)"
+
 # Hard gate, checked first (fail fast before anything else runs) — this app
 # has no build step or bundler, so nothing else here parses the file as a
 # whole. npm test only compiles the specific functions extracted for a given
@@ -185,6 +202,10 @@ printf '%s' "$DEPLOY_TS" > "$_VER_FILE"
 # opposite direction — an untested assumption about which sed this machine
 # has, not proof either one is actually portable.
 sed "s/__CACHE_VERSION__/$DEPLOY_TS/" _cf_deploy/sw.js > _cf_deploy/sw.js.tmp && mv _cf_deploy/sw.js.tmp _cf_deploy/sw.js
+
+# Stamp the build ID into the minified HTML. The placeholder lives in a <meta>
+# attribute, not a <script> block, so this doesn't affect CSP hashes.
+sed "s/__BUILD_ID__/$_BUILD_ID/" _cf_deploy/trakyodollas.html > _cf_deploy/trakyodollas.html.tmp && mv _cf_deploy/trakyodollas.html.tmp _cf_deploy/trakyodollas.html
 
 if [ "$target" = "prod" ]; then
   echo "=== Deploying to Cloudflare (prod) ==="
