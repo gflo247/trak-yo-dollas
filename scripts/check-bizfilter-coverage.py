@@ -113,11 +113,14 @@ KNOWN_FALSE_POSITIVES = {
     # getLatestDataMonth() -- intentionally reads all transactions unfiltered;
     # the fix for the MONTHLY filter-leak class. Reading _bizFilter here would
     # reintroduce exactly the bug being fixed (Budget tab navigating to the
-    # wrong month when Business is active).
-    't=>{ if(t.excluded||t.isIncome)return; if(!state.activeSources.has(t.card))return; const mo=t.date.slice(0,7); if(mo>latest)latest=mo; }',
+    # wrong month when Business is active). Matches rebuildMonthly's filter set
+    # (excluded, isIncome, excludedCats) but deliberately omits _bizFilter.
+    't=>{ if(t.excluded||t.isIncome)return; if(state.excludedCats&&state.excludedCats.has(t.cat))return; const mo=t.date.slice(0,7); if(mo>latest',
     # NW goal widget avgSpend -- intentionally reads all transactions unfiltered;
     # the NW tab must never follow Spending's _bizFilter, same class of fix.
-    't=>{ if(t.excluded||t.isIncome)return; if(!state.activeSources.has(t.card))return; const mo=t.date.slice(0,7); if(mo>=curMo)return; moSpend[',
+    # Matches rebuildMonthly's filter set plus an activeSources guard (same as
+    # the old MONTHLY path the NW widget previously used).
+    't=>{ if(t.excluded||t.isIncome)return; if(state.excludedCats&&state.excludedCats.has(t.cat))return; if(!state.activeSources.has(t.card))retu',
 }
 
 

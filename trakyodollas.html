@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-HtieDFUAXqX/uGEgjMDNwHHxCbHpYGyQLwa/q1wJHbo=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-u49vs3tM2egIq8zBcH5vRjlFPzSBAbbM73cfXlguw1w=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -4878,14 +4878,15 @@ function computeMonthlyGrowth(nw){
       // Object.keys(MONTHLY)/MONTHLY[m] — MONTHLY bakes Spending's _bizFilter,
       // so with Business active the NW goal widget would show income-minus-
       // business-spend as the growth rate, an unrelated Spending tab detail
-      // that has no place on the Net Worth tab. Uses the same activeSources
-      // guard the old MONTHLY path already had (40th adversarial pass fix).
-      // Found in the principal SWE pass over the MONTHLY filter-leak class.
+      // that has no place on the Net Worth tab. Filters match rebuildMonthly():
+      // excluded, isIncome, excludedCats (so CC payments don't inflate avgSpend),
+      // plus an activeSources guard to match the old MONTHLY-path behavior.
       const today2=new Date();
       const curMo=`${today2.getFullYear()}-${String(today2.getMonth()+1).padStart(2,'0')}`;
       const moSpend={};
       state.transactions.forEach(t=>{
         if(t.excluded||t.isIncome)return;
+        if(state.excludedCats&&state.excludedCats.has(t.cat))return;
         if(!state.activeSources.has(t.card))return;
         const mo=t.date.slice(0,7);
         if(mo>=curMo)return;
@@ -10055,16 +10056,18 @@ function budgetNavMonth(dir){
 }
 
 function getLatestDataMonth(){
-  // Scan transactions directly (unfiltered) rather than reading
-  // Object.keys(MONTHLY) — MONTHLY is baked with Spending's _bizFilter, so
-  // when the user has Business selected, this would return the last month
-  // with *business* spend and skip all months that only have personal
-  // transactions, sending the Budget tab to the wrong month. Found during
-  // the principal SWE pass over the MONTHLY filter-leak class.
+  // Scan transactions directly rather than reading Object.keys(MONTHLY) —
+  // MONTHLY is baked with Spending's _bizFilter, so when the user has Business
+  // selected, it returns the last month with *business* spend and skips months
+  // with only personal transactions, sending the Budget tab to the wrong month.
+  // Filters match rebuildMonthly(): excluded, isIncome, excludedCats (so a
+  // month with only CC-payment transactions isn't seen as the "latest month").
+  // Deliberately omits activeSources — rebuildMonthly never filtered by source,
+  // so deselecting a card must not hide its months from the Budget navigator.
   let latest='';
   state.transactions.forEach(t=>{
     if(t.excluded||t.isIncome)return;
-    if(!state.activeSources.has(t.card))return;
+    if(state.excludedCats&&state.excludedCats.has(t.cat))return;
     const mo=t.date.slice(0,7);
     if(mo>latest)latest=mo;
   });

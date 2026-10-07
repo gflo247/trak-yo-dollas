@@ -121,6 +121,13 @@ KNOWN_FALSE_POSITIVES = {
     # is a whole-picture number and must not change based on the Spending tab's
     # current source filter. Same reasoning as the _bizFilter suppression above.
     't=>{ if(t.excluded||t.isIncome)return; if(state.excludedCats&&state.excludedCats.has(t.cat))return; const mo=t.date.slice(0,7); if(mo>=curre',
+    # getLatestDataMonth() -- intentionally omits activeSources to match
+    # rebuildMonthly()'s filter set exactly. rebuildMonthly never filtered by
+    # activeSources (it's a per-source cache builder); adding activeSources here
+    # would cause deselecting a card to hide its months from Budget navigation,
+    # which is a regression. Omitting it is deliberate, confirmed in the
+    # principal SWE adversarial pass.
+    't=>{ if(t.excluded||t.isIncome)return; if(state.excludedCats&&state.excludedCats.has(t.cat))return; const mo=t.date.slice(0,7); if(mo>latest',
 }
 
 
