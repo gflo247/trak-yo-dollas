@@ -729,7 +729,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   .footer-nav a,.footer-nav button,.footer-support{font-size:11px;padding:5px 2px;color:var(--text-muted)}
   .excl-toggle>span:not(.excl-badge){font-size:9px}
   .account-row{flex-wrap:wrap;gap:6px}
-  #date-range-wrap{order:3;width:100%}
   .sort-row{flex-wrap:wrap;gap:4px}
   .sort-btn{padding:9px 6px!important;font-size:16px!important}
   .tx-icon-btn{padding:9px 6px!important;font-size:16px!important}
@@ -1154,10 +1153,24 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div id="insights-pills" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:8px"></div>
   </div>
   <!-- Empty state nudge — shown only before first import, sits above controls -->
-  <div class="flex-between" style="margin-bottom:.5rem;gap:8px">
+  <div style="margin-bottom:.5rem">
     <span class="page-title" id="spending-page-title">Spending</span>
-    <div class="date-range-wrap" id="date-range-wrap" style="flex:1;margin:0"></div>
-    <div class="row" style="gap:5px;align-items:center;flex-shrink:0">
+  </div>
+  <div id="biz-filter-inline" class="row" style="display:none;gap:5px;margin:-.15rem 0 .6rem">
+    <button data-action="setBizFilter" data-arg="all" class="chip biz-chip active" type="button">All</button>
+    <button data-action="setBizFilter" data-arg="biz" class="chip biz-chip" type="button">Business</button>
+    <button data-action="setBizFilter" data-arg="personal" class="chip biz-chip" type="button">Personal</button>
+  </div>
+  <input type="file" id="backup-file-input" data-change="importBackupFromInput" accept=".json" style="display:none">
+  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:.7rem">
+    <div class="chip-row" id="source-chips" style="flex:1;margin-bottom:0;min-width:0"></div>
+    <div id="range-dropdowns-inline"></div>
+  </div>
+  <span id="source-align-link" data-action="resumeSourceAlign" tabindex="0" role="button" style="display:none;font-size:11px;color:var(--accent-blue-light);cursor:pointer;margin-left:4px">↔ Align sources</span>
+  <span id="source-align-active" style="display:none;font-size:11px;color:var(--accent-green);margin-left:4px">✓ Aligned to <span id="source-align-date-label"></span> · <span data-action="resetSourceAlign" tabindex="0" role="button" style="cursor:pointer;color:var(--accent-blue-light)">show all</span></span>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:.85rem">
+    <div class="date-range-wrap" id="date-range-wrap" style="flex:1;margin:0;min-width:0"></div>
+    <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
       <button id="toolbar-import-btn" class="btn btn-sm btn-primary" data-action="openTxImportModal" title="Import transactions from a bank, credit union, or credit card CSV. Your files are processed locally and never uploaded." type="button">⬆ Import CSV</button>
       <!-- Overflow menu -->
       <div style="position:relative">
@@ -1174,18 +1187,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       </div>
     </div>
   </div>
-  <div id="biz-filter-inline" class="row" style="display:none;gap:5px;margin:-.15rem 0 .6rem">
-    <button data-action="setBizFilter" data-arg="all" class="chip biz-chip active" type="button">All</button>
-    <button data-action="setBizFilter" data-arg="biz" class="chip biz-chip" type="button">Business</button>
-    <button data-action="setBizFilter" data-arg="personal" class="chip biz-chip" type="button">Personal</button>
-  </div>
-  <input type="file" id="backup-file-input" data-change="importBackupFromInput" accept=".json" style="display:none">
-  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:.7rem">
-    <div class="chip-row" id="source-chips" style="flex:1;margin-bottom:0;min-width:0"></div>
-    <div id="range-dropdowns-inline"></div>
-  </div>
-  <span id="source-align-link" data-action="resumeSourceAlign" tabindex="0" role="button" style="display:none;font-size:11px;color:var(--accent-blue-light);cursor:pointer;margin-left:4px">↔ Align sources</span>
-  <span id="source-align-active" style="display:none;font-size:11px;color:var(--accent-green);margin-left:4px">✓ Aligned to <span id="source-align-date-label"></span> · <span data-action="resetSourceAlign" tabindex="0" role="button" style="cursor:pointer;color:var(--accent-blue-light)">show all</span></span>
 
   <!-- Search -->
   <div class="search-wrap">
