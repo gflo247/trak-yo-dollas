@@ -1246,11 +1246,11 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div class="tab-strip-lg" style="margin-bottom:0;overflow-x:auto;max-width:100%">
       <button class="h-btn active" id="cv-category" data-action="setChartMode" data-arg="category" type="button">By category</button>
       <button class="h-btn" id="cv-vendor" data-action="setChartMode" data-arg="vendor" type="button">By vendor</button>
-      <button class="h-btn" id="cv-source" data-action="setChartMode" data-arg="source" type="button">By source</button>
       <button class="h-btn" id="cv-trend" data-action="setChartMode" data-arg="trend" type="button">Trend</button>
       <button class="h-btn" id="cv-daily" data-action="setChartMode" data-arg="daily" type="button">Daily</button>
       <button class="h-btn" id="cv-split" data-action="setChartMode" data-arg="split" type="button">Split</button>
       <button class="h-btn" id="cv-sankey" data-action="setChartMode" data-arg="sankey" type="button">Flow</button>
+      <button class="h-btn" id="cv-source" data-action="setChartMode" data-arg="source" type="button">By source</button>
     </div>
     <button id="chart-texture-btn" data-action="toggleChartTexture" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">⠿ Patterns: off</button>
     <button id="cal-transfers-btn" data-action="toggleCalTransfers" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">Transfers: off</button>
@@ -1286,12 +1286,11 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="list-col">
     <div class="flex-between" style="margin-top:.9rem;margin-bottom:.3rem">
       <div class="flex-center gap-8">
-        <div class="sh" style="margin:0" id="tx-count-label">Transactions</div>
+        <div class="sh" style="margin:0" id="tx-count-label">Txns</div>
         <button data-action="openAddTxModal" title="Add a single transaction manually" class="tx-icon-btn" type="button"><span class="tx-icon">+</span><span class="hide-mobile"> Add</span></button>
         <button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search" class="tx-icon-btn" type="button"><span class="tx-icon">⬇</span><span class="hide-mobile"> Export CSV</span></button>
       </div>
       <div class="row sort-row">
-        <span class="hide-mobile" style="font-size:10px;color:var(--text-muted);font-weight:600">Sort:</span>
         <button class="sort-btn" id="sort-date-btn" data-action="setSort" data-arg="date" type="button">Date</button>
         <button class="sort-btn on" id="sort-amt-btn" data-action="setSort" data-arg="amount" type="button">$ Amount ↓</button>
         <button class="sort-btn hide-mobile" id="sort-pct-btn" data-action="setSort" data-arg="pct" type="button">% of Month</button>
@@ -7904,7 +7903,7 @@ function renderTxList(){
     // omitted "· filtered" while a vendor selection was actively scoping
     // the list below. Found in the 49th adversarial pass.
     const _isVendorFiltered=state.bucketMode==='vendor'&&state.activeVendors&&state.activeVendors.size>0;
-    const _base=`Transactions (${txs.length}${(state.activeCats.size>0||_isVendorFiltered)?' · filtered':''}${state.showExcluded?' +contributions':''})`;
+    const _base=`Txns (${txs.length}${(state.activeCats.size>0||_isVendorFiltered)?' · filtered':''}${state.showExcluded?' +contributions':''})`;
     if(state.searchQuery){
       _txLbl.innerHTML=_base+` <button data-action="clearSearch" style="background:none;border:none;color:var(--accent-blue-light);font-size:10px;font-weight:700;cursor:pointer;padding:0;font-family:inherit;vertical-align:middle" type="button">× clear</button>`;
     } else {
