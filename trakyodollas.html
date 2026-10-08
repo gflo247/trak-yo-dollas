@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-mpwZLdIWD35Q0D4OSOkQvvObxpYGgG29kBYDMFTxLto=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-zFo3vxr1SkecI4nGOhFKLqDo92sX3Va3s+Y5p32Nodg=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -730,9 +730,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   .excl-toggle>span:not(.excl-badge){font-size:9px}
   .account-row{flex-wrap:wrap;gap:6px}
   .sort-row{flex-wrap:wrap;gap:4px}
-  .sort-btn{padding:9px 10px!important;font-size:16px!important}
-  .tx-icon-btn{padding:9px 10px!important;font-size:16px!important}
-  #toolbar-overflow-btn{padding:9px 10px!important;font-size:16px!important}
+  .sort-btn{padding:9px 6px!important;font-size:16px!important}
+  .tx-icon-btn{padding:9px 6px!important;font-size:16px!important}
+  #toolbar-overflow-btn{padding:9px 6px!important;font-size:16px!important}
   .search-input{padding:9px 0!important;font-size:16px!important}
   .search-clear{align-self:stretch!important;display:flex!important;align-items:center!important;padding:0 4px 0 10px!important;font-size:16px!important}
   .page-title{font-size:13px}
@@ -1221,7 +1221,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <button id="bucket-mode-cat" class="h-btn active" data-action="setBucketMode" data-arg="category" type="button">Category</button>
       <button id="bucket-mode-vendor" class="h-btn" data-action="setBucketMode" data-arg="vendor" type="button">Vendor</button>
     </div>
-    <span id="bucket-vs-avg-label" style="font-size:10px;font-weight:600;margin-left:6px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+    <span id="bucket-vs-avg-label" style="font-size:11px;font-weight:600;margin-left:6px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">
       <span><span style="color:var(--accent-red)">↑ above</span> · <span style="color:var(--accent-green)">↓ below</span> <span style="color:var(--text-muted)">your avg for this period</span></span>
       <span class="hide-mobile" style="color:var(--text-muted)">·</span>
       <span class="hide-mobile"><span style="color:var(--accent-red)">↑</span><span style="color:var(--accent-green)">↓</span><span style="color:var(--text-muted)"> ≥20%</span></span>
