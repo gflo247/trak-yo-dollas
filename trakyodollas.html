@@ -1164,12 +1164,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <input type="file" id="backup-file-input" data-change="importBackupFromInput" accept=".json" style="display:none">
   <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:.7rem">
     <div class="chip-row" id="source-chips" style="flex:1;margin-bottom:0;min-width:0"></div>
-    <div id="range-dropdowns-inline"></div>
-  </div>
-  <span id="source-align-link" data-action="resumeSourceAlign" tabindex="0" role="button" style="display:none;font-size:11px;color:var(--accent-blue-light);cursor:pointer;margin-left:4px">↔ Align sources</span>
-  <span id="source-align-active" style="display:none;font-size:11px;color:var(--accent-green);margin-left:4px">✓ Aligned to <span id="source-align-date-label"></span> · <span data-action="resetSourceAlign" tabindex="0" role="button" style="cursor:pointer;color:var(--accent-blue-light)">show all</span></span>
-  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:.85rem">
-    <div class="date-range-wrap" id="date-range-wrap" style="flex:1;margin:0;min-width:0"></div>
     <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
       <button id="toolbar-import-btn" class="btn btn-sm btn-primary" data-action="openTxImportModal" title="Import transactions from a bank, credit union, or credit card CSV. Your files are processed locally and never uploaded." type="button">⬆ Import CSV</button>
       <!-- Overflow menu -->
@@ -1186,6 +1180,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
         </div>
       </div>
     </div>
+  </div>
+  <span id="source-align-link" data-action="resumeSourceAlign" tabindex="0" role="button" style="display:none;font-size:11px;color:var(--accent-blue-light);cursor:pointer;margin-left:4px">↔ Align sources</span>
+  <span id="source-align-active" style="display:none;font-size:11px;color:var(--accent-green);margin-left:4px">✓ Aligned to <span id="source-align-date-label"></span> · <span data-action="resetSourceAlign" tabindex="0" role="button" style="cursor:pointer;color:var(--accent-blue-light)">show all</span></span>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:.85rem">
+    <div class="date-range-wrap" id="date-range-wrap" style="flex:1;margin:0;min-width:0"></div>
+    <div id="range-dropdowns-inline"></div>
   </div>
 
   <!-- Search -->
