@@ -7871,8 +7871,8 @@ test("the Spending breakdown tab strip, the Patterns toggle, and both range-chip
   const source = readSource();
   assert.match(
     source,
-    /\.h-btn\{flex:1;background:none;border:none;border-radius:6px;padding:6px 10px;font-size:12px;font-weight:700;color:var\(--text-muted\);cursor:pointer;white-space:nowrap\}/,
-    "the shared .h-btn base class should be 12px/6px 10px"
+    /\.h-btn\{flex:1;background:none;border:none;border-radius:6px;padding:4px 10px;font-size:13px;font-weight:700;color:var\(--text-muted\);cursor:pointer;white-space:nowrap\}/,
+    "the shared .h-btn base class should be 13px/4px 10px"
   );
   assert.match(
     source,
@@ -8529,8 +8529,8 @@ test("The +Add and Export CSV buttons match the Date/Amount/Category sort pills'
   const source = readSource();
   assert.match(
     source,
-    /\.tx-icon-btn\{background:none;border:1px solid #2563EB44;border-radius:5px;padding:6px 10px;font-size:12px;font-weight:600;color:var\(--accent-blue-light\);cursor:pointer;white-space:nowrap\}/,
-    ".tx-icon-btn should match .sort-btn's own padding:6px 10px;font-size:12px scale"
+    /\.tx-icon-btn\{background:none;border:1px solid #2563EB44;border-radius:5px;padding:4px 10px;font-size:14px;font-weight:600;color:var\(--accent-blue-light\);cursor:pointer;white-space:nowrap\}/,
+    ".tx-icon-btn should match .sort-btn's own padding:4px 10px;font-size:14px scale"
   );
   assert.match(
     source,
