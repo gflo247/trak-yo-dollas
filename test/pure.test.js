@@ -8529,8 +8529,8 @@ test("The +Add and Export CSV buttons match the Date/Amount/Category sort pills'
   const source = readSource();
   assert.match(
     source,
-    /\.tx-icon-btn\{background:none;border:1px solid #2563EB44;border-radius:5px;padding:14px 12px;font-size:13px;font-weight:600;color:var\(--accent-blue-light\);cursor:pointer\}/,
-    ".tx-icon-btn should match .sort-btn's own padding:14px 12px;font-size:13px scale"
+    /\.tx-icon-btn\{background:none;border:1px solid #2563EB44;border-radius:5px;padding:6px 10px;font-size:12px;font-weight:600;color:var\(--accent-blue-light\);cursor:pointer;white-space:nowrap\}/,
+    ".tx-icon-btn should match .sort-btn's own padding:6px 10px;font-size:12px scale"
   );
   assert.match(
     source,
