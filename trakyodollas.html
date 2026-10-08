@@ -366,20 +366,20 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .search-clear{flex-shrink:0;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:15px;padding:2px 4px 2px 10px;line-height:1}
 .search-clear:hover{color:var(--text-secondary)}
 /* sort */
-.sort-btn{border:1px solid var(--border-mid);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:600;cursor:pointer;background:none;color:var(--text-muted)}
+.sort-btn{border:1px solid var(--border-mid);border-radius:6px;padding:14px 12px;font-size:13px;font-weight:600;cursor:pointer;background:none;color:var(--text-muted)}
 .sort-btn.on{background:#2563EB;color:#fff;border-color:#2563EB}
 /* +Add/Export CSV next to "Transactions" -- matched to .sort-btn's own
-   scale (padding:3px 9px;font-size:11px) rather than a touch-target
+   scale (padding:14px 12px;font-size:13px) rather than a touch-target
    figure like .quick-chips/.grain-row use elsewhere, since these sit
    directly beside the Date/$ Amount/Category sort pills and looked
    visibly oversized against them at 36px. Applies at every width, not
    just mobile -- the same mismatch existed on desktop too (10px/2px 8px
-   vs .sort-btn's 11px/3px 9px), just less noticeable there since the
-   text label was still visible to pad it out. .tx-icon bumps just the
-   glyph, not the whole button, so it reads as "same-scale pill, bigger
-   icon" rather than "bigger button." */
-.tx-icon-btn{background:none;border:1px solid #2563EB44;border-radius:5px;padding:3px 9px;font-size:11px;font-weight:600;color:var(--accent-blue-light);cursor:pointer}
-.tx-icon-btn .tx-icon{font-size:15px;vertical-align:-2px}
+   vs .sort-btn's scale), just less noticeable there since the text label
+   was still visible to pad it out. .tx-icon bumps just the glyph, not
+   the whole button, so it reads as "same-scale pill, bigger icon" rather
+   than "bigger button." */
+.tx-icon-btn{background:none;border:1px solid #2563EB44;border-radius:5px;padding:14px 12px;font-size:13px;font-weight:600;color:var(--accent-blue-light);cursor:pointer}
+.tx-icon-btn .tx-icon{font-size:16px;vertical-align:-2px}
 /* spend summary */
 .spend-total-card{background:var(--bg-card);border:1px solid var(--border-mid);color:var(--text-bright);border-radius:12px;padding:.9rem 1rem;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.6rem}
 .spend-total-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)}
@@ -1153,7 +1153,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <button id="toolbar-import-btn" class="btn btn-sm btn-primary" data-action="openTxImportModal" title="Import transactions from a bank, credit union, or credit card CSV. Your files are processed locally and never uploaded." type="button">⬆ Import CSV</button>
       <!-- Overflow menu -->
       <div style="position:relative">
-        <button id="toolbar-overflow-btn" class="btn btn-sm" data-action="toggleSpendingOverflow" data-stop title="More options" style="padding:3px 9px;font-size:13px;font-weight:700;letter-spacing:.05em;line-height:1" type="button">···</button>
+        <button id="toolbar-overflow-btn" class="btn btn-sm" data-action="toggleSpendingOverflow" data-stop title="More options" style="padding:14px 12px;font-size:13px;font-weight:700;letter-spacing:.05em;line-height:1" type="button">···</button>
         <div id="toolbar-overflow-menu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:var(--bg-card);border:1px solid var(--border-mid);border-radius:9px;padding:4px;min-width:170px;z-index:50;box-shadow:0 4px 16px rgba(0,0,0,.35)">
           <button id="include-income-btn" data-action="toggleIncludeIncome|closeSpendingOverflow" class="overflow-item" type="button">💼 Include income &amp; business categories</button>
           <button data-action="openIncomeModal|closeSpendingOverflow" class="overflow-item" type="button">💰 Income &amp; savings rate</button>

@@ -8529,12 +8529,12 @@ test("The +Add and Export CSV buttons match the Date/Amount/Category sort pills'
   const source = readSource();
   assert.match(
     source,
-    /\.tx-icon-btn\{background:none;border:1px solid #2563EB44;border-radius:5px;padding:3px 9px;font-size:11px;font-weight:600;color:var\(--accent-blue-light\);cursor:pointer\}/,
-    ".tx-icon-btn should match .sort-btn's own padding:3px 9px;font-size:11px scale, not a touch-target-driven size"
+    /\.tx-icon-btn\{background:none;border:1px solid #2563EB44;border-radius:5px;padding:14px 12px;font-size:13px;font-weight:600;color:var\(--accent-blue-light\);cursor:pointer\}/,
+    ".tx-icon-btn should match .sort-btn's own padding:14px 12px;font-size:13px scale"
   );
   assert.match(
     source,
-    /\.tx-icon-btn \.tx-icon\{font-size:15px/,
+    /\.tx-icon-btn \.tx-icon\{font-size:16px/,
     ".tx-icon should size up just the glyph, not the whole button"
   );
   assert.match(
