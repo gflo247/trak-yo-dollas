@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-qQWYB4MVn6vQgHGXAagmzFW2Sp5CVTXopaxUsreu6BM=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-7TPohxjPjm6n2rNy4LjSrUo89XA1XhstiWkR7Lg5nkU=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -330,7 +330,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .src-remove-pop{position:absolute;top:calc(100% + 6px);left:0;z-index:300;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.6rem .75rem;min-width:210px;box-shadow:0 8px 24px #00000055;white-space:nowrap}
 /* excluded toggle */
 
-.chip-excl{border-color:#92400E55;color:#D97706;background:#78350F0A;margin-left:16px;position:relative}
+.chip-excl{border-color:#92400E55;color:var(--amber-text);background:#78350F0A;margin-left:16px;position:relative}
 .chip-excl::before{content:'';position:absolute;left:-12px;top:20%;height:60%;width:1px;background:var(--border-mid)}
 .chip-excl:hover{border-color:#D97706;background:#78350F18}
 .hidden-popover{position:absolute;top:calc(100% + 8px);left:0;z-index:200;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:12px;padding:.75rem;min-width:260px;box-shadow:0 8px 24px #00000044}
@@ -1658,8 +1658,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
     <div class="hidden" id="sync-pp-reset-panel">
       <div style="background:#7F1D1D22;border:1px solid #DC262644;border-radius:8px;padding:.6rem .85rem">
-        <p style="font-size:12px;color:#FCA5A5;font-weight:700;margin:0 0 .35rem">This permanently deletes your synced data</p>
-        <p style="font-size:12px;color:#FCA5A5;margin:0;line-height:1.5">Nobody can decrypt it without the passphrase, so resetting is the only way back in. Everything on this device — transactions, accounts, budgets, net worth history — stays exactly as it is; only the encrypted cloud backup used for syncing gets deleted. Set a new passphrase and this device's data starts syncing fresh under it.</p>
+        <p style="font-size:12px;color:var(--accent-red);font-weight:700;margin:0 0 .35rem">This permanently deletes your synced data</p>
+        <p style="font-size:12px;color:var(--accent-red);margin:0;line-height:1.5">Nobody can decrypt it without the passphrase, so resetting is the only way back in. Everything on this device — transactions, accounts, budgets, net worth history — stays exactly as it is; only the encrypted cloud backup used for syncing gets deleted. Set a new passphrase and this device's data starts syncing fresh under it.</p>
       </div>
       <div class="form-group" style="margin-top:.6rem">
         <label class="form-label" for="sync-pp-reset-input">Type reset to confirm</label>
@@ -1959,7 +1959,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
         <input type="text" id="srp-keyword-input" class="input-mono" data-input="validateSrpKeyword"/>
       </div>
     </div>
-    <div id="srp-existing-warning" class="hidden" style="background:#78350F18;border:1px solid #D9770633;border-radius:8px;padding:.5rem .75rem;margin-bottom:.75rem;font-size:11px;color:#D97706"></div>
+    <div id="srp-existing-warning" class="hidden" style="background:#78350F18;border:1px solid #D9770633;border-radius:8px;padding:.5rem .75rem;margin-bottom:.75rem;font-size:11px;color:var(--amber-text)"></div>
     <div class="row" style="justify-content:flex-end;gap:8px">
       <button class="btn" data-action="closeModals" type="button">Skip</button>
       <button class="btn btn-primary" data-action="confirmSaveRule" type="button">⚡ Save Rule</button>
@@ -2311,7 +2311,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
           <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Categorization priority</div>
           <div style="padding:.5rem .75rem;color:var(--text-secondary)">
             <span style="color:var(--accent-blue-light);font-weight:600">1. Your rules</span> — keyword rules you've saved always win<br>
-            <span style="color:#64748B;font-weight:600">2. Built-in keywords</span> — ~300 common merchant names, matched automatically<br>
+            <span style="color:var(--text-muted);font-weight:600">2. Built-in keywords</span> — ~300 common merchant names, matched automatically<br>
             <span style="color:var(--accent-green);font-weight:600">3. Community patterns</span> — <span class="community-rules-count">1802</span> community-contributed keyword→category mappings covering US, CA, UK, AU, NZ, and SG merchants, picking up what built-in keywords miss — fetched once per session · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" style="color:var(--accent-green)">Suggest a merchant category ↗</a><br>
             <span style="color:#94A3B8;font-weight:600">4. Merchant Category Codes (MCC)</span> — 4-digit codes your bank or credit union assigns to merchants, if present in your CSV
           </div>
@@ -5996,7 +5996,7 @@ function renderBucketGrid(){
           const spendMonths=vendorMonths.slice(0,-1); // exclude latest to compare against
           const periodAvg=spendMonths.length>0?Math.round(spendMonths.map(m=>state.transactions.filter(t=>t.date.slice(0,7)===m&&resolveVendor(t.desc)===vendor&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0)).reduce((a,b)=>a+b,0)/spendMonths.length):0;
           const vsAvg=periodAvg>0&&curAmt>0?Math.round((curAmt-periodAvg)/periodAvg*100):0;
-          const sig=periodAvg>0?(vsAvg>=20?`<span class="text-danger">↑${vsAvg}%</span> · `:vsAvg<=-20?`<span class="text-success">↓${Math.abs(vsAvg)}%</span> · `:Math.abs(vsAvg)>=5?`<span style="color:#64748B">${vsAvg>=0?'+':''}${vsAvg}%</span> · `:''):'';
+          const sig=periodAvg>0?(vsAvg>=20?`<span class="text-danger">↑${vsAvg}%</span> · `:vsAvg<=-20?`<span class="text-success">↓${Math.abs(vsAvg)}%</span> · `:Math.abs(vsAvg)>=5?`<span style="color:var(--text-muted)">${vsAvg>=0?'+':''}${vsAvg}%</span> · `:''):'';
           return`${sig}${data.count} transactions · Avg: ${fmt(avg)}${grainLabel}`;
         })()}</div>
       </div>`;
@@ -6118,7 +6118,7 @@ function renderBucketGrid(){
     const priorSpendTotal=priorCatMonths.map(m=>(state.transactions||[]).filter(t=>t.date.slice(0,7)===m&&t.cat===cat&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0)).reduce((a,b)=>a+b,0);
     const periodAvg=priorAllMonthCount>0?Math.round(priorSpendTotal/priorAllMonthCount):s.avg;
     const vsAvg=periodAvg>0?Math.round((curAmt-periodAvg)/periodAvg*100):0;
-    const signal=curAmt>0?(vsAvg>=20?`<span class="text-danger">↑${vsAvg}%</span>`:vsAvg<=-20?`<span class="text-success">↓${Math.abs(vsAvg)}%</span>`:(Math.abs(vsAvg)>=5?`<span style="color:#64748B">${vsAvg>=0?'+':''}${vsAvg}%</span>`:'')):'';
+    const signal=curAmt>0?(vsAvg>=20?`<span class="text-danger">↑${vsAvg}%</span>`:vsAvg<=-20?`<span class="text-success">↓${Math.abs(vsAvg)}%</span>`:(Math.abs(vsAvg)>=5?`<span style="color:var(--text-muted)">${vsAvg>=0?'+':''}${vsAvg}%</span>`:'')):'';
     // Compact budget badge — replaces progress bar
     // curAmt>budget+0.005, not a bare >, matching classifyBudgetStatus()'s
     // own epsilon -- this dot/badge reads the identical unrounded
