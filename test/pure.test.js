@@ -5072,7 +5072,7 @@ test("body-script theme IIFE no longer redundantly re-sets data-theme (the head 
   );
   assert.match(
     match[0],
-    /if\(btn\)btn\.textContent=saved==='light'\?'☀️':'🌙';/,
+    /if\(btn\)\{btn\.textContent=saved==='light'\?'☀️':'🌙';/,
     "should still set the toggle button's label from the saved theme"
   );
 });
