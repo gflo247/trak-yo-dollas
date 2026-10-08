@@ -346,7 +346,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 #tx-bulk-bar{position:sticky;bottom:8px;left:0;right:0;display:none;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.5rem .75rem;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:10;margin-top:6px}
 #tx-bulk-bar.visible{display:flex}
 .excl-pill{font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px;background:#7C3AED22;color:var(--accent-purple);border:1px solid #7C3AED33;flex-shrink:0}
-.h-btn{flex:1;background:none;border:none;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--text-muted);cursor:pointer;white-space:nowrap}
+.h-btn{flex:1;background:none;border:none;border-radius:6px;padding:6px 10px;font-size:12px;font-weight:700;color:var(--text-muted);cursor:pointer;white-space:nowrap}
 .h-btn.active{background:var(--bg-deep);color:var(--accent-blue-light);box-shadow:0 1px 4px rgba(0,0,0,.4)}
 /* date range selector */
 .date-range-wrap{margin-bottom:.85rem}
@@ -691,7 +691,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   .spend-total-card>div:last-child{min-width:0!important}
   .spend-top5-col-vendors{display:none}
   #range-dropdowns-inline{width:100%}
-  .quick-chips .h-btn,.grain-row .h-btn{padding:8px 6px;min-height:36px}
+  .h-btn{padding:13px 8px!important;font-size:13px!important}
+  .quick-chips .h-btn,.grain-row .h-btn{padding:8px 6px!important;min-height:36px!important}
   #auth-bar{padding:0 4px;gap:3px}
   /* !important on both -- neither button's mobile shrink was actually
      applying. Both #theme-toggle-btn and #auth-sign-in-btn carry an

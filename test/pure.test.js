@@ -7871,8 +7871,8 @@ test("the Spending breakdown tab strip, the Patterns toggle, and both range-chip
   const source = readSource();
   assert.match(
     source,
-    /\.h-btn\{flex:1;background:none;border:none;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;color:var\(--text-muted\);cursor:pointer;white-space:nowrap\}/,
-    "the shared .h-btn base class should be 11px"
+    /\.h-btn\{flex:1;background:none;border:none;border-radius:6px;padding:6px 10px;font-size:12px;font-weight:700;color:var\(--text-muted\);cursor:pointer;white-space:nowrap\}/,
+    "the shared .h-btn base class should be 12px/6px 10px"
   );
   assert.match(
     source,
@@ -7881,8 +7881,8 @@ test("the Spending breakdown tab strip, the Patterns toggle, and both range-chip
   );
   assert.match(
     source,
-    /\.quick-chips \.h-btn,\.grain-row \.h-btn\{padding:8px 6px;min-height:36px\}/,
-    "the mobile-only override should drop its now-redundant font-size:11px, keeping only the touch-target padding/min-height"
+    /\.quick-chips \.h-btn,\.grain-row \.h-btn\{padding:8px 6px!important;min-height:36px!important\}/,
+    "the quick-chips/grain-row mobile override should use !important to win over the general .h-btn mobile rule"
   );
 });
 
