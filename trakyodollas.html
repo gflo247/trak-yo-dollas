@@ -4078,6 +4078,18 @@ function renderAll(){
   try{renderHistory();}catch(e){console.error('renderHistory failed:',e);}
   try{renderBudgetTab();}catch(e){console.error('renderBudgetTab failed:',e);}
   try{renderSimulatorTab();}catch(e){console.error('renderSimulatorTab failed:',e);}
+  // Re-render year in review content if the panel is currently open so it
+  // reflects the new data (profile switch, sync update, etc.) without
+  // requiring the user to close and reopen it. Reset _yirEndMonth to the
+  // new data's last month first -- the old value may not exist in the new
+  // profile, which causes allMonths.indexOf() to return -1 and Math.max(0,-1)
+  // to silently render month[0] instead of the last month.
+  const _yirEl=document.getElementById('year-review-modal');
+  if(_yirEl&&!_yirEl.classList.contains('hidden')){
+    const _yirAllMonths=Object.keys(MONTHLY).sort();
+    _yirEndMonth=_yirAllMonths[_yirAllMonths.length-1]||null;
+    try{renderYearInReview();}catch(e){console.error('renderYearInReview failed:',e);}
+  }
 }
 
 function renderMetrics(){

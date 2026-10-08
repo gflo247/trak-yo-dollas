@@ -4774,7 +4774,7 @@ test("deleteAcct and deleteVehicle: reset hasRealAccounts=false when state.accou
 // exist anywhere in the DOM. ──
 test("renderAll: per-tab demo notices also hide once state.hasRealData is true, not just their own more-specific flag", () => {
   const source = readSource();
-  const fnMatch = source.match(/function renderAll\(\)\{[\s\S]{0,2700}?\n\}/);
+  const fnMatch = source.match(/function renderAll\(\)\{[\s\S]{0,3500}?\n\}/);
   assert.ok(fnMatch, "renderAll() should exist");
   assert.match(fnMatch[0], /if\(da\)da\.style\.display=\(state\.hasRealAccounts\|\|state\.hasRealData\)\?'none':'';/, "the accounts notice should hide once hasRealData is true too");
   assert.match(fnMatch[0], /if\(sdn\)sdn\.style\.display=\(state\.hasRealSnapshot\|\|state\.hasRealData\)\?'none':'';/, "the snapshot notice should hide once hasRealData is true too");
