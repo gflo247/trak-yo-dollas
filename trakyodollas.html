@@ -1084,9 +1084,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="flex-between" style="margin-bottom:1rem">
     <span class="page-title">Budget</span>
     <div class="flex-center gap-8">
-      <button id="budget-prev-month" class="btn" data-action="budgetNavMonth" data-arg="-1" type="button" style="font-size:16px;padding:2px 10px;line-height:1">‹</button>
+      <button id="budget-prev-month" class="btn" data-action="budgetNavMonth" data-arg="-1" type="button" aria-label="Previous month" style="font-size:16px;padding:2px 10px;line-height:1">‹</button>
       <span id="budget-month-label" style="font-size:12px;font-weight:700;color:var(--text-primary);min-width:80px;text-align:center"></span>
-      <button id="budget-next-month" class="btn" data-action="budgetNavMonth" data-arg="1" type="button" style="font-size:16px;padding:2px 10px;line-height:1">›</button>
+      <button id="budget-next-month" class="btn" data-action="budgetNavMonth" data-arg="1" type="button" aria-label="Next month" style="font-size:16px;padding:2px 10px;line-height:1">›</button>
       <button data-action="openBudgetModal" class="btn btn-sm btn-primary" style="margin-left:4px" type="button">+ Add budget</button>
     </div>
   </div>
@@ -1184,7 +1184,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="search-wrap">
     <span class="search-icon"><svg width="14" height="14" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5.5" cy="5.5" r="4"/><line x1="8.9" y1="8.9" x2="12" y2="12"/></svg></span>
     <input class="search-input" type="text" id="tx-search" placeholder="Search vendors, categories, sources" data-input="onSearchInput">
-    <button class="search-clear hidden" id="search-clear-btn" data-action="clearSearch" type="button">✕</button>
+    <button class="search-clear hidden" id="search-clear-btn" data-action="clearSearch" aria-label="Clear search" type="button">✕</button>
   </div>
 
   <div class="spend-total-card">
@@ -1312,7 +1312,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="cat-modal-title" tabindex="-1" style="width:min(400px,94vw)">
     <div class="modal-header">
       <h3 id="cat-modal-title" style="margin:0">Manage categories</h3>
-      <button data-action="closeCatModal" class="panel-close-btn" type="button">×</button>
+      <button data-action="closeCatModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
     </div>
     <p class="modal-sub">Add custom categories. The app picks colors automatically to keep your categories visually distinct from each other.</p>
     <div id="cat-manager-list" style="max-height:60vh;overflow-y:auto;border:1px solid var(--border-mid);border-radius:8px;margin-bottom:.7rem"></div>
@@ -1861,7 +1861,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
         <h3 id="community-rules-modal-title" style="font-size:16px;margin:0">Community patterns</h3>
         <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Keyword→category mappings that run on every import</div>
       </div>
-      <button data-action="closeCommunityRulesModal" class="panel-close-btn" type="button">×</button>
+      <button data-action="closeCommunityRulesModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
     </div>
     <input type="text" id="cr-search" placeholder="Search merchant or category…" data-input="filterCommunityRules" style="width:100%;padding:.45rem .7rem;border:1px solid var(--border-mid);border-radius:7px;background:var(--bg-deep);color:var(--text-primary);font-size:12px;font-family:inherit;margin-bottom:.6rem;flex-shrink:0">
     <div id="cr-table" style="overflow-y:auto;flex:1;border:1px solid var(--border);border-radius:8px;font-size:11px"></div>
@@ -2214,7 +2214,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="year-review-modal-title" tabindex="-1" style="width:min(580px,94vw)">
     <div class="modal-header">
       <h3 id="year-review-modal-title" style="margin:0">📅 Year in review</h3>
-      <button data-action="closeYearInReview" class="panel-close-btn" type="button">×</button>
+      <button data-action="closeYearInReview" class="panel-close-btn" aria-label="Close" type="button">×</button>
     </div>
     <!-- Start month selector -->
     <div id="yir-start-selector" style="margin-bottom:1rem"></div>
@@ -2245,7 +2245,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="shortcuts-modal-title" tabindex="-1">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
       <h3 id="shortcuts-modal-title" style="margin:0">Tips & shortcuts</h3>
-      <button data-action="closeShortcutsModal" class="panel-close-btn" type="button">×</button>
+      <button data-action="closeShortcutsModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
     </div>
 
     <div class="hide-mobile" style="margin-bottom:1.25rem">
@@ -3626,7 +3626,7 @@ function renderInsights(){
     } // end else (not overspend)
   } else if(!state.hiddenPills.has('savings')){
     pillsArr.push({key:'savings-nudge',label:'Savings rate',score:0,html:`<div data-action="openIncomeModal" tabindex="0" role="button" style="display:flex;flex-direction:column;justify-content:center;background:var(--card-nudge-bg);border:1.5px dashed var(--border-mid);border-radius:12px;padding:.75rem .9rem;gap:.4rem;cursor:pointer;position:relative">
-      <button data-action="dismissSavingsNudge" data-stop="1" data-prevent="1" style="position:absolute;top:6px;right:8px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:4px 6px;z-index:10;pointer-events:all" title="" type="button">✕</button>
+      <button data-action="dismissSavingsNudge" data-stop="1" data-prevent="1" style="position:absolute;top:6px;right:8px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:4px 6px;z-index:10;pointer-events:all" aria-label="Dismiss" type="button">✕</button>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-right:20px">
         <div style="display:flex;align-items:center;gap:7px">
           <span style="font-size:16px">💰</span>
