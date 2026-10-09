@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-SGFhVxGw1mYjkJu24HH5yDQ0ToGS5qp1xi3YjprdG4A=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-KUtHYGLygeDXLJGyQkcEN4pS1lImzFvxfZzghK+BN6M=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -458,7 +458,9 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .tx-desc{font-size:11px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-primary);touch-action:manipulation}
 .pill{font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;white-space:nowrap;touch-action:manipulation}
 .tx-amount{font-size:11px;font-weight:800;min-width:55px;text-align:right;color:var(--accent-red);touch-action:manipulation}
-.tx-pct{font-size:9px;color:var(--text-muted);min-width:35px;text-align:right;touch-action:manipulation}
+.tx-pct{font-size:9px;color:var(--text-muted);width:35px;text-align:right;flex-shrink:0;touch-action:manipulation}
+.tx-pills{display:flex;gap:5px;flex-shrink:0;justify-content:flex-end;min-width:155px}
+.tx-pills .pill{max-width:90px;overflow:hidden;text-overflow:ellipsis}
 .cat-badge{display:flex;align-items:center;gap:6px;margin-bottom:.5rem;padding:.3rem .7rem;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-mid)}
 /* modals */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(4px)}
@@ -659,6 +661,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 #mobile-tooltip.visible{display:block}
 .show-mobile{display:none}
 @media(max-width:600px){
+  .tx-pills{min-width:0}
   .hide-mobile{display:none!important}
   .show-mobile{display:inline!important}
   #spending-start-here{display:none!important}
@@ -7925,9 +7928,11 @@ function renderTxList(){
       <div class="tx-date">${fmtDate(t.date)}</div>
       <div class="tx-desc" title="${esc(t.desc)}">${highlight(displayVendor(t.desc))}</div>
       ${t.excluded?'<span class="excl-pill" title="Hidden from spending — click to edit">hidden</span>':''}
-      <span class="pill" style="background:${color}22;color:${color}">${highlight(t.cat)}</span>
-      <span class="pill" style="background:${cc.bg};color:${cc.fg}">${highlight(t.card.replace('Chase ','').replace(' Unlimited','Unlim').replace('Ally ',''))}</span>
-      ${state.includeIncome?`<span class="pill" style="background:${t.biz?'#2563EB22':'var(--bg-deep)'};color:${t.biz?'#60A5FA':'var(--text-muted)'};font-size:9px;cursor:pointer" data-action="toggleTxBiz" data-arg="${t.id}" data-stop="1" tabindex="0" role="button" aria-label="Toggle business or personal — currently ${t.biz?'business':'personal'}" title="Currently ${t.biz?'business':'personal'} — click to toggle">${t.biz?'BIZ':'PERS'}</span>`:''}
+      <div class="tx-pills">
+        <span class="pill" style="background:${color}22;color:${color}">${highlight(t.cat)}</span>
+        <span class="pill" style="background:${cc.bg};color:${cc.fg}">${highlight(t.card.replace('Chase ','').replace(' Unlimited','Unlim').replace('Ally ',''))}</span>
+        ${state.includeIncome?`<span class="pill" style="background:${t.biz?'#2563EB22':'var(--bg-deep)'};color:${t.biz?'#60A5FA':'var(--text-muted)'};font-size:9px;cursor:pointer" data-action="toggleTxBiz" data-arg="${t.id}" data-stop="1" tabindex="0" role="button" aria-label="Toggle business or personal — currently ${t.biz?'business':'personal'}" title="Currently ${t.biz?'business':'personal'} — click to toggle">${t.biz?'BIZ':'PERS'}</span>`:''}
+      </div>
       <div class="tx-pct">${pctOfMonth!==null&&!t.is_offset?pctOfMonth+'%':''}</div>
       <div class="tx-amount" style="color:${t.isIncome?'#34D399':t.is_offset?'#34D399':'#F87171'}">${t.isIncome?'+':t.is_offset?'+':'-'}${fmtD(Math.abs(t.amount))}</div>
     </div>`;
