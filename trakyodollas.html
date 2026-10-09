@@ -299,7 +299,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .btn:hover{background:var(--bg-card);color:var(--text-primary)}
 .btn-primary{background:#2563EB;color:#fff;border-color:#2563EB}
 .btn-primary:hover{background:#1D4ED8}
-.btn-sm{padding:3px 9px;font-size:11px}
+.btn-sm{padding:5px 9px;font-size:11px}
 .row{display:flex;gap:8px;align-items:center}
 .flex-between{display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem}
 .page-title{font-size:15px;font-weight:800;color:var(--text-bright)}
@@ -686,7 +686,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   .page{padding:.65rem}
   .flex-between{flex-wrap:wrap;gap:.5rem}
   .flex-between .row{flex-wrap:wrap;gap:5px}
-  .btn-sm{font-size:10px;padding:3px 7px}
+  .btn-sm{font-size:10px;padding:5px 7px}
   .metric-grid{grid-template-columns:1fr 1fr}
   .metric-grid>.metric:first-child{grid-column:1/-1}
   .bucket-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
@@ -1263,10 +1263,10 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <button class="h-btn" id="cv-sankey" data-action="setChartMode" data-arg="sankey" type="button">Flow</button>
       <button class="h-btn" id="cv-source" data-action="setChartMode" data-arg="source" type="button">Source</button>
     </div>
-    <button id="chart-texture-btn" data-action="toggleChartTexture" aria-pressed="false" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">⠿ Patterns: off</button>
-    <button id="cal-transfers-btn" data-action="toggleCalTransfers" aria-pressed="false" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">Transfers: off</button>
-    <button id="chart-table-btn" data-action="toggleChartTableView" aria-pressed="false" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">▦ View as table</button>
-    <button id="chart-table-export-btn" data-action="exportChartTable" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">⬇ Export table</button>
+    <button id="chart-texture-btn" data-action="toggleChartTexture" aria-pressed="false" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:5px 8px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">⠿ Patterns: off</button>
+    <button id="cal-transfers-btn" data-action="toggleCalTransfers" aria-pressed="false" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:5px 8px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">Transfers: off</button>
+    <button id="chart-table-btn" data-action="toggleChartTableView" aria-pressed="false" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:5px 8px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">▦ View as table</button>
+    <button id="chart-table-export-btn" data-action="exportChartTable" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:5px 8px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">⬇ Export table</button>
   </div>
   <div style="position:relative">
     <div id="spend-chart-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch" tabindex="0" role="region" aria-label="Spending chart, scrollable on narrow screens">
@@ -1291,7 +1291,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
        even while the chart itself is what's visually showing. -->
   <div id="trend-table-wrap" style="display:none"></div>
   <div id="chart-show-more-row" style="display:none;text-align:right;margin-top:4px">
-    <button data-action="toggleChartShowAll" id="chart-show-more-btn" style="background:none;border:none;color:var(--accent-blue-light);font-size:11px;font-weight:600;cursor:pointer;padding:0" type="button"></button>
+    <button data-action="toggleChartShowAll" id="chart-show-more-btn" style="background:none;border:none;color:var(--accent-blue-light);font-size:11px;font-weight:600;cursor:pointer;padding:5px 8px" type="button"></button>
   </div>
 
   <div class="list-col">
@@ -5800,8 +5800,8 @@ function renderSpendSummary(){
   const badge=document.getElementById('cat-filter-badge');
   if(state.activeCats.size>0){
     badge.classList.remove('hidden');
-    const pills=[...state.activeCats].map(c=>`<span data-action="toggleCatFilter" data-arg="${esc(c)}" tabindex="0" role="button" aria-label="Remove ${esc(c)} filter" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:${getCatColor(c)}22;color:${getCatColor(c)};border:1px solid ${getCatColor(c)}44;border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700">${esc(c)} <span style="opacity:.6">✕</span></span>`).join('');
-    badge.innerHTML=`<div class="cat-badge" style="flex-wrap:wrap;gap:5px"><span class="text-muted-xs">Filtering:</span>${pills}<button data-action="clearCatFilter" style="font-size:10px;background:none;border:none;color:var(--text-muted);cursor:pointer;margin-left:2px" type="button">clear all</button></div>`;
+    const pills=[...state.activeCats].map(c=>`<span data-action="toggleCatFilter" data-arg="${esc(c)}" tabindex="0" role="button" aria-label="Remove ${esc(c)} filter" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:${getCatColor(c)}22;color:${getCatColor(c)};border:1px solid ${getCatColor(c)}44;border-radius:99px;padding:3px 8px;font-size:11px;font-weight:700">${esc(c)} <span style="opacity:.6">✕</span></span>`).join('');
+    badge.innerHTML=`<div class="cat-badge" style="flex-wrap:wrap;gap:5px"><span class="text-muted-xs">Filtering:</span>${pills}<button data-action="clearCatFilter" style="font-size:11px;background:none;border:none;color:var(--text-muted);cursor:pointer;margin-left:2px;padding:3px 6px" type="button">clear all</button></div>`;
   } else {
     badge.classList.add('hidden');
   }

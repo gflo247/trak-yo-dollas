@@ -7876,7 +7876,7 @@ test("the Spending breakdown tab strip, the Patterns toggle, and both range-chip
   );
   assert.match(
     source,
-    /<button id="chart-texture-btn" data-action="toggleChartTexture" aria-pressed="false" style="background:none;border:1px solid var\(--border-mid\);border-radius:6px;padding:2px 8px;font-size:11px;/,
+    /<button id="chart-texture-btn" data-action="toggleChartTexture" aria-pressed="false" style="background:none;border:1px solid var\(--border-mid\);border-radius:6px;padding:5px 8px;font-size:11px;/,
     "the Patterns toggle should be 11px"
   );
   assert.match(
