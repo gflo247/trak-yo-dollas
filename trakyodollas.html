@@ -1218,11 +1218,11 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div style="text-align:right;min-width:140px">
       <div style="display:flex;gap:16px">
         <div style="flex:1">
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:4px">Top 5 categories</div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:4px">Top 5 categories</div>
           <div id="spend-top5-inline"></div>
         </div>
         <div class="spend-top5-col-vendors" style="flex:1">
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:4px">Top 5 vendors</div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:4px">Top 5 vendors</div>
           <div id="spend-top5-vendors"></div>
         </div>
       </div>
@@ -1254,24 +1254,24 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <!-- Chart view toggle + pattern button on same row -->
   <div style="display:flex;align-items:center;gap:6px;margin-bottom:.75rem;flex-wrap:wrap">
     <div class="tab-strip-lg" style="margin-bottom:0;overflow-x:auto;max-width:100%">
-      <button class="h-btn active" id="cv-category" data-action="setChartMode" data-arg="category" type="button">By category</button>
-      <button class="h-btn" id="cv-vendor" data-action="setChartMode" data-arg="vendor" type="button">By vendor</button>
+      <button class="h-btn active" id="cv-category" data-action="setChartMode" data-arg="category" type="button">Category</button>
+      <button class="h-btn" id="cv-vendor" data-action="setChartMode" data-arg="vendor" type="button">Vendor</button>
       <button class="h-btn" id="cv-trend" data-action="setChartMode" data-arg="trend" type="button">Trend</button>
       <button class="h-btn" id="cv-daily" data-action="setChartMode" data-arg="daily" type="button">Daily</button>
       <button class="h-btn" id="cv-split" data-action="setChartMode" data-arg="split" type="button">Split</button>
       <button class="h-btn" id="cv-sankey" data-action="setChartMode" data-arg="sankey" type="button">Flow</button>
-      <button class="h-btn" id="cv-source" data-action="setChartMode" data-arg="source" type="button">By source</button>
+      <button class="h-btn" id="cv-source" data-action="setChartMode" data-arg="source" type="button">Source</button>
     </div>
     <button id="chart-texture-btn" data-action="toggleChartTexture" aria-pressed="false" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">⠿ Patterns: off</button>
-    <button id="cal-transfers-btn" data-action="toggleCalTransfers" aria-pressed="false" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">Transfers: off</button>
-    <button id="chart-table-btn" data-action="toggleChartTableView" aria-pressed="false" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">▦ View as table</button>
-    <button id="chart-table-export-btn" data-action="exportChartTable" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">⬇ Export table</button>
+    <button id="cal-transfers-btn" data-action="toggleCalTransfers" aria-pressed="false" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">Transfers: off</button>
+    <button id="chart-table-btn" data-action="toggleChartTableView" aria-pressed="false" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">▦ View as table</button>
+    <button id="chart-table-export-btn" data-action="exportChartTable" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">⬇ Export table</button>
   </div>
   <div style="position:relative">
     <div id="spend-chart-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch" tabindex="0" role="region" aria-label="Spending chart, scrollable on narrow screens">
       <div id="spend-chart-border" style="border:1px solid var(--border);border-radius:8px;overflow:hidden;min-width:600px">
         <div class="chart-wrap chart-dark" id="spend-chart-wrap" style="height:210px;position:relative;border:none;border-radius:0"><canvas id="spendChart"></canvas></div>
-        <div id="chart-footnote" style="font-size:9px;color:var(--text-muted);text-align:left;padding:4px 8px 5px;border-top:1px solid var(--border);display:none;line-height:1.4;background:var(--bg-card)"></div>
+        <div id="chart-footnote" style="font-size:11px;color:var(--text-muted);text-align:left;padding:4px 8px 5px;border-top:1px solid var(--border);display:none;line-height:1.4;background:var(--bg-card)"></div>
       </div>
     </div>
     <div id="spend-chart-fade"></div>
