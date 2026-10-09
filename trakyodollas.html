@@ -10742,9 +10742,8 @@ function renderBudgetTab(){
     if(gated)gateNote.textContent=`The average tick and Unusual sort need 12 months of history — you have ${histMonths.length} so far. Import more months to unlock them.`;
   }
 
-  // Subtitle — explains the combined view
   const subtitleEl=document.getElementById('budget-view-subtitle');
-  if(subtitleEl)subtitleEl.textContent='This month vs. your budgets, your 12-month spending average, and your year-to-date budget pace — all in one view.';
+  if(subtitleEl)subtitleEl.textContent='';
 
   // Dot legend — budget-based thresholds for the 12-month history dots
   const legendEl=document.getElementById('budget-dot-legend');
@@ -10915,7 +10914,6 @@ function renderBudgetTab(){
       const pctDots=buildRowPctDots(histMonths,cat,budget,_budgetBizFilter);
       const histHTML=histMonths.length
         ?'<div style="margin-top:6px">'
-          +'<div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">12-MO HISTORY</div>'
           +'<div style="display:flex;gap:0;flex-wrap:nowrap;align-items:flex-end;width:100%">'+pctDots+'</div>'
         +'</div>'
         :'';
@@ -11003,16 +11001,14 @@ function renderBudgetTab(){
   }else{
     if(needsAttention.length){
       rowsHTML+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;margin-top:2px">
-        <span style="font-size:10px;font-weight:800;color:var(--accent-red);text-transform:uppercase;letter-spacing:.06em">⚠ Needs attention</span>
-        <span style="font-size:10px;color:var(--text-muted)">${needsAttention.length} ${needsAttention.length===1?'category':'categories'}</span>
+        <span style="font-size:10px;font-weight:800;color:var(--accent-red);text-transform:uppercase;letter-spacing:.06em">⚠ Needs attention · ${needsAttention.length}</span>
       </div>`;
       rowsHTML+=`<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:${onTrack.length?'1.25rem':'0'}">${needsAttention.map(renderRow).join('')}</div>`;
     }
     if(onTrack.length){
       if(needsAttention.length){
         rowsHTML+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-          <span style="font-size:10px;font-weight:800;color:var(--accent-green);text-transform:uppercase;letter-spacing:.06em">✓ On track</span>
-          <span style="font-size:10px;color:var(--text-muted)">${onTrack.length} ${onTrack.length===1?'category':'categories'}</span>
+          <span style="font-size:10px;font-weight:800;color:var(--accent-green);text-transform:uppercase;letter-spacing:.06em">✓ On track · ${onTrack.length}</span>
         </div>`;
       }
       rowsHTML+=`<div style="display:flex;flex-direction:column;gap:6px">${onTrack.map(renderRow).join('')}</div>`;
@@ -11029,7 +11025,7 @@ function renderBudgetTab(){
       <div style="background:var(--bg-card);border:1px solid #FBBF2433;border-radius:10px;padding:.75rem 1rem;margin-top:.25rem">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
           <div style="font-size:12px;font-weight:700;color:var(--accent-amber)">${fmt(totalUnbudgeted)} unbudgeted this month</div>
-          <div style="font-size:10px;color:var(--text-muted)">${unbudgetedCats.length} ${unbudgetedCats.length===1?'category':'categories'} · click to set a limit</div>
+          <div style="font-size:10px;color:var(--text-muted)">${unbudgetedCats.length} ${unbudgetedCats.length===1?'category':'categories'}</div>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:6px">
           ${unbudgetedCats.sort((a,b)=>(spendByCat[b]||0)-(spendByCat[a]||0)).map(c=>`
