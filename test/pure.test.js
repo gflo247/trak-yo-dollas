@@ -8604,7 +8604,7 @@ test("The nav's mobile-shrink and desktop-bump rules for #demo-nav-badge/#theme-
   const source = readSource();
   assert.match(
     source,
-    /#demo-nav-badge\{font-size:8px!important;padding:4px 5px!important;letter-spacing:\.03em!important/,
+    /#demo-nav-badge\{font-size:9px!important;padding:6px 6px!important;letter-spacing:\.03em!important/,
     "#demo-nav-badge's mobile rule should use !important to beat the later, tied-specificity base rule"
   );
   assert.match(
