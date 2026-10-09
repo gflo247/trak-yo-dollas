@@ -226,7 +226,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .nav-btn:hover:not(.active){color:var(--text-secondary);background:var(--bg-hover);border-bottom-color:#2563EB55}
 .page{display:none;padding:1rem;padding-bottom:3rem;background:var(--bg-page)}
 .page.active{display:block}
-.sh{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin:1.2rem 0 .5rem;border-bottom:1px solid var(--border);padding-bottom:.3rem}
+.sh{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin:1.2rem 0 .5rem;border-bottom:1px solid var(--border);padding-bottom:.3rem}
 #tx-count-label{font-size:13px}
 /* metrics */
 .metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:.9rem}
@@ -1225,7 +1225,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:.4rem">
-    <div class="sh" style="margin:0" id="bucket-section-label">By category — click a tile to filter</div>
+    <div class="sh" style="margin:0" id="bucket-section-label">By category</div>
     <div class="tab-strip">
       <button id="bucket-mode-cat" class="h-btn active" data-action="setBucketMode" data-arg="category" type="button">Category</button>
       <button id="bucket-mode-vendor" class="h-btn" data-action="setBucketMode" data-arg="vendor" type="button">Vendor</button>
@@ -1242,7 +1242,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   </div>
   <div class="bucket-grid" id="bucket-grid"></div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;padding-right:2px;min-height:16px">
-    <div id="bucket-footnote" style="font-size:9px;color:var(--text-muted)"></div>
+    <div id="bucket-footnote" style="font-size:11px;color:var(--text-muted)"></div>
     <button id="bucket-show-more-btn" data-action="toggleBucketShowAll" style="display:none;background:none;border:none;color:var(--accent-blue-light);font-size:11px;font-weight:600;cursor:pointer;padding:0" type="button"></button>
   </div>
 
