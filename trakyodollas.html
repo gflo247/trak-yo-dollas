@@ -10519,7 +10519,7 @@ function renderSimulatorTab(){
   const horizonPresets=[3,6,12,24,36];
   const showCustomHorizon=_simulatorHorizonCustomOpen||!horizonPresets.includes(horizon);
   const rowsHTML=sortedRows.map((r,i)=>`
-    <div class="sim-row${i%2===1?' row-alt':''}" data-action="openSimulatorOverrideModal" data-arg="${esc(r.cat)}" tabindex="0" aria-label="Edit spending change for ${esc(r.cat)}" style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;border-radius:8px;margin-bottom:6px;cursor:pointer">
+    <div class="sim-row${i%2===1?' row-alt':''}" data-action="openSimulatorOverrideModal" data-arg="${esc(r.cat)}" tabindex="0" role="button" aria-label="Edit spending change for ${esc(r.cat)}" style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;border-radius:8px;margin-bottom:6px;cursor:pointer">
       <div style="display:flex;align-items:center;gap:8px">
         <span style="width:8px;height:8px;border-radius:50%;background:${getCatColor(r.cat)}"></span>
         <span>${esc(r.cat)}</span>
@@ -10530,11 +10530,11 @@ function renderSimulatorTab(){
           ?(()=>{const ov=state.simulator.overrides.find(o=>o.cat===r.cat);const durStr=ov?.durationMonths?(ov.durationMonths%12===0?` for ${ov.durationMonths/12} yr${ov.durationMonths>12?'s':''}`:`for ${ov.durationMonths} mo`):'';return`<span style="font-weight:600">&rarr; ${fmt(r.projected)}/mo${durStr?`<span style="font-weight:400;font-size:11px;color:var(--text-muted)"> ${durStr}</span>`:''}</span>`;})()
            +`${
               state.budgets[r.cat]===r.projected
-                ?`<span style="font-size:10px;font-weight:700;color:var(--accent-green)" title="This is already your real Budget-tab limit">&check; Budgeted</span>`
+                ?`<span style="font-size:11px;font-weight:700;color:var(--accent-green)" title="This is already your real Budget-tab limit">&check; Budgeted</span>`
                 :r.projected>0
-                  ?`<button data-action="commitSimulatorOverrideAsBudget" data-arg="${esc(r.cat)}" style="background:none;border:1px solid #2563EB44;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:var(--accent-blue-light);cursor:pointer" title="Make this your real Budget-tab limit" type="button">Set as budget</button>`
+                  ?`<button data-action="commitSimulatorOverrideAsBudget" data-arg="${esc(r.cat)}" style="background:none;border:1px solid #2563EB44;border-radius:6px;padding:5px 8px;font-size:11px;font-weight:700;color:var(--accent-blue-light);cursor:pointer" title="Make this your real Budget-tab limit" type="button">Set as budget</button>`
                   :''
-            }<button data-action="removeSimulatorOverride" data-arg="${esc(r.cat)}" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:6px 8px;font-size:14px;line-height:1" title="Remove change" type="button">&times;</button>`
+            }<button data-action="removeSimulatorOverride" data-arg="${esc(r.cat)}" aria-label="Remove change" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:6px 8px;font-size:14px;line-height:1" title="Remove change" type="button">&times;</button>`
           :''}
       </div>
     </div>`).join('');
@@ -10560,8 +10560,8 @@ function renderSimulatorTab(){
           ?`${histMonths.length}-mo avg spend: <strong>${fmt(proj.baselineTotal)}</strong> &rarr; <strong>${fmt(proj.projectedTotal)}</strong> (${proj.delta>=0?'+':'&minus;'}${fmt(Math.abs(proj.delta))})`
           :`${histMonths.length}-mo avg spend: <strong>${fmt(proj.baselineTotal)}</strong>`}</div>
         ${income>0
-          ?`<div>Monthly income: ${fmt(income)} &mdash; ${state.simulator.overrides.length>0?'projected ':''} ${projectedSurplus>=0?'surplus':'deficit'}: <strong style="color:${projectedSurplus>=0?'var(--accent-green)':'var(--accent-red)'}">${fmt(Math.abs(projectedSurplus))}</strong> &nbsp;<button data-action="openIncomeModal" style="background:none;border:none;color:var(--accent-blue-light);cursor:pointer;padding:0;font-size:11px;text-decoration:underline;font-family:inherit" type="button">Edit income</button></div>`
-          :`<div style="font-size:12px;color:var(--text-muted)">No income set &mdash; <button data-action="openIncomeModal" style="background:none;border:none;color:var(--accent-blue-light);cursor:pointer;padding:0;font-size:12px;text-decoration:underline;font-family:inherit" type="button">Add income estimate</button> to see surplus and goal projection</div>`}
+          ?`<div>Monthly income: ${fmt(income)} &mdash; ${state.simulator.overrides.length>0?'projected ':''} ${projectedSurplus>=0?'surplus':'deficit'}: <strong style="color:${projectedSurplus>=0?'var(--accent-green)':'var(--accent-red)'}">${fmt(Math.abs(projectedSurplus))}</strong> &nbsp;<button data-action="openIncomeModal" style="background:none;border:none;color:var(--accent-blue-light);cursor:pointer;padding:3px 6px;font-size:11px;text-decoration:underline;font-family:inherit" type="button">Edit income</button></div>`
+          :`<div style="font-size:12px;color:var(--text-muted)">No income set &mdash; <button data-action="openIncomeModal" style="background:none;border:none;color:var(--accent-blue-light);cursor:pointer;padding:3px 6px;font-size:12px;text-decoration:underline;font-family:inherit" type="button">Add income estimate</button> to see surplus and goal projection</div>`}
         ${goalLineHTML}
       </div>
       ${simChartHTML}
