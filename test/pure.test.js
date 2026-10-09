@@ -8639,8 +8639,8 @@ test("#global-settings-btn has a mobile-shrink rule matching #theme-toggle-btn, 
   const source = readSource();
   assert.match(
     source,
-    /#global-settings-btn\{padding:9px 9px!important;font-size:13px!important\}\s*\n\s*#theme-toggle-btn\{padding:9px 9px!important;font-size:13px!important\}/,
-    "#global-settings-btn's mobile rule should exist and match #theme-toggle-btn's exactly"
+    /#global-settings-btn\{padding:8px 9px!important;font-size:13px!important\}\s*\n\s*#theme-toggle-btn\{padding:9px 9px!important;font-size:13px!important\}/,
+    "#global-settings-btn's mobile rule should exist (1px less vertical than theme-toggle to compensate for gear emoji rendering taller)"
   );
   assert.match(
     source,
