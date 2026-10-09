@@ -723,6 +723,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   #auth-user-label{display:none!important}
   .btn-privacy-nav{font-size:13px!important;padding:9px 9px!important}
   #toolbar-import-btn{font-size:14px!important;padding:7px 8px!important}
+  #year-review-btn,#pill-customizer-btn{padding:4px 4px!important}
   .range-select{font-size:13px!important;text-align:center;text-align-last:center}
   .modal{padding:.85rem}
   .nw-group-header{flex-wrap:wrap;gap:6px}
@@ -1149,8 +1150,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem">
       <div id="insights-card-header" style="font-size:12px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-blue-light)">📊 Latest full month at a glance</div>
       <div style="display:flex;align-items:center;gap:6px">
-        <button data-action="openYearInReview" title="See your spending, savings and net worth summary by year or trailing 12 months" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;color:var(--text-muted);cursor:pointer" type="button">📅 Year in review</button>
-        <button data-action="openPillCustomizer" title="Show or hide insight pills" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;color:var(--text-muted);cursor:pointer" type="button">Customize</button>
+        <button id="year-review-btn" data-action="openYearInReview" title="See your spending, savings and net worth summary by year or trailing 12 months" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;color:var(--text-muted);cursor:pointer" type="button">📅 Year in review</button>
+        <button id="pill-customizer-btn" data-action="openPillCustomizer" title="Show or hide insight pills" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;color:var(--text-muted);cursor:pointer" type="button">Customize</button>
       </div>
     </div>
     <div id="insights-pills" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:8px"></div>
