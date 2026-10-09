@@ -10482,18 +10482,18 @@ function renderSimulatorTab(){
       const bMonths=Math.ceil(remaining/baselineSurplus);
       const pMonths=hasAnyDuration?simPMonths():(projectedSurplus>0?Math.ceil(remaining/projectedSurplus):null);
       if(pMonths===null){
-        goalLineHTML=`<div style="margin-top:.5rem;font-size:12px;color:var(--accent-red)">Goal preview: goal unreachable at projected spending rate</div>`;
+        goalLineHTML=`<div style="margin-top:.5rem;font-size:12px;color:var(--accent-red)">Goal unreachable at projected spending rate</div>`;
       } else {
         const delta=bMonths-pMonths; // positive = sooner, negative = later
         if(Math.abs(delta)>=1){
           const sooner=delta>0;
-          goalLineHTML=`<div style="margin-top:.5rem;font-size:12px;color:${sooner?'var(--accent-green)':'var(--accent-red)'}">Goal preview: moves your <button type="button" data-action="showPageDashboard" style="background:none;border:none;padding:0;color:inherit;font:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px">${fmtC(state.nwGoal)} goal</button> ${fmtMonths(Math.abs(delta))} ${sooner?'sooner':'later'} (cash-flow estimate)</div>`;
+          goalLineHTML=`<div style="margin-top:.5rem;font-size:12px;color:${sooner?'var(--accent-green)':'var(--accent-red)'}">Moves your <button type="button" data-action="showPageDashboard" style="background:none;border:none;padding:0;color:inherit;font:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px">${fmtC(state.nwGoal)} goal</button> ${fmtMonths(Math.abs(delta))} ${sooner?'sooner':'later'}</div>`;
         }
       }
     }else if(baselineSurplus<=0&&projectedSurplus>0){
       const pMonths=hasAnyDuration?simPMonths():Math.ceil(remaining/projectedSurplus);
       if(pMonths!==null){
-        goalLineHTML=`<div style="margin-top:.5rem;font-size:12px;color:var(--accent-green)">Goal preview: this change makes your <button type="button" data-action="showPageDashboard" style="background:none;border:none;padding:0;color:inherit;font:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px">${fmtC(state.nwGoal)} goal</button> reachable &mdash; ${fmtMonths(pMonths)} at the projected rate</div>`;
+        goalLineHTML=`<div style="margin-top:.5rem;font-size:12px;color:var(--accent-green)">This change makes your <button type="button" data-action="showPageDashboard" style="background:none;border:none;padding:0;color:inherit;font:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px">${fmtC(state.nwGoal)} goal</button> reachable &mdash; ${fmtMonths(pMonths)} at the projected rate</div>`;
       }
     }
   }
@@ -10561,7 +10561,7 @@ function renderSimulatorTab(){
           :`${histMonths.length}-mo avg spend: <strong>${fmt(proj.baselineTotal)}</strong>`}</div>
         ${income>0
           ?`<div>Monthly income: ${fmt(income)} &mdash; ${state.simulator.overrides.length>0?'projected ':''} ${projectedSurplus>=0?'surplus':'deficit'}: <strong style="color:${projectedSurplus>=0?'var(--accent-green)':'var(--accent-red)'}">${fmt(Math.abs(projectedSurplus))}</strong> &nbsp;<button data-action="openIncomeModal" style="background:none;border:none;color:var(--accent-blue-light);cursor:pointer;padding:3px 6px;font-size:11px;text-decoration:underline;font-family:inherit" type="button">Edit income</button></div>`
-          :`<div style="font-size:12px;color:var(--text-muted)">No income set &mdash; <button data-action="openIncomeModal" style="background:none;border:none;color:var(--accent-blue-light);cursor:pointer;padding:3px 6px;font-size:12px;text-decoration:underline;font-family:inherit" type="button">Add income estimate</button> to see surplus and goal projection</div>`}
+          :`<div style="font-size:12px;color:var(--text-muted)">No income set &mdash; <button data-action="openIncomeModal" style="background:none;border:none;color:var(--accent-blue-light);cursor:pointer;padding:3px 6px;font-size:12px;text-decoration:underline;font-family:inherit" type="button">Add income estimate</button> to see surplus</div>`}
         ${goalLineHTML}
       </div>
       ${simChartHTML}
