@@ -1185,8 +1185,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
           <div style="padding:4px 10px 6px">
             <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Bucket signals</div>
-            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary);margin-bottom:5px">Show if ≥ <input id="bucket-hide-threshold-mobile" type="number" min="1" max="99" data-input="onBucketHideThreshold" style="width:40px;padding:1px 4px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:12px;text-align:center"> %</label>
-            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary)">Arrow if ≥ <input id="bucket-arrow-threshold-mobile" type="number" min="1" max="99" data-input="onBucketArrowThreshold" style="width:40px;padding:1px 4px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:12px;text-align:center"> %</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary);margin-bottom:5px">Show if ≥ <input id="bucket-hide-threshold-mobile" type="number" min="1" max="99" data-input="onBucketHideThreshold" style="width:50px;padding:1px 4px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:12px;text-align:center"> %</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary)">Arrow if ≥ <input id="bucket-arrow-threshold-mobile" type="number" min="1" max="99" data-input="onBucketArrowThreshold" style="width:50px;padding:1px 4px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:12px;text-align:center"> %</label>
           </div>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
           <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" data-action="closeSpendingOverflow" class="overflow-item" style="text-decoration:none">🏷️ Suggest a merchant category ↗</a>
@@ -1239,9 +1239,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <span id="bucket-vs-avg-label" style="font-size:11px;font-weight:600;margin-left:6px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">
       <span><span style="color:var(--accent-red)">↑ above</span> · <span style="color:var(--accent-green)">↓ below</span> <span style="color:var(--text-muted)">your avg for this period</span></span>
       <span class="hide-mobile" style="color:var(--text-muted)">·</span>
-      <label class="hide-mobile" style="display:flex;align-items:center;gap:3px;color:var(--text-muted);font-size:11px;font-weight:600;cursor:default" title="Signals are hidden when variance is below this threshold, or there is only 1 month of data">Show if ≥ <input id="bucket-hide-threshold" type="number" min="1" max="99" data-input="onBucketHideThreshold" style="width:34px;padding:0 2px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:11px;text-align:center"> %</label>
+      <label class="hide-mobile" style="display:flex;align-items:center;gap:3px;color:var(--text-muted);font-size:11px;font-weight:600;cursor:default" title="Signals are hidden when variance is below this threshold, or there is only 1 month of data">Show if ≥ <input id="bucket-hide-threshold" type="number" min="1" max="99" data-input="onBucketHideThreshold" style="width:44px;padding:0 2px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:11px;text-align:center"> %</label>
       <span class="hide-mobile" style="color:var(--text-muted)">·</span>
-      <label class="hide-mobile" style="display:flex;align-items:center;gap:3px;color:var(--text-muted);font-size:11px;font-weight:600;cursor:default" title="Signals at or above this threshold show a directional arrow">Arrow if ≥ <input id="bucket-arrow-threshold" type="number" min="1" max="99" data-input="onBucketArrowThreshold" style="width:34px;padding:0 2px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:11px;text-align:center"> %</label>
+      <label class="hide-mobile" style="display:flex;align-items:center;gap:3px;color:var(--text-muted);font-size:11px;font-weight:600;cursor:default" title="Signals at or above this threshold show a directional arrow">Arrow if ≥ <input id="bucket-arrow-threshold" type="number" min="1" max="99" data-input="onBucketArrowThreshold" style="width:44px;padding:0 2px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:11px;text-align:center"> %</label>
     </span>
   </div>
   <div class="bucket-grid" id="bucket-grid"></div>
@@ -12050,12 +12050,16 @@ function onBucketHideThreshold(val){
   const n=Math.max(1,Math.min(99,parseInt(val,10)));
   if(isNaN(n))return;
   _bucketHideThreshold=n;
+  if(_bucketArrowThreshold<_bucketHideThreshold){
+    _bucketArrowThreshold=_bucketHideThreshold;
+    try{localStorage.setItem('trakyo_bucketArrow',_bucketArrowThreshold);}catch(e){}
+  }
   try{localStorage.setItem('trakyo_bucketHide',n);}catch(e){}
   _syncBucketThresholdInputs();
   try{renderBucketGrid();}catch(e){}
 }
 function onBucketArrowThreshold(val){
-  const n=Math.max(1,Math.min(99,parseInt(val,10)));
+  const n=Math.max(_bucketHideThreshold,Math.min(99,parseInt(val,10)));
   if(isNaN(n))return;
   _bucketArrowThreshold=n;
   try{localStorage.setItem('trakyo_bucketArrow',n);}catch(e){}
