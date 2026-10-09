@@ -8609,7 +8609,7 @@ test("The nav's mobile-shrink and desktop-bump rules for #demo-nav-badge/#theme-
   );
   assert.match(
     source,
-    /#theme-toggle-btn\{padding:9px 9px!important;font-size:13px!important\}\s*\n\s*#auth-sign-in-btn\{font-size:9px!important;padding:2px 7px!important\}/,
+    /#theme-toggle-btn\{padding:9px 9px!important;font-size:13px!important\}\s*\n\s*#auth-sign-in-btn\{font-size:13px!important;padding:9px 9px!important\}/,
     "#theme-toggle-btn and #auth-sign-in-btn's mobile rules should use !important to beat their own inline styles"
   );
   assert.match(

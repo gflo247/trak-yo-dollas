@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-7TPohxjPjm6n2rNy4LjSrUo89XA1XhstiWkR7Lg5nkU=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-wx0bNeUL38TAs7F3wAd8gBG9Vym1OqdMYLlKhBVumbI=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-SGFhVxGw1mYjkJu24HH5yDQ0ToGS5qp1xi3YjprdG4A=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -718,10 +718,11 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
      pairing. */
   #global-settings-btn{padding:9px 9px!important;font-size:13px!important}
   #theme-toggle-btn{padding:9px 9px!important;font-size:13px!important}
-  #auth-sign-in-btn{font-size:9px!important;padding:2px 7px!important}
+  #auth-sign-in-btn{font-size:13px!important;padding:9px 9px!important}
   #auth-sign-out-btn{font-size:9px;padding:2px 7px;white-space:nowrap}
   #auth-user-label{display:none!important}
-  .btn-privacy-nav{font-size:9px!important;padding:2px 6px!important}
+  .btn-privacy-nav{font-size:13px!important;padding:9px 9px!important}
+  .range-select{font-size:13px!important;text-align:center;text-align-last:center}
   .modal{padding:.85rem}
   .nw-group-header{flex-wrap:wrap;gap:6px}
   .app-footer{flex-direction:column;align-items:center;padding:.75rem 1.5rem}
@@ -734,7 +735,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   .sort-btn{padding:9px 6px!important;font-size:14px!important}
   .tx-icon-btn{padding:9px 6px!important;font-size:16px!important}
   #toolbar-overflow-btn{padding:9px 6px!important;font-size:16px!important}
-  .search-input{padding:9px 0!important;font-size:16px!important}
+  .search-input{padding:9px 0 9px 6px!important;font-size:16px!important}
   .search-clear{align-self:stretch!important;display:flex!important;align-items:center!important;padding:0 4px 0 10px!important;font-size:16px!important}
   .page-title{font-size:13px}
   #nw-goal-projection>div:first-child{flex-wrap:wrap;}
@@ -776,7 +777,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
    header. The demo state is already clear from the nudge banner; hiding the
    badge on these widths is the minimal fix with no information loss. */
 @media(max-width:414px){#demo-nav-badge{display:none!important}}
-@media(min-width:601px){.range-select{padding:6px 18px;font-size:13px;min-width:90px}.range-sep{font-size:13px}.range-dropdowns{gap:6px}.grain-row .h-btn{padding:4px 16px}}
+@media(min-width:601px){.range-select{padding:6px 18px;font-size:13px;min-width:90px}.range-sep{font-size:13px}.range-dropdowns{gap:6px}.grain-row .h-btn{padding:4px 10px}#auth-sign-in-btn,.btn-privacy-nav{font-size:11px!important;padding:3px 9px!important}}
 /* The ⚙ settings icon and 🌙 theme toggle share one inline 12px base size
    (mobile's own @media(max-width:600px) block above shrinks it further,
    to 11px) -- that base was reading small at desktop viewing distance,
@@ -1166,7 +1167,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:.7rem">
     <div class="chip-row" id="source-chips" style="flex:1;margin-bottom:0;min-width:0"></div>
     <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
-      <button id="toolbar-import-btn" class="btn btn-sm btn-primary" data-action="openTxImportModal" title="Import transactions from a bank, credit union, or credit card CSV. Your files are processed locally and never uploaded." type="button">⬆ Import CSV</button>
+      <button id="toolbar-import-btn" class="btn btn-sm btn-primary" data-action="openTxImportModal" title="Import transactions from a bank, credit union, or credit card CSV. Your files are processed locally and never uploaded." type="button">⬆<span class="hide-mobile"> Import CSV</span><span class="show-mobile"> Import</span></button>
       <!-- Overflow menu -->
       <div style="position:relative">
         <button id="toolbar-overflow-btn" class="btn btn-sm" data-action="toggleSpendingOverflow" data-stop title="More options" aria-label="More options" style="padding:4px 10px;font-size:13px;font-weight:700;letter-spacing:.05em;line-height:1;white-space:nowrap" type="button">···</button>
