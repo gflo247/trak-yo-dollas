@@ -8409,7 +8409,7 @@ test("The nav has a global ⚙ settings menu with the cross-tab items, and Spend
     assert.match(navMatch[0], new RegExp(`data-action="${action}\\|closeGlobalSettings"`), `nav's global settings menu should include ${action}`);
   }
 
-  const overflowMatch = source.match(/<div id="toolbar-overflow-menu"[\s\S]{0,1600}?<\/div>\s*<\/div>/);
+  const overflowMatch = source.match(/<div id="toolbar-overflow-menu"[\s\S]{0,3000}?<\/div>\s*<\/div>/);
   assert.ok(overflowMatch, "Spending's own overflow menu should still exist");
   for (const action of ["toggleIncludeIncome", "openIncomeModal", "openRulesModal", "openVendorAliasModal", "openCatModal"]) {
     assert.match(overflowMatch[0], new RegExp(`data-action="${action}\\|closeSpendingOverflow"`), `Spending's overflow menu should keep ${action}`);
@@ -8448,7 +8448,7 @@ test("toggleGlobalSettings/closeGlobalSettings mirror toggleSpendingOverflow/clo
 // privacy.html, the two existing in-app links) -- not a new destination.
 test("Spending's overflow menu includes a direct link to suggest a merchant category", () => {
   const source = readSource();
-  const overflowMatch = source.match(/<div id="toolbar-overflow-menu"[\s\S]{0,1600}?<\/div>\s*<\/div>/);
+  const overflowMatch = source.match(/<div id="toolbar-overflow-menu"[\s\S]{0,3000}?<\/div>\s*<\/div>/);
   assert.ok(overflowMatch, "Spending's own overflow menu should exist");
   assert.match(
     overflowMatch[0],

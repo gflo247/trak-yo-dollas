@@ -1183,6 +1183,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
           <button data-action="openVendorAliasModal|closeSpendingOverflow" class="overflow-item" type="button">⟲ Merge duplicate vendors</button>
           <button data-action="openCatModal|closeSpendingOverflow" class="overflow-item" type="button">⚙ Manage categories</button>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+          <div style="padding:4px 10px 6px">
+            <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Bucket signals</div>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary);margin-bottom:5px">Show if ≥ <input id="bucket-hide-threshold-mobile" type="number" min="1" max="99" data-input="onBucketHideThreshold" style="width:40px;padding:1px 4px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:12px;text-align:center"> %</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary)">Arrow if ≥ <input id="bucket-arrow-threshold-mobile" type="number" min="1" max="99" data-input="onBucketArrowThreshold" style="width:40px;padding:1px 4px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:12px;text-align:center"> %</label>
+          </div>
+          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
           <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" data-action="closeSpendingOverflow" class="overflow-item" style="text-decoration:none">🏷️ Suggest a merchant category ↗</a>
         </div>
       </div>
@@ -1233,11 +1239,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <span id="bucket-vs-avg-label" style="font-size:11px;font-weight:600;margin-left:6px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">
       <span><span style="color:var(--accent-red)">↑ above</span> · <span style="color:var(--accent-green)">↓ below</span> <span style="color:var(--text-muted)">your avg for this period</span></span>
       <span class="hide-mobile" style="color:var(--text-muted)">·</span>
-      <span class="hide-mobile"><span style="color:var(--accent-red)">↑</span><span style="color:var(--accent-green)">↓</span><span style="color:var(--text-muted)"> ≥20%</span></span>
+      <label class="hide-mobile" style="display:flex;align-items:center;gap:3px;color:var(--text-muted);font-size:11px;font-weight:600;cursor:default" title="Signals are hidden when variance is below this threshold, or there is only 1 month of data">Show if ≥ <input id="bucket-hide-threshold" type="number" min="1" max="99" data-input="onBucketHideThreshold" style="width:34px;padding:0 2px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:11px;text-align:center"> %</label>
       <span class="hide-mobile" style="color:var(--text-muted)">·</span>
-      <span class="hide-mobile"><span style="color:var(--text-muted)">±</span><span style="color:var(--text-muted)"> 5–19%</span></span>
-      <span class="hide-mobile" style="color:var(--text-muted)">·</span>
-      <span class="hide-mobile" style="color:var(--text-muted)">hidden if &lt;5% difference or only 1 month of data</span>
+      <label class="hide-mobile" style="display:flex;align-items:center;gap:3px;color:var(--text-muted);font-size:11px;font-weight:600;cursor:default" title="Signals at or above this threshold show a directional arrow">Arrow if ≥ <input id="bucket-arrow-threshold" type="number" min="1" max="99" data-input="onBucketArrowThreshold" style="width:34px;padding:0 2px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:11px;text-align:center"> %</label>
     </span>
   </div>
   <div class="bucket-grid" id="bucket-grid"></div>
@@ -6002,7 +6006,7 @@ function renderBucketGrid(){
           const spendMonths=vendorMonths.slice(0,-1); // exclude latest to compare against
           const periodAvg=spendMonths.length>0?Math.round(spendMonths.map(m=>state.transactions.filter(t=>t.date.slice(0,7)===m&&resolveVendor(t.desc)===vendor&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0)).reduce((a,b)=>a+b,0)/spendMonths.length):0;
           const vsAvg=periodAvg>0&&curAmt>0?Math.round((curAmt-periodAvg)/periodAvg*100):0;
-          const sig=periodAvg>0?(vsAvg>=20?`<span class="text-danger">↑${vsAvg}%</span> · `:vsAvg<=-20?`<span class="text-success">↓${Math.abs(vsAvg)}%</span> · `:Math.abs(vsAvg)>=5?`<span style="color:var(--text-dim)">${vsAvg>=0?'+':''}${vsAvg}%</span> · `:''):'';
+          const sig=periodAvg>0?(vsAvg>=_bucketArrowThreshold?`<span class="text-danger">↑${vsAvg}%</span> · `:vsAvg<=-_bucketArrowThreshold?`<span class="text-success">↓${Math.abs(vsAvg)}%</span> · `:Math.abs(vsAvg)>=_bucketHideThreshold?`<span style="color:var(--text-dim)">${vsAvg>=0?'+':''}${vsAvg}%</span> · `:''):'';
           return`${sig}${data.count} transactions · Avg: ${fmt(avg)}${grainLabel}`;
         })()}</div>
       </div>`;
@@ -6124,7 +6128,7 @@ function renderBucketGrid(){
     const priorSpendTotal=priorCatMonths.map(m=>(state.transactions||[]).filter(t=>t.date.slice(0,7)===m&&t.cat===cat&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0)).reduce((a,b)=>a+b,0);
     const periodAvg=priorAllMonthCount>0?Math.round(priorSpendTotal/priorAllMonthCount):s.avg;
     const vsAvg=periodAvg>0?Math.round((curAmt-periodAvg)/periodAvg*100):0;
-    const signal=curAmt>0?(vsAvg>=20?`<span class="text-danger">↑${vsAvg}%</span>`:vsAvg<=-20?`<span class="text-success">↓${Math.abs(vsAvg)}%</span>`:(Math.abs(vsAvg)>=5?`<span style="color:var(--text-dim)">${vsAvg>=0?'+':''}${vsAvg}%</span>`:'')):'';
+    const signal=curAmt>0?(vsAvg>=_bucketArrowThreshold?`<span class="text-danger">↑${vsAvg}%</span>`:vsAvg<=-_bucketArrowThreshold?`<span class="text-success">↓${Math.abs(vsAvg)}%</span>`:(Math.abs(vsAvg)>=_bucketHideThreshold?`<span style="color:var(--text-dim)">${vsAvg>=0?'+':''}${vsAvg}%</span>`:'')):'';
     // Compact budget badge — replaces progress bar
     // curAmt>budget+0.005, not a bare >, matching classifyBudgetStatus()'s
     // own epsilon -- this dot/badge reads the identical unrounded
@@ -12037,6 +12041,27 @@ function toggleCalTransfers(){
   }
   renderDailyCal();
 }
+function _syncBucketThresholdInputs(){
+  const hide=_bucketHideThreshold,arrow=_bucketArrowThreshold;
+  ['bucket-hide-threshold','bucket-hide-threshold-mobile'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=hide;});
+  ['bucket-arrow-threshold','bucket-arrow-threshold-mobile'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=arrow;});
+}
+function onBucketHideThreshold(val){
+  const n=Math.max(1,Math.min(99,parseInt(val,10)));
+  if(isNaN(n))return;
+  _bucketHideThreshold=n;
+  try{localStorage.setItem('trakyo_bucketHide',n);}catch(e){}
+  _syncBucketThresholdInputs();
+  try{renderBucketGrid();}catch(e){}
+}
+function onBucketArrowThreshold(val){
+  const n=Math.max(1,Math.min(99,parseInt(val,10)));
+  if(isNaN(n))return;
+  _bucketArrowThreshold=n;
+  try{localStorage.setItem('trakyo_bucketArrow',n);}catch(e){}
+  _syncBucketThresholdInputs();
+  try{renderBucketGrid();}catch(e){}
+}
 function toggleChartTexture(){
   _patternsEnabled = !_patternsEnabled;
   try{localStorage.setItem('trakyo_patterns', _patternsEnabled);}catch(e){}
@@ -12130,6 +12155,8 @@ function _ensureBusinessCategories(){
   rebuildCatSelects();
   window._catColorMap=null;
 }
+let _bucketHideThreshold=(()=>{try{const v=parseInt(localStorage.getItem('trakyo_bucketHide'),10);return v>=1&&v<=99?v:5;}catch(e){return 5;}})();
+let _bucketArrowThreshold=(()=>{try{const v=parseInt(localStorage.getItem('trakyo_bucketArrow'),10);return v>=1&&v<=99?v:20;}catch(e){return 20;}})();
 let _bizFilter='all';
 // Spending tab and Budget tab maintain independent biz/personal filters.
 // _budgetBizFilter drives all Budget-tab getCatMonthSpend() calls so that
@@ -17360,6 +17387,9 @@ document.addEventListener('DOMContentLoaded',function(){
       _syncChartTableBtn();
     }
   }catch(e){}
+
+  // Sync bucket signal threshold inputs to persisted values
+  _syncBucketThresholdInputs();
 
   if(hadSavedData&&!_isDemoPreview){
     const hasDemoAccounts=state.accounts.some(a=>a.id<=11);
