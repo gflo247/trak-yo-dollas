@@ -9417,3 +9417,51 @@ test("computeEmergencyCushionMonths: a balance > 600 months of expenses returns 
   // Right at the cap is still fine.
   assert.equal(computeEmergencyCushionMonths(1200000, 2000), 600);
 });
+
+// ── Bucket signal threshold handlers ─────────────────────────────────────────
+
+// The two threshold globals load independently from localStorage. If
+// trakyo_bucketArrow was written before the arrow>=hide constraint existed
+// (or was manually edited), they can load inconsistent. A boot-time guard
+// immediately after the declarations fixes this before any render runs.
+test("bucket threshold globals have a boot-time guard that clamps arrow to hide so stale localStorage can't create an inconsistent starting state", () => {
+  const source = readSource();
+  assert.match(
+    source,
+    /let _bucketArrowThreshold=[\s\S]{0,600}if\(_bucketArrowThreshold<_bucketHideThreshold\)_bucketArrowThreshold=_bucketHideThreshold/,
+    "a guard immediately after the IIFE declarations should clamp arrow >= hide at boot"
+  );
+});
+
+test("onBucketHideThreshold bumps _bucketArrowThreshold to match when raising hide above current arrow, and persists the correction", () => {
+  const source = readSource();
+  assert.match(source, /function onBucketHideThreshold\(val\)\{/, "onBucketHideThreshold should exist");
+  assert.match(
+    source,
+    /function onBucketHideThreshold[\s\S]{0,300}if\(_bucketArrowThreshold<_bucketHideThreshold\)\{[\s\S]{0,100}_bucketArrowThreshold=_bucketHideThreshold/,
+    "should bump _bucketArrowThreshold up to match _bucketHideThreshold when hide exceeds arrow"
+  );
+});
+
+test("onBucketArrowThreshold clamps its minimum to the current hide threshold, preventing arrow < hide", () => {
+  const source = readSource();
+  assert.match(
+    source,
+    /function onBucketArrowThreshold\(val\)\{[\s\S]{0,100}Math\.max\(_bucketHideThreshold,/,
+    "should use Math.max(_bucketHideThreshold, ...) so arrow can never be set below hide"
+  );
+});
+
+test("both bucket threshold handlers guard against NaN so empty or non-numeric input leaves thresholds unchanged", () => {
+  const source = readSource();
+  assert.match(
+    source,
+    /function onBucketHideThreshold[\s\S]{0,200}if\(isNaN\(n\)\)return/,
+    "hide handler should return early on NaN"
+  );
+  assert.match(
+    source,
+    /function onBucketArrowThreshold[\s\S]{0,200}if\(isNaN\(n\)\)return/,
+    "arrow handler should return early on NaN"
+  );
+});

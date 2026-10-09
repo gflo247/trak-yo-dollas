@@ -12161,6 +12161,10 @@ function _ensureBusinessCategories(){
 }
 let _bucketHideThreshold=(()=>{try{const v=parseInt(localStorage.getItem('trakyo_bucketHide'),10);return v>=1&&v<=99?v:5;}catch(e){return 5;}})();
 let _bucketArrowThreshold=(()=>{try{const v=parseInt(localStorage.getItem('trakyo_bucketArrow'),10);return v>=1&&v<=99?v:20;}catch(e){return 20;}})();
+// Enforce boot-time constraint: arrow must be >= hide (handler enforces
+// this on every change, but stale localStorage written before this rule
+// existed could load them in an inconsistent state without this guard).
+if(_bucketArrowThreshold<_bucketHideThreshold)_bucketArrowThreshold=_bucketHideThreshold;
 let _bizFilter='all';
 // Spending tab and Budget tab maintain independent biz/personal filters.
 // _budgetBizFilter drives all Budget-tab getCatMonthSpend() calls so that
