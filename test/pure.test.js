@@ -7308,14 +7308,13 @@ test("Purchase price/year fields are gone from the vehicle modal; Other-asset en
 // on desktop, one size below its sibling "+ Save snapshot" button (11px
 // desktop) for no reason -- removed so it just inherits .btn-sm like its
 // sibling. Requested directly by Nicholas, August 2026. ──
-test("Dashboard tier of the legibility sweep: demo notices and the trend-chart explanation are at least 12px, and the '+ Add historical' button matches its sibling's size", () => {
+test("Dashboard tier of the legibility sweep: demo notice, trend-chart explanation, and monthly nudge are at least 12px, and the '+ Add historical' button matches its sibling's size", () => {
   const source = readSource();
   const dashMatch = source.match(/<div class="page" id="page-dashboard">[\s\S]*?\n<\/div>\n\n<!-- VEHICLES -->/);
   assert.ok(dashMatch, "the Dashboard page block should exist");
   const dash = dashMatch[0];
-  assert.match(dash, /id="demo-notice-dash"[\s\S]{0,200}?<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.5">Demo data/, "#demo-notice-dash's paragraph text should be at least 12px");
+  assert.match(dash, /id="demo-notice-dash"[\s\S]{0,200}?<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.5">/, "#demo-notice-dash's paragraph text should be at least 12px");
   assert.match(dash, /id="nw-chart-note" style="font-size:12px/, "#nw-chart-note's interpolate/extrapolate explanation should be at least 12px");
-  assert.match(dash, /id="snap-demo-notice"[\s\S]{0,200}?<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.5">Demo snapshots/, "#snap-demo-notice's paragraph text should be at least 12px");
   assert.match(dash, /id="snap-monthly-nudge"[\s\S]{0,200}?<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.5">💡 No snapshot yet this month/, "#snap-monthly-nudge's paragraph text should be at least 12px");
   assert.match(
     dash,
@@ -7335,13 +7334,8 @@ test("Dashboard tier of the legibility sweep: demo notices and the trend-chart e
 // labels ("Savings rate", "Subscriptions", "⚑/✓ Worth your attention")
 // alone -- same deliberate small-label design chrome excluded from the
 // Dashboard tier. Requested directly by Nicholas, August 2026. ──
-test("Legibility sweep Tier 1: Spending tab's Insights sub-lines and the Net Worth tab's remaining demo notice are at least 12px", () => {
+test("Legibility sweep Tier 1: Spending tab's Insights sub-lines are at least 12px", () => {
   const source = readSource();
-  assert.match(
-    source,
-    /id="demo-notice-accounts"[\s\S]{0,200}?<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.5">Demo accounts/,
-    "#demo-notice-accounts's paragraph text should be at least 12px"
-  );
   const insightsMatch = source.match(/function renderInsights\(\)\{[\s\S]*?\n\}/);
   assert.ok(insightsMatch, "renderInsights() should exist");
   const insights = insightsMatch[0];
