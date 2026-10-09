@@ -1183,12 +1183,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
           <button data-action="openVendorAliasModal|closeSpendingOverflow" class="overflow-item" type="button">⟲ Merge duplicate vendors</button>
           <button data-action="openCatModal|closeSpendingOverflow" class="overflow-item" type="button">⚙ Manage categories</button>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <div style="padding:4px 10px 6px">
-            <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Bucket signals</div>
-            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary);margin-bottom:5px">Show if ≥ <input id="bucket-hide-threshold-mobile" type="number" min="1" max="99" data-input="onBucketHideThreshold" style="width:50px;padding:1px 4px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:12px;text-align:center"> %</label>
-            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary)">Arrow if ≥ <input id="bucket-arrow-threshold-mobile" type="number" min="1" max="99" data-input="onBucketArrowThreshold" style="width:50px;padding:1px 4px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:12px;text-align:center"> %</label>
-          </div>
-          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
           <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" data-action="closeSpendingOverflow" class="overflow-item" style="text-decoration:none">🏷️ Suggest a merchant category ↗</a>
         </div>
       </div>
@@ -1230,19 +1224,26 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   </div>
 
 
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:.4rem">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:.4rem;position:relative">
     <div class="sh" style="margin:0;border-bottom:none;padding-bottom:0" id="bucket-section-label">By:</div>
     <div class="tab-strip">
       <button id="bucket-mode-cat" class="h-btn active" data-action="setBucketMode" data-arg="category" type="button">Category</button>
       <button id="bucket-mode-vendor" class="h-btn" data-action="setBucketMode" data-arg="vendor" type="button">Vendor</button>
     </div>
     <span id="bucket-vs-avg-label" style="font-size:11px;font-weight:600;margin-left:6px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-      <span><span style="color:var(--accent-red)">↑ above</span> · <span style="color:var(--accent-green)">↓ below</span> <span style="color:var(--text-muted)">your avg for this period</span></span>
+      <button class="show-mobile" data-action="toggleSignalThresholdPopover" data-stop style="background:none;border:none;font:inherit;font-size:11px;font-weight:600;cursor:pointer;padding:0;color:inherit;text-align:left"><span style="color:var(--accent-red)">↑ above</span> · <span style="color:var(--accent-green)">↓ below</span> <span style="color:var(--text-muted)">your avg ▾</span></button>
+      <span class="hide-mobile"><span style="color:var(--accent-red)">↑ above</span> · <span style="color:var(--accent-green)">↓ below</span> <span style="color:var(--text-muted)">your avg for this period</span></span>
       <span class="hide-mobile" style="color:var(--text-muted)">·</span>
-      <label class="hide-mobile" style="display:flex;align-items:center;gap:3px;color:var(--text-muted);font-size:11px;font-weight:600;cursor:default" title="Signals are hidden when variance is below this threshold, or there is only 1 month of data">Show if ≥ <input id="bucket-hide-threshold" type="number" min="1" max="99" data-input="onBucketHideThreshold" style="width:44px;padding:0 2px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:11px;text-align:center"> %</label>
+      <label class="hide-mobile" style="display:flex;align-items:center;gap:3px;color:var(--text-muted);font-size:11px;font-weight:600;cursor:default" title="Tile variance signals: hidden when |variance| is below this %, or only 1 month of data">Show if ≥ <input id="bucket-hide-threshold" type="number" min="1" max="99" data-input="onBucketHideThreshold" style="width:44px;padding:0 2px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:11px;text-align:center"> %</label>
       <span class="hide-mobile" style="color:var(--text-muted)">·</span>
-      <label class="hide-mobile" style="display:flex;align-items:center;gap:3px;color:var(--text-muted);font-size:11px;font-weight:600;cursor:default" title="Signals at or above this threshold show a directional arrow">Arrow if ≥ <input id="bucket-arrow-threshold" type="number" min="1" max="99" data-input="onBucketArrowThreshold" style="width:44px;padding:0 2px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:11px;text-align:center"> %</label>
+      <label class="hide-mobile" style="display:flex;align-items:center;gap:3px;color:var(--text-muted);font-size:11px;font-weight:600;cursor:default" title="Tile variance signals: shows ↑↓ arrow when |variance| is at or above this %">Arrow if ≥ <input id="bucket-arrow-threshold" type="number" min="1" max="99" data-input="onBucketArrowThreshold" style="width:44px;padding:0 2px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:11px;text-align:center"> %</label>
     </span>
+    <div id="signal-threshold-popover" style="display:none;position:absolute;left:0;top:calc(100% + 4px);background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem .85rem;z-index:100;box-shadow:0 8px 24px #00000044;min-width:240px">
+      <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:.5rem">Tile variance signals</div>
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.45;margin-bottom:.65rem"><span style="color:var(--accent-red)">↑</span> / <span style="color:var(--accent-green)">↓</span> appear on tiles when this month's spend differs from your average. Arrows show for larger swings.</div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary);margin-bottom:.4rem">Show signal if ≥ <input id="bucket-hide-threshold-mobile" type="number" min="1" max="99" data-input="onBucketHideThreshold" style="width:44px;padding:1px 4px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:12px;text-align:center"> %</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary)">Show arrow if ≥ <input id="bucket-arrow-threshold-mobile" type="number" min="1" max="99" data-input="onBucketArrowThreshold" style="width:44px;padding:1px 4px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:12px;text-align:center"> %</label>
+    </div>
   </div>
   <div class="bucket-grid" id="bucket-grid"></div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;padding-right:2px;min-height:16px">
@@ -8040,6 +8041,18 @@ document.addEventListener('click',function(e){
   const btn=document.getElementById('toolbar-overflow-btn');
   if(menu&&btn&&!menu.contains(e.target)&&!btn.contains(e.target)){
     menu.style.display='none';
+  }
+});
+function toggleSignalThresholdPopover(){
+  toggleOverflowMenu('signal-threshold-popover');
+  _syncBucketThresholdInputs();
+}
+// Close signal threshold popover when clicking anywhere outside it
+// (data-stop on the toggle button prevents the click from reaching here)
+document.addEventListener('click',function(e){
+  const pop=document.getElementById('signal-threshold-popover');
+  if(pop&&pop.style.display!=='none'&&!pop.contains(e.target)){
+    pop.style.display='none';
   }
 });
 
