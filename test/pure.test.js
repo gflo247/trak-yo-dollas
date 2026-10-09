@@ -7876,7 +7876,7 @@ test("the Spending breakdown tab strip, the Patterns toggle, and both range-chip
   );
   assert.match(
     source,
-    /<button id="chart-texture-btn" data-action="toggleChartTexture" style="background:none;border:1px solid var\(--border-mid\);border-radius:6px;padding:2px 8px;font-size:11px;/,
+    /<button id="chart-texture-btn" data-action="toggleChartTexture" aria-pressed="false" style="background:none;border:1px solid var\(--border-mid\);border-radius:6px;padding:2px 8px;font-size:11px;/,
     "the Patterns toggle should be 11px"
   );
   assert.match(
@@ -8539,8 +8539,8 @@ test("The +Add and Export CSV buttons match the Date/Amount/Category sort pills'
   );
   assert.match(
     source,
-    /<button data-action="openAddTxModal" title="Add a single transaction manually" class="tx-icon-btn" type="button"><span class="tx-icon">\+<\/span>/,
-    "the +Add button should use the shared class with no per-button inline style duplicating it"
+    /<button data-action="openAddTxModal" title="Add a single transaction manually" aria-label="Add transaction" class="tx-icon-btn" type="button"><span class="tx-icon">\+<\/span>/,
+    "the +Add button should use the shared class, have an aria-label, and no per-button inline style"
   );
   assert.match(
     source,

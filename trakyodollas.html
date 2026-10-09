@@ -1125,9 +1125,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   </div>
   <!-- Business/Personal filter — only shown when Include Income is on (same as Spending tab) -->
   <div id="budget-biz-filter-inline" class="row" style="display:none;gap:5px;margin:-.15rem 0 .6rem">
-    <button data-action="setBudgetBizFilter" data-arg="all" class="chip biz-chip active" type="button">All</button>
-    <button data-action="setBudgetBizFilter" data-arg="biz" class="chip biz-chip" type="button">Business</button>
-    <button data-action="setBudgetBizFilter" data-arg="personal" class="chip biz-chip" type="button">Personal</button>
+    <button data-action="setBudgetBizFilter" data-arg="all" class="chip biz-chip active" aria-pressed="true" type="button">All</button>
+    <button data-action="setBudgetBizFilter" data-arg="biz" class="chip biz-chip" aria-pressed="false" type="button">Business</button>
+    <button data-action="setBudgetBizFilter" data-arg="personal" class="chip biz-chip" aria-pressed="false" type="button">Personal</button>
   </div>
 
   <!-- Unbudgeted categories — shown before rows so it's seen early -->
@@ -1164,9 +1164,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <span class="page-title" id="spending-page-title">Spending</span>
   </div>
   <div id="biz-filter-inline" class="row" style="display:none;gap:5px;margin:-.15rem 0 .6rem">
-    <button data-action="setBizFilter" data-arg="all" class="chip biz-chip active" type="button">All</button>
-    <button data-action="setBizFilter" data-arg="biz" class="chip biz-chip" type="button">Business</button>
-    <button data-action="setBizFilter" data-arg="personal" class="chip biz-chip" type="button">Personal</button>
+    <button data-action="setBizFilter" data-arg="all" class="chip biz-chip active" aria-pressed="true" type="button">All</button>
+    <button data-action="setBizFilter" data-arg="biz" class="chip biz-chip" aria-pressed="false" type="button">Business</button>
+    <button data-action="setBizFilter" data-arg="personal" class="chip biz-chip" aria-pressed="false" type="button">Personal</button>
   </div>
   <input type="file" id="backup-file-input" data-change="importBackupFromInput" accept=".json" style="display:none">
   <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:.7rem">
@@ -1198,7 +1198,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <!-- Search -->
   <div class="search-wrap">
     <span class="search-icon"><svg width="14" height="14" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5.5" cy="5.5" r="4"/><line x1="8.9" y1="8.9" x2="12" y2="12"/></svg></span>
-    <input class="search-input" type="text" id="tx-search" placeholder="Search vendors, categories, sources" data-input="onSearchInput">
+    <input class="search-input" type="text" id="tx-search" placeholder="Search vendors, categories, sources" aria-label="Search vendors, categories, sources" data-input="onSearchInput">
     <button class="search-clear hidden" id="search-clear-btn" data-action="clearSearch" aria-label="Clear search" type="button">✕</button>
   </div>
 
@@ -1258,9 +1258,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <button class="h-btn" id="cv-sankey" data-action="setChartMode" data-arg="sankey" type="button">Flow</button>
       <button class="h-btn" id="cv-source" data-action="setChartMode" data-arg="source" type="button">By source</button>
     </div>
-    <button id="chart-texture-btn" data-action="toggleChartTexture" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">⠿ Patterns: off</button>
-    <button id="cal-transfers-btn" data-action="toggleCalTransfers" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">Transfers: off</button>
-    <button id="chart-table-btn" data-action="toggleChartTableView" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">▦ View as table</button>
+    <button id="chart-texture-btn" data-action="toggleChartTexture" aria-pressed="false" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">⠿ Patterns: off</button>
+    <button id="cal-transfers-btn" data-action="toggleCalTransfers" aria-pressed="false" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">Transfers: off</button>
+    <button id="chart-table-btn" data-action="toggleChartTableView" aria-pressed="false" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">▦ View as table</button>
     <button id="chart-table-export-btn" data-action="exportChartTable" style="display:none;background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0" type="button">⬇ Export table</button>
   </div>
   <div style="position:relative">
@@ -1293,7 +1293,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div class="flex-between" style="margin-top:.9rem;margin-bottom:.3rem">
       <div class="flex-center gap-8">
         <div class="sh" style="margin:0" id="tx-count-label" aria-label="Transactions">Txns</div>
-        <button data-action="openAddTxModal" title="Add a single transaction manually" class="tx-icon-btn" type="button"><span class="tx-icon">+</span><span class="hide-mobile"> Add</span></button>
+        <button data-action="openAddTxModal" title="Add a single transaction manually" aria-label="Add transaction" class="tx-icon-btn" type="button"><span class="tx-icon">+</span><span class="hide-mobile"> Add</span></button>
         <button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search" class="tx-icon-btn" type="button"><span class="tx-icon">⬇</span><span class="hide-mobile"> Export CSV</span><span class="show-mobile"> Export</span></button>
       </div>
       <div class="row sort-row">
@@ -5610,7 +5610,7 @@ function renderSpending(){
   const bizRow=document.getElementById('biz-filter-inline');
   if(bizRow){
     bizRow.style.display=state.includeIncome?'flex':'none';
-    bizRow.querySelectorAll('.biz-chip').forEach(b=>b.classList.toggle('active',b.getAttribute('data-arg')===_bizFilter));
+    bizRow.querySelectorAll('.biz-chip').forEach(b=>{b.classList.toggle('active',b.getAttribute('data-arg')===_bizFilter);b.setAttribute('aria-pressed',String(b.getAttribute('data-arg')===_bizFilter));});
   }
   renderInsights();
   renderSourceChips();renderHorizonTabs();
@@ -10652,7 +10652,7 @@ function renderBudgetTab(){
   const budgetBizRow=document.getElementById('budget-biz-filter-inline');
   if(budgetBizRow){
     budgetBizRow.style.display=state.includeIncome?'flex':'none';
-    budgetBizRow.querySelectorAll('.biz-chip').forEach(b=>b.classList.toggle('active',b.getAttribute('data-arg')===_budgetBizFilter));
+    budgetBizRow.querySelectorAll('.biz-chip').forEach(b=>{b.classList.toggle('active',b.getAttribute('data-arg')===_budgetBizFilter);b.setAttribute('aria-pressed',String(b.getAttribute('data-arg')===_budgetBizFilter));});
   }
 
   // Also drop Income rows — without this, Income showed up as "unbudgeted spending" (with a
@@ -11994,6 +11994,7 @@ let _chartTableView=(()=>{
     const patBtn=document.getElementById('chart-texture-btn');
     if(patBtn){
       patBtn.textContent='⠿ Patterns: on';
+      patBtn.setAttribute('aria-pressed','true');
       patBtn.style.color='var(--accent-blue-light)';
       patBtn.style.borderColor='var(--accent-blue-light)';
     }
@@ -12030,6 +12031,7 @@ function toggleCalTransfers(){
   const btn=document.getElementById('cal-transfers-btn');
   if(btn){
     btn.textContent=`Transfers: ${state.showTransfersInCal?'on':'off'}`;
+    btn.setAttribute('aria-pressed',String(state.showTransfersInCal));
     btn.style.color=state.showTransfersInCal?'#60A5FA':'var(--text-muted)';
     btn.style.borderColor=state.showTransfersInCal?'#2563EB44':'var(--border-mid)';
   }
@@ -12042,6 +12044,7 @@ function toggleChartTexture(){
   const btn = document.getElementById('chart-texture-btn');
   if(btn){
     btn.textContent = `⠿ Patterns: ${_patternsEnabled ? 'on' : 'off'}`;
+    btn.setAttribute('aria-pressed', String(_patternsEnabled));
     btn.style.color = _patternsEnabled ? 'var(--accent-blue-light)' : 'var(--text-muted)';
     btn.style.borderColor = _patternsEnabled ? 'var(--accent-blue-light)' : 'var(--border-mid)';
   }
@@ -12078,6 +12081,7 @@ function _syncChartTableBtn(){
     if(eligible){
       const active=_chartTableView[mode];
       btn.textContent=active?'📊 View as chart':'▦ View as table';
+      btn.setAttribute('aria-pressed',String(active));
       btn.style.color=active?'var(--accent-blue-light)':'var(--text-muted)';
       btn.style.borderColor=active?'var(--accent-blue-light)':'var(--border-mid)';
     }
@@ -12151,14 +12155,14 @@ function setBizFilter(val){
   _bizFilter=val||'all';
   _selectedTxIds.clear();
   const bizRow=document.getElementById('biz-filter-inline');
-  if(bizRow)bizRow.querySelectorAll('.biz-chip').forEach(b=>b.classList.toggle('active',b.getAttribute('data-arg')===_bizFilter));
+  if(bizRow)bizRow.querySelectorAll('.biz-chip').forEach(b=>{b.classList.toggle('active',b.getAttribute('data-arg')===_bizFilter);b.setAttribute('aria-pressed',String(b.getAttribute('data-arg')===_bizFilter));});
   rebuildMonthly();
   renderSpending();
 }
 function setBudgetBizFilter(val){
   _budgetBizFilter=val||'all';
   const bizRow=document.getElementById('budget-biz-filter-inline');
-  if(bizRow)bizRow.querySelectorAll('.biz-chip').forEach(b=>b.classList.toggle('active',b.getAttribute('data-arg')===_budgetBizFilter));
+  if(bizRow)bizRow.querySelectorAll('.biz-chip').forEach(b=>{b.classList.toggle('active',b.getAttribute('data-arg')===_budgetBizFilter);b.setAttribute('aria-pressed',String(b.getAttribute('data-arg')===_budgetBizFilter));});
   renderBudgetTab();
 }
 function toggleTxBiz(id){
