@@ -2328,7 +2328,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
           <div style="padding:.5rem .75rem;color:var(--text-secondary)">Save category changes as a permanent rule</div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1.6fr;font-size:12px">
-          <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">⚙ Customize (At a Glance)</div>
+          <div style="padding:.5rem .75rem;color:var(--text-primary);font-weight:600;border-right:1px solid var(--border)">Customize (At a Glance)</div>
           <div style="padding:.5rem .75rem;color:var(--text-secondary)">Show or hide individual insight cards</div>
         </div>
       </div>
@@ -5999,7 +5999,7 @@ function renderBucketGrid(){
           const spendMonths=vendorMonths.slice(0,-1); // exclude latest to compare against
           const periodAvg=spendMonths.length>0?Math.round(spendMonths.map(m=>state.transactions.filter(t=>t.date.slice(0,7)===m&&resolveVendor(t.desc)===vendor&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0)).reduce((a,b)=>a+b,0)/spendMonths.length):0;
           const vsAvg=periodAvg>0&&curAmt>0?Math.round((curAmt-periodAvg)/periodAvg*100):0;
-          const sig=periodAvg>0?(vsAvg>=20?`<span class="text-danger">↑${vsAvg}%</span> · `:vsAvg<=-20?`<span class="text-success">↓${Math.abs(vsAvg)}%</span> · `:Math.abs(vsAvg)>=5?`<span style="color:var(--text-muted)">${vsAvg>=0?'+':''}${vsAvg}%</span> · `:''):'';
+          const sig=periodAvg>0?(vsAvg>=20?`<span class="text-danger">↑${vsAvg}%</span> · `:vsAvg<=-20?`<span class="text-success">↓${Math.abs(vsAvg)}%</span> · `:Math.abs(vsAvg)>=5?`<span style="color:var(--text-dim)">${vsAvg>=0?'+':''}${vsAvg}%</span> · `:''):'';
           return`${sig}${data.count} transactions · Avg: ${fmt(avg)}${grainLabel}`;
         })()}</div>
       </div>`;
@@ -6121,7 +6121,7 @@ function renderBucketGrid(){
     const priorSpendTotal=priorCatMonths.map(m=>(state.transactions||[]).filter(t=>t.date.slice(0,7)===m&&t.cat===cat&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0)).reduce((a,b)=>a+b,0);
     const periodAvg=priorAllMonthCount>0?Math.round(priorSpendTotal/priorAllMonthCount):s.avg;
     const vsAvg=periodAvg>0?Math.round((curAmt-periodAvg)/periodAvg*100):0;
-    const signal=curAmt>0?(vsAvg>=20?`<span class="text-danger">↑${vsAvg}%</span>`:vsAvg<=-20?`<span class="text-success">↓${Math.abs(vsAvg)}%</span>`:(Math.abs(vsAvg)>=5?`<span style="color:var(--text-muted)">${vsAvg>=0?'+':''}${vsAvg}%</span>`:'')):'';
+    const signal=curAmt>0?(vsAvg>=20?`<span class="text-danger">↑${vsAvg}%</span>`:vsAvg<=-20?`<span class="text-success">↓${Math.abs(vsAvg)}%</span>`:(Math.abs(vsAvg)>=5?`<span style="color:var(--text-dim)">${vsAvg>=0?'+':''}${vsAvg}%</span>`:'')):'';
     // Compact budget badge — replaces progress bar
     // curAmt>budget+0.005, not a bare >, matching classifyBudgetStatus()'s
     // own epsilon -- this dot/badge reads the identical unrounded
