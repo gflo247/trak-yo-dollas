@@ -1234,9 +1234,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <button class="show-mobile" data-action="toggleSignalThresholdPopover" data-stop style="background:none;border:none;font:inherit;font-size:11px;font-weight:600;cursor:pointer;padding:0;color:inherit;text-align:left"><span style="color:var(--accent-red)">↑ above</span> · <span style="color:var(--accent-green)">↓ below</span> <span style="color:var(--text-muted)">your avg ▾</span></button>
       <span class="hide-mobile"><span style="color:var(--accent-red)">↑ above</span> · <span style="color:var(--accent-green)">↓ below</span> <span style="color:var(--text-muted)">your avg for this period</span></span>
       <span class="hide-mobile" style="color:var(--text-muted)">·</span>
-      <label class="hide-mobile" style="display:flex;align-items:center;gap:3px;color:var(--text-muted);font-size:11px;font-weight:600;cursor:default" title="Tile variance signals: hidden when |variance| is below this %, or only 1 month of data">Show if ≥ <input id="bucket-hide-threshold" type="number" min="1" max="99" data-input="onBucketHideThreshold" style="width:44px;padding:0 2px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:11px;text-align:center"> %</label>
+      <label class="hide-mobile" style="display:flex;align-items:center;gap:3px;color:var(--text-muted);font-size:11px;font-weight:600;cursor:default" title="Tile variance signals: hidden when variance is below this %, or only 1 month of data">Show if ≥ <input id="bucket-hide-threshold" type="number" min="1" max="99" data-input="onBucketHideThreshold" style="width:44px;padding:0 2px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:11px;text-align:center"> %</label>
       <span class="hide-mobile" style="color:var(--text-muted)">·</span>
-      <label class="hide-mobile" style="display:flex;align-items:center;gap:3px;color:var(--text-muted);font-size:11px;font-weight:600;cursor:default" title="Tile variance signals: shows ↑↓ arrow when |variance| is at or above this %">Arrow if ≥ <input id="bucket-arrow-threshold" type="number" min="1" max="99" data-input="onBucketArrowThreshold" style="width:44px;padding:0 2px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:11px;text-align:center"> %</label>
+      <label class="hide-mobile" style="display:flex;align-items:center;gap:3px;color:var(--text-muted);font-size:11px;font-weight:600;cursor:default" title="Tile variance signals: shows ↑↓ arrow when variance is at or above this %">Arrow if ≥ <input id="bucket-arrow-threshold" type="number" min="1" max="99" data-input="onBucketArrowThreshold" style="width:44px;padding:0 2px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-deep);color:var(--text-primary);font-size:11px;text-align:center"> %</label>
     </span>
     <div id="signal-threshold-popover" style="display:none;position:absolute;left:0;top:calc(100% + 4px);background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem .85rem;z-index:100;box-shadow:0 8px 24px #00000044;min-width:240px">
       <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:.5rem">Tile variance signals</div>
@@ -8047,13 +8047,17 @@ function toggleSignalThresholdPopover(){
   toggleOverflowMenu('signal-threshold-popover');
   _syncBucketThresholdInputs();
 }
-// Close signal threshold popover when clicking anywhere outside it
-// (data-stop on the toggle button prevents the click from reaching here)
+// Close signal threshold popover when clicking anywhere outside it.
+// Must also exclude the toggle button itself -- stopPropagation() only
+// stops upward propagation, not sibling document listeners, so without
+// this guard the dispatch handler opens the popover and then this listener
+// closes it again in the same click event.
 document.addEventListener('click',function(e){
   const pop=document.getElementById('signal-threshold-popover');
-  if(pop&&pop.style.display!=='none'&&!pop.contains(e.target)){
-    pop.style.display='none';
-  }
+  if(!pop||pop.style.display==='none')return;
+  if(pop.contains(e.target))return;
+  if(e.target.closest('[data-action="toggleSignalThresholdPopover"]'))return;
+  pop.style.display='none';
 });
 
 // Nav's ⚙ menu — the cross-tab items (currency, backup/restore, CSV export,
