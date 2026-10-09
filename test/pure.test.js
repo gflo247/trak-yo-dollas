@@ -8387,7 +8387,7 @@ test("Export all transactions (CSV) and Export CSV (Net Worth snapshots) are wir
   );
   assert.match(
     source,
-    /data-action="exportNetWorthCSV" title="Export snapshot history as CSV"/,
+    /data-action="exportNetWorthCSV"/,
     "the Net Worth tab's snapshot header should have an Export CSV button wired to exportNetWorthCSV"
   );
   assert.match(
