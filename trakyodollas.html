@@ -6143,7 +6143,7 @@ function renderBucketGrid(){
       <span style="font-size:12px;color:var(--text-muted)">${fmt(curAmt)} / ${fmt(budget)}</span>
       <span style="font-size:12px;font-weight:700;color:${curAmt>budget+0.005?'#F87171':curAmt/budget>0.8?'#FBBF24':'#34D399'}">${Math.round(curAmt/budget*100)}%</span>
     </div>`
-    :`<button data-action="openBudgetModal" data-arg="${sc}" data-stop="1" style="position:relative;z-index:1;margin-top:5px;width:100%;background:none;border:1px solid var(--border-mid);border-radius:5px;padding:8px 6px;font-size:9px;font-weight:600;color:var(--text-muted);cursor:pointer;text-align:center" title="Set a monthly budget for ${sc}" type="button">+ Set budget</button>`;
+    :`<button data-action="openBudgetModal" data-arg="${sc}" data-stop="1" style="position:relative;z-index:1;margin-top:5px;width:100%;background:none;border:1px solid var(--border-mid);border-radius:5px;padding:8px 6px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;text-align:center" title="Set a monthly budget for ${sc}" type="button">+ Set budget</button>`;
     // .bucket-card itself is no longer a role=button/tabindex element -- it
     // contains several genuinely independent interactive controls (hide,
     // budget, info tooltip), and nesting all of those inside one more
