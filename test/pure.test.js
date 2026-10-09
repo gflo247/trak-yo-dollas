@@ -8506,8 +8506,8 @@ test("The Spending tab's Export CSV button collapses to icon-only on mobile via 
   const source = readSource();
   assert.match(
     source,
-    /<button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search" class="tx-icon-btn" type="button"><span class="tx-icon">⬇<\/span><span class="hide-mobile"> Export CSV<\/span><\/button>/,
-    "the Spending tab's Export CSV button should keep its ⬇ icon always visible and hide only the text label on mobile"
+    /<button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search" class="tx-icon-btn" type="button"><span class="tx-icon">⬇<\/span><span class="hide-mobile"> Export CSV<\/span><span class="show-mobile"> Export<\/span><\/button>/,
+    "the Spending tab's Export CSV button shows 'Export CSV' on desktop and 'Export' on mobile (icon always visible)"
   );
 });
 
