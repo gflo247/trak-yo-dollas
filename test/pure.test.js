@@ -8534,8 +8534,8 @@ test("The +Add and Export CSV buttons match the Date/Amount/Category sort pills'
   );
   assert.match(
     source,
-    /\.tx-icon-btn \.tx-icon\{font-size:16px/,
-    ".tx-icon should size up just the glyph, not the whole button"
+    /\.tx-icon-btn \.tx-icon\{font-size:13px/,
+    ".tx-icon should match the button's own font-size so the glyph doesn't inflate button height"
   );
   assert.match(
     source,
