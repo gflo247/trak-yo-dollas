@@ -1115,12 +1115,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
   <!-- Sort toggle + export — between hero and category rows -->
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:.6rem">
-    <button data-action="exportBudgetCSV" style="background:none;border:1px solid #2563EB44;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:600;color:var(--accent-blue-light);cursor:pointer" type="button">⬇ Export CSV</button>
+    <button data-action="exportBudgetCSV" aria-label="Export budget as CSV" style="background:none;border:1px solid #2563EB44;border-radius:5px;padding:5px 8px;font-size:11px;font-weight:600;color:var(--accent-blue-light);cursor:pointer" type="button">⬇ Export CSV</button>
     <div style="display:flex;border:1px solid var(--border-mid);border-radius:6px;overflow:hidden">
-      <button id="bsort-pct" data-action="setBudgetSort" data-arg="pct" style="padding:3px 10px;border:none;cursor:pointer;font-family:inherit;font-size:10px;font-weight:700;background:#2563EB;color:#fff" type="button">% Used</button>
-      <button id="bsort-amount" data-action="setBudgetSort" data-arg="amount" style="padding:3px 10px;border:none;cursor:pointer;font-family:inherit;font-size:10px;font-weight:700;background:var(--bg-card);color:var(--text-muted)" type="button">Amount</button>
-      <button id="bsort-unusual" data-action="setBudgetSort" data-arg="unusual" style="padding:3px 10px;border:none;cursor:pointer;font-family:inherit;font-size:10px;font-weight:700;background:var(--bg-card);color:var(--text-muted)" type="button">Unusual</button>
-      <button id="bsort-alpha" data-action="setBudgetSort" data-arg="alpha" style="padding:3px 10px;border:none;cursor:pointer;font-family:inherit;font-size:10px;font-weight:700;background:var(--bg-card);color:var(--text-muted)" type="button">A–Z</button>
+      <button id="bsort-pct" data-action="setBudgetSort" data-arg="pct" style="padding:5px 10px;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700;background:#2563EB;color:#fff" type="button">% Used</button>
+      <button id="bsort-amount" data-action="setBudgetSort" data-arg="amount" style="padding:5px 10px;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700;background:var(--bg-card);color:var(--text-muted)" type="button">Amount</button>
+      <button id="bsort-unusual" data-action="setBudgetSort" data-arg="unusual" style="padding:5px 10px;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700;background:var(--bg-card);color:var(--text-muted)" type="button">Unusual</button>
+      <button id="bsort-alpha" data-action="setBudgetSort" data-arg="alpha" style="padding:5px 10px;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700;background:var(--bg-card);color:var(--text-muted)" type="button">A–Z</button>
     </div>
   </div>
   <!-- Business/Personal filter — only shown when Include Income is on (same as Spending tab) -->
@@ -10510,7 +10510,7 @@ function renderSimulatorTab(){
   const sortBtnsHTML=['amount','alpha'].map(k=>{
     const active=k===_simulatorSort;
     const arrow=active?(_simulatorSortDir==='asc'?' ↑':' ↓'):'';
-    return`<button data-action="setSimulatorSort" data-arg="${k}" style="padding:3px 10px;border:none;cursor:pointer;font-family:inherit;font-size:10px;font-weight:700;background:${active?'#2563EB':'var(--bg-card)'};color:${active?'#fff':'var(--text-muted)'}" type="button">${sortLabels[k]}${arrow}</button>`;
+    return`<button data-action="setSimulatorSort" data-arg="${k}" style="padding:5px 10px;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700;background:${active?'#2563EB':'var(--bg-card)'};color:${active?'#fff':'var(--text-muted)'}" type="button">${sortLabels[k]}${arrow}</button>`;
   }).join('');
   // Fixed presets cover the common horizons; "Custom..." reveals a plain
   // number input (same 1-60 clamp as setSimulatorHorizon's own bound) for
@@ -10932,7 +10932,7 @@ function renderBudgetTab(){
       if(isCurrent&&daysPct>0&&daysPct<1&&spent>0){
         const projected=Math.round(spent/daysPct);
         projFmt=`→ ${fmt(projected)} by end`;
-        projColor=projected>budget?'#F87171':'#34D39988';
+        projColor=projected>budget?'#F87171':'var(--accent-green)';
       }
       const amountHTML=`<span style="font-size:14px;font-weight:800;color:${color}">${fmt(spent)}</span><span class="text-muted-sm"> / ${fmt(budget)}</span>${projFmt?`<span style="font-size:10px;font-weight:600;color:${projColor};margin-left:6px">${projFmt}</span>`:''}`;
       // Math.max(...,1) -- classifyBudgetStatus's epsilon guard fires at spent>budget+0.005,
@@ -11037,7 +11037,7 @@ function renderBudgetTab(){
               <div style="width:8px;height:8px;border-radius:50%;background:${getCatColor(c)};flex-shrink:0"></div>
               <span style="font-size:12px;font-weight:600;color:var(--text-primary)">${esc(c)}</span>
               <span style="font-size:12px;font-weight:700;color:var(--text-primary)">${fmt(spendByCat[c]||0)}</span>
-              <span style="font-size:10px;color:var(--accent-blue-light);font-weight:700">+ set limit</span>
+              <span style="font-size:11px;color:var(--accent-blue-light);font-weight:700">+ set limit</span>
             </button>`).join('')}
         </div>
       </div>`
@@ -11076,7 +11076,7 @@ function renderBudgetTab(){
                   <span style="font-size:12px;font-weight:600;color:var(--text-primary)">${esc(cat)}</span>
                   <span style="font-size:11px;color:var(--text-muted)">set at ${fmt(budget)}/mo, averaging ${fmt(avg)}/mo</span>
                 </div>
-                <button data-action="openStaleBudgetModal" data-arg="${esc(cat)}" data-arg2="${Math.round(avg)}" style="background:none;border:1px solid #2563EB44;border-radius:6px;padding:3px 9px;font-size:10px;font-weight:700;color:var(--accent-blue-light);cursor:pointer;white-space:nowrap" type="button">Update to ${fmt(avg)}</button>
+                <button data-action="openStaleBudgetModal" data-arg="${esc(cat)}" data-arg2="${Math.round(avg)}" style="background:none;border:1px solid #2563EB44;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:700;color:var(--accent-blue-light);cursor:pointer;white-space:nowrap" type="button">Update to ${fmt(avg)}</button>
               </div>`;
             }).join('')}
           </div>
