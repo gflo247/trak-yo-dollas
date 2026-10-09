@@ -5828,7 +5828,7 @@ function setBucketMode(mode){
   const lbl=document.getElementById('bucket-section-label');
   if(catBtn)catBtn.classList.toggle('active',mode==='category');
   if(venBtn)venBtn.classList.toggle('active',mode==='vendor');
-  if(lbl)lbl.textContent=mode==='vendor'?'By vendor — click a tile to filter':'By category — click a tile to filter';
+  if(lbl)lbl.textContent='By:';
   showTxN=50;renderBucketGrid();renderSpendSummary();renderTxList();
 }
 function renderBucketGrid(){
