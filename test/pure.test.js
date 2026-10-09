@@ -7498,16 +7498,28 @@ test("#insights-pills uses auto-fit/minmax on desktop instead of a rigid 4-colum
   assert.doesNotMatch(source, /grid-template-columns:repeat\(4,1fr\)/, "the rigid 4-equal-column rule should be gone entirely");
 });
 
-// Finding: the Net Worth tab's snapshot rows used a "✕" for delete, while
-// Budget's category rows use a "🗑️" for the identical action -- both had
-// proper confirmation dialogs and title tooltips, so not a safety issue,
-// just an inconsistent visual language for the same action across tabs.
-test("deleteSnapshot's button uses the same 🗑️ delete icon as removeBudget, not a mismatched ✕", () => {
+// Snapshot rows are now clickable — inline ✏️/🗑️ buttons were removed in favour
+// of an edit modal that exposes a Delete button when editing an existing snapshot.
+// The delete action therefore goes through the modal, not an inline row button.
+test("snapshot rows are clickable (data-action=editSnapshot on the row, no inline delete button)", () => {
   const source = readSource();
+  // Row itself should be the click target
   assert.match(
     source,
-    /data-action="deleteSnapshot" data-arg="\$\{i\}"[^>]*title="Delete snapshot" type="button">🗑️<\/button>/,
-    "the snapshot row's delete button should use 🗑️, matching removeBudget's icon for the same action"
+    /class="account-row" data-action="editSnapshot"/,
+    "snapshot rows should carry data-action='editSnapshot' directly on the row element"
+  );
+  // Delete is in the edit modal, triggered via deleteEditingSnapshot
+  assert.match(
+    source,
+    /data-action="deleteEditingSnapshot"/,
+    "delete should be available via the edit modal's deleteEditingSnapshot action"
+  );
+  // No inline delete button on the row itself
+  assert.doesNotMatch(
+    source,
+    /account-row[^]*?data-action="deleteSnapshot"/s,
+    "there should be no inline deleteSnapshot button inside an account-row"
   );
 });
 
