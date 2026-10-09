@@ -10072,7 +10072,7 @@ function buildPctDots(months,getSpend,limit){
     const bottomText=ms>0?mp+'%':'–';
     const bottomColor=ms>0?mc:'var(--text-muted)';
     return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;padding:0" title="'+ml+': '+fmtC(ms)+' ('+mp+'%)">'
-      +'<div style="font-size:9px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:13px;line-height:13px">'+(topLabel||'')+'</div>'
+      +'<div style="font-size:10px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:13px;line-height:13px">'+(topLabel||'')+'</div>'
       +'<div style="width:100%;height:11px;border-radius:5px;background:'+(ms>0?mc:'#1E293B')+';min-width:0"></div>'
       +'<div style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;color:'+bottomColor+'">'+bottomText+'</div>'
       +'</div>';
@@ -10619,12 +10619,12 @@ function barTicksHTML(budget,avg12,spent,showAvg){
   const budgetTickPct=scaleMax>0?Math.min(budget/scaleMax,1)*100:0;
   let ticksHTML=`<div class="bar-marker budget-tick" style="left:${budgetTickPct}%"></div>`;
   const lbl=(pct,html)=>`<div style="position:absolute;top:calc(100% + 3px);left:${pct}%;transform:translateX(-50%);white-space:nowrap;pointer-events:none">${html}</div>`;
-  const budSpan=`<span style="font-size:9px;font-weight:700;color:var(--text-bright)">budget ${fmt(budget)}</span>`;
+  const budSpan=`<span style="font-size:10px;font-weight:700;color:var(--text-bright)">budget ${fmt(budget)}</span>`;
   let tickLabelsHTML=lbl(budgetTickPct,budSpan);
   if(showAvg){
     const avgTickPct=scaleMax>0?Math.min(avg12/scaleMax,1)*100:0;
-    const avgSpan=`<span style="font-size:9px;font-weight:700;color:var(--accent-blue-light)">average ${fmt(avg12)}</span>`;
-    const dot=`<span style="font-size:9px;color:var(--text-muted)"> · </span>`;
+    const avgSpan=`<span style="font-size:10px;font-weight:700;color:var(--accent-blue-light)">average ${fmt(avg12)}</span>`;
+    const dot=`<span style="font-size:10px;color:var(--text-muted)"> · </span>`;
     if(Math.abs(avgTickPct-budgetTickPct)<=COMBO_TICK_PCT){
       // Close: merge tick marker and label
       const midPct=(budgetTickPct+avgTickPct)/2;
@@ -10749,12 +10749,12 @@ function renderBudgetTab(){
   // Dot legend — budget-based thresholds for the 12-month history dots
   const legendEl=document.getElementById('budget-dot-legend');
   if(legendEl){
-    const legend=[['#F87171','Over budget','>100%'],['#FBBF24','Near limit',`${warnPct}–100%`],['#34D399','On track',`<${warnPct}%`]];
+    const legend=[['#F87171','Over budget','>100%'],['#FBBF24','Near limit',`${warnPct}–100%`]];
     const legendDots=legend.map(([c,l,sub])=>
       `<div style="display:flex;align-items:center;gap:4px"><div style="width:20px;height:8px;border-radius:4px;background:${c};flex-shrink:0"></div><span style="font-size:11px;color:var(--text-muted)">${l} <span style="color:var(--text-muted);opacity:.7">${sub}</span></span></div>`
     ).join('');
-    const warnInputHTML=`<div style="display:flex;align-items:center;gap:4px;margin-left:auto"><label for="budget-warn-input" style="font-size:11px;color:var(--text-muted)">Warn at</label><input id="budget-warn-input" type="number" min="50" max="99" step="1" value="${warnPct}" data-change="setBudgetWarnPct" style="width:44px;font-size:11px;font-weight:700;padding:2px 4px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-card);color:var(--text-primary);text-align:center" aria-label="Near-limit warning threshold percent"><span style="font-size:11px;color:var(--text-muted)">%</span></div>`;
-    legendEl.innerHTML=legendDots+warnInputHTML;
+    const onTrackDot=`<div style="display:flex;align-items:center;gap:4px"><div style="width:20px;height:8px;border-radius:4px;background:#34D399;flex-shrink:0"></div><label for="budget-warn-input" style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:3px;cursor:pointer">On track &lt; <input id="budget-warn-input" type="number" min="50" max="99" step="1" value="${warnPct}" data-change="setBudgetWarnPct" style="width:40px;font-size:11px;font-weight:700;padding:2px 4px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-card);color:var(--text-primary);text-align:center" aria-label="Near-limit warning threshold percent"><span style="opacity:.7">%</span></label></div>`;
+    legendEl.innerHTML=legendDots+onTrackDot;
   }
 
   // Per-category "vs your average" and "YTD budget" figures
@@ -10797,7 +10797,7 @@ function renderBudgetTab(){
       const mBottomText=mSpent>0?mPct+'%':'–';
       const mBottomColor=mSpent>0?mColor:'var(--text-muted)';
       return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;padding:0" title="'+mLabel+': '+fmt(mSpent)+' ('+mPct+'%)">'
-        +'<div style="font-size:9px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:13px;line-height:13px">'+(topLabel||'')+'</div>'
+        +'<div style="font-size:10px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:13px;line-height:13px">'+(topLabel||'')+'</div>'
         +'<div style="width:100%;height:11px;border-radius:5px;background:'+mColor+';min-width:0"></div>'
         +'<div style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;color:'+mBottomColor+'">'+mBottomText+'</div>'
         +'</div>';
