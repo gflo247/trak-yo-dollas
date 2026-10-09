@@ -7313,7 +7313,7 @@ test("Dashboard tier of the legibility sweep: demo notice, trend-chart explanati
   const dashMatch = source.match(/<div class="page" id="page-dashboard">[\s\S]*?\n<\/div>\n\n<!-- VEHICLES -->/);
   assert.ok(dashMatch, "the Dashboard page block should exist");
   const dash = dashMatch[0];
-  assert.match(dash, /id="demo-notice-dash"[\s\S]{0,200}?<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.5">/, "#demo-notice-dash's paragraph text should be at least 12px");
+  assert.match(dash, /id="demo-notice-dash" style="font-size:12px;color:var\(--text-muted\);line-height:1\.5/, "#demo-notice-dash's paragraph text should be at least 12px");
   assert.match(dash, /id="nw-chart-note" style="font-size:12px/, "#nw-chart-note's interpolate/extrapolate explanation should be at least 12px");
   assert.match(dash, /id="snap-monthly-nudge"[\s\S]{0,200}?<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.5">💡 No snapshot yet this month/, "#snap-monthly-nudge's paragraph text should be at least 12px");
   assert.match(
