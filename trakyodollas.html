@@ -7946,7 +7946,7 @@ function renderTxList(){
         ${state.includeIncome?`<span class="pill" style="background:${t.biz?'#2563EB22':'var(--bg-deep)'};color:${t.biz?'#60A5FA':'var(--text-muted)'};font-size:9px;cursor:pointer" data-action="toggleTxBiz" data-arg="${t.id}" data-stop="1" tabindex="0" role="button" aria-label="Toggle business or personal — currently ${t.biz?'business':'personal'}" title="Currently ${t.biz?'business':'personal'} — click to toggle">${t.biz?'BIZ':'PERS'}</span>`:''}
       </div>
       <div class="tx-pct">${pctOfMonth!==null&&!t.is_offset?pctOfMonth+'%':''}</div>
-      <div class="tx-amount" style="color:${t.isIncome?'#34D399':t.is_offset?'#34D399':'#F87171'}">${t.isIncome?'+':t.is_offset?'+':'-'}${fmtD(Math.abs(t.amount))}</div>
+      <div class="tx-amount" style="${(t.isIncome||t.is_offset)?'color:var(--accent-green)':''}">${t.isIncome?'+':t.is_offset?'+':'-'}${fmtD(Math.abs(t.amount))}</div>
     </div>`;
   }
   function buildIncomeGroupRow({month,txs:grpTxs,total}){
