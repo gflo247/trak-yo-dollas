@@ -128,14 +128,12 @@ rsync -a \
   --exclude='wrangler.toml' \
   --exclude='deploy.sh' \
   --exclude='*.sh' \
-  --exclude='README.md' \
+  --exclude='*.md' \
   --exclude='.DS_Store' \
   --exclude='.Rhistory' \
   --exclude='screenshots' \
   --exclude='test-csvs' \
   --exclude='.github' \
-  --exclude='_HANDOFF.md' \
-  --exclude='_notes.md' \
   --exclude='*.archived' \
   --exclude='ENTIRE-SITE-ARCHITECTURE-deep-dive.html' \
   --exclude='scripts' \
@@ -144,7 +142,6 @@ rsync -a \
   --exclude='.claude' \
   --exclude='package.json' \
   --exclude='package-lock.json' \
-  --exclude='TODO.md' \
   --exclude='e2e' \
   --exclude='playwright.config.js' \
   . _cf_deploy/
