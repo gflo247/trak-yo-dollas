@@ -7896,7 +7896,7 @@ function renderTxList(){
     });
     return map;
   })():null;
-  const CARD_S={'Visa Rewards':{bg:'#2E106522',fg:'#A78BFA'},'Gold Card':{bg:'#78350F22',fg:'#FCD34D'},'Checking':{bg:'#1E3A5F22',fg:'#60A5FA'},'High-yield Savings':{bg:tc('#1E293B','#EFF6FF'),fg:'#60A5FA'}};
+  const CARD_S={'Visa Rewards':{bg:'#2E106522',fg:tc('#A78BFA','var(--accent-purple)')},'Gold Card':{bg:'#78350F22',fg:tc('#FCD34D','var(--accent-amber)')},'Checking':{bg:'#1E3A5F22',fg:tc('#60A5FA','var(--accent-blue-light)')},'High-yield Savings':{bg:tc('#1E293B','#EFF6FF'),fg:tc('#60A5FA','var(--accent-blue-light)')}};
   const q=state.searchQuery.toLowerCase();
 
   function highlight(text){
