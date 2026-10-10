@@ -3653,7 +3653,7 @@ function renderInsights(){
   } else if(!state.hiddenPills.has('savings')){
     pillsArr.push({key:'savings-nudge',label:'Savings rate',score:0,html:`<div data-action="openIncomeModal" tabindex="0" role="button" style="display:flex;flex-direction:column;justify-content:center;background:var(--card-nudge-bg);border:1.5px dashed var(--border-mid);border-radius:12px;padding:.75rem .9rem;gap:.4rem;cursor:pointer;position:relative">
       <button data-action="dismissSavingsNudge" data-stop="1" data-prevent="1" style="position:absolute;top:6px;right:8px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:4px 6px;z-index:10;pointer-events:all" aria-label="Dismiss" type="button">✕</button>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-right:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-right:2rem">
         <div style="display:flex;align-items:center;gap:7px">
           <span style="font-size:16px">💰</span>
           <span style="font-size:10px;font-weight:700;color:var(--text-muted)">Savings rate</span>
@@ -3818,6 +3818,7 @@ function renderInsights(){
     const dismissBtn=`<button data-action="dismissBudgetHealthPill" data-stop="1" style="position:absolute;top:6px;right:8px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:4px 6px;z-index:10" title="Dismiss" type="button">✕</button>`;
     const basePill=pillWithTip(statusIcon,'Budget health',pillValue,statusColor,`${statusLabel}${worstStr}`,tooltip,over>0?{label:'Go to Budget tab',action:'showPageBudget'}:'');
     const pillHtml=basePill
+      .replace('padding:.75rem .9rem;gap:.4rem','padding:.75rem 2.5rem .75rem .9rem;gap:.4rem')
       .replace(/<\/div>\s*$/,dismissBtn+'</div>');
     addPill('budget-health','Budget health',pillHtml,over>0?90:under>0?40:5);
   }
