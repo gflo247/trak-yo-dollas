@@ -27,10 +27,10 @@ Deferred until after user testing confirms the sync flow is stable end-to-end.
 
 ## Structural (post-launch, no rush)
 
-- `rebuildMonthly()` still bakes `_bizFilter` into MONTHLY. Every reader that
-  should be unfiltered has been individually fixed. The structural fix (keep
-  MONTHLY unfiltered; apply filter only at read in renderSpending/renderInsights)
-  is cleaner long-term but not urgent — all user-visible paths are correct.
+- ~~`rebuildMonthly()` baking `_bizFilter` into MONTHLY~~ — DONE. MONTHLY is now
+  unfiltered; biz/personal filter applied at read time in `getMonthlyFiltered()`,
+  `getAggregatedData()`, and `sumMonth`. `setBizFilter()` no longer triggers a
+  rebuild.
 - Function/global count (497 fns, 127 globals) — module split and rendering
   cleanup, after launch.
 - ~~CSS class naming standardization~~ — DONE. `.h-btn`, `.fmt-btn`, `.sort-btn`,
