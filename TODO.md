@@ -4,21 +4,19 @@ Roughly in priority order. Stop and re-evaluate after each item ships.
 
 ---
 
-## 1. Accessibility pass (contrast, aria-labels, touch targets)
+## 1. ~~Accessibility pass~~ — DONE
 
-Flagged in an external layout/UX review. Three buckets:
-- **Contrast** — a handful of muted text colors that don't clear WCAG AA at small sizes
+Contrast violations fixed (opacity stacking, raw hex values in JS templates).
+axe-core WCAG 2.1 AA now passes clean in both dark and light themes.
+Remaining open items from the original review:
 - **aria-labels** — icon-only buttons (⚙, 🌙, ✕) missing accessible names
 - **Touch targets** — some action buttons below 44×44px on mobile
 
-Larger effort; do as a dedicated pass rather than piecemeal.
-
 ---
 
-## 2. axe-core in deploy.sh
+## 2. ~~axe-core in deploy.sh~~ — DONE
 
-Add `axe-core` as a hard deploy gate (same pattern as the existing scanners).
-Blocked on item 1 — run axe clean first, then gate on it so it can't regress.
+axe-core is a hard gate in both deploy.sh and CI (dark + light themes).
 
 ---
 

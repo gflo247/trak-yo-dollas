@@ -343,6 +343,12 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .hidden-popover-empty{font-size:12px;color:var(--text-muted);text-align:center;padding:.5rem 0}
 .tx-row.tx-excluded{background:var(--bg-deep);border-color:var(--border)}
 .tx-row.tx-excluded:hover{background:var(--row-hover)}
+[data-theme="dark"] .tx-row.tx-excluded{background:#080d15;border-color:#1a2030}
+[data-theme="dark"] .tx-row.tx-excluded:hover{background:#0e1520}
+[data-theme="light"] .tx-row.tx-excluded{background:#dde3ec;border-color:#c5cdd9}
+[data-theme="light"] .tx-row.tx-excluded:hover{background:#d0d8e4}
+.tx-row.tx-excluded .tx-date,.tx-row.tx-excluded .tx-desc,.tx-row.tx-excluded .tx-pct{color:var(--text-muted)}
+.tx-row.tx-excluded .tx-desc{font-style:italic}
 .tx-selected{background:var(--bg-card)!important;outline:2px solid #2563EB44;outline-offset:-1px}
 #tx-bulk-bar{position:sticky;bottom:8px;left:0;right:0;display:none;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.5rem .75rem;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:10;margin-top:6px}
 #tx-bulk-bar.visible{display:flex}
@@ -7896,7 +7902,7 @@ function renderTxList(){
     });
     return map;
   })():null;
-  const CARD_S={'Visa Rewards':{bg:'#2E106522',fg:tc('#A78BFA','var(--accent-purple)')},'Gold Card':{bg:'#78350F22',fg:tc('#FCD34D','var(--accent-amber)')},'Checking':{bg:'#1E3A5F22',fg:tc('#60A5FA','var(--accent-blue-light)')},'High-yield Savings':{bg:tc('#1E293B','#EFF6FF'),fg:tc('#60A5FA','var(--accent-blue-light)')}};
+  const CARD_S={'Visa Rewards':{bg:'#2E106522',fg:tc('#A78BFA','var(--accent-purple)')},'Gold Card':{bg:tc('#78350F22','#FEF3C7'),fg:tc('#FCD34D','#92400E')},'Checking':{bg:'#1E3A5F22',fg:tc('#60A5FA','var(--accent-blue-light)')},'High-yield Savings':{bg:tc('#1E293B','#EFF6FF'),fg:tc('#60A5FA','var(--accent-blue-light)')}};
   const q=state.searchQuery.toLowerCase();
 
   function highlight(text){
