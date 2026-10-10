@@ -1,5 +1,5 @@
-_HANDOFF.md
-_notes.md
+*.md
+!README.md
 *.archived
 .firebase
 .wrangler
