@@ -3447,7 +3447,16 @@ function renderInsights(){
   // peak-pace projection), all of which silently included deselected
   // sources' spend before this fix, unlike getMonthlyFiltered() and the
   // chart's own monthSumsFn, which already summed this way.
-  const sumMonth=m=>{const row=MONTHLY[m]||{};return [...state.activeSources].reduce((s,src)=>s+(row[src]||0),0);};
+  const sumMonth=m=>{
+    if(_bizFilter==='all'){const row=MONTHLY[m]||{};return[...state.activeSources].reduce((s,src)=>s+(row[src]||0),0);}
+    return state.transactions.reduce((s,t)=>{
+      if(t.date.slice(0,7)!==m||t.excluded||t.isIncome||!state.activeSources.has(t.card))return s;
+      if(state.excludedCats&&state.excludedCats.has(t.cat))return s;
+      if(_bizFilter==='biz'&&!t.biz)return s;
+      if(_bizFilter==='personal'&&t.biz)return s;
+      return s+t.amount;
+    },0);
+  };
 
   const curM=allMonths[allMonths.length-1];
   const prevM=allMonths[allMonths.length-2];
@@ -5427,6 +5436,19 @@ function getAggregatedPeriods(){
 
 function getAggregatedData(){
   const periods=getAggregatedPeriods();
+  if(_bizFilter!=='all'){
+    // MONTHLY is now unfiltered; aggregate from per-month filtered data
+    const mfMap={};
+    getMonthlyFiltered().forEach(d=>{mfMap[d.month]=d;});
+    return periods.map(p=>{
+      const total=p.months.reduce((s,m)=>s+(mfMap[m]?mfMap[m].total:0),0);
+      const bySource={};
+      [...state.activeSources].forEach(src=>{
+        bySource[src]=p.months.reduce((s,m)=>s+(mfMap[m]?mfMap[m].bySource[src]||0:0),0);
+      });
+      return{label:p.label,months:p.months,total,bySource,byCat:{}};
+    });
+  }
   return periods.map(p=>{
     const total=p.months.reduce((s,m)=>{
       const row=MONTHLY[m]||{};
@@ -5524,19 +5546,21 @@ function getSortedTxs(){
 }
 function getMonthlyFiltered(){
   return getFilteredMonths().map(m=>{
-    if(!state.showExcluded){
-      // Use pre-computed included-only totals
+    if(!state.showExcluded&&_bizFilter==='all'){
+      // Fast path: use pre-computed included-only totals (MONTHLY is unfiltered, matches 'all')
       const row=MONTHLY[m]||{};let total=0;
       for(const s of state.activeSources)total+=(row[s]||0);
       return{month:m,total,bySource:Object.fromEntries([...state.activeSources].map(s=>[s,row[s]||0]))};
     } else {
-      // Build live from transactions (includes toggled contributions)
+      // Live path: handles showExcluded=true (any filter) and _bizFilter!=='all' (showExcluded=false)
       const bySource={};let total=0;
       for(const s of state.activeSources)bySource[s]=0;
       state.transactions.forEach(t=>{
         if(t.date.slice(0,7)!==m)return;
         if(!state.activeSources.has(t.card))return;
         if(t.isIncome)return;
+        if(!state.showExcluded&&t.excluded)return;
+        if(!state.showExcluded&&state.excludedCats&&state.excludedCats.has(t.cat))return;
         if(_bizFilter==='biz'&&!t.biz)return;
         if(_bizFilter==='personal'&&t.biz)return;
         bySource[t.card]=(bySource[t.card]||0)+t.amount;
@@ -10125,13 +10149,12 @@ function budgetNavMonth(dir){
 
 function getLatestDataMonth(){
   // Scan transactions directly rather than reading Object.keys(MONTHLY) —
-  // MONTHLY is baked with Spending's _bizFilter, so when the user has Business
-  // selected, it returns the last month with *business* spend and skips months
-  // with only personal transactions, sending the Budget tab to the wrong month.
-  // Filters match rebuildMonthly(): excluded, isIncome, excludedCats (so a
-  // month with only CC-payment transactions isn't seen as the "latest month").
-  // Deliberately omits activeSources — rebuildMonthly never filtered by source,
-  // so deselecting a card must not hide its months from the Budget navigator.
+  // Budget needs the true latest month across all transactions regardless of
+  // Spending's _bizFilter. Filters match rebuildMonthly(): excluded, isIncome,
+  // excludedCats (so a month with only CC-payment transactions isn't seen as
+  // the "latest month"). Deliberately omits activeSources — rebuildMonthly
+  // never filtered by source, so deselecting a card must not hide its months
+  // from the Budget navigator.
   let latest='';
   state.transactions.forEach(t=>{
     if(t.excluded||t.isIncome)return;
@@ -10154,9 +10177,8 @@ function getBudgetMonth(){
 // Defaults to 12 for Budget-tab callers; Life Changes passes its own
 // user-adjustable horizon. bizFilter defaults to 'all' — Budget passes
 // _budgetBizFilter, Life Changes and the cushion widget pass 'all'.
-// Scans transactions directly instead of reading MONTHLY (which is
-// baked with Spending's _bizFilter) so Budget's own independent filter
-// doesn't inherit Spending's current selection.
+// Scans transactions directly so Budget's own independent _budgetBizFilter
+// doesn't inherit Spending's _bizFilter.
 function getBudgetHistMonths(ym,count=12,bizFilter){
   if(bizFilter===undefined)bizFilter='all';
   const set=new Set();
@@ -11239,7 +11261,17 @@ function openIncomeModal(){
   const fullMonths=allMonths.filter(mo=>mo<thisYM);
   // [...state.activeSources].reduce(...), not Object.values(...) -- same
   // fix as renderNwGoalWidget() above, found in the 40th adversarial pass.
-  _latestSpendForPreview=fullMonths.length?(()=>{const row=MONTHLY[fullMonths[fullMonths.length-1]]||{};return[...state.activeSources].reduce((s,src)=>s+(row[src]||0),0);})():0;
+  _latestSpendForPreview=fullMonths.length?(()=>{
+    const m=fullMonths[fullMonths.length-1];
+    if(_bizFilter==='all'){const row=MONTHLY[m]||{};return[...state.activeSources].reduce((s,src)=>s+(row[src]||0),0);}
+    return state.transactions.reduce((s,t)=>{
+      if(t.date.slice(0,7)!==m||t.excluded||t.isIncome||!state.activeSources.has(t.card))return s;
+      if(state.excludedCats&&state.excludedCats.has(t.cat))return s;
+      if(_bizFilter==='biz'&&!t.biz)return s;
+      if(_bizFilter==='personal'&&t.biz)return s;
+      return s+t.amount;
+    },0);
+  })():0;
   if(m==='manual'&&state.income.monthlyAmount){
     document.getElementById('income-amount').value=state.income.monthlyAmount;
     document.getElementById('income-manual-hint').textContent=`Current: ${fmt(state.income.monthlyAmount,true)}/mo take-home`;
@@ -12216,7 +12248,6 @@ function setBizFilter(val){
   _selectedTxIds.clear();
   const bizRow=document.getElementById('biz-filter-inline');
   if(bizRow)bizRow.querySelectorAll('.biz-chip').forEach(b=>{b.classList.toggle('active',b.getAttribute('data-arg')===_bizFilter);b.setAttribute('aria-pressed',String(b.getAttribute('data-arg')===_bizFilter));});
-  rebuildMonthly();
   renderSpending();
 }
 function setBudgetBizFilter(val){
@@ -14674,7 +14705,11 @@ function confirmTxImport(){
 
 // ── Shared state-mutation helpers (used across tabs, not import-specific) ──
 function rebuildMonthly(){
-  // Recompute MONTHLY from current transactions (used by chart when showExcluded=false)
+  // Recompute MONTHLY from current transactions. MONTHLY is intentionally
+  // unfiltered by _bizFilter — the biz/personal filter is applied at read
+  // time in getMonthlyFiltered(), getAggregatedData(), and sumMonth() so
+  // that switching the filter requires no cache rebuild. ALL_MONTHS is
+  // kept in sync and also unfiltered.
   const m={};
   state.transactions.forEach(t=>{
     if(t.excluded)return;
@@ -14688,8 +14723,6 @@ function rebuildMonthly(){
     // as intended. isIncome is the durable signal; cat can drift.
     if(t.isIncome)return;
     if(state.excludedCats&&state.excludedCats.has(t.cat))return;
-    if(_bizFilter==='biz'&&!t.biz)return;
-    if(_bizFilter==='personal'&&t.biz)return;
     const mo=t.date.slice(0,7);
     m[mo]=m[mo]||{};
     m[mo][t.card]=Math.max(0,((m[mo][t.card]||0)+t.amount));
@@ -14698,13 +14731,7 @@ function rebuildMonthly(){
   Object.keys(MONTHLY).forEach(k=>delete MONTHLY[k]);
   Object.assign(MONTHLY,m);
   // Keep ALL_MONTHS in sync — it's used everywhere for horizon/chart ranges.
-  // Must be derived from transactions directly (not Object.keys(MONTHLY)) so
-  // it represents all months with any spend regardless of _bizFilter. Deriving
-  // from MONTHLY would empty ALL_MONTHS when Business filter is active and no
-  // biz-tagged transactions exist, crashing every call site that indexes into
-  // ALL_MONTHS[0] / ALL_MONTHS[length-1] for chart/date-range bounds.
-  // Filter set matches rebuildMonthly's (excluded, isIncome, excludedCats)
-  // but intentionally omits _bizFilter.
+  // Filter set matches rebuildMonthly's (excluded, isIncome, excludedCats).
   ALL_MONTHS.length=0;
   const _allMonthSet=new Set();
   state.transactions.forEach(t=>{
