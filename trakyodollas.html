@@ -42,7 +42,7 @@
   // match --bg-page's own dark/light values. Found in the 115th
   // adversarial pass.
   try{
-    const t=localStorage.getItem('trakyo_theme')||'dark';
+    const t=localStorage.getItem('trakyo_theme')||(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');
     document.documentElement.setAttribute('data-theme',t);
     const tc=document.querySelector('meta[name="theme-color"]');
     if(tc)tc.setAttribute('content',t==='light'?'#F8FAFC':'#111720');
@@ -952,7 +952,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   💾 <strong style="color:var(--amber-text-strong)">Your data lives only in this browser</strong> — clearing site data, switching browsers, or losing this device erases it for good.
   <button data-action="openAuthModal|dismissLocalDataNotice" style="background:var(--amber-text-strong);color:#000;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 3px" type="button">Sign in to sync</button>
   <button data-action="exportBackup|dismissLocalDataNotice" style="background:none;border:none;color:var(--amber-text-strong);font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Export a backup</button>
-  <button data-action="dismissLocalDataNotice" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:4px 6px;font-family:inherit;vertical-align:middle" title="Dismiss" type="button">✕</button>
+  <button data-action="dismissLocalDataNotice" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:10px 12px;font-family:inherit;vertical-align:middle" title="Dismiss" type="button">✕</button>
 </div>
 <!-- Shown exactly once on iPhone/iPad Safari -- see maybeShowLocalDataNotice().
      Safari deletes localStorage after 7 days without a visit; home-screen web
@@ -962,7 +962,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   📱 <strong style="color:var(--amber-text-strong)">On iOS, Safari may delete your data after 7 days</strong> — tap <strong>Share ↗</strong> then <strong>"Add to Home Screen"</strong> to keep it safe.
   <button data-action="openAuthModal|dismissIosHomeBanner" style="background:var(--amber-text-strong);color:#000;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 3px" type="button">Sign in to sync instead</button>
   <button data-action="exportBackup|dismissIosHomeBanner" style="background:none;border:none;color:var(--amber-text-strong);font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Export a backup</button>
-  <button data-action="dismissIosHomeBanner" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:4px 6px;font-family:inherit;vertical-align:middle" title="Dismiss" type="button">✕</button>
+  <button data-action="dismissIosHomeBanner" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:10px 12px;font-family:inherit;vertical-align:middle" title="Dismiss" type="button">✕</button>
 </div>
 <!-- Stays up until dismissed or reloaded, unlike a toast -- the underlying
      "your edits aren't syncing" condition doesn't go away on its own after
@@ -973,7 +973,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 <div id="sync-conflict-banner" role="alert" style="display:none;position:fixed;top:0;left:0;right:0;z-index:26;background:linear-gradient(rgba(251,191,36,.1),rgba(251,191,36,.1)),var(--bg-page);border-bottom:1px solid rgba(251,191,36,.3);padding:8px 1rem;font-size:12px;color:var(--text-secondary);text-align:center;letter-spacing:.01em">
   ⚠ <strong style="color:var(--amber-text-strong)">Your synced data changed on another device</strong> — your changes here are saved on this device but won't sync until you reload.
   <button data-action="reloadForSyncConflict" style="background:var(--amber-text-strong);color:#000;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 3px" type="button">Reload now</button>
-  <button data-action="dismissSyncConflictBanner" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:4px 6px;font-family:inherit;vertical-align:middle" title="Dismiss" type="button">✕</button>
+  <button data-action="dismissSyncConflictBanner" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:10px 12px;font-family:inherit;vertical-align:middle" title="Dismiss" type="button">✕</button>
 </div>
 <nav class="nav" aria-label="Main navigation" style="position:sticky;top:0;z-index:25">
   <a href="/" class="nav-logo hide-mobile">trak-yo-dolla<span>$</span></a>
@@ -999,7 +999,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <button data-action="toggleTheme" id="theme-toggle-btn" title="Toggle light/dark theme" aria-label="Switch to light theme" style="background:none;border:1px solid var(--border-mid);border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer;color:var(--text-muted)" type="button">🌙</button>
   <div id="auth-user-info" class="hidden" style="display:flex;align-items:center;gap:6px">
     <div style="position:relative">
-      <div id="auth-avatar" data-action="toggleAvatarPop" tabindex="0" role="button" aria-label="Account menu" style="width:24px;height:24px;border-radius:50%;background:#2563EB;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer"></div>
+      <div id="auth-avatar" data-action="toggleAvatarPop" tabindex="0" role="button" aria-label="Account menu" style="width:36px;height:36px;border-radius:50%;background:#2563EB;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer"></div>
       <div id="auth-avatar-pop" class="hidden" style="position:absolute;top:calc(100% + 8px);right:0;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.6rem .85rem;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:200;white-space:nowrap">
         <div id="auth-pop-name" style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:2px"></div>
         <div id="auth-pop-email" style="font-size:11px;color:var(--text-muted)"></div>
@@ -12010,10 +12010,11 @@ let _chartTableView=(()=>{
 // Apply saved theme and preferences on load
 (function(){
   try{
-    // data-theme itself is already set by the head IIFE above (which also
-    // handles the localStorage-throws fallback to 'dark') -- this only
-    // needs the button label. Found in the 116th adversarial pass.
-    const saved=localStorage.getItem('trakyo_theme')||'dark';
+    // data-theme is already set by the head IIFE (reads localStorage, falls
+    // back to prefers-color-scheme, or 'dark' on error) -- read the attribute
+    // directly so the button label always matches what actually rendered.
+    // Found in the 116th adversarial pass.
+    const saved=document.documentElement.getAttribute('data-theme')||'dark';
     const btn=document.getElementById('theme-toggle-btn');
     if(btn){btn.textContent=saved==='light'?'☀️':'🌙';btn.setAttribute('aria-label',saved==='light'?'Switch to dark theme':'Switch to light theme');}
   }catch(e){}

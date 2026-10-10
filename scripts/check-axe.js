@@ -55,7 +55,7 @@ async function main() {
 
     try {
       for (const theme of ['dark', 'light']) {
-        const ctx  = await browser.newContext({ bypassCSP: true });
+        const ctx  = await browser.newContext({ bypassCSP: true, colorScheme: theme });
         const page = await ctx.newPage();
         // Suppress Supabase/analytics connection errors — expected in a test env
         page.on('console', () => {});

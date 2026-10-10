@@ -8,9 +8,7 @@ Roughly in priority order. Stop and re-evaluate after each item ships.
 
 Contrast violations fixed (opacity stacking, raw hex values in JS templates).
 axe-core WCAG 2.1 AA now passes clean in both dark and light themes.
-Remaining open items from the original review:
-- **aria-labels** — icon-only buttons (⚙, 🌙, ✕) missing accessible names
-- **Touch targets** — some action buttons below 44×44px on mobile
+Remaining open items from the original review: none — contrast, aria-labels, and touch targets all addressed.
 
 ---
 
