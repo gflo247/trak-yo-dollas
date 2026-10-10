@@ -7955,7 +7955,7 @@ function renderTxList(){
     const label=`Income · ${grpTxs.length} deposit${grpTxs.length===1?'':'s'}`;
     return`<div class="tx-row" data-action="toggleIncomeGroup" data-arg="${month}" tabindex="0" role="button" aria-label="${dateLabel} income, ${grpTxs.length} deposit${grpTxs.length===1?'':'s'}, +${fmtD(total)}">
       <div class="tx-date" style="color:var(--text-muted)">${dateLabel}</div>
-      <div class="tx-desc" style="color:var(--text-muted);font-style:italic">${label} <span style="font-size:10px;color:var(--text-dim)">▶ expand</span></div>
+      <div class="tx-desc" style="color:var(--text-muted);font-style:italic">${label} <span style="font-size:10px;color:var(--text-muted)">▶ expand</span></div>
       <div class="tx-pct"></div>
       <div class="tx-amount" style="color:var(--accent-green)">+${fmtD(total)}</div>
     </div>`;
@@ -7966,7 +7966,7 @@ function renderTxList(){
     const label=`Income · ${grpTxs.length} deposit${grpTxs.length===1?'':'s'}`;
     return`<div class="tx-row" data-action="toggleIncomeGroup" data-arg="${month}" tabindex="0" role="button" aria-label="Collapse ${dateLabel} income">
       <div class="tx-date" style="color:var(--text-muted)">${dateLabel}</div>
-      <div class="tx-desc" style="color:var(--text-muted);font-style:italic">${label} <span style="font-size:10px;color:var(--text-dim)">▼ collapse</span></div>
+      <div class="tx-desc" style="color:var(--text-muted);font-style:italic">${label} <span style="font-size:10px;color:var(--text-muted)">▼ collapse</span></div>
       <div class="tx-pct"></div>
       <div class="tx-amount" style="color:var(--accent-green)">+${fmtD(total)}</div>
     </div>`;
