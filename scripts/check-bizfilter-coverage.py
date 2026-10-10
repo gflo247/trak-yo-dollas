@@ -116,6 +116,11 @@ KNOWN_FALSE_POSITIVES = {
     # wrong month when Business is active). Matches rebuildMonthly's filter set
     # (excluded, isIncome, excludedCats) but deliberately omits _bizFilter.
     't=>{ if(t.excluded||t.isIncome)return; if(state.excludedCats&&state.excludedCats.has(t.cat))return; const mo=t.date.slice(0,7); if(mo>latest',
+    # rebuildMonthly() MONTHLY build -- intentionally unfiltered by _bizFilter;
+    # the filter is now applied at read time in getMonthlyFiltered(),
+    # getAggregatedData(), and sumMonth() so switching the filter requires no
+    # cache rebuild. See rebuildMonthly()'s own comment block for rationale.
+    't=>{ if(t.excluded)return; // Every other spend-aggregating function in the file (getBaseTxs() and // its many callers) already excludes inc',
     # rebuildMonthly() ALL_MONTHS update -- ALL_MONTHS must cover all months with
     # any spend regardless of _bizFilter; deriving from MONTHLY would empty it
     # when Business filter is active with no biz transactions, crashing every
