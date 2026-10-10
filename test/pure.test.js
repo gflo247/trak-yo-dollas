@@ -111,8 +111,12 @@ test("classifyBudgetStatus: a sub-cent float-accumulation overshoot doesn't flip
 // the 141st pass's own fix. ──
 test("the 3 sibling dot/pct-color render sites (compact badge, buildCondensedDots/buildPctDots, hero history dots) all use the same float-noise epsilon as classifyBudgetStatus()", () => {
   const source = readSource();
-  const badgeMatches = source.match(/curAmt>budget\+0\.005\?'#F87171':curAmt\/budget>0\.8\?'#FBBF24':'#34D399'/g) || [];
-  assert.equal(badgeMatches.length, 2, "both the compact badge's dot and % text color should use the same epsilon-tolerant comparison");
+  // Dot background still uses raw hex (background color, not text — no contrast issue):
+  const badgeDotMatches = source.match(/curAmt>budget\+0\.005\?'#F87171':curAmt\/budget>0\.8\?'#FBBF24':'#34D399'/g) || [];
+  assert.equal(badgeDotMatches.length, 1, "the compact badge's dot background should use the epsilon-tolerant comparison");
+  // % text uses CSS variables (theme-aware) with the same epsilon condition:
+  const badgeTextMatches = source.match(/curAmt>budget\+0\.005\?'var\(--accent-red\)':curAmt\/budget>0\.8\?'var\(--accent-amber\)':'var\(--accent-green\)'/g) || [];
+  assert.equal(badgeTextMatches.length, 1, "the compact badge's % text should use theme-aware CSS variable colors with the same epsilon condition");
   const condensedMatches = source.match(/ms>limit\+0\.005\?'#F87171':mp>=warnPct\?'#FBBF24':'#34D399'/g) || [];
   assert.equal(condensedMatches.length, 2, "both buildCondensedDots() and buildPctDots() should use the same epsilon-tolerant comparison");
   assert.match(
@@ -7785,7 +7789,7 @@ test("Spending tab's category tile name/meta/budget line, both empty states, the
   );
   assert.match(
     source,
-    /<div style="font-size:12px;font-weight:700;color:var\(--text-muted\);letter-spacing:\.07em;text-transform:uppercase;padding:\.5rem \.25rem \.25rem;opacity:\.6">Hidden from spending \(\$\{alwaysShowExcl\.length\}\) — click to edit &amp; restore<\/div>/,
+    /<div style="font-size:12px;font-weight:700;color:var\(--text-muted\);letter-spacing:\.07em;text-transform:uppercase;padding:\.5rem \.25rem \.25rem">Hidden from spending \(\$\{alwaysShowExcl\.length\}\) — click to edit &amp; restore<\/div>/,
     "the 'Hidden from spending' note should be 12px"
   );
   assert.match(
@@ -7906,7 +7910,7 @@ test("the in-tile '% of budget' badge is 12px, matching the '$X / $Y' fraction n
   const source = readSource();
   assert.match(
     source,
-    /<span style="font-size:12px;font-weight:700;color:\$\{curAmt>budget\+0\.005\?'#F87171':curAmt\/budget>0\.8\?'#FBBF24':'#34D399'\}">\$\{Math\.round\(curAmt\/budget\*100\)\}%<\/span>/,
+    /<span style="font-size:12px;font-weight:700;color:\$\{curAmt>budget\+0\.005\?'var\(--accent-red\)':curAmt\/budget>0\.8\?'var\(--accent-amber\)':'var\(--accent-green\)'\}">\$\{Math\.round\(curAmt\/budget\*100\)\}%<\/span>/,
     "the budget percentage badge should be 12px"
   );
 });
@@ -8161,7 +8165,7 @@ test("#demo-nudge's banner text uses 'Switch profiles' in place of 'explore them
   const source = readSource();
   assert.match(
     source,
-    /Demo data fills all 4 tabs —\s*<button data-action="openDemoPicker" data-arg="false" style="background:none;border:none;color:#D97706;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Switch profiles<\/button>\s*to explore, then\s*<button data-action="openTxImportModal"/,
+    /Demo data fills all 4 tabs —\s*<button data-action="openDemoPicker" data-arg="false" style="background:none;border:none;color:var\(--accent-amber\);font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Switch profiles<\/button>\s*to explore, then\s*<button data-action="openTxImportModal"/,
     "the banner should read 'Switch profiles' (as a secondary text-link button) positioned before 'Import a CSV', not adjacent to it at the end"
   );
   assert.doesNotMatch(

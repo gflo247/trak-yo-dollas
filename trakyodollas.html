@@ -341,8 +341,8 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .hidden-popover-show{background:none;border:1px solid var(--border-mid);border-radius:4px;padding:1px 8px;font-size:10px;font-weight:600;color:var(--accent-blue-light);cursor:pointer;font-family:inherit}
 .hidden-popover-show:hover{border-color:var(--accent-blue-light);background:#2563EB18}
 .hidden-popover-empty{font-size:12px;color:var(--text-muted);text-align:center;padding:.5rem 0}
-.tx-row.tx-excluded{opacity:.45;border-color:var(--border)}
-.tx-row.tx-excluded:hover{opacity:.7}
+.tx-row.tx-excluded{background:var(--bg-deep);border-color:var(--border)}
+.tx-row.tx-excluded:hover{background:var(--row-hover)}
 .tx-selected{background:var(--bg-card)!important;outline:2px solid #2563EB44;outline-offset:-1px}
 #tx-bulk-bar{position:sticky;bottom:8px;left:0;right:0;display:none;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.5rem .75rem;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:10;margin-top:6px}
 #tx-bulk-bar.visible{display:flex}
@@ -457,6 +457,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .tx-date{font-size:10px;color:var(--text-muted);width:70px;flex-shrink:0;font-variant-numeric:tabular-nums;touch-action:manipulation}
 .tx-desc{font-size:11px;font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-primary);touch-action:manipulation}
 .pill{font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;white-space:nowrap;touch-action:manipulation}
+.cat-pill{color:var(--text-primary)}
 .tx-amount{font-size:11px;font-weight:800;width:90px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums;color:var(--accent-red);touch-action:manipulation}
 .tx-pct{font-size:10px;color:var(--text-muted);width:35px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums;touch-action:manipulation}
 .tx-pills{display:flex;gap:5px;flex-shrink:0;justify-content:flex-end;min-width:155px}
@@ -759,7 +760,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 /* Demo nudge banner */
 #demo-nudge{display:none;background:rgba(217,119,6,.08);border-bottom:1px solid rgba(217,119,6,.18);padding:7px 1rem;font-size:12px;color:var(--text-secondary);text-align:center;letter-spacing:.01em}
-#demo-nudge strong{color:#D97706;font-weight:600}
+#demo-nudge strong{color:var(--accent-amber);font-weight:600}
 #demo-nav-badge{display:none;background:#D97706;color:#000;font-size:10px;font-weight:800;padding:4px 10px;border-radius:5px;letter-spacing:.05em;cursor:pointer;border:none;font-family:inherit;white-space:nowrap;line-height:1.3}
 
 /* Desktop pills -- was a rigid repeat(4,1fr), which has no minimum floor
@@ -929,7 +930,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 </div>
 <div id="demo-nudge" style="display:none;background:rgba(217,119,6,.1);border-bottom:1px solid rgba(217,119,6,.2);padding:8px 1rem;font-size:12px;color:var(--text-secondary);text-align:center;letter-spacing:.01em">
   Demo data fills all 4 tabs —
-  <button data-action="openDemoPicker" data-arg="false" style="background:none;border:none;color:#D97706;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Switch profiles</button>
+  <button data-action="openDemoPicker" data-arg="false" style="background:none;border:none;color:var(--accent-amber);font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Switch profiles</button>
   to explore, then
   <button data-action="openTxImportModal" style="background:#D97706;color:#000;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 3px" type="button">Import a CSV</button>
   for your own numbers. Nothing leaves your device.
@@ -1855,7 +1856,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <div id="import-success-summary" style="font-size:13px;color:var(--text-muted)"></div>
     </div>
 
-    <div id="import-success-uncategorized" class="hidden" style="background:#78350F18;border:1px solid #D9770633;border-radius:8px;padding:.55rem .85rem;margin-bottom:1rem;font-size:12px;color:#D97706;line-height:1.5"></div>
+    <div id="import-success-uncategorized" class="hidden" style="background:#78350F18;border:1px solid #D9770633;border-radius:8px;padding:.55rem .85rem;margin-bottom:1rem;font-size:12px;color:var(--accent-amber);line-height:1.5"></div>
 
     <div id="import-success-no-account" class="hidden" style="background:#1E3A5F18;border:1px solid #2563EB33;border-radius:8px;padding:.55rem .85rem;margin-bottom:1rem;font-size:12px;color:var(--accent-blue-light);line-height:1.5"></div>
 
@@ -6094,7 +6095,7 @@ function renderBucketGrid(){
     'Transfers':'Venmo/Zelle outgoing payments',
   };
   const otherCatBreakdown=hiddenCats.slice(0,10).map(([c,d])=>`${esc(c)}: ${fmt(d.total)}`).join('&#10;');
-  const otherCatTile=hiddenCount>0&&!showAllBucketCats?`<div class="bucket-card" style="border-color:var(--border-mid);background:var(--bg-deep);cursor:pointer;opacity:.75" data-action="showPillTip" data-tip="${hiddenCount} categories:&#10;${otherCatBreakdown}" tabindex="0" role="button">
+  const otherCatTile=hiddenCount>0&&!showAllBucketCats?`<div class="bucket-card" style="border-color:var(--border-mid);background:var(--bg-deep);cursor:pointer" data-action="showPillTip" data-tip="${hiddenCount} categories:&#10;${otherCatBreakdown}" tabindex="0" role="button">
     <div class="bucket-name" style="color:var(--text-muted)">+ ${hiddenCount} other ${hiddenCount===1?'category':'categories'}</div>
     <div class="bucket-total" style="color:var(--text-muted)">${fmt(hiddenTotal)}</div>
     <div class="bucket-meta">${grandCatTotal>0?(Math.round(hiddenTotal/grandCatTotal*100)||'<1')+'%':'0%'} of spend · tap for list</div>
@@ -6141,7 +6142,7 @@ function renderBucketGrid(){
     const budgetBadge=budget?`<div data-action="openBudgetModal" data-arg="${sc}" data-stop="1" tabindex="0" role="button" title="Budget: ${fmt(budget)}/mo — click to edit · See Budget tab for full tracking" style="position:relative;z-index:1;margin-top:5px;display:flex;align-items:center;gap:5px;cursor:pointer">
       <div style="width:10px;height:6px;border-radius:3px;background:${curAmt>budget+0.005?'#F87171':curAmt/budget>0.8?'#FBBF24':'#34D399'};flex-shrink:0"></div>
       <span style="font-size:12px;color:var(--text-muted)">${fmt(curAmt)} / ${fmt(budget)}</span>
-      <span style="font-size:12px;font-weight:700;color:${curAmt>budget+0.005?'#F87171':curAmt/budget>0.8?'#FBBF24':'#34D399'}">${Math.round(curAmt/budget*100)}%</span>
+      <span style="font-size:12px;font-weight:700;color:${curAmt>budget+0.005?'var(--accent-red)':curAmt/budget>0.8?'var(--accent-amber)':'var(--accent-green)'}">${Math.round(curAmt/budget*100)}%</span>
     </div>`
     :`<button data-action="openBudgetModal" data-arg="${sc}" data-stop="1" style="position:relative;z-index:1;margin-top:5px;width:100%;background:none;border:1px solid var(--border-mid);border-radius:5px;padding:8px 6px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;text-align:center" title="Set a monthly budget for ${sc}" type="button">+ Set budget</button>`;
     // .bucket-card itself is no longer a role=button/tabindex element -- it
@@ -7934,7 +7935,7 @@ function renderTxList(){
       <div class="tx-desc" title="${esc(t.desc)}">${highlight(displayVendor(t.desc))}</div>
       ${t.excluded?'<span class="excl-pill" title="Hidden from spending — click to edit">hidden</span>':''}
       <div class="tx-pills">
-        <span class="pill" style="background:${color}22;color:${color}">${highlight(t.cat)}</span>
+        <span class="pill cat-pill" style="background:${color}22">${highlight(t.cat)}</span>
         <span class="pill" style="background:${cc.bg};color:${cc.fg}">${highlight(t.card.replace('Chase ','').replace(' Unlimited','Unlim').replace('Ally ',''))}</span>
         ${state.includeIncome?`<span class="pill" style="background:${t.biz?'#2563EB22':'var(--bg-deep)'};color:${t.biz?'#60A5FA':'var(--text-muted)'};font-size:9px;cursor:pointer" data-action="toggleTxBiz" data-arg="${t.id}" data-stop="1" tabindex="0" role="button" aria-label="Toggle business or personal — currently ${t.biz?'business':'personal'}" title="Currently ${t.biz?'business':'personal'} — click to toggle">${t.biz?'BIZ':'PERS'}</span>`:''}
       </div>
@@ -7946,9 +7947,9 @@ function renderTxList(){
     const[y,m]=month.split('-');
     const dateLabel=`${y} ${MON3[parseInt(m)-1]}`;
     const label=`Income · ${grpTxs.length} deposit${grpTxs.length===1?'':'s'}`;
-    return`<div class="tx-row" data-action="toggleIncomeGroup" data-arg="${month}" tabindex="0" role="button" aria-label="${dateLabel} income, ${grpTxs.length} deposit${grpTxs.length===1?'':'s'}, +${fmtD(total)}" style="opacity:.8">
+    return`<div class="tx-row" data-action="toggleIncomeGroup" data-arg="${month}" tabindex="0" role="button" aria-label="${dateLabel} income, ${grpTxs.length} deposit${grpTxs.length===1?'':'s'}, +${fmtD(total)}">
       <div class="tx-date" style="color:var(--text-muted)">${dateLabel}</div>
-      <div class="tx-desc" style="color:var(--text-muted);font-style:italic">${label} <span style="font-size:10px;opacity:.6">▶ expand</span></div>
+      <div class="tx-desc" style="color:var(--text-muted);font-style:italic">${label} <span style="font-size:10px;color:var(--text-dim)">▶ expand</span></div>
       <div class="tx-pct"></div>
       <div class="tx-amount" style="color:var(--accent-green)">+${fmtD(total)}</div>
     </div>`;
@@ -7957,15 +7958,15 @@ function renderTxList(){
     const[y,m]=month.split('-');
     const dateLabel=`${y} ${MON3[parseInt(m)-1]}`;
     const label=`Income · ${grpTxs.length} deposit${grpTxs.length===1?'':'s'}`;
-    return`<div class="tx-row" data-action="toggleIncomeGroup" data-arg="${month}" tabindex="0" role="button" aria-label="Collapse ${dateLabel} income" style="opacity:.8">
+    return`<div class="tx-row" data-action="toggleIncomeGroup" data-arg="${month}" tabindex="0" role="button" aria-label="Collapse ${dateLabel} income">
       <div class="tx-date" style="color:var(--text-muted)">${dateLabel}</div>
-      <div class="tx-desc" style="color:var(--text-muted);font-style:italic">${label} <span style="font-size:10px;opacity:.6">▼ collapse</span></div>
+      <div class="tx-desc" style="color:var(--text-muted);font-style:italic">${label} <span style="font-size:10px;color:var(--text-dim)">▼ collapse</span></div>
       <div class="tx-pct"></div>
       <div class="tx-amount" style="color:var(--accent-green)">+${fmtD(total)}</div>
     </div>`;
   }
   const exclDivider=alwaysShowExcl.length>0
-    ?`<div style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase;padding:.5rem .25rem .25rem;opacity:.6">Hidden from spending (${alwaysShowExcl.length}) — click to edit &amp; restore</div>`
+    ?`<div style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase;padding:.5rem .25rem .25rem">Hidden from spending (${alwaysShowExcl.length}) — click to edit &amp; restore</div>`
     :'';
   document.getElementById('tx-list').innerHTML=shown.map(item=>item.type==='income-group'?buildIncomeGroupRow(item):item.type==='income-header'?buildIncomeHeaderRow(item):buildTxRow(item.tx)).join('')+exclDivider+alwaysShowExcl.map(buildTxRow).join('');
   document.getElementById('tx-more').innerHTML=displayList.length>showTxN?`<button class="btn" data-action="showMoreTx" type="button">${displayList.length-showTxN} more ↓</button>`:'';
@@ -17461,7 +17462,7 @@ document.addEventListener('DOMContentLoaded',function(){
     }
   }else if(!_isDemo&&!window._hadSavedData){
     loadDemoProfile(2, true, true); // silent + skipRender — renderAll fires below
-    requestAnimationFrame(()=>showToast('👋 Showing demo data — tap <span data-action="openDemoPicker" data-arg="false" tabindex="0" role="button" style="color:#D97706;cursor:pointer;text-decoration:underline">switch profile</span> or import your own CSV',tc('#94A3B8','#4B5563'),6000));
+    requestAnimationFrame(()=>showToast('👋 Showing demo data — tap <span data-action="openDemoPicker" data-arg="false" tabindex="0" role="button" style="color:var(--accent-amber);cursor:pointer;text-decoration:underline">switch profile</span> or import your own CSV',tc('#94A3B8','#4B5563'),6000));
   }else if(hadSavedData&&!state.hasRealData&&state.activeDemoProfileNum&&state.demoDataVersion!==DEMO_DATA_VERSION){
     // A previously-saved demo session whose data has since changed underneath
     // it (DEMO_DATA_VERSION bumped) -- re-run the same profile fresh rather

@@ -79,6 +79,14 @@ python3 scripts/check-contrast.py
 echo "=== Checking modals for ARIA dialog attributes ==="
 python3 scripts/check-modal-aria.py
 
+# Hard gate — added after the axe-core WCAG 2.1 AA audit (check-contrast.py
+# and check-modal-aria.py catch static invariants; this catches runtime
+# rendering failures: opacity stacking, theme-switch timing, actual computed
+# text colors against actual rendered backgrounds in both dark and light
+# themes on a live Chromium instance with demo data loaded).
+echo "=== Running axe-core WCAG 2.1 AA audit (dark + light) ==="
+node scripts/check-axe.js
+
 echo "=== Scanning for unescaped user-data interpolations ==="
 python3 scripts/check-escaping.py
 
