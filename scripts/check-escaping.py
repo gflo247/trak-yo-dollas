@@ -173,7 +173,7 @@ TRAKYODOLLAS_KNOWN_FALSE_POSITIVES = {
     ('q', 'q'),
 
     # Hardcoded `chips` array literal ({label:'3mo',...} etc.).
-    ('chips.map(c=>`<button class="h-btn${chipActive(c)?\' active\':\'\'}"${c.id?` id="${c.id}"`:\'\'}  data-action="setQuickRange" ', '.label'),
+    ('chips.map(c=>`<button class="btn-h${chipActive(c)?\' active\':\'\'}"${c.id?` id="${c.id}"`:\'\'}  data-action="setQuickRange" ', '.label'),
 
     # t.desc used only inside resolveVendor(t.desc)===vendor, a boolean
     # filter predicate -- never rendered as text.
