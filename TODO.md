@@ -33,10 +33,8 @@ Deferred until after user testing confirms the sync flow is stable end-to-end.
   is cleaner long-term but not urgent — all user-visible paths are correct.
 - Function/global count (497 fns, 127 globals) — module split and rendering
   cleanup, after launch.
-- CSS class naming standardization — `.h-btn` → `.btn-h`, `.sort-btn` → `.btn-sort`,
-  etc. to align with the `.btn-*` convention already used everywhere else.
-  Pure dev-ergonomics; no user-visible change. Do as a dedicated pass (bulk
-  rename touches static HTML, dynamic innerHTML strings, and tests).
+- ~~CSS class naming standardization~~ — DONE. `.h-btn`, `.fmt-btn`, `.sort-btn`,
+  `.src-x-btn` renamed to `.btn-h`, `.btn-fmt`, `.btn-sort`, `.btn-src-x`.
 
 ---
 

@@ -5503,7 +5503,7 @@ test("Escape key handler dismisses the pill-tip overlay, matching every other di
 // (~1.9:1 against --bg-card, ~2.4:1 against --bg-input), but it survived
 // here as --text-dim, driving .form-label (32 uses, including the sync-
 // passphrase modal's "Passphrase"/"Confirm passphrase" labels),
-// .modal-sub, .fmt-btn, and the search placeholder. Failed WCAG AA in
+// .modal-sub, .btn-fmt, and the search placeholder. Failed WCAG AA in
 // dark theme, the app's default -- light theme's own #6B7280 (~4.8:1)
 // was already fine. Found in the 139th adversarial pass. ──
 test("dark theme's --text-dim reaches at least WCAG AA contrast against --bg-card (matching --text-muted's already-verified-safe value), and the fully-dead --text-faint token is removed", () => {
@@ -7652,7 +7652,7 @@ test("deleteRule, startDeleteCat, deleteVendorAlias, and the source chip's remov
   );
   assert.match(
     source,
-    /<button class="src-x-btn" data-action="openSrcRemovePop"[^>]*title="Remove this source" type="button">🗑️<\/button>/,
+    /<button class="btn-src-x" data-action="openSrcRemovePop"[^>]*title="Remove this source" type="button">🗑️<\/button>/,
     "the source chip's remove button should use 🗑️"
   );
 });
@@ -7867,9 +7867,9 @@ test("category tiles no longer show 'Peak: 'YY Mon' in the meta line, since it s
 // "Monthly/Quarterly/Yearly" range chips -- the latter two were already
 // 11px on mobile (a touch-target-driven override) but only 10px on
 // desktop, while the breakdown tabs and Patterns toggle were 10px
-// everywhere. Bumping the shared .h-btn base class from 10px to 11px
+// everywhere. Bumping the shared .btn-h base class from 10px to 11px
 // covers all of these at once since none of them carry their own
-// font-size override (verified by checking every class="h-btn" site in
+// font-size override (verified by checking every class="btn-h" site in
 // the file -- the few that do have inline font-size overrides, e.g. the
 // Category/Vendor bucket-mode toggle at 11px and the Vehicle/Other
 // asset-type toggle at 12px, were confirmed untouched by this change).
@@ -7881,8 +7881,8 @@ test("the Spending breakdown tab strip, the Patterns toggle, and both range-chip
   const source = readSource();
   assert.match(
     source,
-    /\.h-btn\{flex:1;background:none;border:none;border-radius:6px;padding:4px 10px;font-size:13px;font-weight:700;color:var\(--text-muted\);cursor:pointer;white-space:nowrap\}/,
-    "the shared .h-btn base class should be 13px/4px 10px"
+    /\.btn-h\{flex:1;background:none;border:none;border-radius:6px;padding:4px 10px;font-size:13px;font-weight:700;color:var\(--text-muted\);cursor:pointer;white-space:nowrap\}/,
+    "the shared .btn-h base class should be 13px/4px 10px"
   );
   assert.match(
     source,
@@ -7891,8 +7891,8 @@ test("the Spending breakdown tab strip, the Patterns toggle, and both range-chip
   );
   assert.match(
     source,
-    /\.quick-chips \.h-btn,\.grain-row \.h-btn\{padding:8px 6px!important;min-height:36px!important\}/,
-    "the quick-chips/grain-row mobile override should use !important to win over the general .h-btn mobile rule"
+    /\.quick-chips \.btn-h,\.grain-row \.btn-h\{padding:8px 6px!important;min-height:36px!important\}/,
+    "the quick-chips/grain-row mobile override should use !important to win over the general .btn-h mobile rule"
   );
 });
 
@@ -8525,7 +8525,7 @@ test("The Spending tab's Export CSV button collapses to icon-only on mobile via 
 // borrowed from .quick-chips/.grain-row) made +Add/Export CSV look
 // oversized once Nicholas saw it on a real device, next to the Date/
 // $ Amount/Category sort pills sharing that same row. Replaced the
-// touch-target figure with .sort-btn's own scale (padding:3px 9px;
+// touch-target figure with .btn-sort's own scale (padding:3px 9px;
 // font-size:11px, no forced min-size) instead, applied at every width
 // (not just mobile -- the same 10px/2px 8px vs 11px/3px 9px mismatch
 // existed on desktop too, just less visible there with the text label
@@ -8540,7 +8540,7 @@ test("The +Add and Export CSV buttons match the Date/Amount/Category sort pills'
   assert.match(
     source,
     /\.tx-icon-btn\{background:none;border:1px solid #2563EB44;border-radius:5px;padding:4px 10px;font-size:13px;font-weight:600;color:var\(--accent-blue-light\);cursor:pointer;white-space:nowrap\}/,
-    ".tx-icon-btn should match .sort-btn's own padding:4px 10px;font-size:13px scale"
+    ".tx-icon-btn should match .btn-sort's own padding:4px 10px;font-size:13px scale"
   );
   assert.match(
     source,
