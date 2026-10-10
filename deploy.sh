@@ -144,6 +144,9 @@ rsync -a \
   --exclude='.claude' \
   --exclude='package.json' \
   --exclude='package-lock.json' \
+  --exclude='TODO.md' \
+  --exclude='e2e' \
+  --exclude='playwright.config.js' \
   . _cf_deploy/
 
 # Minify the app shell — strips comments (including internal dev notes) and

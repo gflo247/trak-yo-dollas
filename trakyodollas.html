@@ -9013,8 +9013,8 @@ function guideSlugForSource(name){
   if(l.includes('citi'))return'citi';
   if(l.includes('discover'))return'discover';
   if(l.includes('us bank')||l.includes('usbank')||l.includes('u.s. bank'))return'usbank';
-  if(l.includes('fidelity'))return'fidelity';
-  if(l.includes('vanguard'))return'vanguard';
+  if(l.includes('fidelity'))return'investment-accounts';
+  if(l.includes('vanguard'))return'investment-accounts';
   return null;
 }
 // Renders the "Transaction sources" panel on the Net Worth tab: one row per
@@ -10482,7 +10482,11 @@ function renderSimulatorTab(){
   // "Look back" horizon and compare two different time windows against
   // each other. sumIncomeForMonths() is the same reusable building block
   // Year in Review already uses for its own independent window.
-  const income=histMonths.length?sumIncomeForMonths(histMonths)/histMonths.length:0;
+  // respectBizFilter=false -- spend is scoped to 'all' via getBudgetHistMonths
+  // and computeSimulatorProjection, so income must match. Using the default
+  // true here caused income to drop to near-zero when biz filter was active
+  // with only personal deposits, producing a false deficit.
+  const income=histMonths.length?sumIncomeForMonths(histMonths,false)/histMonths.length:0;
   const projectedSurplus=income-proj.projectedTotal;
   const baselineSurplus=income-proj.baselineTotal;
   // Goal date delta -- cash-flow projection, shown only when overrides are
@@ -12537,12 +12541,13 @@ function getEffectiveIncome(monthKey){
 // month by month count) only landed in computePeriodSpendVsIncome(), and
 // Year in Review kept reproducing the exact bug that fix addressed. Found
 // in the 67th adversarial pass.
-function sumIncomeForMonths(months){
+function sumIncomeForMonths(months,respectBizFilter=true){
   const usesAutoDetect=state.declaredIncome<=0&&state.income.method==='auto';
-  // respectBizFilter=true -- same reasoning as getEffectiveIncome() above;
-  // this feeds computePeriodSpendVsIncome()'s totalIncome, which must stay
-  // scoped the same way as its already-_bizFilter-scoped totalSpend.
-  const detected=usesAutoDetect?detectDepositIncome(true):null;
+  // respectBizFilter=true (default) -- feeds computePeriodSpendVsIncome()'s
+  // totalIncome, which must stay scoped the same way as its already-
+  // _bizFilter-scoped totalSpend. Pass false for callers whose spend side
+  // is deliberately unfiltered (Life Changes simulator uses bizFilter='all').
+  const detected=usesAutoDetect?detectDepositIncome(respectBizFilter):null;
   return months.reduce((s,m)=>s+(usesAutoDetect?(detected.byMonth?.[m]||detected.avgMonthly||0):getEffectiveIncome(m)),0);
 }
 

@@ -9250,7 +9250,7 @@ test("renderSimulatorTab: sources its income figure from sumIncomeForMonths(hist
   assert.ok(fnMatch, "renderSimulatorTab() should exist");
   assert.match(
     fnMatch[0],
-    /const income=histMonths\.length\?sumIncomeForMonths\(histMonths\)/,
+    /const income=histMonths\.length\?sumIncomeForMonths\(histMonths,false\)/,
     "income should be computed over this tab's own histMonths (its 'Look back' horizon) via sumIncomeForMonths(), not the Spending tab's separately-filtered date range -- otherwise the displayed income and projected-spend figures can silently come from two different time windows"
   );
   assert.doesNotMatch(
