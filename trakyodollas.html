@@ -250,12 +250,6 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
    card surfaces. */
 .m-green .metric-label,.m-red .metric-label,.m-blue .metric-label{opacity:1;color:rgba(255,255,255,.8)}
 [data-theme="light"] .m-green .metric-label,[data-theme="light"] .m-red .metric-label,[data-theme="light"] .m-blue .metric-label{color:var(--text-muted)}
-/* Sub-captions in colored NW cards (asset types, liability types) inherit
-   --text-muted which fails WCAG 4.5:1 through the card's .75 opacity stacking
-   context. Use a fixed light color for dark theme; inherit --text-muted for
-   light theme where the card backgrounds are light enough. */
-.m-green .metric-sub,.m-red .metric-sub,.m-blue .metric-sub{color:rgba(255,255,255,.72)}
-[data-theme="light"] .m-green .metric-sub,[data-theme="light"] .m-red .metric-sub,[data-theme="light"] .m-blue .metric-sub{color:var(--text-muted)}
 .metric-value{font-size:15px;font-weight:800;line-height:1}
 .m-blue{background:#1E3A5F;color:var(--accent-blue-light);border-color:#2563EB44}
 [data-theme="light"] .m-blue{background:#DBEAFE;color:#1D4ED8;border-color:#93C5FD}
@@ -4190,7 +4184,7 @@ function renderMetrics(){
   // uses it; the other two cards render exactly as before.
   const cards=[
     {v:fmtC(nw),l:'Net worth',c:'m-blue',key:null,sub:nwSub},
-    {v:fmtC(assets),l:'Total assets',c:'m-green',key:'assets',sub:`<span class="metric-sub">${assetTypes}</span>`,
+    {v:fmtC(assets),l:'Total assets',c:'m-green',key:'assets',sub:`<span style="color:var(--text-muted)">${assetTypes}</span>`,
       // Label sits above the number, same as every other card's own
       // metric-label -> metric-value order -- without it the % read as an
       // unexplained big number until your eye dropped to the smaller
@@ -4202,7 +4196,7 @@ function renderMetrics(){
       // just line count -- and the dollar/percent live on one line
       // instead of two, per feedback. Found via user feedback, Sept 2026.
       rightStat:`<div style="text-align:right;flex-shrink:0"><div class="metric-label">💧 Liquid</div><div style="font-size:15px;font-weight:800;color:var(--accent-blue-light);line-height:1;white-space:nowrap">${fmtC(liquid)} (${liquidPct}%)</div></div>`},
-    {v:fmtC(liab),l:'Liabilities',c:'m-red',key:'liabilities',sub:`<span class="metric-sub">${liabTypes}</span>`}
+    {v:fmtC(liab),l:'Liabilities',c:'m-red',key:'liabilities',sub:`<span style="color:var(--text-muted)">${liabTypes}</span>`}
   ];
   document.getElementById('summary-metrics').innerHTML=cards.map(({v,l,c,key,sub,rightStat},i)=>`
     <div class="metric ${c} ${key?'clickable':''} ${f===key&&key?'active-card':''}" data-action="${key?'toggleDashFilterDynamic':''}" data-arg="${key||''}"${key?` tabindex="0" role="button" aria-pressed="${f===key}"`:''} style="cursor:${key?'pointer':'default'}${i===0?';padding:1rem 1rem':''}${rightStat?';display:flex;align-items:center;justify-content:space-between;gap:10px':''}">
