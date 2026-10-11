@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-LnSnnIRdK9jDjXdaoIRSfTVNPb35qQBD5zMcGCFkH7k=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-RM1kE+bps7iHUK3x/7DaWQheWnfmzQqpw1eM5g4I1po=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -8017,8 +8017,8 @@ function renderTxList(){
     </div>`;
   }
   const exclSection=alwaysShowExcl.length>0
-    ?`<div style="border:1px solid ${tc('#A78BFA','#6D28D9')}33;border-radius:10px;padding:2px 6px 6px;margin-top:8px;background:${tc('#A78BFA','#6D28D9')}08">
-        <div style="font-size:11px;font-weight:700;color:${tc('#A78BFA','#6D28D9')};letter-spacing:.07em;text-transform:uppercase;padding:.5rem .25rem .35rem">Hidden from spending (${alwaysShowExcl.length}) — click to edit &amp; restore</div>
+    ?`<div style="border:1px solid ${tc('#A78BFA','#6D28D9')}33;border-radius:10px;padding:4px 0;margin-top:8px;background:${tc('#A78BFA','#6D28D9')}08">
+        <div style="font-size:11px;font-weight:700;color:${tc('#A78BFA','#6D28D9')};letter-spacing:.07em;text-transform:uppercase;padding:.5rem .75rem .35rem">Hidden from spending (${alwaysShowExcl.length}) — click to edit &amp; restore</div>
         ${alwaysShowExcl.map(buildTxRow).join('')}
       </div>`
     :'';
