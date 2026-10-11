@@ -768,6 +768,14 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   .page-title{font-size:13px}
   #nw-goal-projection>div:first-child{flex-wrap:wrap;}
 }
+/* Two-line transaction rows on narrow phones: date + merchant + amount on
+   line 1; pills on line 2. Keeps the merchant visible and ensures the amount
+   is never pushed off-screen on excluded rows. */
+@media(max-width:480px){
+  .tx-row{flex-wrap:wrap;row-gap:3px}
+  .tx-pills{flex:0 0 100%;justify-content:flex-start}
+  .tx-pct{display:none}
+}
 /* ── Light theme overrides ─────────────────────────────────────── */
 [data-theme="light"] .btn-primary{background:var(--accent-blue);color:#fff!important;border-color:var(--accent-blue)}
 [data-theme="light"] .bucket-card{background:var(--bg-card)!important;border-color:var(--border)!important;color:var(--text-primary)!important}
