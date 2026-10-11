@@ -10578,7 +10578,7 @@ function renderSimulatorTab(){
   const horizonPresets=[3,6,12,24,36];
   const showCustomHorizon=_simulatorHorizonCustomOpen||!horizonPresets.includes(horizon);
   const rowsHTML=sortedRows.map((r,i)=>`
-    <div class="sim-row${i%2===1?' row-alt':''}" data-action="openSimulatorOverrideModal" data-arg="${esc(r.cat)}" tabindex="0" role="button" aria-label="Edit spending change for ${esc(r.cat)}" style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;border-radius:8px;margin-bottom:6px;cursor:pointer">
+    <div class="sim-row${i%2===1?' row-alt':''}" data-action="openSimulatorOverrideModal" data-arg="${esc(r.cat)}" tabindex="0" role="button" aria-label="${r.hasOverride?`Edit spending change for ${esc(r.cat)}: ${fmt(r.avg)}/mo avg, projected ${fmt(r.projected)}/mo`:`Edit spending change for ${esc(r.cat)}: ${fmt(r.avg)}/mo avg`}" style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;border-radius:8px;margin-bottom:6px;cursor:pointer">
       <div style="display:flex;align-items:center;gap:8px">
         <span style="width:8px;height:8px;border-radius:50%;background:${getCatColor(r.cat)}"></span>
         <span>${esc(r.cat)}</span>
@@ -11023,7 +11023,7 @@ function renderBudgetTab(){
 
       return`<div data-card style="background:${tc('#0F172A','#FFFFFF')};border:1px solid ${borderColor};border-radius:10px;display:flex">
         ${accentDiv}
-        <div data-action="openBudgetModal" data-arg="${esc(cat)}" tabindex="0" role="button" aria-label="Edit ${esc(cat)} budget" style="flex:1;padding:.75rem 1rem;min-width:0;cursor:pointer">
+        <div data-action="openBudgetModal" data-arg="${esc(cat)}" tabindex="0" role="button" aria-label="Edit ${esc(cat)} budget: ${fmt(spent)} of ${fmt(budget)} spent" style="flex:1;padding:.75rem 1rem;min-width:0;cursor:pointer">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:.4rem" data-stop="1">
             <div class="flex-center gap-8" style="min-width:0">
               <div style="width:10px;height:10px;border-radius:2px;background:${catColor};flex-shrink:0"></div>
