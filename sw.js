@@ -46,27 +46,16 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil((async () => {
-    const keys = await caches.keys();
-    const oldKeys = keys.filter(k => k !== CACHE_NAME);
-    const newCache = await caches.open(CACHE_NAME);
-    const newEntries = await newCache.keys();
-
-    // If precaching failed (e.g. installed while offline), migrate old cache entries
-    // into the new cache before deleting them — never leaves users with an empty cache.
-    if (newEntries.length === 0 && oldKeys.length > 0) {
-      for (const oldKey of oldKeys) {
-        const oldCache = await caches.open(oldKey);
-        const requests = await oldCache.keys();
-        await Promise.all(requests.map(async req => {
-          const res = await oldCache.match(req);
-          if (res) await newCache.put(req, res);
-        }));
-      }
-    }
-
-    await Promise.all(oldKeys.map(k => caches.delete(k)));
-  })());
+  // Delete all old caches. If precaching failed (offline install), the new
+  // cache is empty and the fetch handler falls through to the network or the
+  // inlined offline page — don't copy old entries forward, because that
+  // would perpetuate stale content under the new CACHE_NAME indefinitely
+  // (the next activate would see a non-empty cache and skip migration again).
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
+  );
   self.clients.claim();
 });
 

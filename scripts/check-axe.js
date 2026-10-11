@@ -75,25 +75,44 @@ async function main() {
         // Brief pause for JS to finish rendering the initial demo state
         await page.waitForTimeout(400);
 
-        const results = await page.evaluate(() => axe.run(document, {
-          runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21aa'] },
-        }));
+        // Run axe on every tab so contrast/ARIA violations in Budget, Net
+        // Worth, and Life Changes are caught — previously only Spending was
+        // checked (the initial active tab), so hardcoded hex colors that
+        // failed on the light theme in other tabs went undetected until
+        // this was widened.
+        const TABS = [
+          { label: 'Spending',     action: null },
+          { label: 'Budget',       action: 'showPageBudget' },
+          { label: 'Net Worth',    action: 'showPageDashboard' },
+          { label: 'Life Changes', action: 'showPageSimulator' },
+        ];
+
+        for (const tab of TABS) {
+          if (tab.action) {
+            await page.click(`[data-action="${tab.action}"]`);
+            await page.waitForTimeout(300);
+          }
+
+          const results = await page.evaluate(() => axe.run(document, {
+            runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21aa'] },
+          }));
+
+          if (results.violations.length === 0) {
+            console.log(`  ✓ ${theme} / ${tab.label}: no violations`);
+          } else {
+            console.error(`\n  ❌ ${results.violations.length} violation(s) in ${theme} / ${tab.label}:`);
+            for (const v of results.violations) {
+              console.error(`  [${v.impact}] ${v.id}: ${v.description}`);
+              for (const n of v.nodes.slice(0, 2)) {
+                const snippet = n.html.length > 120 ? n.html.slice(0, 120) + '…' : n.html;
+                console.error(`    → ${snippet}`);
+              }
+            }
+            failed = true;
+          }
+        }
 
         await ctx.close();
-
-        if (results.violations.length === 0) {
-          console.log(`  ✓ ${theme} theme: no violations`);
-        } else {
-          console.error(`\n  ❌ ${results.violations.length} violation(s) in ${theme} theme:`);
-          for (const v of results.violations) {
-            console.error(`  [${v.impact}] ${v.id}: ${v.description}`);
-            for (const n of v.nodes.slice(0, 2)) {
-              const snippet = n.html.length > 120 ? n.html.slice(0, 120) + '…' : n.html;
-              console.error(`    → ${snippet}`);
-            }
-          }
-          failed = true;
-        }
       }
     } finally {
       await browser.close();
@@ -103,7 +122,7 @@ async function main() {
       console.error('\nFix axe-core violations before deploying.');
       process.exit(1);
     }
-    console.log('\n  PASS: axe-core found no violations in dark or light theme');
+    console.log('\n  PASS: axe-core found no violations across all tabs in dark and light themes');
   } finally {
     server.kill();
   }

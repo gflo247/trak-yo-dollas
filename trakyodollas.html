@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-AAssp602dNy1b00AobepIimt5I31UjEs91jD9E+ILWc=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-aOAjL31kW1E1oIMTuCngRXNyP0I/3DVfDwndVVmYzKI=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -231,12 +231,31 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 /* metrics */
 .metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:.9rem}
 .metric-grid>.metric:first-child{grid-column:1/-1}
-.metric{border-radius:10px;padding:.55rem .75rem;border:1px solid;transition:transform .1s,box-shadow .1s;opacity:.75}
-.metric.clickable{cursor:pointer}
-.metric.clickable:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.35);opacity:1}
-.metric.active-card{outline:2px solid currentColor;outline-offset:2px;opacity:1}
+.metric{border-radius:10px;padding:.55rem .75rem;border:1px solid;transition:transform .1s,box-shadow .1s,filter .1s}
+/* filter:brightness instead of opacity — achieves the same visual dim effect
+   for secondary clickable cards without creating an opacity stacking context,
+   so axe-core evaluates contrast from the real CSS color values (which all
+   pass WCAG AA) rather than from alpha-composited pixel approximations that
+   fell below 4.5:1 on light-theme card backgrounds. */
+.metric.clickable{cursor:pointer;filter:brightness(.83)}
+.metric.clickable:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.35);filter:brightness(1)}
+.metric.active-card{outline:2px solid currentColor;outline-offset:2px;filter:brightness(1)}
 .metric-label{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:3px;opacity:.7}
 [data-theme="light"] .metric-label{opacity:1;color:var(--text-muted)}
+/* Metric labels inside colored NW cards inherit a bright accent color at .7
+   opacity — on semi-transparent card backgrounds axe-core treats the bg as
+   opaque dark green/red/blue, dropping the composite contrast below 4.5:1.
+   Override to full opacity + a clearly-safe light color for dark theme; the
+   light-theme override uses --text-muted which already passes on all light
+   card surfaces. */
+.m-green .metric-label,.m-red .metric-label,.m-blue .metric-label{opacity:1;color:rgba(255,255,255,.8)}
+[data-theme="light"] .m-green .metric-label,[data-theme="light"] .m-red .metric-label,[data-theme="light"] .m-blue .metric-label{color:var(--text-muted)}
+/* Sub-captions in colored NW cards (asset types, liability types) inherit
+   --text-muted which fails WCAG 4.5:1 through the card's .75 opacity stacking
+   context. Use a fixed light color for dark theme; inherit --text-muted for
+   light theme where the card backgrounds are light enough. */
+.m-green .metric-sub,.m-red .metric-sub,.m-blue .metric-sub{color:rgba(255,255,255,.72)}
+[data-theme="light"] .m-green .metric-sub,[data-theme="light"] .m-red .metric-sub,[data-theme="light"] .m-blue .metric-sub{color:var(--text-muted)}
 .metric-value{font-size:15px;font-weight:800;line-height:1}
 .m-blue{background:#1E3A5F;color:var(--accent-blue-light);border-color:#2563EB44}
 [data-theme="light"] .m-blue{background:#DBEAFE;color:#1D4ED8;border-color:#93C5FD}
@@ -692,7 +711,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
      tightened further than the original (never-applied) 8px, per direct
      request to conserve more horizontal space. */
   #demo-nav-badge{font-size:9px!important;padding:6px 6px!important;letter-spacing:.03em!important;white-space:nowrap;text-align:center;line-height:1.3;max-width:none}
-  .nav-btn{font-size:10px;padding:10px 2px 8px;letter-spacing:.03em}
+  .nav-btn{font-size:10px;padding:10px 2px 8px;letter-spacing:.03em;min-width:0;overflow:hidden}
   .page{padding:.65rem}
   .flex-between{flex-wrap:wrap;gap:.5rem}
   .flex-between .row{flex-wrap:wrap;gap:5px}
@@ -4158,7 +4177,7 @@ function renderMetrics(){
   // Always show specific month — only show if a prior snapshot exists
   const nwChangeLabel=yearStart?`since ${fmtMonthShort(yearStart.monthKey)}`:null;
   const nwSub=nwChange!==null&&nwChangeLabel
-    ?`<span style="color:${nwChange>=0?'#34D399':'#F87171'}">${nwChange>=0?'↑':'↓'}${fmt(Math.abs(nwChange))} ${nwChangeLabel}</span>`
+    ?`<span style="color:${nwChange>=0?tc('#6EE7B7','#065F46'):tc('#FCA5A5','#991B1B')}">${nwChange>=0?'↑':'↓'}${fmt(Math.abs(nwChange))} ${nwChangeLabel}</span>`
     :'';
 
   // rightStat sits beside the label/value/sub column instead of stacking
@@ -4171,7 +4190,7 @@ function renderMetrics(){
   // uses it; the other two cards render exactly as before.
   const cards=[
     {v:fmtC(nw),l:'Net worth',c:'m-blue',key:null,sub:nwSub},
-    {v:fmtC(assets),l:'Total assets',c:'m-green',key:'assets',sub:`<span style="color:var(--text-muted)">${assetTypes}</span>`,
+    {v:fmtC(assets),l:'Total assets',c:'m-green',key:'assets',sub:`<span class="metric-sub">${assetTypes}</span>`,
       // Label sits above the number, same as every other card's own
       // metric-label -> metric-value order -- without it the % read as an
       // unexplained big number until your eye dropped to the smaller
@@ -4182,14 +4201,14 @@ function renderMetrics(){
       // own headline number ($666k) in size was the actual problem, not
       // just line count -- and the dollar/percent live on one line
       // instead of two, per feedback. Found via user feedback, Sept 2026.
-      rightStat:`<div style="text-align:right;flex-shrink:0"><div class="metric-label">💧 Liquid</div><div style="font-size:15px;font-weight:800;color:var(--accent-blue-light);line-height:1;white-space:nowrap">${fmtC(liquid)} <span style="opacity:.75">(${liquidPct}%)</span></div></div>`},
-    {v:fmtC(liab),l:'Liabilities',c:'m-red',key:'liabilities',sub:`<span style="color:var(--text-muted)">${liabTypes}</span>`}
+      rightStat:`<div style="text-align:right;flex-shrink:0"><div class="metric-label">💧 Liquid</div><div style="font-size:15px;font-weight:800;color:var(--accent-blue-light);line-height:1;white-space:nowrap">${fmtC(liquid)} (${liquidPct}%)</div></div>`},
+    {v:fmtC(liab),l:'Liabilities',c:'m-red',key:'liabilities',sub:`<span class="metric-sub">${liabTypes}</span>`}
   ];
   document.getElementById('summary-metrics').innerHTML=cards.map(({v,l,c,key,sub,rightStat},i)=>`
     <div class="metric ${c} ${key?'clickable':''} ${f===key&&key?'active-card':''}" data-action="${key?'toggleDashFilterDynamic':''}" data-arg="${key||''}"${key?` tabindex="0" role="button" aria-pressed="${f===key}"`:''} style="cursor:${key?'pointer':'default'}${i===0?';padding:1rem 1rem':''}${rightStat?';display:flex;align-items:center;justify-content:space-between;gap:10px':''}">
       <div${rightStat?' style="min-width:0"':''}>
-        <div class="metric-label" style="${i===0?'font-size:10px;opacity:.55':''}">${l}</div>
-        <div class="metric-value" style="${i===0?'font-size:48px;font-weight:900;letter-spacing:-.03em;line-height:1':'font-size:15px;opacity:.75'}">${v}</div>
+        <div class="metric-label" style="${i===0?'font-size:10px':''}">${l}</div>
+        <div class="metric-value" style="${i===0?'font-size:48px;font-weight:900;letter-spacing:-.03em;line-height:1':'font-size:15px'}">${v}</div>
         ${sub?`<div style="font-size:10px;margin-top:3px;line-height:1.4">${sub}</div>`:''}
       </div>
       ${rightStat||''}
@@ -4201,12 +4220,12 @@ function renderNwBreakdown(){
   const assets=totalAssets(),f=state.dashFilter;
   const TL={cash:'Cash',investment:'Investment',home:'Real estate',vehicle:'Vehicle',mortgage:'Mortgage',credit:'Credit card','other-asset':'Other','other-liability':'Other liab'};
   const GROUPS=[
-    {label:'Investments',color:'#34D399',hdr:'#065F4618',type:'investment',accts:state.accounts.filter(a=>a.type==='investment'&&a.balance!==0&&!a.excludeFromNW)},
-    {label:'Real estate',color:'#A78BFA',hdr:'#4C1D9518',type:'home',accts:state.accounts.filter(a=>a.type==='home'&&!a.excludeFromNW),deduct:0},
-    {label:'Cash',color:'#60A5FA',hdr:'#1E40AF18',type:'cash',accts:state.accounts.filter(a=>a.type==='cash'&&a.balance!==0&&!a.excludeFromNW)},
-    {label:'Vehicles',color:'#2DD4BF',hdr:'#0D4A4418',type:'vehicle',accts:state.accounts.filter(a=>a.type==='vehicle'&&a.balance!==0&&!a.excludeFromNW)},
-    {label:'Other assets',color:'#FBBF24',hdr:'#78350F18',type:'other-asset',accts:state.accounts.filter(a=>a.type==='other-asset'&&a.balance!==0&&!a.excludeFromNW)},
-    {label:'Liabilities',color:'#F87171',hdr:'#7F1D1D18',type:'other-liability',accts:state.accounts.filter(a=>isLiab(a.type)&&a.balance!==0&&!a.excludeFromNW),isLiab:true},
+    {label:'Investments',color:'#34D399',tc:tc('#34D399','#065F46'),hdr:'#065F4618',type:'investment',accts:state.accounts.filter(a=>a.type==='investment'&&a.balance!==0&&!a.excludeFromNW)},
+    {label:'Real estate',color:'#A78BFA',tc:tc('#A78BFA','#6D28D9'),hdr:'#4C1D9518',type:'home',accts:state.accounts.filter(a=>a.type==='home'&&!a.excludeFromNW),deduct:0},
+    {label:'Cash',color:'#60A5FA',tc:tc('#60A5FA','#1D4ED8'),hdr:'#1E40AF18',type:'cash',accts:state.accounts.filter(a=>a.type==='cash'&&a.balance!==0&&!a.excludeFromNW)},
+    {label:'Vehicles',color:'#2DD4BF',tc:tc('#2DD4BF','#115E59'),hdr:'#0D4A4418',type:'vehicle',accts:state.accounts.filter(a=>a.type==='vehicle'&&a.balance!==0&&!a.excludeFromNW)},
+    {label:'Other assets',color:'#FBBF24',tc:tc('#FBBF24','#92400E'),hdr:'#78350F18',type:'other-asset',accts:state.accounts.filter(a=>a.type==='other-asset'&&a.balance!==0&&!a.excludeFromNW)},
+    {label:'Liabilities',color:'#F87171',tc:tc('#F87171','#B91C1C'),hdr:'#7F1D1D18',type:'other-liability',accts:state.accounts.filter(a=>isLiab(a.type)&&a.balance!==0&&!a.excludeFromNW),isLiab:true},
   ];
   // .filter(g=>g.accts.length) -- previously absent, so a user with zero
   // accounts of a given type (e.g. no 'other-asset' entries) still saw an
@@ -4230,12 +4249,12 @@ function renderNwBreakdown(){
     const items=g.accts.map((a,i)=>{
       const aPct=raw!==0?Math.abs(a.balance/raw)*100:0;
       const isNeg=(g.isLiab?-a.balance:a.balance)<0;
-      return`<div class="nw-item${i%2===1?' row-alt':''}" data-action="editAccount" data-arg="${a.id}" role="button" tabindex="0" aria-label="Edit ${esc(a.name)}" style="cursor:pointer">
+      return`<div class="nw-item${i%2===1?' row-alt':''}" data-action="editAccount" data-arg="${a.id}" role="button" tabindex="0" aria-label="Edit ${esc(a.name)}: ${isNeg?'-':''}${fmtC(a.balance)}" style="cursor:pointer">
         <div class="flex-center gap-8" style="min-width:0">
           <div style="width:8px;height:8px;border-radius:50%;background:${g.color}88;flex-shrink:0"></div>
           <div style="min-width:0"><div class="nw-item-name" title="${esc(a.name)}">${esc(a.name)}</div><div class="nw-item-sub">${esc(a.source)} · ${esc(TL[a.type]||a.type)}</div></div>
         </div>
-        <div style="font-size:12px;font-weight:700;color:${isNeg?'#F87171':g.color}">${isNeg?'-':''}${fmt(a.balance)}</div>
+        <div style="font-size:12px;font-weight:700;color:${isNeg?tc('#F87171','#B91C1C'):g.tc}">${isNeg?'-':''}${fmt(a.balance)}</div>
       </div>
       <div class="nw-bar-row"><div class="nw-bar-bg">
         <div class="nw-bar-fill" style="width:${Math.max(0,Math.min(100,aPct))}%;background:${g.color}55">
@@ -4256,7 +4275,7 @@ function renderNwBreakdown(){
       <div class="nw-group-header" style="background:${g.hdr}">
         <div style="display:flex;align-items:center;gap:7px">
           <div style="width:9px;height:9px;border-radius:2px;background:${g.color}"></div>
-          <span style="font-size:11px;font-weight:700;color:${g.isLiab?'#F87171':g.color}">${g.label}</span>
+          <span style="font-size:11px;font-weight:700;color:${g.tc}">${g.label}</span>
         </div>
         <div class="flex-center gap-8">
           <button class="btn btn-sm" data-action="openAddModal" data-arg="${g.type}" style="font-size:11px;padding:5px 8px;color:var(--text-muted);border-color:var(--border-mid)" aria-label="Add ${g.label.toLowerCase()} account" title="Add ${g.label.toLowerCase()} account" type="button">+</button>
@@ -4267,9 +4286,9 @@ function renderNwBreakdown(){
             // "Infinity% debt-to-asset" (or "NaN%" with no liabilities
             // either) unguarded. Found in the 58th adversarial pass.
             ? `<span style="font-size:10px;font-weight:700;color:var(--accent-red);background:#F8717118;padding:2px 8px;border-radius:10px" title="Total liabilities ÷ total assets">${(assets>0?raw/assets*100:0).toFixed(1)}% debt-to-asset</span>`
-            : `<span style="font-size:10px;font-weight:700;color:${g.color};background:${g.color}18;padding:2px 8px;border-radius:10px">${pct.toFixed(1)}% of assets</span>`
+            : `<span style="font-size:10px;font-weight:700;color:${g.tc};background:${g.color}18;padding:2px 8px;border-radius:10px">${pct.toFixed(1)}% of assets</span>`
           }
-          <span style="font-size:14px;font-weight:800;color:${g.isLiab?'#F87171':'var(--text-primary)'}">${net<0?'-':''}${fmt(net)}</span>
+          <span style="font-size:14px;font-weight:800;color:${g.isLiab?tc('#F87171','#B91C1C'):'var(--text-primary)'}">${net<0?'-':''}${fmt(net)}</span>
         </div>
       </div>${items}</div>`;
   }).join('');
@@ -4670,10 +4689,9 @@ function renderNwGoalWidget(){
       return`<button data-action="setNwGoal" data-arg="${m}" style="
         padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:${isReached?'default':'pointer'};
         background:${isSelected?'#2563EB':tc('#1E293B','#F1F5F9')};
-        color:${isReached?tc('#8595A8','#64748B'):isSelected?'#fff':tc('#64748B','#374151')};
+        color:${isReached?tc('#8595A8','#374151'):isSelected?'#fff':tc('#94A3B8','#374151')};
         border:1px solid ${isSelected?'#2563EB':isReached?tc('#1E293B22','#E2E8F033'):tc('#334155','#CBD5E1')};
-        text-decoration:${isReached?'line-through':'none'};
-        opacity:${isReached?'.5':'1'}"
+        text-decoration:${isReached?'line-through':'none'}"
         title="${isReached?'Already reached!':''}" type="button">${label}</button>`;
     }).join('');
   }
@@ -9188,7 +9206,7 @@ function renderHistory(){
     summaryHTML=`<div style="background:${growthUp?'#065F4618':'#7F1D1D18'};border:1px solid ${growthUp?'#059669':'#DC2626'}33;border-radius:10px;padding:.75rem 1rem;margin-bottom:.65rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
       <div>
         <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Net worth over ${months} months</div>
-        <div style="font-size:20px;font-weight:900;color:${growthUp?'#34D399':'#F87171'};letter-spacing:-.02em">${growthUp?'+':''}${fmtC(totalGrowth)} <span style="font-size:12px;font-weight:600;opacity:.7">(${growthUp?'+':''}${growthPct}%)</span></div>
+        <div style="font-size:20px;font-weight:900;color:${growthUp?tc('#34D399','#065F46'):tc('#F87171','#B91C1C')};letter-spacing:-.02em">${growthUp?'+':''}${fmtC(totalGrowth)} <span style="font-size:12px;font-weight:600">(${growthUp?'+':''}${growthPct}%)</span></div>
         <div class="text-muted-sm">${fmtC(first.nw)} → ${fmtC(last.nw)}${annRate!==null?' · '+Math.abs(annRate)+'%/yr annualized':''}</div>
       </div>
       <div style="text-align:right">
@@ -9214,7 +9232,7 @@ function renderHistory(){
     const i=state.snapshots.length-1-ri;
     const prev=state.snapshots[i-1];
     const delta=prev?s.nw-prev.nw:null;
-    const deltaHTML=delta!==null?`<span style="font-size:10px;font-weight:700;color:${delta>=0?'#34D399':'#F87171'};margin-left:6px">${delta>=0?'+':''}${fmtC(delta)}</span>`:'';
+    const deltaHTML=delta!==null?`<span style="font-size:10px;font-weight:700;color:${delta>=0?tc('#34D399','#065F46'):tc('#F87171','#B91C1C')};margin-left:6px">${delta>=0?'+':''}${fmtC(delta)}</span>`:'';
     const trophies=(milestoneBySnap[i]||[]).map(m=>`<span style="display:inline-flex;align-items:center;gap:3px;background:${tc('#78350F22','#FEF3C7')};border:1px solid ${tc('#D9770644','#D97706')};border-radius:5px;padding:1px 6px;font-size:9px;font-weight:800;color:${tc('#FCD34D','#B45309')};margin-left:5px">🏆 ${fmtC(m)}</span>`).join('');
     return`<div class="account-row" data-action="editSnapshot" data-arg="${i}" style="cursor:pointer" title="Edit snapshot" role="button" tabindex="0">
       <div style="display:flex;align-items:center;gap:4px">
@@ -10105,10 +10123,11 @@ function buildPctDots(months,getSpend,limit){
     // limit+0.005 -- same epsilon fix as buildCondensedDots() just above,
     // for the same reason. Found in the 142nd adversarial pass.
     const mc=ms>limit+0.005?'#F87171':mp>=warnPct?'#FBBF24':'#34D399';
+    const mcText=ms>limit+0.005?tc('#F87171','#B91C1C'):mp>=warnPct?tc('#FBBF24','#92400E'):tc('#34D399','#047857');
     const ml=fmtMonthShort(m);
     const topLabel=_labelIdxs.has(i)?ml.slice(0,3):'';
     const bottomText=ms>0?mp+'%':'–';
-    const bottomColor=ms>0?mc:'var(--text-muted)';
+    const bottomColor=ms>0?mcText:'var(--text-muted)';
     return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;padding:0" title="'+ml+': '+fmtC(ms)+' ('+mp+'%)">'
       +'<div style="font-size:10px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:13px;line-height:13px">'+(topLabel||'')+'</div>'
       +'<div style="width:100%;height:11px;border-radius:5px;background:'+(ms>0?mc:'#1E293B')+';min-width:0"></div>'
@@ -10790,7 +10809,7 @@ function renderBudgetTab(){
   if(legendEl){
     const legend=[['#F87171','Over budget','>100%'],['#FBBF24','Near limit',`${warnPct}–100%`]];
     const legendDots=legend.map(([c,l,sub])=>
-      `<div style="display:flex;align-items:center;gap:4px"><div style="width:20px;height:8px;border-radius:4px;background:${c};flex-shrink:0"></div><span style="font-size:11px;color:var(--text-muted)">${l} <span style="color:var(--text-muted);opacity:.7">${sub}</span></span></div>`
+      `<div style="display:flex;align-items:center;gap:4px"><div style="width:20px;height:8px;border-radius:4px;background:${c};flex-shrink:0"></div><span style="font-size:11px;color:var(--text-muted)">${l} <span style="color:var(--text-muted)">${sub}</span></span></div>`
     ).join('');
     const onTrackDot=`<div style="display:flex;align-items:center;gap:4px"><div style="width:20px;height:8px;border-radius:4px;background:#34D399;flex-shrink:0"></div><label for="budget-warn-input" style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:3px;cursor:pointer">On track &lt; <input id="budget-warn-input" type="number" min="50" max="99" step="1" value="${warnPct}" data-change="setBudgetWarnPct" style="width:40px;font-size:11px;font-weight:700;padding:2px 4px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-card);color:var(--text-primary);text-align:center" aria-label="Near-limit warning threshold percent"><span style="opacity:.7">%</span></label></div>`;
     legendEl.innerHTML=legendDots+onTrackDot;
@@ -10805,6 +10824,7 @@ function renderBudgetTab(){
   const summaryBar=document.getElementById('budget-summary-bar');
   if(summaryBar){
     const heroColor=overallPct>100?'#F87171':overallPct>=warnPct?'#FBBF24':'#34D399';
+    const heroTextColor=overallPct>100?tc('#F87171','#B91C1C'):overallPct>=warnPct?tc('#FBBF24','#92400E'):tc('#34D399','#047857');
     const heroLabel=totalLeft>=0
       ?`<span style="color:var(--accent-green)">${fmt(totalLeft)} left</span>`
       :`<span style="color:var(--accent-red)">${fmt(Math.abs(totalLeft))} over</span>`;
@@ -10831,10 +10851,11 @@ function renderBudgetTab(){
       // buildPctDots() above, same reason. Found in the 142nd
       // adversarial pass.
       const mColor=mSpent>totalBudget+0.005?'#F87171':mPct>=warnPct?'#FBBF24':'#34D399';
+      const mColorText=mSpent>totalBudget+0.005?tc('#F87171','#B91C1C'):mPct>=warnPct?tc('#FBBF24','#92400E'):tc('#34D399','#047857');
       const mLabel=fmtMonthShort(m);
       const topLabel=_labelIdxs.has(i)?mLabel.slice(0,3):'';
       const mBottomText=mSpent>0?mPct+'%':'–';
-      const mBottomColor=mSpent>0?mColor:'var(--text-muted)';
+      const mBottomColor=mSpent>0?mColorText:'var(--text-muted)';
       return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;padding:0" title="'+mLabel+': '+fmt(mSpent)+' ('+mPct+'%)">'
         +'<div style="font-size:10px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:13px;line-height:13px">'+(topLabel||'')+'</div>'
         +'<div style="width:100%;height:11px;border-radius:5px;background:'+mColor+';min-width:0"></div>'
@@ -10852,7 +10873,7 @@ function renderBudgetTab(){
     const heroHTML=`
       <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
         <div style="flex:1;min-width:0">
-          <div style="font-size:28px;font-weight:900;color:${heroColor};letter-spacing:-.02em;line-height:1">${fmt(totalSpent)} <span style="font-size:14px;font-weight:600;color:var(--text-muted)">of ${fmt(totalBudget)}</span></div>
+          <div style="font-size:28px;font-weight:900;color:${heroTextColor};letter-spacing:-.02em;line-height:1">${fmt(totalSpent)} <span style="font-size:14px;font-weight:600;color:var(--text-muted)">of ${fmt(totalBudget)}</span></div>
           <div style="font-size:12px;color:var(--text-muted);margin-top:3px">${heroLabel} · ${overallPct}% used${isCurrent?" · "+(daysInMonth-daysPassed)+"d remaining in "+d.toLocaleDateString(undefined,{month:"long"}):""}${latestTxDay?` · <span style="color:${dataGapDays>=2?"#FBBF24":"var(--text-muted)"}">data through the ${ord(latestTxDay)}${sourcesVary?" (varies by source)":""}</span>`:""}</div>
         </div>
         <div style="display:flex;align-items:center;gap:.65rem;flex-shrink:0">
@@ -10958,19 +10979,19 @@ function renderBudgetTab(){
         +'</div>'
         :'';
 
-      const color=over?'#F87171':pct>=warnPct?'#FBBF24':'#34D399';
+      const color=over?tc('#F87171','#B91C1C'):pct>=warnPct?tc('#FBBF24','#92400E'):tc('#34D399','#047857');
       let avgBadgeHTML='';
       if(_budgetSort==='unusual'&&m.avgRatio!=null&&!gated){
         const dev=Math.round((m.avgRatio-1)*100);
         const sign=dev>=0?'+':'';
-        const col=dev>0?'#FBBF24':'#34D399';
+        const col=dev>0?tc('#FBBF24','#92400E'):tc('#34D399','#047857');
         avgBadgeHTML=`<span style="font-size:10px;font-weight:700;color:${col};background:${col}18;border:1px solid ${col}33;border-radius:4px;padding:1px 5px">${sign}${dev}% vs avg</span>`;
       }
       let projFmt='', projColor='var(--text-muted)';
       if(isCurrent&&daysPct>0&&daysPct<1&&spent>0){
         const projected=Math.round(spent/daysPct);
         projFmt=`→ ${fmt(projected)} by end`;
-        projColor=projected>budget?'#F87171':'var(--accent-green)';
+        projColor=projected>budget?tc('#F87171','#B91C1C'):'var(--accent-green)';
       }
       const amountHTML=`<span style="font-size:14px;font-weight:800;color:${color}">${fmt(spent)}</span><span class="text-muted-sm"> / ${fmt(budget)}</span>${projFmt?`<span style="font-size:10px;font-weight:600;color:${projColor};margin-left:6px">${projFmt}</span>`:''}`;
       // Math.max(...,1) -- classifyBudgetStatus's epsilon guard fires at spent>budget+0.005,

@@ -7048,8 +7048,8 @@ test("the NW-goal milestone chip and pill-customizer hidden-pill label no longer
   const source = readSource();
   assert.match(
     source,
-    /color:\$\{isReached\?tc\('#8595A8','#64748B'\):isSelected\?'#fff':tc\('#64748B','#374151'\)\};/,
-    "the NW-goal milestone chip's isReached text color should use the same proven-safe muted pair as the rest of this session's #475569 fixes"
+    /color:\$\{isReached\?tc\('#8595A8','#374151'\):isSelected\?'#fff':tc\('#94A3B8','#374151'\)\};/,
+    "the NW-goal milestone chip's text colors should use WCAG AA-passing values in both themes (updated from #64748B to #374151 light and #64748B to #94A3B8 dark to fix axe violations)"
   );
   assert.match(
     source,
