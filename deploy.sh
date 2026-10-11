@@ -117,33 +117,29 @@ python3 scripts/update-csp-hashes.py
 python3 scripts/update-privacy-date.py
 python3 scripts/update-sitemap-dates.py
 
-# Build clean deploy directory — only files meant for public serving
+# Build clean deploy directory — allowlist only; any new repo file is
+# excluded by default and must be explicitly added here to go public.
 rm -rf _cf_deploy
 rsync -a \
-  --exclude='.git' \
-  --exclude='.gitignore' \
-  --exclude='.wrangler' \
-  --exclude='.firebase' \
-  --exclude='_cf_deploy' \
-  --exclude='wrangler.toml' \
-  --exclude='deploy.sh' \
-  --exclude='*.sh' \
-  --exclude='*.md' \
-  --exclude='.DS_Store' \
-  --exclude='.Rhistory' \
-  --exclude='screenshots' \
-  --exclude='test-csvs' \
-  --exclude='.github' \
-  --exclude='*.archived' \
-  --exclude='ENTIRE-SITE-ARCHITECTURE-deep-dive.html' \
-  --exclude='scripts' \
-  --exclude='test' \
-  --exclude='node_modules' \
-  --exclude='.claude' \
-  --exclude='package.json' \
-  --exclude='package-lock.json' \
-  --exclude='e2e' \
-  --exclude='playwright.config.js' \
+  --include='404.html' \
+  --include='_headers' \
+  --include='app-screenshot.webp' \
+  --include='app-screenshot-light.webp' \
+  --include='community-rules.json' \
+  --exclude='fonts/.firebase' \
+  --include='fonts/***' \
+  --include='guides/***' \
+  --include='icons/***' \
+  --include='index.html' \
+  --include='lib/***' \
+  --include='manifest.json' \
+  --include='og.png' \
+  --include='privacy.html' \
+  --include='robots.txt' \
+  --include='sitemap.xml' \
+  --include='sw.js' \
+  --include='trakyodollas.html' \
+  --exclude='*' \
   . _cf_deploy/
 
 # Minify the app shell — strips comments (including internal dev notes) and
