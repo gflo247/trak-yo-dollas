@@ -7789,8 +7789,8 @@ test("Spending tab's category tile name/meta/budget line, both empty states, the
   );
   assert.match(
     source,
-    /<div style="font-size:12px;font-weight:700;color:var\(--text-muted\);letter-spacing:\.07em;text-transform:uppercase;padding:\.5rem \.25rem \.25rem">Hidden from spending \(\$\{alwaysShowExcl\.length\}\) — click to edit &amp; restore<\/div>/,
-    "the 'Hidden from spending' note should be 12px"
+    /font-size:11px;font-weight:700;color:\$\{tc\('#A78BFA','#6D28D9'\)\}[^>]*>Hidden from spending \(\$\{alwaysShowExcl\.length\}\) — click to edit &amp; restore/,
+    "the 'Hidden from spending' header should be purple and 11px"
   );
   assert.match(
     source,

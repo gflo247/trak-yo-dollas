@@ -768,14 +768,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   .page-title{font-size:13px}
   #nw-goal-projection>div:first-child{flex-wrap:wrap;}
 }
-/* Two-line transaction rows on narrow phones: date + merchant + amount on
-   line 1; pills on line 2. Keeps the merchant visible and ensures the amount
-   is never pushed off-screen on excluded rows. */
-@media(max-width:480px){
-  .tx-row{flex-wrap:wrap;row-gap:3px}
-  .tx-pills{flex:0 0 100%;justify-content:flex-start}
-  .tx-pct{display:none}
-}
 /* ── Light theme overrides ─────────────────────────────────────── */
 [data-theme="light"] .btn-primary{background:var(--accent-blue);color:#fff!important;border-color:var(--accent-blue)}
 [data-theme="light"] .bucket-card{background:var(--bg-card)!important;border-color:var(--border)!important;color:var(--text-primary)!important}
@@ -7993,7 +7985,6 @@ function renderTxList(){
       ${state.includeIncome&&!t.excluded?`<input type="checkbox" class="tx-select-cb" data-action="toggleTxSelect" data-arg="${t.id}" data-stop="1" aria-label="Select ${esc(displayVendor(t.desc))} – ${fmtD(t.amount)}"${isSel?' checked':''} style="flex-shrink:0;cursor:pointer;accent-color:#2563EB">`:''}
       <div class="tx-date">${fmtDate(t.date)}</div>
       <div class="tx-desc" title="${esc(t.desc)}">${highlight(displayVendor(t.desc))}</div>
-      ${t.excluded?'<span class="excl-pill" title="Hidden from spending — click to edit">hidden</span>':''}
       <div class="tx-pills">
         <span class="pill cat-pill" style="background:${color}22">${highlight(t.cat)}</span>
         <span class="pill" style="background:${cc.bg};color:${cc.fg}">${highlight(t.card.replace('Chase ','').replace(' Unlimited','Unlim').replace('Ally ',''))}</span>
@@ -8025,10 +8016,13 @@ function renderTxList(){
       <div class="tx-amount" style="color:var(--accent-green)">+${fmtD(total)}</div>
     </div>`;
   }
-  const exclDivider=alwaysShowExcl.length>0
-    ?`<div style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase;padding:.5rem .25rem .25rem">Hidden from spending (${alwaysShowExcl.length}) — click to edit &amp; restore</div>`
+  const exclSection=alwaysShowExcl.length>0
+    ?`<div style="border:1px solid ${tc('#A78BFA','#6D28D9')}33;border-radius:10px;padding:2px 6px 6px;margin-top:8px;background:${tc('#A78BFA','#6D28D9')}08">
+        <div style="font-size:11px;font-weight:700;color:${tc('#A78BFA','#6D28D9')};letter-spacing:.07em;text-transform:uppercase;padding:.5rem .25rem .35rem">Hidden from spending (${alwaysShowExcl.length}) — click to edit &amp; restore</div>
+        ${alwaysShowExcl.map(buildTxRow).join('')}
+      </div>`
     :'';
-  document.getElementById('tx-list').innerHTML=shown.map(item=>item.type==='income-group'?buildIncomeGroupRow(item):item.type==='income-header'?buildIncomeHeaderRow(item):buildTxRow(item.tx)).join('')+exclDivider+alwaysShowExcl.map(buildTxRow).join('');
+  document.getElementById('tx-list').innerHTML=shown.map(item=>item.type==='income-group'?buildIncomeGroupRow(item):item.type==='income-header'?buildIncomeHeaderRow(item):buildTxRow(item.tx)).join('')+exclSection;
   document.getElementById('tx-more').innerHTML=displayList.length>showTxN?`<button class="btn" data-action="showMoreTx" type="button">${displayList.length-showTxN} more ↓</button>`:'';
   if(!txs.length){
     const noSources=state.transactions.length>0&&state.activeSources.size===0;
