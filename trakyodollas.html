@@ -9233,9 +9233,9 @@ function renderHistory(){
     const prev=state.snapshots[i-1];
     const delta=prev?s.nw-prev.nw:null;
     const deltaHTML=delta!==null?`<span style="font-size:10px;font-weight:700;color:${delta>=0?tc('#34D399','#065F46'):tc('#F87171','#B91C1C')};margin-left:6px">${delta>=0?'+':''}${fmtC(delta)}</span>`:'';
-    const trophies=(milestoneBySnap[i]||[]).map(m=>`<span style="display:inline-flex;align-items:center;gap:3px;background:${tc('#78350F22','#FEF3C7')};border:1px solid ${tc('#D9770644','#D97706')};border-radius:5px;padding:1px 6px;font-size:9px;font-weight:800;color:${tc('#FCD34D','#B45309')};margin-left:5px">🏆 ${fmtC(m)}</span>`).join('');
+    const trophies=(milestoneBySnap[i]||[]).map(m=>`<span style="display:inline-flex;align-items:center;gap:3px;background:${tc('#78350F22','#FEF3C7')};border:1px solid ${tc('#D9770644','#D97706')};border-radius:5px;padding:2px 7px;font-size:11px;font-weight:800;color:${tc('#FCD34D','#B45309')}">🏆 ${fmtC(m)}</span>`).join('');
     return`<div class="account-row" data-action="editSnapshot" data-arg="${i}" style="cursor:pointer" title="Edit snapshot" role="button" tabindex="0">
-      <div style="display:flex;align-items:center;gap:4px">
+      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
         <div class="account-name" style="font-size:12px">${esc(s.date)}</div>
         ${trophies}
       </div>
