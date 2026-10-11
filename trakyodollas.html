@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-aOAjL31kW1E1oIMTuCngRXNyP0I/3DVfDwndVVmYzKI=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-4pH1Asd7XTHKvYIHYWNJJGQKuKylecnhtlsrN8tMA6U=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -4202,8 +4202,14 @@ function renderMetrics(){
     <div class="metric ${c} ${key?'clickable':''} ${f===key&&key?'active-card':''}" data-action="${key?'toggleDashFilterDynamic':''}" data-arg="${key||''}"${key?` tabindex="0" role="button" aria-pressed="${f===key}"`:''} style="cursor:${key?'pointer':'default'}${i===0?';padding:1rem 1rem':''}${rightStat?';display:flex;align-items:center;justify-content:space-between;gap:10px':''}">
       <div${rightStat?' style="min-width:0"':''}>
         <div class="metric-label" style="${i===0?'font-size:10px':''}">${l}</div>
-        <div class="metric-value" style="${i===0?'font-size:48px;font-weight:900;letter-spacing:-.03em;line-height:1':'font-size:15px'}">${v}</div>
-        ${sub?`<div style="font-size:10px;margin-top:3px;line-height:1.4">${sub}</div>`:''}
+        ${i===0
+          ?`<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+              <div class="metric-value" style="font-size:48px;font-weight:900;letter-spacing:-.03em;line-height:1">${v}</div>
+              ${sub?`<div style="font-size:13px;line-height:1">${sub}</div>`:''}
+            </div>`
+          :`<div class="metric-value" style="font-size:15px">${v}</div>
+           ${sub?`<div style="font-size:10px;margin-top:3px;line-height:1.4">${sub}</div>`:''}`
+        }
       </div>
       ${rightStat||''}
     </div>`).join('');
