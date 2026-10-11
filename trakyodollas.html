@@ -768,6 +768,21 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   .page-title{font-size:13px}
   #nw-goal-projection>div:first-child{flex-wrap:wrap;}
 }
+/* Tighten auth bar on the narrowest phones so Sign in stays on-screen.
+   360px: Sign in clipped 14px even without demo badge → reduce button
+   h-padding and gap. 430px: demo badge pushes Sign in 19px off-screen →
+   additionally compress badge padding at that width. */
+@media(max-width:390px){
+  #auth-bar{gap:1px!important;padding:0 2px!important}
+  #global-settings-btn{padding:8px 5px!important}
+  #theme-toggle-btn{padding:9px 5px!important}
+  #auth-sign-in-btn{padding:9px 5px!important}
+  .btn-privacy-nav{padding:9px 5px!important}
+  #demo-nav-badge{padding:6px 3px!important}
+}
+@media(max-width:430px){
+  #demo-nav-badge{padding:6px 4px!important}
+}
 /* ── Light theme overrides ─────────────────────────────────────── */
 [data-theme="light"] .btn-primary{background:var(--accent-blue);color:#fff!important;border-color:var(--accent-blue)}
 [data-theme="light"] .bucket-card{background:var(--bg-card)!important;border-color:var(--border)!important;color:var(--text-primary)!important}
