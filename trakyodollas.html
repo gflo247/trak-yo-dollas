@@ -12539,13 +12539,13 @@ function getEffectiveIncome(monthKey){
   if(state.declaredIncome>0)return state.declaredIncome;
   if(state.income.method==='manual') return state.income.monthlyAmount;
   if(state.income.method==='auto'){
-    // respectBizFilter=true -- every caller of this function pairs the
-    // result against a _bizFilter-scoped spend figure (e.g. line ~2745's
-    // mSpent), so income must be scoped the same way to stay comparable.
-    // See detectDepositIncome()'s own comment (79th adversarial pass) for
-    // why the filter lives here as an opt-in param rather than always-on
-    // inside detectDepositIncome() itself.
-    const detected=detectDepositIncome(true);
+    // respectBizFilter=false -- income deposits are never tagged as biz
+    // transactions, so applying _bizFilter to them collapses income to
+    // near-zero whenever the biz filter is active, breaking Life Changes,
+    // At a Glance, and Year in Review. Income and spend are categorically
+    // different transaction types; scoping income by the biz filter is not
+    // meaningful and produces incorrect results.
+    const detected=detectDepositIncome(false);
     return detected.byMonth?.[monthKey]||detected.avgMonthly||0;
   }
   return 0;
@@ -12562,12 +12562,13 @@ function getEffectiveIncome(monthKey){
 // month by month count) only landed in computePeriodSpendVsIncome(), and
 // Year in Review kept reproducing the exact bug that fix addressed. Found
 // in the 67th adversarial pass.
-function sumIncomeForMonths(months,respectBizFilter=true){
+function sumIncomeForMonths(months,respectBizFilter=false){
   const usesAutoDetect=state.declaredIncome<=0&&state.income.method==='auto';
-  // respectBizFilter=true (default) -- feeds computePeriodSpendVsIncome()'s
-  // totalIncome, which must stay scoped the same way as its already-
-  // _bizFilter-scoped totalSpend. Pass false for callers whose spend side
-  // is deliberately unfiltered (Life Changes simulator uses bizFilter='all').
+  // respectBizFilter=false (default) -- income deposits are never tagged as
+  // biz transactions so applying _bizFilter to them collapses income to
+  // near-zero when the biz filter is active. The param is retained in case
+  // a future caller genuinely needs filter-scoped income, but no current
+  // caller does (Life Changes already passes false explicitly).
   const detected=usesAutoDetect?detectDepositIncome(respectBizFilter):null;
   return months.reduce((s,m)=>s+(usesAutoDetect?(detected.byMonth?.[m]||detected.avgMonthly||0):getEffectiveIncome(m)),0);
 }
