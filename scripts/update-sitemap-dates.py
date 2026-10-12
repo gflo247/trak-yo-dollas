@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""Update <lastmod> in sitemap.xml using each file's last modification time."""
-import os
+"""Update <lastmod> in sitemap.xml using each file's last git commit date.
+
+Uses git log rather than filesystem mtime — git resets mtime to checkout
+time on every clone, so mtime-based dates changed on every deploy regardless
+of whether the file's content actually changed.
+"""
 import re
-from datetime import datetime
+import subprocess
 from pathlib import Path
 
 REPO = Path(__file__).parent.parent
@@ -10,10 +14,12 @@ SITEMAP = REPO / 'sitemap.xml'
 
 
 def file_lastmod(filename):
-    path = REPO / filename
-    if path.exists():
-        return datetime.fromtimestamp(os.path.getmtime(path)).strftime('%Y-%m-%d')
-    return None
+    result = subprocess.run(
+        ['git', 'log', '-1', '--format=%ai', '--', filename],
+        capture_output=True, text=True, cwd=REPO
+    )
+    date_str = result.stdout.strip()
+    return date_str[:10] if date_str else None
 
 
 def resolve_filename(loc):
@@ -27,6 +33,9 @@ def resolve_filename(loc):
     # in the 82nd adversarial pass.
     path = re.sub(r'^https?://[^/]+', '', loc).strip('/')
     name = path if path else 'index'
+    # /guides/ → guides/index.html (trailing slash signals directory index)
+    if not name:
+        name = 'index'
     for candidate in (f'{name}.html', name):
         if (REPO / candidate).exists():
             return candidate
