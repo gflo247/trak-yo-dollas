@@ -337,7 +337,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .chip-ora.on{background:#431403;color:#FB923C;border-color:#EA580C}
 .chip-sky{background:#0C252622;color:#38BDF8;border-color:#0284C744}
 .chip-sky.on{background:#0C2526;color:#38BDF8;border-color:#0284C7}
-.btn-src-x{margin-left:5px;font-size:10px;opacity:0;color:inherit;line-height:1;vertical-align:middle;transition:opacity .12s;background:none;border:none;cursor:pointer;padding:0;font-family:inherit}
+.btn-src-x{margin-left:5px;font-size:10px;opacity:0;color:inherit;line-height:1;vertical-align:middle;transition:opacity .12s;background:none;border:none;cursor:pointer;padding:4px 5px;min-height:24px;font-family:inherit}
 .chip:hover .btn-src-x,.btn-src-x:hover,.btn-src-x:focus-visible{opacity:.75}
 @media(max-width:600px){.btn-src-x{opacity:.55}}
 .src-remove-pop{position:absolute;top:calc(100% + 6px);left:0;z-index:300;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.6rem .75rem;min-width:210px;box-shadow:0 8px 24px #00000055;white-space:nowrap}
@@ -1402,7 +1402,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
         <span class="show-mobile" style="display:none">Tap to select a CSV file</span>
       </div>
       <div class="hide-mobile" style="font-size:11px;color:var(--text-muted);margin-top:3px">or click to browse</div>
-      <input type="file" id="tx-csv-file" accept=".csv,.CSV"
+      <input type="file" id="tx-csv-file" accept=".csv,.CSV" aria-label="Select CSV file"
              style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer"
              data-dragover="dragOverDropZone"
              data-dragleave="dragLeaveDropZone"
@@ -1836,7 +1836,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <h3 id="acct-csv-modal-title">Import CSV</h3>
     <p class="modal-sub">Columns: <strong style="color:var(--text-secondary)">name, source, type, balance</strong> — type must be one of: cash, investment, home, vehicle, mortgage, credit, other-asset, other-liability</p>
     <div class="csv-zone" data-action="triggerCsvFileInput" tabindex="0" role="button">Click to select CSV
-      <input type="file" id="csv-file" accept=".csv,.CSV" style="display:none" data-change="handleCsvDelegated"/></div>
+      <input type="file" id="csv-file" accept=".csv,.CSV" aria-label="Select accounts CSV file" style="display:none" data-change="handleCsvDelegated"/></div>
     <textarea id="csv-text" rows="3" style="margin-top:.6rem;font-family:monospace;font-size:11px" placeholder="name,source,type,balance"></textarea>
     <div class="row" style="justify-content:flex-end;gap:8px;margin-top:.75rem">
       <button class="btn" data-action="closeModals" type="button">Cancel</button>
@@ -2251,7 +2251,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <h3 id="subscriptions-modal-title" style="margin:0">🔄 Recurring charges</h3>
       <button class="btn btn-primary" data-action="closeModals" type="button">Done</button>
     </div>
-    <div id="subscriptions-list" style="max-height:480px;overflow-y:auto"></div>
+    <div id="subscriptions-list" tabindex="0" style="max-height:480px;overflow-y:auto"></div>
   </div>
 </div>
 
@@ -4354,7 +4354,7 @@ function renderYearInReview(){
   const sel=document.getElementById('yir-start-selector');
   if(sel){
     const opts=allMonths.map(m=>`<option value="${m}"${m===months[months.length-1]?' selected':''}>${fmtMonthShort(m)}</option>`).join('');
-    sel.innerHTML=`<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-muted)">Ending: <select data-change="setYirEndMonth" style="background:var(--bg-input);border:1px solid var(--border-mid);border-radius:6px;padding:3px 8px;font-size:12px;color:var(--text-primary);cursor:pointer">${opts}</select></div>`;
+    sel.innerHTML=`<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-muted)">Ending: <select aria-label="Ending month" data-change="setYirEndMonth" style="background:var(--bg-input);border:1px solid var(--border-mid);border-radius:6px;padding:3px 8px;font-size:12px;color:var(--text-primary);cursor:pointer">${opts}</select></div>`;
   }
 
   // Aggregate — transfers/investments always excluded from all YIR
