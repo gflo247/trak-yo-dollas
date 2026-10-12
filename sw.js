@@ -35,12 +35,15 @@ const HTML_CLEAN_URL = {
 const OFFLINE_PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>trak-yo-dolla$</title><style>*{box-sizing:border-box;margin:0;padding:0}body{background:#111720;color:#D1DCE8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem}.card{text-align:center;max-width:360px}.logo{font-size:1.1rem;font-weight:800;letter-spacing:-.01em;color:#D1DCE8;margin-bottom:2rem}.logo span{color:#FBBF24}h1{font-size:1.2rem;font-weight:700;margin-bottom:.5rem}p{font-size:.875rem;color:#94A3B8;line-height:1.6;margin-bottom:1.5rem}button{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.4);color:rgba(251,191,36,1);font-family:inherit;font-size:.875rem;font-weight:600;padding:.6rem 1.5rem;border-radius:8px;cursor:pointer}</style></head><body><div class="card"><div class="logo">trak-yo-dolla<span>$</span></div><h1>Temporarily unavailable</h1><p>The site is having a brief hiccup — your data is safe and saved locally. Usually resolves in a minute or two.</p><button onclick="location.reload()">Try again</button></div></body></html>`;
 
 self.addEventListener('install', e => {
-  // skipWaiting at the END of the chain so activation (and old-cache deletion)
-  // only happens after the precache attempt — prevents an empty-cache window.
+  // skipWaiting only runs on a fully successful precache. If any fetch fails,
+  // the install rejects: the old SW stays active (with its complete cache),
+  // and the browser retries this install on the next load. The previous
+  // `.catch(() => {})` silently swallowed addAll failures, letting install
+  // "succeed" with a partial cache — activate then deleted the old good cache,
+  // leaving users with nothing until a full re-install.
   e.waitUntil(
     caches.open(CACHE_NAME)
       .then(c => c.addAll(PRECACHE))
-      .catch(() => {}) // allow install to succeed even when offline
       .then(() => self.skipWaiting())
   );
 });
