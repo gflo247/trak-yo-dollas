@@ -87,6 +87,9 @@ python3 scripts/check-modal-aria.py
 echo "=== Running axe-core WCAG 2.1 AA audit (dark + light) ==="
 node scripts/check-axe.js
 
+echo "=== Running Playwright e2e tests ==="
+npm run test:e2e
+
 echo "=== Scanning for unescaped user-data interpolations ==="
 python3 scripts/check-escaping.py
 

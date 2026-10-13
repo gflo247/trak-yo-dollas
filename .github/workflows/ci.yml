@@ -48,3 +48,8 @@ jobs:
         run: node scripts/check-axe.js
         env:
           CI: "true"
+
+      - name: Run Playwright e2e tests
+        run: npm run test:e2e
+        env:
+          CI: "true"

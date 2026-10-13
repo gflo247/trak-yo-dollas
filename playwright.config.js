@@ -7,8 +7,10 @@ module.exports = defineConfig({
   workers: 1,
   use: {
     baseURL: 'http://localhost:3001',
-    // Use system Chrome — Playwright's bundled Chromium doesn't support macOS 12.
-    channel: 'chrome',
+    // Use system Chrome locally — bundled Chromium doesn't support macOS 12.
+    // In CI (GitHub Actions / ubuntu-latest) there's no system Chrome, so fall
+    // back to Playwright's bundled Chromium (same binary the axe check uses).
+    channel: process.env.CI ? undefined : 'chrome',
     headless: true,
     // CSP hashes in the source file go stale after any script edit (the deploy
     // pipeline updates them, but tests serve the source directly). bypassCSP
