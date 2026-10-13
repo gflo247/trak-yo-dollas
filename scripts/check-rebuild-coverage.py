@@ -75,7 +75,12 @@ REBUILD_RE = re.compile(r'rebuildMonthly\(|mutateTransactions\(')
 # or are validated separately; kept here only as a documented allowlist if a
 # future run needs one. Currently empty: every real mutator so far has been
 # checkable via the direct regex approach above.
-KNOWN_SAFE_FNS = set()
+KNOWN_SAFE_FNS = {
+    # Inline IIFE inside loadDemoProfile() that shifts demo transaction dates
+    # forward to keep the demo current. rebuildMonthly() is called by the
+    # parent loadDemoProfile() immediately after this IIFE returns.
+    '_shiftDemoDates',
+}
 
 
 def extract_balanced_braces(text, open_brace_idx):
