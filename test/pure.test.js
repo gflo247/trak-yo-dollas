@@ -2182,8 +2182,8 @@ test("importBackup, confirmTxImport, and loadDemoProfile all call the shared _re
   );
   assert.match(
     source,
-    /state\.nextId=5000;[\s\S]{0,600}?_resetSessionFiltersForDataReplace\(\);\s*rebuildMonthly\(\);\s*rebuildCatSelects\(\);\s*if\(skipRender\)return;/,
-    "loadDemoProfile() should call _resetSessionFiltersForDataReplace()"
+    /state\.nextId=5000;[\s\S]{0,800}?_resetSessionFiltersForDataReplace\(\);[\s\S]{0,2000}?rebuildMonthly\(\);\s*rebuildCatSelects\(\);\s*if\(skipRender\)return;/,
+    "loadDemoProfile() should call _resetSessionFiltersForDataReplace() before rebuildMonthly()"
   );
 });
 
