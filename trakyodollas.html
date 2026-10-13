@@ -766,6 +766,15 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   .page-title{font-size:13px}
   #nw-goal-projection>div:first-child{flex-wrap:wrap;}
 }
+/* At phone widths, keep tx rows single-line by stripping low-signal columns:
+   hide the % column and non-category pills (card source, BIZ/PERS), and
+   narrow the date. Merchant name + color-coded category + amount are the
+   identity data; everything else is available in the edit modal. */
+@media(max-width:480px){
+  .tx-pct{display:none}
+  .tx-pills .pill:not(.cat-pill){display:none}
+  .tx-date{width:54px}
+}
 /* Tighten auth bar on the narrowest phones so Sign in stays on-screen.
    360px: Sign in clipped 14px even without demo badge → reduce button
    h-padding and gap. 430px: demo badge pushes Sign in 19px off-screen →
