@@ -180,6 +180,12 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
         <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val">Nothing to block</span></div>
       </div>
       <div class="mr-card">
+        <div class="mr-event">Signing in with Google</div>
+        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val">Your Google account email<br><span style="font-size:13px;color:var(--clr-warn);font-weight:600">+ financial data after sign-in (encrypted)</span></span></div>
+        <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Google (identity only), then Cloudflare's servers (encrypted data)</span></div>
+        <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-warn);font-weight:700">Don't sign in</span></div>
+      </div>
+      <div class="mr-card">
         <div class="mr-event">Signing in with email link</div>
         <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val">Email address<br><span style="font-size:13px;color:var(--clr-warn);font-weight:600">+ financial data after sign-in (encrypted)</span></span></div>
         <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Resend (email delivery), then Cloudflare's servers (encrypted data)</span></div>
@@ -278,7 +284,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
     <div class="card card-blue">
       <div class="card-label">🔁 Sign in to sync across devices</div>
-      <p>Sign in with a passwordless email link and the app backs up your full data — accounts, transactions, budgets, categories, and snapshots — directly to your account on Cloudflare's infrastructure. You'll also set a <strong>sync passphrase (separate from your sign-in)</strong> and the app uses it to encrypt your data on your device before it leaves. The server stores your financial data in encrypted form it cannot read, and neither can I. (Some metadata is readable: when snapshots were saved and your account email.) The Worker validates your session token before granting database access, restricting each account to its own data only. <strong>Choose that passphrase carefully: there's no reset.</strong> Sign in on any device and enter it to restore everything. Sync doesn't merge changes from multiple devices — if you edit on two devices before either syncs, whichever device saves to the cloud first wins. The other device keeps its edits saved locally and shows a warning that they haven't synced, rather than silently overwriting the newer version — reload there to pick up the latest. If you'd rather your data never leave your device, skip sign-in — the app works fully without it.</p>
+      <p>Sign in with Google or a passwordless email link and the app backs up your full data — accounts, transactions, budgets, categories, and snapshots — directly to your account on Cloudflare's infrastructure. You'll also set a <strong>sync passphrase (separate from your sign-in)</strong> and the app uses it to encrypt your data on your device before it leaves. The server stores your financial data in encrypted form it cannot read, and neither can I. (Some metadata is readable: when snapshots were saved and your account email.) The Worker validates your session token before granting database access, restricting each account to its own data only. <strong>Choose that passphrase carefully: there's no reset.</strong> Sign in on any device and enter it to restore everything. Sync doesn't merge changes from multiple devices — if you edit on two devices before either syncs, whichever device saves to the cloud first wins. The other device keeps its edits saved locally and shows a warning that they haven't synced, rather than silently overwriting the newer version — reload there to pick up the latest. If you'd rather your data never leave your device, skip sign-in — the app works fully without it.</p>
     </div>
 
     <div class="card card-neutral">

@@ -290,6 +290,119 @@ async function handleDeleteSnapshot(request, env, monthKey) {
   return jsonRes({ ok: true });
 }
 
+// ── Google OAuth helpers ──────────────────────────────────────────────────────
+async function hmacHex(secret, data) {
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data));
+  return Array.from(new Uint8Array(sig), b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function createOAuthState(secret) {
+  const nonce = generateToken();
+  const ts    = Date.now().toString();
+  const sig   = await hmacHex(secret, `${nonce}.${ts}`);
+  return `${nonce}.${ts}.${sig}`;
+}
+
+async function verifyOAuthState(state, secret) {
+  const parts = (state || '').split('.');
+  if (parts.length !== 3) return false;
+  const [nonce, ts, sig] = parts;
+  const age = Date.now() - parseInt(ts, 10);
+  if (isNaN(age) || age > 10 * 60 * 1000) return false; // 10-minute window
+  const expected = await hmacHex(secret, `${nonce}.${ts}`);
+  return expected === sig;
+}
+
+// ── GET /auth/google ──────────────────────────────────────────────────────────
+async function handleGoogleAuth(request, env) {
+  const origin      = new URL(request.url).origin;
+  const redirectUri = `${origin}/auth/google/callback`;
+  const state       = await createOAuthState(env.GOOGLE_CLIENT_SECRET);
+  const params      = new URLSearchParams({
+    client_id:     env.GOOGLE_CLIENT_ID,
+    redirect_uri:  redirectUri,
+    response_type: 'code',
+    scope:         'openid email',
+    state,
+    prompt:        'select_account',
+  });
+  return Response.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`, 302);
+}
+
+// ── GET /auth/google/callback ─────────────────────────────────────────────────
+async function handleGoogleCallback(request, env) {
+  const url    = new URL(request.url);
+  const origin = url.origin;
+  const code   = url.searchParams.get('code');
+  const state  = url.searchParams.get('state');
+
+  if (url.searchParams.get('error') || !code || !state) {
+    return Response.redirect(`${origin}/trakyodollas#error=google-auth-failed`, 302);
+  }
+
+  if (!await verifyOAuthState(state, env.GOOGLE_CLIENT_SECRET)) {
+    return Response.redirect(`${origin}/trakyodollas#error=google-auth-failed`, 302);
+  }
+
+  // Exchange authorization code for tokens
+  const redirectUri = `${origin}/auth/google/callback`;
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body:    new URLSearchParams({
+      code,
+      client_id:     env.GOOGLE_CLIENT_ID,
+      client_secret: env.GOOGLE_CLIENT_SECRET,
+      redirect_uri:  redirectUri,
+      grant_type:    'authorization_code',
+    }),
+  });
+  if (!tokenRes.ok) {
+    console.error('Google token exchange failed:', tokenRes.status, await tokenRes.text().catch(() => ''));
+    return Response.redirect(`${origin}/trakyodollas#error=google-auth-failed`, 302);
+  }
+  const { access_token } = await tokenRes.json();
+  if (!access_token) {
+    return Response.redirect(`${origin}/trakyodollas#error=google-auth-failed`, 302);
+  }
+
+  // Retrieve the verified email address
+  const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    headers: { 'Authorization': `Bearer ${access_token}` },
+  });
+  if (!userRes.ok) {
+    return Response.redirect(`${origin}/trakyodollas#error=google-auth-failed`, 302);
+  }
+  const { email, email_verified } = await userRes.json();
+  if (!email || !email_verified) {
+    return Response.redirect(`${origin}/trakyodollas#error=google-auth-failed`, 302);
+  }
+
+  // Find or create user — same email = same account regardless of sign-in method
+  const normalizedEmail = email.toLowerCase();
+  let user = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(normalizedEmail).first();
+  if (!user) {
+    const id = crypto.randomUUID();
+    await env.DB.prepare(
+      'INSERT INTO users (id, email, created_at) VALUES (?, ?, ?)'
+    ).bind(id, normalizedEmail, new Date().toISOString()).run();
+    user = { id };
+  }
+
+  // Issue a 30-day session
+  const sessionToken  = generateToken();
+  const sessionExpiry = new Date(Date.now() + SESSION_DURATION_MS).toISOString();
+  await env.DB.prepare(
+    'INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)'
+  ).bind(sessionToken, user.id, sessionExpiry).run();
+
+  return Response.redirect(`${origin}/trakyodollas#session=${sessionToken}`, 302);
+}
+
 // ── Main fetch handler ────────────────────────────────────────────────────────
 export default {
   async fetch(request, env) {
@@ -297,9 +410,11 @@ export default {
     const method = request.method;
 
     try {
-      if (pathname === '/auth/request-link' && method === 'POST') return handleRequestLink(request, env);
-      if (pathname === '/auth/verify'        && method === 'GET')  return handleVerify(request, env);
-      if (pathname === '/auth/signout'        && method === 'POST') return handleSignout(request, env);
+      if (pathname === '/auth/request-link'    && method === 'POST') return handleRequestLink(request, env);
+      if (pathname === '/auth/verify'          && method === 'GET')  return handleVerify(request, env);
+      if (pathname === '/auth/signout'         && method === 'POST') return handleSignout(request, env);
+      if (pathname === '/auth/google'          && method === 'GET')  return handleGoogleAuth(request, env);
+      if (pathname === '/auth/google/callback' && method === 'GET')  return handleGoogleCallback(request, env);
 
       if (pathname === '/api/session'      && method === 'GET')  return handleGetSession(request, env);
       if (pathname === '/api/salt'         && method === 'GET')  return handleGetSalt(request, env);
