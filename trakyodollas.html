@@ -11572,9 +11572,13 @@ function hideDemoBadge(){
 // undefined elsewhere. CriOS/FxiOS guard excludes Chrome/Firefox on iOS,
 // which use their own storage and don't have the 7-day Safari deletion rule.
 function _isIosSafari(){
-  return /iP(hone|ad|od)/.test(navigator.userAgent)&&
-         /WebKit/.test(navigator.userAgent)&&
-         !/CriOS|FxiOS/.test(navigator.userAgent)&&
+  const ua=navigator.userAgent;
+  // iPadOS 13+ reports as "Macintosh" by default; distinguish from a real Mac
+  // by checking maxTouchPoints (iPad reports 5, Mac trackpads report 0).
+  const isIpadOS=/Macintosh/.test(ua)&&navigator.maxTouchPoints>1;
+  return (/iP(hone|ad|od)/.test(ua)||isIpadOS)&&
+         /WebKit/.test(ua)&&
+         !/CriOS|FxiOS/.test(ua)&&
          !navigator.standalone;
 }
 function maybeShowLocalDataNotice(){
