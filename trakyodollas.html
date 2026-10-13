@@ -777,7 +777,10 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   .tx-date{width:54px;white-space:nowrap}
   .tx-date-full{display:none}
   .tx-date-short{display:inline}
-  .cushion-desc{display:none}
+  .cushion-card-inner{flex-direction:column}
+  .cushion-desc{text-align:left!important}
+}
+@media(max-width:390px){
   .budget-hist-pct{display:none}
 }
 /* Tighten auth bar on the narrowest phones so Sign in stays on-screen.
@@ -5123,7 +5126,7 @@ function renderRetirementRunway(){
   })();
 
   el.innerHTML=`
-    <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem 1rem;display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+    <div class="cushion-card-inner" style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.75rem 1rem;display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
       <div style="flex-shrink:0">
         <div style="position:relative;font-size:13px;font-weight:700;color:var(--accent-blue-light);margin-bottom:.25rem">🛟 Cushion: ${cushionLabel} of expenses <button data-action="toggleCushionRoundingTip" data-stop="1" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;padding:0 2px;vertical-align:middle;line-height:1;font-family:inherit" type="button">ⓘ</button></div>
         <div class="text-muted-sm">${fmtC(liquid)} liquid ÷ ${avgSpendFmt}/mo spend</div>
