@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-7RPnooymmZK/ubDqB7GKLeT9q4n3ddEdc8yadtAwE2I=' 'sha256-FYTRzZ2PySuIiWbt1rfkioQahBDWsB6VhsoNURM9p3Y=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-EmTtLhYuIBjYqU7M52UMoo24IsJ7ioKHbLkffdJ/IDk=' 'sha256-FYTRzZ2PySuIiWbt1rfkioQahBDWsB6VhsoNURM9p3Y=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -18208,6 +18208,14 @@ function _doSignOutCleanup() {
     if (!_savedTab || _savedTab === 'spending') {
       if (window.showPage) showPage('spending', document.querySelectorAll('.nav-btn')[0]);
     }
+  }
+  // If the app is empty after sign-out (e.g. signed in with a brand-new
+  // account that had no cloud data), restore demo data rather than leaving a
+  // blank screen — same experience as a first visit. Only fires when there's
+  // genuinely nothing to show: no real-data flag and no accounts at all.
+  // Preserves whichever profile was active before sign-in if available.
+  if (!state.hasRealData && !state.accounts.length && !window._isDemoPreview && !window._viewingDemoOverReal) {
+    if (typeof loadDemoProfile === 'function') loadDemoProfile(state.activeDemoProfileNum || 1);
   }
 }
 
