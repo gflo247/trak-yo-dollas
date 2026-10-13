@@ -263,14 +263,14 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <section class="section" style="padding-top:0;margin-bottom:3rem">
   <div id="screenshot-wrap" style="position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--border-mid);box-shadow:0 4px 32px rgba(0,0,0,.35);cursor:zoom-in">
     <img src="/app-screenshot.webp" alt="trak-yo-dolla$ spending dashboard showing monthly insights, category breakdown cards, and spending chart" width="100%" class="ss-dark" style="width:100%;height:auto">
-    <img src="/app-screenshot-light.webp" alt="trak-yo-dolla$ spending dashboard showing monthly insights, category breakdown cards, and spending chart" width="100%" class="ss-light" style="width:100%;height:auto">
+    <img data-src="/app-screenshot-light.webp" alt="trak-yo-dolla$ spending dashboard showing monthly insights, category breakdown cards, and spending chart" width="100%" class="ss-light" style="width:100%;height:auto">
     <div style="position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);border-radius:20px;padding:4px 10px;font-size:11px;color:rgba(255,255,255,.7);pointer-events:none;letter-spacing:.02em">⊕ zoom</div>
   </div>
 </section>
 <!-- Screenshot lightbox -->
 <div id="screenshot-lb" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;cursor:zoom-out;overflow:auto;padding:1rem">
   <img src="/app-screenshot.webp" alt="" class="ss-dark" style="max-width:1400px;min-width:min(900px,200vw);width:100%;margin:auto;border-radius:8px;box-shadow:0 8px 64px rgba(0,0,0,.6)">
-  <img src="/app-screenshot-light.webp" alt="" class="ss-light" style="max-width:1400px;min-width:min(900px,200vw);width:100%;margin:auto;border-radius:8px;box-shadow:0 8px 64px rgba(0,0,0,.6)">
+  <img data-src="/app-screenshot-light.webp" alt="" class="ss-light" style="max-width:1400px;min-width:min(900px,200vw);width:100%;margin:auto;border-radius:8px;box-shadow:0 8px 64px rgba(0,0,0,.6)">
 </div>
 
 <section class="section">
@@ -340,7 +340,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
         </div></div>
         <div class="fi" style="padding:.7rem 1rem"><div class="fi-icon" style="font-size:16px;width:28px">💼</div><div>
           <h3 style="font-size:var(--text-sm)">Freelancer-friendly</h3>
-          <p style="font-size:12px">Tag transactions as business or personal and filter your whole view by either.</p>
+          <p style="font-size:12px">Tag transactions as business or personal to separate your spending totals by context.</p>
         </div></div>
       </div>
     </div>
@@ -595,6 +595,16 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 const saved = localStorage.getItem('trakyo_theme') || 'dark';
 document.documentElement.setAttribute('data-theme', saved);
 document.getElementById('theme-btn').textContent = saved === 'light' ? '☀️' : '🌙';
+// Load light screenshots only when light theme is active — dark users never
+// download them. Resolves data-src → src on first activation.
+function _loadScreenshotsForTheme(theme) {
+  if (theme === 'light') {
+    document.querySelectorAll('.ss-light[data-src]').forEach(function(img) {
+      img.src = img.dataset.src;
+    });
+  }
+}
+_loadScreenshotsForTheme(saved);
 
 function toggleTheme() {
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
@@ -602,6 +612,7 @@ function toggleTheme() {
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('trakyo_theme', next);
   document.getElementById('theme-btn').textContent = next === 'light' ? '☀️' : '🌙';
+  _loadScreenshotsForTheme(next);
 }
 
 // Live community rules count — always fetches latest so the number stays current
