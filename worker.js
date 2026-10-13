@@ -71,13 +71,13 @@ async function handleRequestLink(request, env) {
       from:    'trak-yo-dolla$ <noreply@trakyodollas.com>',
       to:      email,
       subject: 'Sign in to trak-yo-dolla$',
-      html: `<!doctype html><html><head><meta charset="utf-8"></head>
-<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#111720;color:#D1DCE8;padding:2rem;max-width:480px;margin:0 auto">
-<div style="background:#1E293B;border-radius:12px;padding:2rem">
-  <p style="font-size:1.1rem;font-weight:700;color:#F1F5F9;margin:0 0 1rem">trak-yo-dolla<span style="color:#FBBF24">$</span></p>
-  <p style="margin:0 0 1.5rem;color:#94A3B8;line-height:1.6">Click the button below to sign in. This link expires in 15 minutes and works only once.</p>
-  <a href="${link}" style="display:inline-block;background:#2563EB;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:0.95rem">Sign in to trak-yo-dolla$</a>
-  <p style="margin:1.5rem 0 0;font-size:0.8rem;color:#8595A8">If you didn't request this, you can safely ignore this email.</p>
+      html: `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="font-family:Arial,Helvetica,sans-serif;background:#f1f5f9;margin:0;padding:24px 16px">
+<div style="background:#ffffff;border-radius:12px;padding:32px;max-width:460px;margin:0 auto">
+  <p style="font-size:17px;font-weight:700;color:#0f172a;margin:0 0 16px">trak-yo-dolla<span style="color:#FBBF24">$</span></p>
+  <p style="font-size:15px;color:#475569;line-height:1.6;margin:0 0 24px">Click the button below to sign in. This link expires in 15 minutes and works only once.</p>
+  <a href="${link}" style="display:block;background:#2563EB;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:8px;font-weight:600;font-size:15px;text-align:center">Sign in to trak-yo-dolla$</a>
+  <p style="font-size:12px;color:#94a3b8;margin:20px 0 0;line-height:1.5">If you didn't request this, you can safely ignore this email.</p>
 </div>
 </body></html>`,
     }),
