@@ -4163,19 +4163,24 @@ function renderAll(){
   if(dn)dn.style.display=((state.hasRealAccounts&&state.hasRealSnapshot)||state.hasRealData)?'none':'';
   const toolbarImport=document.getElementById('toolbar-import-btn');
   if(toolbarImport)toolbarImport.style.display='';
-  try{renderNwGoalWidget();}catch(e){console.error('renderNwGoalWidget failed:',e);}
-  try{renderRetirementRunway();}catch(e){console.error('renderRetirementRunway failed:',e);}
-  try{renderInsights();}catch(e){console.error('renderInsights failed:',e);}
-  try{renderMetrics();}catch(e){console.error('renderMetrics failed:',e);}
-  try{renderNwBreakdown();}catch(e){console.error('renderNwBreakdown failed:',e);}
-  try{renderExcludedAccounts();}catch(e){console.error('renderExcludedAccounts failed:',e);}
-  try{renderAccountLists();}catch(e){console.error('renderAccountLists failed:',e);}
-  try{renderVehicles();}catch(e){console.error('renderVehicles failed:',e);}
-  try{renderSpending();}catch(e){console.error('renderSpending failed:',e);}
-  try{renderSourceChips();}catch(e){console.error('renderSourceChips failed:',e);}
-  try{renderHistory();}catch(e){console.error('renderHistory failed:',e);}
-  try{renderBudgetTab();}catch(e){console.error('renderBudgetTab failed:',e);}
-  try{renderSimulatorTab();}catch(e){console.error('renderSimulatorTab failed:',e);}
+  // Render only the visible tab — other tabs re-render on tab switch via showPage().
+  const _activePageId=document.querySelector('.page.active')?.id||'page-spending';
+  if(_activePageId==='page-spending'){
+    try{renderSpending();}catch(e){console.error('renderSpending failed:',e);}
+  }else if(_activePageId==='page-dashboard'){
+    try{renderNwGoalWidget();}catch(e){console.error('renderNwGoalWidget failed:',e);}
+    try{renderRetirementRunway();}catch(e){console.error('renderRetirementRunway failed:',e);}
+    try{renderMetrics();}catch(e){console.error('renderMetrics failed:',e);}
+    try{renderNwBreakdown();}catch(e){console.error('renderNwBreakdown failed:',e);}
+    try{renderExcludedAccounts();}catch(e){console.error('renderExcludedAccounts failed:',e);}
+    try{renderAccountLists();}catch(e){console.error('renderAccountLists failed:',e);}
+    try{renderVehicles();}catch(e){console.error('renderVehicles failed:',e);}
+    try{renderHistory();}catch(e){console.error('renderHistory failed:',e);}
+  }else if(_activePageId==='page-budget'){
+    try{renderBudgetTab();}catch(e){console.error('renderBudgetTab failed:',e);}
+  }else if(_activePageId==='page-simulator'){
+    try{renderSimulatorTab();}catch(e){console.error('renderSimulatorTab failed:',e);}
+  }
   // Re-render year in review content if the panel is currently open so it
   // reflects the new data (profile switch, sync update, etc.) without
   // requiring the user to close and reopen it. Reset _yirEndMonth to the
@@ -17766,13 +17771,22 @@ function showPage(id,eventOrBtn){
   const saved=_tabScroll['page-'+id]||0;
   requestAnimationFrame(()=>window.scrollTo(0,saved));
 
-  if(id==='dashboard')requestAnimationFrame(()=>requestAnimationFrame(()=>{renderNwChart();renderNwGoalWidget();}));
+  if(id==='dashboard')requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    renderNwChart();
+    renderNwGoalWidget();
+    renderRetirementRunway();
+    renderMetrics();
+    renderNwBreakdown();
+    renderExcludedAccounts();
+    renderAccountLists();
+    renderVehicles();
+    renderHistory();
+  }));
   if(id==='budget'){_budgetNavOffset=0;requestAnimationFrame(()=>requestAnimationFrame(()=>renderBudgetTab()));}
   if(id==='simulator')requestAnimationFrame(()=>requestAnimationFrame(()=>renderSimulatorTab()));
   if(id==='spending')requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    renderSpending();
     renderSpendChart();
-    renderBucketGrid();
-    renderTxList();
     if(spendChart)spendChart.resize();
   }));
 }
