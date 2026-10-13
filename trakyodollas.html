@@ -15624,6 +15624,10 @@ async function loadUserData(uid) {
     _syncConflictWarned = false;
     hideSyncConflictBanner();
     if (prefs) {
+      if ((prefs.schemaVersion??1) > SCHEMA_VERSION) {
+        showToast('Your synced data requires a newer version of trak-yo-dolla$. Refresh the page to update.','#F87171',6000);
+        return;
+      }
       // _arrOfObj(...) -- the 103rd pass's fix for a null customCategories
       // entry (crashing buildCatColorMap()'s c.name) landed in
       // importBackup()/loadFromLocalStorage() but was never applied here,
@@ -15838,7 +15842,7 @@ async function syncToCloud() {
       .map(t => ({ date: t.date, origDesc: t._origDesc||t.desc, desc: t.desc, cat: t.cat, excluded: !!t.excluded }));
     const newUpdatedAt = new Date().toISOString();
     const wrote = await window._fb.savePrefs(user.uid, {
-      schemaVersion: 1,
+      schemaVersion: SCHEMA_VERSION,
       customCategories: state.customCategories,
       budgets: state.budgets,
       catRules: state.catRules,
@@ -16747,6 +16751,10 @@ const LS_KEY='trakyo_state_v2';
 const LS_TXS_KEY='trakyo_txs_v1';
 const LS_VERSION_KEY='trakyo_app_version';
 const APP_VERSION='1.3';
+// Increment when the saved-state shape changes in a backward-incompatible way.
+// loadUserData() and loadFromLocalStorage() refuse data with a higher version
+// so an older app can't silently corrupt newer-schema data.
+const SCHEMA_VERSION=1;
 let _txsDirty=true; // start true so first save always writes transactions
 
 function runMigrations(fromVersion){
@@ -16859,7 +16867,7 @@ function runMigrations(fromVersion){
 function serializeState(){
   try{
     return JSON.stringify({
-      schemaVersion: 1,
+      schemaVersion: SCHEMA_VERSION,
       accounts: state.accounts,
       vehicles: state.vehicles,
       snapshots: state.snapshots,
@@ -16911,6 +16919,10 @@ function loadFromLocalStorage(){
     if(!raw)return false;
     const saved=JSON.parse(raw);
     if(!saved||!saved.accounts)return false;
+    if((saved.schemaVersion??1)>SCHEMA_VERSION){
+      console.warn('[trak] localStorage data has schema v'+saved.schemaVersion+'; this app understands up to v'+SCHEMA_VERSION+'. Refresh to update the app.');
+      return false;
+    }
 
     // Array.isArray, not just truthiness -- a truthy non-array
     // saved.accounts (e.g. a corrupted `{}`) passed the guard above and
