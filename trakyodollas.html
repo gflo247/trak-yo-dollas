@@ -472,6 +472,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 #tx-list .tx-row:nth-child(even):hover{background:var(--row-hover)}
 .tx-row .pill[role="button"]:focus-visible{outline:2px solid #2563EB;outline-offset:2px}
 .tx-date{font-size:10px;color:var(--text-muted);width:70px;flex-shrink:0;font-variant-numeric:tabular-nums;touch-action:manipulation}
+.tx-date-short{display:none}
 .tx-desc{font-size:11px;font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-primary);touch-action:manipulation}
 .pill{font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;white-space:nowrap;touch-action:manipulation}
 .cat-pill{color:var(--text-primary)}
@@ -773,7 +774,11 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 @media(max-width:480px){
   .tx-pct{display:none}
   .tx-pills .pill:not(.cat-pill){display:none}
-  .tx-date{width:54px}
+  .tx-date{width:54px;white-space:nowrap}
+  .tx-date-full{display:none}
+  .tx-date-short{display:inline}
+  .cushion-desc{display:none}
+  .budget-hist-pct{display:none}
 }
 /* Tighten auth bar on the narrowest phones so Sign in stays on-screen.
    360px: Sign in clipped 14px even without demo badge → reduce button
@@ -2577,6 +2582,7 @@ let ALL_MONTHS=Object.keys(MONTHLY).sort();
 const MON3=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const fmtMonthShort=ym=>{const[y,m]=ym.split('-');return`${MON3[parseInt(m)-1]} '${y.slice(2)}`;};
 const fmtDate=d=>{const[y,m,day]=d.split('-');return`${y} ${MON3[parseInt(m)-1]} ${day}`;};
+const fmtDateShort=d=>{const[y,m,day]=d.split('-');return`${y.slice(2)} ${MON3[parseInt(m)-1]} ${day}`;};;
 
 const isLiab=t=>['mortgage','credit','other-liability','loan'].includes(t);
 const totalAssets=()=>state.accounts.filter(a=>!isLiab(a.type)&&!a.excludeFromNW).reduce((s,a)=>s+a.balance,0);
@@ -5123,7 +5129,7 @@ function renderRetirementRunway(){
         <div class="text-muted-sm">${fmtC(liquid)} liquid ÷ ${avgSpendFmt}/mo spend</div>
         ${windowNote}
       </div>
-      <div style="font-size:11.5px;color:var(--text-muted);line-height:1.6;text-align:right">Counts checking, savings, and brokerage; excludes real estate, vehicles, and anything you've marked illiquid. Assumes income stops.</div>
+      <div class="cushion-desc" style="font-size:11.5px;color:var(--text-muted);line-height:1.6;text-align:right">Counts checking, savings, and brokerage; excludes real estate, vehicles, and anything you've marked illiquid. Assumes income stops.</div>
     </div>`;
 }
 function toggleCushionRoundingTip(undefined,btn){
@@ -8012,7 +8018,7 @@ function renderTxList(){
     const isSel=_selectedTxIds.has(t.id);
     return`<div class="tx-row ${t.excluded?'tx-excluded':''}${isSel?' tx-selected':''}" data-action="openEditTxModal" data-arg="${t.id}" tabindex="0" role="button" aria-label="${fmtDate(t.date)}, ${esc(displayVendor(t.desc))}, ${t.isIncome||t.is_offset?'+':'-'}${esc(fmtD(Math.abs(t.amount)))}">
       ${state.includeIncome&&!t.excluded?`<input type="checkbox" class="tx-select-cb" data-action="toggleTxSelect" data-arg="${t.id}" data-stop="1" aria-label="Select ${esc(displayVendor(t.desc))} – ${fmtD(t.amount)}"${isSel?' checked':''} style="flex-shrink:0;cursor:pointer;accent-color:#2563EB">`:''}
-      <div class="tx-date">${fmtDate(t.date)}</div>
+      <div class="tx-date"><span class="tx-date-full">${fmtDate(t.date)}</span><span class="tx-date-short">${fmtDateShort(t.date)}</span></div>
       <div class="tx-desc" title="${esc(t.desc)}">${highlight(displayVendor(t.desc))}</div>
       <div class="tx-pills">
         <span class="pill cat-pill" style="background:${color}22">${highlight(t.cat)}</span>
@@ -10162,7 +10168,7 @@ function buildPctDots(months,getSpend,limit){
     return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;padding:0" title="'+ml+': '+fmtC(ms)+' ('+mp+'%)">'
       +'<div style="font-size:10px;font-weight:700;color:var(--text-secondary);text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;height:13px;line-height:13px">'+(topLabel||'')+'</div>'
       +'<div style="width:100%;height:11px;border-radius:5px;background:'+(ms>0?mc:'#1E293B')+';min-width:0"></div>'
-      +'<div style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;color:'+bottomColor+'">'+bottomText+'</div>'
+      +'<div class="budget-hist-pct" style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;color:'+bottomColor+'">'+bottomText+'</div>'
       +'</div>';
   }).join('');
 }
