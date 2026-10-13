@@ -1596,6 +1596,10 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <h3 id="auth-modal-title">Save your progress</h3>
     <p class="modal-sub" id="auth-modal-desc" style="margin-bottom:.75rem">Sign in to sync your data — accounts, transactions, budgets, and snapshots — across devices.</p>
 
+    <div id="auth-demo-warning" style="display:none;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.4);border-radius:8px;padding:.5rem .85rem;margin-bottom:.65rem;font-size:12px;color:var(--amber-text-strong);text-align:center">
+      ⚠️ Signing in will replace the demo data on this device with your account data.
+    </div>
+
     <div id="auth-signin-options">
       <!-- Google sign-in -->
       <button type="button" data-action="startGoogleSignIn"
@@ -15191,15 +15195,13 @@ window.promptSyncPassphrase = promptSyncPassphrase;
 // submitSyncPassphrase() (both exported above/below), never directly.
 // Removed in the 99th adversarial pass.
 
-function openAuthModal(reason) {
+function openAuthModal() {
   const title = document.getElementById('auth-modal-title');
   const desc  = document.getElementById('auth-modal-desc');
-  if (reason === 'save') {
-    if (title) title.textContent = 'Save your progress';
-  } else {
-    if (title) title.textContent = 'Save your progress';
-  }
+  if (title) title.textContent = 'Save your progress';
   if (desc) desc.textContent = 'Sign in to sync snapshots, custom categories, and transaction edits across devices.';
+  const demoWarning = document.getElementById('auth-demo-warning');
+  if (demoWarning) demoWarning.style.display = _isLiveDemoSession() ? '' : 'none';
   document.getElementById('auth-modal').classList.remove('hidden');
 }
 
@@ -15513,6 +15515,14 @@ async function confirmForgotPassphraseReset() {
 async function loadUserData(uid) {
   if (!window._fb) return;
   if (window._isDemoPreview||window._viewingDemoOverReal) return; // demo-preview sessions never load/overwrite with real account data
+  // Clear any active demo session before loading cloud data -- loadSnapshots/
+  // loadPrefs below only overwrite state when the cloud row is non-empty, so
+  // a brand-new user with nothing saved yet would otherwise keep demo profile
+  // data in state, have state.hasRealData stay false, and see demo profile
+  // data persist after sign-in. _replaceDemoDataWithReal() self-guards on
+  // state.hasRealData (no-op for returning users) and maybeShowLocalDataNotice()
+  // inside it self-guards on window._fbUser (no-op for signed-in users).
+  _replaceDemoDataWithReal();
   try {
     // Load snapshots
     const snaps = await window._fb.loadSnapshots(uid);

@@ -6587,7 +6587,7 @@ test("syncToCloud()/loadUserData() sync and restore chartGrain/rangeFrom/rangeTo
   assert.match(syncSrc, /sourceAlignSkipped: state\.sourceAlignSkipped,/, "syncToCloud() should include sourceAlignSkipped");
   assert.match(syncSrc, /sourceAlignDate: state\.sourceAlignDate,/, "syncToCloud() should include sourceAlignDate");
 
-  const loadSrc = source.match(/async function loadUserData\(uid\) \{[\s\S]{0,17300}?\n  \} catch/)?.[0] || "";
+  const loadSrc = source.match(/async function loadUserData\(uid\) \{[\s\S]{0,18000}?\n  \} catch/)?.[0] || "";
   assert.match(
     loadSrc,
     /if \(prefs\.chartGrain !== undefined\) state\.chartGrain = prefs\.chartGrain \?\? 'month';/,
@@ -6661,7 +6661,7 @@ test("_fb.loadPrefs(): also returns updatedAt alongside the decrypted data, so c
 
 test("loadUserData() caches _cloudPrefsUpdatedAt from every successful load (even a null one, for a brand-new user) and resets _syncConflictWarned, so a fresh load is what actually recovers from a detected conflict", () => {
   const source = readSource();
-  const loadSrc = source.match(/async function loadUserData\(uid\) \{[\s\S]{0,17300}?\n  \} catch/)?.[0] || "";
+  const loadSrc = source.match(/async function loadUserData\(uid\) \{[\s\S]{0,18000}?\n  \} catch/)?.[0] || "";
   assert.match(
     loadSrc,
     /const \{ data: prefs, updatedAt: _loadedUpdatedAt \} = await window\._fb\.loadPrefs\(uid\);/,
