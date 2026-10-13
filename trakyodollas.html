@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-/AyXRoXaNrWSpX0KmOlS7CGznJZ8LedzhP3hyDzQ1Is=' 'sha256-FYTRzZ2PySuIiWbt1rfkioQahBDWsB6VhsoNURM9p3Y=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-y9x/EsnFm+4m94UybQoem+K1icqcke0hVBgp3DmTtVk=' 'sha256-FYTRzZ2PySuIiWbt1rfkioQahBDWsB6VhsoNURM9p3Y=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -1021,6 +1021,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <button data-action="exportAllTransactionsCSV|closeGlobalSettings" class="overflow-item" title="All transactions, unfiltered — readable in Excel/Sheets, but no accounts/budgets/settings. For a full-fidelity backup, use Export data backup (JSON) below." type="button">⬇ Export all transactions (CSV)</button>
       <button data-action="exportBackup|closeGlobalSettings" class="overflow-item" title="Everything, from every tab — transactions, accounts, net worth snapshots, budgets, categories, and settings — in one file." type="button">⬇ Export data backup (JSON)</button>
       <button data-action="triggerImportBackup|closeGlobalSettings" class="overflow-item" title="Replaces everything currently in the app with what's in the backup file — transactions, accounts, budgets, snapshots, and settings." type="button">⬆ Import data backup (JSON)</button>
+      <div id="settings-sync-divider" style="display:none;border-top:1px solid var(--border);margin:4px 0"></div>
+      <button id="settings-sync-reset-btn" data-action="openSyncPassphraseReset|closeGlobalSettings" class="overflow-item" style="display:none" type="button">↺ Reset sync passphrase</button>
       <div style="border-top:1px solid var(--border);margin:4px 0"></div>
       <button data-action="openClearDataModal|closeGlobalSettings" class="overflow-item" style="color:var(--accent-red)" type="button">🗑 Clear all data</button>
     </div>
@@ -15140,9 +15142,13 @@ function updateAuthUI(user, justSignedIn=false) {
   const avatar     = document.getElementById('auth-avatar');
   const userInfo   = document.getElementById('auth-user-info');
   if (!signInBtn) return;
+  const syncResetBtn  = document.getElementById('settings-sync-reset-btn');
+  const syncDivider   = document.getElementById('settings-sync-divider');
   if (user) {
     signInBtn.classList.add('hidden');
     signOutBtn.classList.remove('hidden');
+    if (syncResetBtn) syncResetBtn.style.display = '';
+    if (syncDivider)  syncDivider.style.display  = '';
     if (signOutBtn) { signOutBtn.style.color='var(--accent-green)'; signOutBtn.style.borderColor='var(--accent-green)'; }
     if (userInfo) userInfo.classList.remove('hidden');
     // justSignedIn-gated, not unconditional -- this function is called on
@@ -15178,6 +15184,8 @@ function updateAuthUI(user, justSignedIn=false) {
   } else {
     signInBtn.classList.remove('hidden');
     signOutBtn.classList.add('hidden');
+    if (syncResetBtn) syncResetBtn.style.display = 'none';
+    if (syncDivider)  syncDivider.style.display  = 'none';
     if (signOutBtn) { signOutBtn.style.color=''; signOutBtn.style.borderColor=''; }
     if (userInfo) userInfo.classList.add('hidden');
     if (label) label.textContent = '';
