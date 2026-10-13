@@ -307,12 +307,12 @@ async function createOAuthState(secret) {
   return `${nonce}.${ts}.${sig}`;
 }
 
-async function verifyOAuthState(state, secret) {
+async function verifyOAuthState(state, secret, maxAgeMs = 5 * 60 * 1000) {
   const parts = (state || '').split('.');
   if (parts.length !== 3) return false;
   const [nonce, ts, sig] = parts;
   const age = Date.now() - parseInt(ts, 10);
-  if (isNaN(age) || age > 10 * 60 * 1000) return false; // 10-minute window
+  if (isNaN(age) || age > maxAgeMs) return false;
   const expected = await hmacHex(secret, `${nonce}.${ts}`);
   return expected === sig;
 }
@@ -379,6 +379,7 @@ async function handleGoogleCallback(request, env) {
   }
   const { email, email_verified } = await userRes.json();
   if (!email || !email_verified) {
+    console.warn('Google OAuth: rejected userinfo — email:', email, 'verified:', email_verified);
     return Response.redirect(`${origin}/trakyodollas#error=google-auth-failed`, 302);
   }
 
@@ -387,18 +388,28 @@ async function handleGoogleCallback(request, env) {
   let user = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(normalizedEmail).first();
   if (!user) {
     const id = crypto.randomUUID();
-    await env.DB.prepare(
-      'INSERT INTO users (id, email, created_at) VALUES (?, ?, ?)'
-    ).bind(id, normalizedEmail, new Date().toISOString()).run();
-    user = { id };
+    try {
+      await env.DB.prepare(
+        'INSERT INTO users (id, email, created_at) VALUES (?, ?, ?)'
+      ).bind(id, normalizedEmail, new Date().toISOString()).run();
+      user = { id };
+    } catch {
+      // Concurrent first-time login — re-fetch the row that won the race
+      user = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(normalizedEmail).first();
+      if (!user) return Response.redirect(`${origin}/trakyodollas#error=google-auth-failed`, 302);
+    }
   }
 
   // Issue a 30-day session
   const sessionToken  = generateToken();
   const sessionExpiry = new Date(Date.now() + SESSION_DURATION_MS).toISOString();
-  await env.DB.prepare(
+  const sessionResult = await env.DB.prepare(
     'INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)'
   ).bind(sessionToken, user.id, sessionExpiry).run();
+  if (!sessionResult.success) {
+    console.error('Google OAuth: session INSERT failed for user', user.id);
+    return Response.redirect(`${origin}/trakyodollas#error=google-auth-failed`, 302);
+  }
 
   return Response.redirect(`${origin}/trakyodollas#session=${sessionToken}`, 302);
 }
