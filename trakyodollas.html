@@ -10,12 +10,11 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-0oTrFd6dr8OIS6+cnWcDHB4YJVeN36+nvWuIa8soWGE=' 'sha256-0j17VEJRXFF3I0W93w8QLfegi5tNKwpCCKeeBeX6Fxc=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=' https://cdn.jsdelivr.net;
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-0oTrFd6dr8OIS6+cnWcDHB4YJVeN36+nvWuIa8soWGE=' 'sha256-Ng/jNK/Y19KhTNFEovGAGE+vbxOFvzRAXD7r5f7YllU=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
-  connect-src 'self' https://pjsvsdiplecoilzttyhd.supabase.co https://cdn.jsdelivr.net https://vpic.nhtsa.dot.gov;
-  frame-src https://accounts.google.com https://pjsvsdiplecoilzttyhd.supabase.co;
+  connect-src 'self' https://vpic.nhtsa.dot.gov;
   worker-src 'self';
   manifest-src 'self';
   object-src 'none';
@@ -28,8 +27,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <meta name="color-scheme" content="light dark">
-<link rel="preconnect" href="https://pjsvsdiplecoilzttyhd.supabase.co">
-<link rel="dns-prefetch" href="https://pjsvsdiplecoilzttyhd.supabase.co">
+
 <script>
 // Restore theme before CSS renders to prevent flash
 // Wrapped in try/catch — localStorage throws SecurityError in some private browsing modes
@@ -1599,18 +1597,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <p class="modal-sub" id="auth-modal-desc" style="margin-bottom:.75rem">Sign in to sync your data — accounts, transactions, budgets, and snapshots — across devices.</p>
 
     <div id="auth-signin-options">
-      <button type="button" data-action="startGoogleSignIn"
-        style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:.65rem;border:1px solid var(--border-mid);border-radius:8px;background:var(--bg-card);color:var(--text-primary);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:.5rem">
-        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.7 33.1 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 20-8 20-20 0-1.3-.1-2.7-.4-4z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.5 15.1 18.9 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4c-7.6 0-14.2 4.3-17.7 10.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.4 35.6 26.8 36 24 36c-5.2 0-9.7-2.8-11.2-7.2l-6.5 5C9.7 39.6 16.4 44 24 44z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.8 2.2-2.3 4.1-4.2 5.4l6.2 5.2C40.9 35.3 44 30 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
-        Continue with Google
-      </button>
-
-      <div style="display:flex;align-items:center;gap:8px;margin:.4rem 0 .6rem">
-        <div style="flex:1;height:1px;background:var(--border-mid)"></div>
-        <span style="font-size:11px;color:var(--text-muted)">or</span>
-        <div style="flex:1;height:1px;background:var(--border-mid)"></div>
-      </div>
-
       <!-- Email input state -->
       <div id="magic-link-input-section">
         <div style="display:flex;gap:6px">
@@ -1634,7 +1620,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
     <div style="margin-top:.75rem;background:#065F4622;border:1px solid #05996944;border-radius:8px;padding:.5rem .85rem;text-align:center">
       <span style="font-size:11px;font-weight:700;color:var(--accent-green)">🔒 Your browser handles CSV files locally — nothing leaves your device unless you choose to sync.</span>
-      <div style="font-size:12px;font-weight:600;color:var(--accent-green);margin-top:4px">Synced data encrypted on your device via <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer" style="color:var(--accent-green);text-decoration:underline">Supabase</a> (open source) 🔒</div>
+      <div style="font-size:12px;font-weight:600;color:var(--accent-green);margin-top:4px">Synced data encrypted on your device — only ciphertext stored server-side 🔒</div>
     </div>
     <div style="margin-top:.75rem;text-align:center">
       <button class="btn" data-action="closeModals" type="button" style="width:100%;color:var(--text-primary);font-size:13px;font-weight:600;padding:.65rem">No thanks, keep local</button>
@@ -18014,113 +18000,54 @@ window.addEventListener('error',function(e){console.error('GLOBAL ERROR:',e.mess
 
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.0/dist/umd/supabase.min.js" integrity="sha384-DjOvX/sJLsmbMrw4wTvf6l3kiGBjdxyOO6X2MTFwOOXGkjN/mE08BoDzrpaaIjil" crossorigin="anonymous"></script>
 <script>
-// Supabase config — anon key is public by design; security enforced by RLS policies
-const _sb = supabase.createClient(
-  'https://pjsvsdiplecoilzttyhd.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqc3ZzZGlwbGVjb2lsenR0eWhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5Njk0NDUsImV4cCI6MjA5NzU0NTQ0NX0.mzEBaZP6srlSJiRUr2EMv-xRQywxcIpFuAFsttJviu0'
-);
-
-// An expired/already-used magic link redirects back with an error in the URL
-// hash (e.g. #error=access_denied&error_code=otp_expired&...) instead of
-// #access_token=... — no session gets established, so onAuthStateChange below
-// never fires meaningfully for this case. Previously nothing read this at
-// all: the page just loaded signed-out with the raw error fragment left
-// sitting in the address bar and no indication to the user why sign-in didn't
-// work.
-(function _handleAuthLinkError(){
+// ── Parse URL hash before DOMContentLoaded ───────────────────────────────
+// Worker redirects to /trakyodollas#session=TOKEN on success, or
+// #error=link-expired|link-used|invalid-link on failure. The session is
+// stored here so _initAuth() finds it, and _pendingAuthLinkErrorMsg is
+// stashed for the DOMContentLoaded toast (see check near line 17630).
+(function _handleAuthHash() {
   const hash = window.location.hash;
-  if (!hash.includes('error=')) return;
+  if (!hash) return;
   const params = new URLSearchParams(hash.replace(/^#/, ''));
-  const code = params.get('error_code');
-  window._pendingAuthLinkErrorMsg = code === 'otp_expired'
-    ? 'That sign-in link has expired — request a new one.'
-    : 'That sign-in link is no longer valid — request a new one.';
-  window.history.replaceState({}, '', window.location.pathname + window.location.search);
-  // Not shown here directly — this script runs during initial parse, strictly
-  // before DOMContentLoaded (registered in the main script block) fires its
-  // own synchronous toasts (e.g. "Your data restored" for a returning
-  // signed-in user, exactly the person most likely to have an old magic
-  // link lying around). Calling showToast() here would always lose that
-  // race on the single shared #toast element. Stashed in a flag instead and
-  // shown from the end of the DOMContentLoaded handler, which deterministically
-  // runs after — see the `_pendingAuthLinkErrorMsg` check there.
-})();
-
-// ── Auth state — handles Google redirect return, magic link return, and session restore ──
-let _sbAuthHandled = false;
-_sb.auth.onAuthStateChange((event, session) => {
-  const user = session?.user ?? null;
-  window._fbUser = user ? Object.assign({}, user, {
-    uid: user.id,
-    displayName: user.user_metadata?.full_name || user.user_metadata?.name || user.email || ''
-  }) : null;
-  const isSignIn = event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && user);
-  if (window.updateAuthUI) window.updateAuthUI(window._fbUser, isSignIn && !_sbAuthHandled);
-  if (user && !_sbAuthHandled) {
-    _sbAuthHandled = true;
-    if (window.promptSyncPassphrase) window.promptSyncPassphrase(user.id);
-  } else if (!user) {
-    _sbAuthHandled = false;
-    clearSyncPassphrase();
-    // cancelSyncPassphrase() closes the modal (unblocking the UI) before
-    // doSignOut() actually resolves -- without resetting this here, a
-    // snapshot save/delete triggered in that brief window starts an
-    // _fbCallAfterMerge() poll that would never resolve while signed out,
-    // then fire later under whatever session happens to be signed in when
-    // this device next completes a passphrase flow.
-    window._awaitingCloudMerge = false;
-    // Not required for correctness -- promptSyncPassphrase() already sets
-    // _awaitingCloudMerge=true as its first line on the next sign-in,
-    // which blocks scheduleSave()'s cloud push until that new user's own
-    // loadUserData() overwrites these anyway (see the comment above
-    // _cloudPrefsUpdatedAt) -- but resetting explicitly here means nobody
-    // has to trace that gate to convince themselves a stale baseline from
-    // whoever was signed in before can't leak into the next session.
-    _cloudPrefsUpdatedAt = null;
-    _syncConflictWarned = false;
-    hideSyncConflictBanner();
-    // !state.hasRealData -- without it, a user who picked a demo profile
-    // then transitioned to real data (any of the covered first-real-save
-    // actions correctly hide this nudge via hideDemoBadge()) and later
-    // signed out had this branch unconditionally re-show the "this is
-    // demo data" nudge over what is now entirely real data, since
-    // _demoPicked itself is never reset by the demo-to-real transition
-    // (it's a one-time "did they ever open the demo picker this session"
-    // flag, not a "are they currently viewing demo data" one). Found in
-    // the 112th adversarial pass.
-    if (window._demoPicked && !state.hasRealData) {
-      const nudge = document.getElementById('demo-nudge');
-      if (nudge) nudge.style.display = 'block';
-      const _savedTab = localStorage.getItem('trakyo_tab');
-      if (!_savedTab || _savedTab === 'spending') {
-        if (window.showPage) window.showPage('spending', document.querySelectorAll('.nav-btn')[0]);
-      }
-    }
+  const sessionToken = params.get('session');
+  if (sessionToken) {
+    window._freshSessionThisLoad = true;
+    try { localStorage.setItem('trakyo_session', sessionToken); } catch(e) {}
+    window.history.replaceState({}, '', window.location.pathname + window.location.search);
+    return;
   }
-  if (window.location.hash.includes('access_token')) {
+  const errCode = params.get('error');
+  if (errCode) {
+    window._pendingAuthLinkErrorMsg = errCode === 'link-expired'
+      ? 'That sign-in link has expired — request a new one.'
+      : errCode === 'link-used'
+      ? 'That sign-in link has already been used — request a new one.'
+      : 'That sign-in link is no longer valid — request a new one.';
     window.history.replaceState({}, '', window.location.pathname + window.location.search);
   }
-});
+})();
 
-// ── Client-side encryption (AES-256-GCM via Web Crypto API) ──
-// Key material is a passphrase the user sets, kept ONLY in memory + this
-// device's localStorage — never sent to Supabase. Previously this derived
-// the key from the user's uid, which Supabase itself stores right next to
-// the ciphertext (as every row's user_id column) — meaning Supabase (or
-// anyone with equivalent DB access) had every ingredient needed to derive
-// the same key and decrypt everything, defeating the point of encrypting
-// client-side at all. The salt can still live server-side (salts aren't
-// meant to be secret, only unique) — it's the passphrase that must never
-// reach the backend.
-// localStorage, not sessionStorage: Supabase's own sign-in session already
-// persists in localStorage across tabs and browser restarts, so caching
-// the passphrase any less durably just meant re-prompting far more often
-// than the sign-in itself actually expires. This doesn't weaken what the
-// passphrase protects against (a Supabase-side compromise never sees this
-// either way) — a compromised local device already defeats the app
-// regardless of which storage held it. Sign-out still clears it either way.
+// ── Session helpers ───────────────────────────────────────────────────────
+function _getSessionToken() {
+  try { return localStorage.getItem('trakyo_session') || null; } catch(e) { return null; }
+}
+function _authFetch(path, opts = {}) {
+  const token = _getSessionToken();
+  const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return fetch(path, Object.assign({}, opts, { headers }));
+}
+
+// ── Client-side encryption (AES-256-GCM via Web Crypto API) ──────────────
+// The passphrase is set by the user and kept only in memory and localStorage
+// on this device — it never reaches the server. The salt alone is stored
+// server-side (salts aren't secret, only unique per account).
+// localStorage, not sessionStorage: the session token persists across tabs
+// and browser restarts, so caching the passphrase any less durably just
+// means re-prompting far more often than the session itself expires. A
+// compromised local device defeats the app regardless of which storage held
+// it. Sign-out clears the passphrase either way.
 let _syncPassphrase = null;
 function setSyncPassphrase(pw) {
   _syncPassphrase = pw;
@@ -18139,32 +18066,25 @@ function getSyncPassphrase() {
   } catch(e) {}
   return null;
 }
-// Does this uid already have a salt row from a previous session? Used to
-// decide whether to prompt for a new passphrase (confirm-twice, since
-// there's nothing yet to check it against) or an existing one (single
-// entry — a wrong guess will fail to decrypt and can be retried).
-async function _syncPassphraseAlreadySet(uid) {
-  const { data } = await _sb.from('user_keys').select('user_id').eq('user_id', uid);
-  return !!(data && data.length);
+// Does this account already have a salt row from a previous session? Used to
+// decide whether to prompt for a new passphrase (new account: confirm twice,
+// nothing to check against) or an existing one (returning user: single entry,
+// wrong guess fails to decrypt and can be retried). The uid parameter is
+// unused — the Worker uses the Bearer session token for identity — but kept
+// for interface compatibility with all callers.
+async function _syncPassphraseAlreadySet(_uid) {
+  try {
+    const res = await _authFetch('/api/salt-exists');
+    if (!res.ok) return false;
+    const { exists } = await res.json();
+    return !!exists;
+  } catch(e) { return false; }
 }
-async function _getOrCreateSalt(uid) {
-  const { data } = await _sb.from('user_keys').select('salt').eq('user_id', uid);
-  if (data && data.length) return data[0].salt;
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const saltB64 = btoa(String.fromCharCode(...salt));
-  const { error } = await _sb.from('user_keys').insert({ user_id: uid, salt: saltB64 });
-  if (error) {
-    // user_id is the table's primary key, so a concurrent call for the same
-    // brand-new account (two tabs/devices doing first-time setup at once,
-    // or a double-submitted passphrase form) makes this insert fail with a
-    // conflict — the loser used to silently return its own never-persisted
-    // salt instead of noticing, deriving a key nobody else's copy of the app
-    // would ever reproduce. Re-fetch and use whichever salt actually won.
-    const { data: existing } = await _sb.from('user_keys').select('salt').eq('user_id', uid);
-    if (existing && existing.length) return existing[0].salt;
-    throw error;
-  }
-  return saltB64;
+async function _getOrCreateSalt(_uid) {
+  const res = await _authFetch('/api/salt');
+  if (!res.ok) throw new Error('salt-fetch-failed');
+  const { salt } = await res.json();
+  return salt;
 }
 let _cryptoKey = null;
 let _cryptoKeyUid = null;
@@ -18177,9 +18097,7 @@ async function _deriveKey(uid) {
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
   // 600,000 iterations — OWASP's current PBKDF2-HMAC-SHA256 minimum (July
-  // 2026), up from 100,000. Benchmarked via Node's Web Crypto (same
-  // implementation the browser runs): ~335ms on a normal desktop CPU,
-  // so likely under a second even on a slow phone — once per sign-in,
+  // 2026), up from 100,000. ~335ms on a normal desktop CPU once per sign-in,
   // then cached in _cryptoKey for the rest of the session.
   _cryptoKey = await crypto.subtle.deriveKey(
     { name: 'PBKDF2', salt: Uint8Array.from(atob(saltB64), c => c.charCodeAt(0)), iterations: 600000, hash: 'SHA-256' },
@@ -18196,9 +18114,8 @@ async function _encrypt(obj, uid) {
   const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext);
   return { iv: btoa(String.fromCharCode(...iv)), ct: btoa(String.fromCharCode(...new Uint8Array(ciphertext))) };
 }
-// Throws a recognizable 'wrong-passphrase' error on GCM auth-tag mismatch
-// (i.e. the passphrase was wrong) rather than letting the raw DOMException
-// (OperationError) leak out — callers can catch this to re-prompt cleanly.
+// Throws 'wrong-passphrase' on GCM auth-tag mismatch so callers can re-prompt
+// cleanly rather than receiving a raw DOMException (OperationError).
 async function _decrypt(envelope, uid) {
   const key = await _deriveKey(uid);
   const iv = Uint8Array.from(atob(envelope.iv), c => c.charCodeAt(0));
@@ -18212,106 +18129,142 @@ async function _decrypt(envelope, uid) {
   return JSON.parse(new TextDecoder().decode(plaintext));
 }
 
-// ── Exposed to window so main script can call ───────────────
+// ── Sign-out state reset ──────────────────────────────────────────────────
+// Mirrors what onAuthStateChange's SIGNED_OUT branch did: clears the session
+// token, resets all sync state, hides the conflict banner, and restores the
+// demo nudge when applicable.
+function _doSignOutCleanup() {
+  try { localStorage.removeItem('trakyo_session'); } catch(e) {}
+  window._fbUser = null;
+  clearSyncPassphrase();
+  // cancelSyncPassphrase() closes the modal (unblocking the UI) before
+  // signOut() resolves — without resetting this, a snapshot save/delete
+  // triggered in that brief window starts an _fbCallAfterMerge() poll that
+  // never resolves while signed out, then fires under whatever session is
+  // signed in when this device next completes a passphrase flow.
+  window._awaitingCloudMerge = false;
+  _cloudPrefsUpdatedAt = null;
+  _syncConflictWarned = false;
+  hideSyncConflictBanner();
+  if (window.updateAuthUI) updateAuthUI(null, false);
+  // !state.hasRealData — without it, a user who picked a demo profile, then
+  // transitioned to real data, and later signed out had this unconditionally
+  // re-show the "this is demo data" nudge over real data. _demoPicked is a
+  // one-time "did they open the demo picker this session" flag, not a "are
+  // they currently viewing demo data" one. Found in the 112th adversarial pass.
+  if (window._demoPicked && !state.hasRealData) {
+    const nudge = document.getElementById('demo-nudge');
+    if (nudge) nudge.style.display = 'block';
+    const _savedTab = localStorage.getItem('trakyo_tab');
+    if (!_savedTab || _savedTab === 'spending') {
+      if (window.showPage) showPage('spending', document.querySelectorAll('.nav-btn')[0]);
+    }
+  }
+}
+
+// ── Exposed to window so main script can call ─────────────────────────────
 window._fb = {
-  signInGoogle() {
-    return _sb.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin + '/trakyodollas' }
-    });
+  signOut() {
+    return _authFetch('/auth/signout', { method: 'POST' })
+      .then(_doSignOutCleanup, _doSignOutCleanup);
   },
-  signOut() { return _sb.auth.signOut(); },
   sendMagicLink(email) {
-    return _sb.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: window.location.origin + '/trakyodollas' }
-    }).then(({ error }) => {
-      if (error) throw error;
+    return _authFetch('/auth/request-link', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }).then(async res => {
+      const body = await res.json();
+      if (!res.ok || body.error) {
+        throw new Error(body.error === 'invalid-email' ? 'Enter a valid email address' : 'Failed to send — please try again');
+      }
     });
   },
 
   async saveSnapshot(uid, snap) {
     const plain = { date: snap.date, label: snap.label, monthKey: snap.monthKey, nw: snap.nw, assets: snap.assets, liab: snap.liab };
     const encrypted = await _encrypt(plain, uid);
-    // Explicit onConflict target, found in the 36th adversarial pass --
-    // upsert() without one resolves against the table's primary key, not
-    // necessarily (user_id, month_key). saveSnapshot()'s local caller only
-    // guards against the CURRENT tab's own in-memory state already having
-    // a snapshot for this month; two sessions signed into the same account
-    // (two tabs, phone + laptop) that both still think a given month is
-    // unsaved would otherwise each insert a fresh row instead of updating
-    // one, leaving two snapshots sharing a monthKey -- which the delete
-    // path's monthKey-based lookup (see confirmDeleteSnapshot()) can then
-    // resolve ambiguously.
-    const { error } = await _sb.from('snapshots').upsert({
-      user_id: uid, month_key: snap.monthKey, data: encrypted, updated_at: new Date().toISOString()
-    }, { onConflict: 'user_id,month_key' });
-    if (error) throw error;
+    const res = await _authFetch('/api/snapshots', {
+      method: 'POST',
+      body: JSON.stringify({ monthKey: snap.monthKey, data: encrypted }),
+    });
+    if (!res.ok) throw new Error('save-snapshot-failed');
   },
   async deleteSnapshot(uid, monthKey) {
-    const { error } = await _sb.from('snapshots').delete().eq('user_id', uid).eq('month_key', monthKey);
-    if (error) throw error;
+    const res = await _authFetch(`/api/snapshots/${encodeURIComponent(monthKey)}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('delete-snapshot-failed');
   },
   async loadSnapshots(uid) {
-    const { data, error } = await _sb.from('snapshots').select('data').eq('user_id', uid);
-    if (error) throw error;
-    if (!data || !data.length) return [];
+    const res = await _authFetch('/api/snapshots');
+    if (!res.ok) throw new Error('load-snapshots-failed');
+    const { snapshots } = await res.json();
+    if (!snapshots || !snapshots.length) return [];
     const results = [];
-    for (const row of data) {
+    for (const row of snapshots) {
       if (row.data && row.data.ct) results.push(await _decrypt(row.data, uid));
       else results.push(row.data);
     }
     return results;
   },
-  // expectedUpdatedAt/newUpdatedAt (both caller-supplied, not generated
-  // here) turn this from a blind upsert into an optimistic-concurrency
-  // write -- see the comment above _cloudPrefsUpdatedAt for why a blind
-  // upsert on this particular row (the user's ENTIRE cloud-synced state,
-  // written on every syncToCloud() call) is unsafe the moment two devices
-  // or tabs are both signed in during the same session. When
-  // expectedUpdatedAt is set, this only writes if the row's updated_at
-  // still matches it -- a single atomic conditional UPDATE, not a
-  // separate check-then-write (which would leave its own race window).
-  // Returns false (not an error) if the row had already moved, so the
-  // caller can tell "someone else wrote first" apart from a real failure.
-  // expectedUpdatedAt is null for a brand-new user with no row yet --
-  // nothing to conflict with, so this falls back to the plain upsert the
-  // 37th adversarial pass's fix already established (still keeping its
-  // explicit onConflict target, for the same reason given there).
   async savePrefs(uid, prefs, expectedUpdatedAt, newUpdatedAt) {
     const encrypted = await _encrypt(prefs, uid);
-    if (expectedUpdatedAt) {
-      const { data, error } = await _sb.from('prefs')
-        .update({ data: encrypted, updated_at: newUpdatedAt })
-        .eq('user_id', uid).eq('updated_at', expectedUpdatedAt)
-        .select('updated_at');
-      if (error) throw error;
-      return !!(data && data.length);
-    }
-    const { error } = await _sb.from('prefs').upsert({
-      user_id: uid, data: encrypted, updated_at: newUpdatedAt
-    }, { onConflict: 'user_id' });
-    if (error) throw error;
-    return true;
+    const res = await _authFetch('/api/prefs', {
+      method: 'POST',
+      body: JSON.stringify({ data: encrypted, expectedUpdatedAt, newUpdatedAt }),
+    });
+    if (!res.ok) throw new Error('save-prefs-failed');
+    const { wrote } = await res.json();
+    return !!wrote;
   },
-  // Also returns updated_at now (alongside the existing decrypted prefs),
-  // so callers can cache it as the baseline savePrefs()'s optimistic-
-  // concurrency check compares against later -- one query instead of a
-  // second round-trip just to fetch a timestamp already sitting right next
-  // to the data column this was already selecting.
   async loadPrefs(uid) {
-    // Ordered + limited to the most recent row, found alongside the
-    // onConflict fix above -- without this, if any duplicate rows already
-    // exist from the pre-fix window, which one "wins" on load was
-    // whatever Postgres/PostgREST happened to return first, unspecified.
-    const { data, error } = await _sb.from('prefs').select('data, updated_at').eq('user_id', uid).order('updated_at', { ascending: false }).limit(1);
-    if (error) throw error;
-    const row = data?.[0];
-    if (!row || !row.data) return { data: null, updatedAt: null };
-    const prefs = row.data.ct ? await _decrypt(row.data, uid) : row.data;
-    return { data: prefs, updatedAt: row.updated_at };
+    const res = await _authFetch('/api/prefs');
+    if (!res.ok) throw new Error('load-prefs-failed');
+    const { data, updatedAt } = await res.json();
+    if (!data) return { data: null, updatedAt: null };
+    const prefs = data.ct ? await _decrypt(data, uid) : data;
+    return { data: prefs, updatedAt };
   },
 };
+
+// ── Session init ──────────────────────────────────────────────────────────
+// Validates the stored session token, sets window._fbUser, and fires the
+// same updateAuthUI + promptSyncPassphrase callbacks that onAuthStateChange
+// fired in the Supabase version. Called once on page load; sign-out triggers
+// cleanup directly via _doSignOutCleanup() rather than cycling back here.
+// window._freshSessionThisLoad is true only when this load processed a
+// #session=TOKEN hash — i.e. the user just clicked a magic link — so
+// justSignedIn correctly drives the sign-in-confirm animation and
+// closeModals() call in updateAuthUI without firing on every page reload.
+async function _initAuth() {
+  const token = _getSessionToken();
+  if (!token) {
+    window._fbUser = null;
+    if (window.updateAuthUI) updateAuthUI(null, false);
+    return;
+  }
+  let user = null;
+  try {
+    const res = await _authFetch('/api/session');
+    if (res.ok) {
+      const body = await res.json();
+      if (body.valid && body.user) {
+        user = { uid: body.user.id, id: body.user.id, email: body.user.email, displayName: body.user.email };
+      }
+    }
+  } catch(e) {}
+
+  if (!user) {
+    // Session expired or invalid — clear the stale token and proceed signed out.
+    try { localStorage.removeItem('trakyo_session'); } catch(e) {}
+    window._fbUser = null;
+    if (window.updateAuthUI) updateAuthUI(null, false);
+    return;
+  }
+
+  window._fbUser = user;
+  if (window.updateAuthUI) updateAuthUI(user, !!window._freshSessionThisLoad);
+  if (window.promptSyncPassphrase) promptSyncPassphrase(user.uid);
+}
+_initAuth();
 </script>
 
 <script src="/lib/d3.min.js"></script>

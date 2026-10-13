@@ -34,10 +34,18 @@ def update_file(path):
         print(f"ERROR ({path.name}): no inline scripts found")
         return False
 
-    # Replace the script-src line in the CSP meta tag
-    csp_re = re.compile(r"(script-src\s+'self'\s*)(?:'sha256-[^']+'\s*)*(https://)", re.MULTILINE)
-    replacement = r"\g<1>" + ' '.join(hashes) + r" \g<2>"
-    new_html, n = csp_re.subn(replacement, html, count=1)
+    # Replace the script-src line in the CSP meta tag.
+    # The optional trailing group captures any https:// URL that follows the
+    # hashes (e.g. a CDN allowlist entry) so it can be preserved. If there is
+    # no trailing URL — the normal case since jsDelivr was removed — the group
+    # is absent and we just emit the hashes followed by a semicolon terminator.
+    csp_re = re.compile(r"(script-src\s+'self'\s*)(?:'sha256-[^']+'\s*)*(https://[^\s;']+\s*)?", re.MULTILINE)
+
+    def _replacer(m):
+        suffix = (' ' + m.group(2).strip()) if m.group(2) else ''
+        return m.group(1) + ' '.join(hashes) + suffix
+
+    new_html, n = csp_re.subn(_replacer, html, count=1)
 
     if n == 0:
         print(f"ERROR ({path.name}): could not find script-src in CSP")

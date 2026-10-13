@@ -1,9 +1,15 @@
 name = "trak-yo-dollas"
 account_id = "0595d072acba5ad45f35db62150ee35c"
 compatibility_date = "2025-01-01"
+main = "worker.js"
 
 [assets]
 directory = "_cf_deploy"
+
+[[d1_databases]]
+binding      = "DB"
+database_name = "trak-yo-dollas-db"
+database_id   = "c7c29496-83da-443e-b9cd-c2ea4d653d17"
 not_found_handling = "404-page"
 
 # --- dev.trakyodollas.com (attached, confirmed live 2026-08-09) ---

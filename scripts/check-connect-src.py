@@ -96,13 +96,64 @@ def check_file(path):
                 return True
         return False
 
+    # _authFetch is a thin wrapper function (defined in trakyodollas.html) that
+    # always calls fetch() with a relative path supplied by its callers. Skip
+    # both the function declaration itself and the internal fetch(path, ...) call
+    # inside its body — callers are scanned directly instead.
+    def find_wrapper_body_spans(src, fn_name):
+        """Returns (start, end) byte spans for each definition of fn_name, using
+        brace counting to correctly handle nested braces in the body."""
+        spans = []
+        decl_re = re.compile(r'\bfunction\s+' + re.escape(fn_name) + r'\s*\(')
+        for decl_m in decl_re.finditer(src):
+            # Skip past the parameter list (find the closing ')' of the params)
+            # by paren-counting from the opening '(' of the declaration.
+            open_paren = src.find('(', decl_m.end() - 1)  # the '(' is the last char
+            if open_paren == -1:
+                continue
+            depth_p = 0
+            params_end = open_paren
+            for i in range(open_paren, len(src)):
+                if src[i] == '(':
+                    depth_p += 1
+                elif src[i] == ')':
+                    depth_p -= 1
+                    if depth_p == 0:
+                        params_end = i
+                        break
+            # Find the opening '{' of the function body (after the param list)
+            brace_start = src.find('{', params_end)
+            if brace_start == -1:
+                continue
+            depth = 0
+            for i in range(brace_start, len(src)):
+                if src[i] == '{':
+                    depth += 1
+                elif src[i] == '}':
+                    depth -= 1
+                    if depth == 0:
+                        spans.append((decl_m.start(), i + 1))
+                        break
+        return spans
+
+    wrapper_spans = find_wrapper_body_spans(html, '_authFetch')
+
+    def inside_wrapper_body(pos):
+        return any(start <= pos < end for start, end in wrapper_spans)
+
     findings = []
 
-    for m in re.finditer(r'\bfetch\s*\(', html):
+    for m in re.finditer(r'\b(?:fetch|_authFetch)\s*\(', html):
+        fn_name = m.group(0).strip().rstrip('(').strip()
         open_paren = m.end() - 1
+        # Skip any match that falls inside _authFetch's own definition — both
+        # the function declaration (its parameter list contains "path") and the
+        # internal fetch(path, ...) call. Callers are checked directly below.
+        if inside_wrapper_body(m.start()):
+            continue
         arg = extract_call_arg(html, open_paren)
         if arg is None:
-            findings.append((line_no(m.start()), f"fetch({arg}) — could not parse argument", False))
+            findings.append((line_no(m.start()), f"{fn_name}({arg}) — could not parse argument", False))
             continue
         url = literal_url(arg)
         if url is None:
@@ -110,23 +161,13 @@ def check_file(path):
             if ident_m:
                 url = resolve_identifier(arg, m.start())
             if url is None:
-                findings.append((line_no(m.start()), f"fetch({arg}) — destination not statically resolvable, verify manually", False))
+                findings.append((line_no(m.start()), f"{fn_name}({arg}) — destination not statically resolvable, verify manually", False))
                 continue
         origin = origin_of(url)
         if origin is None:
-            findings.append((line_no(m.start()), f"fetch('{url}') — relative, requires 'self'", has_self))
+            findings.append((line_no(m.start()), f"{fn_name}('{url}') — relative, requires 'self'", has_self))
         else:
-            findings.append((line_no(m.start()), f"fetch(...) -> {origin}", covered(origin)))
-
-    for m in re.finditer(r'\bsupabase\.createClient\s*\(', html):
-        open_paren = m.end() - 1
-        arg = extract_call_arg(html, open_paren)
-        url = literal_url(arg) if arg else None
-        if url is None:
-            findings.append((line_no(m.start()), f"supabase.createClient({arg}) — destination not statically resolvable, verify manually", False))
-            continue
-        origin = origin_of(url)
-        findings.append((line_no(m.start()), f"supabase.createClient(...) -> {origin}", covered(origin) if origin else has_self))
+            findings.append((line_no(m.start()), f"{fn_name}(...) -> {origin}", covered(origin)))
 
     return findings, None
 

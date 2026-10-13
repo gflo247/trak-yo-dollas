@@ -383,50 +383,20 @@ test("_encrypt: throws a recognizable error when no passphrase has been set yet"
   await assert.rejects(() => _encrypt({ a: 1 }, "uid-1"), /missing-passphrase/);
 });
 
-// ── _getOrCreateSalt() — user_keys.user_id is the table's primary key, so
-// two concurrent first-time-setup calls for the same brand-new account (two
-// tabs/devices, or a double-submitted passphrase form — see
-// submitSyncPassphrase's now-added disabled-button guard) can both see "no
-// row yet" and race to insert a salt. Before this fix (July 6, 2026, 6th
-// adversarial pass) the loser's insert error was silently discarded, so it
-// returned its own never-persisted salt and derived a key nobody else's
-// session would ever reproduce — indistinguishable from real data loss on
-// the next load. ──
-function makeSaltMockSb({ selectResults, insertError, onInsert }) {
-  let selectCall = 0;
-  return {
-    from() {
-      return {
-        select() {
-          return { eq() { return Promise.resolve({ data: selectResults[Math.min(selectCall++, selectResults.length - 1)] }); } };
-        },
-        insert(row) { if (onInsert) onInsert(row); return Promise.resolve({ error: insertError || null }); },
-      };
-    },
-  };
-}
-const saltCtx = () => ({ crypto: globalThis.crypto, btoa: (s) => Buffer.from(s, "binary").toString("base64") });
-
-test("_getOrCreateSalt: an existing row is returned directly, no insert attempted", async () => {
-  let insertCalled = false;
-  const _sb = makeSaltMockSb({ selectResults: [[{ salt: "EXISTING" }]], onInsert: () => { insertCalled = true; } });
-  const { _getOrCreateSalt } = loadFunctions(["_getOrCreateSalt"], { ...saltCtx(), _sb });
-  const result = await _getOrCreateSalt("uid-existing");
-  assert.equal(result, "EXISTING");
-  assert.equal(insertCalled, false);
+// ── _getOrCreateSalt() — after migrating from Supabase to the Cloudflare
+// Worker, this function no longer handles the salt insert itself; the Worker's
+// /api/salt endpoint owns all insert/conflict logic. _getOrCreateSalt just
+// calls _authFetch('/api/salt') and returns whatever salt the Worker provides. ──
+test("_getOrCreateSalt: Worker returns a salt — returns it directly", async () => {
+  const _authFetch = async () => ({ ok: true, json: async () => ({ salt: "WORKER_SALT" }) });
+  const { _getOrCreateSalt } = loadFunctions(["_getOrCreateSalt"], { _authFetch });
+  const result = await _getOrCreateSalt("unused-uid");
+  assert.equal(result, "WORKER_SALT");
 });
-test("_getOrCreateSalt: no existing row, insert succeeds — returns the newly-created salt", async () => {
-  const _sb = makeSaltMockSb({ selectResults: [[]] });
-  const { _getOrCreateSalt } = loadFunctions(["_getOrCreateSalt"], { ...saltCtx(), _sb });
-  const result = await _getOrCreateSalt("uid-normal");
-  assert.equal(typeof result, "string");
-  assert.ok(result.length > 0);
-});
-test("_getOrCreateSalt: lost the insert race — re-fetches and returns the winner's salt, not its own orphaned one", async () => {
-  const _sb = makeSaltMockSb({ selectResults: [[], [{ salt: "WINNER_SALT" }]], insertError: { message: "duplicate key value violates unique constraint" } });
-  const { _getOrCreateSalt } = loadFunctions(["_getOrCreateSalt"], { ...saltCtx(), _sb });
-  const result = await _getOrCreateSalt("uid-race");
-  assert.equal(result, "WINNER_SALT");
+test("_getOrCreateSalt: Worker returns an error — throws salt-fetch-failed", async () => {
+  const _authFetch = async () => ({ ok: false });
+  const { _getOrCreateSalt } = loadFunctions(["_getOrCreateSalt"], { _authFetch });
+  await assert.rejects(() => _getOrCreateSalt("unused-uid"), /salt-fetch-failed/);
 });
 
 // ── isRealSpend() — single source of truth for "does this transaction count
@@ -6662,39 +6632,31 @@ test("syncToCloud()/loadUserData() sync and restore chartGrain/rangeFrom/rangeTo
 // successful load (including null for a brand-new user, which correctly
 // means "nothing to conflict with yet"); syncToCloud() blocks the push and
 // warns once (not on every subsequent debounced attempt) when it's stale.
-test("_fb.savePrefs(): takes an expected/new updated_at pair and does an atomic conditional UPDATE (not a blind upsert) whenever a baseline exists, falling back to upsert only when there isn't one yet", () => {
+test("_fb.savePrefs(): takes an expected/new updated_at pair and passes both to the Worker, which returns {wrote:false} on conflict so the caller can distinguish 'someone wrote first' from a real error", () => {
   const source = readSource();
   const fnMatch = source.match(/async savePrefs\(uid, prefs, expectedUpdatedAt, newUpdatedAt\) \{[\s\S]*?\n  \},/);
   assert.ok(fnMatch, "savePrefs(uid, prefs, expectedUpdatedAt, newUpdatedAt) should exist with this signature");
+  // After the Supabase→Worker migration, the optimistic-concurrency logic moved
+  // to the Worker. The client still passes expectedUpdatedAt/newUpdatedAt and
+  // still returns false (not throw) when the Worker reports {wrote:false}.
   assert.match(
     fnMatch[0],
-    /if \(expectedUpdatedAt\) \{/,
-    "should branch on whether a baseline exists"
+    /\{ data: encrypted, expectedUpdatedAt, newUpdatedAt \}/,
+    "should POST all three fields — the encrypted payload and both timestamps — to the Worker"
   );
   assert.match(
     fnMatch[0],
-    /\.update\(\{ data: encrypted, updated_at: newUpdatedAt \}\)\s*\.eq\('user_id', uid\)\.eq\('updated_at', expectedUpdatedAt\)\s*\.select\('updated_at'\);/,
-    "with a baseline, should do one atomic conditional UPDATE scoped to both user_id and the expected updated_at, not a separate check-then-write"
-  );
-  assert.match(
-    fnMatch[0],
-    /return !!\(data && data\.length\);/,
-    "should return false (not throw) when the conditional UPDATE matched 0 rows, so the caller can distinguish 'someone wrote first' from a real error"
-  );
-  assert.match(
-    fnMatch[0],
-    /const \{ error \} = await _sb\.from\('prefs'\)\.upsert\(\{\s*user_id: uid, data: encrypted, updated_at: newUpdatedAt\s*\}, \{ onConflict: 'user_id' \}\);/,
-    "without a baseline (brand-new user, nothing to conflict with), should fall back to the plain upsert, still with its explicit onConflict target"
+    /return !!wrote;/,
+    "should return false (not throw) when the Worker reports {wrote:false}, so the caller can distinguish 'someone wrote first' from a real error"
   );
 });
 
-test("_fb.loadPrefs(): also selects and returns updated_at alongside the decrypted data, so callers get the sync baseline in the same round-trip instead of a second query", () => {
+test("_fb.loadPrefs(): also returns updatedAt alongside the decrypted data, so callers get the sync baseline in the same round-trip instead of a second query", () => {
   const source = readSource();
   const fnMatch = source.match(/async loadPrefs\(uid\) \{[\s\S]*?\n  \},/);
   assert.ok(fnMatch, "loadPrefs() should exist");
-  assert.match(fnMatch[0], /\.select\('data, updated_at'\)/, "should select updated_at alongside data in the same query");
   assert.match(fnMatch[0], /return \{ data: null, updatedAt: null \};/, "should return updatedAt:null (not just data:null) when no row exists, matching 'nothing to conflict with' semantics");
-  assert.match(fnMatch[0], /return \{ data: prefs, updatedAt: row\.updated_at \};/, "should return the row's updated_at alongside the decrypted prefs");
+  assert.match(fnMatch[0], /return \{ data: prefs, updatedAt \};/, "should return the Worker-provided updatedAt alongside the decrypted prefs");
 });
 
 test("loadUserData() caches _cloudPrefsUpdatedAt from every successful load (even a null one, for a brand-new user) and resets _syncConflictWarned, so a fresh load is what actually recovers from a detected conflict", () => {
@@ -6728,10 +6690,13 @@ test("syncToCloud(): passes the cached baseline and a fresh timestamp to savePre
 
 test("signing out resets _cloudPrefsUpdatedAt/_syncConflictWarned, so a stale baseline from whoever was signed in before can't leak into the next sign-in on the same tab", () => {
   const source = readSource();
+  // After the Supabase→Worker migration, the reset logic moved from an
+  // onAuthStateChange callback into _doSignOutCleanup(). Verify all three
+  // resets are still present in that function.
   assert.match(
     source,
-    /window\._awaitingCloudMerge = false;\s*\/\/ Not required for correctness[\s\S]{0,700}?_cloudPrefsUpdatedAt = null;\s*_syncConflictWarned = false;/,
-    "the sign-out branch of onAuthStateChange should reset both, right alongside its existing _awaitingCloudMerge reset"
+    /function _doSignOutCleanup\(\)[\s\S]{0,800}?window\._awaitingCloudMerge = false;[\s\S]{0,400}?_cloudPrefsUpdatedAt = null;[\s\S]{0,200}?_syncConflictWarned = false;/,
+    "_doSignOutCleanup() should reset _awaitingCloudMerge, _cloudPrefsUpdatedAt, and _syncConflictWarned"
   );
 });
 
