@@ -410,26 +410,26 @@ export default {
     const method = request.method;
 
     try {
-      if (pathname === '/auth/request-link'    && method === 'POST') return handleRequestLink(request, env);
-      if (pathname === '/auth/verify'          && method === 'GET')  return handleVerify(request, env);
-      if (pathname === '/auth/signout'         && method === 'POST') return handleSignout(request, env);
-      if (pathname === '/auth/google'          && method === 'GET')  return handleGoogleAuth(request, env);
-      if (pathname === '/auth/google/callback' && method === 'GET')  return handleGoogleCallback(request, env);
+      if (pathname === '/auth/request-link'    && method === 'POST') return await handleRequestLink(request, env);
+      if (pathname === '/auth/verify'          && method === 'GET')  return await handleVerify(request, env);
+      if (pathname === '/auth/signout'         && method === 'POST') return await handleSignout(request, env);
+      if (pathname === '/auth/google'          && method === 'GET')  return await handleGoogleAuth(request, env);
+      if (pathname === '/auth/google/callback' && method === 'GET')  return await handleGoogleCallback(request, env);
 
-      if (pathname === '/api/session'      && method === 'GET')  return handleGetSession(request, env);
-      if (pathname === '/api/salt'         && method === 'GET')  return handleGetSalt(request, env);
-      if (pathname === '/api/salt-exists'  && method === 'GET')  return handleSaltExists(request, env);
-      if (pathname === '/api/prefs'        && method === 'GET')  return handleGetPrefs(request, env);
-      if (pathname === '/api/prefs'        && method === 'POST') return handleSavePrefs(request, env);
-      if (pathname === '/api/snapshots'    && method === 'GET')  return handleGetSnapshots(request, env);
-      if (pathname === '/api/snapshots'    && method === 'POST') return handleSaveSnapshot(request, env);
+      if (pathname === '/api/session'      && method === 'GET')  return await handleGetSession(request, env);
+      if (pathname === '/api/salt'         && method === 'GET')  return await handleGetSalt(request, env);
+      if (pathname === '/api/salt-exists'  && method === 'GET')  return await handleSaltExists(request, env);
+      if (pathname === '/api/prefs'        && method === 'GET')  return await handleGetPrefs(request, env);
+      if (pathname === '/api/prefs'        && method === 'POST') return await handleSavePrefs(request, env);
+      if (pathname === '/api/snapshots'    && method === 'GET')  return await handleGetSnapshots(request, env);
+      if (pathname === '/api/snapshots'    && method === 'POST') return await handleSaveSnapshot(request, env);
 
       const snapMatch = pathname.match(/^\/api\/snapshots\/([^/]+)$/);
       if (snapMatch && method === 'DELETE') {
-        return handleDeleteSnapshot(request, env, decodeURIComponent(snapMatch[1]));
+        return await handleDeleteSnapshot(request, env, decodeURIComponent(snapMatch[1]));
       }
     } catch (e) {
-      console.error('Worker error:', pathname, e.message);
+      console.error('Worker error:', pathname, e.message, e.stack);
       return jsonRes({ error: 'internal-error' }, 500);
     }
 
