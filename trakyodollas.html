@@ -15329,6 +15329,13 @@ async function submitSyncPassphrase() {
   setSyncPassphrase(pw);
   if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
   try {
+    // For first-time setup, ensure the salt row is created in D1 now.
+    // loadUserData() only calls _getOrCreateSalt() indirectly via _deriveKey(),
+    // which only fires when there is encrypted data to decrypt. A brand-new
+    // account with no synced data skips decryption entirely, so the salt row
+    // would never be written — causing the "Set passphrase" prompt to reappear
+    // on every subsequent page load.
+    if (_pendingSyncIsFirstTime) await _getOrCreateSalt(uid);
     await loadUserData(uid);
     window._awaitingCloudMerge = false;
     closeModals();
