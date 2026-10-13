@@ -24,7 +24,7 @@ Import a CSV from your bank, credit union, or credit card. Your browser translat
 - **Spending exclusions** — hide categories like transfers and CC payments from spending totals. Reversible, per-category or per-transaction.
 - **Export anytime** — one click to export transactions or budget history as CSV, or export a full JSON backup of everything in the app: transactions, accounts, net worth snapshots, budgets, categories, and settings, all in one file.
 - **Works offline, installs as an app** — service worker caches the full app; install to your home screen on Android or iPhone, or via Chrome on desktop.
-- **Freelancer-friendly** — opt-in income tracking alongside spending; tag transactions as business or personal and filter your whole view by either, all without a separate bookkeeping app.
+- **Freelancer-friendly** — opt-in income tracking alongside spending; tag transactions as business or personal to separate your spending totals by context, all without a separate bookkeeping app.
 - **Two demo profiles** — explore every feature before touching your own data.
 
 ---
@@ -36,7 +36,7 @@ Local-first by design. I cannot see your financial data — not by policy, but b
 - **No bank connections** — no logins, no screen scraping
 - **Runs entirely in your browser** — data saves to your device's local storage
 - **Nothing leaves your device unless you choose to sync** — and when you do, it's encrypted on your device first
-- **Optional sign-in** — opt-in only, never required; sign in with Google or a passwordless email link to sync across devices via Supabase (open source)
+- **Optional sign-in** — opt-in only, never required; sign in with Google or a passwordless email link to sync across devices via Cloudflare Workers + D1
 - **Privacy-respecting analytics** — [Umami](https://umami.is) (page views, referrer, browser/OS, and country; no cookies, no personal data, never identifies you across sessions)
 - **Self-hosted fonts** — DM Mono and DM Sans come from this repo, not Google Fonts
 - **Hash-based Content Security Policy** — SHA-256 hashes allowlist every inline `<script>` block; no `unsafe-inline` in `script-src`
@@ -104,7 +104,7 @@ Single HTML file app — no dependencies to install, no server required. The dep
 | [D3.js](https://d3js.org/) v7 | NW trend chart, treemap, daily heatmap |
 | [d3-sankey](https://github.com/d3/d3-sankey) | Flow (income/spending) chart |
 | [Chart.js](https://www.chartjs.org/) v4 | Spending bar charts |
-| [Supabase](https://supabase.com/) | Optional sign-in (Google or email link) and encrypted cross-device sync |
+| [Cloudflare Workers + D1](https://developers.cloudflare.com/workers/) | Optional sign-in (Google or email link) and encrypted cross-device sync |
 | [Umami](https://umami.is) | Privacy-respecting page view analytics (no cookies, no personal data) |
 | Vanilla JS / CSS | Everything else |
 
@@ -124,8 +124,8 @@ trak-yo-dollas/
   community-rules.json    ← community-contributed categorization rules
   sitemap.xml             ← sitemap for search engines
   robots.txt              ← crawler directives
-  app-screenshot.png      ← landing page app screenshot (with lightbox)
-  app-screenshot-light.png← light-theme variant
+  app-screenshot.webp     ← landing page app screenshot (with lightbox)
+  app-screenshot-light.webp← light-theme variant (lazy-loaded; only fetched when light theme is active)
   og.png                  ← Open Graph / social share image
   _headers                ← Cloudflare static-asset response headers (X-Frame-Options, etc.)
   icons/
@@ -153,6 +153,10 @@ trak-yo-dollas/
                                        should but don't sync to the cloud, source/business filters missing
                                        from a spend loop, and similar cross-cutting invariants specific to
                                        this app's state model)
+  e2e/
+    app.spec.js            ← Playwright browser-level tests (import, reload, backup, demo-to-real switch)
+    fixtures/
+      sample.csv           ← test fixture used by the e2e suite
   test/
     pure.test.js           ← node --test suite (see "Tests" below)
   .github/
@@ -180,20 +184,21 @@ python3 -m http.server 8080
 `trakyodollas.html` is a single classic `<script>` with no module system, so the test suite extracts named functions directly out of the shipped HTML (by brace-matching, not a hand-copied duplicate) and runs them under `node --test`. `package.json` exists solely for this — the app itself still has no build step.
 
 ```bash
-npm test
+npm test            # node --test unit suite
+npm run test:e2e    # Playwright browser-level tests (requires a local server on port 3001)
 ```
 
 ---
 
 ## Deployment
 
-[Cloudflare Workers](https://workers.cloudflare.com/) hosts the app via static asset serving. [Supabase](https://supabase.com/) (open source) handles optional sign-in and cross-device sync.
+[Cloudflare Workers](https://workers.cloudflare.com/) hosts the app via static asset serving and handles optional sign-in (Google OAuth + magic link) and encrypted cross-device sync (D1).
 
 ```bash
 ./deploy.sh prod
 ```
 
-`deploy.sh` is a hard gate, not just a build script. It runs, in order: a syntax check, the full `node --test` suite (`npm test`), an inline-event-handler lint, a CSP `connect-src` completeness check, a WCAG AA text-contrast check, and a modal ARIA-attributes check — any failure aborts before anything is touched. Only then does it recompute CSP hashes (`update-csp-hashes.py`) and sitemap dates (`update-sitemap-dates.py`), build a clean deploy directory via rsync (excluding dev-only files), minify the app shell (`html-minifier-terser` — ~1.2 MB source → ~714 KB deployed, comments stripped, inline JS/CSS compressed), re-run the syntax check and recompute CSP hashes on the minified output, then run `wrangler deploy`. A further set of advisory scanners (data-integrity/coverage checks specific to this app's state model — see `scripts/`) run after and report but don't block. Never run `wrangler deploy` directly — skipping straight to it bypasses every one of these gates, which is exactly how it's caught real bugs before they shipped.
+`deploy.sh` is a hard gate, not just a build script. It runs, in order: a syntax check, the full `node --test` suite (`npm test`), an inline-event-handler lint, a CSP `connect-src` completeness check, a WCAG AA text-contrast check, a modal ARIA-attributes check, a live axe-core WCAG 2.1 AA audit (dark + light, desktop + 360px + 430px, app + all static pages), and the Playwright e2e browser tests — any failure aborts before anything is touched. Only then does it recompute CSP hashes (`update-csp-hashes.py`) and sitemap dates (`update-sitemap-dates.py`), build a clean deploy directory via rsync allowlist (dev-only files are excluded by default), minify the app shell (`html-minifier-terser` — ~1.2 MB source → ~714 KB deployed, comments stripped, inline JS/CSS compressed), re-run the syntax check and recompute CSP hashes on the minified output, then run `wrangler deploy`. A further set of advisory scanners (data-integrity/coverage checks specific to this app's state model — see `scripts/`) run after and report but don't block. Never run `wrangler deploy` directly — skipping straight to it bypasses every one of these gates, which is exactly how it's caught real bugs before they shipped.
 
 The app uses a hash-based Content Security Policy — SHA-256 hashes allowlist inline scripts. `update-csp-hashes.py` recomputes hashes twice per deploy: once on the source (for local development) and once on the minified output (for the deployed file).
 
