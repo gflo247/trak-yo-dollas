@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-Ike3N3KYOL3zymxxNjAXE9ZDWU4I9lwP5Qio3gcozRY=' 'sha256-FYTRzZ2PySuIiWbt1rfkioQahBDWsB6VhsoNURM9p3Y=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-/AyXRoXaNrWSpX0KmOlS7CGznJZ8LedzhP3hyDzQ1Is=' 'sha256-FYTRzZ2PySuIiWbt1rfkioQahBDWsB6VhsoNURM9p3Y=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -15296,7 +15296,10 @@ async function promptSyncPassphrase(uid, { isFirstTime } = {}) {
   if (confirmInput) confirmInput.value = '';
   hideForgotPassphrase();
   const forgotWrap = document.getElementById('sync-pp-forgot-wrap');
-  if (forgotWrap) forgotWrap.classList.add('hidden');
+  // Show "Forgot your passphrase?" upfront for returning users — hiding it
+  // until a wrong attempt was too buried. First-time setup hides it since
+  // there's nothing to forget yet.
+  if (forgotWrap) forgotWrap.classList.toggle('hidden', !!_pendingSyncIsFirstTime);
   if (_pendingSyncIsFirstTime) {
     if (title) title.textContent = email ? `Set a sync passphrase for ${email}` : 'Set a sync passphrase';
     if (desc) desc.textContent = "This is separate from your Google or email sign-in — it only encrypts your synced data before it ever leaves your device. Choose something memorable — we never see it and can't reset it for you.";
@@ -15515,13 +15518,19 @@ async function confirmForgotPassphraseReset() {
 async function loadUserData(uid) {
   if (!window._fb) return;
   if (window._isDemoPreview||window._viewingDemoOverReal) return; // demo-preview sessions never load/overwrite with real account data
-  // Clear any active demo session before loading cloud data -- loadSnapshots/
-  // loadPrefs below only overwrite state when the cloud row is non-empty, so
-  // a brand-new user with nothing saved yet would otherwise keep demo profile
-  // data in state, have state.hasRealData stay false, and see demo profile
-  // data persist after sign-in. _replaceDemoDataWithReal() self-guards on
-  // state.hasRealData (no-op for returning users) and maybeShowLocalDataNotice()
-  // inside it self-guards on window._fbUser (no-op for signed-in users).
+  // Always clear before pulling from the cloud -- cloud is authoritative,
+  // localStorage is just a cache. _replaceDemoDataWithReal() guards on
+  // state.hasRealData, so reset the three flags first to force it to run
+  // unconditionally. Without this, old code that ran loadUserData without
+  // this clear could set hasRealData=true based on demo data already in
+  // state (accounts.length>0), poison that flag in localStorage, and make
+  // _replaceDemoDataWithReal() a no-op on every subsequent load, leaving
+  // demo data stuck even after sign-in. maybeShowLocalDataNotice() inside
+  // _replaceDemoDataWithReal() self-guards on window._fbUser (no-op when
+  // signed in), so calling this for returning users is safe.
+  state.hasRealData = false;
+  state.hasRealAccounts = false;
+  state.hasRealSnapshot = false;
   _replaceDemoDataWithReal();
   try {
     // Load snapshots
