@@ -592,7 +592,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 })();
 
 // Sync theme with app
-const saved = localStorage.getItem('trakyo_theme') || 'dark';
+const saved = localStorage.getItem('trakyo_theme')||(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');
 document.documentElement.setAttribute('data-theme', saved);
 document.getElementById('theme-btn').textContent = saved === 'light' ? '☀️' : '🌙';
 // Load light screenshots only when light theme is active — dark users never

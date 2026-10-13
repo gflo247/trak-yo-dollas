@@ -500,7 +500,7 @@ function openHashDetails(){
 openHashDetails();
 window.addEventListener('hashchange',openHashDetails);
 
-const saved = localStorage.getItem('trakyo_theme') || 'dark';
+const saved = localStorage.getItem('trakyo_theme')||(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');
 document.documentElement.setAttribute('data-theme', saved);
 document.getElementById('theme-btn').textContent = saved === 'light' ? '☀️' : '🌙';
 function toggleTheme(){

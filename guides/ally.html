@@ -185,8 +185,8 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <script>
 const btn=document.getElementById('theme-btn');
 const root=document.documentElement;
-function applyTheme(t){root.setAttribute('data-theme',t);btn.textContent=t==='dark'?'🌙':'☀️';try{localStorage.setItem('theme',t)}catch(e){}}
-try{const s=localStorage.getItem('theme');if(s==='light'||s==='dark')applyTheme(s)}catch(e){}
+function applyTheme(t){root.setAttribute('data-theme',t);btn.textContent=t==='dark'?'🌙':'☀️';try{localStorage.setItem('trakyo_theme',t)}catch(e){}}
+try{const s=localStorage.getItem('trakyo_theme')||(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');applyTheme(s)}catch(e){}
 btn.addEventListener('click',()=>applyTheme(root.getAttribute('data-theme')==='dark'?'light':'dark'));
 </script>
 <script>if('serviceWorker'in navigator){
