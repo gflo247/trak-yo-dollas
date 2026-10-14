@@ -931,6 +931,11 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 /* Savings nudge pill */
 [data-theme="light"] #insights-pills div[style*="#1E293B"]{background:var(--bg-card)!important;border-color:var(--border-mid)!important}
 
+/* Auth modal amber buttons — hardcoded rgba(251,191,36,…) is ~1.5:1 on
+   light-mode backgrounds; swap to the amber-text token which clears 4.5:1. */
+[data-theme="light"] [data-action="sendMagicLink"]{color:var(--amber-text)!important;background:var(--amber-bg-mid)!important;border-color:var(--amber-border-strong)!important}
+[data-theme="light"] [data-action="resetMagicLinkForm"]{color:var(--amber-text)!important}
+
 /* ── End light theme overrides ──────────────────────────────────── */
 
 /* Taller chart on desktop */
@@ -1352,7 +1357,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div class="flex-between" style="margin-top:.9rem;margin-bottom:.3rem">
       <div class="flex-center gap-8">
         <div class="sh" style="margin:0" id="tx-count-label" aria-label="Transactions">Txns</div>
-        <button data-action="openAddTxModal" title="Add a single transaction manually" aria-label="Add transaction" class="tx-icon-btn" type="button"><span class="tx-icon">+</span><span class="hide-mobile"> Add</span></button>
+        <button data-action="openAddTxModal" title="Add a single transaction manually" aria-label="Add" class="tx-icon-btn" type="button"><span class="tx-icon">+</span><span class="hide-mobile"> Add</span></button>
         <button data-action="exportTransactionsCSV" title="Export visible transactions as CSV — respects current filters and search" class="tx-icon-btn" type="button"><span class="tx-icon">⬇</span><span class="hide-mobile"> Export CSV</span><span class="show-mobile"> Export</span></button>
       </div>
       <div class="row sort-row">

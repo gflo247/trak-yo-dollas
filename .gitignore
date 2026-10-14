@@ -10,5 +10,6 @@ screenshots/
 test-csvs/
 ENTIRE-SITE-ARCHITECTURE-deep-dive.html
 __pycache__/
+test-results/
 .claude/*
 !.claude/settings.json
