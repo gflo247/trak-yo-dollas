@@ -5,6 +5,7 @@ main = "worker.js"
 
 [assets]
 directory          = "_cf_deploy"
+binding            = "ASSETS"
 not_found_handling = "404-page"
 
 [[d1_databases]]

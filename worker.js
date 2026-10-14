@@ -444,7 +444,10 @@ export default {
       return jsonRes({ error: 'internal-error' }, 500);
     }
 
-    // Not an API route — serve static assets
+    // Not an API route — serve static assets.
+    // Guard against env.ASSETS being absent (misconfigured binding) so the
+    // TypeError doesn't escape the try/catch above and produce a silent 500.
+    if (!env.ASSETS) return new Response('Not found', { status: 404 });
     return env.ASSETS.fetch(request);
   },
 };
