@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-0w42YVSqNklRObsZ7Xf2aR/zk7OOoO2xN2iFlgPFbVM=' 'sha256-CyQPjZR4wh00SETdiGygwUSHH04CwHfk5NseCnYd7Es=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-hgc4EV/E6hpNdvIBV04c4GTHt6c2I2/RGsy0oxk11kE=' 'sha256-CyQPjZR4wh00SETdiGygwUSHH04CwHfk5NseCnYd7Es=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -8386,9 +8386,17 @@ function openSrcMenu(arg,el){
   const count=state.transactions.filter(t=>t.card===src).length;
   const safe=esc(src);
   const isActive=state.activeSources.has(src);
-  pop.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:.5rem">${safe}</div><div style="display:flex;gap:6px"><button data-action="toggleSource" data-arg="${safe}" class="btn" style="font-size:11px;padding:4px 12px" type="button">${isActive?'Hide':'Show'}</button><button data-action="confirmSrcRemove" data-arg="${safe}" style="background:#450A0A;border:1px solid #7F1D1D;border-radius:6px;color:#FCA5A5;font-size:11px;font-weight:700;cursor:pointer;padding:4px 10px;font-family:inherit" type="button">Remove ${count}</button></div>`;
+  pop.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:.5rem">${safe}</div><div style="display:flex;gap:6px"><button data-action="toggleSource" data-arg="${safe}" class="btn" style="font-size:11px;padding:4px 12px" type="button">${isActive?'Hide':'Show'}</button><button data-action="openSrcRemoveConfirm" data-arg="${safe}" style="background:#450A0A;border:1px solid #7F1D1D;border-radius:6px;color:#FCA5A5;font-size:11px;font-weight:700;cursor:pointer;padding:4px 10px;font-family:inherit" type="button">Remove ${count}</button></div>`;
   pop.style.display='block';
   setTimeout(()=>document.addEventListener('click',_srcPopOutside,{once:true}),0);
+}
+function openSrcRemoveConfirm(arg,el){
+  const src=String(arg);
+  const safe=esc(src);
+  const pop=el.closest('.src-chip-wrap')?.querySelector('.src-remove-pop');
+  if(!pop)return;
+  const count=state.transactions.filter(t=>t.card===src).length;
+  pop.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:.35rem">Remove ${count} transaction${count===1?'':'s'}?</div><div style="font-size:11px;color:var(--text-muted);margin-bottom:.5rem">${safe}</div><div style="display:flex;gap:6px"><button data-action="confirmSrcRemove" data-arg="${safe}" style="background:#450A0A;border:1px solid #7F1D1D;border-radius:6px;color:#FCA5A5;font-size:11px;font-weight:700;cursor:pointer;padding:4px 10px;font-family:inherit" type="button">Remove</button><button data-action="closeSrcRemovePop" class="btn" style="font-size:11px;padding:4px 10px" type="button">Cancel</button></div>`;
 }
 function _srcPopOutside(e){
   if(!e.target.closest('.src-chip-wrap'))closeSrcRemovePop();
