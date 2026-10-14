@@ -256,25 +256,28 @@ async function handleSavePrefs(request, env) {
   const { data, expectedUpdatedAt, newUpdatedAt } = body;
   if (!data || !newUpdatedAt) return jsonRes({ error: 'bad-request' }, 400);
 
-  const existing = await env.DB.prepare(
-    'SELECT updated_at FROM prefs WHERE user_id = ?'
-  ).bind(session.userId).first();
+  const dataJson = JSON.stringify(data);
 
-  if (!existing) {
-    await env.DB.prepare(
-      'INSERT INTO prefs (user_id, data, updated_at) VALUES (?, ?, ?)'
-    ).bind(session.userId, JSON.stringify(data), newUpdatedAt).run();
+  if (!expectedUpdatedAt) {
+    // First write — INSERT ON CONFLICT DO NOTHING is atomic: if two concurrent
+    // first-writes race, one wins (changes=1) and the other loses (changes=0).
+    // The previous plain INSERT had no conflict handling and threw a 500 on
+    // the losing write.
+    const r = await env.DB.prepare(
+      'INSERT INTO prefs (user_id, data, updated_at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO NOTHING'
+    ).bind(session.userId, dataJson, newUpdatedAt).run();
+    if (r.meta.changes !== 1) return jsonRes({ wrote: false });
     return jsonRes({ wrote: true });
   }
 
-  // Optimistic concurrency: only overwrite if the baseline still matches
-  if (expectedUpdatedAt && existing.updated_at !== expectedUpdatedAt) {
-    return jsonRes({ wrote: false });
-  }
-
-  await env.DB.prepare(
-    'UPDATE prefs SET data = ?, updated_at = ? WHERE user_id = ?'
-  ).bind(JSON.stringify(data), newUpdatedAt, session.userId).run();
+  // Returning write — fold the baseline check into the WHERE clause so the
+  // read-modify-write is one atomic statement. The previous SELECT + unconditional
+  // UPDATE had a TOCTOU: two saves with the same expectedUpdatedAt both passed
+  // the JS check and both wrote (last writer silently won).
+  const r = await env.DB.prepare(
+    'UPDATE prefs SET data = ?, updated_at = ? WHERE user_id = ? AND updated_at = ?'
+  ).bind(dataJson, newUpdatedAt, session.userId, expectedUpdatedAt).run();
+  if (r.meta.changes !== 1) return jsonRes({ wrote: false });
   return jsonRes({ wrote: true });
 }
 
