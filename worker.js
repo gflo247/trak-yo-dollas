@@ -101,29 +101,32 @@ async function handleVerify(request, env) {
     return Response.redirect(`${origin}/trakyodollas#error=invalid-link`, 302);
   }
 
-  const row = await env.DB.prepare(
-    'SELECT user_id, expires_at, used FROM auth_tokens WHERE token = ?'
-  ).bind(token).first();
+  // Atomically consume the token in one statement: only succeeds if the token
+  // exists, hasn't been used, and hasn't expired. A separate SELECT + UPDATE
+  // has a TOCTOU race — two concurrent GETs both pass the JS checks and both
+  // execute the UPDATE, issuing two sessions from one link. RETURNING lets us
+  // get user_id back without a follow-up SELECT on the success path.
+  const consumed = await env.DB.prepare(
+    'UPDATE auth_tokens SET used = 1 WHERE token = ? AND used = 0 AND expires_at > ? RETURNING user_id'
+  ).bind(token, new Date().toISOString()).first();
 
-  if (!row) {
-    return Response.redirect(`${origin}/trakyodollas#error=invalid-link`, 302);
-  }
-  if (row.used) {
-    return Response.redirect(`${origin}/trakyodollas#error=link-used`, 302);
-  }
-  if (new Date(row.expires_at) < new Date()) {
+  if (!consumed) {
+    // Distinguish error types for UX — follow-up SELECT only runs on the rare
+    // failure path so it doesn't add latency to normal sign-ins.
+    const existing = await env.DB.prepare(
+      'SELECT used, expires_at FROM auth_tokens WHERE token = ?'
+    ).bind(token).first();
+    if (!existing) return Response.redirect(`${origin}/trakyodollas#error=invalid-link`, 302);
+    if (existing.used) return Response.redirect(`${origin}/trakyodollas#error=link-used`, 302);
     return Response.redirect(`${origin}/trakyodollas#error=link-expired`, 302);
   }
-
-  // Consume token (mark used so it can't be replayed)
-  await env.DB.prepare('UPDATE auth_tokens SET used = 1 WHERE token = ?').bind(token).run();
 
   // Create a 30-day session
   const sessionToken  = generateToken();
   const sessionExpiry = new Date(Date.now() + SESSION_DURATION_MS).toISOString();
   await env.DB.prepare(
     'INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)'
-  ).bind(sessionToken, row.user_id, sessionExpiry).run();
+  ).bind(sessionToken, consumed.user_id, sessionExpiry).run();
 
   return Response.redirect(`${origin}/trakyodollas#session=${sessionToken}`, 302);
 }
