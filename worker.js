@@ -9,6 +9,9 @@ const TOKEN_DURATION_MS   = 15 * 60 * 1000;            // 15 minutes
 const RATE_WINDOW_MS      = 15 * 60 * 1000;            // sliding window matches token lifetime
 const EMAIL_RATE_LIMIT    = 5;                          // magic-link requests per address per window
 const IP_RATE_LIMIT       = 20;                         // magic-link requests per IP per window
+const PREFS_MAX_BYTES     = 256 * 1024;                 // 256 KB — prefs blob cap
+const SNAPSHOT_MAX_BYTES  = 64  * 1024;                 // 64 KB  — per-snapshot blob cap
+const MAX_SNAPSHOTS       = 120;                        // ~10 years of monthly snapshots per user
 
 function jsonRes(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -257,6 +260,7 @@ async function handleSavePrefs(request, env) {
   if (!data || !newUpdatedAt) return jsonRes({ error: 'bad-request' }, 400);
 
   const dataJson = JSON.stringify(data);
+  if (dataJson.length > PREFS_MAX_BYTES) return jsonRes({ error: 'payload-too-large' }, 413);
 
   if (!expectedUpdatedAt) {
     // First write — INSERT ON CONFLICT DO NOTHING is atomic: if two concurrent
@@ -306,7 +310,17 @@ async function handleSaveSnapshot(request, env) {
   let body;
   try { body = await request.json(); } catch { return jsonRes({ error: 'bad-request' }, 400); }
   const { monthKey, data } = body;
-  if (!monthKey || !data) return jsonRes({ error: 'bad-request' }, 400);
+  if (!monthKey || !data || !/^\d{4}-\d{2}$/.test(monthKey)) return jsonRes({ error: 'bad-request' }, 400);
+
+  const dataJson = JSON.stringify(data);
+  if (dataJson.length > SNAPSHOT_MAX_BYTES) return jsonRes({ error: 'payload-too-large' }, 413);
+
+  // Enforce per-user snapshot cap. COUNT excludes the current month_key so an
+  // update to an existing snapshot is always allowed regardless of total count.
+  const countRow = await env.DB.prepare(
+    'SELECT COUNT(*) AS n FROM snapshots WHERE user_id = ? AND month_key != ?'
+  ).bind(session.userId, monthKey).first();
+  if (countRow && countRow.n >= MAX_SNAPSHOTS) return jsonRes({ error: 'snapshot-limit-exceeded' }, 422);
 
   const updatedAt = new Date().toISOString();
   await env.DB.prepare(
@@ -314,7 +328,7 @@ async function handleSaveSnapshot(request, env) {
      VALUES (?, ?, ?, ?)
      ON CONFLICT(user_id, month_key)
      DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at`
-  ).bind(session.userId, monthKey, JSON.stringify(data), updatedAt).run();
+  ).bind(session.userId, monthKey, dataJson, updatedAt).run();
 
   return jsonRes({ ok: true });
 }
