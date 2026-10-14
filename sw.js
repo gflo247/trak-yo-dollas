@@ -68,6 +68,13 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.origin !== self.location.origin) return;
 
+  // Authenticated, per-user endpoints must never be served from the cache.
+  // Now that the API is same-origin, the cache-first block below would
+  // otherwise hand back a stale session, the previous user's salt after an
+  // account switch, or out-of-date prefs — returning without respondWith
+  // lets the browser fetch these normally.
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/')) return;
+
   // Track direct app opens (bookmark, typed URL, external link). Skip when the
   // referrer is our own domain — those click-throughs already fire via
   // data-umami-event on the landing page CTAs and would otherwise double-count.
