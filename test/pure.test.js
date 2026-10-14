@@ -362,7 +362,7 @@ function makeCryptoContext() {
 
 test("_encrypt/_decrypt: round-trips arbitrary JSON through the same passphrase", async () => {
   const ctx = makeCryptoContext();
-  const { _encrypt, _decrypt } = loadFunctions(["_deriveKey", "_encrypt", "_decrypt"], ctx);
+  const { _encrypt, _decrypt } = loadFunctions(["_deriveKey", "_bytesToB64", "_encrypt", "_decrypt"], ctx);
   ctx.setSyncPassphrase("correct horse battery staple");
   const plain = { budgets: { Groceries: 700 }, note: "hello" };
   const envelope = await _encrypt(plain, "uid-1");
@@ -371,7 +371,7 @@ test("_encrypt/_decrypt: round-trips arbitrary JSON through the same passphrase"
 });
 test("_decrypt: a wrong passphrase throws a recognizable error instead of returning garbage", async () => {
   const ctx = makeCryptoContext();
-  const { _encrypt, _decrypt } = loadFunctions(["_deriveKey", "_encrypt", "_decrypt"], ctx);
+  const { _encrypt, _decrypt } = loadFunctions(["_deriveKey", "_bytesToB64", "_encrypt", "_decrypt"], ctx);
   ctx.setSyncPassphrase("the-right-one");
   const envelope = await _encrypt({ a: 1 }, "uid-1");
   ctx.setSyncPassphrase("a-different-one");
@@ -379,7 +379,7 @@ test("_decrypt: a wrong passphrase throws a recognizable error instead of return
 });
 test("_encrypt: throws a recognizable error when no passphrase has been set yet", async () => {
   const ctx = makeCryptoContext();
-  const { _encrypt } = loadFunctions(["_deriveKey", "_encrypt", "_decrypt"], ctx);
+  const { _encrypt } = loadFunctions(["_deriveKey", "_bytesToB64", "_encrypt", "_decrypt"], ctx);
   await assert.rejects(() => _encrypt({ a: 1 }, "uid-1"), /missing-passphrase/);
 });
 
