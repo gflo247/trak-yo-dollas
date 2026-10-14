@@ -9,7 +9,7 @@ const TOKEN_DURATION_MS   = 15 * 60 * 1000;            // 15 minutes
 const RATE_WINDOW_MS      = 15 * 60 * 1000;            // sliding window matches token lifetime
 const EMAIL_RATE_LIMIT    = 5;                          // magic-link requests per address per window
 const IP_RATE_LIMIT       = 20;                         // magic-link requests per IP per window
-const PREFS_MAX_BYTES     = 256 * 1024;                 // 256 KB — prefs blob cap
+const PREFS_MAX_BYTES     = 1.9 * 1024 * 1024;          // 1.9 MB — just under D1's 2 MB row cap; client gzips before encrypting so raw JSON can be ~6× larger
 const SNAPSHOT_MAX_BYTES  = 64  * 1024;                 // 64 KB  — per-snapshot blob cap
 const MAX_SNAPSHOTS       = 120;                        // ~10 years of monthly snapshots per user
 

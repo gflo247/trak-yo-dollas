@@ -6580,7 +6580,7 @@ test("demo data is version-stamped, persisted, and silently refreshed on load if
 test("syncToCloud()/loadUserData() sync and restore chartGrain/rangeFrom/rangeTo/sourceAlignSkipped/sourceAlignDate, closing check-cloudsync-coverage.py's advisory", () => {
   const source = readSource();
 
-  const syncSrc = source.match(/async function syncToCloud\(\) \{[\s\S]{0,4800}?\n\}/)?.[0] || "";
+  const syncSrc = source.match(/async function syncToCloud\(\) \{[\s\S]{0,5500}?\n\}/)?.[0] || "";
   assert.match(syncSrc, /chartGrain: state\.chartGrain,/, "syncToCloud() should include chartGrain in the savePrefs() payload");
   assert.match(syncSrc, /rangeFrom: state\.rangeFrom,/, "syncToCloud() should include rangeFrom");
   assert.match(syncSrc, /rangeTo: state\.rangeTo,/, "syncToCloud() should include rangeTo");
@@ -6676,7 +6676,7 @@ test("loadUserData() caches _cloudPrefsUpdatedAt from every successful load (eve
 
 test("syncToCloud(): passes the cached baseline and a fresh timestamp to savePrefs(), and when it reports the row already moved, blocks the push, warns once (not on every debounced retry), and leaves the local save (already done by scheduleSave()) untouched", () => {
   const source = readSource();
-  const syncSrc = source.match(/async function syncToCloud\(\) \{[\s\S]{0,4800}?\n\}/)?.[0] || "";
+  const syncSrc = source.match(/async function syncToCloud\(\) \{[\s\S]{0,5500}?\n\}/)?.[0] || "";
   assert.match(syncSrc, /const newUpdatedAt = new Date\(\)\.toISOString\(\);/, "should generate the new timestamp itself, not rely on savePrefs() to generate one internally");
   assert.match(syncSrc, /const wrote = await window\._fb\.savePrefs\(user\.uid, \{/, "should capture savePrefs()'s boolean result");
   assert.match(syncSrc, /\}, _cloudPrefsUpdatedAt, newUpdatedAt\);/, "should pass the cached baseline and the new timestamp as the trailing arguments");

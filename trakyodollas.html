@@ -15954,7 +15954,11 @@ async function syncToCloud() {
     }
   } catch(e) {
     console.error('syncToCloud error:', e);
-    showToast("Couldn\u2019t sync \u2014 your data is saved on this device only.", '#F87171', 6000);
+    if (e?.message === 'save-prefs-too-large') {
+      showToast("Your data is too large to sync \u2014 your data is saved on this device only.", '#F87171', 8000);
+    } else {
+      showToast("Couldn\u2019t sync \u2014 your data is saved on this device only.", '#F87171', 6000);
+    }
   }
 }
 
@@ -18276,8 +18280,15 @@ function _bytesToB64(bytes) {
 async function _encrypt(obj, uid) {
   const key = await _deriveKey(uid);
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const plaintext = new TextEncoder().encode(JSON.stringify(obj));
-  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext);
+  const jsonBytes = new TextEncoder().encode(JSON.stringify(obj));
+  // Gzip before encrypting — reduces payload ~4-6× so large transaction sets
+  // stay well under the server's 1.9 MB cap and D1's 2 MB row limit.
+  const cs = new CompressionStream('gzip');
+  const cw = cs.writable.getWriter();
+  cw.write(jsonBytes);
+  cw.close();
+  const compressed = new Uint8Array(await new Response(cs.readable).arrayBuffer());
+  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, compressed);
   return { iv: _bytesToB64(iv), ct: _bytesToB64(new Uint8Array(ciphertext)) };
 }
 // Throws 'wrong-passphrase' on GCM auth-tag mismatch so callers can re-prompt
@@ -18291,6 +18302,17 @@ async function _decrypt(envelope, uid) {
     plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
   } catch(e) {
     throw new Error('wrong-passphrase');
+  }
+  const bytes = new Uint8Array(plaintext);
+  // Gzip magic is 0x1f,0x8b. Old uncompressed blobs start with 0x7B.
+  // Handle both so existing stored data keeps working.
+  if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
+    const ds = new DecompressionStream('gzip');
+    const dw = ds.writable.getWriter();
+    dw.write(bytes);
+    dw.close();
+    const decompressed = new Uint8Array(await new Response(ds.readable).arrayBuffer());
+    return JSON.parse(new TextDecoder().decode(decompressed));
   }
   return JSON.parse(new TextDecoder().decode(plaintext));
 }
@@ -18385,6 +18407,7 @@ window._fb = {
       method: 'POST',
       body: JSON.stringify({ data: encrypted, expectedUpdatedAt, newUpdatedAt }),
     });
+    if (res.status === 413) throw new Error('save-prefs-too-large');
     if (!res.ok) throw new Error('save-prefs-failed');
     const { wrote } = await res.json();
     return !!wrote;
