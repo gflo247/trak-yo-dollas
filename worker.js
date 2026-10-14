@@ -404,7 +404,7 @@ async function handleGoogleCallback(request, env) {
   }
   const { email, email_verified } = await userRes.json();
   if (!email || !email_verified) {
-    console.warn('Google OAuth: rejected userinfo — email:', email, 'verified:', email_verified);
+    console.warn('Google OAuth: rejected userinfo (unverified or missing email)');
     return Response.redirect(`${origin}/trakyodollas#error=google-auth-failed`, 302);
   }
 
