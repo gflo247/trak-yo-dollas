@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-HpTtQcWaZNdtDpBLaDpPuLDPavo3g9gwl7DXT1RKv/s=' 'sha256-s+1Rezkw7eF5ZItO18DQ5MvOnASzQ21wcjz2bPvE4BY=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-Qxg2XLrwplwlKPrrYPfiGiPEU0SJSSq/Y+konmelzNo=' 'sha256-s+1Rezkw7eF5ZItO18DQ5MvOnASzQ21wcjz2bPvE4BY=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -3888,7 +3888,7 @@ function renderInsights(){
       const spend=getTxForMonth(effectiveM,null,'all').filter(t=>t.cat===cat).reduce((s,t)=>s+t.amount,0);
       const pct=budget>0?Math.round(spend/budget*100):0;
       return {cat,spend,budget,pct};
-    }).sort((a,b)=>b.pct-a.pct).map(({cat,spend,budget,pct})=>`${cat}: ${fmt(spend)} / ${fmt(budget)} (${pct}%)`).join('&#10;');
+    }).sort((a,b)=>b.pct-a.pct||b.budget-a.budget||a.cat.localeCompare(b.cat)).map(({cat,spend,budget,pct})=>`${cat}: ${fmt(spend)} / ${fmt(budget)} (${pct}%)`).join('&#10;');
     const dismissBtn=`<button data-action="dismissBudgetHealthPill" data-stop="1" style="position:absolute;top:6px;right:8px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:8px 10px;z-index:10" title="Dismiss" type="button">✕</button>`;
     const basePill=pillWithTip(statusIcon,'Budget health',pillValue,statusColor,`${statusLabel}${worstStr}`,tooltip,over>0?{label:'Go to Budget tab',action:'showPageBudget'}:'');
     const pillHtml=basePill
