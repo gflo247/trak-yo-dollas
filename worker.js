@@ -6,6 +6,9 @@
 
 const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 const TOKEN_DURATION_MS   = 15 * 60 * 1000;            // 15 minutes
+const RATE_WINDOW_MS      = 15 * 60 * 1000;            // sliding window matches token lifetime
+const EMAIL_RATE_LIMIT    = 5;                          // magic-link requests per address per window
+const IP_RATE_LIMIT       = 20;                         // magic-link requests per IP per window
 
 function jsonRes(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -32,13 +35,45 @@ async function getSession(request, env) {
   return row ? { userId: row.user_id, token } : null;
 }
 
+// Atomically increments a rate-limit counter for the given key within a sliding
+// window. Returns true if the limit is exceeded. Uses an upsert so no separate
+// cleanup job is needed — the count resets automatically once window_end passes.
+async function checkRateLimit(env, key, limit) {
+  const nowIso    = new Date().toISOString();
+  const windowEnd = new Date(Date.now() + RATE_WINDOW_MS).toISOString();
+  const row = await env.DB.prepare(`
+    INSERT INTO rate_limits (key, count, window_end) VALUES (?, 1, ?)
+    ON CONFLICT(key) DO UPDATE SET
+      count      = CASE WHEN window_end < ? THEN 1 ELSE count + 1 END,
+      window_end = CASE WHEN window_end < ? THEN ? ELSE window_end END
+    RETURNING count
+  `).bind(key, windowEnd, nowIso, nowIso, windowEnd).first();
+  return !row || row.count > limit;
+}
+
 // ── POST /auth/request-link  { email } ───────────────────────────────────────
 async function handleRequestLink(request, env) {
+  // Reject non-JSON content types — cross-site HTML forms post
+  // application/x-www-form-urlencoded and must not reach this handler.
+  const ct = request.headers.get('Content-Type') || '';
+  if (!ct.includes('application/json')) {
+    return jsonRes({ error: 'bad-request' }, 400);
+  }
+
   let body;
   try { body = await request.json(); } catch { return jsonRes({ error: 'bad-request' }, 400); }
   const email = (body.email || '').trim().toLowerCase();
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return jsonRes({ error: 'invalid-email' }, 400);
+  }
+
+  // Rate limiting: per-email and per-IP to prevent bursts of outgoing email.
+  const ip = request.headers.get('CF-Connecting-IP') || '';
+  if (await checkRateLimit(env, `email:${email}`, EMAIL_RATE_LIMIT)) {
+    return jsonRes({ error: 'rate-limited' }, 429);
+  }
+  if (ip && await checkRateLimit(env, `ip:${ip}`, IP_RATE_LIMIT)) {
+    return jsonRes({ error: 'rate-limited' }, 429);
   }
 
   // Find or create user record

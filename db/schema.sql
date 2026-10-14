@@ -43,6 +43,15 @@ CREATE TABLE IF NOT EXISTS prefs (
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- Rate-limiting counters for auth endpoints (one row per key per window).
+-- key is 'email:<address>' or 'ip:<address>'. The window resets automatically
+-- when window_end is in the past; no background cleanup job is needed.
+CREATE TABLE IF NOT EXISTS rate_limits (
+  key        TEXT PRIMARY KEY,
+  count      INTEGER NOT NULL DEFAULT 0,
+  window_end TEXT NOT NULL
+);
+
 -- Encrypted monthly net-worth snapshots; one row per (user, month).
 CREATE TABLE IF NOT EXISTS snapshots (
   user_id    TEXT NOT NULL,
