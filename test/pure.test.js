@@ -7598,7 +7598,7 @@ test("Budget tab's subtitle and gate notice meet the 12px legibility floor, not 
 // full site-wide grep showed ✕/× was still used at 4 other delete sites.
 // ✕ conventionally signals "close/dismiss", but all 6 of these actions are
 // permanent deletions, so standardized every one on 🗑️.
-test("deleteRule, startDeleteCat, deleteVendorAlias, and the source chip's remove button all use 🗑️, not a mismatched ✕/×", () => {
+test("deleteRule, startDeleteCat, and deleteVendorAlias all use 🗑️, not a mismatched ✕/×", () => {
   const source = readSource();
   assert.match(
     source,
@@ -7615,10 +7615,12 @@ test("deleteRule, startDeleteCat, deleteVendorAlias, and the source chip's remov
     /data-action="deleteVendorAlias" data-arg="\$\{esc\(from\)\}"[^>]*title="Remove merge" type="button">🗑️<\/button>/,
     "deleteVendorAlias's button should use 🗑️"
   );
+  // Source chips no longer have a separate remove button — clicking the chip itself
+  // opens a menu (openSrcMenu) with Hide/Show and Remove options.
   assert.match(
     source,
-    /<button class="btn-src-x" data-action="openSrcRemovePop"[^>]*title="Remove this source" type="button">🗑️<\/button>/,
-    "the source chip's remove button should use 🗑️"
+    /data-action="openSrcMenu" data-stop="1" data-src/,
+    "source chips should use openSrcMenu on the chip itself"
   );
 });
 

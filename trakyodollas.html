@@ -335,9 +335,6 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .chip-ora.on{background:#431403;color:#FB923C;border-color:#EA580C}
 .chip-sky{background:#0C252622;color:#38BDF8;border-color:#0284C744}
 .chip-sky.on{background:#0C2526;color:#38BDF8;border-color:#0284C7}
-.btn-src-x{margin-left:5px;font-size:10px;opacity:0;color:inherit;line-height:1;vertical-align:middle;transition:opacity .12s;background:none;border:none;cursor:pointer;padding:4px 5px;min-height:24px;min-width:24px;font-family:inherit}
-.chip:hover .btn-src-x,.btn-src-x:hover,.btn-src-x:focus-visible{opacity:.75}
-@media(max-width:600px){.btn-src-x{opacity:.55}}
 .src-remove-pop{position:absolute;top:calc(100% + 6px);left:0;z-index:300;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.6rem .75rem;min-width:210px;box-shadow:0 8px 24px #00000055;white-space:nowrap}
 /* excluded toggle */
 
@@ -5769,7 +5766,7 @@ function renderSourceChips(){
       // via an axe-core audit); the source name and the 🗑️ remove action
       // are two independent controls, so the pill itself is a non-
       // interactive span and both become sibling <button>s inside it.
-      return `<div class="src-chip-wrap" style="position:relative;display:inline-block"><span class="chip ${cls} ${state.activeSources.has(s)?'on':''}" style="display:inline-flex;align-items:center"><button data-action="toggleSource" data-arg="${safe}" style="background:none;border:none;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer" type="button">${safe}</button><button class="btn-src-x" data-action="openSrcRemovePop" data-stop="1" data-src="${safe}" aria-label="Remove source ${safe}" title="Remove this source" type="button">🗑️</button></span><div class="src-remove-pop" style="display:none"></div></div>`;
+      return `<div class="src-chip-wrap" style="position:relative;display:inline-block"><button class="chip ${cls} ${state.activeSources.has(s)?'on':''}" data-action="openSrcMenu" data-stop="1" data-src="${safe}" aria-label="${safe} — tap to toggle or remove" type="button">${safe}</button><div class="src-remove-pop" style="display:none"></div></div>`;
     }).join('')+
     (noneSelected?`<span style="font-size:12px;color:var(--accent-red);align-self:center;margin-left:2px">← select a source to show spending</span>`:'')
     +hiddenChip;
@@ -8380,7 +8377,7 @@ document.addEventListener('keydown',function(e){
   }
 });
 
-function openSrcRemovePop(arg,el){
+function openSrcMenu(arg,el){
   closeSrcRemovePop();
   const src=el.getAttribute('data-src');
   const wrap=el.closest('.src-chip-wrap');
@@ -8388,7 +8385,8 @@ function openSrcRemovePop(arg,el){
   if(!pop)return;
   const count=state.transactions.filter(t=>t.card===src).length;
   const safe=esc(src);
-  pop.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:.35rem">Remove ${count} transaction${count===1?'':'s'}?</div><div style="font-size:11px;color:var(--text-muted);margin-bottom:.55rem">${safe}</div><div style="display:flex;gap:6px"><button data-action="confirmSrcRemove" data-arg="${safe}" style="background:#450A0A;border:1px solid #7F1D1D;border-radius:6px;color:#FCA5A5;font-size:11px;font-weight:700;cursor:pointer;padding:4px 10px;font-family:inherit" type="button">Remove</button><button data-action="closeSrcRemovePop" class="btn" style="font-size:11px;padding:4px 10px" type="button">Cancel</button></div>`;
+  const isActive=state.activeSources.has(src);
+  pop.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:.5rem">${safe}</div><div style="display:flex;gap:6px"><button data-action="toggleSource" data-arg="${safe}" class="btn" style="font-size:11px;padding:4px 12px" type="button">${isActive?'Hide':'Show'}</button><button data-action="confirmSrcRemove" data-arg="${safe}" style="background:#450A0A;border:1px solid #7F1D1D;border-radius:6px;color:#FCA5A5;font-size:11px;font-weight:700;cursor:pointer;padding:4px 10px;font-family:inherit" type="button">Remove ${count}</button></div>`;
   pop.style.display='block';
   setTimeout(()=>document.addEventListener('click',_srcPopOutside,{once:true}),0);
 }
@@ -8433,7 +8431,7 @@ function hideImportFreshConfirm(){
   if(row)row.style.display='flex';
   if(conf)conf.style.display='none';
 }
-function toggleSource(s){s=String(s);if(state.activeSources.has(s))state.activeSources.delete(s);else state.activeSources.add(s);state.activeCats=new Set();state.searchQuery='';document.getElementById('tx-search').value='';document.getElementById('search-clear-btn').classList.add('hidden');showTxN=50;scheduleSave();renderSpending();}
+function toggleSource(s){closeSrcRemovePop();s=String(s);if(state.activeSources.has(s))state.activeSources.delete(s);else state.activeSources.add(s);state.activeCats=new Set();state.searchQuery='';document.getElementById('tx-search').value='';document.getElementById('search-clear-btn').classList.add('hidden');showTxN=50;scheduleSave();renderSpending();}
 function updateExclNote(){
   const cb=document.getElementById('et-excluded');
   const note=document.getElementById('et-excl-note');
