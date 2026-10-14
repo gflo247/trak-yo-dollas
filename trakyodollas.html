@@ -15544,9 +15544,14 @@ async function confirmForgotPassphraseReset() {
   // automatic recovery from what's usually a one-off blip. Found in the
   // 88th adversarial pass, fixed July 28, 2026.
   async function _deleteTableWithRetry(table) {
+    const path = table === 'snapshots' ? '/api/all-snapshots'
+               : table === 'prefs'     ? '/api/prefs'
+               : '/api/keys';
     for (let attempt = 0; attempt < 3; attempt++) {
-      const { error } = await _sb.from(table).delete().eq('user_id', uid);
-      if (!error) return null;
+      try {
+        const r = await _authFetch(path, { method: 'DELETE' });
+        if (r.ok) return null;
+      } catch(e) { /* retry */ }
       if (attempt < 2) await new Promise(r => setTimeout(r, 400 * (attempt + 1)));
     }
     return table;

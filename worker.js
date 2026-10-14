@@ -290,6 +290,28 @@ async function handleDeleteSnapshot(request, env, monthKey) {
   return jsonRes({ ok: true });
 }
 
+// ── DELETE /api/prefs, /api/keys, /api/all-snapshots ─────────────────────────
+// Used by the "forgot passphrase → delete synced data" reset flow. Each
+// deletes only the authenticated user's own rows.
+async function handleDeletePrefs(request, env) {
+  const session = await getSession(request, env);
+  if (!session) return jsonRes({ error: 'unauthorized' }, 401);
+  await env.DB.prepare('DELETE FROM prefs WHERE user_id = ?').bind(session.userId).run();
+  return jsonRes({ ok: true });
+}
+async function handleDeleteKeys(request, env) {
+  const session = await getSession(request, env);
+  if (!session) return jsonRes({ error: 'unauthorized' }, 401);
+  await env.DB.prepare('DELETE FROM user_keys WHERE user_id = ?').bind(session.userId).run();
+  return jsonRes({ ok: true });
+}
+async function handleDeleteAllSnapshots(request, env) {
+  const session = await getSession(request, env);
+  if (!session) return jsonRes({ error: 'unauthorized' }, 401);
+  await env.DB.prepare('DELETE FROM snapshots WHERE user_id = ?').bind(session.userId).run();
+  return jsonRes({ ok: true });
+}
+
 // ── Google OAuth helpers ──────────────────────────────────────────────────────
 async function hmacHex(secret, data) {
   const key = await crypto.subtle.importKey(
@@ -434,6 +456,10 @@ export default {
       if (pathname === '/api/prefs'        && method === 'POST') return await handleSavePrefs(request, env);
       if (pathname === '/api/snapshots'    && method === 'GET')  return await handleGetSnapshots(request, env);
       if (pathname === '/api/snapshots'    && method === 'POST') return await handleSaveSnapshot(request, env);
+
+      if (pathname === '/api/prefs'          && method === 'DELETE') return await handleDeletePrefs(request, env);
+      if (pathname === '/api/keys'           && method === 'DELETE') return await handleDeleteKeys(request, env);
+      if (pathname === '/api/all-snapshots'  && method === 'DELETE') return await handleDeleteAllSnapshots(request, env);
 
       const snapMatch = pathname.match(/^\/api\/snapshots\/([^/]+)$/);
       if (snapMatch && method === 'DELETE') {
