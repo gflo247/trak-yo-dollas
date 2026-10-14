@@ -355,7 +355,18 @@ async function handleGoogleAuth(request, env) {
     state,
     prompt:        'select_account',
   });
-  return Response.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`, 302);
+  // Bind the state nonce to this specific browser via a short-lived cookie.
+  // Without this binding an attacker can start their own flow, take the valid
+  // state value, and craft a callback URL that signs a victim into the
+  // attacker's account (login CSRF). Response.redirect produces immutable
+  // headers so we use new Response to attach the Set-Cookie header.
+  return new Response(null, {
+    status: 302,
+    headers: {
+      'Location':   `https://accounts.google.com/o/oauth2/v2/auth?${params}`,
+      'Set-Cookie': `oauth_state=${state}; HttpOnly; Secure; SameSite=Lax; Path=/auth/google/callback; Max-Age=300`,
+    },
+  });
 }
 
 // ── GET /auth/google/callback ─────────────────────────────────────────────────
@@ -369,7 +380,15 @@ async function handleGoogleCallback(request, env) {
     return Response.redirect(`${origin}/trakyodollas#error=google-auth-failed`, 302);
   }
 
-  if (!await verifyOAuthState(state, env.GOOGLE_CLIENT_SECRET)) {
+  // Verify the state matches the cookie set in handleGoogleAuth — this binds
+  // the flow to the browser that initiated it and prevents login CSRF.
+  const cookieState = (request.headers.get('Cookie') || '')
+    .split(';')
+    .map(c => c.trim())
+    .find(c => c.startsWith('oauth_state='))
+    ?.slice('oauth_state='.length);
+
+  if (!cookieState || cookieState !== state || !await verifyOAuthState(state, env.GOOGLE_CLIENT_SECRET)) {
     return Response.redirect(`${origin}/trakyodollas#error=google-auth-failed`, 302);
   }
 
