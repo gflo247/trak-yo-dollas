@@ -10,7 +10,7 @@ const TOKEN_DURATION_MS   = 15 * 60 * 1000;            // 15 minutes
 function jsonRes(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
   });
 }
 
