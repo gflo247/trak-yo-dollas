@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-rHnNq/4NUStVzH3fvzVJ5lL16a8bPd4LnvSb3qG5SDY=' 'sha256-s+1Rezkw7eF5ZItO18DQ5MvOnASzQ21wcjz2bPvE4BY=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-Ds9AiB8vmhQhIWVWPy/WBOre6jInmGqcPCbllxJR3W4=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -1114,7 +1114,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
       <div class="sh" style="margin:0">Accounts &amp; assets</div>
       <div class="flex-center gap-8">
-        <button class="btn btn-sm" data-action="openAcctCsvModal" type="button">⬆ Import CSV</button>
+        <button class="btn btn-sm" data-action="openAcctCsvModal" type="button" style="min-height:24px">⬆ Import CSV</button>
         <button class="btn btn-sm btn-primary" data-action="openAddModal" type="button">+ Add account</button>
       </div>
     </div>
@@ -1231,7 +1231,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:.7rem">
     <div class="chip-row" id="source-chips" style="flex:1;margin-bottom:0;min-width:0"></div>
     <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
-      <button id="toolbar-import-btn" class="btn btn-sm btn-primary" data-action="openTxImportModal" title="Import transactions from a bank, credit union, or credit card CSV. Your files are processed locally and never uploaded." type="button">⬆<span class="hide-mobile"> Import CSV</span><span class="show-mobile"> Import</span></button>
+      <button id="toolbar-import-btn" class="btn btn-sm btn-primary" data-action="openTxImportModal" title="Import transactions from a bank, credit union, or credit card CSV. Your files are processed locally and never uploaded." type="button" style="min-height:24px">⬆<span class="hide-mobile"> Import CSV</span><span class="show-mobile"> Import</span></button>
       <!-- Overflow menu -->
       <div style="position:relative">
         <button id="toolbar-overflow-btn" class="btn btn-sm" data-action="toggleSpendingOverflow" data-stop title="More options" aria-label="More options" style="padding:4px 10px;font-size:13px;font-weight:700;letter-spacing:.05em;line-height:1;white-space:nowrap" type="button">···</button>
@@ -1662,8 +1662,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
 
     <div style="margin-top:.75rem;background:#065F4622;border:1px solid #05996944;border-radius:8px;padding:.5rem .85rem;text-align:center">
-      <span style="font-size:11px;font-weight:700;color:var(--accent-green)">🔒 Your browser handles CSV files locally — nothing leaves your device unless you choose to sync.</span>
-      <div style="font-size:12px;font-weight:600;color:var(--accent-green);margin-top:4px">Synced data encrypted on your device — only ciphertext stored server-side 🔒</div>
+      <span style="font-size:11px;font-weight:700;color:var(--text-primary)">🔒 Your browser handles CSV files locally — nothing leaves your device unless you choose to sync.</span>
+      <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-top:4px">Synced data encrypted on your device — only ciphertext stored server-side 🔒</div>
     </div>
     <div style="margin-top:.75rem;text-align:center">
       <button class="btn" data-action="closeModals" type="button" style="width:100%;color:var(--text-primary);font-size:13px;font-weight:600;padding:.65rem">No thanks, keep local</button>
@@ -2111,7 +2111,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="income-modal-title" tabindex="-1" style="width:min(480px,95vw)">
     <h3 id="income-modal-title" style="font-size:16px;margin-bottom:.4rem">💰 Income & savings rate</h3>
     <p style="font-size:12px;color:var(--text-muted);margin-bottom:.5rem;line-height:1.6">Your savings rate is how much of your income you keep each month. Choose how you want to track it:</p>
-    <p style="font-size:12px;color:var(--text-muted);background:var(--bg-card);border-radius:8px;padding:.5rem .75rem;margin-bottom:1rem;line-height:1.5">Once saved, your savings rate will appear as a pill in the <strong style="color:#94A3B8">'26 Apr at a glance</strong> card on the Net Worth tab.</p>
+    <p style="font-size:12px;color:var(--text-muted);background:var(--bg-card);border-radius:8px;padding:.5rem .75rem;margin-bottom:1rem;line-height:1.5">Once saved, your savings rate will appear as a pill in the <strong style="color:var(--text-secondary)">'26 Apr at a glance</strong> card on the Net Worth tab.</p>
 
     <!-- Method A: Manual -->
     <div id="income-method-a" data-action="selectIncomeMethod" data-arg="manual" tabindex="0" role="button" aria-pressed="false" style="border:1.5px solid var(--border-mid);border-radius:10px;padding:.85rem 1rem;margin-bottom:.75rem;cursor:pointer">
@@ -2391,7 +2391,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
             <span style="color:var(--accent-blue-light);font-weight:600">1. Your rules</span> — keyword rules you've saved always win<br>
             <span style="color:var(--text-muted);font-weight:600">2. Built-in keywords</span> — ~300 common merchant names, matched automatically<br>
             <span style="color:var(--accent-green);font-weight:600">3. Community patterns</span> — <span class="community-rules-count">1802</span> community-contributed keyword→category mappings covering US, CA, UK, AU, NZ, and SG merchants, picking up what built-in keywords miss — fetched once per session · <a href="https://forms.gle/6oV9UPtv8RKKUHM96" target="_blank" rel="noopener noreferrer" style="color:var(--accent-green)">Suggest a merchant category ↗</a><br>
-            <span style="color:#94A3B8;font-weight:600">4. Merchant Category Codes (MCC)</span> — 4-digit codes your bank or credit union assigns to merchants, if present in your CSV
+            <span style="color:var(--text-secondary);font-weight:600">4. Merchant Category Codes (MCC)</span> — 4-digit codes your bank or credit union assigns to merchants, if present in your CSV
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1.6fr;font-size:12px;border-bottom:1px solid var(--border)">
@@ -4306,7 +4306,7 @@ function renderNwBreakdown(){
     const items=g.accts.map((a,i)=>{
       const aPct=raw!==0?Math.abs(a.balance/raw)*100:0;
       const isNeg=(g.isLiab?-a.balance:a.balance)<0;
-      return`<div class="nw-item${i%2===1?' row-alt':''}" data-action="editAccount" data-arg="${a.id}" role="button" tabindex="0" aria-label="Edit ${esc(a.name)}: ${isNeg?'-':''}${fmtC(a.balance)}" style="cursor:pointer">
+      return`<div class="nw-item${i%2===1?' row-alt':''}" data-action="editAccount" data-arg="${a.id}" role="button" tabindex="0" aria-label="Edit ${esc(a.name)}, ${esc(a.source)} ${esc(TL[a.type]||a.type)}: ${isNeg?'-':''}${fmt(a.balance)}" style="cursor:pointer">
         <div class="flex-center gap-8" style="min-width:0">
           <div style="width:8px;height:8px;border-radius:50%;background:${g.color}88;flex-shrink:0"></div>
           <div style="min-width:0"><div class="nw-item-name" title="${esc(a.name)}">${esc(a.name)}</div><div class="nw-item-sub">${esc(a.source)} · ${esc(TL[a.type]||a.type)}</div></div>
@@ -4493,12 +4493,12 @@ function renderYearInReview(){
       </div>
       ${savingsRate!==null?`<div class="deep-box">
         <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Savings rate</div>
-        <div style="font-size:15px;font-weight:800;color:${savingsRate>=20?'#34D399':savingsRate>=10?'#FBBF24':'#F87171'}">${savingsRate}%</div>
+        <div style="font-size:15px;font-weight:800;color:${savingsRate>=20?'var(--accent-green)':savingsRate>=10?'var(--accent-amber)':'var(--accent-red)'}">${savingsRate}%</div>
         <div class="text-muted-sm">${fmt(periodIncome)} income</div>
       </div>`:''}
       ${nwChange!==null?`<div class="deep-box">
         <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Net worth · snapshots</div>
-        <div style="font-size:15px;font-weight:800;color:${nwChange>=0?'#34D399':'#F87171'}">${nwChange>=0?'+':''}${fmt(nwChange)}</div>
+        <div style="font-size:15px;font-weight:800;color:${nwChange>=0?'var(--accent-green)':'var(--accent-red)'}">${nwChange>=0?'+':''}${fmt(nwChange)}</div>
         <div class="text-muted-sm">${fmt(firstSnap.nw)} → ${fmt(lastSnap.nw)}</div>
         <div style="font-size:9px;color:var(--text-dim);margin-top:2px">${fmtMonthShort(firstSnap.monthKey)} – ${fmtMonthShort(lastSnap.monthKey)}</div>
       </div>`:''}
@@ -8038,16 +8038,16 @@ function renderTxList(){
     const monthCatTotal=activeCatMonthTotals?(activeCatMonthTotals[monthKey]||0):monthTotal;
     const pctOfMonth=monthCatTotal>0&&isRealSpend(t)?Math.round(t.amount/monthCatTotal*100):null;
     const isSel=_selectedTxIds.has(t.id);
-    return`<div class="tx-row ${t.excluded?'tx-excluded':''}${isSel?' tx-selected':''}" data-action="openEditTxModal" data-arg="${t.id}" tabindex="0" role="button" aria-label="${fmtDate(t.date)}, ${esc(displayVendor(t.desc))}, ${t.isIncome||t.is_offset?'+':'-'}${esc(fmtD(Math.abs(t.amount)))}">
+    return`<div class="tx-row ${t.excluded?'tx-excluded':''}${isSel?' tx-selected':''}" data-action="openEditTxModal" data-arg="${t.id}" tabindex="0" role="button" aria-label="${fmtDate(t.date)}, ${esc(displayVendor(t.desc))}, ${esc(t.cat)}, ${t.isIncome||t.is_offset?'+':'-'}${esc(fmtD(Math.abs(t.amount)))}">
       ${state.includeIncome&&!t.excluded?`<input type="checkbox" class="tx-select-cb" data-action="toggleTxSelect" data-arg="${t.id}" data-stop="1" aria-label="Select ${esc(displayVendor(t.desc))} – ${fmtD(t.amount)}"${isSel?' checked':''} style="flex-shrink:0;cursor:pointer;accent-color:#2563EB">`:''}
       <div class="tx-date"><span class="tx-date-full">${fmtDate(t.date)}</span><span class="tx-date-short">${fmtDateShort(t.date)}</span></div>
       <div class="tx-desc" title="${esc(t.desc)}">${highlight(displayVendor(t.desc))}</div>
-      <div class="tx-pills">
+      <div class="tx-pills" aria-hidden="true">
         <span class="pill cat-pill" style="background:${color}22">${highlight(t.cat)}</span>
         <span class="pill" style="background:${cc.bg};color:${cc.fg}">${highlight(t.card.replace('Chase ','').replace(' Unlimited','Unlim').replace('Ally ',''))}</span>
         ${state.includeIncome?`<span class="pill" style="background:${t.biz?'#2563EB22':'var(--bg-deep)'};color:${t.biz?'#60A5FA':'var(--text-muted)'};font-size:9px;cursor:pointer" data-action="toggleTxBiz" data-arg="${t.id}" data-stop="1" tabindex="0" role="button" aria-label="Toggle business or personal — currently ${t.biz?'business':'personal'}" title="Currently ${t.biz?'business':'personal'} — click to toggle">${t.biz?'BIZ':'PERS'}</span>`:''}
       </div>
-      <div class="tx-pct">${pctOfMonth!==null&&!t.is_offset?pctOfMonth+'%':''}</div>
+      <div class="tx-pct" aria-hidden="true">${pctOfMonth!==null&&!t.is_offset?pctOfMonth+'%':''}</div>
       <div class="tx-amount" style="${(t.isIncome||t.is_offset)?'color:var(--accent-green)':''}">${t.isIncome?'+':t.is_offset?'+':'-'}${fmtD(Math.abs(t.amount))}</div>
     </div>`;
   }
@@ -11047,7 +11047,7 @@ function renderBudgetTab(){
 
       const pctDots=buildRowPctDots(histMonths,cat,budget,_budgetBizFilter);
       const histHTML=histMonths.length
-        ?'<div style="margin-top:6px">'
+        ?'<div style="margin-top:6px" aria-hidden="true">'
           +'<div style="display:flex;gap:0;flex-wrap:nowrap;align-items:flex-end;width:100%">'+pctDots+'</div>'
         +'</div>'
         :'';
@@ -11066,6 +11066,14 @@ function renderBudgetTab(){
         projFmt=`→ ${fmt(projected)} by end`;
         projColor=projected>budget?tc('#F87171','#B91C1C'):'var(--accent-green)';
       }
+      const ariaStatus=over?`, ${fmt(Math.max(spent-budget,1))} over`
+        :atRisk?`, ${fmt(left)} left`
+        :(isCurrent&&left>=0.5)?`, ${fmt(left)} left`
+        :'';
+      const ariaProj=projFmt?`, ${projFmt}`:'';
+      const ariaAvgBadge=(_budgetSort==='unusual'&&m.avgRatio!=null&&!gated)
+        ?`, ${Math.round((m.avgRatio-1)*100)>=0?'+':''}${Math.round((m.avgRatio-1)*100)}% vs avg`
+        :'';
       const amountHTML=`<span style="font-size:14px;font-weight:800;color:${color}">${fmt(spent)}</span><span class="text-muted-sm"> / ${fmt(budget)}</span>${projFmt?`<span style="font-size:10px;font-weight:600;color:${projColor};margin-left:6px">${projFmt}</span>`:''}`;
       // Math.max(...,1) -- classifyBudgetStatus's epsilon guard fires at spent>budget+0.005,
       // so spent-budget can be as small as ~$0.006. fmt() rounds to whole dollars, so any
@@ -11096,7 +11104,7 @@ function renderBudgetTab(){
 
       return`<div data-card style="background:${tc('#0F172A','#FFFFFF')};border:1px solid ${borderColor};border-radius:10px;display:flex">
         ${accentDiv}
-        <div data-action="openBudgetModal" data-arg="${esc(cat)}" tabindex="0" role="button" aria-label="Edit ${esc(cat)} budget: ${fmt(spent)} of ${fmt(budget)} spent" style="flex:1;padding:.75rem 1rem;min-width:0;cursor:pointer">
+        <div data-action="openBudgetModal" data-arg="${esc(cat)}" tabindex="0" role="button" aria-label="Edit ${esc(cat)} budget: ${fmt(spent)} of ${fmt(budget)}${ariaStatus}${ariaProj}${ariaAvgBadge}" style="flex:1;padding:.75rem 1rem;min-width:0;cursor:pointer">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:.4rem" data-stop="1">
             <div class="flex-center gap-8" style="min-width:0">
               <div style="width:10px;height:10px;border-radius:2px;background:${catColor};flex-shrink:0"></div>
@@ -11104,7 +11112,7 @@ function renderBudgetTab(){
               ${badgeHTML}${leftTextHTML}
               ${avgBadgeHTML}
             </div>
-            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0" data-stop="1">
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0" data-stop="1" aria-hidden="true">
               <span style="font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">YTD</span>
               ${ringHTML({ytd:m.ytdSpend,ytdPace:m.ytdPace},'sm',tc('#0F172A','#FFFFFF'))}
               <div style="text-align:right">
@@ -11112,7 +11120,7 @@ function renderBudgetTab(){
               </div>
             </div>
           </div>
-          <div class="bar-tick-wrap" title="${pct}% of budget used this month" style="position:relative;margin-bottom:20px">
+          <div class="bar-tick-wrap" title="${pct}% of budget used this month" style="position:relative;margin-bottom:20px" aria-hidden="true">
             <div style="background:${tc('#334155','#E2E8F0')};border-radius:4px;height:7px;overflow:hidden">
               <div style="height:100%;width:${fillPct}%;background:${color};border-radius:4px;transition:width .3s"></div>
             </div>
