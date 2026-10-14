@@ -137,6 +137,11 @@ def check_file(path):
         return spans
 
     wrapper_spans = find_wrapper_body_spans(html, '_authFetch')
+    # _deleteTableWithRetry is a retry wrapper around _authFetch; it receives a
+    # table name from its caller and maps it to a relative /api/ path internally.
+    # Skip its body for the same reason we skip _authFetch's body — the paths are
+    # all relative same-origin and verified by reading the function directly.
+    wrapper_spans += find_wrapper_body_spans(html, '_deleteTableWithRetry')
 
     def inside_wrapper_body(pos):
         return any(start <= pos < end for start, end in wrapper_spans)
