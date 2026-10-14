@@ -1174,7 +1174,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
   <!-- Sort toggle + export — between hero and category rows -->
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:.6rem">
-    <button data-action="exportBudgetCSV" aria-label="Export budget as CSV" style="background:none;border:1px solid #2563EB44;border-radius:5px;padding:5px 8px;font-size:11px;font-weight:600;color:var(--accent-blue-light);cursor:pointer" type="button">⬇ Export CSV</button>
+    <button data-action="exportBudgetCSV" aria-label="Export CSV" style="background:none;border:1px solid #2563EB44;border-radius:5px;padding:5px 8px;font-size:11px;font-weight:600;color:var(--accent-blue-light);cursor:pointer" type="button">⬇ Export CSV</button>
     <div style="display:flex;border:1px solid var(--border-mid);border-radius:6px;overflow:hidden">
       <button id="bsort-pct" data-action="setBudgetSort" data-arg="pct" style="padding:5px 10px;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700;background:#2563EB;color:#fff" type="button">% Used</button>
       <button id="bsort-amount" data-action="setBudgetSort" data-arg="amount" style="padding:5px 10px;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700;background:var(--bg-card);color:var(--text-muted)" type="button">Amount</button>
@@ -3646,7 +3646,7 @@ function renderInsights(){
         </div>
         <div style="font-size:18px;font-weight:900;color:${color};line-height:1;letter-spacing:-.02em;white-space:nowrap;flex-shrink:0">${value}</div>
       </div>
-      ${(sub||cta)?`<div style="font-size:12px;color:var(--text-muted);line-height:1.35">${sub}${cta?` · <button data-action="${_ctaAction(cta)}"${_ctaArg(cta)!==null?` data-arg="${esc(_ctaArg(cta))}"`:''} data-stop="1" style="background:none;border:none;color:${color};font-size:12px;font-weight:700;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">${cta.label} →</button>`:''}</div>`:''}
+      ${(sub||cta)?`<div style="font-size:12px;color:var(--text-muted);line-height:1.35">${sub}${cta?` · <button data-action="${_ctaAction(cta)}"${_ctaArg(cta)!==null?` data-arg="${esc(_ctaArg(cta))}"`:''} data-stop="1" style="background:none;border:none;color:${color};font-size:12px;font-weight:700;cursor:pointer;padding:0;min-height:24px;font-family:inherit;text-decoration:underline" type="button">${cta.label} →</button>`:''}</div>`:''}
     </div>`;
 
   // ── Spend pill pre-computation ────────────────────────────────
@@ -3703,7 +3703,7 @@ function renderInsights(){
     } else {
     const saved=Math.max(0,effectiveIncome-spent);
     const savingsRate=Math.round(saved/effectiveIncome*100);
-    const rateColor=savingsRate>=20?'#34D399':savingsRate>=10?'#FBBF24':'#F87171';
+    const rateColor=savingsRate>=20?'var(--accent-green)':savingsRate>=10?'var(--accent-amber)':'var(--accent-red)';
     const incomeMethod=state.declaredIncome>0?'declared':state.income.method==='manual'?'manual':'estimated from deposits';
     const savingsTooltip=`Income (${incomeMethod}): ${fmt(effectiveIncome)}&#10;Spent in ${latestLabel}: ${fmt(spent)}&#10;Kept: ${fmt(saved)}&#10;Savings rate: ${savingsRate}%&#10;&#10;Rule of thumb: 20%+ is healthy, 10-20% is ok, under 10% is tight.`;
     // Build emotionally resonant savings sub-label
@@ -4500,7 +4500,7 @@ function renderYearInReview(){
         <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Net worth · snapshots</div>
         <div style="font-size:15px;font-weight:800;color:${nwChange>=0?'var(--accent-green)':'var(--accent-red)'}">${nwChange>=0?'+':''}${fmt(nwChange)}</div>
         <div class="text-muted-sm">${fmt(firstSnap.nw)} → ${fmt(lastSnap.nw)}</div>
-        <div style="font-size:9px;color:var(--text-dim);margin-top:2px">${fmtMonthShort(firstSnap.monthKey)} – ${fmtMonthShort(lastSnap.monthKey)}</div>
+        <div style="font-size:9px;color:var(--text-muted);margin-top:2px">${fmtMonthShort(firstSnap.monthKey)} – ${fmtMonthShort(lastSnap.monthKey)}</div>
       </div>`:''}
     </div>
 
@@ -11407,14 +11407,14 @@ function updateIncomePreview(incomeVal){
   }
   const saved=Math.max(0,incomeVal-spent);
   const rate=Math.round(saved/incomeVal*100);
-  const color=rate>=20?'#34D399':rate>=10?'#FBBF24':'#F87171';
+  const color=rate>=20?'var(--accent-green)':rate>=10?'var(--accent-amber)':'var(--accent-red)';
   const icon=rate>=20?'🟢':rate>=10?'🟡':'🔴';
   const bench=rate>=20?'healthy savings rate ✓':rate>=10?'moderate — aim for 20%+':'below target — review spending';
   el.innerHTML=`
     <div style="display:flex;align-items:center;justify-content:space-between;background:${color}18;border:1.5px solid ${color}44;border-radius:10px;padding:.65rem .85rem;margin-bottom:.5rem">
       <div class="flex-center gap-8">
         <span style="font-size:16px">${icon}</span>
-        <span style="font-size:11px;font-weight:700;color:var(--text-secondary)">Savings rate</span>
+        <span style="font-size:11px;font-weight:700;color:var(--text-muted)">Savings rate</span>
       </div>
       <span style="font-size:20px;font-weight:900;color:${color}">${rate}%</span>
     </div>
