@@ -92,6 +92,18 @@ this after every month rollover.~~
 
 ## Post-launch, no rush
 
+### ~~19. Dev database isolation~~ ✓ fixed
+~~Dev worker (`trak-yo-dollas-dev`) shared the production D1 database, so any
+test that touched sync hit real user accounts. Fixed: `trak-yo-dollas-db-dev`
+created and schema applied; `[env.dev]` block added to wrangler.toml; deploy.sh
+now uses `wrangler deploy --env dev` instead of `--name`.~~
+
+### ~~20. Accessibility + contrast batch~~ ✓ fixed
+~~WCAG AA contrast failures across light/dark themes (hardcoded hex replaced with
+CSS vars); WCAG 2.5.3 label-in-name mismatches on budget cards, tx rows, NW items;
+WCAG 2.5.8 tap-target violations on import buttons, at-a-glance pill CTAs, budget
+badges; privacy FAQ copy bugs (cookies answer, sign-in method description).~~
+
 ### 17. Playwright test 5 — D1 sync round-trip
 Encrypt → upload to Cloudflare Workers D1 → wipe localStorage → decrypt → verify transaction count.
 Deferred until after user testing confirms the sync flow is stable end-to-end.
