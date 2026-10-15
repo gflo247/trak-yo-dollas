@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-jxGvdEFxRNAZ2iOPYr1m0Njx7ZFua34DPYwhnrJsxc4=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-M1jrxYV6XBsh9Ex22OptW4jhU2P1i/vm6EN0MPobjmg=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -2001,6 +2001,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <label class="form-label" for="simulator-override-duration">Duration</label>
       <select id="simulator-override-duration">
         <option value="">Ongoing</option>
+        <option value="3">3 months</option>
+        <option value="6">6 months</option>
         <option value="12">1 year</option>
         <option value="24">2 years</option>
         <option value="36">3 years</option>
