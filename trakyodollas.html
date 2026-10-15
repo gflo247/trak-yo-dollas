@@ -4473,7 +4473,7 @@ function renderYearInReview(){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem">
       <div class="deep-box">
         <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Top category</div>
-        <div style="font-size:15px;font-weight:800;color:${topCat?getCatColor(topCat[0]):'var(--text-primary)'}">${topCat?esc(topCat[0]):'—'}</div>
+        <div style="font-size:15px;font-weight:800;color:${topCat?'var(--accent-red)':'var(--text-primary)'}">${topCat?esc(topCat[0]):'—'}</div>
         <div class="text-muted-sm">${topCat?fmt(topCat[1]):''}</div>
       </div>
       <div class="deep-box">
@@ -10657,9 +10657,9 @@ function renderSimulatorTab(){
         <span>${esc(r.cat)}</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
-        <span style="color:var(--text-muted);font-size:12px">${fmt(r.avg)}/mo avg</span>
+        <span style="color:var(--text-secondary);font-size:12px">${fmt(r.avg)}/mo avg</span>
         ${r.hasOverride
-          ?(()=>{const ov=state.simulator.overrides.find(o=>o.cat===r.cat);const durStr=ov?.durationMonths?(ov.durationMonths%12===0?` for ${ov.durationMonths/12} yr${ov.durationMonths>12?'s':''}`:`for ${ov.durationMonths} mo`):'';return`<span style="font-weight:600">&rarr; ${fmt(r.projected)}/mo${durStr?`<span style="font-weight:400;font-size:11px;color:var(--text-muted)"> ${durStr}</span>`:''}</span>`;})()
+          ?(()=>{const ov=state.simulator.overrides.find(o=>o.cat===r.cat);const durStr=ov?.durationMonths?(ov.durationMonths%12===0?` for ${ov.durationMonths/12} yr${ov.durationMonths>12?'s':''}`:`for ${ov.durationMonths} mo`):'';return`<span style="font-weight:600">&rarr; ${fmt(r.projected)}/mo${durStr?`<span style="font-weight:400;font-size:11px;color:var(--text-secondary)"> ${durStr}</span>`:''}</span>`;})()
            +`${
               state.budgets[r.cat]===r.projected
                 ?`<span style="font-size:11px;font-weight:700;color:var(--accent-green)" title="This is already your real Budget-tab limit">&check; Budgeted</span>`
