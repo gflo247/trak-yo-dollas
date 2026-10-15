@@ -206,9 +206,9 @@ if [ "$target" = "prod" ]; then
   wrangler deploy
   echo "✔  https://trak-yo-dollas.nicholas-m-garofalo.workers.dev"
 else
-  # Dev: deploy to a separate trak-yo-dollas-dev worker
+  # Dev: deploy to a separate trak-yo-dollas-dev worker with its own D1
   echo "=== Deploying to Cloudflare (dev) ==="
-  wrangler deploy --name trak-yo-dollas-dev
+  wrangler deploy --env dev
   echo "✔  https://trak-yo-dollas-dev.nicholas-m-garofalo.workers.dev"
 fi
 

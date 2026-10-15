@@ -13,6 +13,17 @@ binding      = "DB"
 database_name = "trak-yo-dollas-db"
 database_id   = "c7c29496-83da-443e-b9cd-c2ea4d653d17"
 
+# --- dev environment: isolated D1, same worker code as prod ---
+# Deploy with: wrangler deploy --env dev  (deploy.sh does this automatically)
+# Schema: wrangler d1 execute trak-yo-dollas-db-dev --remote --file=db/schema.sql
+[env.dev]
+name = "trak-yo-dollas-dev"
+
+[[env.dev.d1_databases]]
+binding      = "DB"
+database_name = "trak-yo-dollas-db-dev"
+database_id   = "7ec7483a-380e-4461-8bd1-31c47bbc2f67"
+
 # --- dev.trakyodollas.com (attached, confirmed live 2026-08-09) ---
 # The dev worker (deployed via `./deploy.sh dev` -> `wrangler deploy --name
 # trak-yo-dollas-dev`, see deploy.sh) is reachable at both the default
