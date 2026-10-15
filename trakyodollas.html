@@ -6250,7 +6250,7 @@ function renderBucketGrid(){
     // classifyBudgetStatus()'s own callers, the exact cross-UI
     // inconsistency that function exists to prevent. Found in the 142nd
     // adversarial pass.
-    const budgetBadge=budget?`<div data-action="openBudgetModal" data-arg="${sc}" data-stop="1" tabindex="0" role="button" title="Budget: ${fmt(budget)}/mo — click to edit · See Budget tab for full tracking" style="position:relative;z-index:1;margin-top:5px;display:flex;align-items:center;gap:5px;cursor:pointer">
+    const budgetBadge=budget?`<div data-action="openBudgetModal" data-arg="${sc}" data-stop="1" tabindex="0" role="button" title="Budget: ${fmt(budget)}/mo — click to edit · See Budget tab for full tracking" style="position:relative;z-index:1;margin-top:5px;display:flex;align-items:center;gap:5px;cursor:pointer;min-height:24px">
       <div style="width:10px;height:6px;border-radius:3px;background:${curAmt>budget+0.005?'#F87171':curAmt/budget>0.8?'#FBBF24':'#34D399'};flex-shrink:0"></div>
       <span style="font-size:12px;color:var(--text-muted)">${fmt(curAmt)} / ${fmt(budget)}</span>
       <span style="font-size:12px;font-weight:700;color:${curAmt>budget+0.005?'var(--accent-red)':curAmt/budget>0.8?'var(--accent-amber)':'var(--accent-green)'}">${Math.round(curAmt/budget*100)}%</span>

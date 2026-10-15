@@ -24,47 +24,11 @@ binding      = "DB"
 database_name = "trak-yo-dollas-db-dev"
 database_id   = "7ec7483a-380e-4461-8bd1-31c47bbc2f67"
 
-# --- dev.trakyodollas.com (attached, confirmed live 2026-08-09) ---
-# The dev worker (deployed via `./deploy.sh dev` -> `wrangler deploy --name
-# trak-yo-dollas-dev`, see deploy.sh) is reachable at both the default
-# trak-yo-dollas-dev.workers.dev URL and the custom domain
-# dev.trakyodollas.com (confirmed via curl: /trakyodollas.html 307s to
-# /trakyodollas, which then 200s). Cloudflare Workers' Custom Domains
-# feature is entirely dashboard/API-managed (it provisions its own DNS
-# record + SSL cert) -- nothing belongs in this file for it to work, so
-# there's no wrangler.toml route/env block for it. deploy.sh needs no
-# changes either way -- it already deploys the same worker both URLs point
-# at.
-#
-# Not independently verified from this repo (no credentials to check):
-# whether dev.trakyodollas.com is also added to Firebase Authentication's
-# authorized domains list, and to the GCP API key's HTTP referrer
-# restrictions. If sign-in or API calls misbehave specifically on
-# dev.trakyodollas.com but work fine on the workers.dev URL, check those
-# two dashboards first.
-#
-# --- trak-yo-dollas-dev gated by Cloudflare Access (added 2026-08-19) ---
-# dev.trakyodollas.com and the trak-yo-dollas-dev.workers.dev URL both
-# serve the same trakyodollas.html as prod, which hardcodes prod's own
-# Supabase project URL (search 'pjsvsdiplecoilzttyhd' in
-# trakyodollas.html) -- there's no separate dev database, so dev was a
-# second, fully public, unauthenticated entry point into the real
-# production Supabase project. Gated via the Cloudflare dashboard: Workers
-# & Pages -> trak-yo-dollas-dev -> Access tab -> "Protect this Worker
-# behind Access", scope "All traffic" (not "Previews only", which only
-# covers ephemeral preview-deployment URLs, not the actual live site),
-# policy "Cloudflare account members" (Allow). Worker-level Access covers
-# both hostnames above in one policy -- confirmed via curl that both now
-# redirect to a nicholas-m-garofalo.cloudflareaccess.com login wall, and
-# that prod is unaffected. Entirely dashboard-managed like the Custom
-# Domain note above -- nothing belongs in this file for it to work. If
-# you ever need to add a collaborator, they need to be added as a member
-# of this Cloudflare account (Access controls -> the "Cloudflare account
-# members" policy checks account membership, not an explicit email list).
-#
-# This closes the "who can reach dev" exposure but not the underlying
-# "dev and prod share one database" one -- a real fix for that (a
-# separate Supabase project for dev, with the app's Supabase client
-# picking a URL based on location.hostname) was deliberately deferred as
-# a lower-urgency "someday" item once this gate closed the actual acute
-# risk. See _notes.md's Decisions section for the full reasoning.
+# --- dev.trakyodollas.com / Cloudflare Access (notes, dashboard-managed) ---
+# dev.trakyodollas.com is a Custom Domain attached to trak-yo-dollas-dev
+# (dashboard only -- nothing belongs in this file). Both that URL and
+# trak-yo-dollas-dev.workers.dev are gated by Cloudflare Access, policy
+# "Cloudflare account members" (Allow), scope "All traffic". To add a
+# collaborator, add them as a Cloudflare account member.
+# Dev now has its own D1 database (trak-yo-dollas-db-dev above), so it is
+# fully isolated from production data.
