@@ -104,6 +104,18 @@ CSS vars); WCAG 2.5.3 label-in-name mismatches on budget cards, tx rows, NW item
 WCAG 2.5.8 tap-target violations on import buttons, at-a-glance pill CTAs, budget
 badges; privacy FAQ copy bugs (cookies answer, sign-in method description).~~
 
+### 21. Harden OAuth state against HMAC forgery
+Sign the `oauth_state` cookie value with a Worker secret (HMAC-SHA256) so a
+crafted state value can't be used to attach an arbitrary Google account to a
+browser session. Current implementation is correct but relies solely on
+unpredictability of the random state value.
+
+### 22. Make magic links survive email link scanners
+Work email security gateways (Proofpoint, Mimecast, etc.) prefetch links to
+scan them, which consumes the one-time token before the user clicks. Fix: land
+the user on an intermediate page that POSTs the token, so a GET from a bot
+doesn't verify the link.
+
 ### 17. Playwright test 5 — D1 sync round-trip
 Encrypt → upload to Cloudflare Workers D1 → wipe localStorage → decrypt → verify transaction count.
 Deferred until after user testing confirms the sync flow is stable end-to-end.
