@@ -14268,7 +14268,7 @@ const CAT_KEYWORDS=[
   // Investment & transfers (check first — high confidence)
   ['Investment Contributions',['VANGUARD','FIDELITY BUY','SCHWAB BUY','ETRADE','ROBINHOOD','TDAMERITRADE','BETTERMENT','WEALTHFRONT','SOFI INVEST','MI DIR ACH CONTRIB','401K','ROTH IRA','BROKERAGE']],
   ['CC Payment',['CHASE CREDIT','CREDIT CRD','AUTOPAY','AMEX PAYMENT','CITI PAYMENT','DISCOVER PAYMENT','CAPITAL ONE PAYMENT','CARD PAYMENT','CREDITCARD']],
-  ['Transfers',['VENMO PAYMENT','ZELLE','PAYPAL TRANSFER','CASH APP','APPLE CASH','GOOGLE PAY TRANSFER','ACH TRANSFER','WIRE TRANSFER','INTERNET TRANSFER','REQUESTED TRANSFER','FLAGSTAR']],
+  ['Transfers',['VENMO PAYMENT','ZELLE','PAYPAL TRANSFER','CASH APP','APPLE CASH','GOOGLE PAY TRANSFER','ACH TRANSFER','WIRE TRANSFER','INTERNET TRANSFER','REQUESTED TRANSFER','BANK TRANSFER','FLAGSTAR']],
   ['Internal Transfer',['TRANSFER TO SAVINGS','TRANSFER FROM CHECKING','ONLINE TRANSFER','INTERNAL TRANSFER']],
   // Housing
   ['Home',['RENT PAYMENT','RENT PMT','RENTAL PAYMENT','MORTGAGE','MTGMANAGER','OLD NATIONAL BAN MTG','HOME DEPOT','LOWES','LOWE\'S','ACE HARDWARE','TRUE VALUE','MENARDS','HOME SERVICES','ELECTRIC CO','ELECTRICCO','PEST CONTROL','LANDSCAP','PLUMB','HVAC','ROOF','HANDYMAN','ANGI ','ANGIE','HOMEADVISOR','THUMBTACK','TASKRABBIT','MR HANDYMAN','MERRY MAIDS','MOLLY MAID','TERMINIX','ORKIN','TRUGREEN','SCOTTS LAWN']],
@@ -14279,7 +14279,7 @@ const CAT_KEYWORDS=[
   // Shopping
   ['Shopping',['AMAZON','AMZN','TARGET','WALMART','BEST BUY','COSTCO','KOHLS','KOHL\'S','MACY\'S','NORDSTROM','TJ MAXX','MARSHALLS','ROSS STORE','OLD NAVY','GAP ','BANANA REPUBLIC','H&M','ZARA','FOREVER 21','AMERICAN EAGLE','HOLLISTER','ABERCROMBIE','VICTORIA\'S SECRET','BATH & BODY','ULTA','SEPHORA','EBAY','ETSY','WAYFAIR','OVERSTOCK','DOLLAR TREE','DOLLAR GENERAL','FIVE BELOW','IKEA','CRATE & BARREL','WEST ELM','POTTERY BARN','WILLIAMS SONOMA','NIKE ','NIKE STORE','LULULEMON','ADIDAS','UNDER ARMOUR','PATAGONIA','REI CO-OP','REI.COM','APPLE STORE']],
   // Gas
-  ['Gas',['SHELL','BP ','EXXON','MARATHON','CHEVRON','SUNOCO','MOBIL','SPEEDWAY','CIRCLE K','WAWA ','KWIK TRIP','CASEY\'S','PILOT TRAVEL','LOVES TRAVEL','FUEL','GAS STATION','MURPHYUSA','MURPHY USA','HOLIDAY STATION','RACETRAC','SHEETZ','AMPM ','7-ELEVEN','CUMBERLAND FARM','THORNTONS','GETGO','MAVERIK','KUM & GO','ROAD RANGER','QUIKTRIP','QUIK TRIP','BUCEES','BUC-EE\'S','SINCLAIR','CENEX','KWIKSTAR']],
+  ['Gas',['SHELL','BP ','EXXON','MARATHON','CHEVRON','SUNOCO','SPEEDWAY','CIRCLE K','WAWA ','KWIK TRIP','CASEY\'S','PILOT TRAVEL','LOVES TRAVEL','FUEL','GAS STATION','MURPHYUSA','MURPHY USA','HOLIDAY STATION','RACETRAC','SHEETZ','AMPM ','7-ELEVEN','CUMBERLAND FARM','THORNTONS','GETGO','MAVERIK','KUM & GO','ROAD RANGER','QUIKTRIP','QUIK TRIP','BUCEES','BUC-EE\'S','SINCLAIR','CENEX','KWIKSTAR']],
   // Bills & Utilities
   ['Bills & Utilities',['PRIORITY WASTE','COMCAST','XFINITY','VERIZON','AT&T','T-MOBILE','SPECTRUM','COX COMM','CENTURY LINK','DIRECTV','DISH NETWORK','WASTE MGMT','REPUBLIC SERVICES','UTILIT','ELECTRIC','GAS BILL','WATER BILL','ATMOS','NATIONAL FUEL','COLUMBIA GAS','NICOR','PECO ','PSE&G','DTE ','CONSUMERS ENERGY','AEP ','DUKE ENERGY']],
   ['Insurance',['GEICO','STATE FARM','PROGRESSIVE','ALLSTATE','USAA ','AMICA','NATIONWIDE','LIBERTY MUTUAL','FARMERS INS','TRAVELERS INS','HARTFORD','METLIFE','PRUDENTIAL','CIGNA','AETNA','HUMANA','ANTHEM','BCBS','BLUE CROSS','UNITED HEALTH','OSCAR HEALTH','KAISER','WELLCARE','MOLINA','CENTENE','GUARDIAN LIFE','PRINCIPAL LIFE','AFLAC','ERIE INSURANCE','AUTO OWNERS','PROTECTIVE COSTCO','HOMEOWNERS INSURANCE']],
@@ -14390,7 +14390,10 @@ async function fetchCommunityRules(){
         // machine-validated — a malformed entry (missing/non-string
         // keyword or cat) would otherwise throw uncaught deep inside CSV
         // import categorization, breaking it file-wide until fixed.
-        const valid=data.filter(r=>r&&typeof r.keyword==='string'&&typeof r.cat==='string');
+        // Reject entries with ≤2 non-whitespace chars in the keyword — the class
+        // that caused two-letter airline codes (NK, WN, AS…) to match as
+        // substrings inside ordinary words like BANK, TOWN, KANSAS (brief #1).
+        const valid=data.filter(r=>r&&typeof r.keyword==='string'&&r.keyword.trim().length>=3&&typeof r.cat==='string');
         _communityRules=valid;
         document.querySelectorAll('.community-rules-count').forEach(el=>el.textContent=valid.length);
         // Re-render the table itself, not just the count badges -- if the
@@ -14432,6 +14435,17 @@ function guessCatFromDesc(d){
   if(u.includes('BROOKSHIRES PHARMACY'))return 'Health & Wellness';
   if(u.includes('KAISER PHARMACY'))return 'Health & Wellness';
   if(u.includes('ANIMAL HOSPITAL')||u.includes('ANIMAL CLINIC'))return 'Pet(s)';
+  // MOBIL: match only when NOT followed by 'E' so MOBILE/T-MOBILE don't hit Gas,
+  // but EXXONMOBIL (one word, L at end) still matches. Removed from CAT_KEYWORDS
+  // to apply this condition rather than a plain substring match.
+  if(/MOBIL(?!E)/i.test(u))return 'Gas';
+  // Card-bill payment detector — runs before CAT_KEYWORDS so built-in keywords
+  // (MOBIL/DELTA/etc.) can't shadow an unambiguous payment description.
+  // Requires a payment word AND either a card-issuer name or a word-boundary CARD/CRD token.
+  if(/\b(?:PAYMENT|PMT|PYMT|AUTOPAY|AUTO\s*PAY|EPAYMENT|E-PAYMENT)\b/i.test(u)&&(
+    /\b(?:CHASE|AMEX|AMERICAN EXPRESS|CAPITAL ONE|DISCOVER|CITI|APPLECARD|GSBANK|BK OF AMER|BANK OF AMERICA|SYNCHRONY|BARCLAYCARD|WF CREDIT|WELLS FARGO)\b/i.test(u)||
+    /\b(?:CARD|CRD|CREDIT CARD)\b/i.test(u)
+  ))return 'CC Payment';
   // Unambiguous donation signals override everything except investment/CC keywords (caught earlier in CAT_KEYWORDS)
   if(u.includes('DONATION')||u.includes('DONATE')){
     return 'Gifts & Donations';

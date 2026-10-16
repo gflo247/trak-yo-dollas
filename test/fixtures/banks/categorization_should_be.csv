@@ -1,0 +1,17 @@
+description,expected_category,why
+Payment to Chase card ending in 1234 09/25,CC Payment,real statement wording (verified); currently Other
+APPLECARD GSBANK PAYMENT,CC Payment,real statement wording (verified); currently Travel via community "NK "
+CAPITAL ONE MOBILE PMT,CC Payment,real statement wording (verified); currently Gas via "MOBIL"
+AMERICAN EXPRESS ACH PMT,CC Payment,plausible variant
+CITI CARD ONLINE PAYMENT,CC Payment,plausible variant; currently Other
+BK OF AMER VISA ONLINE PMT,CC Payment,plausible variant; currently Other
+SYNCHRONY BANK PAYMENT,CC Payment,plausible variant; currently Travel via "NK "
+ALLY BANK TRANSFER,Transfers,currently Travel via "NK "
+FIFTH THIRD BANK FEE,not Travel,currently Travel via "NK "
+DOWNTOWN DELI,not Travel,currently Travel via "WN "
+TOWN OF CARY PAYMENT,not Travel,currently Travel via "WN "
+KANSAS CITY BBQ CO,not Travel,currently Travel via "AS "
+TEXAS DEPT OF PUBLIC SAFETY,not Travel,currently Travel via "AS "
+T-MOBILE PCS SVC,Bills & Utilities,must stay correct after any MOBIL boundary change
+EXXONMOBIL 12345,Gas,currently Gas; must stay Gas after any MOBIL boundary change (one word - a whole-word match would break it)
+SPIRIT AIRL 4871234,Travel,truncated airline name as statements show it; currently Other - add name prefixes like this when removing the two-letter codes

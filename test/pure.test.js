@@ -9442,3 +9442,134 @@ test("both bucket threshold handlers guard against NaN so empty or non-numeric i
     "arrow handler should return early on NaN"
   );
 });
+
+// ── #1 & #2: Categorization correctness — airline code substring misfires
+// and card-payment double-counting (brief 2026-10-16) ──────────────────────
+// Helper: extract CAT_KEYWORDS + guessCatFromDesc from source and compile
+// them together into a callable. This is the only function in this test file
+// that needs a top-level const from the app source rather than a named
+// function — we pull the raw declaration text and prepend it to the body.
+function loadGuessCatFromDesc() {
+  const { extractFunctions, readSource: rs } = require("../scripts/extract-testable-fns.js");
+  const source = rs();
+  const catKwStart = source.indexOf("const CAT_KEYWORDS=[");
+  const catKwEnd   = source.indexOf("\n// MCC", catKwStart);
+  if (catKwStart === -1 || catKwEnd === -1) throw new Error("CAT_KEYWORDS not found in source");
+  const catKwDecl = source.slice(catKwStart, catKwEnd).trim();
+  const fns = extractFunctions(source, ["guessCatFromDesc"]);
+  const body = catKwDecl + "\n" + fns["guessCatFromDesc"] + "\nreturn { guessCatFromDesc };";
+  return new Function(body)();
+}
+
+// Helper: simulate the app's two-layer categorization (built-in first, then
+// community rules if still 'Other') without spinning up the full app.
+function categorizeFull(desc, communityRules, guessCatFromDescFn) {
+  let cat = guessCatFromDescFn(desc);
+  if ((cat === "Other" || !cat) && communityRules) {
+    const du = desc.toUpperCase();
+    for (const rule of communityRules) {
+      if (rule.keyword && du.includes(rule.keyword.toUpperCase())) { cat = rule.cat; break; }
+    }
+  }
+  return cat || "Other";
+}
+
+// Load community-rules.json once for all categorization tests below.
+const _communityRulesForTest = JSON.parse(
+  require("fs").readFileSync(
+    require("path").join(__dirname, "..", "community-rules.json"),
+    "utf8"
+  )
+);
+
+// Load categorization fixture once.
+const _catFixtureRows = (() => {
+  const raw = require("fs").readFileSync(
+    require("path").join(__dirname, "fixtures", "banks", "categorization_should_be.csv"),
+    "utf8"
+  );
+  const lines = raw.trim().split("\n");
+  const header = lines[0].split(",");
+  const di = header.indexOf("description");
+  const ei = header.indexOf("expected_category");
+  return lines.slice(1).map(line => {
+    // description may contain commas — split on first two commas only
+    const parts = line.split(",");
+    return { description: parts[di], expected: parts[ei] };
+  });
+})();
+
+// Load card-payment fixture once.
+const _cardPaymentRows = (() => {
+  const raw = require("fs").readFileSync(
+    require("path").join(__dirname, "fixtures", "banks", "checking_with_card_payments.csv"),
+    "utf8"
+  );
+  const lines = raw.trim().split("\n");
+  const header = lines[0].split(",");
+  const di = header.indexOf("Description");
+  return lines.slice(1).map(line => {
+    // Description is quoted — strip quotes
+    const parts = line.split(',"');
+    const desc = parts[1] ? parts[1].split('"')[0] : line.split(",")[di];
+    return desc;
+  });
+})();
+
+test("community-rules.json: no keyword has 2 or fewer non-whitespace characters (the class that causes two-letter airline codes to match inside ordinary words like BANK, TOWN, KANSAS)", () => {
+  // 3-char keywords like KFC, DMV, IHG are fine — they don't appear as substrings
+  // in common words. 2-char codes (AA, NK, WN etc.) with trailing space do.
+  const short = _communityRulesForTest.filter(r => typeof r.keyword === "string" && r.keyword.trim().length <= 2);
+  assert.equal(
+    short.length, 0,
+    `Found ${short.length} keyword(s) with ≤2 non-whitespace chars: ${short.map(r => JSON.stringify(r.keyword)).join(", ")}`
+  );
+});
+
+test("community-rules.json: the 8 two-letter airline codes (AA, AS, B6, DL, F9, NK, UA, WN + trailing space) are absent", () => {
+  const BAD = ["AA ", "AS ", "B6 ", "DL ", "F9 ", "NK ", "UA ", "WN "];
+  const found = _communityRulesForTest.filter(r => BAD.includes(r.keyword));
+  assert.equal(
+    found.length, 0,
+    `Still present: ${found.map(r => JSON.stringify(r.keyword)).join(", ")}`
+  );
+});
+
+test("community-rules.json: SPIRIT AIRL maps to Travel (truncated airline name as it appears on statements)", () => {
+  const rule = _communityRulesForTest.find(r => r.keyword === "SPIRIT AIRL");
+  assert.ok(rule, "SPIRIT AIRL rule should exist in community-rules.json");
+  assert.equal(rule.cat, "Travel");
+});
+
+test("categorization_should_be.csv: every row categorizes correctly with current community-rules + built-in keywords", () => {
+  const { guessCatFromDesc } = loadGuessCatFromDesc();
+  const failures = [];
+  for (const { description, expected } of _catFixtureRows) {
+    const actual = categorizeFull(description, _communityRulesForTest, guessCatFromDesc);
+    if (expected === "not Travel") {
+      if (actual === "Travel") failures.push(`"${description}" → ${actual} (expected: not Travel)`);
+    } else {
+      if (actual !== expected) failures.push(`"${description}" → ${actual} (expected: ${expected})`);
+    }
+  }
+  assert.equal(failures.length, 0, `\n${failures.join("\n")}`);
+});
+
+test("checking_with_card_payments.csv: all 13 card-bill payments categorize as CC Payment; T-Mobile and Kroger stay correct", () => {
+  const { guessCatFromDesc } = loadGuessCatFromDesc();
+  // Rows 0–12 are card bill payments, row 13 is T-Mobile, row 14 is Kroger
+  const payments  = _cardPaymentRows.slice(0, 13);
+  const tMobile   = _cardPaymentRows[13];
+  const kroger    = _cardPaymentRows[14];
+
+  const paymentFailures = payments
+    .map(d => ({ d, cat: guessCatFromDesc(d) }))
+    .filter(({ cat }) => cat !== "CC Payment");
+  assert.equal(
+    paymentFailures.length, 0,
+    `Card payments that didn't → CC Payment:\n${paymentFailures.map(({d,cat}) => `  "${d}" → ${cat}`).join("\n")}`
+  );
+
+  assert.equal(guessCatFromDesc(tMobile),   "Bills & Utilities", `T-Mobile should → Bills & Utilities, got ${guessCatFromDesc(tMobile)}`);
+  assert.equal(guessCatFromDesc(kroger),    "Groceries",         `Kroger should → Groceries, got ${guessCatFromDesc(kroger)}`);
+});
