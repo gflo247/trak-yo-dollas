@@ -2617,7 +2617,7 @@ test("import-success-modal has a #import-success-no-account nudge box, hidden by
 });
 test("confirmTxImport: shows the no-matching-account nudge only when no account's name matches this import's source label (case-insensitively)", () => {
   const source = readSource();
-  const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,14000}?\n}\n/);
+  const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,15000}?\n}\n/);
   assert.ok(fnMatch, "confirmTxImport() should exist");
   assert.match(
     fnMatch[0],
@@ -4584,7 +4584,7 @@ test("saveHistoricalSnapshot: has the demo-preview guard, wipes demo data before
 // matching those three. Found and fixed August 2026. ──
 test("confirmTxImport()/saveTx()/saveSnapshot()/saveHistoricalSnapshot() all call renderAll() after their demo-to-real wipe, not a narrower render subset that omits the Net Worth tab", () => {
   const source = readSource();
-  const confirmTxImportSrc = source.match(/function confirmTxImport\(\)\{[\s\S]{0,14000}?\n}\n/)[0];
+  const confirmTxImportSrc = source.match(/function confirmTxImport\(\)\{[\s\S]{0,15000}?\n}\n/)[0];
   assert.match(
     confirmTxImportSrc,
     /state\.hasRealData=true;\s*hideDemoBadge\(\);\s*if\(wasFirstRealSave\)_requestStoragePersist\(\);\s*\/\/[\s\S]{0,1400}?renderAll\(\);\s*\/\/ Show post-import success modal/,

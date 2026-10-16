@@ -14,7 +14,7 @@
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
-  connect-src 'self' https://vpic.nhtsa.dot.gov;
+  connect-src 'self' https://vpic.nhtsa.dot.gov https://gateway.umami.is;
   worker-src 'self';
   manifest-src 'self';
   object-src 'none';
@@ -14820,23 +14820,21 @@ function confirmTxImport(){
   window._pendingAlignmentCheck=true;
   // Umami: first-import fires once on a user's first real CSV import;
   // returning-importer fires once if they import again 20+ days later.
-  try{
-    if(window.umami){
-      if(wasFirstRealSave){
-        window.umami.track('first-import');
-        try{localStorage.setItem('trakyo_first_import_date',new Date().toISOString());}catch(e){}
-      }else{
-        const _fid=localStorage.getItem('trakyo_first_import_date');
-        if(_fid&&!localStorage.getItem('trakyo_returning_import_tracked')){
-          const _days=(Date.now()-new Date(_fid).getTime())/(864e5);
-          if(_days>=20){
-            window.umami.track('returning-importer');
-            try{localStorage.setItem('trakyo_returning_import_tracked','1');}catch(e){}
-          }
-        }
+  // firstImportDate is written unconditionally so returning-importer can
+  // fire even if the first-import fetch was blocked by a privacy extension.
+  if(wasFirstRealSave){
+    try{localStorage.setItem('trakyo_first_import_date',new Date().toISOString());}catch(e){}
+    fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'event',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:'/trakyodollas',name:'first-import'}})}).catch(()=>{});
+  }else{
+    const _fid=localStorage.getItem('trakyo_first_import_date');
+    if(_fid&&!localStorage.getItem('trakyo_returning_import_tracked')){
+      const _days=(Date.now()-new Date(_fid).getTime())/(864e5);
+      if(_days>=20){
+        try{localStorage.setItem('trakyo_returning_import_tracked','1');}catch(e){}
+        fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'event',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:'/trakyodollas',name:'returning-importer'}})}).catch(()=>{});
       }
     }
-  }catch(e){}
+  }
 }
 
 // ── Shared state-mutation helpers (used across tabs, not import-specific) ──
@@ -18180,7 +18178,7 @@ function loadDemoProfile(n, silent=false, skipRender=false){
   if(!silent&&hadRealData){
     showDemoPreviewBanner(); // window._viewingDemoOverReal is already set, near the top of this function
   }
-  if(!silent&&!window._demoEventFired){window._demoEventFired=true;try{if(window.umami)window.umami.track('demo-opened');}catch(e){}}
+  if(!silent&&!window._demoEventFired){window._demoEventFired=true;fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'event',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:'/trakyodollas',name:'demo-opened'}})}).catch(()=>{});}
   showToast(n===1?'🌱 Exploring starter demo':'🌳 Exploring full demo','#34D399',3300);
 }
 window.addEventListener('error',function(e){console.error('GLOBAL ERROR:',e.message,'at',e.filename,'line',e.lineno,e.error);});
