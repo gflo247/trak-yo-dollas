@@ -14818,6 +14818,25 @@ function confirmTxImport(){
   setTimeout(()=>checkForVenmoCashouts(newTxs),400);
   // Mark that alignment should be checked when success modal closes
   window._pendingAlignmentCheck=true;
+  // Umami: first-import fires once on a user's first real CSV import;
+  // returning-importer fires once if they import again 20+ days later.
+  try{
+    if(window.umami){
+      if(wasFirstRealSave){
+        window.umami.track('first-import');
+        try{localStorage.setItem('trakyo_first_import_date',new Date().toISOString());}catch(e){}
+      }else{
+        const _fid=localStorage.getItem('trakyo_first_import_date');
+        if(_fid&&!localStorage.getItem('trakyo_returning_import_tracked')){
+          const _days=(Date.now()-new Date(_fid).getTime())/(864e5);
+          if(_days>=20){
+            window.umami.track('returning-importer');
+            try{localStorage.setItem('trakyo_returning_import_tracked','1');}catch(e){}
+          }
+        }
+      }
+    }
+  }catch(e){}
 }
 
 // ── Shared state-mutation helpers (used across tabs, not import-specific) ──
@@ -18161,6 +18180,7 @@ function loadDemoProfile(n, silent=false, skipRender=false){
   if(!silent&&hadRealData){
     showDemoPreviewBanner(); // window._viewingDemoOverReal is already set, near the top of this function
   }
+  if(!silent&&!window._demoEventFired){window._demoEventFired=true;try{if(window.umami)window.umami.track('demo-opened');}catch(e){}}
   showToast(n===1?'🌱 Exploring starter demo':'🌳 Exploring full demo','#34D399',3300);
 }
 window.addEventListener('error',function(e){console.error('GLOBAL ERROR:',e.message,'at',e.filename,'line',e.lineno,e.error);});
