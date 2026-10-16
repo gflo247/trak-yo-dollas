@@ -1,0 +1,4 @@
+Account Number,Transaction Description,Transaction Date,Transaction Type,Transaction Amount,Balance
+1234,Starbucks Store 03456,09/28/26,Debit,6.45,2412.66
+1234,ACME CORP PAYROLL,09/26/26,Credit,2450.00,2419.11
+1234,Withdrawal to 360 Performance Savings XXXXXX5678,09/20/26,Debit,120.00,-30.89

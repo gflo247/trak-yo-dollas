@@ -1,0 +1,4 @@
+Posting Date,Transaction Date,Amount,Credit Debit Indicator,type,Type Group,Reference,Instructions,Description,Category,Card Ending,Check Number,Merchant Category Code
+09/29/2026,09/28/2026,6.45,Debit,POS,Card,1234567,,STARBUCKS STORE 03456,Dining Out,1234,,5814
+09/26/2026,09/26/2026,2450.00,Credit,ACH,Deposit,1234568,,ACME CORP PAYROLL,Paychecks,,,
+09/21/2026,09/21/2026,48.12,Debit,POS,Card,1234569,,SHELL OIL 57444,Gas,1234,,5541

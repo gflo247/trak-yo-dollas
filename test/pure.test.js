@@ -9573,3 +9573,268 @@ test("checking_with_card_payments.csv: all 13 card-bill payments categorize as C
   assert.equal(guessCatFromDesc(tMobile),   "Bills & Utilities", `T-Mobile should → Bills & Utilities, got ${guessCatFromDesc(tMobile)}`);
   assert.equal(guessCatFromDesc(kroger),    "Groceries",         `Kroger should → Groceries, got ${guessCatFromDesc(kroger)}`);
 });
+
+// ── #3 & #4: Bank format fixes (brief 2026-10-16) ──────────────────────────
+
+// Helper: pull named const declarations (single-line or multi-line) from source.
+// marker is the `const NAME=` start string, endMarker is a string that appears
+// right after the declaration ends (used to slice the exact block).
+function _sliceConst(source, marker, endMarker) {
+  const s = source.indexOf(marker);
+  if (s === -1) throw new Error(`_sliceConst: '${marker}' not found`);
+  const e = source.indexOf(endMarker, s);
+  if (e === -1) throw new Error(`_sliceConst: endMarker '${endMarker}' not found after '${marker}'`);
+  return source.slice(s, e).trim();
+}
+
+// Loads normalizeTxRow and all its helpers into a callable context.
+// importFmt, _genericPositiveIsExpense, _importDateFmt, includeIncome can be overridden.
+function loadNormalizePipeline(opts = {}) {
+  const { extractFunctions, readSource: rs } = require("../scripts/extract-testable-fns.js");
+  const source = rs();
+
+  const transferLikeCats = source.slice(
+    source.indexOf("const TRANSFER_LIKE_CATS="),
+    source.indexOf(";", source.indexOf("const TRANSFER_LIKE_CATS=")) + 1
+  );
+  const atmBranchRe = source.slice(
+    source.indexOf("const ATM_BRANCH_RE="),
+    source.indexOf(";", source.indexOf("const ATM_BRANCH_RE=")) + 1
+  );
+  const importCatMap = _sliceConst(source, "const _IMPORT_CAT_MAP={", "\nfunction mapImportedCategory");
+  const catKeywords  = _sliceConst(source, "const CAT_KEYWORDS=[", "\n// MCC");
+  const isResLine    = source.slice(
+    source.indexOf("const isReservedCatName="),
+    source.indexOf(";", source.indexOf("const isReservedCatName=")) + 1
+  );
+
+  const varDecls = `
+    let importFmt = ${JSON.stringify(opts.importFmt || 'generic')};
+    let _genericPositiveIsExpense = ${opts._genericPositiveIsExpense === true};
+    let _importDateFmt = ${JSON.stringify(opts._importDateFmt || 'mdy')};
+    let _communityRules = null;
+    const state = { catRules: [], includeIncome: ${opts.includeIncome !== false} };
+  `;
+
+  const fnNames = [
+    "normalizeTxRow", "parseImportDate", "guessCatFromDesc", "guessCatChase", "guessCatAlly",
+    "_creditDepositCat", "mapImportedCategory", "guessCatFromMCC", "_stripCsvFormulaGuard",
+  ];
+  const fns = extractFunctions(source, fnNames);
+
+  const body = [
+    transferLikeCats, atmBranchRe, importCatMap, catKeywords, isResLine, varDecls,
+    Object.values(fns).join("\n"),
+    "return { normalizeTxRow };",
+  ].join("\n");
+
+  return new Function(body)();
+}
+
+// Helper: run a fixture CSV through detect → parse → normalize and return non-null rows.
+// Uses detectFormatFromLine + parseCSV from the real source + loadNormalizePipeline.
+function parseFixtureCsv(csvText, overrideOpts = {}) {
+  const { detectFormatFromLine, parseCSV, splitCSVLine, splitCSVRows, detectGenericSignConvention } =
+    loadFunctions(["detectFormatFromLine", "parseCSV", "splitCSVLine", "splitCSVRows", "detectGenericSignConvention"]);
+
+  const text = csvText.replace(/^\uFEFF/, "");
+  const scanLines = splitCSVRows(text.trim()).map(l => l.trim()).filter(Boolean);
+
+  let importFmt = null;
+  let headerLineIdx = 0;
+  const scanLimit = Math.min(10, scanLines.length);
+  for (let i = 0; i < scanLimit; i++) {
+    const fmt = detectFormatFromLine(scanLines[i].toLowerCase());
+    if (fmt) { importFmt = fmt; headerLineIdx = i; break; }
+  }
+
+  // Wells Fargo headerless detection (mirrors parseTxFile)
+  if (!importFmt) {
+    const wfCols = scanLines.length ? splitCSVLine(scanLines[0]) : [];
+    const wfDate = (wfCols[0] || "").replace(/^"|"$/g, "").trim();
+    const wfAmt  = (wfCols[1] || "").replace(/^"|"$/g, "").trim();
+    const wfStar = (wfCols[2] || "").replace(/^"|"$/g, "").trim();
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(wfDate) && !isNaN(parseFloat(wfAmt)) && wfStar === "*") {
+      importFmt = "wellsfargo"; headerLineIdx = 0;
+    } else {
+      importFmt = "generic"; headerLineIdx = 0;
+    }
+  }
+
+  let parseText = text;
+  if (importFmt === "wellsfargo") {
+    parseText = "date,amount,type,memo,description\n" + text;
+  }
+
+  const rows = parseCSV(parseText, ",", headerLineIdx);
+  const _genericPositiveIsExpense = (importFmt === "generic")
+    ? detectGenericSignConvention(rows) : false;
+
+  const { normalizeTxRow } = loadNormalizePipeline({
+    importFmt,
+    _genericPositiveIsExpense,
+    _importDateFmt: overrideOpts._importDateFmt || "mdy",
+    includeIncome: overrideOpts.includeIncome !== false,
+  });
+
+  return rows.map(r => normalizeTxRow(r, "Test")).filter(Boolean);
+}
+
+const fs = require("fs");
+const path = require("path");
+const FIXTURES = path.join(__dirname, "fixtures", "banks");
+
+// ── detectFormatFromLine: new and fixed detections ───────────────────────────
+
+test("detectFormatFromLine: Discover 'Trans. Date' header (period mid-word) is detected as generic, not null", () => {
+  const { detectFormatFromLine } = loadFunctions(["detectFormatFromLine"]);
+  assert.equal(
+    detectFormatFromLine("trans. date,post date,description,amount,category"),
+    "generic",
+    "period in 'Trans. Date' should not prevent detection — must normalize before checking"
+  );
+});
+
+test("detectFormatFromLine: 'posted date' (BofA card, no period) triggers generic detection", () => {
+  const { detectFormatFromLine } = loadFunctions(["detectFormatFromLine"]);
+  assert.equal(
+    detectFormatFromLine("posted date,reference number,payee,address,amount"),
+    "generic"
+  );
+});
+
+test("detectFormatFromLine: Navy Federal 'credit debit indicator' header is navyfederal, NOT debitcredit", () => {
+  const { detectFormatFromLine } = loadFunctions(["detectFormatFromLine"]);
+  const header = "posting date,transaction date,amount,credit debit indicator,type,type group,reference,instructions,description,category,card ending,check number,merchant category code";
+  assert.equal(detectFormatFromLine(header), "navyfederal");
+  assert.notEqual(detectFormatFromLine(header), "debitcredit",
+    "'credit debit indicator' contains both words but must NOT match the debitcredit check");
+});
+
+test("detectFormatFromLine: Capital One 360 header with 'transaction description' + 'transaction type' + 'transaction amount' is capitalone360", () => {
+  const { detectFormatFromLine } = loadFunctions(["detectFormatFromLine"]);
+  assert.equal(
+    detectFormatFromLine("account number,transaction description,transaction date,transaction type,transaction amount,balance"),
+    "capitalone360"
+  );
+});
+
+test("detectFormatFromLine: Capital One card with standalone Debit + Credit columns is still debitcredit", () => {
+  const { detectFormatFromLine } = loadFunctions(["detectFormatFromLine"]);
+  // Card No. has a trailing period — after normalization, 'card no' (period stripped before space? no, trailing)
+  // Either way, debit and credit are standalone here
+  assert.equal(
+    detectFormatFromLine("transaction date,posted date,card no.,description,category,debit,credit"),
+    "debitcredit"
+  );
+});
+
+// ── parseCSV header normalization ────────────────────────────────────────────
+
+test("parseCSV: normalizes 'Trans. Date' (period before space) to 'trans date' key", () => {
+  const { parseCSV, splitCSVLine, splitCSVRows } = loadFunctions(["parseCSV", "splitCSVLine", "splitCSVRows"]);
+  const rows = parseCSV(
+    "Trans. Date,Post Date,Description,Amount,Category\n09/28/2026,09/28/2026,STARBUCKS,6.45,Restaurants"
+  );
+  assert.ok("trans date" in rows[0], "normalized 'Trans. Date' key should be 'trans date'");
+  assert.ok(!("trans. date" in rows[0]), "un-normalized 'trans. date' key should not appear");
+});
+
+test("parseCSV: normalizes 'Amount (USD)' to 'amount' key, stripping parenthetical unit", () => {
+  const { parseCSV, splitCSVLine, splitCSVRows } = loadFunctions(["parseCSV", "splitCSVLine", "splitCSVRows"]);
+  const rows = parseCSV(
+    "Transaction Date,Description,Amount (USD)\n09/28/2026,STARBUCKS,6.45"
+  );
+  assert.ok("amount" in rows[0], "'Amount (USD)' should normalize to key 'amount'");
+  assert.ok(!("amount (usd)" in rows[0]));
+});
+
+test("parseCSV: 'running bal.' (trailing period) is left unchanged — existing behavior preserved", () => {
+  const { parseCSV, splitCSVLine, splitCSVRows } = loadFunctions(["parseCSV", "splitCSVLine", "splitCSVRows"]);
+  const rows = parseCSV("Date,Description,Amount,Running Bal.\n01/01/2026,Coffee,-5.00,995.00");
+  assert.ok("running bal." in rows[0], "trailing period in 'Running Bal.' must NOT be stripped — bofa detection relies on it");
+});
+
+// ── Full fixture parsing ──────────────────────────────────────────────────────
+
+test("discover.csv: at least 3 spending rows parse (previously 0 due to 'Trans. Date' header)", () => {
+  const csvText = fs.readFileSync(path.join(FIXTURES, "discover.csv"), "utf8");
+  const rows = parseFixtureCsv(csvText);
+  const spending = rows.filter(r => !r.isIncome && !r.is_offset);
+  assert.ok(spending.length >= 3, `Expected ≥3 spending rows, got ${spending.length}: ${JSON.stringify(spending.map(r => r.desc))}`);
+  assert.ok(spending.every(r => r.amount > 0), "all spending rows should have positive amounts");
+});
+
+test("discover_signflip_synthetic.csv: sign auto-detect still correct — 3 spending rows (negative purchases, positive payment)", () => {
+  const csvText = fs.readFileSync(path.join(FIXTURES, "discover_signflip_synthetic.csv"), "utf8");
+  const rows = parseFixtureCsv(csvText);
+  const spending = rows.filter(r => !r.isIncome && !r.is_offset);
+  assert.ok(spending.length >= 3, `Expected ≥3 spending rows in sign-flipped Discover, got ${spending.length}`);
+  assert.ok(spending.every(r => r.amount > 0), "sign auto-detect should identify the negatives as spending");
+});
+
+test("wellsfargo.csv: at least 2 spending rows parse (previously 0 — no header row)", () => {
+  const csvText = fs.readFileSync(path.join(FIXTURES, "wellsfargo.csv"), "utf8");
+  const rows = parseFixtureCsv(csvText);
+  const spending = rows.filter(r => !r.isIncome && !r.is_offset);
+  assert.ok(spending.length >= 2, `Expected ≥2 spending rows, got ${spending.length}`);
+});
+
+test("bofa_card.csv: rows parse (previously 0 — 'Posted Date' not recognized)", () => {
+  const csvText = fs.readFileSync(path.join(FIXTURES, "bofa_card.csv"), "utf8");
+  const rows = parseFixtureCsv(csvText);
+  assert.ok(rows.length >= 1, `Expected ≥1 rows from bofa_card.csv, got 0`);
+});
+
+test("applecard.csv: rows parse (previously 0 — 'Amount (USD)' column not found)", () => {
+  const csvText = fs.readFileSync(path.join(FIXTURES, "applecard.csv"), "utf8");
+  const rows = parseFixtureCsv(csvText);
+  const spending = rows.filter(r => !r.isIncome && !r.is_offset);
+  assert.ok(spending.length >= 1, `Expected ≥1 spending rows from applecard.csv, got 0`);
+});
+
+test("capitalone_360.csv: Credit rows are NOT counted as spending (previously 0 rows — direction column not read)", () => {
+  const csvText = fs.readFileSync(path.join(FIXTURES, "capitalone_360.csv"), "utf8");
+  // Test with includeIncome: true so income rows show up
+  const rows = parseFixtureCsv(csvText, { includeIncome: true });
+  assert.ok(rows.length >= 1, "at least one row should parse");
+  // The Credit row (payroll deposit) should never be spending
+  const spendingRows = rows.filter(r => !r.isIncome && !r.is_offset && !r.excluded);
+  const payroll = rows.find(r => /payroll/i.test(r.desc));
+  assert.ok(payroll, "ACME CORP PAYROLL row should be present");
+  assert.equal(payroll.isIncome, true, "payroll (Credit row) must be income, never spending");
+});
+
+test("navyfederal.csv: Credit row (payroll) is income, Debit rows are spending (previously wrong format — debitcredit)", () => {
+  const csvText = fs.readFileSync(path.join(FIXTURES, "navyfederal.csv"), "utf8");
+  const rows = parseFixtureCsv(csvText, { includeIncome: true });
+  assert.ok(rows.length >= 2, "at least 2 rows should parse");
+  const payroll = rows.find(r => /payroll/i.test(r.desc));
+  assert.ok(payroll, "payroll row should be present");
+  assert.equal(payroll.isIncome, true, "Credit/payroll row must be income, never spending");
+  const spending = rows.filter(r => !r.isIncome && !r.is_offset);
+  assert.ok(spending.length >= 2, "Debit rows should parse as spending");
+});
+
+// ── #4: Card refunds ──────────────────────────────────────────────────────────
+
+test("chase_card.csv: Return row imports as is_offset=true with negative amount, regardless of includeIncome", () => {
+  const csvText = fs.readFileSync(path.join(FIXTURES, "chase_card.csv"), "utf8");
+
+  for (const includeIncome of [true, false]) {
+    const rows = parseFixtureCsv(csvText, { includeIncome });
+    const refund = rows.find(r => r.is_offset);
+    assert.ok(refund, `includeIncome=${includeIncome}: Return row should import as is_offset (not dropped or income)`);
+    assert.ok(refund.amount < 0, `includeIncome=${includeIncome}: offset amount should be negative, got ${refund.amount}`);
+    assert.equal(Math.abs(refund.amount), 15, `includeIncome=${includeIncome}: offset amount should be $15.00`);
+  }
+});
+
+test("capitalone_card.csv: AMAZON.COM REFUND (Credit column) imports as is_offset=true", () => {
+  const csvText = fs.readFileSync(path.join(FIXTURES, "capitalone_card.csv"), "utf8");
+  const rows = parseFixtureCsv(csvText, { includeIncome: true });
+  const refund = rows.find(r => r.is_offset);
+  assert.ok(refund, "AMAZON.COM REFUND should import as is_offset");
+  assert.ok(refund.amount < 0, `offset amount should be negative, got ${refund.amount}`);
+  assert.ok(/amazon/i.test(refund.desc), "the refund should be the AMAZON.COM REFUND row");
+});

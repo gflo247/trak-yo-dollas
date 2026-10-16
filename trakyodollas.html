@@ -13334,7 +13334,7 @@ function parseImportDate(str,fmt){
 
 // Scan first rows to detect date format; returns 'mdy', 'dmy', 'iso' (all ISO, toggle moot), or null (ambiguous)
 function detectImportDateFmt(rows){
-  const fields=['date','transaction date','trans date','posting date'];
+  const fields=['date','transaction date','trans date','posting date','posted date','post date'];
   let sawSlash=false;
   for(const row of rows.slice(0,15)){
     for(const f of fields){
@@ -13502,6 +13502,9 @@ function handleTxFileSelect(input){
 // doesn't look like any known header. Shared by parseTxFile()'s multi-line
 // header scan below.
 function detectFormatFromLine(firstLine){
+  // Normalize: strip mid-word periods (Trans. Date → trans date) and parenthetical units
+  firstLine=firstLine.replace(/\.(?=\s)/g,'').replace(/\s*\([^)]*\)\s*/g,'');
+  const cols=firstLine.split(',').map(c=>c.trim());
   let importFmt=null,importFmtAutoDetected=false;
   // Our own exportTransactionsCSV() output — checked first since it's the
   // most specific signature (no bank export has both 'vendor' and
@@ -13529,7 +13532,16 @@ function detectFormatFromLine(firstLine){
   // _HANDOFF.md.
   } else if(firstLine.includes('merchant/description')&&firstLine.includes('debit/credit')){
     importFmt='midata'; importFmtAutoDetected=true;
-  } else if(firstLine.includes('debit')&&firstLine.includes('credit')){
+  // Navy Federal: direction in 'credit debit indicator' column — must be before generic debit+credit check
+  } else if(firstLine.includes('credit debit indicator')){
+    importFmt='navyfederal'; importFmtAutoDetected=true;
+  // Capital One 360 checking: direction in 'transaction type' column (Debit/Credit values)
+  } else if(firstLine.includes('transaction description')&&firstLine.includes('transaction type')&&firstLine.includes('transaction amount')){
+    importFmt='capitalone360'; importFmtAutoDetected=true;
+  // Debit/Credit split-column format: firstLine.includes('debit')&&firstLine.includes('credit')
+  // is the broad substring check, but we require standalone column names (not a phrase like
+  // 'credit debit indicator') to avoid misclassifying Navy Federal and similar formats.
+  } else if(firstLine.includes('debit')&&firstLine.includes('credit')&&cols.includes('debit')&&cols.includes('credit')){
     importFmt='debitcredit'; importFmtAutoDetected=true;
   } else if(firstLine.includes('running bal')){
     importFmt='bofa'; importFmtAutoDetected=true;
@@ -13549,7 +13561,7 @@ function detectFormatFromLine(firstLine){
     importFmt='westpacnz'; importFmtAutoDetected=true;
   } else if(firstLine.includes('counter party')&&firstLine.includes('reference')){
     importFmt='starling'; importFmtAutoDetected=true;
-  } else if(firstLine.includes('trans date')||firstLine.includes('posting date')){
+  } else if(firstLine.includes('trans date')||firstLine.includes('posting date')||firstLine.includes('posted date')||firstLine.includes('post date')){
     importFmt='generic'; importFmtAutoDetected=true;
   }
   return importFmtAutoDetected?importFmt:null;
@@ -13593,17 +13605,26 @@ function parseTxFile(file){
         if(fmt){importFmt=fmt;headerLineIdx=i;importFmtAutoDetected=true;break;}
       }
       if(!importFmt){
-        // Nothing matched — previously left importFmt at whatever it was
-        // before (stale from a prior import, or the 'ally' default on a
-        // fresh session), silently misparsing an unrecognized-but-plain
-        // file (e.g. just Date,Description,Amount) under the wrong
-        // format's column-name assumptions. 'ally' in particular requires
-        // a literal Type==='Deposit' column to recognize a positive amount
-        // as income — without one, every deposit/paycheck row silently
-        // vanished with zero warning. Falls through to the generic
-        // sign-convention-detected parser instead, which is built for
-        // exactly this "unknown format" case.
-        importFmt='generic'; importFmtAutoDetected=true; headerLineIdx=0;
+        // Check for headerless Wells Fargo: date in first cell, number in second, '*' in third
+        const _wfCols=scanLines.length?splitCSVLine(scanLines[0]):[];
+        const _wfDate=(_wfCols[0]||'').replace(/^"|"$/g,'').trim();
+        const _wfAmt=(_wfCols[1]||'').replace(/^"|"$/g,'').trim();
+        const _wfStar=(_wfCols[2]||'').replace(/^"|"$/g,'').trim();
+        if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(_wfDate)&&!isNaN(parseFloat(_wfAmt))&&_wfStar==='*'){
+          importFmt='wellsfargo'; importFmtAutoDetected=true; headerLineIdx=0;
+        } else {
+          // Nothing matched — previously left importFmt at whatever it was
+          // before (stale from a prior import, or the 'ally' default on a
+          // fresh session), silently misparsing an unrecognized-but-plain
+          // file (e.g. just Date,Description,Amount) under the wrong
+          // format's column-name assumptions. 'ally' in particular requires
+          // a literal Type==='Deposit' column to recognize a positive amount
+          // as income — without one, every deposit/paycheck row silently
+          // vanished with zero warning. Falls through to the generic
+          // sign-convention-detected parser instead, which is built for
+          // exactly this "unknown format" case.
+          importFmt='generic'; importFmtAutoDetected=true; headerLineIdx=0;
+        }
       }
     }
     // midata is the one format that isn't reliably comma-delimited -- real
@@ -13619,7 +13640,9 @@ function parseTxFile(file){
     // semicolon-delimited header/rows as one giant comma-less field. Found
     // live-testing the header-scan fix above, same day.
     const csvDelim=(importFmt==='midata'&&(scanLines[headerLineIdx]||'').includes(';'))?';':',';
-    const rows=parseCSV(text,csvDelim,headerLineIdx);
+    let _csvText=text;
+    if(importFmt==='wellsfargo'){_csvText='date,amount,type,memo,description\n'+text;}
+    const rows=parseCSV(_csvText,csvDelim,headerLineIdx);
     if(!rows||!rows.length){
       showToast('Could not read this CSV — check the format and try again','#F87171');return;
     }
@@ -13688,7 +13711,7 @@ function parseCSV(text,delim,headerLineIdx){
   // summary line) -- parseTxFile()'s auto-detect scan finds this index;
   // every other caller (tests, or a bare parseCSV(text) call) defaults
   // to 0, the original always-first-line behavior.
-  const headers=splitCSVLine(lines[headerLineIdx],delim).map(h=>h.trim().toLowerCase());
+  const headers=splitCSVLine(lines[headerLineIdx],delim).map(h=>{let n=h.trim().toLowerCase();n=n.replace(/\.(?=\s)/g,'');n=n.replace(/\s*\([^)]*\)\s*/g,'').trim();return n;});
   return lines.slice(headerLineIdx+1).map(line=>{
     const vals=splitCSVLine(line,delim).map(v=>v.trim());
     const obj={};
@@ -13831,7 +13854,8 @@ function normalizeTxRow(row, source){
     amount=rawAmt<0?Math.abs(rawAmt):0;
     const type=(row['type']||'').trim();
     if(type==='Payment')return null;
-    if(!amount&&rawAmt>=0){
+    if(type==='Return'&&rawAmt>0){isOffset=true;amount=-rawAmt;}
+    else if(!amount&&rawAmt>=0){
       const xferCat=_creditDepositCat(desc);
       if(xferCat){
         amount=Math.abs(rawAmt);cat=xferCat;
@@ -13865,6 +13889,8 @@ function normalizeTxRow(row, source){
       const xferCat=_creditDepositCat(desc);
       if(xferCat){
         amount=credit;cat=xferCat;
+      } else if(/\b(?:REFUND|RETURN)\b/i.test(desc)){
+        isOffset=true;amount=-credit;cat=guessCatFromDesc(desc);
       } else {
         if(!state.includeIncome)return null;
         isIncome=true;amount=credit;cat='Income';
@@ -14136,6 +14162,58 @@ function normalizeTxRow(row, source){
     // in the 121st adversarial pass.
     card=_stripCsvFormulaGuard((row['source']||'').trim())||undefined;
 
+  } else if(importFmt==='wellsfargo'){
+    // Wells Fargo: no header row; synthetic header maps positional columns.
+    // Negative amount = spending, positive = deposit.
+    date=row['date']||'';
+    desc=(row['description']||'').trim();
+    const rawAmt=parseFloat(row['amount']||'0');
+    if(rawAmt<0){
+      amount=Math.abs(rawAmt);
+    } else {
+      if(!rawAmt)return null;
+      const xferCat=_creditDepositCat(desc);
+      if(xferCat){amount=rawAmt;cat=xferCat;}
+      else{if(!state.includeIncome)return null;isIncome=true;amount=rawAmt;cat='Income';}
+    }
+    if(!amount)return null;
+    if(!isIncome)cat=guessCatFromDesc(desc);
+
+  } else if(importFmt==='capitalone360'){
+    // Capital One 360 checking: all amounts positive, direction from Transaction Type (Debit/Credit)
+    date=row['transaction date']||row['date']||'';
+    desc=(row['transaction description']||row['description']||'').trim();
+    const rawAmt=parseFloat(row['transaction amount']||row['amount']||'0');
+    const txType=(row['transaction type']||'').trim().toLowerCase();
+    if(txType==='credit'){
+      const xferCat=_creditDepositCat(desc);
+      if(xferCat){amount=rawAmt;cat=xferCat;}
+      else{if(!state.includeIncome)return null;isIncome=true;amount=rawAmt;cat='Income';}
+    } else {
+      amount=rawAmt;
+    }
+    if(!amount)return null;
+    if(!isIncome)cat=guessCatFromDesc(desc);
+    if(cat==='Other')cat=mapImportedCategory(row['category'])||'Other';
+
+  } else if(importFmt==='navyfederal'){
+    // Navy Federal: all amounts positive, direction from Credit Debit Indicator column
+    date=row['posting date']||row['transaction date']||row['date']||'';
+    desc=(row['description']||'').trim();
+    const rawAmt=parseFloat(row['amount']||'0');
+    const indicator=(row['credit debit indicator']||'').trim().toLowerCase();
+    if(indicator==='credit'){
+      const xferCat=_creditDepositCat(desc);
+      if(xferCat){amount=rawAmt;cat=xferCat;}
+      else{if(!state.includeIncome)return null;isIncome=true;amount=rawAmt;cat='Income';}
+    } else {
+      amount=rawAmt;
+    }
+    if(!amount)return null;
+    mcc=row['merchant category code']||row['mcc']||row['MCC']||'';
+    if(!isIncome)cat=guessCatFromDesc(desc);
+    if(cat==='Other')cat=mapImportedCategory(row['category'])||'Other';
+
   } else {
     // Generic — sign convention auto-detected from the whole file's majority polarity
     // (_genericPositiveIsExpense, set by detectGenericSignConvention in parseTxFile).
@@ -14143,8 +14221,8 @@ function normalizeTxRow(row, source){
     // deposits are then subject to the same Include Income gate as every other format
     // instead of always being counted as spend (previously every deposit/paycheck row was
     // silently imported as an expense in "Other", regardless of the Include Income toggle).
-    date=row['date']||row['transaction date']||row['trans date']||row['posting date']||'';
-    desc=(row['description']||row['desc']||row['merchant']||row['payee']||row['name']||'').trim();
+    date=row['date']||row['transaction date']||row['trans date']||row['posting date']||row['posted date']||row['post date']||'';
+    desc=(row['description']||row['desc']||row['merchant']||row['payee']||row['name']||row['transaction description']||row['details']||'').trim();
     const rawAmt=parseFloat(row['amount']||row['transaction amount']||'0');
     const isExpenseSign=_genericPositiveIsExpense?rawAmt>0:rawAmt<0;
     if(isExpenseSign){
