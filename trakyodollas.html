@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-ZUc8BWaNbCQuprpD4HOBfyTLY3bx53VMwDjiY2i1H+M=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-MvhBABoQefYNZTTohVWWIZ2iWSIMFnQ4g0Qj/C5mIjg=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -1468,6 +1468,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div id="import-detected-fmt" class="hidden" style="margin-top:.55rem;display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary)">
       <span style="color:var(--accent-green);font-weight:700">✓</span>
       <span id="import-detected-fmt-text"></span>
+    </div>
+    <!-- Zero-row message — shown when CSV parses to 0 transactions -->
+    <div id="import-zero-msg" class="hidden" style="margin-top:.55rem;background:#1C0A0A;border:1px solid #7F1D1D55;border-radius:8px;padding:.6rem .85rem;font-size:12px;color:var(--text-muted);line-height:1.55">
+      <div style="color:#FCA5A5;font-weight:700;margin-bottom:.35rem">✗ Found 0 transactions</div>
+      <div id="import-zero-header" style="font-family:'DM Mono',monospace;font-size:11px;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:4px;padding:3px 7px;margin-bottom:.45rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+      <a id="import-zero-guide" href="/guides" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">See export guides →</a>
     </div>
     <!-- Import summary (count/date range/total/top categories) -- sits
          right by the Detected line so what's about to import is visible
@@ -13238,6 +13244,7 @@ let fmtPickerOpen=false;
 let importParsed=[];  // [{date,desc,cat,card,amount,excluded,is_offset}]
 let _importDateFmt='mdy'; // 'mdy'=MM/DD/YYYY (US), 'dmy'=DD/MM/YYYY (UK/AU)
 let _importRawRows=null;  // stored for re-parse when date format changes
+let _importRawHeader=''; // first detected header line, shown in zero-row error message
 // Which column the 8-row preview sample is sorted by, and which
 // direction -- sorts the full importParsed set (not just whichever 8 rows
 // already happen to be visible), so e.g. sorting by Amount surfaces the
@@ -13404,6 +13411,7 @@ function openTxImportModal(){
   importFmt='ally';
   _importDateFmt='mdy';
   _importRawRows=null;
+  _importRawHeader='';
   _importPreviewSortCol='date';
   _importPreviewSortAsc=false;
   // #import-source-label/#import-replace were never reset here -- neither
@@ -13448,6 +13456,8 @@ function openTxImportModal(){
   document.getElementById('tx-drop-zone').style.borderColor='';
   const detFmt=document.getElementById('import-detected-fmt');
   if(detFmt)detFmt.classList.add('hidden');
+  const zeroMsg=document.getElementById('import-zero-msg');
+  if(zeroMsg)zeroMsg.classList.add('hidden');
   const pickerPanel=document.getElementById('fmt-picker-panel');
   if(pickerPanel)pickerPanel.classList.add('hidden');
   const toggle=document.getElementById('fmt-manual-toggle');
@@ -13639,6 +13649,7 @@ function parseTxFile(file){
     // the comma-only preamble line and wrongly parse the real
     // semicolon-delimited header/rows as one giant comma-less field. Found
     // live-testing the header-scan fix above, same day.
+    _importRawHeader=importFmt==='wellsfargo'?'date,amount,type,memo,description':(scanLines[headerLineIdx]||'');
     const csvDelim=(importFmt==='midata'&&(scanLines[headerLineIdx]||'').includes(';'))?';':',';
     let _csvText=text;
     if(importFmt==='wellsfargo'){_csvText='date,amount,type,memo,description\n'+text;}
@@ -14312,7 +14323,7 @@ function normalizeTxRow(row, source){
   // pass.
   if(!isATM&&importFmt!=='trakyodollas'&&(!cat||cat==='Other')&&_communityRules){
     for(const rule of _communityRules){
-      if(rule.keyword&&descUpper.includes(rule.keyword.toUpperCase())){
+      if(rule.keyword&&_crMatches(descUpper,rule.keyword)){
         cat=rule.cat;break;
       }
     }
@@ -14345,7 +14356,7 @@ function normalizeTxRow(row, source){
 const CAT_KEYWORDS=[
   // Investment & transfers (check first — high confidence)
   ['Investment Contributions',['VANGUARD','FIDELITY BUY','SCHWAB BUY','ETRADE','ROBINHOOD','TDAMERITRADE','BETTERMENT','WEALTHFRONT','SOFI INVEST','MI DIR ACH CONTRIB','401K','ROTH IRA','BROKERAGE']],
-  ['CC Payment',['CHASE CREDIT','CREDIT CRD','AUTOPAY','AMEX PAYMENT','CITI PAYMENT','DISCOVER PAYMENT','CAPITAL ONE PAYMENT','CARD PAYMENT','CREDITCARD']],
+  ['CC Payment',['CHASE CREDIT','CREDIT CRD','AMEX PAYMENT','CITI PAYMENT','DISCOVER PAYMENT','CAPITAL ONE PAYMENT','CARD PAYMENT','CREDITCARD']],
   ['Transfers',['VENMO PAYMENT','ZELLE','PAYPAL TRANSFER','CASH APP','APPLE CASH','GOOGLE PAY TRANSFER','ACH TRANSFER','WIRE TRANSFER','INTERNET TRANSFER','REQUESTED TRANSFER','BANK TRANSFER','FLAGSTAR']],
   ['Internal Transfer',['TRANSFER TO SAVINGS','TRANSFER FROM CHECKING','ONLINE TRANSFER','INTERNAL TRANSFER']],
   // Housing
@@ -14491,6 +14502,14 @@ async function fetchCommunityRules(){
   }catch(e){/* silently fail — community rules are optional */}
 }
 
+// Keyword matching shared by built-in and community categorization.
+// Short keywords (<=5 chars for community rules, <=4 for built-ins) must start a
+// word, so 'AVIS' can't fire inside DAVIS/MAVIS, 'HERS' inside BROTHERS, or
+// 'IRS ' inside AFFAIRS. A trailing match is still allowed ('ANGIS', 'TESCOS').
+// Longer keywords keep plain substring matching. Regexes are cached per keyword.
+const _kwReCache=new Map();
+function _kwLeadMatch(u,k){let re=_kwReCache.get(k);if(!re){const t=k.trim();const e=t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');re=new RegExp('(?:^|[^A-Z0-9])'+e+(k.endsWith(' ')?' ':''));_kwReCache.set(k,re);}return re.test(u);}
+function _crMatches(du,kw){const k=kw.toUpperCase();if(!k.trim())return false;return k.trim().length<=5?_kwLeadMatch(du,k):du.includes(k);}
 function guessCatFromDesc(d){
   const u=d.toUpperCase();
   // Specific strings that would otherwise match a broader, earlier-checked
@@ -14513,17 +14532,23 @@ function guessCatFromDesc(d){
   if(u.includes('BROOKSHIRES PHARMACY'))return 'Health & Wellness';
   if(u.includes('KAISER PHARMACY'))return 'Health & Wellness';
   if(u.includes('ANIMAL HOSPITAL')||u.includes('ANIMAL CLINIC'))return 'Pet(s)';
-  // MOBIL: match only when NOT followed by 'E' so MOBILE/T-MOBILE don't hit Gas,
-  // but EXXONMOBIL (one word, L at end) still matches. Removed from CAT_KEYWORDS
-  // to apply this condition rather than a plain substring match.
-  if(/MOBIL(?!E)/i.test(u))return 'Gas';
+  // MOBIL (gas brand): match only when not followed by another letter, so
+  // MOBILE / MOBILITY / T-MOBILE never hit Gas while EXXONMOBIL and
+  // 'MOBIL 1234' still do. Removed from CAT_KEYWORDS for this reason.
+  if(/MOBIL(?![A-Z])/i.test(u))return 'Gas';
   // Card-bill payment detector — runs before CAT_KEYWORDS so built-in keywords
-  // (MOBIL/DELTA/etc.) can't shadow an unambiguous payment description.
-  // Requires a payment word AND either a card-issuer name or a word-boundary CARD/CRD token.
-  if(/\b(?:PAYMENT|PMT|PYMT|AUTOPAY|AUTO\s*PAY|EPAYMENT|E-PAYMENT)\b/i.test(u)&&(
-    /\b(?:CHASE|AMEX|AMERICAN EXPRESS|CAPITAL ONE|DISCOVER|CITI|APPLECARD|GSBANK|BK OF AMER|BANK OF AMERICA|SYNCHRONY|BARCLAYCARD|WF CREDIT|WELLS FARGO)\b/i.test(u)||
-    /\b(?:CARD|CRD|CREDIT CARD)\b/i.test(u)
-  ))return 'CC Payment';
+  // can't shadow an unambiguous payment description. Requires a payment word,
+  // never fires on loans (MORTGAGE/MTG/LOAN/AUTO FIN/STUDENT/LEASE/HELOC), and
+  // needs one of: a card-first issuer (Amex, Apple Card/GS Bank, Synchrony,
+  // Barclaycard, Capital One, Discover, Citi), a card word (CARD/CRD/CREDIT
+  // CARD/VISA/MASTERCARD), or THANK YOU (card-statement payment rows). Banks that
+  // also lend (Chase, Wells Fargo, Bank of America) need a card word, so their
+  // mortgage and auto-loan payments keep counting as spending.
+  if(/\b(?:PAYMENT|PMT|PYMT|AUTOPAY|AUTO\s*PAY|EPAYMENT|E-PAYMENT|EPAY)\b/i.test(u)
+    &&!/\b(?:MORTGAGE|MTG|HOME\s*LEND\w*|HOME\s*LOAN|HELOC|LOANS?|LEASE|AUTO\s*FIN\w*|STUDENT)\b/i.test(u)
+    &&(/\b(?:AMEX|AMERICAN EXPRESS|APPLECARD|GSBANK|SYNCHRONY|SYNCB|BARCLAYCARD|CAPITAL ONE|DISCOVER|CITI)\b/i.test(u)
+      ||/\b(?:CARD|CRD|CREDIT\s*CARD|CREDIT\s*CRD|VISA|MASTERCARD)\b/i.test(u)
+      ||/THANK\s*YOU/i.test(u)))return 'CC Payment';
   // Unambiguous donation signals override everything except investment/CC keywords (caught earlier in CAT_KEYWORDS)
   if(u.includes('DONATION')||u.includes('DONATE')){
     return 'Gifts & Donations';
@@ -14534,7 +14559,7 @@ function guessCatFromDesc(d){
       ?'Gifts & Donations':'Entertainment';
   }
   for(const [cat,keywords] of CAT_KEYWORDS){
-    if(keywords.some(k=>u.includes(k)))return cat;
+    if(keywords.some(k=>k.trim().length<=4?_kwLeadMatch(u,k):u.includes(k)))return cat;
   }
   return 'Other';
 }
@@ -14585,16 +14610,27 @@ function showImportPreview(){
     if(stalePreview)stalePreview.classList.add('hidden');
     if(staleStats)staleStats.classList.add('hidden');
     if(staleBtn)staleBtn.classList.add('hidden');
-    const fmtNames={ally:'Checking/Savings',chase:'Credit card',debitcredit:'Debit/Credit columns',bofa:'Bank of America',generic:'Other',mint:'Mint',ynab:'YNAB',monarch:'Monarch Money',trakyodollas:'trak-yo-dolla$ export'};
-    if(!fmtPickerOpen){
-      showToast('We couldn\'t read this file automatically — try selecting your format below','#F87171');
-      expandFormatPicker();
-    } else {
+    const _zeroMsg=document.getElementById('import-zero-msg');
+    const _zeroHdr=document.getElementById('import-zero-header');
+    const _zeroGuide=document.getElementById('import-zero-guide');
+    if(_zeroMsg){
+      if(_zeroHdr)_zeroHdr.textContent=_importRawHeader||'(no header detected)';
+      if(_zeroGuide){
+        const _guideUrls={ally:'/guides/ally',chase:'/guides/chase',bofa:'/guides/bofa',wellsfargo:'/guides/wellsfargo',discover:'/guides/discover',capitalone360:'/guides/capitalone',citi:'/guides/citi',usbank:'/guides/usbank'};
+        _zeroGuide.href=_guideUrls[importFmt]||'/guides';
+      }
+      _zeroMsg.classList.remove('hidden');
+    }
+    if(fmtPickerOpen){
+      const fmtNames={ally:'Checking/Savings',chase:'Credit card',debitcredit:'Debit/Credit columns',bofa:'Bank of America',generic:'Other',mint:'Mint',ynab:'YNAB',monarch:'Monarch Money',trakyodollas:'trak-yo-dolla$ export'};
       const detected=fmtNames[importFmt]||importFmt;
       showToast(`No transactions found with "${detected}" format — try a different option`,'#FCD34D');
     }
     return;
   }
+  // Hide zero-row message from any prior failed attempt in this modal session
+  const _zmEl=document.getElementById('import-zero-msg');
+  if(_zmEl)_zmEl.classList.add('hidden');
   // Show detected format badge
   const fmtLabels={ally:'Checking/Savings',chase:'Credit card',debitcredit:'Debit/Credit columns',bofa:'Bank of America',generic:'Other',mint:'Mint',ynab:'YNAB',monarch:'Monarch Money'};
   if(detFmtEl&&detFmtTxt){
@@ -14794,7 +14830,7 @@ function confirmTxImport(){
           let recat='Other';
           if(_communityRules){
             for(const rule of _communityRules){
-              if(rule.keyword&&du.includes(rule.keyword.toUpperCase())){recat=rule.cat;break;}
+              if(rule.keyword&&_crMatches(du,rule.keyword)){recat=rule.cat;break;}
             }
           }
           t.cat=recat;

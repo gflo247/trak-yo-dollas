@@ -15,3 +15,24 @@ TEXAS DEPT OF PUBLIC SAFETY,not Travel,currently Travel via "AS "
 T-MOBILE PCS SVC,Bills & Utilities,must stay correct after any MOBIL boundary change
 EXXONMOBIL 12345,Gas,currently Gas; must stay Gas after any MOBIL boundary change (one word - a whole-word match would break it)
 SPIRIT AIRL 4871234,Travel,truncated airline name as statements show it; currently Other - add name prefixes like this when removing the two-letter codes
+CHASE MORTGAGE PAYMENT,not CC Payment,mortgage must count as spending; efaa556 excludes it (was Home on cb17325)
+CHASE HOME LENDING PMT,not CC Payment,mortgage; efaa556 excludes it
+WELLS FARGO HOME MORTGAGE AUTOPAY,not CC Payment,mortgage on autopay; excluded on both cb17325 and efaa556
+BANK OF AMERICA MORTGAGE PMT,not CC Payment,mortgage; efaa556 excludes it (was Home)
+CITI MORTGAGE PAYMENT,not CC Payment,mortgage; efaa556 excludes it (was Home)
+CHASE AUTO LOAN PMT,not CC Payment,auto loan; efaa556 excludes it
+CAPITAL ONE AUTO FINANCE PMT,not CC Payment,auto loan; efaa556 excludes it
+DISCOVER STUDENT LOANS PMT,not CC Payment,student loan; efaa556 excludes it (was Education)
+DISCOVER PERSONAL LOAN PAYMENT,not CC Payment,personal loan; efaa556 excludes it
+WELLS FARGO AUTO PAYMENT,not CC Payment,ambiguous (auto loan vs card autopay); banks that also lend should need a card word
+VERIZON WIRELESS AUTOPAY,not CC Payment,bill on autopay; built-in bare 'AUTOPAY' keyword excludes it (descriptor wording unconfirmed)
+STATE FARM AUTOPAY,not CC Payment,insurance on autopay; same bare 'AUTOPAY' keyword (wording unconfirmed)
+DTE ENERGY AUTOPAY,not CC Payment,utility on autopay; same bare 'AUTOPAY' keyword (wording unconfirmed)
+BELL MOBILITY,not Gas,Canadian carrier; MOBIL(?!E) still matches MOBILITY -> Gas
+TELUS MOBILITY,Bills & Utilities,Canadian carrier; same MOBILITY issue
+MOBIL 1234 ANN ARBOR,Gas,must stay Gas under MOBIL(?![A-Z])
+WETHERSPOON LONDON,Food & Drink,regressed to Health & Wellness after community-rules re-sort ('HERS' now first)
+SHOPEE FOOD,Food & Drink,regressed to Shopping after community-rules re-sort ('SHOPEE' now first)
+BROTHERS PIZZA,not Health & Wellness,pre-existing: community 'HERS' matches inside BROTHERS
+UC DAVIS PARKING,not Travel,pre-existing: community 'AVIS' matches inside DAVIS
+MAVIS TIRE 123,not Travel,pre-existing: community 'AVIS' matches inside MAVIS

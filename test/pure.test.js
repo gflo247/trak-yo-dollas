@@ -9456,19 +9456,24 @@ function loadGuessCatFromDesc() {
   const catKwEnd   = source.indexOf("\n// MCC", catKwStart);
   if (catKwStart === -1 || catKwEnd === -1) throw new Error("CAT_KEYWORDS not found in source");
   const catKwDecl = source.slice(catKwStart, catKwEnd).trim();
-  const fns = extractFunctions(source, ["guessCatFromDesc"]);
-  const body = catKwDecl + "\n" + fns["guessCatFromDesc"] + "\nreturn { guessCatFromDesc };";
+  const fns = extractFunctions(source, ["guessCatFromDesc", "_kwLeadMatch"]);
+  const body = catKwDecl + "\nconst _kwReCache = new Map();\n" + fns["_kwLeadMatch"] + "\n" + fns["guessCatFromDesc"] + "\nreturn { guessCatFromDesc };";
   return new Function(body)();
 }
 
 // Helper: simulate the app's two-layer categorization (built-in first, then
 // community rules if still 'Other') without spinning up the full app.
+const _appCrMatches = (() => {
+  const { extractFunctions, readSource: rs } = require("../scripts/extract-testable-fns.js");
+  const fns = extractFunctions(rs(), ["_crMatches", "_kwLeadMatch"]);
+  return new Function("const _kwReCache = new Map();\n" + fns["_kwLeadMatch"] + "\n" + fns["_crMatches"] + "\nreturn _crMatches;")();
+})();
 function categorizeFull(desc, communityRules, guessCatFromDescFn) {
   let cat = guessCatFromDescFn(desc);
   if ((cat === "Other" || !cat) && communityRules) {
     const du = desc.toUpperCase();
     for (const rule of communityRules) {
-      if (rule.keyword && du.includes(rule.keyword.toUpperCase())) { cat = rule.cat; break; }
+      if (rule.keyword && _appCrMatches(du, rule.keyword)) { cat = rule.cat; break; }
     }
   }
   return cat || "Other";
@@ -9546,8 +9551,8 @@ test("categorization_should_be.csv: every row categorizes correctly with current
   const failures = [];
   for (const { description, expected } of _catFixtureRows) {
     const actual = categorizeFull(description, _communityRulesForTest, guessCatFromDesc);
-    if (expected === "not Travel") {
-      if (actual === "Travel") failures.push(`"${description}" → ${actual} (expected: not Travel)`);
+    if (expected.startsWith("not ")) {
+      if (actual === expected.slice(4)) failures.push(`"${description}" → ${actual} (expected: ${expected})`);
     } else {
       if (actual !== expected) failures.push(`"${description}" → ${actual} (expected: ${expected})`);
     }
@@ -9616,14 +9621,20 @@ function loadNormalizePipeline(opts = {}) {
     const state = { catRules: [], includeIncome: ${opts.includeIncome !== false} };
   `;
 
+  const kwReCache = source.slice(
+    source.indexOf("const _kwReCache="),
+    source.indexOf(";", source.indexOf("const _kwReCache=")) + 1
+  );
+
   const fnNames = [
     "normalizeTxRow", "parseImportDate", "guessCatFromDesc", "guessCatChase", "guessCatAlly",
     "_creditDepositCat", "mapImportedCategory", "guessCatFromMCC", "_stripCsvFormulaGuard",
+    "_kwLeadMatch", "_crMatches",
   ];
   const fns = extractFunctions(source, fnNames);
 
   const body = [
-    transferLikeCats, atmBranchRe, importCatMap, catKeywords, isResLine, varDecls,
+    transferLikeCats, atmBranchRe, importCatMap, catKeywords, isResLine, kwReCache, varDecls,
     Object.values(fns).join("\n"),
     "return { normalizeTxRow };",
   ].join("\n");
