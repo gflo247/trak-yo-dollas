@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-7Svy5KCHEKNeIW9VSW0zv3drmhPRsXkk3tHPF15IJ1c=' https://cloud.umami.is;
+  script-src 'self' 'sha256-7Svy5KCHEKNeIW9VSW0zv3drmhPRsXkk3tHPF15IJ1c=' 'sha256-94Fm/uBdA2fU33rRC9UWGz8T+EdUIJUXED08CNNmXaU=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data:;
-  connect-src 'self' https://cloud.umami.is https://gateway.umami.is;
+  connect-src 'self' https://gateway.umami.is;
   worker-src 'self';
   object-src 'none';
   form-action 'self';
@@ -88,7 +88,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#111720">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
-<script defer src="https://cloud.umami.is/script.js" data-website-id="e7ab8f18-2279-4b07-a0b4-cd497a4766ff"></script>
+<script>fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'pageview',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:location.pathname,referrer:document.referrer,screen:screen.width+'x'+screen.height,language:navigator.language,title:document.title}})}).catch(function(){});</script>
 </head>
 <body>
 
