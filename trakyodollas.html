@@ -14407,7 +14407,7 @@ const CAT_KEYWORDS=[
   // Investment & transfers (check first — high confidence)
   ['Investment Contributions',['VANGUARD','FIDELITY BUY','SCHWAB BUY','ETRADE','ROBINHOOD','TDAMERITRADE','BETTERMENT','WEALTHFRONT','SOFI INVEST','MI DIR ACH CONTRIB','401K','ROTH IRA','BROKERAGE']],
   ['CC Payment',['CHASE CREDIT','CREDIT CRD','AMEX PAYMENT','CITI PAYMENT','DISCOVER PAYMENT','CAPITAL ONE PAYMENT','CARD PAYMENT','CREDITCARD']],
-  ['Transfers',['VENMO PAYMENT','ZELLE','PAYPAL TRANSFER','CASH APP','APPLE CASH','GOOGLE PAY TRANSFER','ACH TRANSFER','WIRE TRANSFER','INTERNET TRANSFER','REQUESTED TRANSFER','BANK TRANSFER','FLAGSTAR']],
+  ['Transfers',['VENMO PAYMENT','ZELLE','PAYPAL TRANSFER','PAYPAL','CASH APP','APPLE CASH','GOOGLE PAY TRANSFER','ACH TRANSFER','WIRE TRANSFER','INTERNET TRANSFER','REQUESTED TRANSFER','BANK TRANSFER','FLAGSTAR']],
   ['Internal Transfer',['TRANSFER TO SAVINGS','TRANSFER FROM CHECKING','ONLINE TRANSFER','INTERNAL TRANSFER']],
   // Housing
   ['Home',['RENT PAYMENT','RENT PMT','RENTAL PAYMENT','MORTGAGE','MTGMANAGER','OLD NATIONAL BAN MTG','HOME DEPOT','LOWES','LOWE\'S','ACE HARDWARE','TRUE VALUE','MENARDS','HOME SERVICES','ELECTRIC CO','ELECTRICCO','PEST CONTROL','LANDSCAP','PLUMB','HVAC','ROOF','HANDYMAN','ANGI ','ANGIE','HOMEADVISOR','THUMBTACK','TASKRABBIT','MR HANDYMAN','MERRY MAIDS','MOLLY MAID','TERMINIX','ORKIN','TRUGREEN','SCOTTS LAWN']],
@@ -14562,6 +14562,12 @@ function _kwLeadMatch(u,k){let re=_kwReCache.get(k);if(!re){const t=k.trim();con
 function _crMatches(du,kw){const k=kw.toUpperCase();if(!k.trim())return false;return k.trim().length<=5?_kwLeadMatch(du,k):du.includes(k);}
 function guessCatFromDesc(d){
   const u=d.toUpperCase();
+  // "PAYPAL *NETFLIX.COM" / "PP*AMAZON" — strip the payment-processor prefix
+  // and match on the merchant name. Fall back to the normal path (which lands
+  // on Transfers via the PAYPAL community rule or PAYPAL TRANSFER keyword) when
+  // the inner name is unrecognized or itself resolves to Transfers/Other.
+  const _ppInner=u.match(/^(?:PAYPAL\s*\*|PP\*)\s*(.+)/);
+  if(_ppInner){const _ppCat=guessCatFromDesc(_ppInner[1]);if(_ppCat!=='Other'&&_ppCat!=='Transfers'&&_ppCat!=='Internal Transfer')return _ppCat;}
   // Specific strings that would otherwise match a broader, earlier-checked
   // keyword first -- CAT_KEYWORDS is checked in array order and returns on
   // the first substring match, so a short generic keyword in an earlier

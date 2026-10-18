@@ -9638,7 +9638,7 @@ function loadNormalizePipeline(opts = {}) {
   const body = [
     transferLikeCats, atmBranchRe, importCatMap, catKeywords, isResLine, kwReCache, varDecls,
     Object.values(fns).join("\n"),
-    "return { normalizeTxRow, detectGenericCardRefunds };",
+    "return { normalizeTxRow, detectGenericCardRefunds, guessCatFromDesc };",
   ].join("\n");
 
   return new Function(body)();
@@ -9920,4 +9920,17 @@ test("capitalone_card_refunds.csv: on a file with a Card No. column, a merchant 
 test("store_card_payment.csv: 'KOHLS PAYMENT' names a merchant but is never a refund; the Kohl's return is", () => {
   const rows = parseFixtureCsv(fs.readFileSync(path.join(FIXTURES, "store_card_payment.csv"), "utf8"), { includeIncome: false });
   assert.deepEqual(rows.filter(r => r.is_offset).map(r => [r.desc, r.amount]), [["KOHLS #0123 ANN ARBOR MI", -12]]);
+});
+
+// ── PayPal merchant-prefix stripping ──
+test("guessCatFromDesc: PAYPAL * and PP* prefixes are stripped before matching", () => {
+  const { guessCatFromDesc } = loadNormalizePipeline();
+  // Known merchant → category from the inner name
+  assert.equal(guessCatFromDesc("PAYPAL *NETFLIX.COM"), "Entertainment");
+  assert.equal(guessCatFromDesc("PAYPAL *KROGER #123"), "Groceries");
+  assert.equal(guessCatFromDesc("PP*AMAZON MARKETPLACE"), "Shopping");
+  // Unrecognized inner name → falls back to Transfers via PAYPAL community/keyword rule
+  assert.equal(guessCatFromDesc("PAYPAL *SOME UNKNOWN VENDOR 12345"), "Transfers");
+  // No star → normal matching, not stripped (PAYPAL TRANSFER → Transfers)
+  assert.equal(guessCatFromDesc("PAYPAL TRANSFER"), "Transfers");
 });
