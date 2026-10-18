@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-MvhBABoQefYNZTTohVWWIZ2iWSIMFnQ4g0Qj/C5mIjg=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-z1dVrBDmoUljJqiTGy4cGQdAgTxu65U+rusYyspQUss=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -13259,6 +13259,9 @@ let _importPreviewSortAsc=false; // date defaults to newest-first, matching the 
 // no separate debit/credit marker. Detected once per file from the majority polarity of the
 // 'amount' column so normalizeTxRow's generic branch knows which sign to treat as spend.
 let _genericPositiveIsExpense=false;
+// Whether this generic file's credits may be read as card refunds (see
+// detectGenericCardRefunds). Set once per file in parseTxFile.
+let _genericCardRefunds=false;
 function detectGenericSignConvention(rows){
   let neg=0,pos=0;
   for(const row of rows){
@@ -13267,6 +13270,26 @@ function detectGenericSignConvention(rows){
     if(raw<0)neg++;else pos++;
   }
   return pos>neg; // true only when positive amounts are the clear majority
+}
+
+// The generic branch's description lookup, shared with detectGenericCardRefunds.
+function _genericDesc(row){
+  return (row['description']||row['desc']||row['merchant']||row['payee']||row['name']||row['transaction description']||row['details']||'').trim();
+}
+
+// A positive-majority file is usually a card export (purchases positive), but a
+// short or deposit-heavy checking export can be positive-majority too, and its
+// credits are purchases, not refunds. So before credits may become refunds, the
+// rows we recognize as merchants must be mostly positive as well. Paychecks,
+// transfers and unrecognized descriptions don't count either way.
+function detectGenericCardRefunds(rows){
+  if(!detectGenericSignConvention(rows))return false;
+  return detectGenericSignConvention(rows.filter(r=>{
+    const d=_genericDesc(r);
+    if(_hasPaymentWording(d))return false;
+    const c=guessCatFromDesc(d);
+    return c!=='Other'&&c!=='Income'&&!TRANSFER_LIKE_CATS.includes(c);
+  }));
 }
 
 // Parse a date string into YYYY-MM-DD, respecting the user's chosen date format
@@ -13514,7 +13537,7 @@ function handleTxFileSelect(input){
 function detectFormatFromLine(firstLine){
   // Normalize: strip mid-word periods (Trans. Date → trans date) and parenthetical units
   firstLine=firstLine.replace(/\.(?=\s)/g,'').replace(/\s*\([^)]*\)\s*/g,'');
-  const cols=firstLine.split(',').map(c=>c.trim());
+  const cols=firstLine.split(',').map(c=>c.trim().replace(/^"|"$/g,'').trim());
   let importFmt=null,importFmtAutoDetected=false;
   // Our own exportTransactionsCSV() output — checked first since it's the
   // most specific signature (no bank export has both 'vendor' and
@@ -13548,10 +13571,10 @@ function detectFormatFromLine(firstLine){
   // Capital One 360 checking: direction in 'transaction type' column (Debit/Credit values)
   } else if(firstLine.includes('transaction description')&&firstLine.includes('transaction type')&&firstLine.includes('transaction amount')){
     importFmt='capitalone360'; importFmtAutoDetected=true;
-  // Debit/Credit split-column format: firstLine.includes('debit')&&firstLine.includes('credit')
-  // is the broad substring check, but we require standalone column names (not a phrase like
-  // 'credit debit indicator') to avoid misclassifying Navy Federal and similar formats.
-  } else if(firstLine.includes('debit')&&firstLine.includes('credit')&&cols.includes('debit')&&cols.includes('credit')){
+  // Debit/Credit split-column format: needs standalone debit and credit amount columns
+  // (not a phrase like Navy Federal's 'credit debit indicator'). 'debit amount'/'credit
+  // amount' are names the debitcredit branch also reads (ING Australia, Lloyds).
+  } else if(firstLine.includes('debit')&&firstLine.includes('credit')&&cols.some(c=>c==='debit'||c==='debit amount')&&cols.some(c=>c==='credit'||c==='credit amount')){
     importFmt='debitcredit'; importFmtAutoDetected=true;
   } else if(firstLine.includes('running bal')){
     importFmt='bofa'; importFmtAutoDetected=true;
@@ -13661,6 +13684,7 @@ function parseTxFile(file){
     // Detect sign convention for the generic format's fallback parser (see
     // detectGenericSignConvention) — recomputed per-file since it depends on this file's data.
     _genericPositiveIsExpense=detectGenericSignConvention(rows);
+    _genericCardRefunds=detectGenericCardRefunds(rows);
     // Detect date format — update UI and store for re-parse on toggle
     const detectedFmt=detectImportDateFmt(rows);
     // ANZ NZ, BNZ, Westpac NZ, Starling, and midata (UK) exports are always
@@ -13826,6 +13850,30 @@ function _creditDepositCat(desc){
   return TRANSFER_LIKE_CATS.includes(c)?c:null;
 }
 
+// Payment wording on a card statement ("PAYMENT - THANK YOU", "KOHLS PAYMENT",
+// Discover's "DIRECTPAY FULL BALANCE").
+function _hasPaymentWording(desc){
+  return /\b(?:PAYMENT|PMT|PYMT|AUTOPAY|AUTO\s*PAY|E-?PAYMENT|EPAY|DIRECTPAY)\b|THANK\s*YOU/i.test(desc);
+}
+
+// Card files only: is this credit a refund? Yes when the description names a
+// merchant we recognize (built-in keywords or community rules) or says
+// REFUND/RETURN. Payment wording ("KOHLS PAYMENT" on a store card names a
+// merchant), a bank Type of "Payment", and unrecognized descriptions are not
+// refunds, so an unfamiliar payment wording keeps the old handling instead of
+// becoming negative spending.
+function _isCardRefund(desc,bankType){
+  const marked=/\b(?:REFUND|RETURN)\b/i.test(desc);
+  if(!marked&&(/payment/i.test(bankType||'')||_hasPaymentWording(desc)))return false;
+  let c=guessCatFromDesc(desc);
+  if(c==='Other'&&_communityRules){
+    const du=desc.toUpperCase();
+    for(const r of _communityRules){if(r.keyword&&_crMatches(du,r.keyword)){c=r.cat;break;}}
+  }
+  if(c==='Income'||TRANSFER_LIKE_CATS.includes(c))return false;
+  return c!=='Other'||marked;
+}
+
 function normalizeTxRow(row, source){
   let date, desc, amount, cat='Other', excluded=false, mcc='', isIncome=false, biz, isOffset=false, card;
   // Set true only if state.catRules (tier 3 below) is what assigned cat --
@@ -13892,7 +13940,7 @@ function normalizeTxRow(row, source){
     // and ING Australia's "Debit Amount"/"Credit Amount" columns -- confirmed via
     // ING's own actively-maintained community CSV-import config, July 2026 research)
     date=row['date']||row['transaction date']||row['trans date']||row['posting date']||'';
-    desc=(row['description']||row['memo']||row['payee']||row['name']||'').trim();
+    desc=(row['description']||row['memo']||row['payee']||row['name']||row['transaction description']||'').trim();
     const debit=parseFloat(row['debit']||row['debit amount']||row['withdrawals']||row['withdrawal']||'0')||0;
     const credit=parseFloat(row['credit']||row['credit amount']||row['deposits']||row['deposit']||'0')||0;
     amount=debit>0?debit:0;
@@ -13900,7 +13948,7 @@ function normalizeTxRow(row, source){
       const xferCat=_creditDepositCat(desc);
       if(xferCat){
         amount=credit;cat=xferCat;
-      } else if(/\b(?:REFUND|RETURN)\b/i.test(desc)){
+      } else if('card no.' in row?_isCardRefund(desc):/\b(?:REFUND|RETURN)\b/i.test(desc)){
         isOffset=true;amount=-credit;cat=guessCatFromDesc(desc);
       } else {
         if(!state.includeIncome)return null;
@@ -14233,7 +14281,7 @@ function normalizeTxRow(row, source){
     // instead of always being counted as spend (previously every deposit/paycheck row was
     // silently imported as an expense in "Other", regardless of the Include Income toggle).
     date=row['date']||row['transaction date']||row['trans date']||row['posting date']||row['posted date']||row['post date']||'';
-    desc=(row['description']||row['desc']||row['merchant']||row['payee']||row['name']||row['transaction description']||row['details']||'').trim();
+    desc=_genericDesc(row);
     const rawAmt=parseFloat(row['amount']||row['transaction amount']||'0');
     const isExpenseSign=_genericPositiveIsExpense?rawAmt>0:rawAmt<0;
     if(isExpenseSign){
@@ -14243,6 +14291,8 @@ function normalizeTxRow(row, source){
       const xferCat=_creditDepositCat(desc);
       if(xferCat){
         amount=Math.abs(rawAmt);cat=xferCat;
+      } else if(_genericCardRefunds&&_isCardRefund(desc,row['type']||row['transaction type'])){
+        isOffset=true;amount=-Math.abs(rawAmt);
       } else {
         if(!state.includeIncome)return null;
         isIncome=true;amount=Math.abs(rawAmt);cat='Income';

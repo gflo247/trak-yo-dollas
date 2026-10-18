@@ -5956,7 +5956,7 @@ test("the rules-manager keyword chip and vendor-alias chips truncate with the sa
 test("normalizeTxRow: ANZ NZ/BNZ/Westpac NZ branches read the correct real column names, and ING Australia's Credit/Debit Amount columns are recognized by the debitcredit branch", () => {
   const source = readSource();
 
-  const debitcreditMatch = source.match(/\}\s*else if\(importFmt==='debitcredit'\)\{[\s\S]{0,1400}?\n\n  \} else if\(importFmt==='anznz'\)/);
+  const debitcreditMatch = source.match(/\}\s*else if\(importFmt==='debitcredit'\)\{[\s\S]{0,1600}?\n\n  \} else if\(importFmt==='anznz'\)/);
   assert.ok(debitcreditMatch, "the debitcredit import branch should exist and be immediately followed by the new anznz branch");
   assert.match(
     debitcreditMatch[0],
@@ -9616,6 +9616,7 @@ function loadNormalizePipeline(opts = {}) {
   const varDecls = `
     let importFmt = ${JSON.stringify(opts.importFmt || 'generic')};
     let _genericPositiveIsExpense = ${opts._genericPositiveIsExpense === true};
+    let _genericCardRefunds = ${opts._genericCardRefunds === true};
     let _importDateFmt = ${JSON.stringify(opts._importDateFmt || 'mdy')};
     let _communityRules = null;
     const state = { catRules: [], includeIncome: ${opts.includeIncome !== false} };
@@ -9629,14 +9630,15 @@ function loadNormalizePipeline(opts = {}) {
   const fnNames = [
     "normalizeTxRow", "parseImportDate", "guessCatFromDesc", "guessCatChase", "guessCatAlly",
     "_creditDepositCat", "mapImportedCategory", "guessCatFromMCC", "_stripCsvFormulaGuard",
-    "_kwLeadMatch", "_crMatches",
+    "_kwLeadMatch", "_crMatches", "_isCardRefund",
+    "_genericDesc", "detectGenericSignConvention", "detectGenericCardRefunds", "_hasPaymentWording",
   ];
   const fns = extractFunctions(source, fnNames);
 
   const body = [
     transferLikeCats, atmBranchRe, importCatMap, catKeywords, isResLine, kwReCache, varDecls,
     Object.values(fns).join("\n"),
-    "return { normalizeTxRow };",
+    "return { normalizeTxRow, detectGenericCardRefunds };",
   ].join("\n");
 
   return new Function(body)();
@@ -9680,10 +9682,13 @@ function parseFixtureCsv(csvText, overrideOpts = {}) {
   const rows = parseCSV(parseText, ",", headerLineIdx);
   const _genericPositiveIsExpense = (importFmt === "generic")
     ? detectGenericSignConvention(rows) : false;
+  const _genericCardRefunds = (importFmt === "generic")
+    ? loadNormalizePipeline({ importFmt }).detectGenericCardRefunds(rows) : false;
 
   const { normalizeTxRow } = loadNormalizePipeline({
     importFmt,
     _genericPositiveIsExpense,
+    _genericCardRefunds,
     _importDateFmt: overrideOpts._importDateFmt || "mdy",
     includeIncome: overrideOpts.includeIncome !== false,
   });
@@ -9797,11 +9802,17 @@ test("bofa_card.csv: rows parse (previously 0 — 'Posted Date' not recognized)"
   assert.ok(rows.length >= 1, `Expected ≥1 rows from bofa_card.csv, got 0`);
 });
 
-test("applecard.csv: rows parse (previously 0 — 'Amount (USD)' column not found)", () => {
+test("applecard.csv: the purchases are the spending rows ('Amount (USD)' header); the payment isn't spending and the return is a refund offset", () => {
+  // The earlier 4-row version of this fixture had 2 purchases and 2 credits,
+  // a sign tie that inverted the import, and the old ">=1 spending row"
+  // assertion still passed on the Daily Cash credit. Real statements have
+  // far more purchases than credits, which this fixture now reflects.
   const csvText = fs.readFileSync(path.join(FIXTURES, "applecard.csv"), "utf8");
-  const rows = parseFixtureCsv(csvText);
-  const spending = rows.filter(r => !r.isIncome && !r.is_offset);
-  assert.ok(spending.length >= 1, `Expected ≥1 spending rows from applecard.csv, got 0`);
+  const rows = parseFixtureCsv(csvText, { includeIncome: false });
+  const spending = rows.filter(r => !r.isIncome && !r.is_offset && !TRANSFER_LIKE.includes(r.cat));
+  assert.deepEqual(spending.map(r => r.desc).sort(),
+    ["KROGER #123 ANN ARBOR MI", "SHELL OIL 57444", "STARBUCKS STORE 03456 ANN ARBOR MI", "TARGET 00012345"]);
+  assert.deepEqual(rows.filter(r => r.is_offset).map(r => [r.desc, r.amount]), [["AMAZON.COM", -20]]);
 });
 
 test("capitalone_360.csv: Credit rows are NOT counted as spending (previously 0 rows — direction column not read)", () => {
@@ -9848,4 +9859,65 @@ test("capitalone_card.csv: AMAZON.COM REFUND (Credit column) imports as is_offse
   assert.ok(refund, "AMAZON.COM REFUND should import as is_offset");
   assert.ok(refund.amount < 0, `offset amount should be negative, got ${refund.amount}`);
   assert.ok(/amazon/i.test(refund.desc), "the refund should be the AMAZON.COM REFUND row");
+});
+
+// ── Split Debit/Credit columns: 'Debit Amount'/'Credit Amount' and quoted
+// headers. ad25da2 narrowed detection to exact 'debit'/'credit' columns, which
+// dropped both of these to zero rows (efaa556 imported them). ──
+const TRANSFER_LIKE = ["Investment Contributions", "Transfers", "Internal Transfer", "CC Payment"];
+
+test("detectFormatFromLine: 'Debit Amount'/'Credit Amount' columns and quoted Debit/Credit headers are split-column files", () => {
+  const { detectFormatFromLine } = loadFunctions(["detectFormatFromLine"]);
+  assert.equal(detectFormatFromLine("date,description,debit amount,credit amount,balance"), "debitcredit");
+  assert.equal(detectFormatFromLine('"date","description","debit","credit","balance"'), "debitcredit");
+  assert.equal(detectFormatFromLine("date,description,debit (-),credit (+),balance"), "debitcredit");
+  assert.equal(detectFormatFromLine("transaction date,transaction type,sort code,account number,transaction description,debit amount,credit amount,balance,"), "debitcredit");
+  // Navy Federal's direction column names both words but isn't a pair of amount columns
+  assert.equal(detectFormatFromLine("posting date,transaction date,amount,credit debit indicator,type,description"), "navyfederal");
+});
+
+test("debitcredit_amount_columns.csv / debitcredit_quoted_header.csv: purchases import from the Debit column", () => {
+  for (const f of ["debitcredit_amount_columns.csv", "debitcredit_quoted_header.csv"]) {
+    const rows = parseFixtureCsv(fs.readFileSync(path.join(FIXTURES, f), "utf8"), { includeIncome: false });
+    assert.deepEqual(rows.map(r => [r.desc, r.amount]), [["STARBUCKS STORE 03456", 6.45], ["SHELL OIL 57444", 48.12]], f);
+  }
+});
+
+test("lloyds.csv: Lloyds' 'Transaction Description' column is read; the salary is income, never spending", () => {
+  const rows = parseFixtureCsv(fs.readFileSync(path.join(FIXTURES, "lloyds.csv"), "utf8"), { includeIncome: true, _importDateFmt: "dmy" });
+  assert.deepEqual(rows.filter(r => !r.isIncome).map(r => [r.desc, r.amount]), [["TESCO STORES 3297", 23.1], ["BRITISH GAS", 48.12]]);
+  assert.ok(rows.find(r => /SALARY/.test(r.desc)).isIncome, "the Credit Amount row is income");
+});
+
+// ── #4 for card files outside the Chase branch ──
+test("amex_refund.csv: a merchant credit on a card file is a refund offset; the payment stays an excluded CC Payment", () => {
+  for (const includeIncome of [true, false]) {
+    const rows = parseFixtureCsv(fs.readFileSync(path.join(FIXTURES, "amex_refund.csv"), "utf8"), { includeIncome });
+    assert.deepEqual(rows.filter(r => r.is_offset).map(r => [r.desc, r.amount, r.cat]),
+      [["AMAZON MARKETPLACE NA PA", -42.99, "Shopping"]], `includeIncome=${includeIncome}`);
+    const pay = rows.find(r => /THANK YOU/.test(r.desc));
+    assert.ok(pay && !pay.is_offset && pay.cat === "CC Payment", `includeIncome=${includeIncome}: the payment stays CC Payment`);
+  }
+});
+
+test("checking_deposit_heavy.csv: a positive-majority checking file never turns its purchases into refund offsets", () => {
+  // Five rows, three of them credits: majority polarity misreads this file
+  // (a known limit on very short exports). The refund gate must not add to
+  // that by booking the Kroger and Netflix debits as negative spending.
+  const rows = parseFixtureCsv(fs.readFileSync(path.join(FIXTURES, "checking_deposit_heavy.csv"), "utf8"), { includeIncome: false });
+  assert.deepEqual(rows.filter(r => r.is_offset).map(r => r.desc), []);
+});
+
+test("capitalone_card_refunds.csv: on a file with a Card No. column, a merchant credit without REFUND wording is a refund offset", () => {
+  for (const includeIncome of [true, false]) {
+    const rows = parseFixtureCsv(fs.readFileSync(path.join(FIXTURES, "capitalone_card_refunds.csv"), "utf8"), { includeIncome });
+    assert.deepEqual(rows.filter(r => r.is_offset).map(r => [r.desc, r.amount]), [["BEST BUY 00012", -89.99]], `includeIncome=${includeIncome}`);
+    const pay = rows.find(r => /PYMT/.test(r.desc));
+    assert.ok(pay && !pay.is_offset && pay.cat === "CC Payment", `includeIncome=${includeIncome}: the payment stays CC Payment`);
+  }
+});
+
+test("store_card_payment.csv: 'KOHLS PAYMENT' names a merchant but is never a refund; the Kohl's return is", () => {
+  const rows = parseFixtureCsv(fs.readFileSync(path.join(FIXTURES, "store_card_payment.csv"), "utf8"), { includeIncome: false });
+  assert.deepEqual(rows.filter(r => r.is_offset).map(r => [r.desc, r.amount]), [["KOHLS #0123 ANN ARBOR MI", -12]]);
 });

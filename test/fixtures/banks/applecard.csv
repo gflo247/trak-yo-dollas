@@ -1,5 +1,8 @@
 Transaction Date,Clearing Date,Description,Merchant,Category,Type,Amount (USD),Purchased By
 09/28/2026,09/29/2026,STARBUCKS STORE 03456 ANN ARBOR MI,Starbucks,Restaurants,Purchase,6.45,John Doe
+09/26/2026,09/27/2026,KROGER #123 ANN ARBOR MI,Kroger,Grocery,Purchase,87.34,John Doe
 09/25/2026,09/25/2026,ACH DEPOSIT INTERNET TRANSFER FROM ACCOUNT ENDING IN 1234,Payment,Payment,Payment,-500.00,John Doe
 09/18/2026,09/19/2026,SHELL OIL 57444,Shell,Gas,Purchase,48.12,John Doe
+09/16/2026,09/17/2026,TARGET 00012345,Target,Shopping,Purchase,63.20,John Doe
+09/14/2026,09/15/2026,AMAZON.COM,Amazon,Shopping,Credit,-20.00,John Doe
 09/10/2026,09/11/2026,DAILY CASH ADJUSTMENT,Daily Cash,Other,Credit,-1.20,John Doe
