@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-94Fm/uBdA2fU33rRC9UWGz8T+EdUIJUXED08CNNmXaU=' 'sha256-xlu3zCY3h0PVntESjrXFIkJvBQfhcHMFHy3Ood6OoBo=' 'sha256-/lBiG9DGJZy/ecjdz5eiU+pdIlrFPumS4LYM/fYzHf0=' 'sha256-8poXjTfC+9LuzkQaS/1BLDE9IvFZ1yOvs0oy/CjPuP8=' 'sha256-7Svy5KCHEKNeIW9VSW0zv3drmhPRsXkk3tHPF15IJ1c=';
+  script-src 'self' 'sha256-FZ3i4mTq2lEYLN3WGJ+LIviEHKKJ8g8ujJkfdIFeDDY=' 'sha256-xlu3zCY3h0PVntESjrXFIkJvBQfhcHMFHy3Ood6OoBo=' 'sha256-/lBiG9DGJZy/ecjdz5eiU+pdIlrFPumS4LYM/fYzHf0=' 'sha256-8poXjTfC+9LuzkQaS/1BLDE9IvFZ1yOvs0oy/CjPuP8=' 'sha256-7Svy5KCHEKNeIW9VSW0zv3drmhPRsXkk3tHPF15IJ1c=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data:;
@@ -218,7 +218,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#111720">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
-<script>fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'pageview',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:location.pathname,referrer:document.referrer,screen:screen.width+'x'+screen.height,language:navigator.language,title:document.title}})}).catch(function(){});</script>
+<script>fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'event',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:location.pathname,referrer:document.referrer,screen:screen.width+'x'+screen.height,language:navigator.language,title:document.title}})}).catch(function(){});</script>
 <script>document.addEventListener('click',function(e){var t=e.target.closest('[data-umami-event]');if(t){fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'event',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:location.pathname,name:t.getAttribute('data-umami-event')}})}).catch(function(){});}});</script>
 </head>
 <body>

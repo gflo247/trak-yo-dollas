@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-7Svy5KCHEKNeIW9VSW0zv3drmhPRsXkk3tHPF15IJ1c=' 'sha256-94Fm/uBdA2fU33rRC9UWGz8T+EdUIJUXED08CNNmXaU=';
+  script-src 'self' 'sha256-FZ3i4mTq2lEYLN3WGJ+LIviEHKKJ8g8ujJkfdIFeDDY=' 'sha256-L4mXbj2AbOL2RiyYk48AiwKK/JvWV7UcrFvUk1MAASk=' 'sha256-q+m81R/+bzZUtk0epEBUUd5t0i7jkLgAx7JyQYTkEZU=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data:;
@@ -102,7 +102,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#111720">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
-<script>fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'pageview',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:location.pathname,referrer:document.referrer,screen:screen.width+'x'+screen.height,language:navigator.language,title:document.title}})}).catch(function(){});</script>
+<script>fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'event',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:location.pathname,referrer:document.referrer,screen:screen.width+'x'+screen.height,language:navigator.language,title:document.title}})}).catch(function(){});</script>
 </head>
 <body>
 

@@ -14,7 +14,7 @@ img-src for an unrelated vehicle-photo <img>, which made it easy to assume
 (wrongly) the fetch was covered too. This script exists so that mistake
 can't ship silently again.
 
-Covers trakyodollas.html, index.html, and privacy.html by default — the
+Covers trakyodollas.html, index.html, privacy.html and guides/*.html by default — the
 latter two got their own CSP on July 6, 2026 (previously only
 trakyodollas.html had one).
 
@@ -26,7 +26,8 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).parent.parent
-DEFAULT_TARGETS = ['trakyodollas.html', 'index.html', 'privacy.html']
+DEFAULT_TARGETS = ['trakyodollas.html', 'index.html', 'privacy.html'] + sorted(
+    str(p.relative_to(ROOT)) for p in (ROOT / 'guides').glob('*.html'))
 
 
 def extract_call_arg(text, open_paren_pos):

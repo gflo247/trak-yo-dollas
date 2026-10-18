@@ -88,7 +88,7 @@ self.addEventListener('fetch', e => {
     // Trim to origin only — don't send search terms or campaign parameters.
     const refOrigin = ref ? (()=>{try{return new URL(ref).origin;}catch(e){return '';}})() : '';
     if (!fromOwnSite) {
-      fetch('https://cloud.umami.is/api/send', {
+      fetch('https://gateway.umami.is/api/send', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
@@ -101,7 +101,7 @@ self.addEventListener('fetch', e => {
             url: '/trakyodollas',
             website: UMAMI_WEBSITE_ID
           },
-          type: 'pageview'
+          type: 'event'
         })
       }).catch(() => {});
     }

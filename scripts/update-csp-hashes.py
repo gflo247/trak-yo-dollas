@@ -6,16 +6,21 @@ and updates that file's Content-Security-Policy meta tag accordingly.
 Run before every deploy: python3 scripts/update-csp-hashes.py
 Or for a specific file: python3 scripts/update-csp-hashes.py index.html
 
-Defaults to all three CSP-bearing HTML files. index.html and privacy.html
+Defaults to every CSP-bearing HTML file: trakyodollas.html, index.html,
+privacy.html and each guides/*.html page. index.html and privacy.html
 got their own CSP on July 6, 2026 (previously only trakyodollas.html had
-one) — this script covers all three by design so a future page never
+one) — this script covers all of them by design so a future page never
 silently ships without its hashes kept in sync.
 """
 import hashlib, base64, re, sys
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
-DEFAULT_TARGETS = ['trakyodollas.html', 'index.html', 'privacy.html']
+# guides/*.html carry their own CSP too; they were missing here, so their
+# theme-toggle and service-worker scripts shipped without hashes and were
+# blocked by the browser.
+DEFAULT_TARGETS = ['trakyodollas.html', 'index.html', 'privacy.html'] + sorted(
+    str(p.relative_to(ROOT)) for p in (ROOT / 'guides').glob('*.html'))
 
 
 def update_file(path):
