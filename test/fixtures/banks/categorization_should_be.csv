@@ -38,3 +38,5 @@ UC DAVIS PARKING,not Travel,pre-existing: community 'AVIS' matches inside DAVIS
 MAVIS TIRE 123,not Travel,pre-existing: community 'AVIS' matches inside MAVIS
 CHURCHS CHICKEN,Food & Drink,CHURCH keyword must not match Church's Chicken (trailing-space fix)
 PROGRESSIVE LEASING BEST BUY,Shopping,PROGRESSIVE LEASING must beat bare PROGRESSIVE in Insurance
+AMAZON MUSIC UNLIMITED,Entertainment,AMAZON keyword (Shopping) must not shadow AMAZON MUSIC
+CATCH ROOFTOP NYC,Food & Drink,ROOF keyword (Home) must not shadow CATCH ROOFTOP
