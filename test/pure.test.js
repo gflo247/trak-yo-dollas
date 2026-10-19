@@ -9546,6 +9546,26 @@ test("community-rules.json: SPIRIT AIRL maps to Travel (truncated airline name a
   assert.equal(rule.cat, "Travel");
 });
 
+test("community-rules.json: specific keywords appear before their general prefixes (re-sorting the file would invert these and cause mis-categorization)", () => {
+  // Each pair: [specific, general] — specific must have a lower index so _crMatches
+  // fires on it first. A tool that re-alphabetises the file would break these.
+  const pairs = [
+    ["WETHERSPOON", "HERS"],      // WETHERSPOON contains HERS; HERS → Health & Wellness
+    ["SHOPEE FOOD", "SHOPEE"],    // SHOPEE FOOD → Food & Drink; bare SHOPEE → Shopping
+    ["CHEWY.COM",   "CHEWY"],     // CHEWY.COM → Pet(s); bare CHEWY → Pet(s) (same cat, but order still matters for exact-match semantics)
+  ];
+  for (const [specific, general] of pairs) {
+    const si = _communityRulesForTest.findIndex(r => r.keyword === specific);
+    const gi = _communityRulesForTest.findIndex(r => r.keyword === general);
+    assert.ok(si !== -1, `"${specific}" is missing from community-rules.json`);
+    assert.ok(gi !== -1, `"${general}" is missing from community-rules.json`);
+    assert.ok(
+      si < gi,
+      `"${specific}" (idx ${si}) must appear before "${general}" (idx ${gi}) in community-rules.json`
+    );
+  }
+});
+
 test("categorization_should_be.csv: every row categorizes correctly with current community-rules + built-in keywords", () => {
   const { guessCatFromDesc } = loadGuessCatFromDesc();
   const failures = [];
