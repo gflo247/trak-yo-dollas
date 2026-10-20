@@ -7741,7 +7741,7 @@ test("Spending tab's category tile name/meta/budget line, both empty states, the
   );
   assert.match(
     source,
-    /<span style="font-size:12px;color:var\(--text-muted\)">\$\{fmt\(curAmt\)\} \/ \$\{fmt\(budget\)\}<\/span>/,
+    /<span style="font-size:12px;color:var\(--text-muted\)">\$\{fmtS\(curAmt\)\} \/ \$\{fmt\(budget\)\}<\/span>/,
     "the in-tile budget line should be 12px, formatted as '$X / $Y' matching the Budget tab's own convention"
   );
   assert.match(
@@ -7789,12 +7789,12 @@ test("the in-tile budget line uses a compact '$X / $Y' fraction instead of '$X o
   const source = readSource();
   assert.match(
     source,
-    /<span style="font-size:12px;color:var\(--text-muted\)">\$\{fmt\(curAmt\)\} \/ \$\{fmt\(budget\)\}<\/span>/,
+    /<span style="font-size:12px;color:var\(--text-muted\)">\$\{fmtS\(curAmt\)\} \/ \$\{fmt\(budget\)\}<\/span>/,
     "the budget line should read '$X / $Y', matching the Budget tab's own format"
   );
   assert.doesNotMatch(
     source,
-    /\$\{fmt\(curAmt\)\} of \$\{fmt\(budget\)\} budget/,
+    /\$\{fmtS?\(curAmt\)\} of \$\{fmt\(budget\)\} budget/,
     "the old verbose 'of ... budget' wording should be gone"
   );
 });
@@ -7818,12 +7818,12 @@ test("category tiles no longer show 'Peak: 'YY Mon' in the meta line, since it s
   const source = readSource();
   assert.match(
     source,
-    /<div class="bucket-meta">\$\{signal\?`\$\{signal\} · `:''\}Avg: \$\{fmt\(periodAvg\)\}\$\{grainLabel\}<\/div>/,
+    /<div class="bucket-meta">\$\{signal\?`\$\{signal\} · `:''\}Avg: \$\{fmtS\(periodAvg\)\}\$\{grainLabel\}<\/div>/,
     "the tile's meta line should use periodAvg (prior months only) and end after the average, with no trailing Peak text"
   );
   assert.doesNotMatch(
     source,
-    /Avg: \$\{fmt\(periodAvg\)\}\$\{grainLabel\} · Peak:/,
+    /Avg: \$\{fmtS?\(periodAvg\)\}\$\{grainLabel\} · Peak:/,
     "the meta line should no longer append '· Peak: ...'"
   );
 });
@@ -9468,13 +9468,17 @@ const _appCrMatches = (() => {
   const fns = extractFunctions(rs(), ["_crMatches", "_kwLeadMatch"]);
   return new Function("const _kwReCache = new Map();\n" + fns["_kwLeadMatch"] + "\n" + fns["_crMatches"] + "\nreturn _crMatches;")();
 })();
+// The app's own community lookup (_communityCat), bound to a given rule list.
+const _appCommunityCat = (() => {
+  const { extractFunctions, readSource: rs } = require("../scripts/extract-testable-fns.js");
+  const fns = extractFunctions(rs(), ["_communityCat", "_crMatches", "_kwLeadMatch"]);
+  return new Function("_communityRules",
+    "const _kwReCache = new Map();\n" + fns["_kwLeadMatch"] + "\n" + fns["_crMatches"] + "\n" + fns["_communityCat"] + "\nreturn _communityCat;");
+})();
 function categorizeFull(desc, communityRules, guessCatFromDescFn) {
   let cat = guessCatFromDescFn(desc);
   if ((cat === "Other" || !cat) && communityRules) {
-    const du = desc.toUpperCase();
-    for (const rule of communityRules) {
-      if (rule.keyword && _appCrMatches(du, rule.keyword)) { cat = rule.cat; break; }
-    }
+    cat = _appCommunityCat(communityRules)(desc.toUpperCase()) || cat;
   }
   return cat || "Other";
 }
@@ -9650,7 +9654,7 @@ function loadNormalizePipeline(opts = {}) {
   const fnNames = [
     "normalizeTxRow", "parseImportDate", "guessCatFromDesc", "guessCatChase", "guessCatAlly",
     "_creditDepositCat", "mapImportedCategory", "guessCatFromMCC", "_stripCsvFormulaGuard",
-    "_kwLeadMatch", "_crMatches", "_isCardRefund",
+    "_kwLeadMatch", "_crMatches", "_communityCat", "_isCardRefund",
     "_genericDesc", "detectGenericSignConvention", "detectGenericCardRefunds", "_hasPaymentWording",
   ];
   const fns = extractFunctions(source, fnNames);
@@ -9949,8 +9953,33 @@ test("guessCatFromDesc: PAYPAL * and PP* prefixes are stripped before matching",
   assert.equal(guessCatFromDesc("PAYPAL *NETFLIX.COM"), "Entertainment");
   assert.equal(guessCatFromDesc("PAYPAL *KROGER #123"), "Groceries");
   assert.equal(guessCatFromDesc("PP*AMAZON MARKETPLACE"), "Shopping");
-  // Unrecognized inner name → falls back to Transfers via PAYPAL community/keyword rule
-  assert.equal(guessCatFromDesc("PAYPAL *SOME UNKNOWN VENDOR 12345"), "Transfers");
+  // Unrecognized inner name → no built-in match. The Transfers fallback comes
+  // from the community PAYPAL rule, after community rules for the merchant
+  // name itself (see the PayPal rows in categorization_should_be.csv).
+  assert.equal(guessCatFromDesc("PAYPAL *SOME UNKNOWN VENDOR 12345"), "Other");
   // No star → normal matching, not stripped (PAYPAL TRANSFER → Transfers)
   assert.equal(guessCatFromDesc("PAYPAL TRANSFER"), "Transfers");
+});
+
+// ── Spend totals that net negative (refunds exceed purchases in the window)
+// must keep their sign; fmt() drops it, so a $450 refund read as $450 spent. ──
+test("fmtS: a net-negative spend total keeps its minus sign; float noise and positives are unaffected", () => {
+  const fmtS = loadConstArrowFn("fmtS");
+  assert.equal(fmtS(-450), "-$450");
+  assert.equal(fmtS(450), "$450");
+  assert.equal(fmtS(-1234.4), "-$1,234");
+  assert.equal(fmtS(-0.004), "$0", "float noise from an exactly-offset purchase stays $0, not -$0");
+  assert.equal(fmtS(-0.5), "-$1", "the sign appears whenever the rounded amount is at least $1");
+});
+test("spend displays that can net negative use fmtS, not fmt", () => {
+  const source = readSource();
+  for (const snippet of [
+    '${fmtS(s.total)}</div>',                // category tile total
+    '${fmtS(data.total)}</div>',             // vendor tile total
+    '${fmtS(curAmt)} / ${fmt(budget)}',      // category tile budget badge
+    '${fmtS(spent)}</span><span class="text-muted-sm"> / ${fmt(budget)}', // Budget tab row
+    'budget: ${fmtS(spent)} of ${fmt(budget)}', // Budget tab row label for screen readers
+    'YTD ${fmtS(ytd)} of',                   // YTD ring tooltip
+    '${cat}: ${fmtS(spend)} / ${fmt(budget)}', // budget summary tooltip
+  ]) assert.ok(source.includes(snippet), `expected ${snippet}`);
 });

@@ -40,3 +40,12 @@ CHURCHS CHICKEN,Food & Drink,CHURCH keyword must not match Church's Chicken (tra
 PROGRESSIVE LEASING BEST BUY,Shopping,PROGRESSIVE LEASING must beat bare PROGRESSIVE in Insurance
 AMAZON MUSIC UNLIMITED,Entertainment,AMAZON keyword (Shopping) must not shadow AMAZON MUSIC
 CATCH ROOFTOP NYC,Food & Drink,ROOF keyword (Home) must not shadow CATCH ROOFTOP
+CHECKCARD 0927 PAYPAL *NETFLIX 4029357733 CA 24692166270100123456789,Entertainment,Bank of America debit-card prefix before PAYPAL *; a built-in PAYPAL keyword turned it into Transfers
+PURCHASE AUTHORIZED ON 09/27 PAYPAL *SPOTIFYUSA 402-935-7733 CA,Entertainment,Wells Fargo debit-card prefix before PAYPAL *
+PAYPAL *REPCO,Automotive,merchant known only to community rules; a built-in PAYPAL keyword hid it
+PAYPAL *IHG,Travel,the community IHG rule comes after the PAYPAL rule; the merchant name must be tried first
+PAYPAL *SOME UNKNOWN VENDOR 12345,Transfers,unrecognized PayPal merchant still falls back to the community PAYPAL rule
+FIRST BAPTIST CHURCH,Gifts & Donations,CHURCH at the end of a description (no trailing space)
+ST MARYS CATHOLIC CHURCH,Gifts & Donations,CHURCH at the end of a description
+CHURCH'S CHICKEN #123,Food & Drink,apostrophe form of the restaurant
+CHURCH'S TEXAS CHICKEN #123,Food & Drink,the restaurant's current name

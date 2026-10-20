@@ -3334,6 +3334,11 @@ function _isLiveDemoSession(){
 // currency symbol there renders a literal "&amp;" on screen instead of
 // "&". Found in the 106th adversarial pass.
 const fmt=(n,raw)=>(raw?(state.currency||'$'):esc(state.currency||'$'))+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
+// fmt() with a leading '-' once the amount rounds to at least -$1. For spend
+// totals by category, vendor or month, which go negative when refunds in the
+// window exceed purchases: fmt() alone shows a $450 refund as "$450", which
+// reads as spending ("$450 / $300" on a budget).
+const fmtS=(n,raw)=>(n<=-0.5?'-':'')+(raw?(state.currency||'$'):esc(state.currency||'$'))+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
 // a>=999500, not a>=1e6, picks the 'M' branch -- for a in [999500,999999],
 // the 'k' branch's Math.round(a/1e3) itself rounds up to 1000, producing
 // "$1000k" instead of switching to "$1M" a few hundred dollars early.
@@ -3896,7 +3901,7 @@ function renderInsights(){
       const spend=getTxForMonth(effectiveM,null,'all').filter(t=>t.cat===cat).reduce((s,t)=>s+t.amount,0);
       const pct=budget>0?Math.round(spend/budget*100):0;
       return {cat,spend,budget,pct};
-    }).sort((a,b)=>b.pct-a.pct||b.budget-a.budget||a.cat.localeCompare(b.cat)).map(({cat,spend,budget,pct})=>`${cat}: ${fmt(spend)} / ${fmt(budget)} (${pct}%)`).join('&#10;');
+    }).sort((a,b)=>b.pct-a.pct||b.budget-a.budget||a.cat.localeCompare(b.cat)).map(({cat,spend,budget,pct})=>`${cat}: ${fmtS(spend)} / ${fmt(budget)} (${pct}%)`).join('&#10;');
     const dismissBtn=`<button data-action="dismissBudgetHealthPill" data-stop="1" style="position:absolute;top:6px;right:8px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:8px 10px;z-index:10" title="Dismiss" type="button">✕</button>`;
     const basePill=pillWithTip(statusIcon,'Budget health',pillValue,statusColor,`${statusLabel}${worstStr}`,tooltip,over>0?{label:'Go to Budget tab',action:'showPageBudget'}:'');
     const pillHtml=basePill
@@ -6110,7 +6115,7 @@ function renderBucketGrid(){
           <div class="bucket-name" title="${esc(vendor)}" style="color:${color};margin:0">${esc(displayVendor(vendor))}${data.isCollapsed?` <span data-tip="Individual check numbers collapsed — categorize a check to split it out" data-action="showPillTip" data-stop="1" tabindex="0" role="button" aria-label="Info: individual check numbers collapsed" style="font-size:14px;opacity:.5;cursor:pointer;line-height:1;vertical-align:middle">ⓘ</span>`:''}</div>
           ${sparkline}
         </div>
-        <div class="bucket-total" style="color:${color}">${fmt(data.total)}</div>
+        <div class="bucket-total" style="color:${color}">${fmtS(data.total)}</div>
         <div class="bucket-meta">${(()=>{
           // state.activeSources check added in the 35th adversarial pass to
           // all 3 filters below -- was silently including deselected
@@ -6258,7 +6263,7 @@ function renderBucketGrid(){
     // adversarial pass.
     const budgetBadge=budget?`<div data-action="openBudgetModal" data-arg="${sc}" data-stop="1" tabindex="0" role="button" title="Budget: ${fmt(budget)}/mo — click to edit · See Budget tab for full tracking" style="position:relative;z-index:1;margin-top:5px;display:flex;align-items:center;gap:5px;cursor:pointer;min-height:24px">
       <div style="width:10px;height:6px;border-radius:3px;background:${curAmt>budget+0.005?'#F87171':curAmt/budget>0.8?'#FBBF24':'#34D399'};flex-shrink:0"></div>
-      <span style="font-size:12px;color:var(--text-muted)">${fmt(curAmt)} / ${fmt(budget)}</span>
+      <span style="font-size:12px;color:var(--text-muted)">${fmtS(curAmt)} / ${fmt(budget)}</span>
       <span style="font-size:12px;font-weight:700;color:${curAmt>budget+0.005?'var(--accent-red)':curAmt/budget>0.8?'var(--accent-amber)':'var(--accent-green)'}">${Math.round(curAmt/budget*100)}%</span>
     </div>`
     :`<button data-action="openBudgetModal" data-arg="${sc}" data-stop="1" style="position:relative;z-index:1;margin-top:5px;width:100%;background:none;border:1px solid var(--border-mid);border-radius:5px;padding:8px 6px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;text-align:center" title="Set a monthly budget for ${sc}" type="button">+ Set budget</button>`;
@@ -6281,8 +6286,8 @@ function renderBucketGrid(){
           <button data-action="toggleCatExclusion" data-arg="${sc}" data-stop="1" data-hide-cat="${sc}" style="position:relative;z-index:1;background:none;border:none;cursor:pointer;font-size:11px;padding:7px 8px;margin:-7px -8px;color:var(--text-dim);line-height:1" type="button">${state.excludedCats.has(cat)?'👁':'···'}</button>
         </div>
       </div>
-      <div class="bucket-total" style="color:${color}">${fmt(s.total)}</div>
-      <div class="bucket-meta">${signal?`${signal} · `:''}Avg: ${fmt(periodAvg)}${grainLabel}</div>
+      <div class="bucket-total" style="color:${color}">${fmtS(s.total)}</div>
+      <div class="bucket-meta">${signal?`${signal} · `:''}Avg: ${fmtS(periodAvg)}${grainLabel}</div>
       ${budgetBadge}
     </div>`;}).join('')+otherCatTile;
 }
@@ -10732,7 +10737,7 @@ function ringHTML({ytd,ytdPace},size='',bg='var(--bg-card)'){
   const warnRatio=(state.budgetWarnPct??80)/100;
   const color=ratio==null?'var(--text-muted)':ratio>1?'#F87171':ratio>=warnRatio?'#FBBF24':'#34D399';
   const label=ratio==null?'–':Math.round(ratio*100)+'%';
-  const title=ratio==null?'No budget set':`YTD ${fmt(ytd)} of ${fmt(ytdPace)} pace (${label})`;
+  const title=ratio==null?'No budget set':`YTD ${fmtS(ytd)} of ${fmt(ytdPace)} pace (${label})`;
   const cls=size?` ${size}`:'';
   return `<div class="ytd-ring-wrap${cls}" title="${esc(title)}">
     <div class="ytd-ring${cls}" style="--pct:${arcPct}%;--ring-color:${color};--ytd-ring-bg:${bg}">
@@ -11082,7 +11087,7 @@ function renderBudgetTab(){
       const ariaAvgBadge=(_budgetSort==='unusual'&&m.avgRatio!=null&&!gated)
         ?`, ${Math.round((m.avgRatio-1)*100)>=0?'+':''}${Math.round((m.avgRatio-1)*100)}% vs avg`
         :'';
-      const amountHTML=`<span style="font-size:14px;font-weight:800;color:${color}">${fmt(spent)}</span><span class="text-muted-sm"> / ${fmt(budget)}</span>${projFmt?`<span style="font-size:10px;font-weight:600;color:${projColor};margin-left:6px">${projFmt}</span>`:''}`;
+      const amountHTML=`<span style="font-size:14px;font-weight:800;color:${color}">${fmtS(spent)}</span><span class="text-muted-sm"> / ${fmt(budget)}</span>${projFmt?`<span style="font-size:10px;font-weight:600;color:${projColor};margin-left:6px">${projFmt}</span>`:''}`;
       // Math.max(...,1) -- classifyBudgetStatus's epsilon guard fires at spent>budget+0.005,
       // so spent-budget can be as small as ~$0.006. fmt() rounds to whole dollars, so any
       // overspend under $0.50 would display as "$0 over". Clamp to $1 so the badge never
@@ -11112,7 +11117,7 @@ function renderBudgetTab(){
 
       return`<div data-card style="background:${tc('#0F172A','#FFFFFF')};border:1px solid ${borderColor};border-radius:10px;display:flex">
         ${accentDiv}
-        <div data-action="openBudgetModal" data-arg="${esc(cat)}" tabindex="0" role="button" aria-label="Edit ${esc(cat)} budget: ${fmt(spent)} of ${fmt(budget)}${ariaStatus}${ariaProj}${ariaAvgBadge}" style="flex:1;padding:.75rem 1rem;min-width:0;cursor:pointer">
+        <div data-action="openBudgetModal" data-arg="${esc(cat)}" tabindex="0" role="button" aria-label="Edit ${esc(cat)} budget: ${fmtS(spent)} of ${fmt(budget)}${ariaStatus}${ariaProj}${ariaAvgBadge}" style="flex:1;padding:.75rem 1rem;min-width:0;cursor:pointer">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:.4rem" data-stop="1">
             <div class="flex-center gap-8" style="min-width:0">
               <div style="width:10px;height:10px;border-radius:2px;background:${catColor};flex-shrink:0"></div>
@@ -13866,10 +13871,7 @@ function _isCardRefund(desc,bankType){
   const marked=/\b(?:REFUND|RETURN)\b/i.test(desc);
   if(!marked&&(/payment/i.test(bankType||'')||_hasPaymentWording(desc)))return false;
   let c=guessCatFromDesc(desc);
-  if(c==='Other'&&_communityRules){
-    const du=desc.toUpperCase();
-    for(const r of _communityRules){if(r.keyword&&_crMatches(du,r.keyword)){c=r.cat;break;}}
-  }
+  if(c==='Other')c=_communityCat(desc.toUpperCase())||'Other';
   if(c==='Income'||TRANSFER_LIKE_CATS.includes(c))return false;
   return c!=='Other'||marked;
 }
@@ -14371,12 +14373,9 @@ function normalizeTxRow(row, source){
   // description happened to match a community-rules.json keyword,
   // contradicting that documented intent. Found in the 26th adversarial
   // pass.
-  if(!isATM&&importFmt!=='trakyodollas'&&(!cat||cat==='Other')&&_communityRules){
-    for(const rule of _communityRules){
-      if(rule.keyword&&_crMatches(descUpper,rule.keyword)){
-        cat=rule.cat;break;
-      }
-    }
+  if(!isATM&&importFmt!=='trakyodollas'&&(!cat||cat==='Other')){
+    const communityCat=_communityCat(descUpper);
+    if(communityCat)cat=communityCat;
   }
   // MCC lookup (third priority — skip for ATM matches, same trakyodollas
   // exemption as community rules above)
@@ -14407,7 +14406,7 @@ const CAT_KEYWORDS=[
   // Investment & transfers (check first — high confidence)
   ['Investment Contributions',['VANGUARD','FIDELITY BUY','SCHWAB BUY','ETRADE','ROBINHOOD','TDAMERITRADE','BETTERMENT','WEALTHFRONT','SOFI INVEST','MI DIR ACH CONTRIB','401K','ROTH IRA','BROKERAGE']],
   ['CC Payment',['CHASE CREDIT','CREDIT CRD','AMEX PAYMENT','CITI PAYMENT','DISCOVER PAYMENT','CAPITAL ONE PAYMENT','CARD PAYMENT','CREDITCARD']],
-  ['Transfers',['VENMO PAYMENT','ZELLE','PAYPAL TRANSFER','PAYPAL','CASH APP','APPLE CASH','GOOGLE PAY TRANSFER','ACH TRANSFER','WIRE TRANSFER','INTERNET TRANSFER','REQUESTED TRANSFER','BANK TRANSFER','FLAGSTAR']],
+  ['Transfers',['VENMO PAYMENT','ZELLE','PAYPAL TRANSFER','CASH APP','APPLE CASH','GOOGLE PAY TRANSFER','ACH TRANSFER','WIRE TRANSFER','INTERNET TRANSFER','REQUESTED TRANSFER','BANK TRANSFER','FLAGSTAR']],
   ['Internal Transfer',['TRANSFER TO SAVINGS','TRANSFER FROM CHECKING','ONLINE TRANSFER','INTERNAL TRANSFER']],
   // Housing
   ['Home',['RENT PAYMENT','RENT PMT','RENTAL PAYMENT','MORTGAGE','MTGMANAGER','OLD NATIONAL BAN MTG','HOME DEPOT','LOWES','LOWE\'S','ACE HARDWARE','TRUE VALUE','MENARDS','HOME SERVICES','ELECTRIC CO','ELECTRICCO','PEST CONTROL','LANDSCAP','PLUMB','HVAC','ROOF','HANDYMAN','ANGI ','ANGIE','HOMEADVISOR','THUMBTACK','TASKRABBIT','MR HANDYMAN','MERRY MAIDS','MOLLY MAID','TERMINIX','ORKIN','TRUGREEN','SCOTTS LAWN']],
@@ -14437,7 +14436,7 @@ const CAT_KEYWORDS=[
   // Tax
   ['Taxes & Fees',['IRS ','STATE TAX','FEDERAL TAX','PROPERTY TAX','TREASURER','COUNTY TAX','PNP BILLPAYMENT','STATE OF MICH SOS','STATE OF MI SOMIIT','TURBOTAX','H&R BLOCK','HRBLOCK','FREETAXUSA']],
   // Gifts & Donations — org names + generic donation signals
-  ['Gifts & Donations',['GOFUNDME','NFGIVING','UNITED WAY','RED CROSS','GOODWILL','HABITAT FOR HUMANITY','PLANNED PARENTHOOD','NPR ','PBS ','CHURCH ','TITHE','OFFERING','CHARITY','GIVING FUND']],
+  ['Gifts & Donations',['GOFUNDME','NFGIVING','UNITED WAY','RED CROSS','GOODWILL','HABITAT FOR HUMANITY','PLANNED PARENTHOOD','NPR ','PBS ','CHURCH','TITHE','OFFERING','CHARITY','GIVING FUND']],
   // Childcare
   ['Child Care',['DAYCARE','DAY CARE','CHILDCARE','CHILD CARE','PRESCHOOL','NANNY','BABYSIT','MONTESSORI','KINDERCARE','BRIGHT HORIZONS','LEARNING CARE','NEIGHBORHOOD0467']],
   ['Personal Care',['SUPERCUTS','GREAT CLIPS','SPORT CLIPS','FANTASTIC SAMS','REGIS SALON','COST CUTTERS','SMARTSTYLE','HAIR SALON','NAIL SALON','NAIL SPA','NAIL BAR','BARBERSHOP','BARBER SHOP','MASSAGE ENVY','HAND & STONE','ELEMENTS MASSAGE','EUROPEAN WAX','AMAZING LASH','DRYBAR','BLOWOUT BAR','TANNING SALON','DAY SPA','SALON']],
@@ -14560,6 +14559,17 @@ async function fetchCommunityRules(){
 const _kwReCache=new Map();
 function _kwLeadMatch(u,k){let re=_kwReCache.get(k);if(!re){const t=k.trim();const e=t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');re=new RegExp('(?:^|[^A-Z0-9])'+e+(k.endsWith(' ')?' ':''));_kwReCache.set(k,re);}return re.test(u);}
 function _crMatches(du,kw){const k=kw.toUpperCase();if(!k.trim())return false;return k.trim().length<=5?_kwLeadMatch(du,k):du.includes(k);}
+// First matching community rule. A PayPal-processed charge ("PAYPAL *IHG",
+// "CHECKCARD 0927 PP*KLOOK") is matched on the merchant name first, so the
+// general PAYPAL -> Transfers rule applies only when the merchant is unknown.
+function _communityCat(du){
+  if(!_communityRules)return null;
+  const pp=du.match(/(?:^|\s)(?:PAYPAL\s*\*|PP\*)\s*(\S.*)/);
+  for(const s of pp?[pp[1],du]:[du]){
+    for(const r of _communityRules){if(r.keyword&&_crMatches(s,r.keyword))return r.cat;}
+  }
+  return null;
+}
 function guessCatFromDesc(d){
   const u=d.toUpperCase();
   // "PAYPAL *NETFLIX.COM" / "PP*AMAZON" — strip the payment-processor prefix
@@ -14590,6 +14600,10 @@ function guessCatFromDesc(d){
   if(u.includes('ANIMAL HOSPITAL')||u.includes('ANIMAL CLINIC'))return 'Pet(s)';
   if(u.includes('AMAZON MUSIC'))return 'Entertainment';
   if(u.includes('CATCH ROOFTOP'))return 'Food & Drink';
+  // Church's Chicken (now "Church's Texas Chicken") before the CHURCH donation
+  // keyword, which must keep matching at the end of a description ("FIRST
+  // BAPTIST CHURCH"). CHIC, not CHICKEN: descriptors get truncated.
+  if(/\bCHURCH'?S\s+(?:TEXAS\s+)?CHIC/.test(u))return 'Food & Drink';
   // MOBIL (gas brand): match only when not followed by another letter, so
   // MOBILE / MOBILITY / T-MOBILE never hit Gas while EXXONMOBIL and
   // 'MOBIL 1234' still do. Removed from CAT_KEYWORDS for this reason.
@@ -14885,13 +14899,7 @@ function confirmTxImport(){
       newTxs.forEach(t=>{
         if(t.catFromUserRule){
           const du=t.desc.toUpperCase();
-          let recat='Other';
-          if(_communityRules){
-            for(const rule of _communityRules){
-              if(rule.keyword&&_crMatches(du,rule.keyword)){recat=rule.cat;break;}
-            }
-          }
-          t.cat=recat;
+          t.cat=_communityCat(du)||'Other';
         }
       });
     }
