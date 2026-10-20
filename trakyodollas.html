@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-KnXgisQnrPPOSvo+yV+LhzEEc10e/dJm2wKw3nowMDg=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-uCNu9dI0CSC+/TyTFziMKdbJhLmijuvdK8IA9LJ8wB0=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -14898,8 +14898,8 @@ function confirmTxImport(){
       state.transactions=state.transactions.filter(t=>t.card!==source);
     }
 
-    // Auto-activate new source
-    state.activeSources.add(source);
+    // Auto-activate new source (an export's rows switch on their own, below)
+    if(importFmt!=='trakyodollas')state.activeSources.add(source);
 
     // Skip already-present transactions so re-importing an overlapping CSV
     // (the common monthly pattern: download Jan-Aug, import; next month
@@ -14925,8 +14925,10 @@ function confirmTxImport(){
       return true;
     });
     skippedDupCount=importParsed.length-_dedupedParsed.length;
-    // Assign IDs and stamp current source label onto card (user may have edited it after parsing)
-    newTxs=_dedupedParsed.map(t=>({...t,card:source,id:state.nextId++}));
+    // Stamp the current label (it may have been edited after parsing), except on
+    // a trak-yo-dolla$ export's rows, which keep their own Source column.
+    newTxs=_dedupedParsed.map(t=>({...t,card:importFmt==='trakyodollas'&&t.card?t.card:source,id:state.nextId++}));
+    newTxs.forEach(t=>state.activeSources.add(t.card));
     // On a first-real-save transition, normalizeTxRow() categorized these
     // rows (during the file preview, before _replaceDemoDataWithReal() ran
     // above) using the demo profile's own state.catRules -- e.g. Demo
@@ -14985,7 +14987,9 @@ function confirmTxImport(){
   });
 
   closeModals();
-  showToast(`✓ Imported ${newTxs.length} transaction${newTxs.length===1?'':'s'} from ${esc(source)}${skippedDupCount>0?` (${skippedDupCount} already imported, skipped)`:''}`);
+  const importedSources=[...new Set(newTxs.map(t=>t.card))];
+  const fromLabel=importedSources.length>1?`${importedSources.length} sources`:(importedSources[0]||source);
+  showToast(`✓ Imported ${newTxs.length} transaction${newTxs.length===1?'':'s'} from ${esc(fromLabel)}${skippedDupCount>0?` (${skippedDupCount} already imported, skipped)`:''}`);
   // Restored -- the 88th adversarial pass removed this as "dead code" after
   // grepping trakyodollas.html and finding zero read sites in THIS file,
   // but index.html's "Time for a refresh" landing-page nudge (same origin,
@@ -15025,7 +15029,7 @@ function confirmTxImport(){
   const months=[...new Set(newTxs.map(t=>t.date.slice(0,7)))].sort();
   const monthRange=months.length>1?`${fmtMonthShort(months[0])} – ${fmtMonthShort(months[months.length-1])}`:(months[0]?fmtMonthShort(months[0]):'');
   const summaryEl=document.getElementById('import-success-summary');
-  if(summaryEl)summaryEl.innerHTML=`<strong style="color:var(--text-primary)">${newTxs.length} transaction${newTxs.length===1?'':'s'}</strong> from ${esc(source)}${monthRange?` · ${esc(monthRange)}`:''}${skippedDupCount>0?` · <span style="color:var(--text-muted)">${skippedDupCount} already imported, skipped</span>`:''}`;
+  if(summaryEl)summaryEl.innerHTML=`<strong style="color:var(--text-primary)">${newTxs.length} transaction${newTxs.length===1?'':'s'}</strong> from ${esc(fromLabel)}${monthRange?` · ${esc(monthRange)}`:''}${skippedDupCount>0?` · <span style="color:var(--text-muted)">${skippedDupCount} already imported, skipped</span>`:''}`;
   const uncatEl=document.getElementById('import-success-uncategorized');
   if(uncatEl){
     if(uncatCount>0){uncatEl.textContent=`⚠️ ${uncatCount} transaction${uncatCount===1?'':'s'} landed in "Other" — click them in the Spending tab to recategorize.`;uncatEl.classList.remove('hidden');}
@@ -15053,6 +15057,8 @@ function confirmTxImport(){
     if(!hasMatchingAccount){noAcctEl.textContent=`💡 This is now in your Spending tab. Net Worth won't include it until you add an account named "${source}" — totally optional, from the Net Worth tab.`;noAcctEl.classList.remove('hidden');}
     else{noAcctEl.classList.add('hidden');}
   }
+  // A multi-source export has no single account name to suggest.
+  if(noAcctEl&&importedSources.length>1)noAcctEl.classList.add('hidden');
   document.getElementById('import-success-modal').classList.remove('hidden');
   // Check for Venmo cashouts
   setTimeout(()=>checkForVenmoCashouts(newTxs),400);

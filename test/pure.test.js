@@ -10073,3 +10073,12 @@ test("monarch_export.csv: the Shopping refund is an offset; Transfer and Credit 
     assert.deepEqual(m.income, includeIncome ? [["Acme Corp", 2450]] : [], `only the paycheck is income (includeIncome=${includeIncome})`);
   }
 });
+
+// ── A re-imported trak-yo-dolla$ CSV export keeps each row's own Source. The
+// 121st pass made normalizeTxRow read it, but confirmTxImport() then stamped
+// the file-level label ("Checking") over every row anyway. ──
+test("confirmTxImport keeps per-row sources from a trak-yo-dolla$ export and switches each one on", () => {
+  const source = readSource();
+  assert.match(source, /newTxs=_dedupedParsed\.map\(t=>\(\{\.\.\.t,card:importFmt==='trakyodollas'&&t\.card\?t\.card:source,id:state\.nextId\+\+\}\)\);/);
+  assert.match(source, /newTxs\.forEach\(t=>state\.activeSources\.add\(t\.card\)\);/);
+});
