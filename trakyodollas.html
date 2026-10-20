@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-gfZhDFrofTmyCga7Z+cN6fHgQsHCp0VUKVGfBzL5CTY=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-URFyMBNX+hlgDpMZXGuVX8MDyVgZ+nLPZR4Mq0TvPvE=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -13267,10 +13267,21 @@ let _genericPositiveIsExpense=false;
 // Whether this generic file's credits may be read as card refunds (see
 // detectGenericCardRefunds). Set once per file in parseTxFile.
 let _genericCardRefunds=false;
+// An amount cell as a number. Bank exports write thousands separators (Bank of
+// America quotes every amount of 1,000 or more, e.g. "-1,850.00"), currency
+// signs and accounting parentheses for negatives, and parseFloat stops at the
+// first of those: parseFloat("-1,850.00") is -1.
+function _parseAmt(v){
+  let s=String(v==null?'':v).trim(),neg=false;
+  if(/^\(.*\)$/.test(s)){neg=true;s=s.slice(1,-1);}
+  s=s.replace(/[\s,$\u00a3\u20ac]/g,'').replace(/^\u2212/,'-');
+  const n=parseFloat(s);
+  return neg?-n:n;
+}
 function detectGenericSignConvention(rows){
   let neg=0,pos=0;
   for(const row of rows){
-    const raw=parseFloat(row['amount']||row['transaction amount']||'0');
+    const raw=_parseAmt(row['amount']||row['transaction amount']||'0');
     if(!raw)continue;
     if(raw<0)neg++;else pos++;
   }
@@ -13778,7 +13789,10 @@ function splitCSVLine(line,delim){
 
 // ATM withdrawals appear as "BANK NAME 12345" (bank name + branch street number).
 // Catches cases where no amount sign or type field distinguishes them from spending.
-const ATM_BRANCH_RE=/(CHASE|WELLS FARGO|BANK OF AMERICA|FLAGSTAR|PNC|FIFTH THIRD|HUNTINGTON|CITIBANK|US BANK|TD BANK|REGIONS|SUNTRUST|TRUIST|KEYBANK|CITIZENS BANK|COMERICA|BBANDT|BB&T|ASSOCIATED BANK)\s+\d/i;
+// \b: the bank name must start a word. Without it CHASE matched inside
+// PURCHASE ("POS PURCHASE 07/05 ... WALMART") and PAPERCHASE, so those
+// purchases were forced to Other.
+const ATM_BRANCH_RE=/\b(CHASE|WELLS FARGO|BANK OF AMERICA|FLAGSTAR|PNC|FIFTH THIRD|HUNTINGTON|CITIBANK|US BANK|TD BANK|REGIONS|SUNTRUST|TRUIST|KEYBANK|CITIZENS BANK|COMERICA|BBANDT|BB&T|ASSOCIATED BANK)\s+\d/i;
 
 // Maps category strings exported from Mint, YNAB, and Monarch Money to our category names.
 // Keys are lowercased; values must exactly match getAllCats() output.
@@ -13888,7 +13902,7 @@ function normalizeTxRow(row, source){
   if(importFmt==='ally'){
     date=row['date']||row['date ']||'';
     desc=(row['description']||row['description ']||'').trim();
-    const rawAmt=parseFloat(row['amount']||row['amount ']||'0');
+    const rawAmt=_parseAmt(row['amount']||row['amount ']||'0');
     amount=rawAmt<0?Math.abs(rawAmt):0;
     mcc=row['mcc']||row['MCC']||row['mcc ']||'';
     const type=(row['type']||row['type ']||'').trim();
@@ -13911,7 +13925,7 @@ function normalizeTxRow(row, source){
   } else if(importFmt==='chase'){
     date=row['transaction date']||row['date']||'';
     desc=(row['description']||'').trim();
-    const rawAmt=parseFloat(row['amount']||'0');
+    const rawAmt=_parseAmt(row['amount']||'0');
     amount=rawAmt<0?Math.abs(rawAmt):0;
     const type=(row['type']||'').trim();
     if(type==='Payment')return null;
@@ -13943,8 +13957,8 @@ function normalizeTxRow(row, source){
     // ING's own actively-maintained community CSV-import config, July 2026 research)
     date=row['date']||row['transaction date']||row['trans date']||row['posting date']||'';
     desc=(row['description']||row['memo']||row['payee']||row['name']||row['transaction description']||'').trim();
-    const debit=parseFloat(row['debit']||row['debit amount']||row['withdrawals']||row['withdrawal']||'0')||0;
-    const credit=parseFloat(row['credit']||row['credit amount']||row['deposits']||row['deposit']||'0')||0;
+    const debit=_parseAmt(row['debit']||row['debit amount']||row['withdrawals']||row['withdrawal']||'0')||0;
+    const credit=_parseAmt(row['credit']||row['credit amount']||row['deposits']||row['deposit']||'0')||0;
     amount=debit>0?debit:0;
     if(!amount&&credit>0){
       const xferCat=_creditDepositCat(desc);
@@ -13976,7 +13990,7 @@ function normalizeTxRow(row, source){
     // July 2026 research; see _HANDOFF.md.
     date=row['date']||'';
     desc=(row['details']||row['particulars']||'').trim();
-    const rawAmt=parseFloat(row['amount']||'0');
+    const rawAmt=_parseAmt(row['amount']||'0');
     if(rawAmt>=0){
       const xferCat=_creditDepositCat(desc);
       if(xferCat){
@@ -14003,7 +14017,7 @@ function normalizeTxRow(row, source){
     // research, single well-evidenced source; see _HANDOFF.md.
     date=row['processed date']||row['date']||'';
     desc=(row['payee']||row['particulars']||'').trim();
-    const rawAmt=parseFloat(row['amount']||'0');
+    const rawAmt=_parseAmt(row['amount']||'0');
     if(rawAmt>=0){
       const xferCat=_creditDepositCat(desc);
       if(xferCat){
@@ -14028,7 +14042,7 @@ function normalizeTxRow(row, source){
     // format-picker label. July 2026 research; see _HANDOFF.md.
     date=row['date']||'';
     desc=(row['description']||row['other party']||'').trim();
-    const rawAmt=parseFloat(row['amount']||'0');
+    const rawAmt=_parseAmt(row['amount']||'0');
     if(rawAmt>=0){
       const xferCat=_creditDepositCat(desc);
       if(xferCat){
@@ -14053,7 +14067,7 @@ function normalizeTxRow(row, source){
     // research; see _HANDOFF.md.
     date=row['date']||'';
     desc=(row['counter party']||row['reference']||'').trim();
-    const rawAmt=parseFloat(row['amount (gbp)']||row['amount']||'0');
+    const rawAmt=_parseAmt(row['amount (gbp)']||row['amount']||'0');
     if(rawAmt>=0){
       const xferCat=_creditDepositCat(desc);
       if(xferCat){
@@ -14089,7 +14103,7 @@ function normalizeTxRow(row, source){
     // July 2026 research; see _HANDOFF.md.
     date=row['date']||row['transaction date']||'';
     desc=(row['merchant/description']||row['description']||'').trim();
-    const rawAmt=parseFloat(row['debit/credit']||'0');
+    const rawAmt=_parseAmt(row['debit/credit']||'0');
     if(rawAmt>=0){
       const xferCat=_creditDepositCat(desc);
       if(xferCat){
@@ -14109,7 +14123,7 @@ function normalizeTxRow(row, source){
     // Negative amount = spending, positive = deposit (skip)
     date=row['date']||'';
     desc=(row['description']||'').trim();
-    const rawAmt=parseFloat(row['amount']||'0');
+    const rawAmt=_parseAmt(row['amount']||'0');
     if(rawAmt>=0){
       const xferCat=_creditDepositCat(desc);
       if(xferCat){
@@ -14131,7 +14145,7 @@ function normalizeTxRow(row, source){
     date=row['date']||'';
     desc=(row['description']||row['original description']||'').trim();
     const txType=(row['transaction type']||'').trim().toLowerCase();
-    const rawAmt=parseFloat(row['amount']||'0');
+    const rawAmt=_parseAmt(row['amount']||'0');
     if(txType==='credit'){
       const xferCat=_creditDepositCat(desc);
       if(xferCat){
@@ -14151,8 +14165,8 @@ function normalizeTxRow(row, source){
     // Amounts may be formatted as "$123.45" — strip currency characters
     date=row['date']||'';
     desc=(row['payee']||row['memo']||'').trim();
-    const outflow=parseFloat((row['outflow']||'0').replace(/[$,]/g,''))||0;
-    const inflow=parseFloat((row['inflow']||'0').replace(/[$,]/g,''))||0;
+    const outflow=_parseAmt(row['outflow']||'0')||0;
+    const inflow=_parseAmt(row['inflow']||'0')||0;
     if(outflow<=0){
       if(inflow<=0)return null;
       const xferCat=_creditDepositCat(desc);
@@ -14172,7 +14186,7 @@ function normalizeTxRow(row, source){
     // Negative amount = spending, positive = income (skip)
     date=row['date']||'';
     desc=(row['merchant']||row['original statement']||'').trim();
-    const rawAmt=parseFloat(row['amount']||'0');
+    const rawAmt=_parseAmt(row['amount']||'0');
     if(rawAmt>=0){
       const xferCat=_creditDepositCat(desc);
       if(xferCat){
@@ -14200,7 +14214,7 @@ function normalizeTxRow(row, source){
     date=row['date']||'';
     desc=_stripCsvFormulaGuard((row['description']||'').trim());
     isOffset=(row['isoffset']||'').trim().toLowerCase()==='yes';
-    amount=parseFloat(row['amount']||'0');
+    amount=_parseAmt(row['amount']||'0');
     if(!isOffset)amount=Math.abs(amount);
     // .trim(), matching desc two lines above -- unlike desc, this was left
     // untrimmed, so a hand-edited or foreign-profile CSV's " Groceries"
@@ -14228,7 +14242,7 @@ function normalizeTxRow(row, source){
     // Negative amount = spending, positive = deposit.
     date=row['date']||'';
     desc=(row['description']||'').trim();
-    const rawAmt=parseFloat(row['amount']||'0');
+    const rawAmt=_parseAmt(row['amount']||'0');
     if(rawAmt<0){
       amount=Math.abs(rawAmt);
     } else {
@@ -14244,7 +14258,7 @@ function normalizeTxRow(row, source){
     // Capital One 360 checking: all amounts positive, direction from Transaction Type (Debit/Credit)
     date=row['transaction date']||row['date']||'';
     desc=(row['transaction description']||row['description']||'').trim();
-    const rawAmt=parseFloat(row['transaction amount']||row['amount']||'0');
+    const rawAmt=_parseAmt(row['transaction amount']||row['amount']||'0');
     const txType=(row['transaction type']||'').trim().toLowerCase();
     if(txType==='credit'){
       const xferCat=_creditDepositCat(desc);
@@ -14261,7 +14275,7 @@ function normalizeTxRow(row, source){
     // Navy Federal: all amounts positive, direction from Credit Debit Indicator column
     date=row['posting date']||row['transaction date']||row['date']||'';
     desc=(row['description']||'').trim();
-    const rawAmt=parseFloat(row['amount']||'0');
+    const rawAmt=_parseAmt(row['amount']||'0');
     const indicator=(row['credit debit indicator']||'').trim().toLowerCase();
     if(indicator==='credit'){
       const xferCat=_creditDepositCat(desc);
@@ -14284,7 +14298,7 @@ function normalizeTxRow(row, source){
     // silently imported as an expense in "Other", regardless of the Include Income toggle).
     date=row['date']||row['transaction date']||row['trans date']||row['posting date']||row['posted date']||row['post date']||'';
     desc=_genericDesc(row);
-    const rawAmt=parseFloat(row['amount']||row['transaction amount']||'0');
+    const rawAmt=_parseAmt(row['amount']||row['transaction amount']||'0');
     const isExpenseSign=_genericPositiveIsExpense?rawAmt>0:rawAmt<0;
     if(isExpenseSign){
       amount=Math.abs(rawAmt);

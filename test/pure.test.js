@@ -325,17 +325,17 @@ test("parseImportDate: rescues an unambiguous date even when the given fmt's rea
 // normalizeTxRow's generic branch can gate the minority sign behind Include Income,
 // the same way every other format already does. ──
 test("detectGenericSignConvention: majority-negative file (typical checking export) treats negative as expense", () => {
-  const { detectGenericSignConvention } = loadFunctions(["detectGenericSignConvention"]);
+  const { detectGenericSignConvention } = loadFunctions(["detectGenericSignConvention", "_parseAmt"]);
   const rows = [{amount:"-4.50"},{amount:"-82.10"},{amount:"2500.00"},{amount:"-45.00"}];
   assert.equal(detectGenericSignConvention(rows), false);
 });
 test("detectGenericSignConvention: majority-positive file (unsigned credit-card export) treats positive as expense", () => {
-  const { detectGenericSignConvention } = loadFunctions(["detectGenericSignConvention"]);
+  const { detectGenericSignConvention } = loadFunctions(["detectGenericSignConvention", "_parseAmt"]);
   const rows = [{amount:"4.50"},{amount:"82.10"},{amount:"-25.00"},{amount:"45.00"}];
   assert.equal(detectGenericSignConvention(rows), true);
 });
 test("detectGenericSignConvention: zero/unparseable amounts don't skew the majority", () => {
-  const { detectGenericSignConvention } = loadFunctions(["detectGenericSignConvention"]);
+  const { detectGenericSignConvention } = loadFunctions(["detectGenericSignConvention", "_parseAmt"]);
   const rows = [{amount:"-10"},{amount:"0"},{amount:""},{amount:"-5"}];
   assert.equal(detectGenericSignConvention(rows), false);
 });
@@ -5972,7 +5972,7 @@ test("normalizeTxRow: ANZ NZ/BNZ/Westpac NZ branches read the correct real colum
   const anznzMatch = source.match(/\}\s*else if\(importFmt==='anznz'\)\{[\s\S]{0,1300}?\n\n  \} else if\(importFmt==='bnz'\)/);
   assert.ok(anznzMatch, "the anznz import branch should exist");
   assert.match(anznzMatch[0], /row\['details'\]/, "anznz should read the 'Details' column for its description");
-  assert.match(anznzMatch[0], /const rawAmt=parseFloat\(row\['amount'\]/, "anznz should read the 'Amount' column as a single signed value");
+  assert.match(anznzMatch[0], /const rawAmt=_parseAmt\(row\['amount'\]/, "anznz should read the 'Amount' column as a single signed value");
 
   const bnzMatch = source.match(/\}\s*else if\(importFmt==='bnz'\)\{[\s\S]{0,1300}?\n\n  \} else if\(importFmt==='westpacnz'\)/);
   assert.ok(bnzMatch, "the bnz import branch should exist");
@@ -5994,13 +5994,13 @@ test("normalizeTxRow: ANZ NZ/BNZ/Westpac NZ branches read the correct real colum
   const starlingMatch = source.match(/\}\s*else if\(importFmt==='starling'\)\{[\s\S]{0,1200}?\n\n  \} else if\(importFmt==='midata'\)/);
   assert.ok(starlingMatch, "the starling import branch should exist and be immediately followed by the new midata branch");
   assert.match(starlingMatch[0], /row\['counter party'\]\|\|row\['reference'\]/, "starling should read the 'Counter Party' column for its description, falling back to 'Reference'");
-  assert.match(starlingMatch[0], /const rawAmt=parseFloat\(row\['amount \(gbp\)'\]/, "starling should read the 'Amount (GBP)' column as a single signed value");
+  assert.match(starlingMatch[0], /const rawAmt=_parseAmt\(row\['amount \(gbp\)'\]/, "starling should read the 'Amount (GBP)' column as a single signed value");
 
   const midataMatch = source.match(/\}\s*else if\(importFmt==='midata'\)\{[\s\S]{0,2000}?\n\n  \} else if\(importFmt==='bofa'\)/);
   assert.ok(midataMatch, "the midata import branch should exist");
   assert.match(midataMatch[0], /row\['date'\]\|\|row\['transaction date'\]/, "midata should read 'Date', falling back to 'Transaction Date'");
   assert.match(midataMatch[0], /row\['merchant\/description'\]\|\|row\['description'\]/, "midata should read the 'Merchant/Description' column for its description");
-  assert.match(midataMatch[0], /const rawAmt=parseFloat\(row\['debit\/credit'\]/, "midata should read the 'Debit/Credit' column as a single signed value");
+  assert.match(midataMatch[0], /const rawAmt=_parseAmt\(row\['debit\/credit'\]/, "midata should read the 'Debit/Credit' column as a single signed value");
 });
 
 test("parseTxFile: UK midata auto-detect is checked before the generic debit+credit check (its header contains both substrings), uses the right delimiter, and normalizeTxRow reads its real column names", () => {
@@ -9655,7 +9655,7 @@ function loadNormalizePipeline(opts = {}) {
     "normalizeTxRow", "parseImportDate", "guessCatFromDesc", "guessCatChase", "guessCatAlly",
     "_creditDepositCat", "mapImportedCategory", "guessCatFromMCC", "_stripCsvFormulaGuard",
     "_kwLeadMatch", "_crMatches", "_communityCat", "_isCardRefund",
-    "_genericDesc", "detectGenericSignConvention", "detectGenericCardRefunds", "_hasPaymentWording",
+    "_genericDesc", "detectGenericSignConvention", "detectGenericCardRefunds", "_hasPaymentWording", "_parseAmt",
   ];
   const fns = extractFunctions(source, fnNames);
 
@@ -9672,7 +9672,7 @@ function loadNormalizePipeline(opts = {}) {
 // Uses detectFormatFromLine + parseCSV from the real source + loadNormalizePipeline.
 function parseFixtureCsv(csvText, overrideOpts = {}) {
   const { detectFormatFromLine, parseCSV, splitCSVLine, splitCSVRows, detectGenericSignConvention } =
-    loadFunctions(["detectFormatFromLine", "parseCSV", "splitCSVLine", "splitCSVRows", "detectGenericSignConvention"]);
+    loadFunctions(["detectFormatFromLine", "parseCSV", "splitCSVLine", "splitCSVRows", "detectGenericSignConvention", "_parseAmt"]);
 
   const text = csvText.replace(/^\uFEFF/, "");
   const scanLines = splitCSVRows(text.trim()).map(l => l.trim()).filter(Boolean);
@@ -9982,4 +9982,49 @@ test("spend displays that can net negative use fmtS, not fmt", () => {
     'YTD ${fmtS(ytd)} of',                   // YTD ring tooltip
     '${cat}: ${fmtS(spend)} / ${fmt(budget)}', // budget summary tooltip
   ]) assert.ok(source.includes(snippet), `expected ${snippet}`);
+});
+
+// ── Amount cells with thousands separators, currency signs or accounting
+// parentheses. parseFloat("-1,850.00") is -1, so a Bank of America rent
+// payment imported as $1. ──
+test("_parseAmt: thousands separators, currency signs, parentheses and plain numbers", () => {
+  const { _parseAmt } = loadFunctions(["_parseAmt"]);
+  assert.equal(_parseAmt("-1,850.00"), -1850);
+  assert.equal(_parseAmt("2,500.00"), 2500);
+  assert.equal(_parseAmt("$1,234.56"), 1234.56);
+  assert.equal(_parseAmt("-$1,234.56"), -1234.56);
+  assert.equal(_parseAmt("(1,234.56)"), -1234.56);
+  assert.equal(_parseAmt("\u00a312.50"), 12.5);
+  assert.equal(_parseAmt("-17.23"), -17.23);
+  assert.equal(_parseAmt(" 42 "), 42);
+  assert.ok(Number.isNaN(_parseAmt("")), "an empty cell stays NaN, so callers' ||'0' / ||0 fallbacks still apply");
+  assert.ok(Number.isNaN(_parseAmt("N/A")));
+});
+
+test("bofa_checking_thousands.csv: amounts of 1,000 or more import at full value (rent $1,850, payroll $2,500), not $1 and $2", () => {
+  const rows = parseFixtureCsv(fs.readFileSync(path.join(FIXTURES, "bofa_checking_thousands.csv"), "utf8"), { includeIncome: true });
+  const by = d => rows.find(r => r.desc.includes(d));
+  assert.equal(by("RENT").amount, 1850);
+  assert.ok(!by("RENT").isIncome, "rent is spending");
+  assert.equal(by("PAYROLL").amount, 2500);
+  assert.ok(by("PAYROLL").isIncome, "payroll is income");
+  assert.equal(by("KROGER").amount, 87.34);
+  assert.equal(rows.length, 4, "the beginning-balance row (empty Amount) is still skipped");
+});
+
+// ── ATM_BRANCH_RE (cash withdrawals at a bank's own ATM or branch are forced to
+// Other) must not fire on a bank name inside another word: CHASE in PURCHASE. ──
+test("ATM_BRANCH_RE: bank ATM/branch descriptors match; PURCHASE and PAPERCHASE followed by a number don't", () => {
+  const source = readSource();
+  const line = source.slice(source.indexOf("const ATM_BRANCH_RE="), source.indexOf(";", source.indexOf("const ATM_BRANCH_RE=")) + 1);
+  const ATM_BRANCH_RE = new Function(line + "\nreturn ATM_BRANCH_RE;")();
+  for (const d of ["CHASE 1234 ANN ARBOR MI", "WITHDRAWAL WELLS FARGO 0123 MAIN ST", "BANK OF AMERICA 4567 ATM", "PNC 0099 CASH"])
+    assert.ok(ATM_BRANCH_RE.test(d), d);
+  for (const d of ["POS PURCHASE 07/05 TERMINAL 4482 WALMART #2341 AUSTIN TX", "STEAM PURCHASE 1234", "PAPERCHASE 1234", "STEEPLECHASE 2 BAR"])
+    assert.ok(!ATM_BRANCH_RE.test(d), d);
+});
+test("normalizeTxRow: a 'POS PURCHASE <date> ...' debit keeps its merchant category", () => {
+  const { normalizeTxRow } = loadNormalizePipeline({ importFmt: "generic" });
+  const t = normalizeTxRow({ date: "07/05/2026", description: "POS PURCHASE 07/05 TERMINAL 4482 WALMART #2341 AUSTIN TX", amount: "-54.10" }, "Test");
+  assert.equal(t.cat, "Shopping");
 });
