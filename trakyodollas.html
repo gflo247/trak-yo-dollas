@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-URFyMBNX+hlgDpMZXGuVX8MDyVgZ+nLPZR4Mq0TvPvE=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-KnXgisQnrPPOSvo+yV+LhzEEc10e/dJm2wKw3nowMDg=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -13869,6 +13869,18 @@ function _creditDepositCat(desc){
   return TRANSFER_LIKE_CATS.includes(c)?c:null;
 }
 
+// A credit in a migration export (Mint, YNAB, Monarch), which carries the
+// source app's own category. A transfer or card-payment category stays an
+// excluded transfer; a spending category is a refund that app netted against
+// that category, so it imports as an offset there. Anything else (income,
+// investments, uncategorized, or a name the map doesn't know) returns null and
+// keeps the description-based handling.
+function _migratedCredit(rawCat){
+  const mc=mapImportedCategory(rawCat);
+  if(!mc||mc==='Other'||mc==='Investment Contributions')return null;
+  return {cat:mc,transfer:TRANSFER_LIKE_CATS.includes(mc)};
+}
+
 // Payment wording on a card statement ("PAYMENT - THANK YOU", "KOHLS PAYMENT",
 // Discover's "DIRECTPAY FULL BALANCE").
 function _hasPaymentWording(desc){
@@ -14141,15 +14153,19 @@ function normalizeTxRow(row, source){
 
   } else if(importFmt==='mint'){
     // Mint: Date,Description,Original Description,Amount,Transaction Type,Category,Account Name,Labels,Notes
-    // Amount is always positive; Transaction Type = 'debit' (spending) or 'credit' (income — skip)
+    // Amount is always positive; Transaction Type = 'debit' (spending) or 'credit'
+    // (a transfer, refund or income -- see _migratedCredit)
     date=row['date']||'';
     desc=(row['description']||row['original description']||'').trim();
     const txType=(row['transaction type']||'').trim().toLowerCase();
     const rawAmt=_parseAmt(row['amount']||'0');
     if(txType==='credit'){
-      const xferCat=_creditDepositCat(desc);
+      const mig=_migratedCredit(row['category']);
+      const xferCat=mig?(mig.transfer?mig.cat:null):_creditDepositCat(desc);
       if(xferCat){
         amount=rawAmt>0?rawAmt:0;cat=xferCat;
+      } else if(mig){
+        isOffset=true;amount=-(rawAmt>0?rawAmt:0);cat=mig.cat;
       } else {
         if(!state.includeIncome)return null;
         isIncome=true;amount=rawAmt>0?rawAmt:0;cat='Income';
@@ -14158,7 +14174,7 @@ function normalizeTxRow(row, source){
       amount=rawAmt>0?rawAmt:0;
     }
     if(!amount)return null;
-    if(!isIncome)cat=mapImportedCategory(row['category'])||guessCatFromDesc(desc);
+    if(txType!=='credit')cat=mapImportedCategory(row['category'])||guessCatFromDesc(desc);
 
   } else if(importFmt==='ynab'){
     // YNAB: Account,Flag,Date,Payee,Category Group/Category,Category Group,Category,Memo,Outflow,Inflow,Cleared
@@ -14167,30 +14183,46 @@ function normalizeTxRow(row, source){
     desc=(row['payee']||row['memo']||'').trim();
     const outflow=_parseAmt(row['outflow']||'0')||0;
     const inflow=_parseAmt(row['inflow']||'0')||0;
-    if(outflow<=0){
+    const ynabCat=row['category']||row['category group/category'];
+    // YNAB opens every account with a "Starting Balance" row: neither spending
+    // nor income.
+    if(/^starting balance$/i.test(desc))return null;
+    if(/^transfer\s*:/i.test(desc)){
+      // A transfer between the user's own accounts ("Transfer : Savings"),
+      // listed once per side, usually with no category: excluded, never
+      // spending or income.
+      amount=outflow>0?outflow:inflow;cat='Internal Transfer';
+    } else if(outflow<=0){
       if(inflow<=0)return null;
-      const xferCat=_creditDepositCat(desc);
+      const mig=_migratedCredit(ynabCat);
+      const xferCat=mig?(mig.transfer?mig.cat:null):_creditDepositCat(desc);
       if(xferCat){
         amount=inflow;cat=xferCat;
+      } else if(mig){
+        isOffset=true;amount=-inflow;cat=mig.cat;
       } else {
         if(!state.includeIncome)return null;
         isIncome=true;amount=inflow;cat='Income';
       }
     } else {
       amount=outflow;
+      cat=mapImportedCategory(ynabCat)||guessCatFromDesc(desc);
     }
-    if(!isIncome)cat=mapImportedCategory(row['category']||row['category group/category'])||guessCatFromDesc(desc);
 
   } else if(importFmt==='monarch'){
     // Monarch Money: Date,Merchant,Category,Account,Original Statement,Notes,Amount,Tags
-    // Negative amount = spending, positive = income (skip)
+    // Negative amount = spending, positive = a transfer, refund or income
+    // (see _migratedCredit)
     date=row['date']||'';
     desc=(row['merchant']||row['original statement']||'').trim();
     const rawAmt=_parseAmt(row['amount']||'0');
     if(rawAmt>=0){
-      const xferCat=_creditDepositCat(desc);
+      const mig=_migratedCredit(row['category']);
+      const xferCat=mig?(mig.transfer?mig.cat:null):_creditDepositCat(desc);
       if(xferCat){
         amount=rawAmt;cat=xferCat;
+      } else if(mig){
+        isOffset=true;amount=-rawAmt;cat=mig.cat;
       } else {
         if(!state.includeIncome)return null;
         isIncome=true;amount=rawAmt;cat='Income';
@@ -14199,7 +14231,7 @@ function normalizeTxRow(row, source){
       amount=Math.abs(rawAmt);
     }
     if(!amount)return null;
-    if(!isIncome)cat=mapImportedCategory(row['category'])||guessCatFromDesc(desc);
+    if(rawAmt<0)cat=mapImportedCategory(row['category'])||guessCatFromDesc(desc);
 
   } else if(importFmt==='trakyodollas'){
     // Our own exportTransactionsCSV() output — trust every field directly

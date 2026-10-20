@@ -9655,7 +9655,7 @@ function loadNormalizePipeline(opts = {}) {
     "normalizeTxRow", "parseImportDate", "guessCatFromDesc", "guessCatChase", "guessCatAlly",
     "_creditDepositCat", "mapImportedCategory", "guessCatFromMCC", "_stripCsvFormulaGuard",
     "_kwLeadMatch", "_crMatches", "_communityCat", "_isCardRefund",
-    "_genericDesc", "detectGenericSignConvention", "detectGenericCardRefunds", "_hasPaymentWording", "_parseAmt",
+    "_genericDesc", "detectGenericSignConvention", "detectGenericCardRefunds", "_hasPaymentWording", "_parseAmt", "_migratedCredit",
   ];
   const fns = extractFunctions(source, fnNames);
 
@@ -10027,4 +10027,49 @@ test("normalizeTxRow: a 'POS PURCHASE <date> ...' debit keeps its merchant categ
   const { normalizeTxRow } = loadNormalizePipeline({ importFmt: "generic" });
   const t = normalizeTxRow({ date: "07/05/2026", description: "POS PURCHASE 07/05 TERMINAL 4482 WALMART #2341 AUSTIN TX", amount: "-54.10" }, "Test");
   assert.equal(t.cat, "Shopping");
+});
+
+// ── Migration imports (Mint, YNAB, Monarch) use the source app's own category
+// for credits: transfers and card payments stay excluded, refunds in a spending
+// category become offsets there, and only income stays income. YNAB transfers
+// ("Transfer : Savings") and "Starting Balance" rows are never spending. ──
+const MIGRATION_XFER = ["Investment Contributions", "Transfers", "Internal Transfer", "CC Payment"];
+function migrationSummary(file, includeIncome) {
+  const rows = parseFixtureCsv(fs.readFileSync(path.join(FIXTURES, file), "utf8"), { includeIncome });
+  return {
+    rows,
+    spending: rows.filter(r => !r.isIncome && !r.is_offset && !MIGRATION_XFER.includes(r.cat)).map(r => [r.desc, r.amount, r.cat]),
+    offsets: rows.filter(r => r.is_offset).map(r => [r.desc, r.amount, r.cat]),
+    income: rows.filter(r => r.isIncome).map(r => [r.desc, r.amount]),
+  };
+}
+test("mint_export.csv: the Shopping refund is an offset; transfer and card-payment credits are excluded, never income", () => {
+  for (const includeIncome of [false, true]) {
+    const m = migrationSummary("mint_export.csv", includeIncome);
+    assert.deepEqual(m.spending, [["Starbucks", 6.45, "Food & Drink"], ["Amazon", 25.99, "Shopping"]], `includeIncome=${includeIncome}`);
+    assert.deepEqual(m.offsets, [["Amazon", -25.99, "Shopping"]], `includeIncome=${includeIncome}`);
+    for (const d of ["Transfer from Savings", "Chase Payment"]) {
+      const r = m.rows.find(x => x.desc === d);
+      assert.ok(r && MIGRATION_XFER.includes(r.cat) && !r.isIncome, `${d} stays an excluded transfer (includeIncome=${includeIncome})`);
+    }
+    if (includeIncome) assert.ok(m.income.some(([d, a]) => d === "Acme Corp" && a === 2450), "the paycheck is income");
+  }
+});
+test("ynab_export.csv: 'Transfer : <account>' rows are excluded transfers and Starting Balance rows are skipped", () => {
+  for (const includeIncome of [false, true]) {
+    const y = migrationSummary("ynab_export.csv", includeIncome);
+    assert.deepEqual(y.spending, [["Amazon", 25.99, "Shopping"], ["Kroger", 87.34, "Groceries"]], `includeIncome=${includeIncome}`);
+    assert.deepEqual(y.offsets, [["Amazon", -25.99, "Shopping"]], `includeIncome=${includeIncome}`);
+    assert.ok(y.rows.filter(r => /^Transfer :/.test(r.desc)).every(r => r.cat === "Internal Transfer" && !r.isIncome), `transfers excluded (includeIncome=${includeIncome})`);
+    assert.ok(!y.rows.some(r => r.desc === "Starting Balance"), `Starting Balance skipped (includeIncome=${includeIncome})`);
+    assert.deepEqual(y.income, includeIncome ? [["Acme Corp", 2450]] : [], `only the paycheck is income (includeIncome=${includeIncome})`);
+  }
+});
+test("monarch_export.csv: the Shopping refund is an offset; Transfer and Credit Card Payment credits are excluded, never income", () => {
+  for (const includeIncome of [false, true]) {
+    const m = migrationSummary("monarch_export.csv", includeIncome);
+    assert.deepEqual(m.spending, [["Starbucks", 6.45, "Food & Drink"], ["Amazon", 25.99, "Shopping"]], `includeIncome=${includeIncome}`);
+    assert.deepEqual(m.offsets, [["Amazon", -25.99, "Shopping"]], `includeIncome=${includeIncome}`);
+    assert.deepEqual(m.income, includeIncome ? [["Acme Corp", 2450]] : [], `only the paycheck is income (includeIncome=${includeIncome})`);
+  }
 });
