@@ -129,6 +129,7 @@ rsync -a \
   --include='app-screenshot.webp' \
   --include='app-screenshot-light.webp' \
   --include='community-rules.json' \
+  --include='favicon.ico' \
   --exclude='fonts/.firebase' \
   --include='fonts/***' \
   --include='guides/***' \

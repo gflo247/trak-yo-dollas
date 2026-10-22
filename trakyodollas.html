@@ -7,7 +7,8 @@
 <meta name="description" content="Track your net worth and spending. No bank connections. Your data stays in your browser.">
 <meta name="robots" content="noindex, nofollow">
 <meta name="build" content="__BUILD_ID__">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
   script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-sEgL3d6mx5zBA0d2dhHPzNHkNOcVs9S6Vw6kut3s69Q=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
@@ -25,7 +26,7 @@
 <meta name="theme-color" content="#111720">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="color-scheme" content="light dark">
 
 <script>
@@ -211,11 +212,12 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 .nav{display:flex;border-bottom:1px solid var(--border);background:var(--bg-page);position:sticky;top:0;z-index:25;transition:top .2s}
 #auth-bar{gap:6px;padding:0 10px}
 .nav-logo{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--text-bright);text-decoration:none;letter-spacing:.02em;padding:0 12px;flex-shrink:0;display:flex;align-items:center}
-.nav-logo span{color:var(--accent-blue-light)}
+.nav-logo span{color:var(--accent-green)}
+.brand-mark{display:inline-block;width:.75em;height:1.55em;vertical-align:-.45em;margin-right:.45em;flex-shrink:0;fill:none;stroke-linecap:round;stroke-linejoin:round}.brand-mark .bm-s{stroke:var(--text-bright);stroke-width:10}.brand-mark .bm-t{stroke:var(--accent-green);stroke-width:9}
 .nav-logo:hover{opacity:.8}
 .app-footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:12px;margin-top:1rem}
 .footer-logo{font-family:'DM Mono',monospace;font-size:13px;color:var(--text-muted);text-decoration:none;letter-spacing:.02em}
-.footer-logo span{color:var(--accent-blue-light)}
+.footer-logo span{color:var(--accent-green)}
 .footer-left{display:flex;align-items:center;gap:12px}
 .footer-nav{display:flex;gap:16px;flex-wrap:wrap;margin-left:auto}
 .footer-nav a,.footer-nav button,.footer-support{font-size:13px;color:var(--text-muted);text-decoration:none;background:none;border:none;cursor:pointer;padding:0;font-family:inherit}
@@ -1028,7 +1030,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <button data-action="dismissSyncConflictBanner" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:10px 12px;font-family:inherit;vertical-align:middle" title="Dismiss" type="button">✕</button>
 </div>
 <nav class="nav" aria-label="Main navigation" style="position:sticky;top:0;z-index:25">
-  <a href="/" class="nav-logo hide-mobile">trak-yo-dolla<span>$</span></a>
+  <a href="/" class="nav-logo hide-mobile"><svg class="brand-mark" viewBox="28 4 44 90" aria-hidden="true" focusable="false"><path class="bm-s" d="M66 41C62 35 56 32 50 32C42 32 35.5 36 35.5 43C35.5 50 42 52 50 54C58 56 64.5 58 64.5 65C64.5 72 58 75.5 50 75.5C43 75.5 37 72.5 34 67"/><path class="bm-t" d="M50 9V76Q50 88 62 88M37 26L66 16"/></svg>trak-yo-dolla<span>$</span></a>
   <button class="nav-btn active" data-action="showPageSpending" type="button">Spending <span id="spending-start-here" style="display:none;font-size:9px;font-weight:800;color:var(--accent-green);background:#34D39922;border:1px solid #34D39944;border-radius:3px;padding:1px 5px;vertical-align:middle;letter-spacing:.03em">start here</span></button>
   <button class="nav-btn" data-action="showPageBudget" type="button">Budget</button>
   <button class="nav-btn" data-action="showPageSimulator" type="button">Life Changes</button>

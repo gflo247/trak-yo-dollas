@@ -15,7 +15,8 @@
   form-action 'self';
   base-uri 'self';
 ">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>trak-yo-dolla$ · Privacy policy</title>
 <meta name="description" content="Honest &amp; local-first. Your CSV never leaves your browser. No bank connections. Full source code on GitHub.">
@@ -54,7 +55,8 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var
 
 nav{display:flex;align-items:center;justify-content:space-between;padding:.75rem 2rem;background:var(--bg-page);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
 .nav-logo{font-family:'DM Mono',monospace;font-size:14px;color:var(--text-bright);text-decoration:none;letter-spacing:.02em}
-.nav-logo span{color:var(--accent-blue-light)}
+.nav-logo span{color:var(--accent-green)}
+.brand-mark{display:inline-block;width:.75em;height:1.55em;vertical-align:-.45em;margin-right:.45em;flex-shrink:0;fill:none;stroke-linecap:round;stroke-linejoin:round}.brand-mark .bm-s{stroke:var(--text-bright);stroke-width:10}.brand-mark .bm-t{stroke:var(--accent-green);stroke-width:9}
 .nav-right{display:flex;align-items:center;gap:10px}
 .btn-ghost{background:none;border:1px solid var(--border-mid);border-radius:7px;padding:6px 14px;font-size:13px;color:var(--text-secondary);cursor:pointer;text-decoration:none;font-family:inherit;transition:border-color .15s,color .15s}
 .btn-ghost:hover{border-color:var(--accent-blue-light);color:var(--text-bright)}
@@ -84,7 +86,7 @@ h1{font-size:2rem;font-weight:800;color:var(--text-bright);letter-spacing:-.02em
 
 footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:12px}
 .footer-logo{font-family:'DM Mono',monospace;font-size:13px;color:var(--text-muted);text-decoration:none;letter-spacing:.02em}
-.footer-logo span{color:var(--accent-blue-light)}
+.footer-logo span{color:var(--accent-green)}
 .footer-left{display:flex;align-items:center;gap:12px}
 .footer-links{display:flex;gap:16px;flex-wrap:wrap;margin-left:auto}
 .footer-links a,.footer-support{font-size:13px;color:var(--text-muted);text-decoration:none}
@@ -137,13 +139,13 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#111720">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <script>fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'event',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:location.pathname,referrer:document.referrer,screen:screen.width+'x'+screen.height,language:navigator.language,title:document.title}})}).catch(function(){});</script>
 </head>
 <body>
 
 <nav>
-  <a href="/" class="nav-logo">trak-yo-dolla<span>$</span></a>
+  <a href="/" class="nav-logo"><svg class="brand-mark" viewBox="28 4 44 90" aria-hidden="true" focusable="false"><path class="bm-s" d="M66 41C62 35 56 32 50 32C42 32 35.5 36 35.5 43C35.5 50 42 52 50 54C58 56 64.5 58 64.5 65C64.5 72 58 75.5 50 75.5C43 75.5 37 72.5 34 67"/><path class="bm-t" d="M50 9V76Q50 88 62 88M37 26L66 16"/></svg>trak-yo-dolla<span>$</span></a>
   <div class="nav-right">
     <button class="theme-btn" data-action="toggleTheme" id="theme-btn">🌙</button>
     <a href="/trakyodollas" class="btn-ghost">Open app</a>

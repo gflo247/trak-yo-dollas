@@ -10,6 +10,8 @@ const PRECACHE = [
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
+  '/icons/favicon.svg',
+  '/favicon.ico',
   '/fonts/fonts.css',
   '/fonts/dm-sans.woff2',
   '/fonts/dm-sans-ext.woff2',
