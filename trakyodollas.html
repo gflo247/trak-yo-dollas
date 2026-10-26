@@ -10666,7 +10666,7 @@ function renderSimulatorTab(){
   const horizonPresets=[3,6,12,24,36];
   const showCustomHorizon=_simulatorHorizonCustomOpen||!horizonPresets.includes(horizon);
   const rowsHTML=sortedRows.map((r,i)=>`
-    <div class="sim-row${i%2===1?' row-alt':''}" data-action="openSimulatorOverrideModal" data-arg="${esc(r.cat)}" tabindex="0" role="button" aria-label="${r.hasOverride?`Edit spending change for ${esc(r.cat)}: ${fmt(r.avg)}/mo avg, projected ${fmt(r.projected)}/mo`:`Edit spending change for ${esc(r.cat)}: ${fmt(r.avg)}/mo avg`}" style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;border-radius:8px;margin-bottom:6px;cursor:pointer">
+    <div class="sim-row${i%2===1?' row-alt':''}" data-action="openSimulatorOverrideModal" data-arg="${esc(r.cat)}" tabindex="0" role="button" aria-label="${r.hasOverride?`Edit spending change for ${esc(r.cat)}: ${fmt(r.avg)}/mo avg, projected ${fmt(r.projected)}/mo`:`Edit spending change for ${esc(r.cat)}: ${fmt(r.avg)}/mo avg`}" style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem .6rem ${r.hasOverride?'.5rem':'.75rem'};border-radius:8px;margin-bottom:6px;cursor:pointer;border-left:3px solid ${r.hasOverride?'var(--accent-green)':'transparent'};${r.hasOverride?'background:#34D39912':''}">
       <div style="display:flex;align-items:center;gap:8px">
         <span style="width:8px;height:8px;border-radius:50%;background:${getCatColor(r.cat)}"></span>
         <span>${esc(r.cat)}</span>
