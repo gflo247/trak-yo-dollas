@@ -102,6 +102,8 @@ test('backup export and re-import restores the same data', async ({ page }) => {
 
   // Set the backup file directly on the hidden input — bypasses the settings
   // menu and the demo picker overlay that auto-opens on a fresh page.
+  // importBackup() shows a confirm() dialog; accept it so the import proceeds.
+  page.once('dialog', dialog => dialog.accept());
   await page.locator('#backup-file-input').setInputFiles(backupPath);
   await page.waitForFunction(
     (n) => typeof state !== 'undefined' && state.transactions.length === n,
