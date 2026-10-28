@@ -1763,9 +1763,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 </div>
 
 <!-- Modals -->
-<div class="modal-overlay hidden" id="add-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="add-modal-title" tabindex="-1">
-    <h3 id="add-modal-title">Add account</h3>
+<div class="modal-overlay drawer-overlay hidden" id="add-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="add-modal-title" tabindex="-1" style="width:min(440px,94vw)">
+    <div class="modal-header">
+      <h3 id="add-modal-title">Add account</h3>
+      <button data-action="closeAddModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
     <div class="form-group"><label class="form-label" for="f-name">Name</label><input type="text" id="f-name"/></div>
     <div class="form-group"><label class="form-label" for="f-source">Institution</label>
       <select id="f-source"><option>Alliant</option><option>Ally</option><option>Amex</option><option>ANZ</option><option>Bank of America</option><option>Barclays</option><option>BECU</option><option>BMO</option><option>BNZ</option><option>Capital One</option><option>Chase</option><option>CIBC</option><option>CommBank</option><option>Discover</option><option>Domain</option><option>E*TRADE</option><option>Fidelity</option><option>Halifax</option><option>homes.co.nz</option><option>HSBC</option><option>ING</option><option>Lloyds</option><option>Marcus</option><option>Nationwide</option><option>Navy Federal</option><option>Old National</option><option>PenFed</option><option>RBC</option><option>Redfin</option><option>Santander</option><option>Schwab</option><option>Scotiabank</option><option>SoFi</option><option>SRX</option><option>Starling</option><option>Tangerine</option><option>TD Bank</option><option>Truist</option><option>USAA</option><option>Vanguard</option><option>Wells Fargo</option><option>Westpac</option><option>Zillow</option><option>Zolo</option><option>Zoopla</option><option>Other</option></select></div>
@@ -1789,7 +1792,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div class="row" style="justify-content:space-between;gap:8px;margin-top:1rem">
       <button class="btn" data-action="confirmDeleteAcct" type="button" id="delete-acct-btn" style="display:none;color:var(--accent-red);border-color:#F8717166">Delete</button>
       <div class="row" style="gap:8px;margin-left:auto">
-        <button class="btn" data-action="closeModals" type="button">Cancel</button>
+        <button class="btn" data-action="closeAddModal" type="button">Cancel</button>
         <button class="btn btn-primary" data-action="saveAccount" type="button">Save</button>
       </div>
     </div>
@@ -1802,9 +1805,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
   </div>
 </div>
-<div class="modal-overlay hidden" id="add-tx-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="add-tx-modal-title" tabindex="-1">
-    <h3 id="add-tx-modal-title">Add transaction</h3>
+<div class="modal-overlay drawer-overlay hidden" id="add-tx-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="add-tx-modal-title" tabindex="-1" style="width:min(480px,94vw)">
+    <div class="modal-header">
+      <h3 id="add-tx-modal-title">Add transaction</h3>
+      <button data-action="closeAddTxModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
     <div class="form-group"><label class="form-label" for="t-date">Date</label><input type="text" id="t-date"/></div>
     <div class="form-group"><label class="form-label" for="t-desc">Description</label><input type="text" id="t-desc"/></div>
     <div class="form-group"><label class="form-label" for="t-card">Source</label>
@@ -1813,14 +1819,17 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <select id="t-cat"><option>Groceries</option><option>Shopping</option><option>Bills & Utilities</option><option>Home</option><option>Child Care</option><option>Checks</option><option>Health & Wellness</option><option>Travel</option><option>Food & Drink</option><option>Gas</option><option>College Fund(s)</option><option>Taxes & Fees</option><option>Education</option><option>Automotive</option><option>Entertainment</option><option>Gifts & Donations</option><option>Transfers</option><option>Other</option></select></div>
     <div class="form-group"><label class="form-label" for="t-amount">Amount ($)</label><input type="number" id="t-amount"/></div>
     <div class="modal-footer">
-      <button class="btn" data-action="closeModals" type="button">Cancel</button>
+      <button class="btn" data-action="closeAddTxModal" type="button">Cancel</button>
       <button class="btn btn-primary" data-action="saveTx" type="button">Save</button>
     </div>
   </div>
 </div>
-<div class="modal-overlay hidden" id="edit-tx-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-tx-modal-title" tabindex="-1">
-    <h3 id="edit-tx-modal-title">Edit transaction</h3>
+<div class="modal-overlay drawer-overlay hidden" id="edit-tx-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="edit-tx-modal-title" tabindex="-1" style="width:min(480px,94vw)">
+    <div class="modal-header">
+      <h3 id="edit-tx-modal-title">Edit transaction</h3>
+      <button data-action="closeEditTxModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
     <div id="check-label-hint" style="display:none;background:#F59E0B18;border:1px solid #F59E0B44;border-radius:8px;padding:.45rem .75rem;margin-bottom:.6rem;font-size:11px;color:var(--amber-text);line-height:1.4">
       ✏️ <strong>Check transaction</strong> — update the description to note what this was for (e.g. "Plumber", "Tuition"), then pick the right category.
     </div>
@@ -1858,7 +1867,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div class="row" style="justify-content:space-between;gap:8px;margin-top:1rem">
       <button class="btn" data-action="confirmDeleteTx" type="button" id="delete-tx-btn" style="color:var(--accent-red);border-color:#F8717166">Delete</button>
       <div class="row" style="gap:8px">
-        <button class="btn" data-action="closeModals" type="button">Cancel</button>
+        <button class="btn" data-action="closeEditTxModal" type="button">Cancel</button>
         <button class="btn btn-primary" data-action="saveEditTx" type="button">Save changes</button>
       </div>
     </div>
@@ -1967,9 +1976,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 </div>
 
 <!-- Budget modal -->
-<div class="modal-overlay hidden" id="budget-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="budget-modal-title" tabindex="-1" style="width:min(360px,95vw)">
-    <h3 id="budget-modal-title">Set monthly budget</h3>
+<div class="modal-overlay drawer-overlay hidden" id="budget-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="budget-modal-title" tabindex="-1" style="width:min(400px,94vw)">
+    <div class="modal-header">
+      <h3 id="budget-modal-title">Set monthly budget</h3>
+      <button data-action="closeBudgetModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
     <div class="form-group">
       <label class="form-label" for="budget-cat-select">Category</label>
       <select id="budget-cat-select"></select>
@@ -1990,7 +2002,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
     <div class="modal-footer">
       <button id="budget-remove-btn" class="btn hidden" data-action="promptBudgetRemoval" type="button" style="margin-right:auto;color:var(--accent-red);border-color:rgba(248,113,113,.4)">Remove budget</button>
-      <button class="btn" data-action="closeModals" type="button">Cancel</button>
+      <button class="btn" data-action="closeBudgetModal" type="button">Cancel</button>
       <button class="btn btn-primary" data-action="saveBudget" type="button">Save budget</button>
     </div>
   </div>
@@ -2239,9 +2251,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 <div id="mobile-tooltip"></div>
 
 <!-- Historical snapshot modal -->
-<div class="modal-overlay hidden" id="historical-snapshot-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="historical-snapshot-modal-title" tabindex="-1" style="width:min(420px,95vw)">
-    <h3 id="historical-snapshot-modal-title" style="font-size:16px;margin-bottom:.35rem">📅 Add historical snapshot</h3>
+<div class="modal-overlay drawer-overlay hidden" id="historical-snapshot-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="historical-snapshot-modal-title" tabindex="-1" style="width:min(420px,94vw)">
+    <div class="modal-header">
+      <h3 id="historical-snapshot-modal-title">Add historical snapshot</h3>
+      <button data-action="closeHistoricalSnapshotModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
     <p class="modal-body-text">Backfill a past net worth data point to extend your trend line. Useful if you know what your net worth was at a specific date.</p>
     <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1rem">
       <div>
@@ -2267,7 +2282,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div style="display:flex;justify-content:space-between;gap:8px">
       <button id="hist-snap-delete-btn" class="btn" data-action="deleteEditingSnapshot" type="button" style="display:none;color:var(--accent-red);border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.08)">Delete</button>
       <div style="display:flex;gap:8px;margin-left:auto">
-        <button class="btn" data-action="closeModals" type="button">Cancel</button>
+        <button class="btn" data-action="closeHistoricalSnapshotModal" type="button">Cancel</button>
         <button class="btn btn-primary" data-action="saveHistoricalSnapshot" type="button">Save snapshot</button>
       </div>
     </div>
@@ -3000,7 +3015,7 @@ function _ctaArg(cta){return cta&&cta.arg!=null?String(cta.arg):null;}
 // nothing else is open, and a no-op on mobile too (only one can ever be
 // open there regardless, same reason as above).
 function _closeOtherPersistentPanels(exceptId){
-  ['shortcuts-modal','community-rules-modal','year-review-modal','cat-modal','tx-import-modal'].forEach(id=>{
+  ['shortcuts-modal','community-rules-modal','year-review-modal','cat-modal','tx-import-modal','add-modal','add-tx-modal','edit-tx-modal','budget-modal','historical-snapshot-modal'].forEach(id=>{
     if(id===exceptId)return;
     const el=document.getElementById(id);
     if(el&&!el.classList.contains('hidden'))el.classList.add('hidden');
@@ -8337,6 +8352,16 @@ document.addEventListener('keydown',function(e){
     if(catEl&&!catEl.classList.contains('hidden')){closeCatModal();return;}
     const txImportEl=document.getElementById('tx-import-modal');
     if(txImportEl&&!txImportEl.classList.contains('hidden')){closeTxImportModal();return;}
+    const addModalEl=document.getElementById('add-modal');
+    if(addModalEl&&!addModalEl.classList.contains('hidden')){closeAddModal();return;}
+    const addTxEl=document.getElementById('add-tx-modal');
+    if(addTxEl&&!addTxEl.classList.contains('hidden')){closeAddTxModal();return;}
+    const editTxEl=document.getElementById('edit-tx-modal');
+    if(editTxEl&&!editTxEl.classList.contains('hidden')){closeEditTxModal();return;}
+    const budgetEl=document.getElementById('budget-modal');
+    if(budgetEl&&!budgetEl.classList.contains('hidden')){closeBudgetModal();return;}
+    const histSnapEl=document.getElementById('historical-snapshot-modal');
+    if(histSnapEl&&!histSnapEl.classList.contains('hidden')){closeHistoricalSnapshotModal();return;}
     // Clear active filters
     let cleared=false;
     if(state.activeDate){state.activeDate=null;document.querySelectorAll('.cal-day-active').forEach(el=>{el.classList.remove('cal-day-active');el.style.outline='';});cleared=true;}
@@ -8841,14 +8866,24 @@ function showMoreTx(){showTxN+=100;renderTxList();}
 
 /* ── EDIT TX ── */
 function openEditTxModal(id){
+  _closeOtherPersistentPanels('edit-tx-modal');
   const t=state.transactions.find(x=>x.id===id);if(!t)return;
   editTxId=id;
   rebuildCatSelects(t.cat);
   const hint=document.getElementById('check-label-hint');
   if(hint)hint.style.display=t.cat==='Checks'?'block':'none';document.getElementById('et-desc').value=t.desc;document.getElementById('et-date').value=t.date;document.getElementById('et-amount').value=t.amount;document.getElementById('et-cat').value=t.cat;
   if(document.getElementById('et-excluded'))document.getElementById('et-excluded').checked=!!t.excluded;
-  updateExclNote();buildRcList(t,t.cat,t.cat);document.getElementById('edit-tx-modal').classList.remove('hidden');
+  updateExclNote();buildRcList(t,t.cat,t.cat);
+  const el=document.getElementById('edit-tx-modal');
+  const panel=el.querySelector('.drawer');
+  const persistent=window.innerWidth>=900;
+  el.classList.toggle('modal-overlay',!persistent);
+  panel.setAttribute('aria-modal',persistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',persistent);
+  document.body.style.setProperty('--pp-width','480px');
+  el.classList.remove('hidden');
 }
+function closeEditTxModal(){hideModalById('edit-tx-modal');}
 function onEditCatChange(){const t=state.transactions.find(x=>x.id===editTxId);if(!t)return;buildRcList(t,t.cat,document.getElementById('et-cat').value);}
 function buildRcList(tx,origCat,newCat){
   const sec=document.getElementById('recategorize-section');
@@ -9341,6 +9376,7 @@ function renderHistory(){
   el.innerHTML=summaryHTML+rows;
 }
 function openBudgetModal(cat){
+  _closeOtherPersistentPanels('budget-modal');
   const allCats=getAllCats();
   // Coerce before the !cat check, not after -- a category literally named
   // "0" gets turned into the JS Number 0 by the dispatcher's coerce(),
@@ -9360,9 +9396,17 @@ function openBudgetModal(cat){
   sel.innerHTML=allCats.map(c=>`<option value="${esc(c)}"${c===cat?' selected':''}>${esc(c)}${state.budgets[c]?' ('+fmt(state.budgets[c])+'/mo)':''}</option>`).join('');
   sel.onchange=()=>_refreshBudgetModalContext(sel.value);
   _refreshBudgetModalContext(cat);
-  document.getElementById('budget-modal').classList.remove('hidden');
+  const el=document.getElementById('budget-modal');
+  const panel=el.querySelector('.drawer');
+  const persistent=window.innerWidth>=900;
+  el.classList.toggle('modal-overlay',!persistent);
+  panel.setAttribute('aria-modal',persistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',persistent);
+  document.body.style.setProperty('--pp-width','400px');
+  el.classList.remove('hidden');
   setTimeout(()=>document.getElementById('budget-amount').focus(),80);
 }
+function closeBudgetModal(){hideModalById('budget-modal');}
 function _refreshBudgetModalContext(cat){
   window._budgetCat=cat;
   document.getElementById('budget-modal').style.setProperty('--budget-color',getCatColor(cat));
@@ -9565,6 +9609,7 @@ function updateHistSnapDatePreview(_,el){
 }
 let _editingSnapshotMonthKey=null;
 function openHistoricalSnapshotModal(){
+  _closeOtherPersistentPanels('historical-snapshot-modal');
   _editingSnapshotMonthKey=null; // fresh add, not editing an existing snapshot
   const d=new Date();
   const iso=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -9576,11 +9621,18 @@ function openHistoricalSnapshotModal(){
   const _addModal=document.getElementById('historical-snapshot-modal');
   const _delBtn=document.getElementById('hist-snap-delete-btn');
   if(_delBtn)_delBtn.style.display='none';
-  _addModal.classList.remove('hidden');
   const h3=_addModal.querySelector('h3');
   if(h3)h3.textContent='📅 Add historical snapshot';
+  const panel=_addModal.querySelector('.drawer');
+  const persistent=window.innerWidth>=900;
+  _addModal.classList.toggle('modal-overlay',!persistent);
+  panel.setAttribute('aria-modal',persistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',persistent);
+  document.body.style.setProperty('--pp-width','420px');
+  _addModal.classList.remove('hidden');
   setTimeout(()=>document.getElementById('hist-snap-nw').focus(),80);
 }
+function closeHistoricalSnapshotModal(){hideModalById('historical-snapshot-modal');}
 
 function editSnapshot(i){
   const s=state.snapshots[i];
@@ -9607,6 +9659,13 @@ function editSnapshot(i){
   if(h3)h3.textContent='✏️ Edit snapshot';
   const _editDelBtn=document.getElementById('hist-snap-delete-btn');
   if(_editDelBtn)_editDelBtn.style.display='';
+  _closeOtherPersistentPanels('historical-snapshot-modal');
+  const panel=modal.querySelector('.drawer');
+  const persistent=window.innerWidth>=900;
+  modal.classList.toggle('modal-overlay',!persistent);
+  panel.setAttribute('aria-modal',persistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',persistent);
+  document.body.style.setProperty('--pp-width','420px');
   modal.classList.remove('hidden');
   setTimeout(()=>document.getElementById('hist-snap-nw').focus(),80);
 }
@@ -9615,7 +9674,7 @@ function deleteEditingSnapshot(){
   if(!_editingSnapshotMonthKey)return;
   const i=state.snapshots.findIndex(s=>s.monthKey===_editingSnapshotMonthKey);
   if(i<0)return;
-  closeModals();
+  closeHistoricalSnapshotModal();
   deleteSnapshot(i);
 }
 
@@ -16410,7 +16469,19 @@ function onLiquidManualToggle(){_liquidTouchedByUser=true;}
 // random institution assigned, with nothing prompting them to check it.
 // Defaults to "Other" instead, matching what that option already exists
 // for. Found via a user-friendliness pass, August 2026.
-function openAddModal(type){editAcctId=null;_liquidTouchedByUser=false;document.getElementById('add-modal-title').textContent='Add account';['f-name','f-balance'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-exclude').checked=false;const ft=document.getElementById('f-type');if(ft){ft.selectedIndex=0;if(type)ft.value=type;}updateSourceOptionsForType();const fs=document.getElementById('f-source');if(fs)fs.value='Other';const db=document.getElementById('delete-acct-btn');if(db)db.style.display='none';const dc=document.getElementById('delete-acct-confirm');if(dc)dc.style.display='none';document.getElementById('add-modal').classList.remove('hidden');}
+function openAddModal(type){
+  _closeOtherPersistentPanels('add-modal');
+  editAcctId=null;_liquidTouchedByUser=false;document.getElementById('add-modal-title').textContent='Add account';['f-name','f-balance'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-exclude').checked=false;const ft=document.getElementById('f-type');if(ft){ft.selectedIndex=0;if(type)ft.value=type;}updateSourceOptionsForType();const fs=document.getElementById('f-source');if(fs)fs.value='Other';const db=document.getElementById('delete-acct-btn');if(db)db.style.display='none';const dc=document.getElementById('delete-acct-confirm');if(dc)dc.style.display='none';
+  const el=document.getElementById('add-modal');
+  const panel=el.querySelector('.drawer');
+  const persistent=window.innerWidth>=900;
+  el.classList.toggle('modal-overlay',!persistent);
+  panel.setAttribute('aria-modal',persistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',persistent);
+  document.body.style.setProperty('--pp-width','440px');
+  el.classList.remove('hidden');
+}
+function closeAddModal(){hideModalById('add-modal');}
 function openAcctCsvModal(){
   // Reset stale state from a prior open/cancel, matching openAddModal()'s
   // own reset-on-open convention immediately above -- this modal had no
@@ -16423,6 +16494,7 @@ function openAcctCsvModal(){
   document.getElementById('acct-csv-modal').classList.remove('hidden');
 }
 function openAddTxModal(){
+  _closeOtherPersistentPanels('add-tx-modal');
   rebuildCatSelects();
   const cardSel=document.getElementById('t-card');
   if(cardSel){
@@ -16439,8 +16511,16 @@ function openAddTxModal(){
   const _now=new Date();
   document.getElementById('t-date').value=`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
   ['t-desc','t-amount'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('add-tx-modal').classList.remove('hidden');
+  const el=document.getElementById('add-tx-modal');
+  const panel=el.querySelector('.drawer');
+  const persistent=window.innerWidth>=900;
+  el.classList.toggle('modal-overlay',!persistent);
+  panel.setAttribute('aria-modal',persistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',persistent);
+  document.body.style.setProperty('--pp-width','480px');
+  el.classList.remove('hidden');
 }
+function closeAddTxModal(){hideModalById('add-tx-modal');}
 
 async function lookupVIN(){
   const vin=(document.getElementById('v-vin').value||'').trim().toUpperCase();
@@ -16564,7 +16644,7 @@ function openVehicleModal(){
   const dc=document.getElementById('delete-vehicle-confirm');if(dc)dc.style.display='none';
   document.getElementById('vehicle-modal').classList.remove('hidden');
 }
-function editAccount(id){const a=state.accounts.find(x=>x.id===id);if(!a)return;editAcctId=id;_liquidTouchedByUser=false;document.getElementById('add-modal-title').textContent='Edit account';document.getElementById('f-name').value=a.name;document.getElementById('f-type').value=a.type;updateSourceOptionsForType();document.getElementById('f-source').value=a.source;document.getElementById('f-balance').value=a.balance;document.getElementById('f-exclude').checked=!!a.excludeFromNW;const fl=document.getElementById('f-liquid');if(fl)fl.checked=isLiquidAccount(a);const db=document.getElementById('delete-acct-btn');if(db)db.style.display='';const dc=document.getElementById('delete-acct-confirm');if(dc)dc.style.display='none';document.getElementById('add-modal').classList.remove('hidden');}
+function editAccount(id){const a=state.accounts.find(x=>x.id===id);if(!a)return;_closeOtherPersistentPanels('add-modal');editAcctId=id;_liquidTouchedByUser=false;document.getElementById('add-modal-title').textContent='Edit account';document.getElementById('f-name').value=a.name;document.getElementById('f-type').value=a.type;updateSourceOptionsForType();document.getElementById('f-source').value=a.source;document.getElementById('f-balance').value=a.balance;document.getElementById('f-exclude').checked=!!a.excludeFromNW;const fl=document.getElementById('f-liquid');if(fl)fl.checked=isLiquidAccount(a);const db=document.getElementById('delete-acct-btn');if(db)db.style.display='';const dc=document.getElementById('delete-acct-confirm');if(dc)dc.style.display='none';const el=document.getElementById('add-modal');const panel=el.querySelector('.drawer');const persistent=window.innerWidth>=900;el.classList.toggle('modal-overlay',!persistent);panel.setAttribute('aria-modal',persistent?'false':'true');document.body.classList.toggle('persistent-panel-open',persistent);document.body.style.setProperty('--pp-width','440px');el.classList.remove('hidden');}
 function saveAccount(){
   // Matches confirmTxImport()/importBackup()'s existing guard (98th
   // adversarial pass) -- without it, adding an account while previewing a

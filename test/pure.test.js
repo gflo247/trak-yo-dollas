@@ -851,8 +851,10 @@ test("openBudgetModal: a numeric-looking category name (coerced to a Number by t
     get innerHTML() { return selHTML; },
     onchange: null,
   };
-  const fakeModal = { classList: { remove: () => {} } };
+  const fakePanel = { setAttribute: () => {} };
+  const fakeModal = { classList: { remove: () => {}, toggle: () => {} }, querySelector: () => fakePanel };
   const fakeAmountInput = { focus: () => {} };
+  const fakeBody = { classList: { toggle: () => {} }, style: { setProperty: () => {} } };
   const ctx = {
     getAllCats: () => ["Groceries", "2024"],
     state: { budgets: {} },
@@ -861,6 +863,8 @@ test("openBudgetModal: a numeric-looking category name (coerced to a Number by t
     esc: (s) => String(s),
     fmt: (n) => String(n),
     _refreshBudgetModalContext: () => {},
+    _closeOtherPersistentPanels: () => {},
+    window: { innerWidth: 800 },
     document: {
       getElementById: (id) => {
         if (id === "budget-cat-select") return fakeSel;
@@ -868,6 +872,7 @@ test("openBudgetModal: a numeric-looking category name (coerced to a Number by t
         if (id === "budget-amount") return fakeAmountInput;
         return null;
       },
+      body: fakeBody,
     },
   };
   const { openBudgetModal } = loadFunctions(["openBudgetModal"], ctx);
@@ -1381,10 +1386,12 @@ test("_refreshBudgetModalContext: no budget and no history leaves the field blan
 
 function openStaleBudgetModalCtx(existingBudget) {
   const amountEl = { value: "", focus: () => {} };
+  const fakePanel = { setAttribute: () => {} };
+  const fakeBody = { classList: { toggle: () => {} }, style: { setProperty: () => {} } };
   return {
     amountEl,
     ctx: {
-      window: {},
+      window: { innerWidth: 800 },
       state: { budgets: existingBudget !== undefined ? { Groceries: existingBudget } : {} },
       getAllCats: () => ["Groceries", "Shopping"],
       getCatColor: () => "#000",
@@ -1396,16 +1403,18 @@ function openStaleBudgetModalCtx(existingBudget) {
       fmt: (n) => String(n),
       _budgetBizFilter: 'all',
       MONTHLY: {},
+      _closeOtherPersistentPanels: () => {},
       document: {
         getElementById: (id) => {
           if (id === "budget-amount") return amountEl;
           if (id === "budget-cat-select") return { innerHTML: "", onchange: null };
-          if (id === "budget-modal") return { classList: { remove: () => {} }, style: { setProperty: () => {} } };
+          if (id === "budget-modal") return { classList: { remove: () => {}, toggle: () => {} }, style: { setProperty: () => {} }, querySelector: () => fakePanel };
           if (id === "budget-modal-context") return { set innerHTML(v) {}, get innerHTML() { return ""; } };
           if (id === "budget-remove-btn") return { classList: { toggle: () => {} } };
           if (id === "budget-remove-confirm") return { classList: { add: () => {} } };
           return null;
         },
+        body: fakeBody,
       },
     },
   };
@@ -8790,10 +8799,15 @@ for (const [openFn, closeFn, modalId] of [
   ["openYearInReview", "closeYearInReview", "year-review-modal"],
   ["openCatModal", "closeCatModal", "cat-modal"],
   ["openTxImportModal", "closeTxImportModal", "tx-import-modal"],
+  ["openAddModal", "closeAddModal", "add-modal"],
+  ["openAddTxModal", "closeAddTxModal", "add-tx-modal"],
+  ["openEditTxModal", "closeEditTxModal", "edit-tx-modal"],
+  ["openBudgetModal", "closeBudgetModal", "budget-modal"],
+  ["openHistoricalSnapshotModal", "closeHistoricalSnapshotModal", "historical-snapshot-modal"],
 ]) {
   test(`${openFn}() opens as a persistent, non-blocking panel on wide viewports (drops .modal-overlay, flips aria-modal), matching shortcuts-modal's mechanism`, () => {
     const source = readSource();
-    const fnMatch = source.match(new RegExp(`function ${openFn}\\(\\)\\{[\\s\\S]*?\\n\\}`));
+    const fnMatch = source.match(new RegExp(`function ${openFn}\\([^)]*\\)\\{[\\s\\S]*?\\n\\}`));
     assert.ok(fnMatch, `${openFn}() should exist`);
     assert.match(fnMatch[0], /window\.innerWidth>=900/, "should gate persistent mode on the same viewport-width check as shortcuts-modal");
     assert.match(fnMatch[0], /classList\.toggle\('modal-overlay',!persistent\)/, "should drop .modal-overlay in persistent mode");
@@ -8803,7 +8817,7 @@ for (const [openFn, closeFn, modalId] of [
   });
 }
 
-test("Every one of the 5 persistent panels' Done/×/Got it/Cancel buttons uses its own dedicated close function, not the generic closeModals() -- a real regression risk once .modal-overlay can be dropped at runtime", () => {
+test("Every one of the 10 persistent panels' Done/×/Got it/Cancel buttons uses its own dedicated close function, not the generic closeModals() -- a real regression risk once .modal-overlay can be dropped at runtime", () => {
   const source = readSource();
   const catBlock = source.match(/<!-- Category manager modal -->[\s\S]*?<\/div>\s*<\/div>\s*<\/div>\s*\n\n<!-- Transaction CSV import drawer -->/);
   assert.ok(catBlock, "cat-modal's markup block should exist");
@@ -8817,6 +8831,26 @@ test("Every one of the 5 persistent panels' Done/×/Got it/Cancel buttons uses i
   assert.ok(txImportBlock, "tx-import-modal's markup block should exist");
   assert.match(txImportBlock[0], /data-action="closeTxImportModal"/, "tx-import-modal's ✕/Cancel buttons should use the dedicated close function");
   assert.doesNotMatch(txImportBlock[0], /data-action="closeModals"/, "tx-import-modal should have no remaining buttons wired to the generic sweep");
+  const addModalBlock = source.match(/<div class="modal-overlay drawer-overlay hidden" id="add-modal">[\s\S]*?<\/div>\s*<\/div>\s*\n<div class="modal-overlay drawer-overlay hidden" id="add-tx-modal">/);
+  assert.ok(addModalBlock, "add-modal's markup block should exist");
+  assert.match(addModalBlock[0], /data-action="closeAddModal"/, "add-modal's Cancel button should use the dedicated close function");
+  assert.doesNotMatch(addModalBlock[0], /data-action="closeModals"/, "add-modal should have no remaining buttons wired to the generic sweep");
+  const addTxBlock = source.match(/<div class="modal-overlay drawer-overlay hidden" id="add-tx-modal">[\s\S]*?<\/div>\s*<\/div>\s*\n<div class="modal-overlay drawer-overlay hidden" id="edit-tx-modal">/);
+  assert.ok(addTxBlock, "add-tx-modal's markup block should exist");
+  assert.match(addTxBlock[0], /data-action="closeAddTxModal"/, "add-tx-modal's Cancel button should use the dedicated close function");
+  assert.doesNotMatch(addTxBlock[0], /data-action="closeModals"/, "add-tx-modal should have no remaining buttons wired to the generic sweep");
+  const editTxBlock = source.match(/<div class="modal-overlay drawer-overlay hidden" id="edit-tx-modal">[\s\S]*?<\/div>\s*<\/div>\s*\n<div class="modal-overlay hidden" id="acct-csv-modal">/);
+  assert.ok(editTxBlock, "edit-tx-modal's markup block should exist");
+  assert.match(editTxBlock[0], /data-action="closeEditTxModal"/, "edit-tx-modal's Cancel button should use the dedicated close function");
+  assert.doesNotMatch(editTxBlock[0], /data-action="closeModals"/, "edit-tx-modal should have no remaining buttons wired to the generic sweep");
+  const budgetBlock = source.match(/<!-- Budget modal -->[\s\S]*?<\/div>\s*<\/div>\s*\n\n<!-- Life Changes/);
+  assert.ok(budgetBlock, "budget-modal's markup block should exist");
+  assert.match(budgetBlock[0], /data-action="closeBudgetModal"/, "budget-modal's Cancel button should use the dedicated close function");
+  assert.doesNotMatch(budgetBlock[0], /data-action="closeModals"/, "budget-modal should have no remaining buttons wired to the generic sweep");
+  const histSnapBlock = source.match(/<div class="modal-overlay drawer-overlay hidden" id="historical-snapshot-modal">[\s\S]*?<\/div>\s*<\/div>\s*\n\n<!-- Other vendors modal -->/);
+  assert.ok(histSnapBlock, "historical-snapshot-modal's markup block should exist");
+  assert.match(histSnapBlock[0], /data-action="closeHistoricalSnapshotModal"/, "historical-snapshot-modal's Cancel button should use the dedicated close function");
+  assert.doesNotMatch(histSnapBlock[0], /data-action="closeModals"/, "historical-snapshot-modal should have no remaining buttons wired to the generic sweep");
 });
 
 // Finding: an adversarial pass caught a real bug once all 4 panels could
@@ -8830,12 +8864,12 @@ test("Every one of the 5 persistent panels' Done/×/Got it/Cancel buttons uses i
 // mobile) -- which is exactly why this gap only opened up as a side
 // effect of the persistence feature itself, not something the original
 // blocking-modal design ever had to guard against.
-test("_closeOtherPersistentPanels() is called at the start of all 5 open functions, so opening one persistent panel closes any other that's already open instead of silently stacking on top of it", () => {
+test("_closeOtherPersistentPanels() is called at the start of all 10 open functions, so opening one persistent panel closes any other that's already open instead of silently stacking on top of it", () => {
   const source = readSource();
   assert.match(
     source,
-    /function _closeOtherPersistentPanels\(exceptId\)\{\s*\['shortcuts-modal','community-rules-modal','year-review-modal','cat-modal','tx-import-modal'\]\.forEach/,
-    "the helper should exist and enumerate all 5 persistent-eligible panels"
+    /function _closeOtherPersistentPanels\(exceptId\)\{\s*\['shortcuts-modal','community-rules-modal','year-review-modal','cat-modal','tx-import-modal','add-modal','add-tx-modal','edit-tx-modal','budget-modal','historical-snapshot-modal'\]\.forEach/,
+    "the helper should exist and enumerate all 10 persistent-eligible panels"
   );
   for (const [openFn, exceptId] of [
     ["openShortcutsModal", "shortcuts-modal"],
@@ -8843,13 +8877,18 @@ test("_closeOtherPersistentPanels() is called at the start of all 5 open functio
     ["openCommunityRulesModal", "community-rules-modal"],
     ["openCatModal", "cat-modal"],
     ["openTxImportModal", "tx-import-modal"],
+    ["openAddModal", "add-modal"],
+    ["openAddTxModal", "add-tx-modal"],
+    ["openEditTxModal", "edit-tx-modal"],
+    ["openBudgetModal", "budget-modal"],
+    ["openHistoricalSnapshotModal", "historical-snapshot-modal"],
   ]) {
-    const fnMatch = source.match(new RegExp(`function ${openFn}\\(\\)\\{[\\s\\S]*?\\n\\}`));
+    const fnMatch = source.match(new RegExp(`function ${openFn}\\([^)]*\\)\\{[\\s\\S]*?\\n\\}`));
     assert.ok(fnMatch, `${openFn}() should exist`);
     assert.match(
       fnMatch[0],
       new RegExp(`_closeOtherPersistentPanels\\('${exceptId}'\\)`),
-      `${openFn}() should close the other 4 panels before opening, passing its own id so it doesn't close itself`
+      `${openFn}() should close the other 9 panels before opening, passing its own id so it doesn't close itself`
     );
   }
 });
@@ -8891,10 +8930,15 @@ for (const [openFn, closeFn, width] of [
   ["openCommunityRulesModal", "closeCommunityRulesModal", "560px"],
   ["openYearInReview", "closeYearInReview", "580px"],
   ["openCatModal", "closeCatModal", "400px"],
+  ["openAddModal", "closeAddModal", "440px"],
+  ["openAddTxModal", "closeAddTxModal", "480px"],
+  ["openEditTxModal", "closeEditTxModal", "480px"],
+  ["openBudgetModal", "closeBudgetModal", "400px"],
+  ["openHistoricalSnapshotModal", "closeHistoricalSnapshotModal", "420px"],
 ]) {
   test(`${openFn}()/${closeFn}() set and clear persistent-panel-open + --pp-width:${width}, matching this panel's own drawer width`, () => {
     const source = readSource();
-    const openMatch = source.match(new RegExp(`function ${openFn}\\(\\)\\{[\\s\\S]*?\\n\\}`));
+    const openMatch = source.match(new RegExp(`function ${openFn}\\([^)]*\\)\\{[\\s\\S]*?\\n\\}`));
     assert.ok(openMatch, `${openFn}() should exist`);
     assert.match(
       openMatch[0],
@@ -8936,7 +8980,7 @@ test("The .drawer-overlay:not(.modal-overlay) CSS lets clicks pass through to th
 
 test("Escape closes whichever persistent panel is open (shortcuts, community-rules, year-review, cat) -- all four checks sit after any real modal closes, before falling through to Clear filters, since none of them match the generic .modal-overlay:not(.hidden) close check anymore once persistent", () => {
   const source = readSource();
-  const blockMatch = source.match(/closeModals\(\);return;\s*\}\s*\/\/ Persistent panels[\s\S]{0,3000}?\/\/ Clear active filters/);
+  const blockMatch = source.match(/closeModals\(\);return;\s*\}\s*\/\/ Persistent panels[\s\S]{0,5000}?\/\/ Clear active filters/);
   assert.ok(blockMatch, "the persistent-panels Escape block should sit between the real-modal-closing branch and the 'Clear active filters' fallback");
   const order = ["closeShortcutsModal", "closeCommunityRulesModal", "closeYearInReview", "closeCatModal"];
   let lastIndex = -1;
