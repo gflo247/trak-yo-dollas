@@ -1589,9 +1589,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 
 
 <!-- Venmo cashout categorization modal -->
-<div class="modal-overlay hidden" id="venmo-cashout-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="venmo-cashout-modal-title" tabindex="-1">
-    <h3 id="venmo-cashout-modal-title">Venmo cashouts detected</h3>
+<div class="modal-overlay drawer-overlay hidden" id="venmo-cashout-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="venmo-cashout-modal-title" tabindex="-1" style="width:min(440px,94vw)">
+    <div class="modal-header">
+      <h3 id="venmo-cashout-modal-title">Venmo cashouts detected</h3>
+      <button data-action="closeVenmoCashoutModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
     <p class="modal-sub">We found <strong id="venmo-cashout-count" style="color:var(--text-primary)">0</strong> Venmo cashout(s) totaling <strong id="venmo-cashout-total" style="color:var(--accent-green)">$0</strong>. These are incoming payments — how should we treat them?</p>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem">
       <label class="venmo-label" id="venmo-opt-shopping">
@@ -1682,9 +1685,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   </div>
 </div>
 
-<div class="modal-overlay hidden" id="sync-passphrase-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sync-pp-title" tabindex="-1" style="max-width:380px">
-    <h3 id="sync-pp-title">Sync passphrase</h3>
+<div class="modal-overlay drawer-overlay hidden" id="sync-passphrase-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="sync-pp-title" tabindex="-1" style="width:min(460px,94vw)">
+    <div class="modal-header">
+      <h3 id="sync-pp-title">Sync passphrase</h3>
+      <button data-action="cancelSyncPassphrase" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
     <!-- font-size:12px overrides .modal-sub's 11px default -- below this
          app's own established legibility floor (12px, per the several
          "Legibility sweep" passes elsewhere in this file), and this
@@ -1880,22 +1886,28 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
   </div>
 </div>
-<div class="modal-overlay hidden" id="acct-csv-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="acct-csv-modal-title" tabindex="-1">
-    <h3 id="acct-csv-modal-title">Import CSV</h3>
+<div class="modal-overlay drawer-overlay hidden" id="acct-csv-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="acct-csv-modal-title" tabindex="-1" style="width:min(480px,94vw)">
+    <div class="modal-header">
+      <h3 id="acct-csv-modal-title">Import CSV</h3>
+      <button data-action="closeAcctCsvModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
     <p class="modal-sub">Columns: <strong style="color:var(--text-secondary)">name, source, type, balance</strong> — type must be one of: cash, investment, home, vehicle, mortgage, credit, other-asset, other-liability</p>
     <div class="csv-zone" data-action="triggerCsvFileInput" tabindex="0" role="button">Click to select CSV
       <input type="file" id="csv-file" accept=".csv,.CSV" aria-label="Select accounts CSV file" style="display:none" data-change="handleCsvDelegated"/></div>
     <textarea id="csv-text" rows="3" style="margin-top:.6rem;font-family:monospace;font-size:11px" placeholder="name,source,type,balance"></textarea>
     <div class="row" style="justify-content:flex-end;gap:8px;margin-top:.75rem">
-      <button class="btn" data-action="closeModals" type="button">Cancel</button>
+      <button class="btn" data-action="closeAcctCsvModal" type="button">Cancel</button>
       <button class="btn btn-primary" data-action="importCsvText" type="button">Import</button>
     </div>
   </div>
 </div>
-<div class="modal-overlay hidden" id="vehicle-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="v-modal-title" tabindex="-1">
-    <h3 id="v-modal-title">Add physical asset</h3>
+<div class="modal-overlay drawer-overlay hidden" id="vehicle-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="v-modal-title" tabindex="-1" style="width:min(460px,94vw)">
+    <div class="modal-header">
+      <h3 id="v-modal-title">Add physical asset</h3>
+      <button data-action="closeVehicleModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
     <div style="display:flex;gap:4px;background:var(--bg-deep);border-radius:8px;padding:3px;margin-bottom:.85rem">
       <button id="at-vehicle" class="btn-h active" data-action="setAssetType" data-arg="vehicle" style="flex:1;padding:5px;font-size:12px" type="button">🚗 Vehicle</button>
       <button id="at-other" class="btn-h" data-action="setAssetType" data-arg="other" style="flex:1;padding:5px;font-size:12px" type="button">📦 Other asset</button>
@@ -1919,7 +1931,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div class="row" style="justify-content:space-between;gap:8px;margin-top:1rem">
       <button class="btn" data-action="confirmDeleteVehicle" type="button" id="delete-vehicle-btn" style="display:none;color:var(--accent-red);border-color:#F8717166">Delete</button>
       <div class="row" style="gap:8px;margin-left:auto">
-        <button class="btn" data-action="closeModals" type="button">Cancel</button>
+        <button class="btn" data-action="closeVehicleModal" type="button">Cancel</button>
         <button class="btn btn-primary" data-action="saveVehicle" type="button">Save</button>
       </div>
     </div>
@@ -2009,9 +2021,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 </div>
 
 <!-- Life Changes simulator: add/edit a hypothetical category override -->
-<div class="modal-overlay hidden" id="simulator-override-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="simulator-override-modal-title" tabindex="-1" style="width:min(360px,95vw)">
-    <h3 id="simulator-override-modal-title">Add a hypothetical change</h3>
+<div class="modal-overlay drawer-overlay hidden" id="simulator-override-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="simulator-override-modal-title" tabindex="-1" style="width:min(420px,94vw)">
+    <div class="modal-header">
+      <h3 id="simulator-override-modal-title">Add a hypothetical change</h3>
+      <button data-action="closeSimulatorOverrideModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
     <div class="form-group">
       <label class="form-label" for="simulator-override-cat-select">Category</label>
       <select id="simulator-override-cat-select"></select>
@@ -2035,19 +2050,22 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
     <div id="simulator-override-modal-context" style="font-size:11px;color:var(--text-muted);margin-bottom:.75rem;line-height:1.5"></div>
     <div class="modal-footer">
-      <button class="btn" data-action="closeModals" type="button">Cancel</button>
+      <button class="btn" data-action="closeSimulatorOverrideModal" type="button">Cancel</button>
       <button class="btn btn-primary" data-action="saveSimulatorOverride" type="button">Save change</button>
     </div>
   </div>
 </div>
 
 <!-- Save rule prompt (appears after recategorizing) -->
-<div class="modal-overlay hidden" id="save-rule-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="save-rule-modal-title" tabindex="-1" style="width:min(420px,95vw)">
+<div class="modal-overlay drawer-overlay hidden" id="save-rule-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="save-rule-modal-title" tabindex="-1" style="width:min(440px,94vw)">
+    <div class="modal-header">
+      <h3 id="save-rule-modal-title">Save as auto-categorization rule?</h3>
+      <button data-action="closeSaveRuleModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem">
       <div style="font-size:24px">⚡</div>
       <div>
-        <h3 id="save-rule-modal-title" style="margin:0">Save as auto-categorization rule?</h3>
         <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Next time you import a CSV, matching transactions will be categorized automatically.</div>
       </div>
     </div>
@@ -2061,17 +2079,20 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
     <div id="srp-existing-warning" class="hidden" style="background:#78350F18;border:1px solid #D9770633;border-radius:8px;padding:.5rem .75rem;margin-bottom:.75rem;font-size:11px;color:var(--amber-text)"></div>
     <div class="row" style="justify-content:flex-end;gap:8px">
-      <button class="btn" data-action="closeModals" type="button">Skip</button>
+      <button class="btn" data-action="closeSaveRuleModal" type="button">Skip</button>
       <button class="btn btn-primary" data-action="confirmSaveRule" type="button">⚡ Save Rule</button>
     </div>
   </div>
 </div>
 
 <!-- Rules manager modal -->
-<div class="modal-overlay hidden" id="rules-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rules-modal-title" tabindex="-1" style="width:min(560px,95vw)">
+<div class="modal-overlay drawer-overlay hidden" id="rules-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="rules-modal-title" tabindex="-1" style="width:min(550px,94vw)">
     <div class="modal-header">
       <h3 id="rules-modal-title" style="margin:0">⚡ Auto-categorization rules</h3>
+      <button data-action="closeRulesModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:.5rem">
       <button class="btn btn-primary btn-sm" data-action="openAddRuleForm" type="button">+ Add rule</button>
     </div>
     <div style="background:#065F4618;border:1px solid #05996933;border-radius:10px;padding:.75rem 1rem;margin-bottom:1rem">
@@ -2105,15 +2126,18 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
     <div id="rules-list" style="display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto"></div>
     <div style="display:flex;justify-content:flex-end;margin-top:1rem">
-      <button class="btn btn-primary" data-action="closeModals" type="button">Done</button>
+      <button class="btn btn-primary" data-action="closeRulesModal" type="button">Done</button>
     </div>
   </div>
 </div>
 
 <!-- Currency symbol modal -->
-<div class="modal-overlay hidden" id="currency-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="currency-modal-title" tabindex="-1" style="width:min(380px,94vw)">
-    <div class="modal-header"><h3 id="currency-modal-title" style="font-size:16px;margin:0">🌍 Currency symbol</h3><button class="btn btn-primary" data-action="closeModals" type="button">Done</button></div>
+<div class="modal-overlay drawer-overlay hidden" id="currency-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="currency-modal-title" tabindex="-1" style="width:min(380px,94vw)">
+    <div class="modal-header">
+      <h3 id="currency-modal-title" style="font-size:16px;margin:0">🌍 Currency symbol</h3>
+      <button data-action="closeCurrencyModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
     <p style="font-size:13px;color:var(--text-muted);margin-bottom:.9rem;line-height:1.6">Choose the symbol displayed next to all amounts in the app. This is cosmetic only — the app does not convert between currencies.</p>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.85rem">
       <button data-action="applyCurrency" data-arg="$" class="btn btn-sm currency-preset" data-sym="$" type="button">$ Dollar</button>
@@ -2132,9 +2156,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 </div>
 
 <!-- Income / savings rate modal -->
-<div class="modal-overlay hidden" id="income-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="income-modal-title" tabindex="-1" style="width:min(480px,95vw)">
-    <h3 id="income-modal-title" style="font-size:16px;margin-bottom:.4rem">💰 Income & savings rate</h3>
+<div class="modal-overlay drawer-overlay hidden" id="income-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="income-modal-title" tabindex="-1" style="width:min(480px,94vw)">
+    <div class="modal-header">
+      <h3 id="income-modal-title" style="font-size:16px;margin:0">💰 Income & savings rate</h3>
+      <button data-action="closeIncomeModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
     <p style="font-size:12px;color:var(--text-muted);margin-bottom:.5rem;line-height:1.6">Your savings rate is how much of your income you keep each month. Choose how you want to track it:</p>
     <p style="font-size:12px;color:var(--text-muted);background:var(--bg-card);border-radius:8px;padding:.5rem .75rem;margin-bottom:1rem;line-height:1.5">Once saved, your savings rate will appear as a pill in the <strong style="color:var(--text-secondary)">'26 Apr at a glance</strong> card on the Net Worth tab.</p>
 
@@ -2187,9 +2214,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 </div>
 
 <!-- Flow chart declared income modal -->
-<div class="modal-overlay hidden" id="declared-income-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="declared-income-modal-title" tabindex="-1" style="width:min(360px,95vw)">
-    <h3 id="declared-income-modal-title" style="font-size:16px;margin-bottom:.5rem">💰 Monthly take-home income</h3>
+<div class="modal-overlay drawer-overlay hidden" id="declared-income-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="declared-income-modal-title" tabindex="-1" style="width:min(380px,94vw)">
+    <div class="modal-header">
+      <h3 id="declared-income-modal-title" style="font-size:16px;margin:0">💰 Monthly take-home income</h3>
+      <button data-action="closeDeclaredIncomeModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
     <p style="font-size:12px;color:var(--text-muted);margin-bottom:1rem;line-height:1.6">Set your actual monthly after-tax pay. Overrides deposit detection and feeds the savings rate insight.</p>
     <div style="margin-bottom:1.1rem">
       <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.35rem" for="declared-income-input">Monthly take-home (after tax)</label>
@@ -2197,29 +2227,35 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
     <div style="display:flex;gap:8px;align-items:center">
       <button class="btn btn-primary" data-action="saveDeclaredIncome" type="button">Save</button>
-      <button class="btn" data-action="closeModals" type="button">Cancel</button>
+      <button class="btn" data-action="closeDeclaredIncomeModal" type="button">Cancel</button>
       <button data-action="clearDeclaredIncome" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;margin-left:auto" type="button">Clear override</button>
     </div>
   </div>
 </div>
 
 <!-- Pill customizer modal -->
-<div class="modal-overlay hidden" id="pill-customizer-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pill-customizer-modal-title" tabindex="-1" style="width:min(380px,95vw)">
-    <h3 id="pill-customizer-modal-title" style="font-size:15px;margin-bottom:.35rem">⚙ Customize insight pills</h3>
+<div class="modal-overlay drawer-overlay hidden" id="pill-customizer-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="pill-customizer-modal-title" tabindex="-1" style="width:min(380px,94vw)">
+    <div class="modal-header">
+      <h3 id="pill-customizer-modal-title" style="font-size:15px;margin:0">⚙ Customize insight pills</h3>
+      <button data-action="closePillCustomizerModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
     <p style="font-size:11px;color:var(--text-muted);margin-bottom:1rem;line-height:1.5">Choose which pills appear in your at-a-glance card. Changes save automatically.</p>
     <div id="pill-toggle-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem"></div>
     <div style="display:flex;align-items:center;justify-content:space-between">
       <button data-action="showAllPills" style="background:none;border:none;color:var(--accent-blue-light);font-size:11px;cursor:pointer;padding:0;font-weight:600" type="button">Show all</button>
-      <button class="btn btn-primary" data-action="closeModals" type="button">Done</button>
+      <button class="btn btn-primary" data-action="closePillCustomizerModal" type="button">Done</button>
     </div>
   </div>
 </div>
 
 <!-- Vendor alias / merge modal -->
-<div class="modal-overlay hidden" id="vendor-alias-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="vendor-alias-modal-title" tabindex="-1" style="width:min(520px,95vw)">
-    <h3 id="vendor-alias-modal-title" style="font-size:16px;margin-bottom:.35rem">⟲ Merge duplicate vendors</h3>
+<div class="modal-overlay drawer-overlay hidden" id="vendor-alias-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="vendor-alias-modal-title" tabindex="-1" style="width:min(520px,94vw)">
+    <div class="modal-header">
+      <h3 id="vendor-alias-modal-title" style="font-size:16px;margin:0">⟲ Merge duplicate vendors</h3>
+      <button data-action="closeVendorAliasModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
     <p style="font-size:12px;color:var(--text-muted);margin-bottom:.75rem;line-height:1.5">Bank CSVs often use different names for the same vendor — <em>AMZN MKTP US</em>, <em>AMAZON.COM</em>, <em>AMAZON PRIME</em>. Merging them combines their totals everywhere: charts, buckets, insights, and summaries. Your raw transactions are unchanged.</p>
     <div class="section-box-sm">
       <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.6rem">Add alias</div>
@@ -2243,7 +2279,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
     <div id="vendor-alias-list" style="display:flex;flex-direction:column;gap:5px;max-height:260px;overflow-y:auto;margin-bottom:.85rem"></div>
     <div style="display:flex;justify-content:flex-end">
-      <button class="btn btn-primary" data-action="closeModals" type="button">Done</button>
+      <button class="btn btn-primary" data-action="closeVendorAliasModal" type="button">Done</button>
     </div>
   </div>
 </div>
@@ -2290,11 +2326,11 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 </div>
 
 <!-- Other vendors modal -->
-<div class="modal-overlay hidden" id="other-vendors-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="other-vendors-modal-title" tabindex="-1" style="width:min(480px,95vw)">
+<div class="modal-overlay drawer-overlay hidden" id="other-vendors-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="other-vendors-modal-title" tabindex="-1" style="width:min(480px,94vw)">
     <div class="modal-header">
       <h3 id="other-vendors-modal-title" style="margin:0">Other vendors</h3>
-      <button class="btn" data-action="closeModals" type="button">Done</button>
+      <button data-action="closeOtherVendorsModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
     </div>
     <p style="font-size:11px;color:var(--text-muted);margin-bottom:.75rem;line-height:1.5">Vendors outside the top 8. Click any to search their transactions.</p>
     <div id="other-vendors-list" style="display:flex;flex-direction:column;gap:4px;max-height:420px;overflow-y:auto"></div>
@@ -2302,22 +2338,22 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 </div>
 
 <!-- Subscriptions modal -->
-<div class="modal-overlay hidden" id="subscriptions-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="subscriptions-modal-title" tabindex="-1" style="width:min(480px,95vw)">
+<div class="modal-overlay drawer-overlay hidden" id="subscriptions-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="subscriptions-modal-title" tabindex="-1" style="width:min(480px,94vw)">
     <div class="modal-header">
       <h3 id="subscriptions-modal-title" style="margin:0">🔄 Recurring charges</h3>
-      <button class="btn btn-primary" data-action="closeModals" type="button">Done</button>
+      <button data-action="closeSubscriptionsModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
     </div>
     <div id="subscriptions-list" tabindex="0" style="max-height:480px;overflow-y:auto"></div>
   </div>
 </div>
 
 <!-- Duplicate charges modal -->
-<div class="modal-overlay hidden" id="duplicate-charges-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="duplicate-charges-modal-title" tabindex="-1" style="width:min(480px,95vw)">
+<div class="modal-overlay drawer-overlay hidden" id="duplicate-charges-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="duplicate-charges-modal-title" tabindex="-1" style="width:min(480px,94vw)">
     <div class="modal-header">
       <h3 id="duplicate-charges-modal-title" style="margin:0">⚠️ Possible duplicate charges</h3>
-      <button class="btn btn-primary" data-action="closeModals" type="button">Done</button>
+      <button data-action="closeDuplicateChargesModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
     </div>
     <div id="duplicate-charges-list" style="max-height:480px;overflow-y:auto"></div>
   </div>
@@ -2442,9 +2478,12 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
   </div>
 </div>
-<div class="modal-overlay hidden" id="custom-goal-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="custom-goal-modal-title" tabindex="-1" style="width:min(360px,94vw)">
-    <h3 id="custom-goal-modal-title">Set a custom goal</h3>
+<div class="modal-overlay drawer-overlay hidden" id="custom-goal-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="custom-goal-modal-title" tabindex="-1" style="width:min(380px,94vw)">
+    <div class="modal-header">
+      <h3 id="custom-goal-modal-title">Set a custom goal</h3>
+      <button data-action="closeCustomGoalModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
     <p class="modal-sub">Enter any net worth target. Milestone buttons will still work alongside it.</p>
     <div class="form-group">
       <label class="form-label" for="custom-goal-input">Goal amount</label>
@@ -2452,7 +2491,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <div id="custom-goal-hint" style="font-size:11px;color:var(--text-muted);margin-top:5px;min-height:16px"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn" data-action="closeModals" type="button">Cancel</button>
+      <button class="btn" data-action="closeCustomGoalModal" type="button">Cancel</button>
       <button class="btn btn-primary" data-action="confirmCustomGoal" type="button">Set goal</button>
     </div>
   </div>
@@ -3015,7 +3054,7 @@ function _ctaArg(cta){return cta&&cta.arg!=null?String(cta.arg):null;}
 // nothing else is open, and a no-op on mobile too (only one can ever be
 // open there regardless, same reason as above).
 function _closeOtherPersistentPanels(exceptId){
-  ['shortcuts-modal','community-rules-modal','year-review-modal','cat-modal','tx-import-modal','add-modal','add-tx-modal','edit-tx-modal','budget-modal','historical-snapshot-modal'].forEach(id=>{
+  ['shortcuts-modal','community-rules-modal','year-review-modal','cat-modal','tx-import-modal','add-modal','add-tx-modal','edit-tx-modal','budget-modal','historical-snapshot-modal','rules-modal','income-modal','declared-income-modal','save-rule-modal','venmo-cashout-modal','other-vendors-modal','vendor-alias-modal','subscriptions-modal','duplicate-charges-modal','vehicle-modal','acct-csv-modal','pill-customizer-modal','custom-goal-modal','simulator-override-modal','sync-passphrase-modal','currency-modal'].forEach(id=>{
     if(id===exceptId)return;
     const el=document.getElementById(id);
     if(el&&!el.classList.contains('hidden'))el.classList.add('hidden');
@@ -3041,6 +3080,21 @@ function hideModalById(id){document.getElementById(id).classList.add('hidden');d
 function closeShortcutsModal(){hideModalById('shortcuts-modal');}
 function toggleShortcutsModal(){document.getElementById('shortcuts-modal').classList.contains('hidden')?openShortcutsModal():closeShortcutsModal();}
 function closeCommunityRulesModal(){hideModalById('community-rules-modal');}
+function closeRulesModal(){hideModalById('rules-modal');}
+// closeIncomeModal() is defined later in the file alongside income logic.
+function closeDeclaredIncomeModal(){hideModalById('declared-income-modal');}
+function closeSaveRuleModal(){hideModalById('save-rule-modal');}
+function closeVenmoCashoutModal(){hideModalById('venmo-cashout-modal');}
+function closeOtherVendorsModal(){hideModalById('other-vendors-modal');}
+function closeVendorAliasModal(){hideModalById('vendor-alias-modal');}
+function closeSubscriptionsModal(){hideModalById('subscriptions-modal');}
+function closeDuplicateChargesModal(){hideModalById('duplicate-charges-modal');}
+function closeVehicleModal(){hideModalById('vehicle-modal');}
+function closeAcctCsvModal(){hideModalById('acct-csv-modal');}
+function closePillCustomizerModal(){hideModalById('pill-customizer-modal');}
+function closeCustomGoalModal(){hideModalById('custom-goal-modal');}
+function closeSimulatorOverrideModal(){hideModalById('simulator-override-modal');}
+function closeCurrencyModal(){hideModalById('currency-modal');}
 function closeAddRuleForm(){document.getElementById('add-rule-form').classList.add('hidden');}
 function triggerFileInput(id){document.getElementById(id).click();}
 function triggerCsvFileInput(){triggerFileInput('csv-file');}
@@ -5237,12 +5291,20 @@ function setNwGoalNextMilestone(){
 }
 
 function openCustomNwGoal(){
+  _closeOtherPersistentPanels('custom-goal-modal');
   const current=state.nwGoal;
   const input=document.getElementById('custom-goal-input');
   const hint=document.getElementById('custom-goal-hint');
   if(input){input.value=current||'';input.select();}
   if(hint){hint.textContent=current?`Current goal: ${fmtC(current,true)}`:'';hint.style.color='var(--text-muted)';}
-  document.getElementById('custom-goal-modal').classList.remove('hidden');
+  const _goalEl=document.getElementById('custom-goal-modal');
+  const _goalPanel=_goalEl.querySelector('.drawer');
+  const _goalPersistent=window.innerWidth>=900;
+  _goalEl.classList.toggle('modal-overlay',!_goalPersistent);
+  _goalPanel.setAttribute('aria-modal',_goalPersistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',_goalPersistent);
+  document.body.style.setProperty('--pp-width','380px');
+  _goalEl.classList.remove('hidden');
   setTimeout(()=>{if(input)input.focus();},80);
 }
 
@@ -5281,7 +5343,7 @@ function confirmCustomGoal(){
   state.nwGoal=Math.round(parsed);
   state.hideNwGoal=false;
   scheduleSave();
-  closeModals();
+  closeCustomGoalModal();
   renderNwGoalWidget();
   renderNwChart();
   renderInsights();
@@ -8362,6 +8424,38 @@ document.addEventListener('keydown',function(e){
     if(budgetEl&&!budgetEl.classList.contains('hidden')){closeBudgetModal();return;}
     const histSnapEl=document.getElementById('historical-snapshot-modal');
     if(histSnapEl&&!histSnapEl.classList.contains('hidden')){closeHistoricalSnapshotModal();return;}
+    const rulesEl=document.getElementById('rules-modal');
+    if(rulesEl&&!rulesEl.classList.contains('hidden')){closeRulesModal();return;}
+    const incomeEl=document.getElementById('income-modal');
+    if(incomeEl&&!incomeEl.classList.contains('hidden')){closeIncomeModal();return;}
+    const declaredIncomeEl=document.getElementById('declared-income-modal');
+    if(declaredIncomeEl&&!declaredIncomeEl.classList.contains('hidden')){closeDeclaredIncomeModal();return;}
+    const saveRuleEl=document.getElementById('save-rule-modal');
+    if(saveRuleEl&&!saveRuleEl.classList.contains('hidden')){closeSaveRuleModal();return;}
+    const venmoCashoutEl=document.getElementById('venmo-cashout-modal');
+    if(venmoCashoutEl&&!venmoCashoutEl.classList.contains('hidden')){closeVenmoCashoutModal();return;}
+    const otherVendorsEl=document.getElementById('other-vendors-modal');
+    if(otherVendorsEl&&!otherVendorsEl.classList.contains('hidden')){closeOtherVendorsModal();return;}
+    const vendorAliasEl=document.getElementById('vendor-alias-modal');
+    if(vendorAliasEl&&!vendorAliasEl.classList.contains('hidden')){closeVendorAliasModal();return;}
+    const subscriptionsEl=document.getElementById('subscriptions-modal');
+    if(subscriptionsEl&&!subscriptionsEl.classList.contains('hidden')){closeSubscriptionsModal();return;}
+    const duplicateChargesEl=document.getElementById('duplicate-charges-modal');
+    if(duplicateChargesEl&&!duplicateChargesEl.classList.contains('hidden')){closeDuplicateChargesModal();return;}
+    const vehicleEl=document.getElementById('vehicle-modal');
+    if(vehicleEl&&!vehicleEl.classList.contains('hidden')){closeVehicleModal();return;}
+    const acctCsvEl=document.getElementById('acct-csv-modal');
+    if(acctCsvEl&&!acctCsvEl.classList.contains('hidden')){closeAcctCsvModal();return;}
+    const pillCustomizerEl=document.getElementById('pill-customizer-modal');
+    if(pillCustomizerEl&&!pillCustomizerEl.classList.contains('hidden')){closePillCustomizerModal();return;}
+    const customGoalEl=document.getElementById('custom-goal-modal');
+    if(customGoalEl&&!customGoalEl.classList.contains('hidden')){closeCustomGoalModal();return;}
+    const simulatorOverrideEl=document.getElementById('simulator-override-modal');
+    if(simulatorOverrideEl&&!simulatorOverrideEl.classList.contains('hidden')){closeSimulatorOverrideModal();return;}
+    const syncPassphraseEl=document.getElementById('sync-passphrase-modal');
+    if(syncPassphraseEl&&!syncPassphraseEl.classList.contains('hidden')){const _sppReset=document.getElementById('sync-pp-reset-panel');if(_sppReset&&!_sppReset.classList.contains('hidden')){hideForgotPassphrase();return;}cancelSyncPassphrase();return;}
+    const currencyEl=document.getElementById('currency-modal');
+    if(currencyEl&&!currencyEl.classList.contains('hidden')){closeCurrencyModal();return;}
     // Clear active filters
     let cleared=false;
     if(state.activeDate){state.activeDate=null;document.querySelectorAll('.cal-day-active').forEach(el=>{el.classList.remove('cal-day-active');el.style.outline='';});cleared=true;}
@@ -9565,6 +9659,7 @@ function openStaleBudgetModal(cat,suggestedAmount){
 })();
 // ── Vendor & historical snapshot management ──────────────────────────────
 function openOtherVendorsModal(){
+  _closeOtherPersistentPanels('other-vendors-modal');
   const vendors=window._otherVendors||[];
   const list=document.getElementById('other-vendors-list');
   if(!list)return;
@@ -9583,7 +9678,14 @@ function openOtherVendorsModal(){
       </div>
     </div>`;
   }).join('');
-  document.getElementById('other-vendors-modal').classList.remove('hidden');
+  const el=document.getElementById('other-vendors-modal');
+  const panel=el.querySelector('.drawer');
+  const persistent=window.innerWidth>=900;
+  el.classList.toggle('modal-overlay',!persistent);
+  panel.setAttribute('aria-modal',persistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',persistent);
+  document.body.style.setProperty('--pp-width','480px');
+  el.classList.remove('hidden');
 }
 
 function setVendorSearch(vendor){
@@ -9911,6 +10013,7 @@ function applyRulesToExisting(){
 }
 
 function openVendorAliasModal(){
+  _closeOtherPersistentPanels('vendor-alias-modal');
   // Populate datalist with known vendor names
   const vendors=new Set();
   const CHECK_RE=/^CHECK (PAID|WRITTEN|#)/i;
@@ -9920,7 +10023,14 @@ function openVendorAliasModal(){
   document.getElementById('alias-from').value='';
   document.getElementById('alias-to').value='';
   renderVendorAliasList();
-  document.getElementById('vendor-alias-modal').classList.remove('hidden');
+  const el=document.getElementById('vendor-alias-modal');
+  const panel=el.querySelector('.drawer');
+  const persistent=window.innerWidth>=900;
+  el.classList.toggle('modal-overlay',!persistent);
+  panel.setAttribute('aria-modal',persistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',persistent);
+  document.body.style.setProperty('--pp-width','520px');
+  el.classList.remove('hidden');
   setTimeout(()=>document.getElementById('alias-from').focus(),80);
 }
 
@@ -10532,6 +10642,7 @@ function setSimulatorSort(s){
 // first category with no override yet, same fallback shape as
 // openBudgetModal()'s "first unbudgeted category with spend" default.
 function openSimulatorOverrideModal(cat){
+  _closeOtherPersistentPanels('simulator-override-modal');
   if(cat!==undefined)cat=String(cat);
   const latest=getLatestDataMonth();
   const _today=new Date();
@@ -10544,7 +10655,14 @@ function openSimulatorOverrideModal(cat){
   sel.innerHTML=allCats.map(c=>`<option value="${esc(c)}"${c===cat?' selected':''}>${esc(c)}</option>`).join('');
   sel.onchange=()=>_refreshSimulatorModalContext(sel.value,histMonths,existing);
   _refreshSimulatorModalContext(cat,histMonths,existing);
-  document.getElementById('simulator-override-modal').classList.remove('hidden');
+  const _simEl=document.getElementById('simulator-override-modal');
+  const _simPanel=_simEl.querySelector('.drawer');
+  const _simPersistent=window.innerWidth>=900;
+  _simEl.classList.toggle('modal-overlay',!_simPersistent);
+  _simPanel.setAttribute('aria-modal',_simPersistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',_simPersistent);
+  document.body.style.setProperty('--pp-width','420px');
+  _simEl.classList.remove('hidden');
   // Populate duration from existing override or preset default, then consume the preset hint
   const existingOv=state.simulator.overrides.find(o=>o.cat===cat);
   const durSel=document.getElementById('simulator-override-duration');
@@ -11305,6 +11423,7 @@ function renderBudgetTab(){
 }
 
 function openPillCustomizer(){
+  _closeOtherPersistentPanels('pill-customizer-modal');
   const list=document.getElementById('pill-toggle-list');
   list.innerHTML=PILL_DEFS.map(({key,icon,label,note})=>{
     const hidden=state.hiddenPills.has(key);
@@ -11332,7 +11451,14 @@ function openPillCustomizer(){
       </label>
     </div>`;
   }).join('');
-  document.getElementById('pill-customizer-modal').classList.remove('hidden');
+  const _pillEl=document.getElementById('pill-customizer-modal');
+  const _pillPanel=_pillEl.querySelector('.drawer');
+  const _pillPersistent=window.innerWidth>=900;
+  _pillEl.classList.toggle('modal-overlay',!_pillPersistent);
+  _pillPanel.setAttribute('aria-modal',_pillPersistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',_pillPersistent);
+  document.body.style.setProperty('--pp-width','380px');
+  _pillEl.classList.remove('hidden');
 }
 
 function showAllPills(){
@@ -11361,10 +11487,18 @@ function togglePill(key,visible){
 let _latestSpendForPreview=0;
 
 function openDeclaredIncomeModal(){
+  _closeOtherPersistentPanels('declared-income-modal');
   const input=document.getElementById('declared-income-input');
   if(input&&state.declaredIncome>0)input.value=state.declaredIncome;
   else if(input)input.value='';
-  document.getElementById('declared-income-modal').classList.remove('hidden');
+  const el=document.getElementById('declared-income-modal');
+  const panel=el.querySelector('.drawer');
+  const persistent=window.innerWidth>=900;
+  el.classList.toggle('modal-overlay',!persistent);
+  panel.setAttribute('aria-modal',persistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',persistent);
+  document.body.style.setProperty('--pp-width','380px');
+  el.classList.remove('hidden');
   setTimeout(()=>input&&input.focus(),80);
 }
 function saveDeclaredIncome(){
@@ -11376,7 +11510,7 @@ function saveDeclaredIncome(){
   if(Number.isFinite(val)&&val>0){
     state.declaredIncome=Math.round(val);
     scheduleSave();
-    closeModals();
+    closeDeclaredIncomeModal();
     renderSankey();
     renderInsights();
     if(_isLiveDemoSession())showToast('💰 Income saved (resets once you add real data)','#34D399');
@@ -11392,13 +11526,13 @@ function saveDeclaredIncome(){
 function clearDeclaredIncome(){
   state.declaredIncome=0;
   scheduleSave();
-  closeModals();
+  closeDeclaredIncomeModal();
   renderSankey();
   renderInsights();
 }
 
 function openCurrencyModal(){
-  document.getElementById('currency-modal').classList.remove('hidden');
+  _closeOtherPersistentPanels('currency-modal');
   const cur=state.currency||'$';
   document.querySelectorAll('.currency-preset').forEach(b=>{
     const on=b.dataset.sym===cur;
@@ -11409,6 +11543,14 @@ function openCurrencyModal(){
   const ci=document.getElementById('currency-custom-input');
   const presets=['$','C$','A$','NZ$','S$','£','€'];
   if(ci)ci.value=presets.includes(cur)?'':cur;
+  const _curEl=document.getElementById('currency-modal');
+  const _curPanel=_curEl.querySelector('.drawer');
+  const _curPersistent=window.innerWidth>=900;
+  _curEl.classList.toggle('modal-overlay',!_curPersistent);
+  _curPanel.setAttribute('aria-modal',_curPersistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',_curPersistent);
+  document.body.style.setProperty('--pp-width','380px');
+  _curEl.classList.remove('hidden');
 }
 function applyCurrency(sym,btn){
   state.currency=sym;
@@ -11438,6 +11580,7 @@ function applyCustomCurrency(val){
   renderAll();
 }
 function openIncomeModal(){
+  _closeOtherPersistentPanels('income-modal');
   const m=state.income.method;
   _lastSelectedIncomeMethod=m||null;
   _incomeAmountDirty=false;
@@ -11473,7 +11616,14 @@ function openIncomeModal(){
   // Wire input to live preview
   const input=document.getElementById('income-amount');
   if(input) input.oninput=()=>{_incomeAmountDirty=true;updateIncomePreview(parseFloat(input.value)||0);};
-  document.getElementById('income-modal').classList.remove('hidden');
+  const _incEl=document.getElementById('income-modal');
+  const _incPanel=_incEl.querySelector('.drawer');
+  const _incPersistent=window.innerWidth>=900;
+  _incEl.classList.toggle('modal-overlay',!_incPersistent);
+  _incPanel.setAttribute('aria-modal',_incPersistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',_incPersistent);
+  document.body.style.setProperty('--pp-width','480px');
+  _incEl.classList.remove('hidden');
 }
 
 function updateIncomePreview(incomeVal){
@@ -11650,7 +11800,7 @@ function closeIncomeModal(){
     const val=parseFloat(document.getElementById('income-amount').value);
     if(val>0&&(state.income.method!=='manual'||Math.round(val)!==state.income.monthlyAmount))saveManualIncome();
   }
-  closeModals();
+  hideModalById('income-modal');
 }
 
 function showAutoPreview(){
@@ -12065,6 +12215,7 @@ function detectDuplicateCharges(){
 }
 
 function openDuplicateChargesModal(){
+  _closeOtherPersistentPanels('duplicate-charges-modal');
   const{clusters,dupTotal}=detectDuplicateCharges();
   const list=document.getElementById('duplicate-charges-list');
   if(!list)return;
@@ -12095,10 +12246,18 @@ function openDuplicateChargesModal(){
       </div>`;
     }).join('');
   }
-  document.getElementById('duplicate-charges-modal').classList.remove('hidden');
+  const _dupEl=document.getElementById('duplicate-charges-modal');
+  const _dupPanel=_dupEl.querySelector('.drawer');
+  const _dupPersistent=window.innerWidth>=900;
+  _dupEl.classList.toggle('modal-overlay',!_dupPersistent);
+  _dupPanel.setAttribute('aria-modal',_dupPersistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',_dupPersistent);
+  document.body.style.setProperty('--pp-width','480px');
+  _dupEl.classList.remove('hidden');
 }
 
 function openSubscriptionsModal(){
+  _closeOtherPersistentPanels('subscriptions-modal');
   const allMonths=Object.keys(MONTHLY).sort();
   // Last *completed* month, not just the latest month with any data --
   // renderInsights() already computes latestFullM this way (excluding
@@ -12151,7 +12310,14 @@ function openSubscriptionsModal(){
       </div>`;
     }).join('');
   }
-  document.getElementById('subscriptions-modal').classList.remove('hidden');
+  const _subEl=document.getElementById('subscriptions-modal');
+  const _subPanel=_subEl.querySelector('.drawer');
+  const _subPersistent=window.innerWidth>=900;
+  _subEl.classList.toggle('modal-overlay',!_subPersistent);
+  _subPanel.setAttribute('aria-modal',_subPersistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',_subPersistent);
+  document.body.style.setProperty('--pp-width','480px');
+  _subEl.classList.remove('hidden');
 }
 
 function showPillTip(_,el){
@@ -12776,9 +12942,17 @@ function computePeriodSpendVsIncome(){
 
 // ── Auto-categorization rules ─────────────────────────────────────────────
 function openRulesModal(){
+  _closeOtherPersistentPanels('rules-modal');
   renderRulesList();
   document.getElementById('add-rule-form').classList.add('hidden');
-  document.getElementById('rules-modal').classList.remove('hidden');
+  const el=document.getElementById('rules-modal');
+  const panel=el.querySelector('.drawer');
+  const persistent=window.innerWidth>=900;
+  el.classList.toggle('modal-overlay',!persistent);
+  panel.setAttribute('aria-modal',persistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',persistent);
+  document.body.style.setProperty('--pp-width','550px');
+  el.classList.remove('hidden');
 }
 
 function renderRulesList(){
@@ -12892,12 +13066,20 @@ function validateSrpKeyword(val){
   _checkSrpKeywordConflict((val||'').trim());
 }
 function openSaveRulePrompt(keyword,cat,fullDesc){
+  _closeOtherPersistentPanels('save-rule-modal');
   _pendingRule={keyword,cat};
   document.getElementById('srp-keyword').textContent=keyword;
   document.getElementById('srp-cat').textContent=cat;
   document.getElementById('srp-keyword-input').value=keyword;
   _checkSrpKeywordConflict(keyword);
-  document.getElementById('save-rule-modal').classList.remove('hidden');
+  const _srEl=document.getElementById('save-rule-modal');
+  const _srPanel=_srEl.querySelector('.drawer');
+  const _srPersistent=window.innerWidth>=900;
+  _srEl.classList.toggle('modal-overlay',!_srPersistent);
+  _srPanel.setAttribute('aria-modal',_srPersistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',_srPersistent);
+  document.body.style.setProperty('--pp-width','440px');
+  _srEl.classList.remove('hidden');
 }
 
 function confirmSaveRule(){
@@ -12906,7 +13088,7 @@ function confirmSaveRule(){
   addCatRule(kw,_pendingRule.cat);
   showToast(`⚡ Rule saved: "${esc(kw)}" → ${esc(_pendingRule.cat)}`+(_isLiveDemoSession()?' (resets once you add real data)':''),'#34D399');
   _pendingRule=null;
-  closeModals();
+  closeSaveRuleModal();
 }
 // #toast carries role="status"/aria-live="polite" -- it's the app's single
 // universal feedback channel (save confirmations, import results,
@@ -15384,10 +15566,18 @@ function checkForVenmoCashouts(txs){
   if(totalEl)totalEl.textContent=fmtD(total,true);
   // Pre-select all radio highlight
   selectVenmoOpt({value:'shopping'});
-  document.getElementById('venmo-cashout-modal').classList.remove('hidden');
+  _closeOtherPersistentPanels('venmo-cashout-modal');
+  const _venmoEl=document.getElementById('venmo-cashout-modal');
+  const _venmoPanel=_venmoEl.querySelector('.drawer');
+  const _venmoPersistent=window.innerWidth>=900;
+  _venmoEl.classList.toggle('modal-overlay',!_venmoPersistent);
+  _venmoPanel.setAttribute('aria-modal',_venmoPersistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',_venmoPersistent);
+  document.body.style.setProperty('--pp-width','440px');
+  _venmoEl.classList.remove('hidden');
 }
 function applyVenmoOpt(skip){
-  if(skip==='skip'){closeModals();_pendingVenmoCashoutIds=null;return;}
+  if(skip==='skip'){closeVenmoCashoutModal();_pendingVenmoCashoutIds=null;return;}
   const sel=document.querySelector('input[name="venmo-opt"]:checked');
   if(!sel){closeModals();_pendingVenmoCashoutIds=null;return;}
   const opt=sel.value;
@@ -15406,7 +15596,7 @@ function applyVenmoOpt(skip){
     });
   });
   _pendingVenmoCashoutIds=null;
-  closeModals();
+  closeVenmoCashoutModal();
   // renderAll(), not just renderSpending() -- see applyRulesToExisting()'s
   // matching comment; this can recategorize/re-amount every pending
   // cashout at once, shifting Budget tab/Dashboard/Year in Review totals
@@ -15720,7 +15910,15 @@ async function promptSyncPassphrase(uid, { isFirstTime } = {}) {
     if (desc) desc.textContent = 'Enter the passphrase you set when you first enabled sync — separate from your Google or email sign-in.';
     if (confirmGroup) confirmGroup.classList.add('hidden');
   }
-  document.getElementById('sync-passphrase-modal').classList.remove('hidden');
+  _closeOtherPersistentPanels('sync-passphrase-modal');
+  const _ppEl=document.getElementById('sync-passphrase-modal');
+  const _ppPanel=_ppEl.querySelector('.drawer');
+  const _ppPersistent=window.innerWidth>=900;
+  _ppEl.classList.toggle('modal-overlay',!_ppPersistent);
+  _ppPanel.setAttribute('aria-modal',_ppPersistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',_ppPersistent);
+  document.body.style.setProperty('--pp-width','460px');
+  _ppEl.classList.remove('hidden');
   if (input) setTimeout(()=>input.focus(), 50);
 }
 async function submitSyncPassphrase() {
@@ -15754,7 +15952,7 @@ async function submitSyncPassphrase() {
     if (_pendingSyncIsFirstTime) await _getOrCreateSalt(uid);
     await loadUserData(uid);
     window._awaitingCloudMerge = false;
-    closeModals();
+    hideModalById('sync-passphrase-modal');
   } catch(e) {
     if (e && (e.message === 'wrong-passphrase' || e.message === 'missing-passphrase')) clearSyncPassphrase();
     showError(e && e.message === 'wrong-passphrase' ? 'Incorrect passphrase — try again.' : 'Something went wrong — please try again.');
@@ -15789,7 +15987,7 @@ function toggleSyncPassphraseVisibility(_, btn) {
   }
 }
 function cancelSyncPassphrase() {
-  closeModals();
+  hideModalById('sync-passphrase-modal');
   _pendingSyncUid = null;
   // Only sign out for a genuine unresolved sign-in attempt --
   // window._awaitingCloudMerge stays true (set by promptSyncPassphrase())
@@ -15826,7 +16024,15 @@ function openSyncPassphraseReset() {
   closeModals();
   _pendingSyncUid = window._fbUser.uid;
   _pendingSyncIsFirstTime = false;
-  document.getElementById('sync-passphrase-modal').classList.remove('hidden');
+  _closeOtherPersistentPanels('sync-passphrase-modal');
+  const _ppREl=document.getElementById('sync-passphrase-modal');
+  const _ppRPanel=_ppREl.querySelector('.drawer');
+  const _ppRPersistent=window.innerWidth>=900;
+  _ppREl.classList.toggle('modal-overlay',!_ppRPersistent);
+  _ppRPanel.setAttribute('aria-modal',_ppRPersistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',_ppRPersistent);
+  document.body.style.setProperty('--pp-width','460px');
+  _ppREl.classList.remove('hidden');
   showForgotPassphrase();
 }
 function showForgotPassphrase() {
@@ -16483,6 +16689,7 @@ function openAddModal(type){
 }
 function closeAddModal(){hideModalById('add-modal');}
 function openAcctCsvModal(){
+  _closeOtherPersistentPanels('acct-csv-modal');
   // Reset stale state from a prior open/cancel, matching openAddModal()'s
   // own reset-on-open convention immediately above -- this modal had no
   // trigger anywhere until the 77th adversarial pass added one, so there
@@ -16491,7 +16698,14 @@ function openAcctCsvModal(){
   const csvFile=document.getElementById('csv-file');
   if(csvText)csvText.value='';
   if(csvFile)csvFile.value='';
-  document.getElementById('acct-csv-modal').classList.remove('hidden');
+  const _csvEl=document.getElementById('acct-csv-modal');
+  const _csvPanel=_csvEl.querySelector('.drawer');
+  const _csvPersistent=window.innerWidth>=900;
+  _csvEl.classList.toggle('modal-overlay',!_csvPersistent);
+  _csvPanel.setAttribute('aria-modal',_csvPersistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',_csvPersistent);
+  document.body.style.setProperty('--pp-width','480px');
+  _csvEl.classList.remove('hidden');
 }
 function openAddTxModal(){
   _closeOtherPersistentPanels('add-tx-modal');
@@ -16608,6 +16822,7 @@ function setAssetType(type){
   ["vehicle","other"].forEach(t=>{const btn=document.getElementById("at-"+t);if(btn)btn.classList.toggle("active",t===type);});
 }
 function openVehicleModal(){
+  _closeOtherPersistentPanels('vehicle-modal');
   _vehicleModalGen++;
   editVehicleId=null;currentAssetType='vehicle';setAssetType('vehicle');
   document.getElementById('v-modal-title').textContent='Add physical asset';
@@ -16642,7 +16857,14 @@ function openVehicleModal(){
   const s=document.getElementById('v-vin-status');if(s)s.textContent='';
   const db=document.getElementById('delete-vehicle-btn');if(db)db.style.display='none';
   const dc=document.getElementById('delete-vehicle-confirm');if(dc)dc.style.display='none';
-  document.getElementById('vehicle-modal').classList.remove('hidden');
+  const _vEl=document.getElementById('vehicle-modal');
+  const _vPanel=_vEl.querySelector('.drawer');
+  const _vPersistent=window.innerWidth>=900;
+  _vEl.classList.toggle('modal-overlay',!_vPersistent);
+  _vPanel.setAttribute('aria-modal',_vPersistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',_vPersistent);
+  document.body.style.setProperty('--pp-width','460px');
+  _vEl.classList.remove('hidden');
 }
 function editAccount(id){const a=state.accounts.find(x=>x.id===id);if(!a)return;_closeOtherPersistentPanels('add-modal');editAcctId=id;_liquidTouchedByUser=false;document.getElementById('add-modal-title').textContent='Edit account';document.getElementById('f-name').value=a.name;document.getElementById('f-type').value=a.type;updateSourceOptionsForType();document.getElementById('f-source').value=a.source;document.getElementById('f-balance').value=a.balance;document.getElementById('f-exclude').checked=!!a.excludeFromNW;const fl=document.getElementById('f-liquid');if(fl)fl.checked=isLiquidAccount(a);const db=document.getElementById('delete-acct-btn');if(db)db.style.display='';const dc=document.getElementById('delete-acct-confirm');if(dc)dc.style.display='none';const el=document.getElementById('add-modal');const panel=el.querySelector('.drawer');const persistent=window.innerWidth>=900;el.classList.toggle('modal-overlay',!persistent);panel.setAttribute('aria-modal',persistent?'false':'true');document.body.classList.toggle('persistent-panel-open',persistent);document.body.style.setProperty('--pp-width','440px');el.classList.remove('hidden');}
 function saveAccount(){
@@ -16705,6 +16927,7 @@ function saveAccount(){
   // edit if it no longer resolves.
   if(editAcctId){const a=state.accounts.find(x=>x.id===editAcctId);if(a){a.name=name;a.source=source;a.type=type;a.balance=balance;a.excludeFromNW=excludeFromNW;a.liquid=liquid;}else state.accounts.push({id:state.nextId++,name,source,type,balance,excludeFromNW:excludeFromNW||undefined,liquid});}else state.accounts.push({id:state.nextId++,name,source,type,balance,excludeFromNW:excludeFromNW||undefined,liquid});closeModals();renderAll();}
 function editVehicle(id){
+  _closeOtherPersistentPanels('vehicle-modal');
   const v=state.vehicles.find(x=>x.id===id);if(!v)return;editVehicleId=id;
   _vehicleModalGen++;
   const type=v.assetType||'vehicle';currentAssetType=type;setAssetType(type);
@@ -16719,7 +16942,14 @@ function editVehicle(id){
   // from a previously-open vehicle must not leave this one's button stuck
   // disabled/"…". Found in the 46th adversarial pass.
   const vvb=document.getElementById('v-vin-btn');if(vvb){vvb.disabled=false;vvb.textContent='Look up';}
-  document.getElementById('vehicle-modal').classList.remove('hidden');
+  const _vEditEl=document.getElementById('vehicle-modal');
+  const _vEditPanel=_vEditEl.querySelector('.drawer');
+  const _vEditPersistent=window.innerWidth>=900;
+  _vEditEl.classList.toggle('modal-overlay',!_vEditPersistent);
+  _vEditPanel.setAttribute('aria-modal',_vEditPersistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',_vEditPersistent);
+  document.body.style.setProperty('--pp-width','460px');
+  _vEditEl.classList.remove('hidden');
 }
 
 if(!state.activeVendors)state.activeVendors=new Set();

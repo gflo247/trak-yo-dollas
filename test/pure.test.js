@@ -1156,6 +1156,7 @@ function cancelSyncPassphraseCtx(awaitingCloudMerge) {
     ctx: {
       window: { _awaitingCloudMerge: awaitingCloudMerge },
       closeModals: () => {},
+      hideModalById: () => {},
       doSignOut: () => signOutCalls.push(true),
       _pendingSyncUid: "some-uid",
     },
@@ -4669,7 +4670,7 @@ test("applyRulesToExisting()/saveEditTx()/deleteTx()/toggleTxBiz()/applyVenmoOpt
   const applyVenmoOptSrc = source.match(/function applyVenmoOpt\(skip\)\{[\s\S]{0,2000}?\n\}/)?.[0] || "";
   assert.match(
     applyVenmoOptSrc,
-    /closeModals\(\);\s*\/\/[\s\S]{0,400}?renderAll\(\);\s*showToast\('✓ Venmo cashouts updated'\);/,
+    /close(?:Modals|VenmoCashoutModal)\(\);\s*\/\/[\s\S]{0,400}?renderAll\(\);\s*showToast\('✓ Venmo cashouts updated'\);/,
     "applyVenmoOpt() should call renderAll() (not renderSpending()) before its success toast"
   );
 });
@@ -7335,7 +7336,7 @@ test("Legibility sweep Tier 1: Spending tab's Insights sub-lines are at least 12
 // all 5 to 12px, matching the floor the rest of this sweep settled on. ──
 test("Legibility sweep Tier 2: every remaining 11px paragraph line in the Income Setup modal is at least 12px", () => {
   const source = readSource();
-  const modalMatch = source.match(/<div class="modal-overlay hidden" id="income-modal">[\s\S]*?\n<\/div>\n\n<!-- Flow chart declared income modal -->/);
+  const modalMatch = source.match(/<div class="modal-overlay drawer-overlay hidden" id="income-modal">[\s\S]*?\n<\/div>\n\n<!-- Flow chart declared income modal -->/);
   assert.ok(modalMatch, "the Income Setup modal block should exist");
   const modal = modalMatch[0];
   assert.match(modal, /<p style="font-size:12px;color:var\(--text-muted\);background:var\(--bg-card\);border-radius:8px;padding:\.5rem \.75rem;margin-bottom:1rem;line-height:1\.5">Once saved, your savings rate will appear/, "the intro blurb should be at least 12px");
@@ -7984,7 +7985,7 @@ test("Possible duplicates pill is registered in PILL_DEFS and its modal is wired
   );
   assert.match(
     source,
-    /<div class="modal-overlay hidden" id="duplicate-charges-modal">/,
+    /<div class="modal-overlay drawer-overlay hidden" id="duplicate-charges-modal">/,
     "the duplicate charges modal markup should exist"
   );
   assert.match(
@@ -8839,7 +8840,7 @@ test("Every one of the 10 persistent panels' Done/×/Got it/Cancel buttons uses 
   assert.ok(addTxBlock, "add-tx-modal's markup block should exist");
   assert.match(addTxBlock[0], /data-action="closeAddTxModal"/, "add-tx-modal's Cancel button should use the dedicated close function");
   assert.doesNotMatch(addTxBlock[0], /data-action="closeModals"/, "add-tx-modal should have no remaining buttons wired to the generic sweep");
-  const editTxBlock = source.match(/<div class="modal-overlay drawer-overlay hidden" id="edit-tx-modal">[\s\S]*?<\/div>\s*<\/div>\s*\n<div class="modal-overlay hidden" id="acct-csv-modal">/);
+  const editTxBlock = source.match(/<div class="modal-overlay drawer-overlay hidden" id="edit-tx-modal">[\s\S]*?<\/div>\s*<\/div>\s*\n<div class="modal-overlay drawer-overlay hidden" id="acct-csv-modal">/);
   assert.ok(editTxBlock, "edit-tx-modal's markup block should exist");
   assert.match(editTxBlock[0], /data-action="closeEditTxModal"/, "edit-tx-modal's Cancel button should use the dedicated close function");
   assert.doesNotMatch(editTxBlock[0], /data-action="closeModals"/, "edit-tx-modal should have no remaining buttons wired to the generic sweep");
@@ -8868,8 +8869,8 @@ test("_closeOtherPersistentPanels() is called at the start of all 10 open functi
   const source = readSource();
   assert.match(
     source,
-    /function _closeOtherPersistentPanels\(exceptId\)\{\s*\['shortcuts-modal','community-rules-modal','year-review-modal','cat-modal','tx-import-modal','add-modal','add-tx-modal','edit-tx-modal','budget-modal','historical-snapshot-modal'\]\.forEach/,
-    "the helper should exist and enumerate all 10 persistent-eligible panels"
+    /function _closeOtherPersistentPanels\(exceptId\)\{\s*\['shortcuts-modal','community-rules-modal','year-review-modal','cat-modal','tx-import-modal','add-modal','add-tx-modal','edit-tx-modal','budget-modal','historical-snapshot-modal','rules-modal','income-modal','declared-income-modal','save-rule-modal','venmo-cashout-modal','other-vendors-modal','vendor-alias-modal','subscriptions-modal','duplicate-charges-modal','vehicle-modal','acct-csv-modal','pill-customizer-modal','custom-goal-modal','simulator-override-modal','sync-passphrase-modal','currency-modal'\]\.forEach/,
+    "the helper should exist and enumerate all 26 persistent-eligible panels"
   );
   for (const [openFn, exceptId] of [
     ["openShortcutsModal", "shortcuts-modal"],
@@ -8980,7 +8981,7 @@ test("The .drawer-overlay:not(.modal-overlay) CSS lets clicks pass through to th
 
 test("Escape closes whichever persistent panel is open (shortcuts, community-rules, year-review, cat) -- all four checks sit after any real modal closes, before falling through to Clear filters, since none of them match the generic .modal-overlay:not(.hidden) close check anymore once persistent", () => {
   const source = readSource();
-  const blockMatch = source.match(/closeModals\(\);return;\s*\}\s*\/\/ Persistent panels[\s\S]{0,5000}?\/\/ Clear active filters/);
+  const blockMatch = source.match(/closeModals\(\);return;\s*\}\s*\/\/ Persistent panels[\s\S]{0,15000}?\/\/ Clear active filters/);
   assert.ok(blockMatch, "the persistent-panels Escape block should sit between the real-modal-closing branch and the 'Clear active filters' fallback");
   const order = ["closeShortcutsModal", "closeCommunityRulesModal", "closeYearInReview", "closeCatModal"];
   let lastIndex = -1;
