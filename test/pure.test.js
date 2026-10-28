@@ -8804,7 +8804,7 @@ for (const [openFn, closeFn, modalId] of [
 
 test("Every one of the 4 persistent panels' Done/×/Got it buttons uses its own dedicated close function, not the generic closeModals() -- a real regression risk once .modal-overlay can be dropped at runtime", () => {
   const source = readSource();
-  const catBlock = source.match(/<!-- Category manager modal -->[\s\S]*?<\/div>\s*<\/div>\s*<\/div>\s*\n\n<!-- Transaction CSV import modal -->/);
+  const catBlock = source.match(/<!-- Category manager modal -->[\s\S]*?<\/div>\s*<\/div>\s*<\/div>\s*\n\n<!-- Transaction CSV import drawer -->/);
   assert.ok(catBlock, "cat-modal's markup block should exist");
   assert.match(catBlock[0], /data-action="closeCatModal"/, "cat-modal's Done button should use the dedicated close function");
   assert.doesNotMatch(catBlock[0], /data-action="closeModals"/, "cat-modal should have no remaining buttons wired to the generic sweep");
