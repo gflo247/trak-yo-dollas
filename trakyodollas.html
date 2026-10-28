@@ -17993,7 +17993,7 @@ document.addEventListener('DOMContentLoaded',function(){
     }catch(e){}
 
     const params=new URLSearchParams(window.location.search);
-    if(params.get('import')==='1')openTxImportModal();
+    if(params.get('import')==='1'){showPageSpending();openTxImportModal();}
     if(params.has('import')||params.has('demo')||params.has('demoPreview'))window.history.replaceState({},'',window.location.pathname);
   }));
 
