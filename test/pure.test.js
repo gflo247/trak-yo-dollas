@@ -2023,7 +2023,7 @@ test("openTxImportModal: resets #import-source-label and #import-replace, not le
   const source = readSource();
   assert.match(
     source,
-    /function openTxImportModal\(\)\{[\s\S]{0,2000}?const isl=document\.getElementById\('import-source-label'\);if\(isl\)isl\.value='Checking';\s*const irc=document\.getElementById\('import-replace'\);if\(irc\)irc\.checked=false;/,
+    /function openTxImportModal\(\)\{[\s\S]{0,2000}?const isl=document\.getElementById\('import-source-label'\);if\(isl\)\{isl\.value='Checking';[\s\S]{0,100}?\}\s*const irc=document\.getElementById\('import-replace'\);if\(irc\)irc\.checked=false;/,
     "openTxImportModal() should reset #import-source-label to its default value and #import-replace to unchecked"
   );
 });
