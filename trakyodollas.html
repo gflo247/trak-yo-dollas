@@ -13474,7 +13474,7 @@ function openTxImportModal(){
   // 89th adversarial pass -- the fifth instance this review cycle of a
   // modal-open function resetting some fields but not others (45th, 77th,
   // 87th, 88th passes each found a different one).
-  const isl=document.getElementById('import-source-label');if(isl)isl.value='Checking';
+  const isl=document.getElementById('import-source-label');if(isl){isl.value='Checking';setTimeout(()=>isl.focus(),0);}
   const irc=document.getElementById('import-replace');if(irc)irc.checked=false;
   // Show staleness hint for the default "Checking" source, and refresh it on
   // every keystroke. removeEventListener first so repeated modal opens don't
