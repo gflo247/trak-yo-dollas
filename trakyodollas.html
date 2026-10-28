@@ -1403,10 +1403,13 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   </div>
 </div>
 
-<!-- Transaction CSV import modal -->
-<div class="modal-overlay hidden" id="tx-import-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tx-import-modal-title" tabindex="-1" style="width:min(520px,96vw)">
-    <h3 id="tx-import-modal-title">Import transactions</h3>
+<!-- Transaction CSV import drawer -->
+<div class="modal-overlay drawer-overlay hidden" id="tx-import-modal">
+  <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="tx-import-modal-title" tabindex="-1" style="width:min(520px,94vw)">
+    <div class="modal-header">
+      <h3 id="tx-import-modal-title">Import transactions</h3>
+      <button data-action="closeModals" class="panel-close-btn" aria-label="Close" type="button">×</button>
+    </div>
     <p class="modal-sub" style="margin-bottom:.35rem">Drop your CSV and we'll figure out the format automatically. Nothing leaves your device.</p>
     <p style="font-size:11px;color:var(--text-muted);margin-bottom:.85rem">Also accepts Mint, YNAB, and Monarch Money exports.</p>
 
