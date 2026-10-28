@@ -149,7 +149,7 @@ rsync -a \
 # Stamp the live merchant rule count into the guide pages — hardcoding it in
 # the HTML would require a manual update every time community-rules.json grows,
 # so it's computed here at deploy time instead.
-RULE_COUNT=$(python3 -c "import json; print(len(json.load(open('community-rules.json'))))")
+RULE_COUNT=$(python3 -c "import json; data=json.load(open('community-rules.json')); print(f'{len(data):,}')")
 for f in _cf_deploy/guides/*.html; do
   sed "s/__RULE_COUNT__/$RULE_COUNT/g" "$f" > "$f.tmp" && mv "$f.tmp" "$f"
 done
