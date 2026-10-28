@@ -3909,7 +3909,7 @@ test("confirmTxImport: the demo-session-wipe branch delegates to the shared _rep
   const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,2700}?_replaceDemoDataWithReal\(\);/);
   assert.ok(fnMatch, "confirmTxImport() should call _replaceDemoDataWithReal()");
   assert.doesNotMatch(
-    source.match(/function confirmTxImport\(\)\{[\s\S]{0,7800}?\n  closeModals\(\);/)[0],
+    source.match(/function confirmTxImport\(\)\{[\s\S]{0,7800}?\n  closeTxImportModal\(\);/)[0],
     /state\.income=\{method:null,monthlyAmount:0\};/,
     "confirmTxImport() itself should no longer hand-roll the income reset -- it's now inside the shared helper"
   );
@@ -8789,6 +8789,7 @@ for (const [openFn, closeFn, modalId] of [
   ["openCommunityRulesModal", "closeCommunityRulesModal", "community-rules-modal"],
   ["openYearInReview", "closeYearInReview", "year-review-modal"],
   ["openCatModal", "closeCatModal", "cat-modal"],
+  ["openTxImportModal", "closeTxImportModal", "tx-import-modal"],
 ]) {
   test(`${openFn}() opens as a persistent, non-blocking panel on wide viewports (drops .modal-overlay, flips aria-modal), matching shortcuts-modal's mechanism`, () => {
     const source = readSource();
@@ -8802,7 +8803,7 @@ for (const [openFn, closeFn, modalId] of [
   });
 }
 
-test("Every one of the 4 persistent panels' Done/×/Got it buttons uses its own dedicated close function, not the generic closeModals() -- a real regression risk once .modal-overlay can be dropped at runtime", () => {
+test("Every one of the 5 persistent panels' Done/×/Got it/Cancel buttons uses its own dedicated close function, not the generic closeModals() -- a real regression risk once .modal-overlay can be dropped at runtime", () => {
   const source = readSource();
   const catBlock = source.match(/<!-- Category manager modal -->[\s\S]*?<\/div>\s*<\/div>\s*<\/div>\s*\n\n<!-- Transaction CSV import drawer -->/);
   assert.ok(catBlock, "cat-modal's markup block should exist");
@@ -8812,6 +8813,10 @@ test("Every one of the 4 persistent panels' Done/×/Got it buttons uses its own 
   assert.ok(yirBlock, "year-review-modal's markup block should exist");
   assert.match(yirBlock[0], /data-action="closeYearInReview"/, "year-review-modal's Done button should use the dedicated close function");
   assert.doesNotMatch(yirBlock[0], /data-action="closeModals"/, "year-review-modal should have no remaining buttons wired to the generic sweep");
+  const txImportBlock = source.match(/<div class="modal-overlay drawer-overlay hidden" id="tx-import-modal"[\s\S]*?<\/div>\s*<\/div>\s*\n\n\n<!-- College fund modal -->/);
+  assert.ok(txImportBlock, "tx-import-modal's markup block should exist");
+  assert.match(txImportBlock[0], /data-action="closeTxImportModal"/, "tx-import-modal's ✕/Cancel buttons should use the dedicated close function");
+  assert.doesNotMatch(txImportBlock[0], /data-action="closeModals"/, "tx-import-modal should have no remaining buttons wired to the generic sweep");
 });
 
 // Finding: an adversarial pass caught a real bug once all 4 panels could
@@ -8825,25 +8830,26 @@ test("Every one of the 4 persistent panels' Done/×/Got it buttons uses its own 
 // mobile) -- which is exactly why this gap only opened up as a side
 // effect of the persistence feature itself, not something the original
 // blocking-modal design ever had to guard against.
-test("_closeOtherPersistentPanels() is called at the start of all 4 open functions, so opening one persistent panel closes any other that's already open instead of silently stacking on top of it", () => {
+test("_closeOtherPersistentPanels() is called at the start of all 5 open functions, so opening one persistent panel closes any other that's already open instead of silently stacking on top of it", () => {
   const source = readSource();
   assert.match(
     source,
-    /function _closeOtherPersistentPanels\(exceptId\)\{\s*\['shortcuts-modal','community-rules-modal','year-review-modal','cat-modal'\]\.forEach/,
-    "the helper should exist and enumerate all 4 persistent-eligible panels"
+    /function _closeOtherPersistentPanels\(exceptId\)\{\s*\['shortcuts-modal','community-rules-modal','year-review-modal','cat-modal','tx-import-modal'\]\.forEach/,
+    "the helper should exist and enumerate all 5 persistent-eligible panels"
   );
   for (const [openFn, exceptId] of [
     ["openShortcutsModal", "shortcuts-modal"],
     ["openYearInReview", "year-review-modal"],
     ["openCommunityRulesModal", "community-rules-modal"],
     ["openCatModal", "cat-modal"],
+    ["openTxImportModal", "tx-import-modal"],
   ]) {
     const fnMatch = source.match(new RegExp(`function ${openFn}\\(\\)\\{[\\s\\S]*?\\n\\}`));
     assert.ok(fnMatch, `${openFn}() should exist`);
     assert.match(
       fnMatch[0],
       new RegExp(`_closeOtherPersistentPanels\\('${exceptId}'\\)`),
-      `${openFn}() should close the other 3 panels before opening, passing its own id so it doesn't close itself`
+      `${openFn}() should close the other 4 panels before opening, passing its own id so it doesn't close itself`
     );
   }
 });

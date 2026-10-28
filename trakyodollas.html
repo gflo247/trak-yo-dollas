@@ -1408,7 +1408,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <div class="modal drawer" role="dialog" aria-modal="true" aria-labelledby="tx-import-modal-title" tabindex="-1" style="width:min(520px,94vw)">
     <div class="modal-header">
       <h3 id="tx-import-modal-title">Import transactions</h3>
-      <button data-action="closeModals" class="panel-close-btn" aria-label="Close" type="button">×</button>
+      <button data-action="closeTxImportModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
     </div>
     <p class="modal-sub" style="margin-bottom:.35rem">Drop your CSV and we'll figure out the format automatically. Nothing leaves your device.</p>
     <p style="font-size:11px;color:var(--text-muted);margin-bottom:.85rem">Also accepts Mint, YNAB, and Monarch Money exports.</p>
@@ -1578,7 +1578,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
 
     <div class="modal-footer">
-      <button class="btn" data-action="closeModals" type="button">Cancel</button>
+      <button class="btn" data-action="closeTxImportModal" type="button">Cancel</button>
       <button class="btn btn-primary hidden" id="import-confirm-btn" data-action="confirmTxImport" type="button">Import</button>
     </div>
   </div>
@@ -3000,7 +3000,7 @@ function _ctaArg(cta){return cta&&cta.arg!=null?String(cta.arg):null;}
 // nothing else is open, and a no-op on mobile too (only one can ever be
 // open there regardless, same reason as above).
 function _closeOtherPersistentPanels(exceptId){
-  ['shortcuts-modal','community-rules-modal','year-review-modal','cat-modal'].forEach(id=>{
+  ['shortcuts-modal','community-rules-modal','year-review-modal','cat-modal','tx-import-modal'].forEach(id=>{
     if(id===exceptId)return;
     const el=document.getElementById(id);
     if(el&&!el.classList.contains('hidden'))el.classList.add('hidden');
@@ -8335,6 +8335,8 @@ document.addEventListener('keydown',function(e){
     // either, just noting it wasn't re-solved here.
     const catEl=document.getElementById('cat-modal');
     if(catEl&&!catEl.classList.contains('hidden')){closeCatModal();return;}
+    const txImportEl=document.getElementById('tx-import-modal');
+    if(txImportEl&&!txImportEl.classList.contains('hidden')){closeTxImportModal();return;}
     // Clear active filters
     let cleared=false;
     if(state.activeDate){state.activeDate=null;document.querySelectorAll('.cal-day-active').forEach(el=>{el.classList.remove('cal-day-active');el.style.outline='';});cleared=true;}
@@ -13449,6 +13451,7 @@ function onImportSuccessClose(){
 }
 
 function openTxImportModal(){
+  _closeOtherPersistentPanels('tx-import-modal');
   importParsed=[];
   importFmtAutoDetected=false;
   fmtPickerOpen=false;
@@ -13510,8 +13513,16 @@ function openTxImportModal(){
   const freshConf=document.getElementById('import-fresh-confirm');
   if(freshRow)freshRow.style.display=state.transactions.length>0?'flex':'none';
   if(freshConf)freshConf.style.display='none';
-  document.getElementById('tx-import-modal').classList.remove('hidden');
+  const el=document.getElementById('tx-import-modal');
+  const panel=el.querySelector('.drawer');
+  const persistent=window.innerWidth>=900;
+  el.classList.toggle('modal-overlay',!persistent);
+  panel.setAttribute('aria-modal',persistent?'false':'true');
+  document.body.classList.toggle('persistent-panel-open',persistent);
+  document.body.style.setProperty('--pp-width','520px');
+  el.classList.remove('hidden');
 }
+function closeTxImportModal(){hideModalById('tx-import-modal');}
 
 function setImportFmt(fmt){
   importFmt=fmt;
@@ -14991,7 +15002,7 @@ function confirmTxImport(){
     });
   });
 
-  closeModals();
+  closeTxImportModal();
   const importedSources=[...new Set(newTxs.map(t=>t.card))];
   const fromLabel=importedSources.length>1?`${importedSources.length} sources`:(importedSources[0]||source);
   showToast(`✓ Imported ${newTxs.length} transaction${newTxs.length===1?'':'s'} from ${esc(fromLabel)}${skippedDupCount>0?` (${skippedDupCount} already imported, skipped)`:''}`);
