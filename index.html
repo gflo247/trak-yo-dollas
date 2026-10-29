@@ -185,6 +185,9 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 
 /* Animations */
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes featurePulse{0%,100%{box-shadow:none}40%,60%{box-shadow:0 0 0 2px var(--accent-blue-light),0 0 24px rgba(37,99,235,.18)}}
+.fi-pulse{animation:featurePulse 1.8s ease;border-radius:10px}
+.scroll-anchor{scroll-margin-top:72px}
 .fu{animation:fadeUp .55s ease both}
 .fu1{animation-delay:.05s}.fu2{animation-delay:.12s}.fu3{animation-delay:.2s}.fu4{animation-delay:.28s}.fu5{animation-delay:.36s}
 
@@ -240,7 +243,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <section class="hero">
   <div class="hero-eyebrow fu fu1"><svg class="brand-mark" viewBox="28 4 44 90" aria-hidden="true" focusable="false"><path class="bm-s" d="M66 41C62 35 56 32 50 32C42 32 35.5 36 35.5 43C35.5 50 42 52 50 54C58 56 64.5 58 64.5 65C64.5 72 58 75.5 50 75.5C43 75.5 37 72.5 34 67"/><path class="bm-t" d="M50 9V76Q50 88 62 88M37 26L66 16"/></svg>trak-yo-dolla$</div>
   <h1 class="fu fu2">Track your money for free.</h1>
-  <p class="hero-sub fu fu3">Track spending, budgets, net worth, and <a href="#life-changes" style="color:var(--accent-blue-light)">life changes</a> — entirely on your device. Sign in only if you want encrypted sync across all your devices.</p>
+  <p class="hero-sub fu fu3">Track spending, budgets, net worth, and <a href="#features" data-action="pulseLifeChanges" style="color:var(--accent-blue-light)">life changes</a> — entirely on your device. Sign in only if you want encrypted sync across all your devices.</p>
   <div class="hero-ctas fu fu4">
     <a href="/trakyodollas?demo=1" class="btn-hero" data-umami-event="open-app">Try with demo data</a>
     <a href="/trakyodollas?import=1" class="btn-hero-ghost" data-umami-event="open-app">⬆ Import CSV</a>
@@ -306,7 +309,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 </section>
 
 <!-- Features -->
-<section class="section">
+<section class="section scroll-anchor" id="features">
   <h2>What's inside.</h2>
   <div class="feature-list">
     <div class="fi"><div class="fi-icon">🧹</div><div>
@@ -330,7 +333,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       <h3>Budgets that learn your patterns</h3>
       <p>Set monthly limits and see them alongside your 12-month average and year-to-date pace in one view. AT RISK warnings surface before you go over, Unusual sort flags categories spiking compared to your own history, and a budget that's run over for 3 months straight gets flagged so it doesn't sit there stale.</p>
     </div></div>
-    <div class="fi" id="life-changes" style="scroll-margin-top:72px"><div class="fi-icon">🔮</div><div>
+    <div class="fi" id="life-changes"><div class="fi-icon">🔮</div><div>
       <h3>See a big decision before you make it</h3>
       <p>The Life Changes tab takes your real spending history and previews a hypothetical — rent becoming a mortgage, a car payment, childcare starting — against your real income. Nothing changes until you decide it should.</p>
     </div></div>
@@ -516,7 +519,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       <p>Chase, Ally, Fidelity, Vanguard, Navy Federal Credit Union, BECU, PenFed, TD, Scotiabank, BMO, CIBC, and most banks and credit unions. Look for a Download or Export button in your transaction history, then drop the file in — the app auto-detects the format.</p>
       <p style="font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--lh-body);font-weight:var(--fw-normal);margin-top:.5rem">Migrating from Mint, YNAB, or Monarch Money? Drop in your export and your categories map across automatically.</p>
     </div>
-    <div class="diff-card" id="sync-optional" style="scroll-margin-top:72px">
+    <div class="diff-card scroll-anchor" id="sync-optional">
       <span class="diff-icon">🔁</span>
       <h3>Optional sync — you hold the key</h3>
       <p>Your data stays on this device by default — no account required. Want it on your phone and your laptop too? Sign in with Google or a passwordless email link, then set a sync passphrase — separate from your sign-in — to encrypt everything before it syncs. Forget that passphrase and your synced data is gone for good; nobody can recover it, not even me.</p>
@@ -634,6 +637,16 @@ fetch('/community-rules.json',{cache:'no-cache'})
   .then(r=>r.ok?r.json():null).then(d=>{
     if(Array.isArray(d))document.querySelectorAll('.community-rules-count').forEach(el=>el.textContent=d.length.toLocaleString());
   }).catch(()=>{});
+
+// 650ms lets the browser's smooth-scroll finish before the pulse fires
+window.pulseLifeChanges=function(){
+  setTimeout(function(){
+    var el=document.getElementById('life-changes');
+    if(!el)return;
+    el.classList.add('fi-pulse');
+    el.addEventListener('animationend',function(){el.classList.remove('fi-pulse');},{once:true});
+  },650);
+};
 
 // Scroll-triggered fade-in
 const observer = new IntersectionObserver(entries => {
