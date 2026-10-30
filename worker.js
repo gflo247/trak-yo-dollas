@@ -548,6 +548,12 @@ export default {
     // Guard against env.ASSETS being absent (misconfigured binding) so the
     // TypeError doesn't escape the try/catch above and produce a silent 500.
     if (!env.ASSETS) return new Response('Not found', { status: 404 });
-    return env.ASSETS.fetch(request);
+    const assetRes = await env.ASSETS.fetch(request);
+    const res = new Response(assetRes.body, assetRes);
+    res.headers.set('X-Frame-Options', 'DENY');
+    res.headers.set('X-Content-Type-Options', 'nosniff');
+    res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    return res;
   },
 };
