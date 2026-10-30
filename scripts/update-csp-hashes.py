@@ -16,6 +16,7 @@ import hashlib, base64, re, sys
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
+_JSONLD_TYPE = 'type="application/ld+json"'
 # guides/*.html carry their own CSP too; they were missing here, so their
 # theme-toggle and service-worker scripts shipped without hashes and were
 # blocked by the browser.
@@ -30,6 +31,8 @@ def update_file(path):
     script_re = re.compile(r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>', re.DOTALL)
     hashes = []
     for m in script_re.finditer(html):
+        if _JSONLD_TYPE in m.group(0):
+            continue  # JSON-LD is not executed; browsers don't enforce script-src on it
         content = m.group(1)
         if content.strip():
             digest = hashlib.sha256(content.encode('utf-8')).digest()

@@ -39,6 +39,7 @@ ROOT = Path(__file__).parent.parent
 DEFAULT_TARGETS = ['trakyodollas.html', 'index.html', 'privacy.html']
 
 SCRIPT_RE = re.compile(r'<script(?:\s+[^>]*)?>(.*?)</script>', re.DOTALL)
+_JSONLD_TYPE = 'type="application/ld+json"'
 
 
 def check_file(path: Path):
@@ -46,7 +47,9 @@ def check_file(path: Path):
     syntactically valid)."""
     text = path.read_text(encoding='utf-8')
     errors = []
-    blocks = [m.group(1) for m in SCRIPT_RE.finditer(text) if m.group(1).strip()]
+    # Skip JSON-LD blocks — they're not executed; node --check would reject valid JSON as JS syntax errors
+    blocks = [m.group(1) for m in SCRIPT_RE.finditer(text)
+              if m.group(1).strip() and _JSONLD_TYPE not in m.group(0)]
     for i, block in enumerate(blocks, start=1):
         with tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False, encoding='utf-8') as f:
             f.write(block)
