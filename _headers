@@ -1,5 +1,3 @@
-/*
-  X-Frame-Options: DENY
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
-  Strict-Transport-Security: max-age=31536000; includeSubDomains
+# Security headers are set in worker.js (env.ASSETS responses go through the
+# worker, so _headers is not applied by the Workers Assets binding).
+# This file is kept as a no-op placeholder in case the setup ever changes.
