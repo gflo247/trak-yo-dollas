@@ -6037,7 +6037,7 @@ test("parseTxFile: UK midata auto-detect is checked before the generic debit+cre
   // and silently failed to split on ';'.
   assert.match(
     source,
-    /const csvDelim=\(importFmt==='midata'&&\(scanLines\[headerLineIdx\]\|\|''\)\.includes\(';'\)\)\?';':',';/,
+    /importFmt==='midata'&&\(scanLines\[headerLineIdx\]\|\|''\)\.includes\(';'\)/,
     "midata is the only format allowed a non-comma delimiter (real exports use comma or semicolon); every other format must stay comma-only"
   );
 });
@@ -6178,9 +6178,9 @@ test("setImportPreviewSort(): clicking a new column sorts by it with a sensible 
   const openModalFn = source.match(/function openTxImportModal\(\)\{[\s\S]*?\n\}/);
   assert.ok(openModalFn, "openTxImportModal() should exist");
   assert.match(openModalFn[0], /_importPreviewSortCol='date';\s*_importPreviewSortAsc=false;/, "opening the modal fresh should reset the sort column/direction");
-  const parseFileFn = source.match(/function parseTxFile\(file\)\{[\s\S]*?reader\.onload=e=>\{[\s\S]{0,700}/);
-  assert.ok(parseFileFn, "parseTxFile()'s reader.onload should exist");
-  assert.match(parseFileFn[0], /_importPreviewSortCol='date';\s*_importPreviewSortAsc=false;/, "loading a new file into an already-open modal should also reset the sort, not carry over the prior file's setting");
+  const parseTxtFn = source.match(/function parseTxText\(rawText,pasteDelim\)\{[\s\S]{0,800}/);
+  assert.ok(parseTxtFn, "parseTxText() should exist (parseTxFile delegates to it)");
+  assert.match(parseTxtFn[0], /_importPreviewSortCol='date';\s*_importPreviewSortAsc=false;/, "loading new text into an already-open modal should also reset the sort, not carry over the prior parse's setting");
 });
 test("showImportPreview: the 8-row sample is sorted by whichever column/direction is active, over the full importParsed set, with visible sort-direction arrows", () => {
   const source = readSource();

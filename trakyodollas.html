@@ -11,7 +11,7 @@
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-UldKBRQqceypViT5EEqObLgDIl+CU8bm8SNjqjkt4A8=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-fASkpkzBRwcCAf31umhTj5O3ChZK/IinPjv0jGLQ/tM=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -1410,7 +1410,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <h3 id="tx-import-modal-title">Import transactions</h3>
       <button data-action="closeTxImportModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
     </div>
-    <p class="modal-sub" style="margin-bottom:.35rem">Drop your CSV and we'll figure out the format automatically. Nothing leaves your device.</p>
+    <p class="modal-sub" style="margin-bottom:.35rem">Upload a CSV or paste rows from your bank. Format is detected automatically. Nothing leaves your device.</p>
     <p style="font-size:11px;color:var(--text-muted);margin-bottom:.85rem">Also accepts Mint, YNAB, and Monarch Money exports.</p>
 
     <!-- Source label -->
@@ -1420,6 +1420,14 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <div id="import-source-hint" style="font-size:11px;color:var(--text-muted);margin-top:.3rem;min-height:1em"></div>
     </div>
 
+    <!-- Import method toggle -->
+    <div style="display:flex;border:1px solid var(--border-mid);border-radius:8px;overflow:hidden;margin-bottom:.65rem">
+      <button id="import-tab-file" data-action="switchImportTab" data-arg="file" style="background:#2563EB;color:#fff;border:none;padding:5px 0;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;flex:1;transition:background .15s,color .15s" type="button">File</button>
+      <button id="import-tab-paste" data-action="switchImportTab" data-arg="paste" style="background:var(--bg-deep);color:var(--text-muted);border:none;border-left:1px solid var(--border-mid);padding:5px 0;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;flex:1;transition:background .15s,color .15s" type="button">Paste</button>
+    </div>
+
+    <!-- File panel -->
+    <div id="import-panel-file">
     <!-- Drop zone — hero -->
     <div class="csv-zone" id="tx-drop-zone" style="position:relative;padding:2rem 1rem"
          data-dragover="dragOverHighlight"
@@ -1437,6 +1445,15 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
              data-dragleave="dragLeaveDropZone"
              data-drop="handleTxDropDelegated"
              data-change="handleTxFileSelectDelegated"/>
+    </div>
+    </div>
+
+    <!-- Paste panel -->
+    <div id="import-panel-paste" class="hidden">
+      <textarea id="tx-paste-area" rows="7" placeholder="Paste rows copied from your bank's website or app — tabs or commas, with or without currency symbols. A header row is expected." style="width:100%;box-sizing:border-box;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:8px;color:var(--text-primary);font-size:12px;font-family:'DM Mono',monospace;padding:.6rem .75rem;resize:vertical;min-height:120px;line-height:1.5" aria-label="Paste transaction rows"></textarea>
+      <div style="margin-top:.45rem;text-align:right">
+        <button data-action="handlePasteImport" class="btn btn-primary" type="button">Preview</button>
+      </div>
     </div>
 
     <!-- CSV export help — native collapsible, no JS -->
@@ -13761,6 +13778,9 @@ function openTxImportModal(){
   panel.setAttribute('aria-modal',persistent?'false':'true');
   document.body.classList.toggle('persistent-panel-open',persistent);
   document.body.style.setProperty('--pp-width','520px');
+  const pasteArea=document.getElementById('tx-paste-area');
+  if(pasteArea)pasteArea.value='';
+  switchImportTab('file');
   el.classList.remove('hidden');
 }
 function closeTxImportModal(){hideModalById('tx-import-modal');}
@@ -13805,12 +13825,13 @@ function handleTxFileSelect(input){
 // bank/export signature, in priority order (e.g. midata before the generic
 // debit+credit check, since a midata header contains both substrings).
 // Returns the matched format string, or null if this particular line
-// doesn't look like any known header. Shared by parseTxFile()'s multi-line
+// doesn't look like any known header. Shared by parseTxText()'s multi-line
 // header scan below.
-function detectFormatFromLine(firstLine){
+function detectFormatFromLine(firstLine,delim){
+  delim=delim||',';
   // Normalize: strip mid-word periods (Trans. Date → trans date) and parenthetical units
   firstLine=firstLine.replace(/\.(?=\s)/g,'').replace(/\s*\([^)]*\)\s*/g,'');
-  const cols=firstLine.split(',').map(c=>c.trim().replace(/^"|"$/g,'').trim());
+  const cols=firstLine.split(delim).map(c=>c.trim().replace(/^"|"$/g,'').trim());
   let importFmt=null,importFmtAutoDetected=false;
   // Our own exportTransactionsCSV() output — checked first since it's the
   // most specific signature (no bank export has both 'vendor' and
@@ -13873,113 +13894,148 @@ function detectFormatFromLine(firstLine){
   return importFmtAutoDetected?importFmt:null;
 }
 
+function _detectPasteDelim(text){
+  const firstLine=(text.trim().split(/\r?\n/)[0]||'');
+  return (firstLine.split('\t').length-1)>(firstLine.split(',').length-1)?'\t':',';
+}
+
+// Core parsing logic shared by file import (parseTxFile) and paste import
+// (handlePasteImport). pasteDelim is the field delimiter detected from paste
+// text ('\t' or ','), or undefined for file import (delimiter sniffed below).
+function parseTxText(rawText,pasteDelim){
+  // Strip UTF-8 BOM if present
+  rawText=rawText.replace(/^\uFEFF/,'');
+  // Auto-detect format from headers — skipped when user has the manual picker open
+  importFmtAutoDetected=false;
+  // Dropping new text into an already-open modal (re-picking a file or re-pasting
+  // after Cancel) shouldn't carry over a prior parse's sort column/direction.
+  _importPreviewSortCol='date';
+  _importPreviewSortAsc=false;
+  // Same splitCSVRows()+trim+filter pipeline parseCSV() itself uses, computed
+  // once here and reused both for the header-line scan below and for the
+  // midata delimiter sniff further down -- so both agree on exactly which
+  // logical row is "the header," instead of one checking against filtered
+  // rows and the other against a raw, unfiltered text.split('\n')[0].
+  const scanLines=splitCSVRows(rawText.trim()).map(l=>l.trim()).filter(Boolean);
+  let headerLineIdx=0;
+  if(!fmtPickerOpen){
+    // Scan the first several logical rows for a recognizable header,
+    // instead of always assuming it's the literal first row. Some bank
+    // exports (a real Bank of America quirk) prepend preamble/summary
+    // rows -- e.g. "Description,,Summary Amt." / "Beginning balance as
+    // of ..." -- before the real "Date,Description,Amount,Running
+    // Bal." header, which used to defeat both format auto-detection
+    // (only ever checked line 0) and parseCSV()'s header-row selection
+    // (same assumption), silently dropping every row under the wrong
+    // field names. Capped at 10 rows so a coincidental match deep in
+    // real transaction data can't be mistaken for a header. July 2026.
+    const scanLimit=Math.min(10,scanLines.length);
+    importFmt=null;
+    for(let i=0;i<scanLimit;i++){
+      const fmt=detectFormatFromLine(scanLines[i].toLowerCase(),pasteDelim||',');
+      if(fmt){importFmt=fmt;headerLineIdx=i;importFmtAutoDetected=true;break;}
+    }
+    if(!importFmt){
+      // Check for headerless Wells Fargo: date in first cell, number in second, '*' in third
+      const _wfCols=scanLines.length?splitCSVLine(scanLines[0]):[];
+      const _wfDate=(_wfCols[0]||'').replace(/^"|"$/g,'').trim();
+      const _wfAmt=(_wfCols[1]||'').replace(/^"|"$/g,'').trim();
+      const _wfStar=(_wfCols[2]||'').replace(/^"|"$/g,'').trim();
+      if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(_wfDate)&&!isNaN(parseFloat(_wfAmt))&&_wfStar==='*'){
+        importFmt='wellsfargo'; importFmtAutoDetected=true; headerLineIdx=0;
+      } else {
+        // Nothing matched — previously left importFmt at whatever it was
+        // before (stale from a prior import, or the 'ally' default on a
+        // fresh session), silently misparsing an unrecognized-but-plain
+        // file (e.g. just Date,Description,Amount) under the wrong
+        // format's column-name assumptions. 'ally' in particular requires
+        // a literal Type==='Deposit' column to recognize a positive amount
+        // as income — without one, every deposit/paycheck row silently
+        // vanished with zero warning. Falls through to the generic
+        // sign-convention-detected parser instead, which is built for
+        // exactly this "unknown format" case.
+        importFmt='generic'; importFmtAutoDetected=true; headerLineIdx=0;
+      }
+    }
+  }
+  // midata is the one format that isn't reliably comma-delimited -- real
+  // exports seen from different banks use either comma or semicolon
+  // (confirmed across 3 independent midata parser projects, one of which
+  // has to auto-sniff the delimiter for exactly this reason). Every other
+  // supported format is comma-only, so this only branches for midata to
+  // avoid any risk to the other 15 formats' parsing. July 2026 research;
+  // see _HANDOFF.md. Sniffs the actual detected header row, not always
+  // rawText.split('\n')[0] -- a preamble-row midata file (e.g. an account
+  // summary line before the real semicolon header) would otherwise sniff
+  // the comma-only preamble line and wrongly parse the real
+  // semicolon-delimited header/rows as one giant comma-less field. Found
+  // live-testing the header-scan fix above, same day.
+  // Paste input is never midata (a file-only UK download format) -- skip
+  // the semicolon sniff when pasteDelim is already set.
+  _importRawHeader=importFmt==='wellsfargo'?'date,amount,type,memo,description':(scanLines[headerLineIdx]||'');
+  const csvDelim=pasteDelim||(importFmt==='midata'&&(scanLines[headerLineIdx]||'').includes(';')?';':',');
+  let _csvText=rawText;
+  if(importFmt==='wellsfargo'){_csvText='date,amount,type,memo,description\n'+rawText;}
+  const rows=parseCSV(_csvText,csvDelim,headerLineIdx);
+  if(!rows||!rows.length){
+    showToast('Could not read this CSV — check the format and try again','#F87171');return;
+  }
+  _importRawRows=rows;
+  // Detect sign convention for the generic format's fallback parser (see
+  // detectGenericSignConvention) — recomputed per-parse since it depends on this data.
+  _genericPositiveIsExpense=detectGenericSignConvention(rows);
+  _genericCardRefunds=detectGenericCardRefunds(rows);
+  // Detect date format — update UI and store for re-parse on toggle
+  const detectedFmt=detectImportDateFmt(rows);
+  // ANZ NZ, BNZ, Westpac NZ, Starling, and midata (UK) exports are always
+  // DD/MM/YYYY -- when the sample itself is ambiguous (no day>12 in the
+  // first 15 rows), detectImportDateFmt() can't tell and would normally
+  // fall back to 'mdy' (meant for US formats). None of these formats
+  // ever use MM/DD, so force 'dmy' instead of risking a wrong guess on a
+  // coincidentally-all-day-under-13 file. July 2026 addition.
+  const alwaysDmyFmt=(importFmt==='anznz'||importFmt==='bnz'||importFmt==='westpacnz'||importFmt==='starling'||importFmt==='midata')&&detectedFmt===null;
+  if(detectedFmt==='iso'){
+    const dfRow=document.getElementById('import-date-fmt-row');
+    if(dfRow)dfRow.style.display='none';
+  } else if(alwaysDmyFmt){
+    updateDateFmtUI('dmy',false);
+  } else {
+    updateDateFmtUI(detectedFmt||'mdy',detectedFmt===null);
+  }
+  const source=document.getElementById('import-source-label').value.trim()||'Imported';
+  importParsed=rows.map(r=>normalizeTxRow(r,source)).filter(Boolean);
+  showImportPreview();
+}
+
 function parseTxFile(file){
   const reader=new FileReader();
-  reader.onload=e=>{
-    // Strip UTF-8 BOM if present
-    const text=e.target.result.replace(/^\uFEFF/,'');
-    // Auto-detect format from headers — skipped when user has the manual picker open
-    importFmtAutoDetected=false;
-    // Dropping a new file into an already-open modal (re-picking after
-    // Cancel, or trying a different file) shouldn't carry over a prior
-    // file's sort column/direction -- same reasoning as every other
-    // per-file reset here.
-    _importPreviewSortCol='date';
-    _importPreviewSortAsc=false;
-    // Same splitCSVRows()+trim+filter pipeline parseCSV() itself uses, computed
-    // once here and reused both for the header-line scan below and for the
-    // midata delimiter sniff further down -- so both agree on exactly which
-    // logical row is "the header," instead of one checking against filtered
-    // rows and the other against a raw, unfiltered text.split('\n')[0].
-    const scanLines=splitCSVRows(text.trim()).map(l=>l.trim()).filter(Boolean);
-    let headerLineIdx=0;
-    if(!fmtPickerOpen){
-      // Scan the first several logical rows for a recognizable header,
-      // instead of always assuming it's the literal first row. Some bank
-      // exports (a real Bank of America quirk) prepend preamble/summary
-      // rows -- e.g. "Description,,Summary Amt." / "Beginning balance as
-      // of ..." -- before the real "Date,Description,Amount,Running
-      // Bal." header, which used to defeat both format auto-detection
-      // (only ever checked line 0) and parseCSV()'s header-row selection
-      // (same assumption), silently dropping every row under the wrong
-      // field names. Capped at 10 rows so a coincidental match deep in
-      // real transaction data can't be mistaken for a header. July 2026.
-      const scanLimit=Math.min(10,scanLines.length);
-      importFmt=null;
-      for(let i=0;i<scanLimit;i++){
-        const fmt=detectFormatFromLine(scanLines[i].toLowerCase());
-        if(fmt){importFmt=fmt;headerLineIdx=i;importFmtAutoDetected=true;break;}
-      }
-      if(!importFmt){
-        // Check for headerless Wells Fargo: date in first cell, number in second, '*' in third
-        const _wfCols=scanLines.length?splitCSVLine(scanLines[0]):[];
-        const _wfDate=(_wfCols[0]||'').replace(/^"|"$/g,'').trim();
-        const _wfAmt=(_wfCols[1]||'').replace(/^"|"$/g,'').trim();
-        const _wfStar=(_wfCols[2]||'').replace(/^"|"$/g,'').trim();
-        if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(_wfDate)&&!isNaN(parseFloat(_wfAmt))&&_wfStar==='*'){
-          importFmt='wellsfargo'; importFmtAutoDetected=true; headerLineIdx=0;
-        } else {
-          // Nothing matched — previously left importFmt at whatever it was
-          // before (stale from a prior import, or the 'ally' default on a
-          // fresh session), silently misparsing an unrecognized-but-plain
-          // file (e.g. just Date,Description,Amount) under the wrong
-          // format's column-name assumptions. 'ally' in particular requires
-          // a literal Type==='Deposit' column to recognize a positive amount
-          // as income — without one, every deposit/paycheck row silently
-          // vanished with zero warning. Falls through to the generic
-          // sign-convention-detected parser instead, which is built for
-          // exactly this "unknown format" case.
-          importFmt='generic'; importFmtAutoDetected=true; headerLineIdx=0;
-        }
-      }
-    }
-    // midata is the one format that isn't reliably comma-delimited -- real
-    // exports seen from different banks use either comma or semicolon
-    // (confirmed across 3 independent midata parser projects, one of which
-    // has to auto-sniff the delimiter for exactly this reason). Every other
-    // supported format is comma-only, so this only branches for midata to
-    // avoid any risk to the other 15 formats' parsing. July 2026 research;
-    // see _HANDOFF.md. Sniffs the actual detected header row, not always
-    // text.split('\n')[0] -- a preamble-row midata file (e.g. an account
-    // summary line before the real semicolon header) would otherwise sniff
-    // the comma-only preamble line and wrongly parse the real
-    // semicolon-delimited header/rows as one giant comma-less field. Found
-    // live-testing the header-scan fix above, same day.
-    _importRawHeader=importFmt==='wellsfargo'?'date,amount,type,memo,description':(scanLines[headerLineIdx]||'');
-    const csvDelim=(importFmt==='midata'&&(scanLines[headerLineIdx]||'').includes(';'))?';':',';
-    let _csvText=text;
-    if(importFmt==='wellsfargo'){_csvText='date,amount,type,memo,description\n'+text;}
-    const rows=parseCSV(_csvText,csvDelim,headerLineIdx);
-    if(!rows||!rows.length){
-      showToast('Could not read this CSV — check the format and try again','#F87171');return;
-    }
-    _importRawRows=rows;
-    // Detect sign convention for the generic format's fallback parser (see
-    // detectGenericSignConvention) — recomputed per-file since it depends on this file's data.
-    _genericPositiveIsExpense=detectGenericSignConvention(rows);
-    _genericCardRefunds=detectGenericCardRefunds(rows);
-    // Detect date format — update UI and store for re-parse on toggle
-    const detectedFmt=detectImportDateFmt(rows);
-    // ANZ NZ, BNZ, Westpac NZ, Starling, and midata (UK) exports are always
-    // DD/MM/YYYY -- when the sample itself is ambiguous (no day>12 in the
-    // first 15 rows), detectImportDateFmt() can't tell and would normally
-    // fall back to 'mdy' (meant for US formats). None of these formats
-    // ever use MM/DD, so force 'dmy' instead of risking a wrong guess on a
-    // coincidentally-all-day-under-13 file. July 2026 addition.
-    const alwaysDmyFmt=(importFmt==='anznz'||importFmt==='bnz'||importFmt==='westpacnz'||importFmt==='starling'||importFmt==='midata')&&detectedFmt===null;
-    if(detectedFmt==='iso'){
-      const dfRow=document.getElementById('import-date-fmt-row');
-      if(dfRow)dfRow.style.display='none';
-    } else if(alwaysDmyFmt){
-      updateDateFmtUI('dmy',false);
-    } else {
-      updateDateFmtUI(detectedFmt||'mdy',detectedFmt===null);
-    }
-    const source=document.getElementById('import-source-label').value.trim()||'Imported';
-    importParsed=rows.map(r=>normalizeTxRow(r,source)).filter(Boolean);
-    showImportPreview();
-  };
+  reader.onload=e=>parseTxText(e.target.result);
   reader.readAsText(file);
+}
+
+function handlePasteImport(){
+  const ta=document.getElementById('tx-paste-area');
+  const raw=(ta&&ta.value)||'';
+  if(!raw.trim()){showToast('Paste some transactions first','#F87171');return;}
+  parseTxText(raw,_detectPasteDelim(raw));
+}
+
+function switchImportTab(tab){
+  const isFile=tab==='file';
+  const filePanel=document.getElementById('import-panel-file');
+  const pastePanel=document.getElementById('import-panel-paste');
+  if(filePanel)filePanel.classList.toggle('hidden',!isFile);
+  if(pastePanel)pastePanel.classList.toggle('hidden',isFile);
+  const tabFile=document.getElementById('import-tab-file');
+  const tabPaste=document.getElementById('import-tab-paste');
+  if(tabFile){tabFile.style.background=isFile?'#2563EB':'var(--bg-deep)';tabFile.style.color=isFile?'#fff':'var(--text-muted)';}
+  if(tabPaste){tabPaste.style.background=isFile?'var(--bg-deep)':'#2563EB';tabPaste.style.color=isFile?'var(--text-muted)':'#fff';}
+  importParsed=[];
+  document.getElementById('import-preview').classList.add('hidden');
+  const stats=document.getElementById('import-preview-stats');if(stats)stats.classList.add('hidden');
+  document.getElementById('import-confirm-btn').classList.add('hidden');
+  const detFmt=document.getElementById('import-detected-fmt');if(detFmt)detFmt.classList.add('hidden');
+  const zeroMsg=document.getElementById('import-zero-msg');if(zeroMsg)zeroMsg.classList.add('hidden');
 }
 
 // Splits raw CSV text into logical rows, respecting quotes so a comma or
