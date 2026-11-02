@@ -11,7 +11,7 @@
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-fASkpkzBRwcCAf31umhTj5O3ChZK/IinPjv0jGLQ/tM=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-L1FPvZxGLkG6QqarljtLK9ZY0NVgjPFYKgBFy7YKJAA=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -13745,24 +13745,6 @@ function openTxImportModal(){
   const _dfRow=document.getElementById('import-date-fmt-row');
   if(_dfRow)_dfRow.style.display='none';
   fetchCommunityRules(); // kick off once per session, non-blocking
-  document.getElementById('import-preview').classList.add('hidden');
-  // #import-preview-stats used to be a child of #import-preview and
-  // inherited its parent's hidden toggle for free -- moved out to sit
-  // next to #import-detected-fmt (per Nicholas's direct feedback, same
-  // day), which means this reset needs its own explicit line now.
-  // Without it, reopening the modal after a successful import left the
-  // previous file's "N transactions · date range · total" text visibly
-  // sitting above an otherwise-empty drop zone. Found in the adversarial
-  // pass immediately following that relocation.
-  const stalePreviewStats=document.getElementById('import-preview-stats');
-  if(stalePreviewStats)stalePreviewStats.classList.add('hidden');
-  document.getElementById('import-confirm-btn').classList.add('hidden');
-  document.getElementById('tx-csv-file').value='';
-  document.getElementById('tx-drop-zone').style.borderColor='';
-  const detFmt=document.getElementById('import-detected-fmt');
-  if(detFmt)detFmt.classList.add('hidden');
-  const zeroMsg=document.getElementById('import-zero-msg');
-  if(zeroMsg)zeroMsg.classList.add('hidden');
   const pickerPanel=document.getElementById('fmt-picker-panel');
   if(pickerPanel)pickerPanel.classList.add('hidden');
   const toggle=document.getElementById('fmt-manual-toggle');
@@ -14030,8 +14012,18 @@ function switchImportTab(tab){
   const tabPaste=document.getElementById('import-tab-paste');
   if(tabFile){tabFile.style.background=isFile?'#2563EB':'var(--bg-deep)';tabFile.style.color=isFile?'#fff':'var(--text-muted)';}
   if(tabPaste){tabPaste.style.background=isFile?'var(--bg-deep)':'#2563EB';tabPaste.style.color=isFile?'var(--text-muted)':'#fff';}
+  if(isFile){
+    // Clear file input and drop zone highlight so a prior file/highlight
+    // doesn't linger when the user switches away from Paste and back.
+    const fi=document.getElementById('tx-csv-file');if(fi)fi.value='';
+    const dz=document.getElementById('tx-drop-zone');if(dz)dz.style.borderColor='';
+  }
   importParsed=[];
   document.getElementById('import-preview').classList.add('hidden');
+  // #import-preview-stats sits outside #import-preview (moved per Nicholas's
+  // feedback so it appears next to #import-detected-fmt, not buried below the
+  // format picker) -- must be hidden explicitly here rather than inheriting
+  // its parent's hidden toggle as it used to.
   const stats=document.getElementById('import-preview-stats');if(stats)stats.classList.add('hidden');
   document.getElementById('import-confirm-btn').classList.add('hidden');
   const detFmt=document.getElementById('import-detected-fmt');if(detFmt)detFmt.classList.add('hidden');

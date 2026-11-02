@@ -6232,24 +6232,23 @@ test("the import summary line (#import-preview-stats) now sits right after the D
 
 // Two findings from the adversarial pass run immediately after the
 // relocation/column-sort work above, both fixed same day.
-test("openTxImportModal() also hides the relocated #import-preview-stats on a fresh modal open, not just #import-preview/#import-confirm-btn", () => {
+test("the relocated #import-preview-stats is hidden on every modal open and tab switch, not just when #import-preview itself is hidden", () => {
   const source = readSource();
-  const fnMatch = source.match(/function openTxImportModal\(\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "openTxImportModal() should exist");
   // Moving #import-preview-stats out of #import-preview (so it could sit
   // next to the Detected badge) meant it stopped inheriting the parent's
-  // hidden-class reset on modal open -- without its own explicit line
-  // here, reopening the modal after a successful import left the
-  // previous file's "N transactions · date range · total" text visibly
-  // sitting above an otherwise-empty drop zone. Live-reproduced before
-  // this fix: called openTxImportModal() with the stats element
-  // deliberately left visible with stale content, confirmed it stayed
-  // visible and unchanged.
+  // hidden-class reset. The hide now lives in switchImportTab(), which
+  // openTxImportModal() calls at the end — so every modal open and every
+  // tab switch clears stale stats text.
+  const switchFn = source.match(/function switchImportTab\(tab\)\{[\s\S]*?\n\}/);
+  assert.ok(switchFn, "switchImportTab() should exist");
   assert.match(
-    fnMatch[0],
-    /const stalePreviewStats=document\.getElementById\('import-preview-stats'\);\s*if\(stalePreviewStats\)stalePreviewStats\.classList\.add\('hidden'\);/,
-    "openTxImportModal() should explicitly hide #import-preview-stats, matching how it already hides #import-preview and #import-detected-fmt"
+    switchFn[0],
+    /getElementById\('import-preview-stats'\)[\s\S]*?classList\.add\('hidden'\)/,
+    "switchImportTab() should hide #import-preview-stats so stale stats don't linger after a tab switch or modal re-open"
   );
+  const openFn = source.match(/function openTxImportModal\(\)\{[\s\S]*?\n\}/);
+  assert.ok(openFn, "openTxImportModal() should exist");
+  assert.match(openFn[0], /switchImportTab\('file'\)/, "openTxImportModal() should call switchImportTab('file') to delegate the UI reset");
 });
 test("the import-preview category pill truncates with the shared .truncate class, so an unusually long custom category name can't blow out the row or misalign the new Amount column header", () => {
   const source = readSource();
