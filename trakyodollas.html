@@ -11,7 +11,7 @@
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-L1FPvZxGLkG6QqarljtLK9ZY0NVgjPFYKgBFy7YKJAA=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-+lMfkY/9/bA32h+Njsk549RnX2CNzPoro+y1mcL8kWk=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -13760,8 +13760,7 @@ function openTxImportModal(){
   panel.setAttribute('aria-modal',persistent?'false':'true');
   document.body.classList.toggle('persistent-panel-open',persistent);
   document.body.style.setProperty('--pp-width','520px');
-  const pasteArea=document.getElementById('tx-paste-area');
-  if(pasteArea)pasteArea.value='';
+  document.getElementById('tx-paste-area').value='';
   switchImportTab('file');
   el.classList.remove('hidden');
 }
@@ -13877,7 +13876,7 @@ function detectFormatFromLine(firstLine,delim){
 }
 
 function _detectPasteDelim(text){
-  const firstLine=(text.trim().split(/\r?\n/)[0]||'');
+  const firstLine=(text.split(/\r?\n/)[0]||'');
   return (firstLine.split('\t').length-1)>(firstLine.split(',').length-1)?'\t':',';
 }
 
@@ -13996,9 +13995,8 @@ function parseTxFile(file){
 }
 
 function handlePasteImport(){
-  const ta=document.getElementById('tx-paste-area');
-  const raw=(ta&&ta.value)||'';
-  if(!raw.trim()){showToast('Paste some transactions first','#F87171');return;}
+  const raw=(document.getElementById('tx-paste-area').value||'').trim();
+  if(!raw){showToast('Paste some transactions first','#F87171');return;}
   parseTxText(raw,_detectPasteDelim(raw));
 }
 

@@ -10132,3 +10132,195 @@ test("confirmTxImport keeps per-row sources from a trak-yo-dolla$ export and swi
   assert.match(source, /newTxs=_dedupedParsed\.map\(t=>\(\{\.\.\.t,card:importFmt==='trakyodollas'&&t\.card\?t\.card:source,id:state\.nextId\+\+\}\)\);/);
   assert.match(source, /newTxs\.forEach\(t=>state\.activeSources\.add\(t\.card\)\);/);
 });
+
+// ── Paste import: _detectPasteDelim, tab-delimiter format detection, and full pipeline ──
+// Covers the new paste path added alongside the File/Paste toggle. The key new code
+// is: (1) _detectPasteDelim sniffs '\t' vs ',' from the header line, and (2)
+// detectFormatFromLine now receives that delimiter for its cols.some() check — without
+// which a tab-separated Debit/Credit header produces cols=["date\tdesc\tdebit\tcredit"]
+// (one field), so cols.some(c==='debit') is always false and the format silently falls
+// through to generic, losing all Debit/Credit amounts.
+
+test("_detectPasteDelim: identifies the field delimiter from the first line of pasted text", () => {
+  const { _detectPasteDelim } = loadFunctions(["_detectPasteDelim"]);
+  assert.equal(
+    _detectPasteDelim("Date\tDescription\tAmount\n01/15/2024\tStarbucks\t-5.45"),
+    "\t", "tab-separated header → tab"
+  );
+  assert.equal(
+    _detectPasteDelim("Date,Description,Amount\n01/15/2024,Starbucks,-5.45"),
+    ",", "comma-separated header → comma"
+  );
+  // Header has 3 tabs, data row has 1 comma in '$1,234.56' — tabs still win on the header line
+  assert.equal(
+    _detectPasteDelim("Date\tDescription\tDebit\tCredit\n01/15/2024\tTarget\t$1,234.56\t"),
+    "\t", "tabs outnumber commas in the header even when amounts in data rows contain commas"
+  );
+  assert.equal(_detectPasteDelim(""), ",", "empty input defaults to comma");
+  assert.equal(_detectPasteDelim("Date\tAmount"), "\t", "header-only (no data rows) detects tab");
+});
+
+test("detectFormatFromLine: tab-delimited debit/credit header requires the tab delimiter — comma-split misses it (paste import regression gate)", () => {
+  const { detectFormatFromLine } = loadFunctions(["detectFormatFromLine"]);
+  // With tab delimiter: cols=[date, description, debit, credit] → debitcredit
+  assert.equal(
+    detectFormatFromLine("date\tdescription\tdebit\tcredit", "\t"),
+    "debitcredit",
+    "tab-delimited debit/credit header detects correctly when delim='\\t' is passed"
+  );
+  // Without tab delimiter (comma default): cols=["date\tdescription\tdebit\tcredit"] (one field) → null
+  assert.equal(
+    detectFormatFromLine("date\tdescription\tdebit\tcredit"),
+    null,
+    "the same header parsed with comma delimiter returns null — the pre-fix behavior that silently misparsed every tab-pasted debit/credit table"
+  );
+  // Debit Amount / Credit Amount column names (ING Australia)
+  assert.equal(
+    detectFormatFromLine("date\tdescription\tdebit amount\tcredit amount", "\t"),
+    "debitcredit"
+  );
+  // Deposits/Withdrawals variant uses firstLine.includes(), not cols — works regardless of delimiter
+  assert.equal(
+    detectFormatFromLine("date\tdescription\tdeposits\twithdrawals", "\t"),
+    "debitcredit"
+  );
+});
+
+// Helper: mirrors parseTxText(rawText, pasteDelim) for unit tests.
+// Auto-detects the delimiter, runs format detection with it, parses with it,
+// and runs the full normalizeTxRow pipeline — the same path the UI takes.
+function parsePasteText(rawText, overrideOpts = {}) {
+  const {
+    _detectPasteDelim, detectFormatFromLine, parseCSV, splitCSVLine, splitCSVRows, detectGenericSignConvention,
+  } = loadFunctions([
+    "_detectPasteDelim", "detectFormatFromLine", "parseCSV", "splitCSVLine",
+    "splitCSVRows", "detectGenericSignConvention", "_parseAmt",
+  ]);
+
+  const pasteDelim = _detectPasteDelim(rawText);
+  const text = rawText.replace(/^\uFEFF/, "");
+  const scanLines = splitCSVRows(text.trim()).map(l => l.trim()).filter(Boolean);
+
+  let importFmt = null;
+  let headerLineIdx = 0;
+  const scanLimit = Math.min(10, scanLines.length);
+  for (let i = 0; i < scanLimit; i++) {
+    const fmt = detectFormatFromLine(scanLines[i].toLowerCase(), pasteDelim);
+    if (fmt) { importFmt = fmt; headerLineIdx = i; break; }
+  }
+  if (!importFmt) { importFmt = "generic"; headerLineIdx = 0; }
+
+  const rows = parseCSV(text, pasteDelim, headerLineIdx);
+  const _genericPositiveIsExpense = importFmt === "generic"
+    ? detectGenericSignConvention(rows) : false;
+  const _genericCardRefunds = importFmt === "generic"
+    ? loadNormalizePipeline({ importFmt }).detectGenericCardRefunds(rows) : false;
+
+  const { normalizeTxRow } = loadNormalizePipeline({
+    importFmt,
+    _genericPositiveIsExpense,
+    _genericCardRefunds,
+    _importDateFmt: overrideOpts._importDateFmt || "mdy",
+    includeIncome: overrideOpts.includeIncome !== false,
+  });
+
+  return {
+    txs: rows.map(r => normalizeTxRow(r, "Test")).filter(Boolean),
+    importFmt,
+    pasteDelim,
+  };
+}
+
+test("paste: tab-separated debit/credit (common bank web-UI copy) → debitcredit format, correct amounts", () => {
+  const paste = [
+    "Date\tDescription\tDebit\tCredit",
+    "01/15/2024\tSTARBUCKS\t5.45\t",
+    "01/14/2024\tPAYCHECK\t\t2000.00",
+    "01/13/2024\tTARGET\t47.82\t",
+  ].join("\n");
+
+  const { txs, importFmt, pasteDelim } = parsePasteText(paste, { includeIncome: false });
+  assert.equal(pasteDelim, "\t");
+  assert.equal(importFmt, "debitcredit");
+  assert.equal(txs.length, 2, "PAYCHECK (income) filtered out");
+  assert.equal(txs.find(t => t.desc === "STARBUCKS")?.amount, 5.45);
+  assert.equal(txs.find(t => t.desc === "TARGET")?.amount, 47.82);
+});
+
+test("paste: tab-separated Deposits/Withdrawals column name variant → debitcredit, correct sign", () => {
+  const paste = [
+    "Date\tDescription\tDeposits\tWithdrawals",
+    "01/15/2024\tSTARBUCKS\t\t5.45",
+    "01/14/2024\tPAYCHECK\t2000.00\t",
+    "01/13/2024\tTARGET\t\t47.82",
+  ].join("\n");
+
+  const { txs, importFmt } = parsePasteText(paste, { includeIncome: false });
+  assert.equal(importFmt, "debitcredit");
+  assert.equal(txs.length, 2, "PAYCHECK (income) filtered out");
+  assert.equal(txs.find(t => t.desc === "STARBUCKS")?.amount, 5.45);
+  assert.equal(txs.find(t => t.desc === "TARGET")?.amount, 47.82);
+});
+
+test("paste: tab-separated debit/credit — dollar signs, thousands separators, and a REFUND credit offset", () => {
+  const paste = [
+    "Date\tDescription\tDebit\tCredit",
+    "01/15/2024\tTARGET\t$1,234.56\t",
+    "01/14/2024\tAMAZON REFUND\t\t$45.00",
+    "01/13/2024\tSTARBUCKS\t$5.45\t",
+  ].join("\n");
+
+  const { txs, importFmt } = parsePasteText(paste);
+  assert.equal(importFmt, "debitcredit");
+  assert.equal(txs.length, 3, "2 expenses + 1 refund offset, all 3 rows survive");
+  assert.equal(txs.find(t => t.desc === "TARGET")?.amount, 1234.56, "$1,234.56 → 1234.56");
+  assert.equal(txs.find(t => t.desc === "AMAZON REFUND")?.is_offset, true);
+  assert.equal(txs.find(t => t.desc === "AMAZON REFUND")?.amount, -45);
+  assert.equal(txs.find(t => t.desc === "STARBUCKS")?.amount, 5.45);
+});
+
+test("paste: tab-separated generic Amount column — sign convention auto-detected, negative = expense", () => {
+  const paste = [
+    "Date\tDescription\tAmount",
+    "01/15/2024\tSTARBUCKS\t-5.45",
+    "01/14/2024\tTARGET\t-47.82",
+    "01/13/2024\tPAYCHECK\t2500.00",
+  ].join("\n");
+
+  const { txs, importFmt } = parsePasteText(paste, { includeIncome: false });
+  assert.equal(importFmt, "generic");
+  assert.equal(txs.length, 2, "PAYCHECK income filtered out");
+  assert.equal(txs.find(t => t.desc === "STARBUCKS")?.amount, 5.45);
+  assert.equal(txs.find(t => t.desc === "TARGET")?.amount, 47.82);
+});
+
+test("paste: comma-separated text (non-tab paste) routes through same pipeline correctly", () => {
+  const paste = [
+    "Date,Description,Amount",
+    "01/15/2024,Starbucks,-5.45",
+    "01/14/2024,Paycheck,2500.00",
+  ].join("\n");
+
+  const { txs, importFmt, pasteDelim } = parsePasteText(paste, { includeIncome: false });
+  assert.equal(pasteDelim, ",", "comma-separated paste detects comma delimiter");
+  assert.equal(importFmt, "generic");
+  assert.equal(txs.length, 1, "only Starbucks; Paycheck income filtered");
+  assert.equal(txs[0].amount, 5.45);
+});
+
+test("paste: trailing blank line and whitespace don't create phantom rows", () => {
+  const paste = [
+    "Date\tDescription\tDebit\tCredit",
+    "01/15/2024\tSTARBUCKS\t5.45\t",
+    "",
+  ].join("\n");
+
+  const { txs } = parsePasteText(paste);
+  assert.equal(txs.length, 1, "blank trailing line must not produce a phantom transaction");
+  assert.equal(txs[0].amount, 5.45);
+});
+
+test("paste: header-only (no data rows) returns zero transactions without crashing", () => {
+  const { txs } = parsePasteText("Date\tDescription\tDebit\tCredit");
+  assert.equal(txs.length, 0);
+});
