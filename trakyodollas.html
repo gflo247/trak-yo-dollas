@@ -1012,14 +1012,26 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <button data-action="dismissLocalDataNotice" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:10px 12px;font-family:inherit;vertical-align:middle" title="Dismiss" type="button">✕</button>
 </div>
 <!-- Shown exactly once on iPhone/iPad Safari -- see maybeShowLocalDataNotice().
-     Safari deletes localStorage after 7 days without a visit; home-screen web
-     apps are exempt. Safari never fires beforeinstallprompt so the settings-
-     panel install button never surfaces for these users. -->
+     Safari deletes localStorage after 7 days without a visit. Home Screen apps
+     start empty (no shared state with Safari), so the banner tells users to
+     import their CSV there rather than implying their current data carries over.
+     Safari never fires beforeinstallprompt so the settings-panel install button
+     never surfaces for these users. -->
 <div id="ios-home-screen-banner" style="display:none;background:rgba(251,191,36,.1);border-bottom:1px solid rgba(251,191,36,.3);padding:8px 1rem;font-size:12px;color:var(--text-secondary);text-align:center;letter-spacing:.01em">
-  📱 <strong style="color:var(--amber-text-strong)">On iOS, Safari may delete your data after 7 days</strong> — tap <strong>Share ↗</strong> then <strong>"Add to Home Screen"</strong> to keep it safe.
-  <button data-action="openAuthModal|dismissIosHomeBanner" style="background:var(--amber-text-strong);color:#000;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 3px" type="button">Sign in to sync instead</button>
+  📱 <strong style="color:var(--amber-text-strong)">Safari can erase this site's data after a week without a visit.</strong> To keep it, tap <strong>Share → Add to Home Screen</strong>, open trak-yo-dolla$ from your Home Screen, and import your CSV there.
+  <button data-action="openAuthModal|dismissIosHomeBanner" style="background:var(--amber-text-strong);color:#000;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 3px" type="button">Sign in to sync</button>
   <button data-action="exportBackup|dismissIosHomeBanner" style="background:none;border:none;color:var(--amber-text-strong);font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Export a backup</button>
   <button data-action="dismissIosHomeBanner" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:10px 12px;font-family:inherit;vertical-align:middle" title="Dismiss" type="button">✕</button>
+</div>
+<!-- Shown exactly once on Mac Safari -- see maybeShowLocalDataNotice().
+     Same 7-day deletion policy applies to macOS Safari (not just iOS). Mac web
+     apps (File → Add to Dock, macOS Sonoma 14+) start empty, so users must
+     re-import their CSV there. -->
+<div id="mac-safari-banner" style="display:none;background:rgba(251,191,36,.1);border-bottom:1px solid rgba(251,191,36,.3);padding:8px 1rem;font-size:12px;color:var(--text-secondary);text-align:center;letter-spacing:.01em">
+  🖥 <strong style="color:var(--amber-text-strong)">Safari can erase this site's data after a week without a visit.</strong> To keep it, choose <strong>File → Add to Dock</strong> (macOS Sonoma or later), open trak-yo-dolla$ from your Dock, and import your CSV there.
+  <button data-action="openAuthModal|dismissMacSafariBanner" style="background:var(--amber-text-strong);color:#000;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 3px" type="button">Sign in to sync</button>
+  <button data-action="exportBackup|dismissMacSafariBanner" style="background:none;border:none;color:var(--amber-text-strong);font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Export a backup</button>
+  <button data-action="dismissMacSafariBanner" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:10px 12px;font-family:inherit;vertical-align:middle" title="Dismiss" type="button">✕</button>
 </div>
 <!-- Stays up until dismissed or reloaded, unlike a toast -- the underlying
      "your edits aren't syncing" condition doesn't go away on its own after
@@ -1968,6 +1980,13 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div id="import-success-uncategorized" class="hidden" style="background:#78350F18;border:1px solid #D9770633;border-radius:8px;padding:.55rem .85rem;margin-bottom:1rem;font-size:12px;color:var(--accent-amber);line-height:1.5"></div>
 
     <div id="import-success-no-account" class="hidden" style="background:#1E3A5F18;border:1px solid #2563EB33;border-radius:8px;padding:.55rem .85rem;margin-bottom:1rem;font-size:12px;color:var(--accent-blue-light);line-height:1.5"></div>
+
+    <!-- Shown when user isn't synced and has never backed up (or last backup
+         was 30+ days ago). Dismissed by exporting. -->
+    <div id="import-success-backup-nudge" class="hidden" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:8px;padding:.55rem .85rem;margin-bottom:1rem;font-size:12px;color:var(--text-secondary);line-height:1.5;align-items:center;gap:8px">
+      <span id="import-success-backup-msg" style="flex:1"></span>
+      <button data-action="exportBackup" style="background:var(--amber-text-strong);color:#000;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0" type="button">Export a backup</button>
+    </div>
 
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1.1rem">
       <button class="btn btn-primary" style="width:100%;justify-content:center;font-size:14px;padding:.65rem" data-action="importSuccessAndAlign" type="button">View my spending</button>
@@ -3481,15 +3500,34 @@ function makeTip(wrap){
   };
 }
 // ── End format / theme / tooltip helpers ──────────────────────────
-const resolveVendor=desc=>{
+
+// Strips variable suffixes from bank transaction descriptions so the same
+// merchant doesn't appear as multiple vendors in spending views. Applied
+// inside resolveVendor() — never touches stored t.desc.
+// Conservative by design: only targets patterns that unambiguously add noise
+// (payment-processor prefixes, marketplace order IDs, store numbers). Does
+// NOT strip short digit sequences (7-ELEVEN, 76) or non-trailing numbers.
+function _normalizeVendorDesc(desc){
   if(!desc)return desc;
-  // Follows a chain of merges (e.g. "AMAZON.COM"→"Amazon", then later
-  // "Amazon"→"Shopping Hub") instead of a single-hop lookup — merging an
-  // already-resolved display name into a further alias used to be a
-  // silent no-op, since no transaction's raw description literally
-  // matched the intermediate name. `seen` guards against a cycle
-  // (A→B, B→A) causing an infinite loop.
-  let current=desc,hops=0;
+  let s=desc.trim();
+  s=s.replace(/^(SQ|TST|PAYPAL|PP)\s*\*\s*/i,'');
+  // hadOrderId gates the Amazon map below — without it, AMAZON PRIME /
+  // AMAZON MUSIC / AMAZON WEB SERVICES would also collapse to "Amazon".
+  const hadOrderId=/\*[A-Z0-9]{4,}$/i.test(s);
+  if(hadOrderId)s=s.replace(/\*[A-Z0-9]{4,}$/i,'').trim();
+  s=s.replace(/\s+#\s*\d+\s*$/,'').trim();
+  // \s+ prefix is load-bearing: "76" and "7-ELEVEN" have no leading space
+  // before the digits, so they aren't affected.
+  s=s.replace(/\s+\d{5,}\s*$/,'').trim();
+  if(hadOrderId&&/^(AMAZON[\s.]*(?:COM|MKTPL|MKTPLACE|SMILE|FRESH|CA|AU|UK|PHARMACY)?|AMZN\s+MKTP)/i.test(s)){
+    s='Amazon';
+  }
+  return s;
+}
+
+// `seen` guards against A→B→A cycles; 10-hop limit handles unusually long chains.
+function _resolveAlias(start){
+  let current=start,hops=0;
   const seen=new Set();
   while(hops++<10){
     const u=current.toUpperCase();
@@ -3502,7 +3540,19 @@ const resolveVendor=desc=>{
     current=matched;
   }
   return current;
-};
+}
+
+function resolveVendor(desc){
+  if(!desc)return desc;
+  // Raw description tried first — preserves manual merges set up before
+  // normalization existed (e.g. user aliased "AMAZON MKTPL*AB12CD" directly).
+  const aliasResult=_resolveAlias(desc);
+  if(aliasResult!==desc)return aliasResult;
+  // Normalize then alias again so users can target the cleaner form
+  // (e.g. alias "Amazon" → "Shopping" to catch all marketplace variants).
+  const normalized=_normalizeVendorDesc(desc);
+  return normalized===desc?desc:_resolveAlias(normalized);
+}
 // Display-only: convert ALL CAPS bank strings to Proper Case.
 // Keeps caps for: words containing & (AT&T, H&R), ≤2 alpha chars, or no vowels (CVS, NBC).
 // Multi-word proper nouns work correctly: BEST BUY → Best Buy, GAS → Gas.
@@ -4000,7 +4050,7 @@ function renderInsights(){
     const catUp=biggestCat.diff>0;
     const catVendors={};
     state.transactions.filter(t=>t.date.slice(0,7)===effectiveM&&t.cat===biggestCat.cat&&isRealSpend(t)&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz))
-      .forEach(t=>{catVendors[t.desc]=(catVendors[t.desc]||0)+t.amount;});
+      .forEach(t=>{const v=resolveVendor(t.desc);catVendors[v]=(catVendors[v]||0)+t.amount;});
     const sortedCatVendors=Object.entries(catVendors).sort((a,b)=>b[1]-a[1]);
     const topVendors=sortedCatVendors.slice(0,3);
     const vendorTooltipLines=sortedCatVendors.map(([v,a])=>`${esc(displayVendor(v))}: ${fmt(a)} (${biggestCat.cur>0?Math.round(a/biggestCat.cur*100):0}%)`).join('&#10;');
@@ -11873,25 +11923,51 @@ function _isIosSafari(){
          !/CriOS|FxiOS/.test(ua)&&
          !navigator.standalone;
 }
+// Detects Mac Safari in the browser (not installed as a Dock web app).
+// "Version/" distinguishes real Safari from Chrome/Edge, which carry a
+// "Safari" UA fragment but not "Version/X.Y Safari". maxTouchPoints>1 guard
+// keeps iPadOS (which reports "Macintosh") in the iOS path instead.
+function _isMacSafari(){
+  const ua=navigator.userAgent;
+  if(navigator.maxTouchPoints>1)return false;
+  if(!/Macintosh/.test(ua))return false;
+  if(!/Version\//.test(ua)||!/Safari/.test(ua))return false;
+  if(/Chrome|Chromium|Edg\/|EdgA|OPR\/|Firefox/.test(ua))return false;
+  // Not an installed Mac web app (File → Add to Dock)
+  if(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)return false;
+  return true;
+}
 function maybeShowLocalDataNotice(){
   if(window._fbUser)return;
   try{if(localStorage.getItem('trakyo_local_data_notice_shown')==='1')return;}catch(e){}
   try{localStorage.setItem('trakyo_local_data_notice_shown','1');}catch(e){}
-  if(_isIosSafari()){
-    const el=document.getElementById('ios-home-screen-banner');
-    if(el)el.style.display='block';
-    return;
-  }
-  const el=document.getElementById('local-data-notice-banner');
+  const id=_isIosSafari()?'ios-home-screen-banner':_isMacSafari()?'mac-safari-banner':'local-data-notice-banner';
+  const el=document.getElementById(id);
   if(el)el.style.display='block';
 }
-function dismissLocalDataNotice(){
-  const el=document.getElementById('local-data-notice-banner');
-  if(el)el.style.display='none';
-}
-function dismissIosHomeBanner(){
-  const el=document.getElementById('ios-home-screen-banner');
-  if(el)el.style.display='none';
+function _dismissBanner(id){const el=document.getElementById(id);if(el)el.style.display='none';}
+function dismissLocalDataNotice(){_dismissBanner('local-data-notice-banner');}
+function dismissIosHomeBanner(){_dismissBanner('ios-home-screen-banner');}
+function dismissMacSafariBanner(){_dismissBanner('mac-safari-banner');}
+// Shows backup age in the import-success modal for unsigned-in users who
+// have never exported a backup or last exported more than 30 days ago.
+function _maybeShowBackupNudge(){
+  const nudgeEl=document.getElementById('import-success-backup-nudge');
+  const msgEl=document.getElementById('import-success-backup-msg');
+  if(!nudgeEl||!msgEl)return;
+  if(window._fbUser){nudgeEl.classList.add('hidden');return;}
+  try{
+    const lastBackup=localStorage.getItem('trakyo_last_backup_date');
+    if(!lastBackup){
+      msgEl.textContent='Last backup: never.';
+    }else{
+      const days=Math.floor((Date.now()-new Date(lastBackup).getTime())/(1000*60*60*24));
+      if(days<30){nudgeEl.classList.add('hidden');return;}
+      msgEl.textContent=`Last backup: ${days} day${days===1?'':'s'} ago.`;
+    }
+  }catch(e){nudgeEl.classList.add('hidden');return;}
+  nudgeEl.style.display='flex';
+  nudgeEl.classList.remove('hidden');
 }
 function showDemoNudge(){
   if((window._isDemoPreview||window._viewingDemoOverReal)&&window._hadSavedData)return; // viewing demo while real data is saved untouched — skip the "import a CSV" prompt
@@ -15403,6 +15479,7 @@ function confirmTxImport(){
   // A multi-source export has no single account name to suggest.
   if(noAcctEl&&importedSources.length>1)noAcctEl.classList.add('hidden');
   document.getElementById('import-success-modal').classList.remove('hidden');
+  _maybeShowBackupNudge();
   // Check for Venmo cashouts
   setTimeout(()=>checkForVenmoCashouts(newTxs),400);
   // Mark that alignment should be checked when success modal closes
@@ -17879,6 +17956,7 @@ function exportBackup(){
     a.href=url;a.download=`trak-yo-dollas-backup-${dateStr}.json`;
     document.body.appendChild(a);a.click();
     setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);
+    try{localStorage.setItem('trakyo_last_backup_date',new Date().toISOString());}catch(e){}
     showToast('Backup exported.','#34D399',3500);
   }catch(e){console.error('exportBackup error:',e);showToast('Export failed.','#F87171');}
 }

@@ -2484,6 +2484,87 @@ test("addVendorAlias: refuses to re-point an alias in a way that would close a m
   assert.deepEqual(ctx.state.vendorAliases, { AMZN: "Amazon", Amazon: "Shopping" }, "the alias map should be unchanged after a refused update -- not left as a closed 2-cycle that silently neutralizes both merges");
 });
 
+// ── _normalizeVendorDesc: strips variable suffixes so the same merchant
+// doesn't appear as multiple vendors in spending views. ───────────────────
+
+test("_normalizeVendorDesc: strips marketplace order IDs and maps Amazon variants to 'Amazon'", () => {
+  const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc"]);
+  // The four variants from the user's bug report — all $25 each, all Amazon
+  assert.equal(_normalizeVendorDesc("AMAZON MKTPL*AB12CD34"), "Amazon");
+  assert.equal(_normalizeVendorDesc("AMAZON MKTPL*ZZ99XX11"), "Amazon");
+  assert.equal(_normalizeVendorDesc("Amazon.com*1A2B3C4D5"), "Amazon");
+  assert.equal(_normalizeVendorDesc("AMZN Mktp US*9K8J7H6G5"), "Amazon");
+  // Other marketplace order-ID patterns
+  assert.equal(_normalizeVendorDesc("AMAZON MKTPLACE PMTS*XY78"), "Amazon");
+  assert.equal(_normalizeVendorDesc("AMAZON.COM*Q1W2E3R4"), "Amazon");
+  // Amazon subscriptions / regional stores without order IDs stay distinct
+  assert.equal(_normalizeVendorDesc("AMAZON MUSIC"), "AMAZON MUSIC", "AMAZON MUSIC has no order ID — stays distinct");
+  assert.equal(_normalizeVendorDesc("AMAZON PRIME"), "AMAZON PRIME", "AMAZON PRIME stays distinct");
+  assert.equal(_normalizeVendorDesc("AMAZON WEB SERVICES"), "AMAZON WEB SERVICES", "AWS stays distinct");
+});
+
+test("_normalizeVendorDesc: strips trailing store/location numbers", () => {
+  const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc"]);
+  // Hash-prefixed store numbers (KROGER #612, #1045)
+  assert.equal(_normalizeVendorDesc("KROGER #612"), "KROGER");
+  assert.equal(_normalizeVendorDesc("KROGER #1045"), "KROGER");
+  assert.equal(_normalizeVendorDesc("TRADER JOE'S #123"), "TRADER JOE'S");
+  // Long trailing digit runs (5+): SHELL OIL 57444, 12345678
+  assert.equal(_normalizeVendorDesc("SHELL OIL 57444"), "SHELL OIL");
+  assert.equal(_normalizeVendorDesc("SHELL OIL 12345678"), "SHELL OIL");
+  assert.equal(_normalizeVendorDesc("STARBUCKS 12345"), "STARBUCKS");
+});
+
+test("_normalizeVendorDesc: strips payment-processor prefixes", () => {
+  const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc"]);
+  assert.equal(_normalizeVendorDesc("SQ *STARBUCKS"), "STARBUCKS");
+  assert.equal(_normalizeVendorDesc("SQ * STARBUCKS"), "STARBUCKS");
+  assert.equal(_normalizeVendorDesc("TST* OLIVE GARDEN"), "OLIVE GARDEN");
+  assert.equal(_normalizeVendorDesc("PAYPAL *ETSY"), "ETSY");
+  assert.equal(_normalizeVendorDesc("PP*EBAY"), "EBAY");
+});
+
+test("_normalizeVendorDesc: does NOT strip digits that are part of a name", () => {
+  const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc"]);
+  // 7-ELEVEN: leading digits are part of the brand name
+  assert.equal(_normalizeVendorDesc("7-ELEVEN"), "7-ELEVEN");
+  assert.equal(_normalizeVendorDesc("7-ELEVEN GAS"), "7-ELEVEN GAS");
+  // 76: short digit name (< 5 chars, no preceding whitespace before digits)
+  assert.equal(_normalizeVendorDesc("76"), "76");
+  assert.equal(_normalizeVendorDesc("76 STATION"), "76 STATION");
+  // 4-digit trailing number (not 5+): leave alone
+  assert.equal(_normalizeVendorDesc("DISCOVER E-PAYMENT 1234"), "DISCOVER E-PAYMENT 1234");
+  // No change for clean descriptions
+  assert.equal(_normalizeVendorDesc("WHOLE FOODS"), "WHOLE FOODS");
+  assert.equal(_normalizeVendorDesc("T-MOBILE PCS SVC"), "T-MOBILE PCS SVC");
+});
+
+test("resolveVendor: applies normalization when no alias matches the raw description", () => {
+  const ctx = { state: { vendorAliases: {} } };
+  const { resolveVendor } = loadFunctions(["resolveVendor", "_resolveAlias", "_normalizeVendorDesc"], ctx);
+  assert.equal(resolveVendor("KROGER #612"), "KROGER", "no alias — falls through to normalization");
+  assert.equal(resolveVendor("KROGER #1045"), "KROGER", "different store number, same result");
+  assert.equal(resolveVendor("SHELL OIL 57444"), "SHELL OIL");
+  assert.equal(resolveVendor("AMAZON MKTPL*AB12CD34"), "Amazon");
+});
+
+test("resolveVendor: raw-description aliases take priority over normalization", () => {
+  // If a user manually aliased the raw form before normalization existed, honor it
+  const ctx = { state: { vendorAliases: { "KROGER #612": "Kroger" } } };
+  const { resolveVendor } = loadFunctions(["resolveVendor", "_resolveAlias", "_normalizeVendorDesc"], ctx);
+  assert.equal(resolveVendor("KROGER #612"), "Kroger", "exact raw alias wins over normalization");
+  assert.equal(resolveVendor("KROGER #1045"), "KROGER", "unaliased variant normalizes");
+});
+
+test("resolveVendor: an alias on the normalized form is applied after normalization", () => {
+  // User aliased "Amazon" → "Online Shopping"; all marketplace variants should resolve through it
+  const ctx = { state: { vendorAliases: { Amazon: "Online Shopping" } } };
+  const { resolveVendor } = loadFunctions(["resolveVendor", "_resolveAlias", "_normalizeVendorDesc"], ctx);
+  assert.equal(resolveVendor("AMAZON MKTPL*AB12CD34"), "Online Shopping");
+  assert.equal(resolveVendor("Amazon.com*1A2B3C4D5"), "Online Shopping");
+  assert.equal(resolveVendor("AMZN Mktp US*9K8J7H6G5"), "Online Shopping");
+});
+
 // ── 97th adversarial pass: renderVendorAliasList()'s per-alias transaction
 // count matched against the raw t.desc, so a chained alias (merging an
 // already-merged display name into a further alias) always showed "(0
@@ -2616,7 +2697,7 @@ test("confirmTxImport: refuses to run during a demo-preview session instead of a
 test("import-success-modal has a #import-success-no-account nudge box, hidden by default like the existing uncategorized-count nudge", () => {
   const source = readSource();
   const modalMatch = source.match(
-    /<div class="modal-overlay hidden" id="import-success-modal">[\s\S]{0,1900}?<!-- Community rules modal -->/
+    /<div class="modal-overlay hidden" id="import-success-modal">[\s\S]{0,3000}?<!-- Community rules modal -->/
   );
   assert.ok(modalMatch, "import-success-modal should exist");
   assert.match(
@@ -3330,7 +3411,7 @@ test("transaction ingestion: desc/cat/card are string-coerced (with cat defaulti
   const pattern = /date:typeof t\.date==='string'&&\/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\$\/\.test\(t\.date\)\?t\.date:'',desc:typeof t\.desc==='string'\?t\.desc:'',cat:typeof t\.cat==='string'\?t\.cat:'Other',card:typeof t\.card==='string'\?t\.card:'',amount:parseFloat\(t\.amount\)\|\|0,excluded:!!t\.excluded,is_offset:!!t\.is_offset/g;
   const matches = source.match(pattern) || [];
   assert.equal(matches.length, 3, "all 3 ingestion points (loadUserData, loadFromLocalStorage, importBackup) should coerce desc/cat/card the same way -- a truthy non-string desc previously threw in resolveVendor()/displayVendor(), reachable from the Treemap, Spending tab, and the Dashboard's own 'largest charge' card");
-  assert.match(source, /const resolveVendor=desc=>\{\s*if\(!desc\)return desc;/, "resolveVendor()'s guard is falsy-only, so a truthy non-string would have slipped through without the ingestion-side fix above");
+  assert.match(source, /function resolveVendor\(desc\)\{\s*if\(!desc\)return desc;/, "resolveVendor()'s guard is falsy-only, so a truthy non-string would have slipped through without the ingestion-side fix above");
   assert.match(source, /const displayVendor=name=>\{\s*if\(!name\)return name;/, "displayVendor()'s guard is falsy-only, same reasoning");
 });
 
@@ -6963,6 +7044,78 @@ test("privacy.html discloses that local-only data is unrecoverable if lost, not 
 // goes looking for it -- almost nobody reads a privacy policy before
 // using an app. This surfaces the same fact in-app, once, at the exact
 // moment it first becomes true. ──
+// ── Safari data safety: Mac Safari detection and banners ─────────────────────
+
+const MAC_SAFARI_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15";
+const CHROME_MAC_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+const EDGE_MAC_UA   = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0";
+const FIREFOX_MAC_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14.0; rv:121.0) Gecko/20100101 Firefox/121.0";
+const IPHONE_UA     = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1";
+const IPAD_MAC_UA   = MAC_SAFARI_UA; // iPadOS 13+ — same UA as Mac but maxTouchPoints>1
+const CHROME_IOS_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.0.0 Mobile/15E148 Safari/604.1";
+
+function makeMacNav(ua, maxTouch = 0) { return { userAgent: ua, maxTouchPoints: maxTouch, standalone: undefined }; }
+function noStandaloneWindow() { return { matchMedia: () => ({ matches: false }) }; }
+function standaloneWindow() { return { matchMedia: () => ({ matches: true }) }; }
+
+test("_isMacSafari: detects real Mac Safari, rejects Chrome/Edge/Firefox on Mac", () => {
+  const fns = (ua, maxTouch = 0, win = noStandaloneWindow()) =>
+    loadFunctions(["_isMacSafari"], { navigator: makeMacNav(ua, maxTouch), window: win });
+  assert.equal(fns(MAC_SAFARI_UA)._isMacSafari(), true,  "real Mac Safari 17");
+  assert.equal(fns(CHROME_MAC_UA)._isMacSafari(), false, "Chrome on Mac has 'Safari' but no 'Version/'");
+  assert.equal(fns(EDGE_MAC_UA)._isMacSafari(),   false, "Edge on Mac");
+  assert.equal(fns(FIREFOX_MAC_UA)._isMacSafari(), false, "Firefox on Mac");
+  // iPad disguised as Mac: maxTouchPoints>1 distinguishes it from a real Mac
+  assert.equal(fns(IPAD_MAC_UA, 5)._isMacSafari(), false, "iPadOS 13+ Mac UA stays in iOS path");
+  // iPhone — no Macintosh in UA
+  assert.equal(fns(IPHONE_UA)._isMacSafari(), false, "iPhone UA");
+  // Installed Mac web app: matchMedia returns standalone=true → no notice needed
+  assert.equal(fns(MAC_SAFARI_UA, 0, standaloneWindow())._isMacSafari(), false, "installed Mac web app skips notice");
+});
+
+test("_isIosSafari: detects iPhone/iPad Safari, skips standalone and Chrome/Firefox on iOS", () => {
+  const fns = (ua, maxTouch = 0, standalone = false) =>
+    loadFunctions(["_isIosSafari"], { navigator: { userAgent: ua, maxTouchPoints: maxTouch, standalone } });
+  assert.equal(fns(IPHONE_UA)._isIosSafari(), true,  "iPhone Safari in browser");
+  assert.equal(fns(IPHONE_UA, 0, true)._isIosSafari(), false, "iPhone Safari as Home Screen app — no notice needed");
+  assert.equal(fns(IPAD_MAC_UA, 5)._isIosSafari(), true,  "iPadOS 13+ Mac UA with maxTouchPoints=5");
+  assert.equal(fns(IPAD_MAC_UA, 5, true)._isIosSafari(), false, "iPadOS Home Screen app");
+  assert.equal(fns(CHROME_IOS_UA)._isIosSafari(), false, "Chrome on iPhone (CriOS)");
+  assert.equal(fns(CHROME_MAC_UA)._isIosSafari(), false, "Chrome on Mac");
+  assert.equal(fns(MAC_SAFARI_UA)._isIosSafari(), false, "Mac Safari — no iPhone/iPad in UA, low touchPoints");
+});
+
+test("the mac-safari-banner exists in the DOM, hidden by default, with matching actions", () => {
+  const source = readSource();
+  assert.match(source, /<div id="mac-safari-banner" style="display:none[^"]*">/, "banner should exist hidden by default");
+  assert.match(source, /<button data-action="openAuthModal\|dismissMacSafariBanner"[^>]*>Sign in to sync<\/button>/);
+  assert.match(source, /<button data-action="exportBackup\|dismissMacSafariBanner"[^>]*>Export a backup<\/button>/);
+  assert.match(source, /dismissMacSafariBanner\(\)/, "dismissMacSafariBanner() function should be defined");
+});
+
+test("maybeShowLocalDataNotice: routes Mac Safari to mac-safari-banner, iOS Safari to ios-home-screen-banner, others to local-data-notice-banner", () => {
+  const source = readSource();
+  const fnBody = source.match(/function maybeShowLocalDataNotice\(\)\{[\s\S]{0,700}?\n\}/)?.[0];
+  assert.ok(fnBody, "maybeShowLocalDataNotice() should be defined");
+  assert.match(fnBody, /_isIosSafari\(\)/, "should check iOS Safari");
+  assert.match(fnBody, /_isMacSafari\(\)/, "should check Mac Safari");
+  assert.match(fnBody, /mac-safari-banner/, "should show Mac Safari banner for Mac Safari");
+});
+
+test("exportBackup: stores trakyo_last_backup_date in localStorage on each successful export", () => {
+  const source = readSource();
+  const fnBody = source.match(/function exportBackup\(\)\{[\s\S]{0,1500}?\n\}/)?.[0];
+  assert.ok(fnBody, "exportBackup() should be defined");
+  assert.match(fnBody, /trakyo_last_backup_date/, "should write the backup date to localStorage");
+});
+
+test("import-success-backup-nudge: element exists in success modal, hidden by default", () => {
+  const source = readSource();
+  assert.match(source, /id="import-success-backup-nudge"[^>]*class="hidden"/, "backup nudge should exist hidden by default");
+  assert.match(source, /id="import-success-backup-msg"/, "backup message span should exist");
+  assert.match(source, /_maybeShowBackupNudge\(\)/, "_maybeShowBackupNudge() should be called");
+});
+
 test("the local-data notice banner exists, is signed-in-aware, and fires exactly once via a device-local (not synced) flag", () => {
   const source = readSource();
   assert.match(
@@ -6985,7 +7138,7 @@ test("the local-data notice banner exists, is signed-in-aware, and fires exactly
     /<button data-action="exportBackup\|dismissLocalDataNotice"[^>]*>Export a backup<\/button>/,
     "should also offer a one-click backup export as the no-sign-in alternative"
   );
-  const fnMatch = source.match(/function maybeShowLocalDataNotice\(\)\{[\s\S]{0,500}?\n\}/);
+  const fnMatch = source.match(/function maybeShowLocalDataNotice\(\)\{[\s\S]{0,900}?\n\}/);
   assert.ok(fnMatch, "maybeShowLocalDataNotice() should be defined");
   assert.match(fnMatch[0], /if\(window\._fbUser\)return;/, "should skip entirely for a signed-in user, since sync already covers them");
   assert.match(
