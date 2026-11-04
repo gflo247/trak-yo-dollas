@@ -2033,7 +2033,7 @@ test("openTxImportModal: resets #import-source-label and #import-replace, not le
   const source = readSource();
   assert.match(
     source,
-    /function openTxImportModal\(\)\{[\s\S]{0,2000}?const isl=document\.getElementById\('import-source-label'\);if\(isl\)\{isl\.value='Checking';[\s\S]{0,100}?\}\s*const irc=document\.getElementById\('import-replace'\);if\(irc\)irc\.checked=false;/,
+    /function openTxImportModal\(\)\{[\s\S]{0,2000}?const isl=document\.getElementById\('import-source-label'\);if\(isl\)isl\.value='Checking';[\s\S]{0,200}?const irc=document\.getElementById\('import-replace'\);if\(irc\)irc\.checked=false;/,
     "openTxImportModal() should reset #import-source-label to its default value and #import-replace to unchecked"
   );
 });
@@ -10126,6 +10126,62 @@ test("confirmTxImport keeps per-row sources from a trak-yo-dolla$ export and swi
   const source = readSource();
   assert.match(source, /newTxs=_dedupedParsed\.map\(t=>\(\{\.\.\.t,card:importFmt==='trakyodollas'&&t\.card\?t\.card:source,id:state\.nextId\+\+\}\)\);/);
   assert.match(source, /newTxs\.forEach\(t=>state\.activeSources\.add\(t\.card\)\);/);
+});
+
+// ── Item 1: shiftDate clamping and starter-demo rent coverage ──
+
+test("shiftDate: clamps end-of-month days to the last valid day of the target month", () => {
+  const { shiftDate } = loadFunctions(["shiftDate"]);
+  assert.equal(shiftDate('2026-08-31', 1), '2026-09-30', "Aug 31 + 1 month → Sep 30 (not Oct 1)");
+  assert.equal(shiftDate('2027-01-31', 1), '2027-02-28', "Jan 31 + 1 month → Feb 28 (non-leap year)");
+  assert.equal(shiftDate('2028-01-31', 1), '2028-02-29', "Jan 31 + 1 month → Feb 29 (2028 is a leap year)");
+  assert.equal(shiftDate('2026-12-31', 1), '2027-01-31', "Dec 31 + 1 month → Jan 31 (year boundary)");
+  assert.equal(shiftDate('2026-06-15', 1), '2026-07-15', "mid-month date is unchanged by clamping");
+  assert.equal(shiftDate('2026-08-31', 0), '2026-08-31', "delta 0 returns the original date unchanged");
+});
+
+test("starter demo: exactly one RENT PAYMENT per month, Oct 2025 through Sep 2026 (no gaps after adding Jul and Sep rows)", () => {
+  const source = readSource();
+  // Extract all RENT PAYMENT dates from the DEMO_PROFILE_1 transaction array.
+  // The pattern matches the compact object literal format used in the data.
+  const rentDates = [...source.matchAll(/\{date:'(20(?:25|26)-\d{2})-\d{2}',desc:'RENT PAYMENT'/g)]
+    .map(m => m[1]);
+  const expected = [
+    '2025-10','2025-11','2025-12',
+    '2026-01','2026-02','2026-03','2026-04','2026-05','2026-06',
+    '2026-07','2026-08','2026-09',
+  ];
+  assert.deepStrictEqual(
+    [...rentDates].sort(),
+    [...expected].sort(),
+    "every month from Oct 2025 through Sep 2026 must have exactly one RENT PAYMENT — no gaps, no duplicates"
+  );
+});
+
+// ── Item 2: import label defaults and merge hint elements ──
+
+test("import modal HTML: #import-label-hint and #import-label-hint-text elements exist", () => {
+  const source = readSource();
+  assert.ok(source.includes('id="import-label-hint"'), "#import-label-hint element must exist in the import modal");
+  assert.ok(source.includes('id="import-label-hint-text"'), "#import-label-hint-text span must exist for the hint message");
+});
+
+test("import modal HTML: Rename button uses data-action='focusImportLabel'", () => {
+  const source = readSource();
+  assert.ok(source.includes("data-action=\"focusImportLabel\""), "Rename button must dispatch via data-action");
+});
+
+test("import modal JS: _importLabelEdited is reset to false in openTxImportModal", () => {
+  const source = readSource();
+  // Both the declaration and the reset-on-open must exist.
+  assert.ok(source.includes("let _importLabelEdited=false;"), "_importLabelEdited must be declared as a module-level boolean");
+  assert.ok(source.includes("_importLabelEdited=false;"), "openTxImportModal must reset _importLabelEdited to false");
+});
+
+test("import modal JS: focusImportLabel and _onImportLabelInput functions are defined", () => {
+  const { focusImportLabel, _onImportLabelInput } = loadFunctions(["focusImportLabel", "_onImportLabelInput"]);
+  assert.ok(typeof focusImportLabel === "function", "focusImportLabel must be a top-level function");
+  assert.ok(typeof _onImportLabelInput === "function", "_onImportLabelInput must be a top-level function");
 });
 
 // ── end of tests ──

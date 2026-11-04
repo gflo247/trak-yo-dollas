@@ -118,3 +118,46 @@ rendering, after launch.
 
 HN and r/SideProject posts are drafted. PH account warmed. Pending: screenshot assets
 and a short screen-recording.
+
+---
+
+## Lower import friction
+
+### 21. Per-format "what does this column mean" tooltip
+Show a one-line key (e.g. "Amount: negative = withdrawal") inline in the preview
+header when the detected format is known — saves the user a docs round-trip for
+unfamiliar formats.
+
+### 22. Import error messages for common malformed files
+"This looks like an Excel file — open it in Excel or Sheets, then File → Export → CSV"
+when the magic bytes are XLSX/XLS; similar hint for Quicken QFX/OFX uploads.
+
+### 23. Multi-file drop in a single import session
+Accept 2–5 CSVs dropped at once (e.g. all three Chase accounts at once), parse each,
+merge into one importParsed, show combined preview. Reduces clicks for users with
+multiple accounts at the same bank.
+
+### 24. Duplicate-detection preview before confirm
+Show a "X likely duplicates skipped" count in the preview stats line (using the same
+dedup logic confirmTxImport already runs) so users know before they hit Import that
+re-importing an overlapping date range is safe.
+
+### 25. Import success: prompt to label the next file
+After confirming an import, if the user has only one source, show a nudge:
+"Have another account? Drop the next CSV to add it." — keeps momentum without
+requiring the user to find the import button again.
+
+### 26. Guided first-import flow for zero-data state
+On first visit (no localStorage data), show a larger, more prominent import CTA
+with a one-sentence explainer: "Drop a CSV from your bank to get started." Collapses
+to the current compact UI once data exists.
+
+### 27. Source-name autocomplete from past imports
+Datalist already populated on modal open — extend to also suggest names from
+previously-used but now-empty sources (e.g. a source the user deleted). Requires
+tracking used source names separately from active transactions.
+
+### 28. "Open bank guide" deep-link from import modal format buttons
+When the user manually picks a format (e.g. Chase), show a small "How to export from
+Chase →" link next to the format button that opens the matching /guides/chase page
+in a new tab.

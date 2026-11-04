@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-FZ3i4mTq2lEYLN3WGJ+LIviEHKKJ8g8ujJkfdIFeDDY=' 'sha256-tGKcE3ZDrA0X8ogqIyH0oUD+uiwfRq5/2wB6ThhAV2E=' 'sha256-7Svy5KCHEKNeIW9VSW0zv3drmhPRsXkk3tHPF15IJ1c=';
+  script-src 'self' 'sha256-x74zgtB2dRP4K2cpWqokh323Bj2prUJYXtdxI9B20XY=' 'sha256-tGKcE3ZDrA0X8ogqIyH0oUD+uiwfRq5/2wB6ThhAV2E=' 'sha256-7Svy5KCHEKNeIW9VSW0zv3drmhPRsXkk3tHPF15IJ1c=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data:;
@@ -140,7 +140,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#111720">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<script>fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'event',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:location.pathname,referrer:document.referrer,screen:screen.width+'x'+screen.height,language:navigator.language,title:document.title}})}).catch(function(){});</script>
+<script>try{if(!localStorage.getItem('umami.disabled'))fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'event',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:location.pathname,referrer:document.referrer,screen:screen.width+'x'+screen.height,language:navigator.language,title:document.title}})}).catch(function(){});}catch(e){}</script>
 </head>
 <body>
 
@@ -201,7 +201,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
       </div>
       <div class="mr-card">
         <div class="mr-event">Analytics</div>
-        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val"><a href="#analytics" style="color:var(--accent-blue-light)">Page views, referring domain, browser type, OS, country</a><br><span style="font-size:13px;color:var(--text-muted)">also fires on 3 in-app actions: demo explored, first CSV import, returning use — no financial data</span></span></div>
+        <div class="mr-field"><span class="mr-lbl">Data sent</span><span class="mr-val"><a href="#analytics" style="color:var(--accent-blue-light)">Page views, referring domain, browser type, OS, country</a><br><span style="font-size:13px;color:var(--text-muted)">also fires on 6 in-app actions: import panel opened, demo explored, first CSV import, returning use, landing page demo click, landing page import click — no financial data; opt out by setting <code>umami.disabled</code> in localStorage</span></span></div>
         <div class="mr-field"><span class="mr-lbl">Where it goes</span><span class="mr-val">Umami (no cookies or personal data)</span></div>
         <div class="mr-field"><span class="mr-lbl">Blockable?</span><span class="mr-val" style="color:var(--clr-ok);font-weight:700">Yes<br><span style="font-size:13px;font-weight:400;color:var(--text-muted)">No effect on the app either way — only removes usage stats.</span></span></div>
       </div>

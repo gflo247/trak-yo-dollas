@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-FZ3i4mTq2lEYLN3WGJ+LIviEHKKJ8g8ujJkfdIFeDDY=' 'sha256-L4mXbj2AbOL2RiyYk48AiwKK/JvWV7UcrFvUk1MAASk=' 'sha256-q+m81R/+bzZUtk0epEBUUd5t0i7jkLgAx7JyQYTkEZU=';
+  script-src 'self' 'sha256-x74zgtB2dRP4K2cpWqokh323Bj2prUJYXtdxI9B20XY=' 'sha256-L4mXbj2AbOL2RiyYk48AiwKK/JvWV7UcrFvUk1MAASk=' 'sha256-q+m81R/+bzZUtk0epEBUUd5t0i7jkLgAx7JyQYTkEZU=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data:;
@@ -104,7 +104,7 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#111720">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<script>fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'event',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:location.pathname,referrer:document.referrer,screen:screen.width+'x'+screen.height,language:navigator.language,title:document.title}})}).catch(function(){});</script>
+<script>try{if(!localStorage.getItem('umami.disabled'))fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'event',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:location.pathname,referrer:document.referrer,screen:screen.width+'x'+screen.height,language:navigator.language,title:document.title}})}).catch(function(){});}catch(e){}</script>
 </head>
 <body>
 
@@ -126,6 +126,9 @@ footer{border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;align
   <p class="intro">Works for Chase checking accounts, savings accounts, and all Chase credit cards &mdash; Freedom, Sapphire, Ink, and others. You'll get a <code>.CSV</code> file you can import directly into trak-yo-dolla$ or any spreadsheet.</p>
 
   <h2>Steps</h2>
+  <div class="note" style="margin-bottom:1.25rem">
+    <p style="font-size:14px;color:var(--text-muted);line-height:1.65">Can't find a CSV download in your bank's app? Use your bank's website on a computer instead — that's where the export option lives.</p>
+  </div>
   <div class="steps">
     <div class="step">
       <div class="step-num">1</div>

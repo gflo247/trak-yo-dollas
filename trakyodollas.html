@@ -11,7 +11,7 @@
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-F8oBlYyEv2qQ6iswfpkha1W9BwOpo61oowjZXYaHfrs=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-lxmbPmXHU261GcmEHJbqmhdF9cBJhcXY/dou/eQSjCo=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -568,6 +568,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid #2563EB;outline-offset
 select option{background:var(--bg-card)}
 .csv-zone{border:2px dashed var(--border-mid);border-radius:10px;padding:.85rem;text-align:center;cursor:pointer;color:var(--text-muted);font-size:12px}
 .csv-zone:hover{background:var(--bg-card);border-color:#2563EB}
+.csv-zone:focus-within{outline:2px solid var(--accent-blue);outline-offset:2px}
 .divider{height:1px;background:var(--border);margin:.85rem 0}
 .recategorize-list{max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:8px}
 .rc-item{display:flex;align-items:center;gap:8px;padding:.4rem .7rem;border-bottom:1px solid var(--border);font-size:11px;color:var(--text-secondary)}
@@ -1416,7 +1417,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <!-- Source label -->
     <div class="form-group">
       <label class="form-label" for="import-source-label">Label these transactions as</label>
-      <input type="text" id="import-source-label" placeholder="e.g. Checking, Visa Rewards…" value="Checking"/>
+      <input type="text" id="import-source-label" placeholder="e.g. Checking, Visa Rewards…" value="Checking" list="import-source-datalist"/>
+      <datalist id="import-source-datalist"></datalist>
       <div id="import-source-hint" style="font-size:11px;color:var(--text-muted);margin-top:.3rem;min-height:1em"></div>
     </div>
 
@@ -1441,6 +1443,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
              data-drop="handleTxDropDelegated"
              data-change="handleTxFileSelectDelegated"/>
     </div>
+    <!-- Mobile-only: remind users to use their bank's website, not the app -->
+    <p class="show-mobile" style="display:none;font-size:11px;color:var(--text-muted);margin-top:.45rem;line-height:1.5">Can't find a CSV download in your bank's app? Use your bank's website instead — it's easiest on a computer.</p>
 
     <!-- CSV export help — native collapsible, no JS -->
     <details class="csv-help" style="margin-top:.55rem;font-size:12px;color:var(--text-muted)">
@@ -1489,6 +1493,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
          info blurb further down. Moved up from inside #import-preview per
          Nicholas's direct feedback, launch day, August 2026. -->
     <div id="import-preview-stats" class="hidden" style="font-size:11px;color:var(--text-secondary);margin-top:.35rem"></div>
+    <!-- Label merge/rename hint — shown after preview when the label is still the default -->
+    <div id="import-label-hint" class="hidden" style="font-size:11px;color:var(--text-muted);margin-top:.3rem;line-height:1.5"><span id="import-label-hint-text"></span> <button data-action="focusImportLabel" style="background:none;border:none;color:var(--accent-blue-light);font-size:11px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">Rename</button></div>
 
     <!-- Date format toggle — shown after file loads, hidden until then -->
     <div id="import-date-fmt-row" style="display:none;margin-top:.45rem;align-items:center;gap:6px;font-size:11px;color:var(--text-secondary)">
@@ -9297,6 +9303,18 @@ function renderTxSourcesPanel(){
   }).join('');
   el.innerHTML=`<div class="list-col" style="margin-top:1rem"><div class="sh">Transaction sources</div>${rows}</div>`;
 }
+function _onImportLabelInput(){
+  _importLabelEdited=true;
+  const hint=document.getElementById('import-label-hint');
+  if(hint)hint.classList.add('hidden');
+  updateImportSourceHint();
+}
+function focusImportLabel(){
+  const isl=document.getElementById('import-source-label');
+  if(!isl)return;
+  isl.focus();
+  isl.select();
+}
 // Updates the source-hint line below the source label input in the import
 // modal. Called on modal open and on every keystroke in the label field.
 function updateImportSourceHint(){
@@ -13501,6 +13519,7 @@ let importParsed=[];  // [{date,desc,cat,card,amount,excluded,is_offset}]
 let _importDateFmt='mdy'; // 'mdy'=MM/DD/YYYY (US), 'dmy'=DD/MM/YYYY (UK/AU)
 let _importRawRows=null;  // stored for re-parse when date format changes
 let _importRawHeader=''; // first detected header line, shown in zero-row error message
+let _importLabelEdited=false; // true once the user edits the label; reset on each modal open
 // Which column the 8-row preview sample is sorted by, and which
 // direction -- sorts the full importParsed set (not just whichever 8 rows
 // already happen to be visible), so e.g. sorting by Amount surfaces the
@@ -13721,13 +13740,21 @@ function openTxImportModal(){
   // 89th adversarial pass -- the fifth instance this review cycle of a
   // modal-open function resetting some fields but not others (45th, 77th,
   // 87th, 88th passes each found a different one).
-  const isl=document.getElementById('import-source-label');if(isl){isl.value='Checking';setTimeout(()=>isl.focus(),0);}
+  _importLabelEdited=false;
+  const isl=document.getElementById('import-source-label');if(isl)isl.value='Checking';
   const irc=document.getElementById('import-replace');if(irc)irc.checked=false;
+  // Populate datalist with existing imported source names for autocomplete.
+  const datalist=document.getElementById('import-source-datalist');
+  if(datalist){datalist.innerHTML='';[...new Set(state.transactions.map(t=>t.card).filter(Boolean))].forEach(src=>{const o=document.createElement('option');o.value=src;datalist.appendChild(o);});}
   // Show staleness hint for the default "Checking" source, and refresh it on
   // every keystroke. removeEventListener first so repeated modal opens don't
   // stack listeners on the same element.
   updateImportSourceHint();
-  if(isl){isl.removeEventListener('input',updateImportSourceHint);isl.addEventListener('input',updateImportSourceHint);}
+  if(isl){isl.removeEventListener('input',_onImportLabelInput);isl.addEventListener('input',_onImportLabelInput);}
+  // Focus the file input (not the label) so the drop zone gets a keyboard
+  // focus indicator via .csv-zone:focus-within — the label focus made it look
+  // like text entry was the first step rather than dropping a file.
+  setTimeout(()=>document.getElementById('tx-csv-file').focus(),0);
   const _dfRow=document.getElementById('import-date-fmt-row');
   if(_dfRow)_dfRow.style.display='none';
   fetchCommunityRules(); // kick off once per session, non-blocking
@@ -13750,12 +13777,14 @@ function openTxImportModal(){
   document.getElementById('tx-drop-zone').style.borderColor='';
   importParsed=[];
   document.getElementById('import-preview').classList.add('hidden');
-  // #import-preview-stats sits outside #import-preview — must be hidden explicitly.
+  // #import-preview-stats and #import-label-hint sit outside #import-preview — must be hidden explicitly.
   const stats=document.getElementById('import-preview-stats');if(stats)stats.classList.add('hidden');
+  const labelHint=document.getElementById('import-label-hint');if(labelHint)labelHint.classList.add('hidden');
   document.getElementById('import-confirm-btn').classList.add('hidden');
   const detFmt=document.getElementById('import-detected-fmt');if(detFmt)detFmt.classList.add('hidden');
   const zeroMsg=document.getElementById('import-zero-msg');if(zeroMsg)zeroMsg.classList.add('hidden');
   el.classList.remove('hidden');
+  _umamiSend('import-opened');
 }
 function closeTxImportModal(){hideModalById('tx-import-modal');}
 
@@ -15047,6 +15076,25 @@ function showImportPreview(){
   stats.classList.remove('hidden');
   stats.innerHTML=`<strong style="color:var(--text-bright)">${importParsed.length} transaction${importParsed.length===1?'':'s'}</strong> · <span style="color:var(--text-muted)">${esc(dateRangeStr)}</span> · <span style="color:var(--text-muted)">${fmtD(total)} total</span> · Top: ${topCats}`;
 
+  // Show the merge/rename hint if the label is still the default "Checking".
+  // If the user already edited it, _importLabelEdited is true and we stay hidden.
+  const labelHintEl=document.getElementById('import-label-hint');
+  const labelHintText=document.getElementById('import-label-hint-text');
+  if(labelHintEl&&labelHintText){
+    if(!_importLabelEdited&&state.hasRealData){
+      const curLabel=(document.getElementById('import-source-label')?.value||'').trim();
+      const existing=[...new Set(state.transactions.map(t=>t.card).filter(Boolean))];
+      if(existing.map(s=>s.toLowerCase()).includes(curLabel.toLowerCase())){
+        labelHintText.textContent=`This will merge with your existing "${curLabel}" source.`;
+      } else {
+        labelHintText.textContent=`Transactions will be tagged as "${curLabel || 'Checking'}".`;
+      }
+      labelHintEl.classList.remove('hidden');
+    } else {
+      labelHintEl.classList.add('hidden');
+    }
+  }
+
   // Sorted fresh each render by whichever column/direction was last
   // clicked, over the FULL importParsed set (not just whichever 8 rows
   // already happen to be on screen) -- so e.g. sorting by Amount surfaces
@@ -15104,6 +15152,13 @@ function toggleFormatPicker(){
     if(panel)panel.classList.add('hidden');
     if(toggle)toggle.textContent='Having trouble? Pick your format manually →';
   }
+}
+
+// Analytics helper — respects the official Umami self-exclusion flag so
+// users who set it in localStorage aren't tracked even by in-app events.
+function _umamiSend(name){
+  try{if(localStorage.getItem('umami.disabled'))return;}catch(e){}
+  fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'event',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:'/trakyodollas',name}})}).catch(()=>{});
 }
 
 function confirmTxImport(){
@@ -15323,14 +15378,14 @@ function confirmTxImport(){
   // fire even if the first-import fetch was blocked by a privacy extension.
   if(wasFirstRealSave){
     try{localStorage.setItem('trakyo_first_import_date',new Date().toISOString());}catch(e){}
-    fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'event',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:'/trakyodollas',name:'first-import'}})}).catch(()=>{});
+    _umamiSend('first-import');
   }else{
     const _fid=localStorage.getItem('trakyo_first_import_date');
     if(_fid&&!localStorage.getItem('trakyo_returning_import_tracked')){
       const _days=(Date.now()-new Date(_fid).getTime())/(864e5);
       if(_days>=20){
         try{localStorage.setItem('trakyo_returning_import_tracked','1');}catch(e){}
-        fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'event',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:'/trakyodollas',name:'returning-importer'}})}).catch(()=>{});
+        _umamiSend('returning-importer');
       }
     }
   }
@@ -18459,11 +18514,11 @@ const DEMO_PROFILE_1 = {
   vendorAliases:{'COMCAST XFINITY':'Internet','AT&T':'Phone','VENMO':'Transfers'},
   transactions:[
     // Sep 2026
-    {date:'2026-09-26',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:15.77},{date:'2026-09-25',desc:'ALDI',cat:'Groceries',card:'Checking',amount:59.22},{date:'2026-09-23',desc:'SHELL',cat:'Transportation',card:'Checking',amount:44.55},{date:'2026-09-21',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2026-09-20',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:15.49},{date:'2026-09-18',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:8.90},{date:'2026-09-16',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:32.44},{date:'2026-09-15',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:54.11},{date:'2026-09-13',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2026-09-12',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-09-10',desc:'SHELL',cat:'Transportation',card:'Checking',amount:39.88},{date:'2026-09-08',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:46.22},{date:'2026-09-06',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:77.33},{date:'2026-09-04',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:11.88},{date:'2026-09-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
+    {date:'2026-09-30',desc:'RENT PAYMENT',cat:'Rent',card:'Checking',amount:1350.00},{date:'2026-09-26',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:15.77},{date:'2026-09-25',desc:'ALDI',cat:'Groceries',card:'Checking',amount:59.22},{date:'2026-09-23',desc:'SHELL',cat:'Transportation',card:'Checking',amount:44.55},{date:'2026-09-21',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2026-09-20',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:15.49},{date:'2026-09-18',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:8.90},{date:'2026-09-16',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:32.44},{date:'2026-09-15',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:54.11},{date:'2026-09-13',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2026-09-12',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-09-10',desc:'SHELL',cat:'Transportation',card:'Checking',amount:39.88},{date:'2026-09-08',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:46.22},{date:'2026-09-06',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:77.33},{date:'2026-09-04',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:11.88},{date:'2026-09-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
     // Aug 2026
     {date:'2026-08-31',desc:'RENT PAYMENT',cat:'Rent',card:'Checking',amount:1350.00},{date:'2026-08-29',desc:'ALDI',cat:'Groceries',card:'Checking',amount:62.44},{date:'2026-08-27',desc:'SHELL',cat:'Transportation',card:'Checking',amount:43.77},{date:'2026-08-25',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:15.49},{date:'2026-08-24',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2026-08-22',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:14.88},{date:'2026-08-20',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:56.33},{date:'2026-08-18',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:9.25},{date:'2026-08-17',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-08-15',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:27.49},{date:'2026-08-14',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2026-08-12',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:40.11},{date:'2026-08-10',desc:'SHELL',cat:'Transportation',card:'Checking',amount:41.88},{date:'2026-08-08',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:88.44},{date:'2026-08-06',desc:'PANERA BREAD',cat:'Food & Drink',card:'Visa Rewards',amount:19.33},{date:'2026-08-04',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:14.22},{date:'2026-08-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
     // Jul 2026
-    {date:'2026-07-27',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:16.10},{date:'2026-07-26',desc:'SHELL',cat:'Transportation',card:'Checking',amount:46.33},{date:'2026-07-24',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:15.77},{date:'2026-07-23',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:48.22},{date:'2026-07-21',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:9.60},{date:'2026-07-19',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:58.11},{date:'2026-07-18',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-07-20',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:15.49},{date:'2026-07-16',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:33.49},{date:'2026-07-14',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2026-07-12',desc:'SHELL',cat:'Transportation',card:'Checking',amount:40.28},{date:'2026-07-10',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2026-07-08',desc:'PANERA BREAD',cat:'Food & Drink',card:'Visa Rewards',amount:20.44},{date:'2026-07-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
+    {date:'2026-07-31',desc:'RENT PAYMENT',cat:'Rent',card:'Checking',amount:1350.00},{date:'2026-07-27',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:16.10},{date:'2026-07-26',desc:'SHELL',cat:'Transportation',card:'Checking',amount:46.33},{date:'2026-07-24',desc:'WALGREENS',cat:'Health & Wellness',card:'Visa Rewards',amount:15.77},{date:'2026-07-23',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:48.22},{date:'2026-07-21',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:9.60},{date:'2026-07-19',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:58.11},{date:'2026-07-18',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-07-20',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:15.49},{date:'2026-07-16',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:33.49},{date:'2026-07-14',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2026-07-12',desc:'SHELL',cat:'Transportation',card:'Checking',amount:40.28},{date:'2026-07-10',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2026-07-08',desc:'PANERA BREAD',cat:'Food & Drink',card:'Visa Rewards',amount:20.44},{date:'2026-07-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
     // Jun 2026
     {date:'2026-06-30',desc:'RENT PAYMENT',cat:'Rent',card:'Checking',amount:1350.00},{date:'2026-06-28',desc:'ALDI',cat:'Groceries',card:'Checking',amount:60.55},{date:'2026-06-27',desc:'NETFLIX',cat:'Entertainment',card:'Visa Rewards',amount:15.49},{date:'2026-06-26',desc:'SHELL',cat:'Transportation',card:'Checking',amount:44.10},{date:'2026-06-25',desc:'CHIPOTLE',cat:'Food & Drink',card:'Visa Rewards',amount:15.22},{date:'2026-06-24',desc:'TARGET',cat:'Shopping',card:'Visa Rewards',amount:55.88},{date:'2026-06-23',desc:'UTILITY CO',cat:'Bills & Utilities',card:'Checking',amount:91.17},{date:'2026-06-22',desc:'STARBUCKS',cat:'Food & Drink',card:'Visa Rewards',amount:8.75},{date:'2026-06-20',desc:'TRADER JOE\'S',cat:'Groceries',card:'Checking',amount:53.66},{date:'2026-06-19',desc:'AMAZON.COM',cat:'Shopping',card:'Visa Rewards',amount:29.99},{date:'2026-06-18',desc:'SPOTIFY',cat:'Entertainment',card:'Visa Rewards',amount:11.99},{date:'2026-06-17',desc:'AT&T',cat:'Bills & Utilities',card:'Checking',amount:65.00},{date:'2026-06-15',desc:'SHELL',cat:'Transportation',card:'Checking',amount:42.55},{date:'2026-06-13',desc:'COMCAST XFINITY',cat:'Bills & Utilities',card:'Checking',amount:79.99},{date:'2026-06-01',desc:'STUDENT LOAN PMT',cat:'Transfers',card:'Checking',amount:287.00},
     // May 2026
@@ -18586,6 +18641,18 @@ function openDemoPicker(firstVisit=true){
   }
 }
 
+// Shifts a YYYY-MM-DD date string by delta months, clamping the day to the
+// last valid day of the target month so e.g. Aug 31 + 1 → Sep 30, not Oct 1.
+// Top-level so extract-testable-fns.js can test it independently.
+function shiftDate(s,delta){
+  const[y,m,d]=s.split('-').map(Number);
+  const totalM=y*12+(m-1)+delta;
+  const tgtY=Math.floor(totalM/12);
+  const tgtM=totalM%12+1; // 1-indexed
+  const lastDay=new Date(tgtY,tgtM,0).getDate(); // new Date(y,m,0) = last day of 1-indexed month m
+  return`${tgtY}-${String(tgtM).padStart(2,'0')}-${String(Math.min(d,lastDay)).padStart(2,'0')}`;
+}
+
 function loadDemoProfile(n, silent=false, skipRender=false){
   if(silent instanceof Element||silent instanceof EventTarget)silent=false; // delegation passes el as 2nd arg
   const hadRealData=state.hasRealData; // switching profiles must never overwrite real saved data
@@ -18696,10 +18763,9 @@ function loadDemoProfile(n, silent=false, skipRender=false){
     const delta=(tgtY*12+tgtM)-(ancY*12+ancM);
     if(!delta)return;
     const shiftYM=ym=>{const[y,m]=ym.split('-').map(Number);const d=new Date(y,m-1+delta,1);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;};
-    const shiftDate=s=>{const[y,m,d]=s.split('-').map(Number);const dt=new Date(y,m-1+delta,d);return`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;};
     const MO_FULL=['January','February','March','April','May','June','July','August','September','October','November','December'];
     _txsDirty=true; // already set by parent loadDemoProfile(); explicit here to satisfy the persistence gate
-    state.transactions.forEach(t=>{t.date=shiftDate(t.date);});
+    state.transactions.forEach(t=>{t.date=shiftDate(t.date,delta);});
     state.snapshots.forEach(s=>{
       const ym=shiftYM(s.monthKey);
       const[sy,sm]=ym.split('-').map(Number);
@@ -18746,7 +18812,7 @@ function loadDemoProfile(n, silent=false, skipRender=false){
   if(!silent&&hadRealData){
     showDemoPreviewBanner(); // window._viewingDemoOverReal is already set, near the top of this function
   }
-  if(!silent&&!window._demoEventFired){window._demoEventFired=true;fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'event',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:'/trakyodollas',name:'demo-opened'}})}).catch(()=>{});}
+  if(!silent&&!window._demoEventFired){window._demoEventFired=true;_umamiSend('demo-opened');}
   showToast(n===1?'🌱 Exploring starter demo':'🌳 Exploring full demo','#34D399',3300);
 }
 window.addEventListener('error',function(e){console.error('GLOBAL ERROR:',e.message,'at',e.filename,'line',e.lineno,e.error);});
