@@ -6126,12 +6126,12 @@ test("showImportPreview: the Detected badge no longer repeats the transaction co
   assert.ok(fnMatch, "showImportPreview() should exist");
   assert.match(
     fnMatch[0],
-    /detFmtTxt\.textContent=`Detected: \$\{fmtLabels\[importFmt\]\|\|importFmt\}`;/,
+    /detFmtTxt\.textContent=`Detected: \$\{_FMT_LABELS\[importFmt\]\|\|importFmt\}`;/,
     "the Detected badge should only name the format, not repeat the transaction count"
   );
   assert.doesNotMatch(
     fnMatch[0],
-    /detFmtTxt\.textContent=`Detected: \$\{fmtLabels\[importFmt\]\|\|importFmt\} —/,
+    /detFmtTxt\.textContent=`Detected: \$\{_FMT_LABELS\[importFmt\]\|\|importFmt\} —/,
     "the Detected badge should not re-introduce a trailing '-- N transactions ready' clause"
   );
 });

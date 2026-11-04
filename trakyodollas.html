@@ -1444,7 +1444,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
              data-change="handleTxFileSelectDelegated"/>
     </div>
     <!-- Mobile-only: remind users to use their bank's website, not the app -->
-    <p class="show-mobile" style="display:none;font-size:11px;color:var(--text-muted);margin-top:.45rem;line-height:1.5">Can't find a CSV download in your bank's app? Use your bank's website instead — it's easiest on a computer.</p>
+    <div class="show-mobile" style="display:none;margin-top:.65rem;padding:.55rem .75rem;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:8px;font-size:11px;color:var(--text-muted);line-height:1.55">Can't find a CSV download in your bank's app? Use your bank's website instead — it's easiest on a computer.</div>
 
     <!-- CSV export help — native collapsible, no JS -->
     <details class="csv-help" style="margin-top:.55rem;font-size:12px;color:var(--text-muted)">
@@ -14990,6 +14990,14 @@ function setImportPreviewSort(col){
   showImportPreview();
 }
 
+// Format display names — used in the detected-format badge and the zero-row
+// toast. Defined once here; both uses inside showImportPreview() read this.
+const _FMT_LABELS={ally:'Checking/Savings',chase:'Credit card',debitcredit:'Debit/Credit columns',bofa:'Bank of America',generic:'Other',mint:'Mint',ynab:'YNAB',monarch:'Monarch Money',trakyodollas:'trak-yo-dolla$ export'};
+// Suggested label field values for bank-specific formats. Generic/ambiguous
+// formats (debitcredit, generic, trakyodollas) are absent intentionally —
+// "Checking" is a better default than guessing a bank name from column shapes.
+const _AUTO_LABELS={chase:'Chase',ally:'Ally',bofa:'BofA',mint:'Mint Import',ynab:'YNAB Import',monarch:'Monarch Import',capitalone360:'Capital One',navyfederal:'Navy Federal',midata:'UK Bank',anznz:'ANZ NZ',bnz:'BNZ',westpacnz:'Westpac NZ',starling:'Starling',usbank:'US Bank',citi:'Citi',discover:'Discover',wellsfargo:'Wells Fargo'};
+
 function showImportPreview(){
   const detFmtEl=document.getElementById('import-detected-fmt');
   const detFmtTxt=document.getElementById('import-detected-fmt-text');
@@ -15022,8 +15030,7 @@ function showImportPreview(){
       _zeroMsg.classList.remove('hidden');
     }
     if(fmtPickerOpen){
-      const fmtNames={ally:'Checking/Savings',chase:'Credit card',debitcredit:'Debit/Credit columns',bofa:'Bank of America',generic:'Other',mint:'Mint',ynab:'YNAB',monarch:'Monarch Money',trakyodollas:'trak-yo-dolla$ export'};
-      const detected=fmtNames[importFmt]||importFmt;
+      const detected=_FMT_LABELS[importFmt]||importFmt;
       showToast(`No transactions found with "${detected}" format — try a different option`,'#FCD34D');
     }
     return;
@@ -15032,15 +15039,21 @@ function showImportPreview(){
   const _zmEl=document.getElementById('import-zero-msg');
   if(_zmEl)_zmEl.classList.add('hidden');
   // Show detected format badge
-  const fmtLabels={ally:'Checking/Savings',chase:'Credit card',debitcredit:'Debit/Credit columns',bofa:'Bank of America',generic:'Other',mint:'Mint',ynab:'YNAB',monarch:'Monarch Money'};
   if(detFmtEl&&detFmtTxt){
     if(importFmtAutoDetected){
       // Used to repeat "-- N transactions ready" here too, duplicating the
       // PREVIEW section's own leading "N transactions" a few lines below --
       // this badge's job is just confirming which format matched; the
       // count belongs in exactly one place. Found by Nicholas, launch day.
-      detFmtTxt.textContent=`Detected: ${fmtLabels[importFmt]||importFmt}`;
+      detFmtTxt.textContent=`Detected: ${_FMT_LABELS[importFmt]||importFmt}`;
       detFmtEl.classList.remove('hidden');
+      // Auto-fill the label field when format is bank-specific and the user
+      // hasn't edited it yet — gives each account a meaningful name without
+      // requiring the user to know they should change "Checking".
+      if(!_importLabelEdited){
+        const autoLabel=_AUTO_LABELS[importFmt];
+        if(autoLabel){const isl=document.getElementById('import-source-label');if(isl)isl.value=autoLabel;}
+      }
     } else {
       detFmtEl.classList.add('hidden');
     }
@@ -18648,7 +18661,7 @@ function shiftDate(s,delta){
   const[y,m,d]=s.split('-').map(Number);
   const totalM=y*12+(m-1)+delta;
   const tgtY=Math.floor(totalM/12);
-  const tgtM=totalM%12+1; // 1-indexed
+  const tgtM=totalM%12+1;
   const lastDay=new Date(tgtY,tgtM,0).getDate(); // new Date(y,m,0) = last day of 1-indexed month m
   return`${tgtY}-${String(tgtM).padStart(2,'0')}-${String(Math.min(d,lastDay)).padStart(2,'0')}`;
 }
