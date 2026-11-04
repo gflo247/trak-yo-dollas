@@ -9771,6 +9771,19 @@ const FIXTURES = path.join(__dirname, "fixtures", "banks");
 
 // ── detectFormatFromLine: new and fixed detections ───────────────────────────
 
+// Ally detection is intentionally loose: 'time' + 'type' + no 'memo'. Monzo,
+// Venmo, and PayPal all pass that test. The auto-label block uses exact-header
+// matching (_IMPORT_LABELS.exactHeader) to avoid mislabeling those files as "Ally".
+test("detectFormatFromLine: Monzo, Venmo, and PayPal headers all detect as ally (loose detection; auto-label relies on exact-header guard)", () => {
+  const { detectFormatFromLine } = loadFunctions(["detectFormatFromLine"]);
+  // Monzo — has 'time' and 'type' columns, no 'memo'
+  assert.equal(detectFormatFromLine("transaction id,date,time,type,name,emoji,category,amount,currency"), "ally", "Monzo");
+  // Venmo — 'datetime' contains 'time'; has a standalone 'type' column
+  assert.equal(detectFormatFromLine(",id,datetime,type,note,from,to,amount (total),amount (fee)"), "ally", "Venmo");
+  // PayPal — has both 'time' and 'type' columns
+  assert.equal(detectFormatFromLine('"date","time","timezone","name","type","status","currency","gross"'), "ally", "PayPal");
+});
+
 test("detectFormatFromLine: Discover 'Trans. Date' header (period mid-word) is detected as generic, not null", () => {
   const { detectFormatFromLine } = loadFunctions(["detectFormatFromLine"]);
   assert.equal(

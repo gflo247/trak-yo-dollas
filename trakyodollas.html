@@ -680,6 +680,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 #mobile-tooltip{position:fixed;z-index:500;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:10px;padding:.65rem .9rem;font-size:12px;color:var(--text-secondary);line-height:1.5;max-width:280px;box-shadow:0 8px 24px rgba(0,0,0,.5);display:none;pointer-events:none}
 #mobile-tooltip.visible{display:block}
 .show-mobile{display:none}
+.show-mobile-block{display:none}
 @media(max-width:600px){
   .tx-pills{min-width:0}
   .tx-row{gap:5px}
@@ -687,6 +688,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   .tx-amount{width:76px}
   .hide-mobile{display:none!important}
   .show-mobile{display:inline!important}
+  .show-mobile-block{display:block!important}
   #spending-start-here{display:none!important}
   #demo-nudge{font-size:11px;padding:6px .75rem;line-height:1.5}
   /* !important on every property this shares with the later, unconditional
@@ -1444,7 +1446,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
              data-change="handleTxFileSelectDelegated"/>
     </div>
     <!-- Mobile-only: remind users to use their bank's website, not the app -->
-    <div class="show-mobile" style="display:none;margin-top:.65rem;padding:.55rem .75rem;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:8px;font-size:11px;color:var(--text-muted);line-height:1.55">Can't find a CSV download in your bank's app? Use your bank's website instead — it's easiest on a computer.</div>
+    <div class="show-mobile-block" style="margin-top:.65rem;padding:.55rem .75rem;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:8px;font-size:11px;color:var(--text-muted);line-height:1.55">Can't find a CSV download in your bank's app? Use your bank's website instead — it's easiest on a computer.</div>
 
     <!-- CSV export help — native collapsible, no JS -->
     <details class="csv-help" style="margin-top:.55rem;font-size:12px;color:var(--text-muted)">
@@ -13745,7 +13747,7 @@ function openTxImportModal(){
   const irc=document.getElementById('import-replace');if(irc)irc.checked=false;
   // Populate datalist with existing imported source names for autocomplete.
   const datalist=document.getElementById('import-source-datalist');
-  if(datalist){datalist.innerHTML='';[...new Set(state.transactions.map(t=>t.card).filter(Boolean))].forEach(src=>{const o=document.createElement('option');o.value=src;datalist.appendChild(o);});}
+  if(datalist){datalist.innerHTML='';if(state.hasRealData)[...new Set(state.transactions.map(t=>t.card).filter(Boolean))].forEach(src=>{const o=document.createElement('option');o.value=src;datalist.appendChild(o);});}
   // Show staleness hint for the default "Checking" source, and refresh it on
   // every keystroke. removeEventListener first so repeated modal opens don't
   // stack listeners on the same element.
@@ -14993,10 +14995,25 @@ function setImportPreviewSort(col){
 // Format display names — used in the detected-format badge and the zero-row
 // toast. Defined once here; both uses inside showImportPreview() read this.
 const _FMT_LABELS={ally:'Checking/Savings',chase:'Credit card',debitcredit:'Debit/Credit columns',bofa:'Bank of America',generic:'Other',mint:'Mint',ynab:'YNAB',monarch:'Monarch Money',trakyodollas:'trak-yo-dolla$ export'};
-// Suggested label field values for bank-specific formats. Generic/ambiguous
-// formats (debitcredit, generic, trakyodollas) are absent intentionally —
-// "Checking" is a better default than guessing a bank name from column shapes.
-const _AUTO_LABELS={chase:'Chase',ally:'Ally',bofa:'BofA',mint:'Mint Import',ynab:'YNAB Import',monarch:'Monarch Import',capitalone360:'Capital One',navyfederal:'Navy Federal',midata:'UK Bank',anznz:'ANZ NZ',bnz:'BNZ',westpacnz:'Westpac NZ',starling:'Starling',usbank:'US Bank',citi:'Citi',discover:'Discover',wellsfargo:'Wells Fargo'};
+// Normalizes a raw CSV header string the same way detectFormatFromLine does,
+// so the two call sites stay in sync if the normalization rules ever change.
+function _normalizeHeader(s){return s.toLowerCase().replace(/"/g,'').trim().replace(/\.(?=\s)/g,'').replace(/\s*\([^)]*\)\s*/g,'');}
+// Auto-label suggestions for bank-specific formats. Formats without an
+// exactHeader property are labeled unconditionally — their detection conditions
+// are specific enough that false positives are implausible. Formats with
+// exactHeader are only labeled when the raw CSV header matches exactly —
+// guarding against formats like ally ('time'+'type'+no memo) that also match
+// Monzo, Venmo, and PayPal exports.
+const _IMPORT_LABELS={
+  mint:{label:'Mint Import'},ynab:{label:'YNAB Import'},monarch:{label:'Monarch Import'},
+  bofa:{label:'BofA'},midata:{label:'UK Bank'},anznz:{label:'ANZ NZ'},bnz:{label:'BNZ'},
+  westpacnz:{label:'Westpac NZ'},starling:{label:'Starling'},usbank:{label:'US Bank'},
+  citi:{label:'Citi'},discover:{label:'Discover'},wellsfargo:{label:'Wells Fargo'},
+  ally:{label:'Ally',exactHeader:'date,time,amount,type,description'},
+  chase:{label:'Chase',exactHeader:'transaction date,post date,description,category,type,amount,memo'},
+  capitalone360:{label:'Capital One',exactHeader:'account number,transaction description,transaction date,transaction type,transaction amount,balance'},
+  navyfederal:{label:'Navy Federal',exactHeader:'posting date,transaction date,amount,credit debit indicator,type,type group,reference,instructions,description,category,card ending,check number,merchant category code'},
+};
 
 function showImportPreview(){
   const detFmtEl=document.getElementById('import-detected-fmt');
@@ -15051,8 +15068,13 @@ function showImportPreview(){
       // hasn't edited it yet — gives each account a meaningful name without
       // requiring the user to know they should change "Checking".
       if(!_importLabelEdited){
-        const autoLabel=_AUTO_LABELS[importFmt];
-        if(autoLabel){const isl=document.getElementById('import-source-label');if(isl)isl.value=autoLabel;}
+        const entry=_IMPORT_LABELS[importFmt];
+        let label;
+        if(entry){
+          if(!entry.exactHeader){label=entry.label;}
+          else if(_normalizeHeader(_importRawHeader)===entry.exactHeader){label=entry.label;}
+        }
+        if(label){const isl=document.getElementById('import-source-label');if(isl){isl.value=label;updateImportSourceHint();}}
       }
     } else {
       detFmtEl.classList.add('hidden');
@@ -15094,10 +15116,10 @@ function showImportPreview(){
   const labelHintEl=document.getElementById('import-label-hint');
   const labelHintText=document.getElementById('import-label-hint-text');
   if(labelHintEl&&labelHintText){
-    if(!_importLabelEdited&&state.hasRealData){
+    if(!_importLabelEdited){
       const curLabel=(document.getElementById('import-source-label')?.value||'').trim();
       const existing=[...new Set(state.transactions.map(t=>t.card).filter(Boolean))];
-      if(existing.map(s=>s.toLowerCase()).includes(curLabel.toLowerCase())){
+      if(state.hasRealData&&existing.some(s=>s.toLowerCase()===curLabel.toLowerCase())){
         labelHintText.textContent=`This will merge with your existing "${curLabel}" source.`;
       } else {
         labelHintText.textContent=`Transactions will be tagged as "${curLabel || 'Checking'}".`;

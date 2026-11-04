@@ -161,3 +161,43 @@ tracking used source names separately from active transactions.
 When the user manually picks a format (e.g. Chase), show a small "How to export from
 Chase →" link next to the format button that opens the matching /guides/chase page
 in a new tab.
+
+### 29. Trim import panel for first-time users
+Move "Pick your format manually," "Clear all data," and the categorization sentence
+into a collapsed "More options" section. First-time users only need the drop zone;
+the advanced controls add noise before they've seen a successful import.
+
+### 30. Bank guide sign-in links
+In each /guides/* page, link the "Log in to your account" step directly to the
+bank's official sign-in page. Verify every URL against the bank's real domain before
+publishing — official domains only.
+
+### 31. Rename an imported account
+Let users rename an existing source (e.g. "Chase" → "Chase Sapphire") from the
+import modal or a dedicated source-management panel. Currently requires wiping and
+re-importing with a corrected label.
+
+### 32. "At a Glance" first-appearance wording
+In the At a Glance breakdown, only say "first appearance" for a category when the
+spending window contains no earlier months — not when the category simply happened
+to be absent in a few middle months.
+
+### 33. Demo: make monthly bills actually monthly
+Bills in the demo profile (rent, utilities, etc.) should land on the same day each
+month. Right now some shift by a few days between months, which undermines the demo
+as a credible preview of a real budget.
+
+### 34. Quicken format support (OFX/QFX)
+Accept OFX/QFX files in the import drop zone and add a note to the Chase guide that
+Chase also supports QFX export (some users hit the CSV option only after hunting
+through settings).
+
+### 35. First-import onboarding copy
+Show a one-line prompt above the drop zone on first open: "Start with one card and
+one month — about 2 minutes." Sets expectations and reduces abandonment before the
+first successful import.
+
+### 36. PDF statement import (later, maybe)
+On-device PDF → CSV conversion using a WebAssembly PDF parser. Useful for users
+whose bank only offers PDF statements. High complexity — revisit after the CSV
+experience is solid.
