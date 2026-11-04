@@ -6037,7 +6037,7 @@ test("parseTxFile: UK midata auto-detect is checked before the generic debit+cre
   // and silently failed to split on ';'.
   assert.match(
     source,
-    /importFmt==='midata'&&\(scanLines\[headerLineIdx\]\|\|''\)\.includes\(';'\)/,
+    /const csvDelim=\(importFmt==='midata'&&\(scanLines\[headerLineIdx\]\|\|''\)\.includes\(';'\)\)\?';':',';/,
     "midata is the only format allowed a non-comma delimiter (real exports use comma or semicolon); every other format must stay comma-only"
   );
 });
@@ -6178,9 +6178,9 @@ test("setImportPreviewSort(): clicking a new column sorts by it with a sensible 
   const openModalFn = source.match(/function openTxImportModal\(\)\{[\s\S]*?\n\}/);
   assert.ok(openModalFn, "openTxImportModal() should exist");
   assert.match(openModalFn[0], /_importPreviewSortCol='date';\s*_importPreviewSortAsc=false;/, "opening the modal fresh should reset the sort column/direction");
-  const parseTxtFn = source.match(/function parseTxText\(rawText,pasteDelim\)\{[\s\S]{0,800}/);
+  const parseTxtFn = source.match(/function parseTxText\(rawText\)\{[\s\S]{0,800}/);
   assert.ok(parseTxtFn, "parseTxText() should exist (parseTxFile delegates to it)");
-  assert.match(parseTxtFn[0], /_importPreviewSortCol='date';\s*_importPreviewSortAsc=false;/, "loading new text into an already-open modal should also reset the sort, not carry over the prior parse's setting");
+  assert.match(parseTxtFn[0], /_importPreviewSortCol='date';\s*_importPreviewSortAsc=false;/, "loading a new file into an already-open modal should also reset the sort, not carry over the prior file's setting");
 });
 test("showImportPreview: the 8-row sample is sorted by whichever column/direction is active, over the full importParsed set, with visible sort-direction arrows", () => {
   const source = readSource();
@@ -6232,23 +6232,18 @@ test("the import summary line (#import-preview-stats) now sits right after the D
 
 // Two findings from the adversarial pass run immediately after the
 // relocation/column-sort work above, both fixed same day.
-test("the relocated #import-preview-stats is hidden on every modal open and tab switch, not just when #import-preview itself is hidden", () => {
+test("the relocated #import-preview-stats is hidden on every modal open, not just when #import-preview itself is hidden", () => {
   const source = readSource();
   // Moving #import-preview-stats out of #import-preview (so it could sit
   // next to the Detected badge) meant it stopped inheriting the parent's
-  // hidden-class reset. The hide now lives in switchImportTab(), which
-  // openTxImportModal() calls at the end — so every modal open and every
-  // tab switch clears stale stats text.
-  const switchFn = source.match(/function switchImportTab\(tab\)\{[\s\S]*?\n\}/);
-  assert.ok(switchFn, "switchImportTab() should exist");
-  assert.match(
-    switchFn[0],
-    /getElementById\('import-preview-stats'\)[\s\S]*?classList\.add\('hidden'\)/,
-    "switchImportTab() should hide #import-preview-stats so stale stats don't linger after a tab switch or modal re-open"
-  );
+  // hidden-class reset. openTxImportModal() now hides it explicitly.
   const openFn = source.match(/function openTxImportModal\(\)\{[\s\S]*?\n\}/);
   assert.ok(openFn, "openTxImportModal() should exist");
-  assert.match(openFn[0], /switchImportTab\('file'\)/, "openTxImportModal() should call switchImportTab('file') to delegate the UI reset");
+  assert.match(
+    openFn[0],
+    /getElementById\('import-preview-stats'\)[\s\S]*?classList\.add\('hidden'\)/,
+    "openTxImportModal() should explicitly hide #import-preview-stats so stale stats don't linger on re-open"
+  );
 });
 test("the import-preview category pill truncates with the shared .truncate class, so an unusually long custom category name can't blow out the row or misalign the new Amount column header", () => {
   const source = readSource();
@@ -10133,194 +10128,4 @@ test("confirmTxImport keeps per-row sources from a trak-yo-dolla$ export and swi
   assert.match(source, /newTxs\.forEach\(t=>state\.activeSources\.add\(t\.card\)\);/);
 });
 
-// ── Paste import: _detectPasteDelim, tab-delimiter format detection, and full pipeline ──
-// Covers the new paste path added alongside the File/Paste toggle. The key new code
-// is: (1) _detectPasteDelim sniffs '\t' vs ',' from the header line, and (2)
-// detectFormatFromLine now receives that delimiter for its cols.some() check — without
-// which a tab-separated Debit/Credit header produces cols=["date\tdesc\tdebit\tcredit"]
-// (one field), so cols.some(c==='debit') is always false and the format silently falls
-// through to generic, losing all Debit/Credit amounts.
-
-test("_detectPasteDelim: identifies the field delimiter from the first line of pasted text", () => {
-  const { _detectPasteDelim } = loadFunctions(["_detectPasteDelim"]);
-  assert.equal(
-    _detectPasteDelim("Date\tDescription\tAmount\n01/15/2024\tStarbucks\t-5.45"),
-    "\t", "tab-separated header → tab"
-  );
-  assert.equal(
-    _detectPasteDelim("Date,Description,Amount\n01/15/2024,Starbucks,-5.45"),
-    ",", "comma-separated header → comma"
-  );
-  // Header has 3 tabs, data row has 1 comma in '$1,234.56' — tabs still win on the header line
-  assert.equal(
-    _detectPasteDelim("Date\tDescription\tDebit\tCredit\n01/15/2024\tTarget\t$1,234.56\t"),
-    "\t", "tabs outnumber commas in the header even when amounts in data rows contain commas"
-  );
-  assert.equal(_detectPasteDelim(""), ",", "empty input defaults to comma");
-  assert.equal(_detectPasteDelim("Date\tAmount"), "\t", "header-only (no data rows) detects tab");
-});
-
-test("detectFormatFromLine: tab-delimited debit/credit header requires the tab delimiter — comma-split misses it (paste import regression gate)", () => {
-  const { detectFormatFromLine } = loadFunctions(["detectFormatFromLine"]);
-  // With tab delimiter: cols=[date, description, debit, credit] → debitcredit
-  assert.equal(
-    detectFormatFromLine("date\tdescription\tdebit\tcredit", "\t"),
-    "debitcredit",
-    "tab-delimited debit/credit header detects correctly when delim='\\t' is passed"
-  );
-  // Without tab delimiter (comma default): cols=["date\tdescription\tdebit\tcredit"] (one field) → null
-  assert.equal(
-    detectFormatFromLine("date\tdescription\tdebit\tcredit"),
-    null,
-    "the same header parsed with comma delimiter returns null — the pre-fix behavior that silently misparsed every tab-pasted debit/credit table"
-  );
-  // Debit Amount / Credit Amount column names (ING Australia)
-  assert.equal(
-    detectFormatFromLine("date\tdescription\tdebit amount\tcredit amount", "\t"),
-    "debitcredit"
-  );
-  // Deposits/Withdrawals variant uses firstLine.includes(), not cols — works regardless of delimiter
-  assert.equal(
-    detectFormatFromLine("date\tdescription\tdeposits\twithdrawals", "\t"),
-    "debitcredit"
-  );
-});
-
-// Helper: mirrors parseTxText(rawText, pasteDelim) for unit tests.
-// Auto-detects the delimiter, runs format detection with it, parses with it,
-// and runs the full normalizeTxRow pipeline — the same path the UI takes.
-function parsePasteText(rawText, overrideOpts = {}) {
-  const {
-    _detectPasteDelim, detectFormatFromLine, parseCSV, splitCSVLine, splitCSVRows, detectGenericSignConvention,
-  } = loadFunctions([
-    "_detectPasteDelim", "detectFormatFromLine", "parseCSV", "splitCSVLine",
-    "splitCSVRows", "detectGenericSignConvention", "_parseAmt",
-  ]);
-
-  const pasteDelim = _detectPasteDelim(rawText);
-  const text = rawText.replace(/^\uFEFF/, "");
-  const scanLines = splitCSVRows(text.trim()).map(l => l.trim()).filter(Boolean);
-
-  let importFmt = null;
-  let headerLineIdx = 0;
-  const scanLimit = Math.min(10, scanLines.length);
-  for (let i = 0; i < scanLimit; i++) {
-    const fmt = detectFormatFromLine(scanLines[i].toLowerCase(), pasteDelim);
-    if (fmt) { importFmt = fmt; headerLineIdx = i; break; }
-  }
-  if (!importFmt) { importFmt = "generic"; headerLineIdx = 0; }
-
-  const rows = parseCSV(text, pasteDelim, headerLineIdx);
-  const _genericPositiveIsExpense = importFmt === "generic"
-    ? detectGenericSignConvention(rows) : false;
-  const _genericCardRefunds = importFmt === "generic"
-    ? loadNormalizePipeline({ importFmt }).detectGenericCardRefunds(rows) : false;
-
-  const { normalizeTxRow } = loadNormalizePipeline({
-    importFmt,
-    _genericPositiveIsExpense,
-    _genericCardRefunds,
-    _importDateFmt: overrideOpts._importDateFmt || "mdy",
-    includeIncome: overrideOpts.includeIncome !== false,
-  });
-
-  return {
-    txs: rows.map(r => normalizeTxRow(r, "Test")).filter(Boolean),
-    importFmt,
-    pasteDelim,
-  };
-}
-
-test("paste: tab-separated debit/credit (common bank web-UI copy) → debitcredit format, correct amounts", () => {
-  const paste = [
-    "Date\tDescription\tDebit\tCredit",
-    "01/15/2024\tSTARBUCKS\t5.45\t",
-    "01/14/2024\tPAYCHECK\t\t2000.00",
-    "01/13/2024\tTARGET\t47.82\t",
-  ].join("\n");
-
-  const { txs, importFmt, pasteDelim } = parsePasteText(paste, { includeIncome: false });
-  assert.equal(pasteDelim, "\t");
-  assert.equal(importFmt, "debitcredit");
-  assert.equal(txs.length, 2, "PAYCHECK (income) filtered out");
-  assert.equal(txs.find(t => t.desc === "STARBUCKS")?.amount, 5.45);
-  assert.equal(txs.find(t => t.desc === "TARGET")?.amount, 47.82);
-});
-
-test("paste: tab-separated Deposits/Withdrawals column name variant → debitcredit, correct sign", () => {
-  const paste = [
-    "Date\tDescription\tDeposits\tWithdrawals",
-    "01/15/2024\tSTARBUCKS\t\t5.45",
-    "01/14/2024\tPAYCHECK\t2000.00\t",
-    "01/13/2024\tTARGET\t\t47.82",
-  ].join("\n");
-
-  const { txs, importFmt } = parsePasteText(paste, { includeIncome: false });
-  assert.equal(importFmt, "debitcredit");
-  assert.equal(txs.length, 2, "PAYCHECK (income) filtered out");
-  assert.equal(txs.find(t => t.desc === "STARBUCKS")?.amount, 5.45);
-  assert.equal(txs.find(t => t.desc === "TARGET")?.amount, 47.82);
-});
-
-test("paste: tab-separated debit/credit — dollar signs, thousands separators, and a REFUND credit offset", () => {
-  const paste = [
-    "Date\tDescription\tDebit\tCredit",
-    "01/15/2024\tTARGET\t$1,234.56\t",
-    "01/14/2024\tAMAZON REFUND\t\t$45.00",
-    "01/13/2024\tSTARBUCKS\t$5.45\t",
-  ].join("\n");
-
-  const { txs, importFmt } = parsePasteText(paste);
-  assert.equal(importFmt, "debitcredit");
-  assert.equal(txs.length, 3, "2 expenses + 1 refund offset, all 3 rows survive");
-  assert.equal(txs.find(t => t.desc === "TARGET")?.amount, 1234.56, "$1,234.56 → 1234.56");
-  assert.equal(txs.find(t => t.desc === "AMAZON REFUND")?.is_offset, true);
-  assert.equal(txs.find(t => t.desc === "AMAZON REFUND")?.amount, -45);
-  assert.equal(txs.find(t => t.desc === "STARBUCKS")?.amount, 5.45);
-});
-
-test("paste: tab-separated generic Amount column — sign convention auto-detected, negative = expense", () => {
-  const paste = [
-    "Date\tDescription\tAmount",
-    "01/15/2024\tSTARBUCKS\t-5.45",
-    "01/14/2024\tTARGET\t-47.82",
-    "01/13/2024\tPAYCHECK\t2500.00",
-  ].join("\n");
-
-  const { txs, importFmt } = parsePasteText(paste, { includeIncome: false });
-  assert.equal(importFmt, "generic");
-  assert.equal(txs.length, 2, "PAYCHECK income filtered out");
-  assert.equal(txs.find(t => t.desc === "STARBUCKS")?.amount, 5.45);
-  assert.equal(txs.find(t => t.desc === "TARGET")?.amount, 47.82);
-});
-
-test("paste: comma-separated text (non-tab paste) routes through same pipeline correctly", () => {
-  const paste = [
-    "Date,Description,Amount",
-    "01/15/2024,Starbucks,-5.45",
-    "01/14/2024,Paycheck,2500.00",
-  ].join("\n");
-
-  const { txs, importFmt, pasteDelim } = parsePasteText(paste, { includeIncome: false });
-  assert.equal(pasteDelim, ",", "comma-separated paste detects comma delimiter");
-  assert.equal(importFmt, "generic");
-  assert.equal(txs.length, 1, "only Starbucks; Paycheck income filtered");
-  assert.equal(txs[0].amount, 5.45);
-});
-
-test("paste: trailing blank line and whitespace don't create phantom rows", () => {
-  const paste = [
-    "Date\tDescription\tDebit\tCredit",
-    "01/15/2024\tSTARBUCKS\t5.45\t",
-    "",
-  ].join("\n");
-
-  const { txs } = parsePasteText(paste);
-  assert.equal(txs.length, 1, "blank trailing line must not produce a phantom transaction");
-  assert.equal(txs[0].amount, 5.45);
-});
-
-test("paste: header-only (no data rows) returns zero transactions without crashing", () => {
-  const { txs } = parsePasteText("Date\tDescription\tDebit\tCredit");
-  assert.equal(txs.length, 0);
-});
+// ── end of tests ──

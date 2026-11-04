@@ -11,7 +11,7 @@
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-+lMfkY/9/bA32h+Njsk549RnX2CNzPoro+y1mcL8kWk=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-F8oBlYyEv2qQ6iswfpkha1W9BwOpo61oowjZXYaHfrs=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -1410,7 +1410,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <h3 id="tx-import-modal-title">Import transactions</h3>
       <button data-action="closeTxImportModal" class="panel-close-btn" aria-label="Close" type="button">×</button>
     </div>
-    <p class="modal-sub" style="margin-bottom:.35rem">Upload a CSV or paste rows from your bank. Format is detected automatically. Nothing leaves your device.</p>
+    <p class="modal-sub" style="margin-bottom:.35rem">Drop your bank's CSV. Format is detected automatically. Nothing leaves your device.</p>
     <p style="font-size:11px;color:var(--text-muted);margin-bottom:.85rem">Also accepts Mint, YNAB, and Monarch Money exports.</p>
 
     <!-- Source label -->
@@ -1420,14 +1420,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <div id="import-source-hint" style="font-size:11px;color:var(--text-muted);margin-top:.3rem;min-height:1em"></div>
     </div>
 
-    <!-- Import method toggle -->
-    <div style="display:flex;border:1px solid var(--border-mid);border-radius:8px;overflow:hidden;margin-bottom:.65rem">
-      <button id="import-tab-file" data-action="switchImportTab" data-arg="file" style="background:#2563EB;color:#fff;border:none;padding:5px 0;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;flex:1;transition:background .15s,color .15s" type="button">File</button>
-      <button id="import-tab-paste" data-action="switchImportTab" data-arg="paste" style="background:var(--bg-deep);color:var(--text-muted);border:none;border-left:1px solid var(--border-mid);padding:5px 0;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;flex:1;transition:background .15s,color .15s" type="button">Paste</button>
-    </div>
+    <!-- Bank export quicklinks -->
+    <div style="margin-bottom:.65rem;font-size:12px"><span style="color:var(--text-muted)">Export from: </span><a href="/guides/chase" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">Chase</a> · <a href="/guides/ally" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">Ally</a> · <a href="/guides/bofa" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">BofA</a> · <a href="/guides/wellsfargo" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">Wells Fargo</a> · <a href="/guides/capitalone" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">Capital One</a> · <a href="/guides/discover" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">Discover</a> · <a href="/guides" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">more →</a></div>
 
-    <!-- File panel -->
-    <div id="import-panel-file">
     <!-- Drop zone — hero -->
     <div class="csv-zone" id="tx-drop-zone" style="position:relative;padding:2rem 1rem"
          data-dragover="dragOverHighlight"
@@ -1445,15 +1440,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
              data-dragleave="dragLeaveDropZone"
              data-drop="handleTxDropDelegated"
              data-change="handleTxFileSelectDelegated"/>
-    </div>
-    </div>
-
-    <!-- Paste panel -->
-    <div id="import-panel-paste" class="hidden">
-      <textarea id="tx-paste-area" rows="7" placeholder="Paste rows copied from your bank's website or app — tabs or commas, with or without currency symbols. A header row is expected." style="width:100%;box-sizing:border-box;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:8px;color:var(--text-primary);font-size:12px;font-family:'DM Mono',monospace;padding:.6rem .75rem;resize:vertical;min-height:120px;line-height:1.5" aria-label="Paste transaction rows"></textarea>
-      <div style="margin-top:.45rem;text-align:right">
-        <button data-action="handlePasteImport" class="btn btn-primary" type="button">Preview</button>
-      </div>
     </div>
 
     <!-- CSV export help — native collapsible, no JS -->
@@ -13760,8 +13746,15 @@ function openTxImportModal(){
   panel.setAttribute('aria-modal',persistent?'false':'true');
   document.body.classList.toggle('persistent-panel-open',persistent);
   document.body.style.setProperty('--pp-width','520px');
-  document.getElementById('tx-paste-area').value='';
-  switchImportTab('file');
+  document.getElementById('tx-csv-file').value='';
+  document.getElementById('tx-drop-zone').style.borderColor='';
+  importParsed=[];
+  document.getElementById('import-preview').classList.add('hidden');
+  // #import-preview-stats sits outside #import-preview — must be hidden explicitly.
+  const stats=document.getElementById('import-preview-stats');if(stats)stats.classList.add('hidden');
+  document.getElementById('import-confirm-btn').classList.add('hidden');
+  const detFmt=document.getElementById('import-detected-fmt');if(detFmt)detFmt.classList.add('hidden');
+  const zeroMsg=document.getElementById('import-zero-msg');if(zeroMsg)zeroMsg.classList.add('hidden');
   el.classList.remove('hidden');
 }
 function closeTxImportModal(){hideModalById('tx-import-modal');}
@@ -13875,15 +13868,8 @@ function detectFormatFromLine(firstLine,delim){
   return importFmtAutoDetected?importFmt:null;
 }
 
-function _detectPasteDelim(text){
-  const firstLine=(text.split(/\r?\n/)[0]||'');
-  return (firstLine.split('\t').length-1)>(firstLine.split(',').length-1)?'\t':',';
-}
-
-// Core parsing logic shared by file import (parseTxFile) and paste import
-// (handlePasteImport). pasteDelim is the field delimiter detected from paste
-// text ('\t' or ','), or undefined for file import (delimiter sniffed below).
-function parseTxText(rawText,pasteDelim){
+// Core parsing logic. Called by parseTxFile after FileReader loads the text.
+function parseTxText(rawText){
   // Strip UTF-8 BOM if present
   rawText=rawText.replace(/^\uFEFF/,'');
   // Auto-detect format from headers — skipped when user has the manual picker open
@@ -13913,7 +13899,7 @@ function parseTxText(rawText,pasteDelim){
     const scanLimit=Math.min(10,scanLines.length);
     importFmt=null;
     for(let i=0;i<scanLimit;i++){
-      const fmt=detectFormatFromLine(scanLines[i].toLowerCase(),pasteDelim||',');
+      const fmt=detectFormatFromLine(scanLines[i].toLowerCase());
       if(fmt){importFmt=fmt;headerLineIdx=i;importFmtAutoDetected=true;break;}
     }
     if(!importFmt){
@@ -13951,10 +13937,8 @@ function parseTxText(rawText,pasteDelim){
   // the comma-only preamble line and wrongly parse the real
   // semicolon-delimited header/rows as one giant comma-less field. Found
   // live-testing the header-scan fix above, same day.
-  // Paste input is never midata (a file-only UK download format) -- skip
-  // the semicolon sniff when pasteDelim is already set.
   _importRawHeader=importFmt==='wellsfargo'?'date,amount,type,memo,description':(scanLines[headerLineIdx]||'');
-  const csvDelim=pasteDelim||(importFmt==='midata'&&(scanLines[headerLineIdx]||'').includes(';')?';':',');
+  const csvDelim=(importFmt==='midata'&&(scanLines[headerLineIdx]||'').includes(';'))?';':',';
   let _csvText=rawText;
   if(importFmt==='wellsfargo'){_csvText='date,amount,type,memo,description\n'+rawText;}
   const rows=parseCSV(_csvText,csvDelim,headerLineIdx);
@@ -13992,40 +13976,6 @@ function parseTxFile(file){
   const reader=new FileReader();
   reader.onload=e=>parseTxText(e.target.result);
   reader.readAsText(file);
-}
-
-function handlePasteImport(){
-  const raw=(document.getElementById('tx-paste-area').value||'').trim();
-  if(!raw){showToast('Paste some transactions first','#F87171');return;}
-  parseTxText(raw,_detectPasteDelim(raw));
-}
-
-function switchImportTab(tab){
-  const isFile=tab==='file';
-  const filePanel=document.getElementById('import-panel-file');
-  const pastePanel=document.getElementById('import-panel-paste');
-  if(filePanel)filePanel.classList.toggle('hidden',!isFile);
-  if(pastePanel)pastePanel.classList.toggle('hidden',isFile);
-  const tabFile=document.getElementById('import-tab-file');
-  const tabPaste=document.getElementById('import-tab-paste');
-  if(tabFile){tabFile.style.background=isFile?'#2563EB':'var(--bg-deep)';tabFile.style.color=isFile?'#fff':'var(--text-muted)';}
-  if(tabPaste){tabPaste.style.background=isFile?'var(--bg-deep)':'#2563EB';tabPaste.style.color=isFile?'var(--text-muted)':'#fff';}
-  if(isFile){
-    // Clear file input and drop zone highlight so a prior file/highlight
-    // doesn't linger when the user switches away from Paste and back.
-    const fi=document.getElementById('tx-csv-file');if(fi)fi.value='';
-    const dz=document.getElementById('tx-drop-zone');if(dz)dz.style.borderColor='';
-  }
-  importParsed=[];
-  document.getElementById('import-preview').classList.add('hidden');
-  // #import-preview-stats sits outside #import-preview (moved per Nicholas's
-  // feedback so it appears next to #import-detected-fmt, not buried below the
-  // format picker) -- must be hidden explicitly here rather than inheriting
-  // its parent's hidden toggle as it used to.
-  const stats=document.getElementById('import-preview-stats');if(stats)stats.classList.add('hidden');
-  document.getElementById('import-confirm-btn').classList.add('hidden');
-  const detFmt=document.getElementById('import-detected-fmt');if(detFmt)detFmt.classList.add('hidden');
-  const zeroMsg=document.getElementById('import-zero-msg');if(zeroMsg)zeroMsg.classList.add('hidden');
 }
 
 // Splits raw CSV text into logical rows, respecting quotes so a comma or
