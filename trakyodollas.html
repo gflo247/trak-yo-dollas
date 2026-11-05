@@ -11,7 +11,7 @@
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-kLWu0UHRD/b5NXT7t76l9OPGubLTvKN749KQCLhEexY=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-3O4KPdfrlkLiEafivfysAtmE9ns+PAOScEx0eDekPrg=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -1576,9 +1576,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <div id="fmt-help-debitcredit" class="fmt-help hidden help-box" style="margin-top:.65rem;margin-bottom:0">Wells Fargo, USAA, and banks with separate <strong style="color:var(--text-secondary)">Deposits</strong> and <strong style="color:var(--text-secondary)">Withdrawals</strong> columns — common with credit unions and older bank exports.</div>
       <div id="fmt-help-bofa"        class="fmt-help hidden help-box" style="margin-top:.65rem;margin-bottom:0">Bank of America checking and savings. Deposits are skipped automatically — only spending rows are imported. Look for <strong style="color:var(--text-secondary)">Download → CSV</strong> in your transaction history.</div>
       <div id="fmt-help-generic"     class="fmt-help hidden help-box" style="margin-top:.65rem;margin-bottom:0">Any CSV with <strong style="color:var(--text-secondary)">date, description, and amount</strong> columns. First row must be headers.</div>
-      <div id="fmt-help-mint"        class="fmt-help hidden help-box" style="margin-top:.65rem;margin-bottom:0">Mint exported CSV (<strong style="color:var(--text-secondary)">Date, Description, Amount, Transaction Type, Category</strong> columns). Mint shut down in March 2024 — your exported CSVs still work here. Credits are skipped automatically. Categories import as-is where they match.</div>
-      <div id="fmt-help-ynab"        class="fmt-help hidden help-box" style="margin-top:.65rem;margin-bottom:0">You Need A Budget export (<strong style="color:var(--text-secondary)">Payee, Outflow, Inflow, Category</strong> columns). Export from YNAB → All Accounts → Export. Inflows are skipped. Categories map automatically where possible.</div>
-      <div id="fmt-help-monarch"     class="fmt-help hidden help-box" style="margin-top:.65rem;margin-bottom:0">Monarch Money export (<strong style="color:var(--text-secondary)">Date, Merchant, Amount, Category</strong> columns). Export from Settings → Data → Export Transactions. Positive amounts (income) are skipped. Categories import as-is where they match.</div>
+      <div id="fmt-help-mint"        class="fmt-help hidden help-box" style="margin-top:.65rem;margin-bottom:0">Mint exported CSV (<strong style="color:var(--text-secondary)">Date, Description, Amount, Transaction Type, Category, Account Name</strong> columns). Mint shut down in March 2024 — your exported CSVs still work here. Credits are skipped automatically. Categories import as-is where they match. Each row's Account Name becomes its source label.</div>
+      <div id="fmt-help-ynab"        class="fmt-help hidden help-box" style="margin-top:.65rem;margin-bottom:0">You Need A Budget export (<strong style="color:var(--text-secondary)">Account, Payee, Outflow, Inflow, Category</strong> columns). Export from YNAB → All Accounts → Export. Inflows are skipped. Categories map automatically where possible. Each row's Account becomes its source label.</div>
+      <div id="fmt-help-monarch"     class="fmt-help hidden help-box" style="margin-top:.65rem;margin-bottom:0">Monarch Money export (<strong style="color:var(--text-secondary)">Date, Merchant, Amount, Category, Account</strong> columns). Export from Settings → Data → Export Transactions. Positive amounts (income) are skipped. Categories import as-is where they match. Each row's Account becomes its source label.</div>
     </div>
     <!-- Start fresh link -->
     <div id="import-fresh-row" style="display:none;justify-content:center;align-items:center;margin-top:.45rem">
@@ -14688,6 +14688,7 @@ function normalizeTxRow(row, source){
     }
     if(!amount)return null;
     if(txType!=='credit')cat=mapImportedCategory(row['category'])||guessCatFromDesc(desc);
+    card=(row['account name']||'').trim()||undefined;
 
   } else if(importFmt==='ynab'){
     // YNAB: Account,Flag,Date,Payee,Category Group/Category,Category Group,Category,Memo,Outflow,Inflow,Cleared
@@ -14721,6 +14722,7 @@ function normalizeTxRow(row, source){
       amount=outflow;
       cat=mapImportedCategory(ynabCat)||guessCatFromDesc(desc);
     }
+    card=(row['account']||'').trim()||undefined;
 
   } else if(importFmt==='monarch'){
     // Monarch Money: Date,Merchant,Category,Account,Original Statement,Notes,Amount,Tags
@@ -14745,6 +14747,7 @@ function normalizeTxRow(row, source){
     }
     if(!amount)return null;
     if(rawAmt<0)cat=mapImportedCategory(row['category'])||guessCatFromDesc(desc);
+    card=(row['account']||'').trim()||undefined;
 
   } else if(importFmt==='trakyodollas'){
     // Our own exportTransactionsCSV() output — trust every field directly
@@ -15641,7 +15644,13 @@ function _doConfirmImport(incoming){
     const _dedupedParsed=_preDeduped;
     // Stamp the current label (it may have been edited after parsing), except on
     // a trak-yo-dolla$ export's rows, which keep their own Source column.
-    newTxs=_dedupedParsed.map(t=>({...t,card:importFmt==='trakyodollas'&&t.card?t.card:source,id:state.nextId++}));
+    // Mint, YNAB, and Monarch exports carry a per-row Account column.
+    // normalizeTxRow() reads it into t.card; preserve it here so a
+    // multi-account export (e.g. Chase Freedom + BofA Checking in one
+    // Monarch file) keeps each transaction on its own account rather
+    // than collapsing everything onto the single import-modal label.
+    const _perRowCard=importFmt==='trakyodollas'||importFmt==='mint'||importFmt==='ynab'||importFmt==='monarch';
+    newTxs=_dedupedParsed.map(t=>({...t,card:_perRowCard&&t.card?t.card:source,id:state.nextId++}));
     newTxs.forEach(t=>state.activeSources.add(t.card));
     // On a first-real-save transition, normalizeTxRow() categorized these
     // rows (during the file preview, before _replaceDemoDataWithReal() ran

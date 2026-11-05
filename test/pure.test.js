@@ -4005,7 +4005,7 @@ test("confirmTxImport: the demo-session-wipe branch delegates to the shared _rep
   const fnMatch = source.match(/function _doConfirmImport\(incoming\)\{[\s\S]{0,2700}?_replaceDemoDataWithReal\(\);/);
   assert.ok(fnMatch, "confirmTxImport() should call _replaceDemoDataWithReal() (via _doConfirmImport)");
   assert.doesNotMatch(
-    source.match(/function _doConfirmImport\(incoming\)\{[\s\S]{0,7800}?\n  closeTxImportModal\(\);/)[0],
+    source.match(/function _doConfirmImport\(incoming\)\{[\s\S]{0,9000}?\n  closeTxImportModal\(\);/)[0],
     /state\.income=\{method:null,monthlyAmount:0\};/,
     "_doConfirmImport() itself should no longer hand-roll the income reset -- it's now inside the shared helper"
   );
@@ -10295,8 +10295,53 @@ test("monarch_export.csv: the Shopping refund is an offset; Transfer and Credit 
 // the file-level label ("Checking") over every row anyway. ──
 test("confirmTxImport keeps per-row sources from a trak-yo-dolla$ export and switches each one on", () => {
   const source = readSource();
-  assert.match(source, /newTxs=_dedupedParsed\.map\(t=>\(\{\.\.\.t,card:importFmt==='trakyodollas'&&t\.card\?t\.card:source,id:state\.nextId\+\+\}\)\);/);
+  // Also covers Mint/YNAB/Monarch which now preserve their per-row Account column.
+  assert.match(source, /const _perRowCard=importFmt==='trakyodollas'\|\|importFmt==='mint'\|\|importFmt==='ynab'\|\|importFmt==='monarch';/);
+  assert.match(source, /newTxs=_dedupedParsed\.map\(t=>\(\{\.\.\.t,card:_perRowCard&&t\.card\?t\.card:source,id:state\.nextId\+\+\}\)\);/);
   assert.match(source, /newTxs\.forEach\(t=>state\.activeSources\.add\(t\.card\)\);/);
+});
+
+// ── Item 2: Mint/YNAB/Monarch account column ────────────────────────────────
+// Each format has a per-row Account column that normalizeTxRow used to ignore,
+// collapsing all rows onto the import-modal label. Now each row's account name
+// is read into card, and _doConfirmImport preserves it (same as trakyodollas).
+
+test("normalizeTxRow: Mint reads Account Name column into card", () => {
+  const { normalizeTxRow } = loadNormalizePipeline({ importFmt: 'mint' });
+  const t = normalizeTxRow({
+    date: '1/15/2024', description: 'NETFLIX', amount: '15.99',
+    'transaction type': 'debit', category: 'Entertainment',
+    'account name': 'Chase Freedom',
+  }, 'Mint Import');
+  assert.equal(t.card, 'Chase Freedom', "card should come from Account Name, not the file-level source label");
+});
+
+test("normalizeTxRow: Mint falls back to source label when Account Name is empty", () => {
+  const { normalizeTxRow } = loadNormalizePipeline({ importFmt: 'mint' });
+  const t = normalizeTxRow({
+    date: '1/15/2024', description: 'NETFLIX', amount: '15.99',
+    'transaction type': 'debit', category: 'Entertainment',
+    'account name': '',
+  }, 'Mint Import');
+  assert.equal(t.card, 'Mint Import', "card should fall back to source when account name is absent");
+});
+
+test("normalizeTxRow: YNAB reads Account column into card", () => {
+  const { normalizeTxRow } = loadNormalizePipeline({ importFmt: 'ynab' });
+  const t = normalizeTxRow({
+    date: '01/15/2024', payee: 'Netflix', outflow: '15.99', inflow: '0',
+    category: 'Entertainment', account: 'BofA Checking',
+  }, 'YNAB Import');
+  assert.equal(t.card, 'BofA Checking', "card should come from Account column");
+});
+
+test("normalizeTxRow: Monarch reads Account column into card", () => {
+  const { normalizeTxRow } = loadNormalizePipeline({ importFmt: 'monarch' });
+  const t = normalizeTxRow({
+    date: '2024-01-15', merchant: 'Netflix', category: 'Entertainment',
+    account: 'Discover it', amount: '-15.99',
+  }, 'Monarch Import');
+  assert.equal(t.card, 'Discover it', "card should come from Account column");
 });
 
 // ── Item 1: shiftDate clamping and starter-demo rent coverage ──
