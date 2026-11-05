@@ -11,7 +11,7 @@
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-8h+O7WZPnQkvy7V7ZB2lSgwYP8fE9YykvhfuoZu8hbs=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-pgr6auItfHNkUJTJcgm8Ca8Ff82vItev0i7WpKM4C/g=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -15390,7 +15390,21 @@ function showImportPreview(){
   const labelHintEl=document.getElementById('import-label-hint');
   const labelHintText=document.getElementById('import-label-hint-text');
   if(labelHintEl&&labelHintText){
-    if(!_importLabelEdited){
+    // Mint, YNAB, Monarch, and trak-yo-dolla$ re-imports carry a per-row
+    // account name in t.card — the import-label field isn't what gets
+    // stamped on the transactions, so the normal "tagged as X" hint is
+    // misleading. Show the actual accounts from the parsed rows instead.
+    const _perRowFmt=importFmt==='mint'||importFmt==='ynab'||importFmt==='monarch'||importFmt==='trakyodollas';
+    if(_perRowFmt){
+      const accounts=[...new Set(importParsed.map(t=>t.card).filter(Boolean))];
+      if(accounts.length){
+        const list=accounts.slice(0,3).map(a=>`"${esc(a)}"`).join(', ')+(accounts.length>3?` +${accounts.length-3} more`:'');
+        labelHintText.innerHTML=`Each transaction keeps its own account name from the file (${list}).`;
+        labelHintEl.classList.remove('hidden');
+      }else{
+        labelHintEl.classList.add('hidden');
+      }
+    }else if(!_importLabelEdited){
       const curLabel=(document.getElementById('import-source-label')?.value||'').trim();
       const existing=[...new Set(state.transactions.map(t=>t.card).filter(Boolean))];
       if(state.hasRealData&&existing.some(s=>s.toLowerCase()===curLabel.toLowerCase())){
@@ -15556,21 +15570,31 @@ function _measureStorageFreeBytes(){
 }
 
 // Impure: returns true if newJson (the full tx list to save) will fit in localStorage.
-// Fast-paths: if shrinking or the delta is small (<200KB), skip the probe entirely.
+// Fast-path: if projectedTotal of all keys is under 4MB, skip the binary-search probe.
+// The old delta<200_000 fast-path was wrong: a 100KB addition can still overflow
+// when the user is already at 4.9MB, so total usage matters, not just the delta.
 function _txsFit(newJson){
   const oldJson=localStorage.getItem('trakyo_txs_v1')||'';
   const delta=newJson.length-oldJson.length;
   if(delta<=0)return true;
-  if(delta<200_000)return true;
+  // Sum all localStorage bytes that would exist after this write.
+  let projectedTotal=newJson.length;
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k==='trakyo_txs_v1')continue; // new value already counted above
+    projectedTotal+=(k?.length||0)+(localStorage.getItem(k)?.length||0);
+  }
+  // 4MB is safely below every browser's minimum localStorage quota (all
+  // major browsers guarantee at least 5MB), so we can skip the expensive
+  // binary-search probe when total would stay under it.
+  if(projectedTotal<4_000_000)return true;
   const free=_measureStorageFreeBytes();
   return delta<=free;
 }
 
-// Impure: populate and show #import-too-big-msg.
-// offer = {txs, firstMonth, lastMonth, count} or null.
-// Shows the wrong-file error state in #import-zero-msg. Extracted from
-// parseTxFile so there's one owner for all wrong-file DOM mutations, making
-// it straightforward for showImportPreview()'s zero-row branch to undo them.
+// Impure: show #import-zero-msg in wrong-file state. Extracted from parseTxFile
+// so there's one owner for all wrong-file DOM mutations, making it easy for
+// showImportPreview()'s zero-row branch to undo them.
 function _showWrongFileMsg(kind){
   const msgs={
     spreadsheet:'This is a spreadsheet file, not a CSV. Download the CSV from your bank instead, or open this file in Excel, Numbers or Google Sheets and export it as CSV.',
@@ -15620,7 +15644,8 @@ function _showImportTooBig(totalCount,offer){
   const msg=document.getElementById('import-too-big-msg');
   if(!msg)return;
   const heading=document.getElementById('import-too-big-heading');
-  if(heading)heading.textContent='This file has '+totalCount.toLocaleString()+' transactions \u2014 your browser\u2019s storage is full, so nothing was imported.';
+  // Offer = at least one month fits; no-offer = storage completely full.
+  if(heading)heading.textContent='This file has '+totalCount.toLocaleString()+' transactions \u2014 '+(offer?'only the most recent months will fit in your browser\u2019s storage.':'your browser\u2019s storage is full, so nothing was imported.');
   const offerDiv=document.getElementById('import-too-big-offer');
   const noOfferDiv=document.getElementById('import-too-big-nooffer');
   const trimBtn=document.getElementById('import-trim-btn');
@@ -15638,6 +15663,9 @@ function _showImportTooBig(totalCount,offer){
     if(noOfferDiv)noOfferDiv.classList.remove('hidden');
   }
   msg.classList.remove('hidden');
+  // Hide the Import button — it can't succeed when storage is full/too-tight.
+  const _btn=document.getElementById('import-confirm-btn');
+  if(_btn)_btn.classList.add('hidden');
 }
 
 // Set when the import-too-big offer is computed; consumed by acceptTrimmedImport().
@@ -15670,10 +15698,21 @@ function _doConfirmImport(incoming){
   // specific moment matters.
   const wasFirstRealSave=!state.hasRealData;
 
+  // For per-row-card formats (Mint/YNAB/Monarch/re-import), Replace must
+  // remove existing transactions by the account names in the file, not by
+  // the import-label value — the label ("Mint Import") typically matches
+  // nothing in state.transactions, so Replace would silently skip deletion.
+  const _perRowCard=importFmt==='trakyodollas'||importFmt==='mint'||importFmt==='ynab'||importFmt==='monarch';
+  const _replaceCards=replace&&_perRowCard?new Set(incoming.map(t=>t.card).filter(Boolean)):null;
+
   // Build what baseTxs will be after _replaceDemoDataWithReal() + replace filter,
   // so the storage-size check sees the same final list that mutateTransactions would.
   const baseTxs=wasFirstRealSave?[]:
-    replace?state.transactions.filter(t=>t.card!==source):[...state.transactions];
+    replace
+      ?(_replaceCards
+        ?state.transactions.filter(t=>!_replaceCards.has(t.card))
+        :state.transactions.filter(t=>t.card!==source))
+      :[...state.transactions];
 
   // Pre-dedup to build the final list for the storage size check
   const {deduped:_preDeduped,skippedCount:_preSkipped}=_dedupeIncoming(baseTxs,incoming);
@@ -15708,9 +15747,13 @@ function _doConfirmImport(incoming){
     // guard this replaces). Found in the 110th adversarial pass.
     _replaceDemoDataWithReal();
 
-    // Remove existing from this source if replace checked
+    // Remove existing from this source if replace checked.
+    // _replaceCards and _perRowCard are computed above the mutateTransactions
+    // call and close over into this callback.
     if(replace){
-      state.transactions=state.transactions.filter(t=>t.card!==source);
+      state.transactions=_replaceCards
+        ?state.transactions.filter(t=>!_replaceCards.has(t.card))
+        :state.transactions.filter(t=>t.card!==source);
     }
 
     // Auto-activate new source (an export's rows switch on their own, below)
@@ -15727,7 +15770,6 @@ function _doConfirmImport(incoming){
     // multi-account export (e.g. Chase Freedom + BofA Checking in one
     // Monarch file) keeps each transaction on its own account rather
     // than collapsing everything onto the single import-modal label.
-    const _perRowCard=importFmt==='trakyodollas'||importFmt==='mint'||importFmt==='ynab'||importFmt==='monarch';
     newTxs=_dedupedParsed.map(t=>({...t,card:_perRowCard&&t.card?t.card:source,id:state.nextId++}));
     newTxs.forEach(t=>state.activeSources.add(t.card));
     // On a first-real-save transition, normalizeTxRow() categorized these

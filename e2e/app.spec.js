@@ -529,6 +529,38 @@ test('wrong-file: dropping a valid CSV after a wrong-file error clears the wrong
   await expect(page.locator('#import-zero-msg')).toBeHidden();
 });
 
+// ── Replace existing transactions ────────────────────────────────────────────
+test('replace: re-importing same source with replace checked removes old transactions and imports new ones', async ({ page }) => {
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+
+  // First import: Discover CSV under source "Discover"
+  await page.evaluate(() => openTxImportModal());
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+  await page.locator('#tx-csv-file').setInputFiles(DISCOVER_CSV);
+  await page.locator('#import-confirm-btn').waitFor({ state: 'visible' });
+  const countBefore = await page.evaluate(() => importParsed.length);
+  await page.locator('#import-confirm-btn').click();
+  await page.locator('#import-success-modal').waitFor({ state: 'visible' });
+  const afterFirst = await page.evaluate(() => state.transactions.length);
+  expect(afterFirst).toBeGreaterThan(0);
+  await page.evaluate(() => { const m = document.getElementById('import-success-modal'); if (m) m.classList.add('hidden'); });
+
+  // Second import: same Discover CSV, replace checked
+  await page.evaluate(() => openTxImportModal());
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+  await page.locator('#tx-csv-file').setInputFiles(DISCOVER_CSV);
+  await page.locator('#import-confirm-btn').waitFor({ state: 'visible' });
+  await page.locator('#import-replace').check();
+  await page.locator('#import-confirm-btn').click();
+  await page.locator('#import-success-modal').waitFor({ state: 'visible' });
+
+  // After replace, transaction count should equal a single import (not doubled)
+  const afterReplace = await page.evaluate(() => state.transactions.length);
+  expect(afterReplace).toBe(afterFirst);
+  expect(afterReplace).toBe(countBefore);
+});
+
 // ── Storage quota: too-big imports and banner behavior ───────────────────────
 // initScript that wraps localStorage.setItem to throw QuotaExceededError once
 // total used space exceeds 400,000 characters (well under a real 5MB Safari

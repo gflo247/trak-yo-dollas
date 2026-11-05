@@ -10540,4 +10540,44 @@ test("parseTxFile: UTF-16 encoding path uses readAsText with 'UTF-16LE' or 'UTF-
     "UTF-16 BE BOM must trigger readAsText with 'UTF-16BE' encoding");
 });
 
+test("_txsFit: uses projected total storage size, not raw delta, to skip the binary-search probe", () => {
+  // The old fast-path (delta < 200_000) was replaced by a projected-total check
+  // so a small delta can't silently push total usage over quota.
+  assert.match(fnBody('_txsFit'),
+    /projectedTotal/,
+    "_txsFit must compute projected total storage size");
+  assert.match(fnBody('_txsFit'),
+    /4_000_000/,
+    "_txsFit must compare projected total against a 4MB threshold");
+  assert.doesNotMatch(fnBody('_txsFit'),
+    /delta<200_000/,
+    "_txsFit must not use the old delta<200_000 fast-path");
+});
+
+test("_showImportTooBig: heading distinguishes 'storage full' (no offer) from 'only recent months fit' (offer)", () => {
+  assert.match(fnBody('_showImportTooBig'),
+    /offer\?.*most recent months will fit.*:.*storage is full/s,
+    "heading must use offer-conditional copy: 'most recent months will fit' vs 'storage is full'");
+});
+
+test("_doConfirmImport: Replace for per-row-card formats (Mint/YNAB/Monarch) removes by per-row account names, not the import label", () => {
+  const src = fnBody('_doConfirmImport');
+  assert.match(src,
+    /_replaceCards/,
+    "_doConfirmImport must build _replaceCards for per-row-card formats");
+  assert.match(src,
+    /_replaceCards\.has\(t\.card\)/,
+    "_doConfirmImport must filter by _replaceCards.has(t.card) when replacing");
+});
+
+test("showImportPreview: label hint for Mint/YNAB/Monarch shows per-row account names instead of import label", () => {
+  const src = fnBody('showImportPreview');
+  assert.match(src,
+    /_perRowFmt/,
+    "showImportPreview must branch on per-row-card format for the label hint");
+  assert.match(src,
+    /keeps its own account name from the file/,
+    "showImportPreview must show 'keeps its own account name from the file' for per-row formats");
+});
+
 // ── end of tests ──
