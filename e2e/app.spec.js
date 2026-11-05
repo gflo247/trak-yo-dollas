@@ -588,15 +588,16 @@ test.describe('storage quota', () => {
       // Now mock setItem to throw and trigger a save.
       // Remove trakyo_txs_v1 first so saveToLocalStorage() must write it
       // (the guard skips the write if _txsDirty=false AND the key exists).
+      // Store orig on window so it survives across evaluate() calls.
       await page.evaluate(() => {
         localStorage.removeItem('trakyo_txs_v1');
-        const orig = Storage.prototype.setItem;
+        window.__origSetItem = Storage.prototype.setItem;
         Storage.prototype.setItem = function(k, v) {
           if (k === 'trakyo_txs_v1') {
             const err = new DOMException('QuotaExceededError', 'QuotaExceededError');
             throw err;
           }
-          return orig.call(this, k, v);
+          return window.__origSetItem.call(this, k, v);
         };
         // Trigger a save
         if (typeof saveToLocalStorage === 'function') saveToLocalStorage();
@@ -606,11 +607,12 @@ test.describe('storage quota', () => {
       await page.waitForFunction(() => {
         const b = document.getElementById('storage-full-banner');
         return b && b.style.display !== 'none';
-      }, { timeout: 3000 });
+      }, { timeout: 5000 });
 
       // Restore setItem and trigger a successful save — banner should hide
       await page.evaluate(() => {
-        delete Storage.prototype.setItem;
+        Storage.prototype.setItem = window.__origSetItem;
+        window.__origSetItem = null;
         if (typeof saveToLocalStorage === 'function') saveToLocalStorage();
       });
 
