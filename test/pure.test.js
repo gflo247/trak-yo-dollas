@@ -2645,14 +2645,6 @@ test("importBackup: refuses to run during a demo-preview session instead of appe
     "importBackup() should early-return with the standard demo-preview toast before ever reading the file"
   );
 });
-test("confirmTxImport: refuses to run during a demo-preview session instead of appearing to succeed and persisting nothing", () => {
-  const source = readSource();
-  assert.match(
-    source,
-    /function confirmTxImport\(\)\{\s*if\(!importParsed\.length\)return;[\s\S]{0,900}?if\(blockedInDemoPreview\(\)\)return;/,
-    "confirmTxImport() should early-return with the standard demo-preview toast before touching state.transactions"
-  );
-});
 
 // ── Importing a transaction CSV only tags rows with a source label
 // (state.activeSources/t.card) -- it never creates a state.accounts entry,
@@ -4065,26 +4057,34 @@ test("_replaceDemoDataWithReal: resets every field loadDemoProfile() seeds to th
   }
   assert.match(src, /_resetSessionFiltersForDataReplace\(\);/, "should also reset session-scoped filters, matching every other wholesale-replace path");
 });
-test("saveAccount: calls _replaceDemoDataWithReal() before adding the account, and falls back to adding as new if editAcctId no longer resolves after the wipe", () => {
-  const src = fnBody('saveAccount');
-  const wipeIdx = src.search(/_replaceDemoDataWithReal\(\);/);
-  const pushIdx = src.search(/state\.accounts\.push\(/);
-  assert.ok(wipeIdx >= 0, "saveAccount() should call _replaceDemoDataWithReal()");
-  assert.ok(wipeIdx < pushIdx, "the wipe must run BEFORE the account is added, or the new account would be wiped along with the demo data");
-  assert.match(
-    src,
+// _replaceDemoDataWithReal() ordering: wipe must precede the write in every entry point.
+// A wipe AFTER the push would delete the data the user just saved.
+test("saveAccount/saveSnapshot/saveTx: each calls _replaceDemoDataWithReal() and the wipe precedes the write", () => {
+  for (const { name, writePat, writeLabel } of [
+    { name: 'saveAccount',  writePat: /state\.accounts\.push\(/,              writeLabel: 'account push' },
+    { name: 'saveSnapshot', writePat: /state\.snapshots\.find\(s=>s\.monthKey===ym\)/, writeLabel: 'dup-month check' },
+    { name: 'saveTx',       writePat: /mutateTransactions\(/,                 writeLabel: 'mutateTransactions' },
+  ]) {
+    const src = fnBody(name);
+    const wipeIdx = src.search(/_replaceDemoDataWithReal\(\);/);
+    assert.ok(wipeIdx >= 0, `${name}() should call _replaceDemoDataWithReal()`);
+    assert.ok(wipeIdx < src.search(writePat), `${name}(): wipe must run before ${writeLabel}`);
+  }
+  // saveAccount-specific: if editAcctId no longer resolves post-wipe (pointed at a demo account
+  // just cleared), fall back to add-as-new rather than silently dropping the save
+  assert.match(fnBody('saveAccount'),
     /if\(editAcctId\)\{const a=state\.accounts\.find\(x=>x\.id===editAcctId\);if\(a\)\{[^}]*\}else state\.accounts\.push\(/,
-    "if editAcctId no longer resolves after the wipe (it pointed at a demo account that just got cleared), saveAccount() should fall back to adding as new rather than silently dropping the save"
+    "saveAccount(): fall back to add-as-new when editAcctId no longer resolves post-wipe"
   );
-});
-test("saveSnapshot: calls _replaceDemoDataWithReal() before the duplicate-month check and before computing netWorth()/totalAssets()/totalLiab()", () => {
-  const src = fnBody('saveSnapshot');
-  const wipeIdx = src.search(/_replaceDemoDataWithReal\(\);/);
-  const dupCheckIdx = src.search(/state\.snapshots\.find\(s=>s\.monthKey===ym\)/);
-  const netWorthIdx = src.search(/nw:netWorth\(\)/);
-  assert.ok(wipeIdx >= 0, "saveSnapshot() should call _replaceDemoDataWithReal()");
-  assert.ok(wipeIdx < dupCheckIdx, "the wipe must run before the duplicate-month check, so a demo-scripted monthKey can't false-positive against the real current month");
-  assert.ok(wipeIdx < netWorthIdx, "the wipe must run before netWorth()/totalAssets()/totalLiab() are computed, so the snapshot reflects real (possibly zero) account data, not fake demo balances");
+  // saveSnapshot-specific: wipe must also precede netWorth() so snapshot reflects real (zero)
+  // account data, not fake demo balances
+  const snapSrc = fnBody('saveSnapshot');
+  assert.ok(snapSrc.search(/_replaceDemoDataWithReal\(\);/) < snapSrc.search(/nw:netWorth\(\)/),
+    "saveSnapshot(): wipe must precede netWorth()/totalAssets()/totalLiab() computation"
+  );
+  // saveTx-specific: sets state.hasRealData=true (never did before; caused manual-entry
+  // transactions to be treated as demo data and deleted by confirmTxImport's own first-import wipe)
+  assert.match(fnBody('saveTx'), /state\.hasRealData=true;/, "saveTx() should set state.hasRealData=true");
 });
 test("parseCsvAccounts: only calls _replaceDemoDataWithReal() once at least one row parses successfully, not unconditionally", () => {
   const src = fnBody('parseCsvAccounts');
@@ -4095,11 +4095,6 @@ test("parseCsvAccounts: only calls _replaceDemoDataWithReal() once at least one 
     ifImportedIdx < wipeIdx,
     "the wipe must be gated inside if(imported>0), not run unconditionally -- otherwise a CSV where every row is invalid would wipe the demo's accounts and leave the user with neither the demo nor any real data"
   );
-});
-test("saveTx: sets state.hasRealData and calls _replaceDemoDataWithReal(), unlike before when it never set hasRealData at all", () => {
-  const src = fnBody('saveTx');
-  assert.match(src, /_replaceDemoDataWithReal\(\);/, "saveTx() should call the shared wipe helper");
-  assert.match(src, /state\.hasRealData=true;/, "saveTx() should now set state.hasRealData -- previously it never did, so a manual-entry-only user's transactions stayed misclassified as demo data and were silently deleted by confirmTxImport()'s own !state.hasRealData wipe on their first later CSV import");
 });
 
 // Finding 4 (LOW): applyCurrency()/applyCustomCurrency() only called
@@ -4487,9 +4482,12 @@ test("_replaceDemoDataWithReal: calls rebuildMonthly() and rebuildCatSelects(), 
 // each of these ran the full wipe-and-save UI (demo data visibly
 // disappears, a normal success toast fires) that silently reverted on
 // the next reload with no warning it was never actually saved. ──
-test("saveAccount, saveSnapshot, saveTx, handleCsv, and importCsvText all refuse to run during a demo-preview-over-real session", () => {
+test("every write entry point that can trigger _replaceDemoDataWithReal() has the blockedInDemoPreview() guard", () => {
   const guardPattern = /if\(blockedInDemoPreview\(\)\)return;/;
-  for (const name of ['saveAccount', 'saveSnapshot', 'saveTx', 'handleCsv', 'importCsvText']) {
+  for (const name of [
+    'saveAccount', 'saveSnapshot', 'saveTx', 'handleCsv', 'importCsvText',
+    'confirmTxImport', 'saveVehicle', 'saveHistoricalSnapshot',
+  ]) {
     assert.match(fnBody(name), guardPattern, `${name}() should have the demo-preview guard`);
   }
 });
@@ -4538,15 +4536,14 @@ test("confirmTxImport: the dead write-only SOURCES global and its guard are remo
 // ran its own wipe. Fixed with the same guard/wipe/fallback pattern as
 // saveAccount(). saveVehicle() is DOM-heavy; source-pattern only,
 // matching this suite's established precedent. ──
-test("saveVehicle: has the demo-preview guard, calls _replaceDemoDataWithReal() after validation, and falls back editVehicleId to null if it no longer resolves post-wipe", () => {
+test("saveVehicle: demo-preview guard is first, _replaceDemoDataWithReal() follows validation, editVehicleId falls back to null post-wipe", () => {
   const src = fnBody('saveVehicle');
   const guardIdx = src.search(/if\(blockedInDemoPreview\(\)\)return;/);
   const valueGuardIdx = src.search(/if\(value<0\|\|!Number\.isFinite\(value\)\)return;/);
   const wipeIdx = src.search(/_replaceDemoDataWithReal\(\);/);
   const fallbackIdx = src.search(/if\(editVehicleId&&!state\.vehicles\.find\(x=>x\.id===editVehicleId\)\)editVehicleId=null;/);
   const editCheckIdx = src.search(/if\(editVehicleId\)\{/);
-  assert.ok(guardIdx >= 0, "saveVehicle() should have the demo-preview guard");
-  assert.ok(guardIdx < valueGuardIdx, "the demo-preview guard should be the first check in the function");
+  assert.ok(guardIdx < valueGuardIdx, "demo-preview guard should be the first check in the function");
   assert.ok(wipeIdx >= 0, "saveVehicle() should call _replaceDemoDataWithReal()");
   assert.ok(valueGuardIdx < wipeIdx, "value/name validation must run before the wipe, so a rejected save doesn't leave demo data wiped with nothing saved");
   assert.ok(fallbackIdx >= 0 && fallbackIdx < editCheckIdx, "editVehicleId should be nulled out before the edit/add branch if it no longer resolves post-wipe, falling back to add-as-new");
@@ -4559,18 +4556,17 @@ test("saveVehicle: has the demo-preview guard, calls _replaceDemoDataWithReal() 
 // saveSnapshot()'s "current month" flow did), leaving the "Demo
 // snapshots" notice visible over fully real history for anyone whose
 // first snapshot came from this "+ Add historical" flow instead. ──
-test("saveHistoricalSnapshot: has the demo-preview guard, wipes demo data before the duplicate-month checks, and sets hasRealData/hasRealSnapshot", () => {
+test("saveHistoricalSnapshot: demo-preview guard is first, validation precedes wipe, wipe precedes dup-month check, sets hasRealData/hasRealSnapshot", () => {
   const src = fnBody('saveHistoricalSnapshot');
   const guardIdx = src.search(/if\(blockedInDemoPreview\(\)\)return;/);
   const dateGuardIdx = src.search(/if\(!date\|\|!Number\.isFinite\(nw\)\)/);
   const wipeIdx = src.search(/_replaceDemoDataWithReal\(\);/);
   const dupCheckIdx = src.search(/if\(!_editingSnapshotMonthKey&&state\.snapshots\.some/);
   const hasRealSnapIdx = src.search(/state\.hasRealSnapshot=true;/);
-  assert.ok(guardIdx >= 0 && guardIdx < dateGuardIdx, "the demo-preview guard should be the first check");
-  assert.ok(wipeIdx >= 0, "should call _replaceDemoDataWithReal()");
-  assert.ok(dateGuardIdx < wipeIdx, "date/net-worth validation must run before the wipe");
-  assert.ok(wipeIdx < dupCheckIdx, "the wipe must run BEFORE the duplicate-month check, so a demo-scripted monthKey can't false-positive against the real month being backfilled");
-  assert.ok(hasRealSnapIdx >= 0, "should set state.hasRealSnapshot=true, matching saveSnapshot()'s own flag -- previously only that function set it");
+  assert.ok(guardIdx < dateGuardIdx, "demo-preview guard should be the first check in the function");
+  assert.ok(wipeIdx >= 0 && dateGuardIdx < wipeIdx, "date/net-worth validation must run before the wipe");
+  assert.ok(wipeIdx < dupCheckIdx, "wipe must run BEFORE the dup-month check, so a demo-scripted monthKey can't false-positive against the real month being backfilled");
+  assert.ok(hasRealSnapIdx >= 0, "should set state.hasRealSnapshot=true -- previously only saveSnapshot()'s current-month flow set it, leaving historical-entry users stuck on the demo notice");
 });
 
 // ── A real production report (a user's own DevTools showed accounts:[] and
