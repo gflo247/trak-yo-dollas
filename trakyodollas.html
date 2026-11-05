@@ -11,7 +11,7 @@
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-JaI2OEc9RbJeiGnYhgmo0G9PqNc7KwpoRcIbOTHhFO8=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-8h+O7WZPnQkvy7V7ZB2lSgwYP8fE9YykvhfuoZu8hbs=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -6210,6 +6210,43 @@ function renderBucketGrid(){
     return[...map.values()];
   }
   const grainedPeriods=grainPeriods(filteredMonthsForSpark);
+  // Pre-build per-month totals so sparklines and per-card badges do an O(1)
+  // lookup instead of an O(txns) .filter() per card per month.
+  //
+  // Filter applied: !excluded & activeSources & bizFilter — the same set
+  // catSparkline, vendorSparkline, and the meta-badge .filter() calls below
+  // all use. Intentionally does NOT apply state.excludedCats or isRealSpend:
+  //   • a tile can represent an excluded category when state.showExcluded is on
+  //   • income transactions appear as their own category tile (e.g. "Income")
+  // This differs from getBaseTxs()'s default 'normal' mode, which strips both.
+  // Map key: t.cat in category mode; resolveVendor/CHECK key in vendor mode.
+  const _fmSet=new Set(filteredMonthsForSpark);
+  const _gridTxMap=new Map(); // Map<key, Map<month, number>>
+  if(isVendor){
+    const _vCheckRe=/^CHECK (PAID|WRITTEN|#)/i;
+    state.transactions.forEach(t=>{
+      if(t.excluded||!state.activeSources.has(t.card))return;
+      if(_bizFilter==='biz'&&!t.biz)return;
+      if(_bizFilter==='personal'&&t.biz)return;
+      const m=t.date.slice(0,7);
+      if(!_fmSet.has(m))return;
+      const key=_vCheckRe.test(t.desc)?'Checks written':resolveVendor(t.desc);
+      let mp=_gridTxMap.get(key);
+      if(!mp){mp=new Map();_gridTxMap.set(key,mp);}
+      mp.set(m,(mp.get(m)||0)+t.amount);
+    });
+  }else{
+    state.transactions.forEach(t=>{
+      if(t.excluded||!state.activeSources.has(t.card))return;
+      if(_bizFilter==='biz'&&!t.biz)return;
+      if(_bizFilter==='personal'&&t.biz)return;
+      const m=t.date.slice(0,7);
+      if(!_fmSet.has(m))return;
+      let mp=_gridTxMap.get(t.cat);
+      if(!mp){mp=new Map();_gridTxMap.set(t.cat,mp);}
+      mp.set(m,(mp.get(m)||0)+t.amount);
+    });
+  }
   function makeSpark(pts,color,dashed=false){
     if(pts.filter(v=>v>0).length<2)return'';
     const maxVal=Math.max(...pts)||1;
@@ -6251,35 +6288,20 @@ function renderBucketGrid(){
     </svg>`;
   }
   function vendorSparkline(vendor,color){
-    // Match by the same resolved/aliased key vendorMap below is built
-    // from (resolveVendor(), with the CHECK_RE override), not the raw
-    // t.desc -- a plain t.desc===vendor check only ever matched a
-    // transaction whose raw description was already identical to its
-    // canonical vendor name, so every aliased/merged vendor (the entire
-    // point of the alias feature) and every "Checks written" bucket
-    // (raw desc is never literally that string) silently rendered a
-    // flat/empty sparkline while the tile's total/count right next to it
-    // stayed correct. Found in the 31st adversarial pass.
-    const CHECK_RE=/^CHECK (PAID|WRITTEN|#)/i;
-    // state.activeSources check added in the 35th adversarial pass -- the
-    // tile's own total (built from getBaseTxs(), which already respects
-    // it) stayed correct, but this sparkline still included deselected
-    // sources' spend, the same tile-vs-sparkline mismatch shape as the
-    // vendor-alias bug the 31st pass fixed here.
+    // Uses _gridTxMap (keyed by resolveVendor/CHECK_RE, built once above)
+    // instead of re-scanning state.transactions per grain period.
+    const mp=_gridTxMap.get(vendor);
     const pts=grainedPeriods.map(pMonths=>
-      pMonths.reduce((s,m)=>s+state.transactions.filter(t=>{
-        if(t.date.slice(0,7)!==m||t.excluded||!state.activeSources.has(t.card))return false;
-        if(_bizFilter==='biz'&&!t.biz)return false;
-        if(_bizFilter==='personal'&&t.biz)return false;
-        const key=CHECK_RE.test(t.desc)?'Checks written':resolveVendor(t.desc);
-        return key===vendor;
-      }).reduce((a,t)=>a+t.amount,0),0)
+      pMonths.reduce((s,m)=>s+(mp?mp.get(m)||0:0),0)
     );
     return makeSpark(pts,color);
   }
   function catSparkline(cat,color,dashed=false){
+    // Uses _gridTxMap (keyed by t.cat, built once above) instead of
+    // re-scanning state.transactions per grain period.
+    const mp=_gridTxMap.get(cat);
     const pts=grainedPeriods.map(pMonths=>
-      pMonths.reduce((s,m)=>s+state.transactions.filter(t=>t.date.slice(0,7)===m&&t.cat===cat&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0),0)
+      pMonths.reduce((s,m)=>s+(mp?mp.get(m)||0:0),0)
     );
     return makeSpark(pts,color,dashed);
   }
@@ -6341,18 +6363,17 @@ function renderBucketGrid(){
         </div>
         <div class="bucket-total" style="color:${color}">${fmtS(data.total)}</div>
         <div class="bucket-meta">${(()=>{
-          // state.activeSources check added in the 35th adversarial pass to
-          // all 3 filters below -- was silently including deselected
-          // sources' spend in this "vs your average" badge.
-          const filteredMs=getFilteredMonths();
+          // Uses _gridTxMap for O(1) per-month lookups instead of
+          // re-scanning state.transactions per month per vendor.
+          const _vMp=_gridTxMap.get(vendor);
           // Most recent month in filtered range that has any spend for this vendor
-          const vendorMonths=filteredMs.filter(m=>state.transactions.some(t=>t.date.slice(0,7)===m&&resolveVendor(t.desc)===vendor&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)));
+          const vendorMonths=filteredMonthsForSpark.filter(m=>_vMp&&(_vMp.get(m)||0)>0);
           if(!vendorMonths.length)return`${data.count} transactions · ${fmt(avg)}${grainLabel}`;
           const latestM=vendorMonths[vendorMonths.length-1];
-          const curAmt=state.transactions.filter(t=>t.date.slice(0,7)===latestM&&resolveVendor(t.desc)===vendor&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0);
+          const curAmt=_vMp?_vMp.get(latestM)||0:0;
           // Average only over months with actual spend for this vendor
           const spendMonths=vendorMonths.slice(0,-1); // exclude latest to compare against
-          const periodAvg=spendMonths.length>0?Math.round(spendMonths.map(m=>state.transactions.filter(t=>t.date.slice(0,7)===m&&resolveVendor(t.desc)===vendor&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0)).reduce((a,b)=>a+b,0)/spendMonths.length):0;
+          const periodAvg=spendMonths.length>0?Math.round(spendMonths.reduce((s,m)=>s+(_vMp?_vMp.get(m)||0:0),0)/spendMonths.length):0;
           const vsAvg=periodAvg>0&&curAmt>0?Math.round((curAmt-periodAvg)/periodAvg*100):0;
           const sig=periodAvg>0?(vsAvg>=_bucketArrowThreshold?`<span class="text-danger">↑${vsAvg}%</span> · `:vsAvg<=-_bucketArrowThreshold?`<span class="text-success">↓${Math.abs(vsAvg)}%</span> · `:Math.abs(vsAvg)>=_bucketHideThreshold?`<span style="color:var(--text-dim)">${vsAvg>=0?'+':''}${vsAvg}%</span> · `:''):'';
           return`${sig}${data.count} transactions · Avg: ${fmt(avg)}${grainLabel}`;
@@ -6456,14 +6477,13 @@ function renderBucketGrid(){
     const hint=HINTS[cat]||'';
     const sc=esc(cat);
     const budget=state.budgets[cat];
-    const filteredMs=getFilteredMonths();
-    // state.activeSources check added in the 35th adversarial pass to all
-    // 4 filters below -- the vendor-tile twin of this exact badge had the
-    // identical gap, fixed in the same pass.
+    // Uses _gridTxMap for O(1) per-month lookups instead of re-scanning
+    // state.transactions per month per category.
+    const _cMp=_gridTxMap.get(cat);
     // Most recent month in filtered range with spend for this category
-    const catMonths=filteredMs.filter(m=>state.transactions.some(t=>t.date.slice(0,7)===m&&t.cat===cat&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)));
+    const catMonths=filteredMonthsForSpark.filter(m=>_cMp&&(_cMp.get(m)||0)>0);
     const latestCatM=catMonths.length?catMonths[catMonths.length-1]:null;
-    const curAmt=latestCatM?(state.transactions||[]).filter(t=>t.date.slice(0,7)===latestCatM&&t.cat===cat&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0):0;
+    const curAmt=latestCatM?(_cMp?_cMp.get(latestCatM)||0:0):0;
     // Average: sum prior spend months, divide by ALL months before the latest
     // spend month (not just spend months). Using only spend months inflates
     // the avg for irregular categories like Travel or Gifts -- e.g. $7k
@@ -6472,8 +6492,8 @@ function renderBucketGrid(){
     // filtered months) already does this correctly and is used as the
     // fallback when there are no prior months; the main path now matches it.
     const priorCatMonths=catMonths.slice(0,-1);
-    const priorAllMonthCount=filteredMs.length>1?filteredMs.length-1:0;
-    const priorSpendTotal=priorCatMonths.map(m=>(state.transactions||[]).filter(t=>t.date.slice(0,7)===m&&t.cat===cat&&!t.excluded&&state.activeSources.has(t.card)&&(_bizFilter!=='biz'||t.biz)&&(_bizFilter!=='personal'||!t.biz)).reduce((a,t)=>a+t.amount,0)).reduce((a,b)=>a+b,0);
+    const priorAllMonthCount=filteredMonthsForSpark.length>1?filteredMonthsForSpark.length-1:0;
+    const priorSpendTotal=priorCatMonths.reduce((s,m)=>s+(_cMp?_cMp.get(m)||0:0),0);
     const periodAvg=priorAllMonthCount>0?Math.round(priorSpendTotal/priorAllMonthCount):s.avg;
     const vsAvg=periodAvg>0?Math.round((curAmt-periodAvg)/periodAvg*100):0;
     const signal=curAmt>0?(vsAvg>=_bucketArrowThreshold?`<span class="text-danger">↑${vsAvg}%</span>`:vsAvg<=-_bucketArrowThreshold?`<span class="text-success">↓${Math.abs(vsAvg)}%</span>`:(Math.abs(vsAvg)>=_bucketHideThreshold?`<span style="color:var(--text-dim)">${vsAvg>=0?'+':''}${vsAvg}%</span>`:'')):'';
