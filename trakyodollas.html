@@ -11,7 +11,7 @@
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-BKnajD2O4RDvDN3y1NAWZQ8jM1wj2mKWvBeuzAJU6vY=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-ofKJzyOfIU93dhrIlAfsxSSaVzkeCFTb0HhOPsx8sT0=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -3507,19 +3507,52 @@ function makeTip(wrap){
 // Conservative by design: only targets patterns that unambiguously add noise
 // (payment-processor prefixes, marketplace order IDs, store numbers). Does
 // NOT strip short digit sequences (7-ELEVEN, 76) or non-trailing numbers.
-function _normalizeVendorDesc(desc){
+// Pure text cleanup: strips bank noise (processor prefixes, store numbers,
+// mid-description dates, trailing location info) BEFORE any Amazon mapping.
+// Called by _normalizeVendorDesc and by saveEditTx's keyword suggestion.
+function _cleanVendorText(desc){
   if(!desc)return desc;
   let s=desc.trim();
+  // 1. Strip leading "CHECKCARD MMDD"
+  s=s.replace(/^CHECKCARD\s+\d{4}\s+/i,'');
+  // 2. Strip "PURCHASE AUTHORIZED ON MM/DD" prefix and trailing ref+CARD suffix
+  s=s.replace(/^(?:\w+\s+)*AUTHORIZED\s+ON\s+\d{1,2}\/\d{1,2}\s+/i,'');
+  s=s.replace(/\s+\S+\s+CARD\s+\d+\s*$/i,'');
+  // 3. Cut at " DES:" (Bank of America ACH transfers)
+  s=s.replace(/\s+DES:.*$/i,'').trim();
+  // 4. Strip payment-processor prefixes (SQ*, TST*, PAYPAL*, PP*)
   s=s.replace(/^(SQ|TST|PAYPAL|PP)\s*\*\s*/i,'');
-  // hadOrderId gates the Amazon map below — without it, AMAZON PRIME /
-  // AMAZON MUSIC / AMAZON WEB SERVICES would also collapse to "Amazon".
-  const hadOrderId=/\*[A-Z0-9]{4,}$/i.test(s);
-  if(hadOrderId)s=s.replace(/\*[A-Z0-9]{4,}$/i,'').trim();
-  s=s.replace(/\s+#\s*\d+\s*$/,'').trim();
+  // 5. Strip "amzn.com/bill" suffix
+  s=s.replace(/\s*amzn\.com\/bill\b.*/i,'').trim();
+  // 6. The "* tail" rule — Amazon-family heads strip any tail; others only if tail has a digit
+  const amazonFamily=/^(AMAZON|AMZN|PRIME\s+VIDEO|AUDIBLE|KINDLE)\b/i;
+  if(amazonFamily.test(s)){
+    s=s.replace(/\s*\*.*$/,'');
+  }else{
+    s=s.replace(/\s*\*[^*]*\d[^*]*$/,'');
+  }
+  // 7. Strip bare trailing digit runs (5+) and store numbers first, so the
+  // city/state pattern can match after the outermost trailing garbage is gone.
   // \s+ prefix is load-bearing: "76" and "7-ELEVEN" have no leading space
   // before the digits, so they aren't affected.
   s=s.replace(/\s+\d{5,}\s*$/,'').trim();
-  if(hadOrderId&&/^(AMAZON[\s.]*(?:COM|MKTPL|MKTPLACE|SMILE|FRESH|CA|AU|UK|PHARMACY)?|AMZN\s+MKTP)/i.test(s)){
+  s=s.replace(/\s+#\s*\d+\s*$/,'').trim();
+  // 8. Strip trailing store/location numbers when followed by city + 2-letter state
+  s=s.replace(/(\s+(?:#\s*\d{3,}|\d{5,}|\d{3}-\d{3}-\d{4}))(?:\s+\S+)*\s+[A-Z]{2}\s*$/,'');
+  // 9. Cut at mid-description date (MM/DD) — only if not at the very start
+  s=s.replace(/(?<=.)\s+(?:0?[1-9]|1[0-2])\/(?:0?[1-9]|[12]\d|3[01])(?:\s|$).*$/,'');
+  return s.trim();
+}
+// Processor/bank prefixes that are never useful as categorization rule keywords.
+const _VENDOR_BARE_PREFIXES=['SQ','TST','PAYPAL','PP','CHECKCARD','PURCHASE'];
+
+// Calls _cleanVendorText then applies the Amazon-family → "Amazon" mapping.
+// Conservative: only collapses marketplace/generic-purchase patterns, not
+// Amazon Prime, Amazon Music, Amazon Digital, Amazon Fresh, etc.
+function _normalizeVendorDesc(desc){
+  let s=_cleanVendorText(desc);
+  // Map Amazon marketplace variants to canonical "Amazon"
+  if(/^(AMAZON\.COM$|AMAZON\s+COM$|AMAZON\s+MKTPL|AMAZON\s+MKTPLACE|AMAZON\s+MARKETPLACE|AMZN\s+MKTP)/i.test(s)){
     s='Amazon';
   }
   return s;
@@ -3559,8 +3592,10 @@ function resolveVendor(desc){
 // Apply after resolveVendor; never mutates underlying data.
 const displayVendor=name=>{
   if(!name)return name;
-  return name.split(/(\s+|-)/g).map(part=>{
-    if(/^(\s+|-)$/.test(part))return part;
+  return name.split(/(\s+|-|[*/])/g).map(part=>{
+    if(/^(\s+|-|[*/])$/.test(part))return part;
+    // Chunks containing any digit are returned as-is (handles #612, AB12CD34, phone numbers)
+    if(/\d/.test(part))return part;
     const alphaLen=(part.match(/[a-zA-Z]/g)||[]).length;
     const hasVowel=/[aeiou]/i.test(part);
     if(part.includes('&')||alphaLen<=2||!hasVowel)return part;
@@ -3972,7 +4007,7 @@ function renderInsights(){
           <span style="font-size:16px;flex-shrink:0">🔄</span>
           <span style="font-size:10px;font-weight:700;color:var(--text-secondary);white-space:nowrap">Recurring</span>
         </div>
-        <div style="font-size:18px;font-weight:900;color:var(--accent-purple);line-height:1;letter-spacing:-.02em;white-space:nowrap;flex-shrink:0">${fmtC(subTotal)} · ${subCount} charges</div>
+        <div style="font-size:18px;font-weight:900;color:var(--accent-purple);line-height:1;letter-spacing:-.02em;white-space:nowrap;flex-shrink:0">${fmtC(subTotal)} · ${subCount} charge${subCount===1?'':'s'}</div>
       </div>
       <div style="font-size:12px;color:var(--text-muted);line-height:1.35">That's ${fmtC(subTotal*12)}/yr · largest: ${esc(displayVendor(topSub.vendor))} at ${fmtC(topSub.amt)}/mo · <span style="color:var(--accent-purple);font-weight:600">view all →</span></div>
     </div>`,subScore);
@@ -8194,10 +8229,11 @@ function renderTxList(){
     const monthCatTotal=activeCatMonthTotals?(activeCatMonthTotals[monthKey]||0):monthTotal;
     const pctOfMonth=monthCatTotal>0&&isRealSpend(t)?Math.round(t.amount/monthCatTotal*100):null;
     const isSel=_selectedTxIds.has(t.id);
-    return`<div class="tx-row ${t.excluded?'tx-excluded':''}${isSel?' tx-selected':''}" data-action="openEditTxModal" data-arg="${t.id}" tabindex="0" role="button" aria-label="${fmtDate(t.date)}, ${esc(displayVendor(t.desc))}, ${esc(t.cat)}, ${t.isIncome||t.is_offset?'+':'-'}${esc(fmtD(Math.abs(t.amount)))}">
-      ${state.includeIncome&&!t.excluded?`<input type="checkbox" class="tx-select-cb" data-action="toggleTxSelect" data-arg="${t.id}" data-stop="1" aria-label="Select ${esc(displayVendor(t.desc))} – ${fmtD(t.amount)}"${isSel?' checked':''} style="flex-shrink:0;cursor:pointer;accent-color:#2563EB">`:''}
+    const dv=displayVendor(t.desc);
+    return`<div class="tx-row ${t.excluded?'tx-excluded':''}${isSel?' tx-selected':''}" data-action="openEditTxModal" data-arg="${t.id}" tabindex="0" role="button" aria-label="${fmtDate(t.date)}, ${esc(dv)}, ${esc(t.cat)}, ${t.isIncome||t.is_offset?'+':'-'}${esc(fmtD(Math.abs(t.amount)))}">
+      ${state.includeIncome&&!t.excluded?`<input type="checkbox" class="tx-select-cb" data-action="toggleTxSelect" data-arg="${t.id}" data-stop="1" aria-label="Select ${esc(dv)} – ${fmtD(t.amount)}"${isSel?' checked':''} style="flex-shrink:0;cursor:pointer;accent-color:#2563EB">`:''}
       <div class="tx-date"><span class="tx-date-full">${fmtDate(t.date)}</span><span class="tx-date-short">${fmtDateShort(t.date)}</span></div>
-      <div class="tx-desc" title="${esc(t.desc)}">${highlight(displayVendor(t.desc))}</div>
+      <div class="tx-desc" title="${esc(t.desc)}">${highlight(dv)}</div>
       <div class="tx-pills" aria-hidden="true">
         <span class="pill cat-pill" style="background:${color}22">${highlight(t.cat)}</span>
         <span class="pill" style="background:${cc.bg};color:${cc.fg}">${highlight(t.card.replace('Chase ','').replace(' Unlimited','Unlim').replace('Ally ',''))}</span>
@@ -9042,8 +9078,8 @@ function closeEditTxModal(){hideModalById('edit-tx-modal');}
 function onEditCatChange(){const t=state.transactions.find(x=>x.id===editTxId);if(!t)return;buildRcList(t,t.cat,document.getElementById('et-cat').value);}
 function buildRcList(tx,origCat,newCat){
   const sec=document.getElementById('recategorize-section');
-  const kw=tx.desc.split(/[\s*]+/)[0].toUpperCase();
-  const similar=state.transactions.filter(t=>t.id!==tx.id&&t.cat===origCat&&t.desc.toUpperCase().startsWith(kw));
+  const vendorKey=resolveVendor(tx.desc);
+  const similar=state.transactions.filter(t=>t.id!==tx.id&&t.cat===origCat&&resolveVendor(t.desc)===vendorKey);
   if(!similar.length||origCat===newCat){
     sec.classList.add('hidden');
     // Clear #rc-list, not just hide the section -- openEditTxModal() calls
@@ -9063,7 +9099,7 @@ function buildRcList(tx,origCat,newCat){
     return;
   }
   sec.classList.remove('hidden');
-  document.getElementById('rc-desc-text').textContent=`${similar.length} other "${origCat}" transaction${similar.length>1?'s':''} match "${kw}…". Apply "${newCat}" to selected?`;
+  document.getElementById('rc-desc-text').textContent=`${similar.length} other "${origCat}" transaction${similar.length>1?'s':''} from ${displayVendor(vendorKey)}. Apply "${newCat}" to selected?`;
   document.getElementById('rc-list').innerHTML=similar.map(t=>`<div class="rc-item"><input type="checkbox" id="rc-${t.id}" checked value="${t.id}"><label for="rc-${t.id}" style="flex:1;min-width:0;display:flex;align-items:center"><span class="truncate" style="color:var(--text-primary)" title="${esc(displayVendor(t.desc))}">${esc(displayVendor(t.desc))}</span><span style="color:var(--text-muted);margin-left:6px;flex-shrink:0">${fmtDate(t.date)}</span></label><span class="rc-count">${fmtD(t.amount)}</span></div>`).join('');
   // Every row above is rebuilt checked, but #rc-select-all's own checked
   // state was never synced to match -- if a user unchecked "Select all"
@@ -9134,8 +9170,10 @@ function saveEditTx(){
   closeModals();renderAll();
   // Offer to save a categorization rule if the category changed
   if(newCat!==origCat&&newCat!=='Other'){
-    const kw=t.desc.split(' ')[0].replace(/[^A-Z0-9]/gi,'').toUpperCase().slice(0,20);
-    if(kw.length>=3){
+    let kw=_cleanVendorText(t.desc).toUpperCase();
+    // Trim to ≤20 chars at a word boundary
+    if(kw.length>20){const cut=kw.lastIndexOf(' ',20);kw=cut>2?kw.slice(0,cut):kw.slice(0,20);}
+    if(kw.length>=3&&!_VENDOR_BARE_PREFIXES.includes(kw.split(/\s+/)[0])&&t.desc.toUpperCase().includes(kw)){
       const existing=state.catRules.find(r=>r.keyword.toUpperCase()===kw);
       if(!existing){
         setTimeout(()=>openSaveRulePrompt(kw,newCat,t.desc),200);
@@ -11956,6 +11994,14 @@ function _maybeShowBackupNudge(){
   const msgEl=document.getElementById('import-success-backup-msg');
   if(!nudgeEl||!msgEl)return;
   if(window._fbUser){nudgeEl.classList.add('hidden');return;}
+  // Hide nudge when any onboarding/platform banner is visible — the import-
+  // success modal already has limited vertical space, and stacking the nudge
+  // below a banner (local-data-notice, iOS home-screen, Mac Safari) crowds
+  // the UI. The nudge will re-evaluate next import once the banner is dismissed.
+  const banners=['local-data-notice-banner','ios-home-screen-banner','mac-safari-banner'];
+  if(banners.some(id=>{const b=document.getElementById(id);return b&&b.style.display!=='none'&&b.style.display!=='';})){
+    nudgeEl.classList.add('hidden');return;
+  }
   try{
     const lastBackup=localStorage.getItem('trakyo_last_backup_date');
     if(!lastBackup){
@@ -13598,6 +13644,7 @@ let _importDateFmt='mdy'; // 'mdy'=MM/DD/YYYY (US), 'dmy'=DD/MM/YYYY (UK/AU)
 let _importRawRows=null;  // stored for re-parse when date format changes
 let _importRawHeader=''; // first detected header line, shown in zero-row error message
 let _importLabelEdited=false; // true once the user edits the label; reset on each modal open
+let _lastAutoLabel=null; // tracks auto-filled label value so we can reset on file change
 // Which column the 8-row preview sample is sorted by, and which
 // direction -- sorts the full importParsed set (not just whichever 8 rows
 // already happen to be visible), so e.g. sorting by Amount surfaces the
@@ -13819,6 +13866,7 @@ function openTxImportModal(){
   // modal-open function resetting some fields but not others (45th, 77th,
   // 87th, 88th passes each found a different one).
   _importLabelEdited=false;
+  _lastAutoLabel=null;
   const isl=document.getElementById('import-source-label');if(isl)isl.value='Checking';
   const irc=document.getElementById('import-replace');if(irc)irc.checked=false;
   // Populate datalist with existing imported source names for autocomplete.
@@ -15073,7 +15121,7 @@ function setImportPreviewSort(col){
 const _FMT_LABELS={ally:'Checking/Savings',chase:'Credit card',debitcredit:'Debit/Credit columns',bofa:'Bank of America',generic:'Other',mint:'Mint',ynab:'YNAB',monarch:'Monarch Money',trakyodollas:'trak-yo-dolla$ export'};
 // Normalizes a raw CSV header string the same way detectFormatFromLine does,
 // so the two call sites stay in sync if the normalization rules ever change.
-function _normalizeHeader(s){return s.toLowerCase().replace(/"/g,'').trim().replace(/\.(?=\s)/g,'').replace(/\s*\([^)]*\)\s*/g,'');}
+function _normalizeHeader(s){return s.toLowerCase().replace(/"/g,'').trim().replace(/\.(?=\s)/g,'').replace(/\s*\([^)]*\)\s*/g,'').split(',').map(c=>c.trim()).join(',');}
 // Auto-label suggestions for bank-specific formats. Formats without an
 // exactHeader property are labeled unconditionally — their detection conditions
 // are specific enough that false positives are implausible. Formats with
@@ -15091,6 +15139,11 @@ const _IMPORT_LABELS={
   navyfederal:{label:'Navy Federal',exactHeader:'posting date,transaction date,amount,credit debit indicator,type,type group,reference,instructions,description,category,card ending,check number,merchant category code'},
 };
 
+function _resetAutoLabelIfStale(){
+  const isl=document.getElementById('import-source-label');
+  if(isl&&_lastAutoLabel&&isl.value===_lastAutoLabel){isl.value='Checking';updateImportSourceHint();}
+  _lastAutoLabel=null;
+}
 function showImportPreview(){
   const detFmtEl=document.getElementById('import-detected-fmt');
   const detFmtTxt=document.getElementById('import-detected-fmt-text');
@@ -15150,10 +15203,16 @@ function showImportPreview(){
           if(!entry.exactHeader){label=entry.label;}
           else if(_normalizeHeader(_importRawHeader)===entry.exactHeader){label=entry.label;}
         }
-        if(label){const isl=document.getElementById('import-source-label');if(isl){isl.value=label;updateImportSourceHint();}}
+        if(label){
+          const isl=document.getElementById('import-source-label');if(isl){isl.value=label;updateImportSourceHint();}
+          _lastAutoLabel=label;
+        }else{
+          _resetAutoLabelIfStale();
+        }
       }
     } else {
       detFmtEl.classList.add('hidden');
+      if(!_importLabelEdited){_resetAutoLabelIfStale();}
     }
   }
   const preview=document.getElementById('import-preview');
@@ -17957,6 +18016,7 @@ function exportBackup(){
     document.body.appendChild(a);a.click();
     setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);
     try{localStorage.setItem('trakyo_last_backup_date',new Date().toISOString());}catch(e){}
+    const nudgeEl2=document.getElementById('import-success-backup-nudge');if(nudgeEl2)nudgeEl2.classList.add('hidden');
     showToast('Backup exported.','#34D399',3500);
   }catch(e){console.error('exportBackup error:',e);showToast('Export failed.','#F87171');}
 }

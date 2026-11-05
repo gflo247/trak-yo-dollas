@@ -180,12 +180,10 @@ re-importing with a corrected label.
 ### 32. "At a Glance" first-appearance wording
 In the At a Glance breakdown, only say "first appearance" for a category when the
 spending window contains no earlier months — not when the category simply happened
-to be absent in a few middle months.
+to be absent in a few middle months. Say "first appearance" only when the category
+has no spending in any earlier month in the window.
 
-### 33. Demo: make monthly bills actually monthly
-Bills in the demo profile (rent, utilities, etc.) should land on the same day each
-month. Right now some shift by a few days between months, which undermines the demo
-as a credible preview of a real budget.
+### 33. Established demo profile: City Electric, AT&T, Netflix and Spotify appear 0–2 times a month at random; make each a once-a-month bill.
 
 ### 34. Quicken format support (OFX/QFX)
 Accept OFX/QFX files in the import drop zone and add a note to the Chase guide that

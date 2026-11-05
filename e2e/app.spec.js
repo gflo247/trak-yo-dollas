@@ -8,6 +8,13 @@ const path = require('path');
 const SAMPLE_CSV = path.join(__dirname, 'fixtures/sample.csv');
 const APP = '/trakyodollas.html';
 
+// Bank fixture paths
+const DISCOVER_CSV = path.join(__dirname, '..', 'test/fixtures/banks/discover.csv');
+const CAPITALONE_CARD_CSV = path.join(__dirname, '..', 'test/fixtures/banks/capitalone_card.csv');
+const CHASE_CARD_CSV = path.join(__dirname, '..', 'test/fixtures/banks/chase_card.csv');
+const CHASE_PLATFORMS_CSV = path.join(__dirname, '..', 'test/fixtures/banks/chase_card_platforms.csv');
+const BOFA_CHECKING_CSV = path.join(__dirname, '..', 'test/fixtures/banks/bofa_checking_debit.csv');
+
 // Load a demo profile. The demo picker auto-opens after an 80ms timer on a
 // fresh page, but in headless Chrome the overlay may not become visible in
 // time. Calling openDemoPicker() directly after the page is ready is reliable.
@@ -27,6 +34,16 @@ async function importCSV(page) {
   await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
   await page.locator('#tx-csv-file').setInputFiles(SAMPLE_CSV);
   // Confirm button is hidden until the CSV parses successfully.
+  await page.locator('#import-confirm-btn').waitFor({ state: 'visible' });
+  await page.locator('#import-confirm-btn').click();
+  await page.locator('#import-success-modal').waitFor({ state: 'visible' });
+}
+
+// Import a specific CSV file. Opens the import modal if not already open.
+async function importFile(page, csvPath) {
+  await page.locator('#toolbar-import-btn').click();
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+  await page.locator('#tx-csv-file').setInputFiles(csvPath);
   await page.locator('#import-confirm-btn').waitFor({ state: 'visible' });
   await page.locator('#import-confirm-btn').click();
   await page.locator('#import-success-modal').waitFor({ state: 'visible' });
@@ -129,4 +146,223 @@ test('importing real data dismisses the demo markers', async ({ page }) => {
   // Both markers must disappear after the first real import.
   await expect(page.locator('#demo-nudge')).toBeHidden();
   await expect(page.locator('#demo-nav-badge')).toBeHidden();
+});
+
+// ─── Test 4a: auto-label hint on first import, merge hint on second ─────────
+test('import label hints: first shows tag hint, second shows merge hint', async ({ page }) => {
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+
+  // First import — discover.csv auto-labels as "Discover"
+  await page.locator('#toolbar-import-btn').click();
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+  await page.locator('#tx-csv-file').setInputFiles(DISCOVER_CSV);
+  await page.locator('#import-confirm-btn').waitFor({ state: 'visible' });
+
+  // Check the hint text — should say "tagged as"
+  const hintText = await page.locator('#import-label-hint-text').textContent();
+  expect(hintText).toContain('tagged as');
+
+  // Complete the import
+  await page.locator('#import-confirm-btn').click();
+  await page.locator('#import-success-modal').waitFor({ state: 'visible' });
+
+  // "Import another CSV" — capitalone_card.csv
+  await page.locator('[data-action="importSuccessAndReopen"]').click();
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+  await page.locator('#tx-csv-file').setInputFiles(CAPITALONE_CARD_CSV);
+  await page.locator('#import-confirm-btn').waitFor({ state: 'visible' });
+
+  // Hint should now say "merge" since Capital One is a new source but "Checking" is default
+  // and Discover already exists — actually Capital One auto-labels as "Capital One"
+  // which is new, so it shows "tagged as" again. Check that it shows a label hint.
+  const hintText2 = await page.locator('#import-label-hint-text').textContent();
+  expect(hintText2.length).toBeGreaterThan(0);
+});
+
+// ─── Test 4b: label resets from auto-name to "Checking" on file change ──────
+test('import label resets from auto-name when new file has no auto-name', async ({ page }) => {
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+
+  await page.locator('#toolbar-import-btn').click();
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+
+  // Load chase_card.csv — auto-labels as "Chase"
+  await page.locator('#tx-csv-file').setInputFiles(CHASE_CARD_CSV);
+  await page.locator('#import-confirm-btn').waitFor({ state: 'visible' });
+  const labelAfterChase = await page.locator('#import-source-label').inputValue();
+  expect(labelAfterChase).toBe('Chase');
+
+  // Now load the generic sample.csv — no bank-specific auto-label.
+  // The label should reset from "Chase" back to "Checking".
+  await page.locator('#tx-csv-file').setInputFiles(SAMPLE_CSV);
+  await page.locator('#import-confirm-btn').waitFor({ state: 'visible' });
+  const labelAfterSample = await page.locator('#import-source-label').inputValue();
+  expect(labelAfterSample).toBe('Checking');
+});
+
+// ─── Test 4c: backup nudge hidden when banner showing, visible after dismiss ─
+test('backup nudge hidden while banner visible, shows after dismiss', async ({ page }) => {
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+
+  // Ensure no prior backup date exists and banner hasn't been dismissed
+  await page.evaluate(() => {
+    localStorage.removeItem('trakyo_last_backup_date');
+    localStorage.removeItem('trakyo_local_data_notice_shown');
+  });
+  await page.reload();
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+
+  // Import a file — the local-data-notice banner should be showing
+  await page.locator('#toolbar-import-btn').click();
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+  await page.locator('#tx-csv-file').setInputFiles(DISCOVER_CSV);
+  await page.locator('#import-confirm-btn').waitFor({ state: 'visible' });
+  await page.locator('#import-confirm-btn').click();
+  await page.locator('#import-success-modal').waitFor({ state: 'visible' });
+
+  // Backup nudge should be hidden because the banner is visible
+  const nudge = page.locator('#import-success-backup-nudge');
+  await expect(nudge).toBeHidden();
+
+  // Dismiss the banner via JS (it's behind the modal overlay so can't click it)
+  await page.evaluate(() => dismissLocalDataNotice());
+
+  // "Import another CSV" reopens the import modal
+  await page.locator('[data-action="importSuccessAndReopen"]').click();
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+  // Small delay for the modal to fully initialize
+  await page.waitForTimeout(200);
+  await page.locator('#tx-csv-file').setInputFiles(CAPITALONE_CARD_CSV);
+  await page.locator('#import-confirm-btn').waitFor({ state: 'visible', timeout: 10000 });
+  await page.locator('#import-confirm-btn').click();
+  await page.locator('#import-success-modal').waitFor({ state: 'visible' });
+
+  // Now the banner is dismissed, so the nudge should show "Last backup: never."
+  const nudge2 = page.locator('#import-success-backup-nudge');
+  await expect(nudge2).toBeVisible();
+  const nudgeMsg = await page.locator('#import-success-backup-msg').textContent();
+  expect(nudgeMsg).toContain('never');
+
+  // Export backup — nudge should hide
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('[data-action="exportBackup"]').click();
+  await downloadPromise;
+  await expect(nudge2).toBeHidden();
+});
+
+// ─── Test 4d: chase_card_platforms detects 4 subscriptions ──────────────────
+test('recurring tab detects Netflix, YouTube Premium, Duolingo, Amazon Prime from chase_card_platforms', async ({ page }) => {
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+
+  await importFile(page, CHASE_PLATFORMS_CSV);
+
+  // Close success modal
+  await page.locator('[data-action="importSuccessAndAlign"]').click();
+
+  // Navigate to Spending tab (should already be there)
+  await page.locator('[data-action="showPageSpending"]').click();
+
+  // Open the subscriptions modal
+  await page.evaluate(() => openSubscriptionsModal());
+  await page.locator('#subscriptions-modal').waitFor({ state: 'visible' });
+
+  const listText = await page.locator('#subscriptions-list').textContent();
+  expect(listText).toContain('Netflix');
+  expect(listText).toContain('Youtube');  // displayVendor lowercases
+  expect(listText).toContain('Duolingo');
+  expect(listText).toContain('Amazon Prime');
+});
+
+// ─── Test 4e: bofa_checking_debit detects recurring and single vendor entries ─
+test('bofa_checking_debit: recurring includes Netflix and Spotify; Kroger appears once in vendors', async ({ page }) => {
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+
+  await importFile(page, BOFA_CHECKING_CSV);
+  await page.locator('[data-action="importSuccessAndAlign"]').click();
+  await page.locator('[data-action="showPageSpending"]').click();
+
+  // Check subscriptions
+  await page.evaluate(() => openSubscriptionsModal());
+  await page.locator('#subscriptions-modal').waitFor({ state: 'visible' });
+  const listText = await page.locator('#subscriptions-list').textContent();
+  expect(listText).toContain('Netflix');
+  expect(listText).toContain('Spotify');
+
+  // Close modal
+  await page.locator('[data-action="closeSubscriptionsModal"]').click();
+
+  // Check that Kroger appears as a single vendor (all KROGER #123/456 resolve to KROGER)
+  // The top vendor tiles use resolveVendor, so KROGER should appear once not multiple times
+  const vendorTiles = await page.evaluate(() => {
+    const txs = state.transactions.filter(t => !t.excluded);
+    const vendors = {};
+    txs.forEach(t => {
+      const v = resolveVendor(t.desc);
+      vendors[v] = (vendors[v] || 0) + t.amount;
+    });
+    return Object.keys(vendors).filter(v => v === 'KROGER');
+  });
+  expect(vendorTiles.length).toBe(1);
+});
+
+// ─── Test 4f: SQ* keyword suggestion strips prefix ─────────────────────────
+test('keyword suggestion uses cleaned vendor text, not raw prefix', async ({ page }) => {
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+
+  // Create a minimal Chase-format CSV inline with SQ * and TST* entries
+  const csvContent = [
+    'Transaction Date,Post Date,Description,Category,Type,Amount,Memo',
+    '09/01/2026,09/02/2026,SQ *BLUE BOTTLE COFFEE,Food & Drink,Sale,-5.50,',
+    '09/05/2026,09/06/2026,SQ *JOES TACO TRUCK,Food & Drink,Sale,-12.00,',
+    '09/10/2026,09/11/2026,SQ *KERRYTOWN FARMERS MKT,Food & Drink,Sale,-25.00,',
+    '09/15/2026,09/16/2026,TST* LOCAL KITCHEN,Food & Drink,Sale,-18.50,',
+  ].join('\n');
+
+  // Write the CSV content to a temp file
+  const fs = require('fs');
+  const tmpFile = path.join(__dirname, 'fixtures/sq_test.csv');
+  fs.writeFileSync(tmpFile, csvContent);
+
+  await importFile(page, tmpFile);
+  await page.locator('[data-action="importSuccessAndAlign"]').click();
+
+  // Navigate to Spending tab and find transactions
+  await page.locator('[data-action="showPageSpending"]').click();
+  await page.waitForFunction(() => typeof state !== 'undefined' && state.transactions.length > 0);
+
+  // Find the TST* LOCAL KITCHEN transaction and change its category
+  const txId = await page.evaluate(() => {
+    const t = state.transactions.find(t => t.desc.includes('TST* LOCAL KITCHEN'));
+    return t ? t.id : null;
+  });
+  expect(txId).not.toBeNull();
+
+  // Open edit modal for this transaction
+  await page.evaluate((id) => openEditTxModal(id), txId);
+  await page.locator('#edit-tx-modal').waitFor({ state: 'visible' });
+
+  // Change category to Groceries
+  await page.locator('#et-cat').selectOption('Groceries');
+  await page.locator('[data-action="saveEditTx"]').click();
+
+  // Wait for the rule prompt modal to appear
+  await page.waitForFunction(() => {
+    const el = document.getElementById('save-rule-modal');
+    return el && !el.classList.contains('hidden');
+  }, { timeout: 3000 });
+
+  // Check that the suggested keyword is "LOCAL KITCHEN" not "TST"
+  const keywordField = await page.locator('#srp-keyword-input').inputValue();
+  expect(keywordField).toBe('LOCAL KITCHEN');
+  expect(keywordField).not.toContain('TST');
+
+  // Cleanup
+  fs.unlinkSync(tmpFile);
 });

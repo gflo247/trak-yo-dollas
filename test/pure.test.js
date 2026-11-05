@@ -2488,7 +2488,7 @@ test("addVendorAlias: refuses to re-point an alias in a way that would close a m
 // doesn't appear as multiple vendors in spending views. ───────────────────
 
 test("_normalizeVendorDesc: strips marketplace order IDs and maps Amazon variants to 'Amazon'", () => {
-  const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc"]);
+  const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc", "_cleanVendorText"]);
   // The four variants from the user's bug report — all $25 each, all Amazon
   assert.equal(_normalizeVendorDesc("AMAZON MKTPL*AB12CD34"), "Amazon");
   assert.equal(_normalizeVendorDesc("AMAZON MKTPL*ZZ99XX11"), "Amazon");
@@ -2504,7 +2504,7 @@ test("_normalizeVendorDesc: strips marketplace order IDs and maps Amazon variant
 });
 
 test("_normalizeVendorDesc: strips trailing store/location numbers", () => {
-  const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc"]);
+  const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc", "_cleanVendorText"]);
   // Hash-prefixed store numbers (KROGER #612, #1045)
   assert.equal(_normalizeVendorDesc("KROGER #612"), "KROGER");
   assert.equal(_normalizeVendorDesc("KROGER #1045"), "KROGER");
@@ -2516,7 +2516,7 @@ test("_normalizeVendorDesc: strips trailing store/location numbers", () => {
 });
 
 test("_normalizeVendorDesc: strips payment-processor prefixes", () => {
-  const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc"]);
+  const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc", "_cleanVendorText"]);
   assert.equal(_normalizeVendorDesc("SQ *STARBUCKS"), "STARBUCKS");
   assert.equal(_normalizeVendorDesc("SQ * STARBUCKS"), "STARBUCKS");
   assert.equal(_normalizeVendorDesc("TST* OLIVE GARDEN"), "OLIVE GARDEN");
@@ -2525,7 +2525,7 @@ test("_normalizeVendorDesc: strips payment-processor prefixes", () => {
 });
 
 test("_normalizeVendorDesc: does NOT strip digits that are part of a name", () => {
-  const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc"]);
+  const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc", "_cleanVendorText"]);
   // 7-ELEVEN: leading digits are part of the brand name
   assert.equal(_normalizeVendorDesc("7-ELEVEN"), "7-ELEVEN");
   assert.equal(_normalizeVendorDesc("7-ELEVEN GAS"), "7-ELEVEN GAS");
@@ -2541,7 +2541,7 @@ test("_normalizeVendorDesc: does NOT strip digits that are part of a name", () =
 
 test("resolveVendor: applies normalization when no alias matches the raw description", () => {
   const ctx = { state: { vendorAliases: {} } };
-  const { resolveVendor } = loadFunctions(["resolveVendor", "_resolveAlias", "_normalizeVendorDesc"], ctx);
+  const { resolveVendor } = loadFunctions(["resolveVendor", "_resolveAlias", "_normalizeVendorDesc", "_cleanVendorText"], ctx);
   assert.equal(resolveVendor("KROGER #612"), "KROGER", "no alias — falls through to normalization");
   assert.equal(resolveVendor("KROGER #1045"), "KROGER", "different store number, same result");
   assert.equal(resolveVendor("SHELL OIL 57444"), "SHELL OIL");
@@ -2551,7 +2551,7 @@ test("resolveVendor: applies normalization when no alias matches the raw descrip
 test("resolveVendor: raw-description aliases take priority over normalization", () => {
   // If a user manually aliased the raw form before normalization existed, honor it
   const ctx = { state: { vendorAliases: { "KROGER #612": "Kroger" } } };
-  const { resolveVendor } = loadFunctions(["resolveVendor", "_resolveAlias", "_normalizeVendorDesc"], ctx);
+  const { resolveVendor } = loadFunctions(["resolveVendor", "_resolveAlias", "_normalizeVendorDesc", "_cleanVendorText"], ctx);
   assert.equal(resolveVendor("KROGER #612"), "Kroger", "exact raw alias wins over normalization");
   assert.equal(resolveVendor("KROGER #1045"), "KROGER", "unaliased variant normalizes");
 });
@@ -2559,7 +2559,7 @@ test("resolveVendor: raw-description aliases take priority over normalization", 
 test("resolveVendor: an alias on the normalized form is applied after normalization", () => {
   // User aliased "Amazon" → "Online Shopping"; all marketplace variants should resolve through it
   const ctx = { state: { vendorAliases: { Amazon: "Online Shopping" } } };
-  const { resolveVendor } = loadFunctions(["resolveVendor", "_resolveAlias", "_normalizeVendorDesc"], ctx);
+  const { resolveVendor } = loadFunctions(["resolveVendor", "_resolveAlias", "_normalizeVendorDesc", "_cleanVendorText"], ctx);
   assert.equal(resolveVendor("AMAZON MKTPL*AB12CD34"), "Online Shopping");
   assert.equal(resolveVendor("Amazon.com*1A2B3C4D5"), "Online Shopping");
   assert.equal(resolveVendor("AMZN Mktp US*9K8J7H6G5"), "Online Shopping");
@@ -10348,6 +10348,198 @@ test("import modal JS: focusImportLabel and _onImportLabelInput functions are de
   const { focusImportLabel, _onImportLabelInput } = loadFunctions(["focusImportLabel", "_onImportLabelInput"]);
   assert.ok(typeof focusImportLabel === "function", "focusImportLabel must be a top-level function");
   assert.ok(typeof _onImportLabelInput === "function", "_onImportLabelInput must be a top-level function");
+});
+
+// ── _cleanVendorText — strips bank noise without any Amazon mapping ──────────
+test("_cleanVendorText: payment-processor prefixes SQ*, TST*, PAYPAL*, PP*", () => {
+  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
+  assert.equal(_cleanVendorText("SQ *STARBUCKS"), "STARBUCKS");
+  assert.equal(_cleanVendorText("TST* OLIVE GARDEN"), "OLIVE GARDEN");
+  assert.equal(_cleanVendorText("PAYPAL *ETSY"), "ETSY");
+  assert.equal(_cleanVendorText("PP*ETSY"), "ETSY");
+});
+
+test("_cleanVendorText: CHECKCARD prefix stripped", () => {
+  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
+  assert.equal(_cleanVendorText("CHECKCARD 0927 PAYPAL *NETFLIX 4029357733 CA 24692166270100123456789"), "NETFLIX");
+});
+
+test("_cleanVendorText: PURCHASE AUTHORIZED prefix and trailing CARD suffix stripped", () => {
+  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
+  assert.equal(_cleanVendorText("PURCHASE AUTHORIZED ON 09/27 STARBUCKS STORE 03456 ANN ARBOR MI S386270123456789 CARD 1234"), "STARBUCKS STORE");
+  assert.equal(_cleanVendorText("PURCHASE AUTHORIZED ON 09/27 PAYPAL *SPOTIFYUSA 402-935-7733 CA"), "SPOTIFYUSA");
+});
+
+test("_cleanVendorText: DES: cuts Bank of America ACH transfers", () => {
+  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
+  assert.equal(_cleanVendorText("OAKWOOD APTS DES:RENT ID:XXXXX INDN:JOHN DOE CO ID:XXXXX WEB"), "OAKWOOD APTS");
+});
+
+test("_cleanVendorText: amzn.com/bill suffix stripped", () => {
+  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
+  assert.equal(_cleanVendorText("AMAZON.COM AMZN.COM/BILL WA"), "AMAZON.COM");
+  assert.equal(_cleanVendorText("Amazon Digital Svcs amzn.com/bill"), "Amazon Digital Svcs");
+  assert.equal(_cleanVendorText("AMAZON PRIME*A1B2C3D4Eamzn.com/bill"), "AMAZON PRIME");
+});
+
+test("_cleanVendorText: Amazon-family heads strip any tail after *", () => {
+  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
+  assert.equal(_cleanVendorText("AMAZON MKTPL*AB12CD34"), "AMAZON MKTPL");
+  assert.equal(_cleanVendorText("AMAZON MKTPL*RETURN"), "AMAZON MKTPL");
+  assert.equal(_cleanVendorText("Amazon.com*1A2B3C4D5"), "Amazon.com");
+  assert.equal(_cleanVendorText("AMZN Mktp US*9K8J7H6G5"), "AMZN Mktp US");
+  assert.equal(_cleanVendorText("AMZN Mktp US *A1B2C3D4E"), "AMZN Mktp US");
+  assert.equal(_cleanVendorText("Amazon Prime*RT5YH6TT1"), "Amazon Prime");
+  assert.equal(_cleanVendorText("Amazon Prime*RTBNLZGCJ"), "Amazon Prime");
+});
+
+test("_cleanVendorText: non-Amazon * tail stripped only if it contains a digit", () => {
+  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
+  // Tail has digits — stripped
+  assert.equal(_cleanVendorText("UBER *EATS"), "UBER *EATS", "no digit in EATS → kept");
+  assert.equal(_cleanVendorText("UBER *TRIP"), "UBER *TRIP", "no digit in TRIP → kept");
+  assert.equal(_cleanVendorText("DOORDASH*CHIPOTLE"), "DOORDASH*CHIPOTLE", "no digit in CHIPOTLE → kept");
+  assert.equal(_cleanVendorText("GOOGLE *YOUTUBEPREMIUM"), "GOOGLE *YOUTUBEPREMIUM", "no digit → kept");
+  assert.equal(_cleanVendorText("GOOGLE *DUOLINGO"), "GOOGLE *DUOLINGO", "no digit → kept");
+});
+
+test("_cleanVendorText: store numbers and city/state stripped", () => {
+  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
+  assert.equal(_cleanVendorText("STARBUCKS STORE 03456 ANN ARBOR MI"), "STARBUCKS STORE");
+  assert.equal(_cleanVendorText("KROGER #123 ANN ARBOR MI"), "KROGER");
+  assert.equal(_cleanVendorText("KROGER #456 YPSILANTI MI"), "KROGER");
+  assert.equal(_cleanVendorText("MEIJER # 223 ANN ARBOR MI"), "MEIJER");
+  assert.equal(_cleanVendorText("TARGET 00012345 ANN ARBOR MI"), "TARGET");
+  assert.equal(_cleanVendorText("SHELL OIL 57444 ANN ARBOR MI"), "SHELL OIL");
+});
+
+test("_cleanVendorText: bare trailing store numbers (no city/state)", () => {
+  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
+  assert.equal(_cleanVendorText("KROGER #612"), "KROGER");
+  assert.equal(_cleanVendorText("SHELL OIL 57444"), "SHELL OIL");
+});
+
+test("_cleanVendorText: mid-description date cut", () => {
+  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
+  assert.equal(_cleanVendorText("KROGER #123 09/04 PURCHASE ANN ARBOR MI"), "KROGER");
+  assert.equal(_cleanVendorText("NETFLIX.COM 09/07 PURCHASE 866-579-7172 CA"), "NETFLIX.COM");
+  assert.equal(_cleanVendorText("SHELL OIL 57444 07/09 PURCHASE ANN ARBOR MI"), "SHELL OIL");
+});
+
+test("_cleanVendorText: phone numbers in trailing city/state pattern", () => {
+  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
+  // The CHECKCARD + PAYPAL prefix are stripped first, then trailing phone+state
+  assert.equal(_cleanVendorText("CHECKCARD 0927 PAYPAL *NETFLIX 4029357733 CA 24692166270100123456789"), "NETFLIX");
+});
+
+test("_cleanVendorText: strings that must stay unchanged", () => {
+  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
+  assert.equal(_cleanVendorText("NETFLIX.COM"), "NETFLIX.COM");
+  assert.equal(_cleanVendorText("7-ELEVEN"), "7-ELEVEN");
+  assert.equal(_cleanVendorText("76"), "76");
+  assert.equal(_cleanVendorText("PIER 1 IMPORTS"), "PIER 1 IMPORTS");
+  assert.equal(_cleanVendorText("FOREVER 21"), "FOREVER 21");
+  assert.equal(_cleanVendorText("AT&T"), "AT&T");
+  assert.equal(_cleanVendorText("AMAZON MUSIC UNLIMITED"), "AMAZON MUSIC UNLIMITED");
+});
+
+test("_cleanVendorText: CHURCH'S variants stay different from each other", () => {
+  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
+  const a = _cleanVendorText("CHURCH'S CHICKEN #123");
+  const b = _cleanVendorText("CHURCH'S TEXAS CHICKEN #123");
+  assert.notEqual(a, b, "the two Church's variants must normalize to different strings");
+});
+
+// ── _normalizeVendorDesc — applies Amazon mapping after cleaning ─────────────
+test("_normalizeVendorDesc: Amazon marketplace variants all map to 'Amazon'", () => {
+  const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc", "_cleanVendorText"]);
+  assert.equal(_normalizeVendorDesc("AMAZON MKTPL*AB12CD34"), "Amazon");
+  assert.equal(_normalizeVendorDesc("Amazon.com*1A2B3C4D5"), "Amazon");
+  assert.equal(_normalizeVendorDesc("AMZN Mktp US*9K8J7H6G5"), "Amazon");
+  assert.equal(_normalizeVendorDesc("AMZN Mktp US *A1B2C3D4E"), "Amazon");
+  assert.equal(_normalizeVendorDesc("AMAZON.COM AMZN.COM/BILL WA"), "Amazon");
+  assert.equal(_normalizeVendorDesc("AMAZON MARKETPLACE NA PA"), "Amazon");
+  assert.equal(_normalizeVendorDesc("AMAZON MKTPLACE PMTS"), "Amazon");
+  assert.equal(_normalizeVendorDesc("AMAZON MKTPL*RETURN"), "Amazon");
+});
+
+test("_normalizeVendorDesc: Amazon sub-brands stay separate", () => {
+  const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc", "_cleanVendorText"]);
+  assert.equal(_normalizeVendorDesc("Amazon Prime*RT5YH6TT1"), "Amazon Prime");
+  assert.equal(_normalizeVendorDesc("Amazon Prime*RTBNLZGCJ"), "Amazon Prime");
+  assert.equal(_normalizeVendorDesc("AMAZON PRIME*A1B2C3D4Eamzn.com/bill"), "AMAZON PRIME");
+  assert.equal(_normalizeVendorDesc("AMAZON MUSIC*AB12CD34"), "AMAZON MUSIC");
+  assert.equal(_normalizeVendorDesc("Amazon Digital Svcs amzn.com/bill"), "Amazon Digital Svcs");
+});
+
+// ── resolveVendor — full pipeline (clean → normalize → alias) ────────────────
+test("resolveVendor: full test table", () => {
+  const { resolveVendor } = loadFunctions(
+    ["resolveVendor","_resolveAlias","_cleanVendorText","_normalizeVendorDesc"],
+    {state:{vendorAliases:{}}}
+  );
+  // Amazon marketplace → "Amazon"
+  assert.equal(resolveVendor("AMAZON MKTPL*AB12CD34"), "Amazon");
+  assert.equal(resolveVendor("Amazon.com*1A2B3C4D5"), "Amazon");
+  assert.equal(resolveVendor("AMZN Mktp US*9K8J7H6G5"), "Amazon");
+  assert.equal(resolveVendor("AMAZON.COM AMZN.COM/BILL WA"), "Amazon");
+  assert.equal(resolveVendor("AMAZON MARKETPLACE NA PA"), "Amazon");
+  assert.equal(resolveVendor("AMAZON MKTPLACE PMTS"), "Amazon");
+  // Amazon sub-brands stay separate
+  assert.equal(resolveVendor("Amazon Prime*RT5YH6TT1"), "Amazon Prime");
+  assert.equal(resolveVendor("AMAZON MUSIC*AB12CD34"), "AMAZON MUSIC");
+  // Bank noise stripped
+  assert.equal(resolveVendor("KROGER #123 09/04 PURCHASE ANN ARBOR MI"), "KROGER");
+  assert.equal(resolveVendor("NETFLIX.COM 09/07 PURCHASE 866-579-7172 CA"), "NETFLIX.COM");
+  assert.equal(resolveVendor("SHELL OIL 57444 07/09 PURCHASE ANN ARBOR MI"), "SHELL OIL");
+  assert.equal(resolveVendor("OAKWOOD APTS DES:RENT ID:XXXXX INDN:JOHN DOE CO ID:XXXXX WEB"), "OAKWOOD APTS");
+  // Unchanged
+  assert.equal(resolveVendor("GOOGLE *YOUTUBEPREMIUM"), "GOOGLE *YOUTUBEPREMIUM");
+  assert.equal(resolveVendor("UBER *EATS"), "UBER *EATS");
+  assert.equal(resolveVendor("NETFLIX.COM"), "NETFLIX.COM");
+  // Processor prefix stripped
+  assert.equal(resolveVendor("SQ *STARBUCKS"), "STARBUCKS");
+  assert.equal(resolveVendor("TST* OLIVE GARDEN"), "OLIVE GARDEN");
+  assert.equal(resolveVendor("PAYPAL *ETSY"), "ETSY");
+  // Same Kroger stores resolve to same vendor
+  assert.equal(resolveVendor("KROGER #123 ANN ARBOR MI"), resolveVendor("KROGER #456 YPSILANTI MI"));
+});
+
+// ── displayVendor — proper-case with digit and separator handling ────────────
+test("displayVendor: proper-casing with * and / as word breaks", () => {
+  // displayVendor is a const arrow — loadFunctions only extracts function
+  // declarations. Extract the function body from the source directly.
+  const source = readSource();
+  const match = source.match(/const displayVendor=name=>\{([\s\S]*?)\n\};/);
+  assert.ok(match, "displayVendor arrow function must exist in source");
+  const displayVendor = new Function("name", match[1]);
+
+  assert.equal(displayVendor("SQ *BLUE BOTTLE COFFEE"), "SQ *Blue Bottle Coffee");
+  assert.equal(displayVendor("PAYPAL *NETFLIX"), "Paypal *Netflix");
+  assert.equal(displayVendor("KROGER #612"), "Kroger #612");
+  assert.equal(displayVendor("GOOGLE *YOUTUBEPREMIUM"), "Google *Youtubepremium");
+  assert.equal(displayVendor("AT&T"), "AT&T");
+  assert.equal(displayVendor("7-ELEVEN"), "7-Eleven");
+  assert.equal(displayVendor("UBER *EATS"), "Uber *Eats");
+});
+
+// ── _normalizeHeader — trims spaces after commas (Ally fix) ─────────────────
+test("_normalizeHeader: trims spaces after commas for Ally-style headers", () => {
+  const { _normalizeHeader } = loadFunctions(["_normalizeHeader"]);
+  // Ally's CSV has "Date, Time, Amount, Type, Description"
+  assert.equal(
+    _normalizeHeader("Date, Time, Amount, Type, Description"),
+    "date,time,amount,type,description"
+  );
+});
+
+// ── singular/plural "charge(s)" in recurring card ────────────────────────────
+test("recurring card: singular 'charge' when subCount is 1", () => {
+  const source = readSource();
+  assert.ok(
+    source.includes("subCount===1?'':'s'"),
+    "recurring pill must pluralize 'charge' conditionally"
+  );
 });
 
 // ── end of tests ──
