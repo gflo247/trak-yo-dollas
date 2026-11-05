@@ -45,8 +45,10 @@ _JSONLD_TYPE = 'type="application/ld+json"'
 # Matches lookbehind assertions (?<= and (?<! but NOT named capture groups (?<name>...)
 _LOOKBEHIND_RE = re.compile(r'\(\?<[=!]')
 
-# Standalone JS files to scan for lookbehinds alongside inline scripts
-_JS_FILES = ['sw.js']
+# Standalone JS files to scan for lookbehinds alongside inline scripts.
+# lib/*.js are third-party bundles served to users; include them so a library
+# update that introduces a lookbehind gets caught before it reaches Safari < 16.4.
+_JS_FILES = ['sw.js', 'lib/chart.umd.js', 'lib/d3.min.js', 'lib/d3-sankey.min.js']
 
 
 def check_lookbehinds_in_text(text, label):

@@ -11,7 +11,7 @@
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-3O4KPdfrlkLiEafivfysAtmE9ns+PAOScEx0eDekPrg=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-cY369+Mw9TLp6MR83J3ZREmD28K4B34/lDMoSdWzZq8=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -14174,6 +14174,10 @@ function parseTxText(rawText){
 // first 1024 bytes of the file.
 function _classifyImportFile(name,bytes){
   const lname=(name||'').toLowerCase();
+  // .zip extension check must come BEFORE the PK magic-byte check below — both
+  // .zip and .xlsx start with 50 4B 03 04, so without this guard a plain archive
+  // falls into the 'spreadsheet' bucket and shows "open in Excel" advice.
+  if(lname.endsWith('.zip'))return'zip';
   // Check magic bytes first
   if(bytes.length>=4&&bytes[0]===0x50&&bytes[1]===0x4B&&bytes[2]===0x03&&bytes[3]===0x04)return'spreadsheet'; // ZIP (xlsx/numbers/ods)
   if(bytes.length>=8&&bytes[0]===0xD0&&bytes[1]===0xCF&&bytes[2]===0x11&&bytes[3]===0xE0&&bytes[4]===0xA1&&bytes[5]===0xB1&&bytes[6]===0x1A&&bytes[7]===0xE1)return'spreadsheet'; // CFB (xls)
@@ -14187,6 +14191,11 @@ function _classifyImportFile(name,bytes){
   const head=new TextDecoder('utf-8',{fatal:false}).decode(bytes);
   if(/OFXHEADER|<OFX/i.test(head))return'quicken';
   if(/^!Type:/m.test(head))return'quicken';
+  // UTF-16 BOM (LE: FF FE, BE: FE FF): these contain NUL bytes as part of
+  // their encoding for ASCII characters, so they'd hit the binary check below
+  // and show a confusing "doesn't look like a CSV" error. Return null to pass
+  // them through to parseTxFile's text reader, which selects the right encoding.
+  if(bytes.length>=2&&((bytes[0]===0xFF&&bytes[1]===0xFE)||(bytes[0]===0xFE&&bytes[1]===0xFF)))return null;
   // NUL bytes = binary
   if(bytes.includes(0))return'binary';
   return null;
@@ -14201,6 +14210,7 @@ function parseTxFile(file){
       // Show appropriate error message
       const msgs={
         spreadsheet:'This is a spreadsheet file, not a CSV. Download the CSV from your bank instead, or open this file in Excel, Numbers or Google Sheets and export it as CSV.',
+        zip:'This is a zip archive. If it contains a CSV, unzip it and drag the CSV file here directly.',
         quicken:'This is a Quicken or QuickBooks file (QFX, OFX, QBO or QIF). Download again and pick the CSV option \u2014 banks label it \u201CSpreadsheet (Excel, CSV)\u201D, \u201CMicrosoft Excel format (.csv)\u201D or \u201CComma Delimited (.csv)\u201D.',
         pdf:'This is a PDF statement. Use the download or export option on your account\u2019s activity page and pick CSV instead.',
         binary:'This doesn\u2019t look like a CSV file. The guide below shows how to download one.'
@@ -14227,13 +14237,33 @@ function parseTxFile(file){
         zeroMsg.classList.remove('hidden');
       }
       _hideImportPreview();
+      // Clear any stale importParsed from a prior successful parse in this modal
+      // session — without this, a previous file's rows stay in the array, so
+      // the Import button keeps working with old data even though the error panel
+      // is showing. confirmTxImport() guards on importParsed.length, but the UI
+      // still showed the old preview state until the user noticed.
+      importParsed=[];
+      // Hide the auto-detected format badge too — it reflects the previous file
+      // and is meaningless once an error is showing.
+      const _detBadge=document.getElementById('import-detected-fmt');
+      if(_detBadge)_detBadge.classList.add('hidden');
       _umamiSend('import-wrong-file');
       return;
     }
     // Passed classification — proceed with text parse
     const textReader=new FileReader();
     textReader.onload=function(ev){parseTxText(ev.target.result);};
-    textReader.readAsText(file);
+    // UTF-16 LE (FF FE) or BE (FE FF): _classifyImportFile lets these through
+    // (returns null instead of 'binary' despite their NUL bytes). Detect the
+    // BOM from the already-read bytes and pass the matching encoding to
+    // readAsText — without it, the default UTF-8 decoding produces garbled
+    // mojibake for every ASCII character (every other byte is 0x00 in UTF-16).
+    if(bytes.length>=2&&bytes[0]===0xFF&&bytes[1]===0xFE)
+      textReader.readAsText(file,'UTF-16LE');
+    else if(bytes.length>=2&&bytes[0]===0xFE&&bytes[1]===0xFF)
+      textReader.readAsText(file,'UTF-16BE');
+    else
+      textReader.readAsText(file);
   };
   sliceReader.readAsArrayBuffer(file.slice(0,1024));
 }

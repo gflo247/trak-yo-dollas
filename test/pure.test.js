@@ -10768,4 +10768,60 @@ test('_trimToFitMonths: takes only newest month when only one fits', () => {
   assert.strictEqual(result.count, 2);
 });
 
+// ── Item 3: wrong-file state machine fixes ──────────────────────────────────
+
+test("_classifyImportFile: .zip extension returns 'zip' before PK magic bytes can return 'spreadsheet'", () => {
+  const { _classifyImportFile } = loadFunctions(['_classifyImportFile']);
+  // PK magic bytes (same as XLSX) with .zip extension → 'zip', not 'spreadsheet'
+  const pkBytes = new Uint8Array([0x50, 0x4B, 0x03, 0x04, 0, 0, 0, 0]);
+  assert.equal(_classifyImportFile('transactions.zip', pkBytes), 'zip',
+    ".zip extension must return 'zip' even though it has XLSX/ZIP magic bytes");
+  // .xlsx with PK magic → 'spreadsheet' (unchanged)
+  assert.equal(_classifyImportFile('transactions.xlsx', pkBytes), 'spreadsheet',
+    ".xlsx extension still returns 'spreadsheet'");
+});
+
+test("_classifyImportFile: UTF-16 LE BOM (FF FE) returns null instead of 'binary'", () => {
+  const { _classifyImportFile } = loadFunctions(['_classifyImportFile']);
+  // UTF-16 LE BOM followed by NUL-interleaved ASCII — would trigger 'binary' without the BOM guard
+  const utf16le = new Uint8Array([0xFF, 0xFE, 0x44, 0x00, 0x61, 0x00, 0x74, 0x00, 0x65, 0x00]);
+  assert.equal(_classifyImportFile('export.csv', utf16le), null,
+    "UTF-16 LE BOM must pass through to the text reader (return null), not be rejected as binary");
+});
+
+test("_classifyImportFile: UTF-16 BE BOM (FE FF) returns null instead of 'binary'", () => {
+  const { _classifyImportFile } = loadFunctions(['_classifyImportFile']);
+  const utf16be = new Uint8Array([0xFE, 0xFF, 0x00, 0x44, 0x00, 0x61, 0x00, 0x74, 0x00, 0x65]);
+  assert.equal(_classifyImportFile('export.csv', utf16be), null,
+    "UTF-16 BE BOM must pass through to the text reader (return null), not be rejected as binary");
+});
+
+test("_classifyImportFile: NUL bytes without UTF-16 BOM still return 'binary'", () => {
+  const { _classifyImportFile } = loadFunctions(['_classifyImportFile']);
+  const binary = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x00, 0x1A, 0x0A]);
+  assert.equal(_classifyImportFile('image.png', binary), 'binary',
+    "binary files without a UTF-16 BOM must still be rejected");
+});
+
+test("parseTxFile error path: importParsed is cleared and format badge is hidden when a wrong-file error fires", () => {
+  const source = readSource();
+  // Both fixes are co-located right after _hideImportPreview() in the error path
+  assert.match(source,
+    /_hideImportPreview\(\);\s*\/\/[^\n]*stale importParsed[\s\S]{0,500}?importParsed=\[\];/,
+    "importParsed must be cleared in the error path after _hideImportPreview()");
+  assert.match(source,
+    /importParsed=\[\];\s*\/\/[^\n]*format badge[\s\S]{0,300}?const _detBadge=document\.getElementById\('import-detected-fmt'\);\s*if\(_detBadge\)_detBadge\.classList\.add\('hidden'\);/,
+    "detected-format badge must be hidden after importParsed is cleared");
+});
+
+test("parseTxFile: UTF-16 encoding path uses readAsText with 'UTF-16LE' or 'UTF-16BE'", () => {
+  const source = readSource();
+  assert.match(source,
+    /bytes\[0\]===0xFF&&bytes\[1\]===0xFE\)[\s\S]{0,50}?readAsText\(file,'UTF-16LE'\)/,
+    "UTF-16 LE BOM must trigger readAsText with 'UTF-16LE' encoding");
+  assert.match(source,
+    /bytes\[0\]===0xFE&&bytes\[1\]===0xFF\)[\s\S]{0,50}?readAsText\(file,'UTF-16BE'\)/,
+    "UTF-16 BE BOM must trigger readAsText with 'UTF-16BE' encoding");
+});
+
 // ── end of tests ──

@@ -411,6 +411,68 @@ test('wrong-file: XLSX file shows spreadsheet error message', async ({ page }) =
   fs.unlinkSync(tmpXlsx);
 });
 
+// ── Wrong-file: .zip shows archive message, not spreadsheet ─────────────────
+test('wrong-file: .zip file shows archive error message, not spreadsheet message', async ({ page }) => {
+  const fs = require('fs');
+  // .zip with PK magic bytes — same bytes as XLSX, but extension is .zip
+  const tmpZip = path.join(__dirname, 'fixtures/wrong_file.zip');
+  fs.writeFileSync(tmpZip, Buffer.from([0x50, 0x4B, 0x03, 0x04, 0, 0, 0, 0]));
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+  await page.evaluate(() => openTxImportModal());
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+  await page.locator('#tx-csv-file').setInputFiles(tmpZip);
+  await page.waitForFunction(() => {
+    const el = document.getElementById('import-zero-msg');
+    return el && !el.classList.contains('hidden');
+  }, { timeout: 3000 });
+  const msgText = await page.locator('#import-zero-msg').innerText();
+  expect(msgText).toContain('zip');
+  expect(msgText).not.toContain('spreadsheet');
+  expect(msgText).not.toContain('Excel');
+  fs.unlinkSync(tmpZip);
+});
+
+// ── Wrong-file: stale state cleared on error ─────────────────────────────────
+test('wrong-file: format badge hidden and Import button gone after dropping bad file over successful parse', async ({ page }) => {
+  const fs = require('fs');
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+
+  // First: import a valid CSV so importParsed is populated and badge shows
+  await importFile(page, DISCOVER_CSV);
+  // Close success modal
+  await page.evaluate(() => { const m = document.getElementById('import-success-modal'); if (m) m.classList.add('hidden'); });
+
+  // Re-open modal and confirm the badge is visible from the auto-detect
+  await page.evaluate(() => openTxImportModal());
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+  await page.locator('#tx-csv-file').setInputFiles(DISCOVER_CSV);
+  await page.waitForFunction(() => {
+    const btn = document.getElementById('import-confirm-btn');
+    return btn && !btn.classList.contains('hidden');
+  }, { timeout: 5000 });
+  // Badge should be visible after a successful parse
+  await expect(page.locator('#import-detected-fmt')).toBeVisible();
+
+  // Now drop a ZIP file (wrong type) — badge and Import button should both hide
+  const tmpZip = path.join(__dirname, 'fixtures/wrong_file.zip');
+  fs.writeFileSync(tmpZip, Buffer.from([0x50, 0x4B, 0x03, 0x04, 0, 0, 0, 0]));
+  try {
+    await page.locator('#tx-csv-file').setInputFiles(tmpZip);
+    await page.waitForFunction(() => {
+      const el = document.getElementById('import-zero-msg');
+      return el && !el.classList.contains('hidden');
+    }, { timeout: 3000 });
+    // Import button must be hidden
+    await expect(page.locator('#import-confirm-btn')).toBeHidden();
+    // Format badge must be hidden — not left over from the previous parse
+    await expect(page.locator('#import-detected-fmt')).toBeHidden();
+  } finally {
+    fs.unlinkSync(tmpZip);
+  }
+});
+
 // ── Storage quota: too-big imports and banner behavior ───────────────────────
 // initScript that wraps localStorage.setItem to throw QuotaExceededError once
 // total used space exceeds 400,000 characters (well under a real 5MB Safari
