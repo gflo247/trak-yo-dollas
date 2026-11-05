@@ -11,7 +11,7 @@
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-ofKJzyOfIU93dhrIlAfsxSSaVzkeCFTb0HhOPsx8sT0=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-ZjkwxdRLbNcmPTd1aCSD1+IfQv+l9MsklgxGZncvq9I=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -590,6 +590,7 @@ select option{background:var(--bg-card)}
 .help-box{font-size:12px;color:var(--text-secondary);background:var(--bg-card);border-radius:6px;padding:.55rem .85rem;margin-bottom:.75rem;line-height:1.6;border-left:3px solid #2563EB40}
 details.csv-help>summary::before{content:'▸';display:inline-block;margin-right:5px;font-size:11px;transition:transform .15s;color:var(--text-muted)}
 details.csv-help[open]>summary::before{transform:rotate(90deg)}
+#import-more-options[open] .import-more-arrow{transform:rotate(90deg)}
 
 /* ── Utility classes ─────────────────────────────────────────────────── */
 /* Modal structure */
@@ -1439,6 +1440,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <!-- Bank export quicklinks -->
     <div style="margin-bottom:.65rem;font-size:12px"><span style="color:var(--text-muted)">Export from: </span><a href="/guides/chase" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">Chase</a> · <a href="/guides/ally" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">Ally</a> · <a href="/guides/bofa" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">BofA</a> · <a href="/guides/wellsfargo" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">Wells Fargo</a> · <a href="/guides/capitalone" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">Capital One</a> · <a href="/guides/discover" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">Discover</a> · <a href="/guides" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">more →</a></div>
 
+    <div id="import-first-time-hint" style="display:none;font-size:12px;color:var(--text-muted);text-align:center;padding:6px 0 2px;line-height:1.4">Start with one card and one month — about 2 minutes.</div>
     <!-- Drop zone — hero -->
     <div class="csv-zone" id="tx-drop-zone" style="position:relative;padding:2rem 1rem"
          data-dragover="dragOverHighlight"
@@ -1450,7 +1452,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
         <span class="show-mobile" style="display:none">Tap to select a CSV file</span>
       </div>
       <div class="hide-mobile" style="font-size:11px;color:var(--text-muted);margin-top:3px">or click to browse</div>
-      <input type="file" id="tx-csv-file" accept=".csv,.CSV" aria-label="Select CSV file"
+      <input type="file" id="tx-csv-file" accept=".csv,.CSV,.qfx,.ofx,.qbo,.qif,.xlsx,.xls,.numbers,.ods,.pdf" aria-label="Select CSV file"
              style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer"
              data-dragover="dragOverDropZone"
              data-dragleave="dragLeaveDropZone"
@@ -1500,6 +1502,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <div style="color:#FCA5A5;font-weight:700;margin-bottom:.35rem">✗ Found 0 transactions</div>
       <div id="import-zero-header" style="font-family:'DM Mono',monospace;font-size:11px;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:4px;padding:3px 7px;margin-bottom:.45rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
       <a id="import-zero-guide" href="/guides" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">See export guides →</a>
+      <div style="margin-top:.45rem"><button data-action="openMoreOptions" style="background:none;border:none;color:var(--accent-blue-light);font-size:11px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">Pick your format manually →</button></div>
     </div>
     <!-- Import summary (count/date range/total/top categories) -- sits
          right by the Detected line so what's about to import is visible
@@ -1520,6 +1523,10 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <span id="date-fmt-note" style="font-size:12px;color:var(--text-muted)"></span>
     </div>
 
+    <details id="import-more-options">
+      <summary style="cursor:pointer;font-size:12px;color:var(--text-muted);list-style:none;display:flex;align-items:center;gap:4px;padding:4px 0;user-select:none;margin-top:.45rem" class="import-more-toggle">
+        <span class="import-more-arrow" style="font-size:10px;transition:transform .15s">&#9654;</span> More options
+      </summary>
     <!-- Manual format fallback toggle -->
     <div style="margin-top:.65rem;text-align:center">
       <button id="fmt-manual-toggle" data-action="toggleFormatPicker" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">Having trouble? Pick your format manually →</button>
@@ -1569,6 +1576,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <button data-action="openCommunityRulesModal" style="background:none;border:none;color:var(--accent-blue-light);font-size:12px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">View patterns ↗</button> &nbsp;
       <button data-action="openShortcutsModal" style="background:none;border:none;color:var(--accent-blue-light);font-size:12px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">How it works ↗</button>
     </div>
+    </details>
 
     <!-- Preview -->
     <div id="import-preview" class="hidden" style="margin-top:.65rem">
@@ -3540,7 +3548,7 @@ function _cleanVendorText(desc){
   // 8. Strip trailing store/location numbers when followed by city + 2-letter state
   s=s.replace(/(\s+(?:#\s*\d{3,}|\d{5,}|\d{3}-\d{3}-\d{4}))(?:\s+\S+)*\s+[A-Z]{2}\s*$/,'');
   // 9. Cut at mid-description date (MM/DD) — only if not at the very start
-  s=s.replace(/(?<=.)\s+(?:0?[1-9]|1[0-2])\/(?:0?[1-9]|[12]\d|3[01])(?:\s|$).*$/,'');
+  s=s.replace(/^(.+?)\s+(?:0?[1-9]|1[0-2])\/(?:0?[1-9]|[12]\d|3[01])(?:\s|$).*$/,'$1');
   return s.trim();
 }
 // Processor/bank prefixes that are never useful as categorization rule keywords.
@@ -13902,13 +13910,22 @@ function openTxImportModal(){
   document.getElementById('tx-csv-file').value='';
   document.getElementById('tx-drop-zone').style.borderColor='';
   importParsed=[];
-  document.getElementById('import-preview').classList.add('hidden');
-  // #import-preview-stats and #import-label-hint sit outside #import-preview — must be hidden explicitly.
-  const stats=document.getElementById('import-preview-stats');if(stats)stats.classList.add('hidden');
+  _hideImportPreview();
+  // #import-label-hint and #import-detected-fmt sit outside #import-preview — must be hidden explicitly.
   const labelHint=document.getElementById('import-label-hint');if(labelHint)labelHint.classList.add('hidden');
-  document.getElementById('import-confirm-btn').classList.add('hidden');
   const detFmt=document.getElementById('import-detected-fmt');if(detFmt)detFmt.classList.add('hidden');
-  const zeroMsg=document.getElementById('import-zero-msg');if(zeroMsg)zeroMsg.classList.add('hidden');
+  const zeroMsg=document.getElementById('import-zero-msg');
+  if(zeroMsg){
+    zeroMsg.classList.add('hidden');
+    const wfm=document.getElementById('import-wrong-file-msg');
+    if(wfm)wfm.remove();
+    const zh=document.getElementById('import-zero-header');
+    if(zh)zh.style.display='';
+    const heading=zeroMsg.querySelector('div');
+    if(heading)heading.textContent='\u2717 Found 0 transactions';
+  }
+  const moreOpts=document.getElementById('import-more-options');if(moreOpts)moreOpts.removeAttribute('open');
+  const fth=document.getElementById('import-first-time-hint');if(fth)fth.style.display=state.hasRealData?'none':'block';
   el.classList.remove('hidden');
   _umamiSend('import-opened');
 }
@@ -14127,10 +14144,74 @@ function parseTxText(rawText){
   showImportPreview();
 }
 
+// Classifies an import file by magic bytes and extension before attempting
+// CSV parse. Returns 'spreadsheet', 'quicken', 'pdf', 'binary', or null
+// (null = passes through to CSV parsing). bytes is a Uint8Array of the
+// first 1024 bytes of the file.
+function _classifyImportFile(name,bytes){
+  const lname=(name||'').toLowerCase();
+  // Check magic bytes first
+  if(bytes.length>=4&&bytes[0]===0x50&&bytes[1]===0x4B&&bytes[2]===0x03&&bytes[3]===0x04)return'spreadsheet'; // ZIP (xlsx/numbers/ods)
+  if(bytes.length>=8&&bytes[0]===0xD0&&bytes[1]===0xCF&&bytes[2]===0x11&&bytes[3]===0xE0&&bytes[4]===0xA1&&bytes[5]===0xB1&&bytes[6]===0x1A&&bytes[7]===0xE1)return'spreadsheet'; // CFB (xls)
+  // PDF magic
+  if(bytes.length>=5&&bytes[0]===0x25&&bytes[1]===0x50&&bytes[2]===0x44&&bytes[3]===0x46&&bytes[4]===0x2D)return'pdf'; // %PDF-
+  // Extension checks
+  if(/\.(xlsx|xls|numbers|ods)$/.test(lname))return'spreadsheet';
+  if(/\.(qfx|ofx|qbo|qif)$/.test(lname))return'quicken';
+  if(/\.pdf$/.test(lname))return'pdf';
+  // Text-based Quicken check (look in first 1KB text)
+  const head=new TextDecoder('utf-8',{fatal:false}).decode(bytes);
+  if(/OFXHEADER|<OFX/i.test(head))return'quicken';
+  if(/^!Type:/m.test(head))return'quicken';
+  // NUL bytes = binary
+  if(bytes.includes(0))return'binary';
+  return null;
+}
+
 function parseTxFile(file){
-  const reader=new FileReader();
-  reader.onload=e=>parseTxText(e.target.result);
-  reader.readAsText(file);
+  const sliceReader=new FileReader();
+  sliceReader.onload=function(e){
+    const bytes=new Uint8Array(e.target.result);
+    const kind=_classifyImportFile(file.name,bytes);
+    if(kind){
+      // Show appropriate error message
+      const msgs={
+        spreadsheet:'This is a spreadsheet file, not a CSV. Download the CSV from your bank instead, or open this file in Excel, Numbers or Google Sheets and export it as CSV.',
+        quicken:'This is a Quicken or QuickBooks file (QFX, OFX, QBO or QIF). Download again and pick the CSV option \u2014 banks label it \u201CSpreadsheet (Excel, CSV)\u201D, \u201CMicrosoft Excel format (.csv)\u201D or \u201CComma Delimited (.csv)\u201D.',
+        pdf:'This is a PDF statement. Use the download or export option on your account\u2019s activity page and pick CSV instead.',
+        binary:'This doesn\u2019t look like a CSV file. The guide below shows how to download one.'
+      };
+      const zeroMsg=document.getElementById('import-zero-msg');
+      const zeroHdr=document.getElementById('import-zero-header');
+      const zeroGuide=document.getElementById('import-zero-guide');
+      if(zeroMsg){
+        if(zeroHdr)zeroHdr.textContent='';
+        if(zeroHdr)zeroHdr.style.display='none';
+        // Replace the "Found 0 transactions" heading with a file-type message
+        const heading=zeroMsg.querySelector('div');
+        if(heading)heading.textContent='\u2717 Wrong file type';
+        // Reuse or create the message div to avoid duplicates on repeated drops
+        let msgDiv=document.getElementById('import-wrong-file-msg');
+        if(!msgDiv){
+          msgDiv=document.createElement('div');
+          msgDiv.id='import-wrong-file-msg';
+          msgDiv.style.cssText='margin-bottom:.45rem';
+          if(zeroGuide)zeroMsg.insertBefore(msgDiv,zeroGuide);
+          else zeroMsg.appendChild(msgDiv);
+        }
+        msgDiv.textContent=msgs[kind];
+        zeroMsg.classList.remove('hidden');
+      }
+      _hideImportPreview();
+      _umamiSend('import-wrong-file');
+      return;
+    }
+    // Passed classification — proceed with text parse
+    const textReader=new FileReader();
+    textReader.onload=function(ev){parseTxText(ev.target.result);};
+    textReader.readAsText(file);
+  };
+  sliceReader.readAsArrayBuffer(file.slice(0,1024));
 }
 
 // Splits raw CSV text into logical rows, respecting quotes so a comma or
@@ -15144,6 +15225,11 @@ function _resetAutoLabelIfStale(){
   if(isl&&_lastAutoLabel&&isl.value===_lastAutoLabel){isl.value='Checking';updateImportSourceHint();}
   _lastAutoLabel=null;
 }
+function _hideImportPreview(){
+  const preview=document.getElementById('import-preview');if(preview)preview.classList.add('hidden');
+  const stats=document.getElementById('import-preview-stats');if(stats)stats.classList.add('hidden');
+  const btn=document.getElementById('import-confirm-btn');if(btn)btn.classList.add('hidden');
+}
 function showImportPreview(){
   const detFmtEl=document.getElementById('import-detected-fmt');
   const detFmtTxt=document.getElementById('import-detected-fmt-text');
@@ -15158,12 +15244,7 @@ function showImportPreview(){
     // for a file that in fact matched nothing. Explicitly hide both, same
     // as openTxImportModal()'s fresh-open state. Found live-testing the
     // header-scan fix above, same day.
-    const stalePreview=document.getElementById('import-preview');
-    const staleStats=document.getElementById('import-preview-stats');
-    const staleBtn=document.getElementById('import-confirm-btn');
-    if(stalePreview)stalePreview.classList.add('hidden');
-    if(staleStats)staleStats.classList.add('hidden');
-    if(staleBtn)staleBtn.classList.add('hidden');
+    _hideImportPreview();
     const _zeroMsg=document.getElementById('import-zero-msg');
     const _zeroHdr=document.getElementById('import-zero-header');
     const _zeroGuide=document.getElementById('import-zero-guide');
@@ -15322,6 +15403,16 @@ function toggleFormatPicker(){
     if(panel)panel.classList.add('hidden');
     if(toggle)toggle.textContent='Having trouble? Pick your format manually →';
   }
+}
+
+function openMoreOptions(){
+  const d=document.getElementById('import-more-options');
+  if(d){
+    const wasOpen=d.hasAttribute('open');
+    d.setAttribute('open','');
+    if(!wasOpen)d.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+  if(!fmtPickerOpen)toggleFormatPicker();
 }
 
 // Analytics helper — respects the official Umami self-exclusion flag so

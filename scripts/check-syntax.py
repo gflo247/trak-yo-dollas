@@ -17,9 +17,10 @@ pipeline. This script makes that check automatic instead of something a
 person has to remember to do by hand.
 
 Hard gate (not advisory, unlike the heuristic scanners in this directory) —
-a syntax error has zero false positives; if node can't parse it, the browser
-can't either, and since every file here is one script tag, one syntax error
-anywhere breaks the entire page.
+a syntax error has zero false positives. Node accepts some syntax (e.g.
+lookbehinds) that older Safari rejects; this check catches those gaps.
+Since every file here is one script tag, one syntax error anywhere breaks
+the entire page.
 
 Covers trakyodollas.html, index.html, and privacy.html by default, matching
 check-connect-src.py's target list — all three are single/few-script-block
@@ -40,6 +41,43 @@ DEFAULT_TARGETS = ['trakyodollas.html', 'index.html', 'privacy.html']
 
 SCRIPT_RE = re.compile(r'<script(?:\s+[^>]*)?>(.*?)</script>', re.DOTALL)
 _JSONLD_TYPE = 'type="application/ld+json"'
+
+# Matches lookbehind assertions (?<= and (?<! but NOT named capture groups (?<name>...)
+_LOOKBEHIND_RE = re.compile(r'\(\?<[=!]')
+
+# Standalone JS files to scan for lookbehinds alongside inline scripts
+_JS_FILES = ['sw.js']
+
+
+def check_lookbehinds_in_text(text, label):
+    """Scans text for lookbehind patterns. Returns a list of error messages."""
+    errors = []
+    for i, line in enumerate(text.splitlines(), start=1):
+        if _LOOKBEHIND_RE.search(line):
+            errors.append(
+                f'ERROR: lookbehind in {label} line {i} '
+                f'(Safari < 16.4 rejects these; use a capture group instead)')
+    return errors
+
+
+def check_lookbehinds(path: Path):
+    """Scans inline <script> blocks in an HTML file for lookbehind patterns."""
+    text = path.read_text(encoding='utf-8')
+    errors = []
+    blocks = [m.group(1) for m in SCRIPT_RE.finditer(text)
+              if m.group(1).strip() and _JSONLD_TYPE not in m.group(0)]
+    for i, block in enumerate(blocks, start=1):
+        label = f'{path.name} <script> block {i}'
+        errors.extend(check_lookbehinds_in_text(block, label))
+    return errors
+
+
+def check_lookbehinds_js(path: Path):
+    """Scans a standalone JS file for lookbehind patterns."""
+    if not path.exists():
+        return []
+    text = path.read_text(encoding='utf-8')
+    return check_lookbehinds_in_text(text, path.name)
 
 
 def check_file(path: Path):
@@ -86,6 +124,8 @@ def main():
             print(f'SKIP: {name} not found')
             continue
         errors = check_file(path)
+        # Also scan for lookbehinds in inline scripts
+        errors.extend(check_lookbehinds(path))
         if errors:
             any_errors = True
             print(f'FAIL: {name}')
@@ -93,6 +133,18 @@ def main():
                 print(e)
         else:
             print(f'OK: {name}')
+    # Scan standalone JS files for lookbehinds
+    for name in _JS_FILES:
+        path = ROOT / name
+        errors = check_lookbehinds_js(path)
+        if errors:
+            any_errors = True
+            print(f'FAIL: {name}')
+            for e in errors:
+                print(e)
+        else:
+            if path.exists():
+                print(f'OK: {name}')
     if any_errors:
         sys.exit(1)
 

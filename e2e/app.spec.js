@@ -366,3 +366,47 @@ test('keyword suggestion uses cleaned vendor text, not raw prefix', async ({ pag
   // Cleanup
   fs.unlinkSync(tmpFile);
 });
+
+// ── Wrong-file detection: QFX file shows Quicken error ──────────────────────
+test('wrong-file: QFX file shows Quicken error message', async ({ page }) => {
+  const QFX_FILE = path.join(__dirname, 'fixtures/wrong_file.qfx');
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+  await page.evaluate(() => openTxImportModal());
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+  await page.locator('#tx-csv-file').setInputFiles(QFX_FILE);
+  // Wait for the zero-msg to appear
+  await page.waitForFunction(() => {
+    const el = document.getElementById('import-zero-msg');
+    return el && !el.classList.contains('hidden');
+  }, { timeout: 3000 });
+  const msgText = await page.locator('#import-zero-msg').innerText();
+  expect(msgText).toContain('Quicken');
+  expect(msgText).not.toContain('PK');
+  // Confirm button should not be visible
+  const confirmVisible = await page.locator('#import-confirm-btn').isVisible();
+  expect(confirmVisible).toBe(false);
+});
+
+// ── Wrong-file detection: XLSX file shows spreadsheet error ─────────────────
+test('wrong-file: XLSX file shows spreadsheet error message', async ({ page }) => {
+  const fs = require('fs');
+  const tmpXlsx = path.join(__dirname, 'fixtures/wrong_file.xlsx');
+  fs.writeFileSync(tmpXlsx, Buffer.from([0x50, 0x4B, 0x03, 0x04]));
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+  await page.evaluate(() => openTxImportModal());
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+  await page.locator('#tx-csv-file').setInputFiles(tmpXlsx);
+  await page.waitForFunction(() => {
+    const el = document.getElementById('import-zero-msg');
+    return el && !el.classList.contains('hidden');
+  }, { timeout: 3000 });
+  const msgText = await page.locator('#import-zero-msg').innerText();
+  expect(msgText).toContain('spreadsheet');
+  expect(msgText).not.toContain('PK');
+  const confirmVisible = await page.locator('#import-confirm-btn').isVisible();
+  expect(confirmVisible).toBe(false);
+  // Cleanup
+  fs.unlinkSync(tmpXlsx);
+});

@@ -6137,13 +6137,8 @@ test("showImportPreview: the zero-transactions branch hides any stale preview/Im
   assert.ok(zeroBranch, "showImportPreview() should have a zero-transactions early-return branch");
   assert.match(
     zeroBranch[0],
-    /getElementById\('import-preview'\)[\s\S]*?classList\.add\('hidden'\)/,
-    "the zero-transactions branch should hide #import-preview, not leave a prior file's preview showing"
-  );
-  assert.match(
-    zeroBranch[0],
-    /getElementById\('import-confirm-btn'\)[\s\S]*?classList\.add\('hidden'\)/,
-    "the zero-transactions branch should hide #import-confirm-btn, not leave a prior file's Import button enabled"
+    /_hideImportPreview\(\)/,
+    "the zero-transactions branch should call _hideImportPreview() to hide preview/stats/confirm-btn"
   );
 });
 
@@ -6308,7 +6303,7 @@ test("the import summary line (#import-preview-stats) now sits right after the D
   assert.match(fnMatch[0], /stats\.classList\.remove\('hidden'\);/, "showImportPreview()'s success path should explicitly un-hide the relocated stats element");
   const zeroBranch = fnMatch[0].match(/if\(!importParsed\.length\)\{[\s\S]*?\n {4}return;\n {2}\}/);
   assert.ok(zeroBranch, "showImportPreview() should have a zero-transactions early-return branch");
-  assert.match(zeroBranch[0], /staleStats\.classList\.add\('hidden'\)/, "the zero-transactions branch should also hide the relocated stats element, not just #import-preview/#import-confirm-btn");
+  assert.match(zeroBranch[0], /_hideImportPreview\(\)/, "the zero-transactions branch should call _hideImportPreview() to hide preview/stats/confirm-btn");
 });
 
 // Two findings from the adversarial pass run immediately after the
@@ -6317,14 +6312,18 @@ test("the relocated #import-preview-stats is hidden on every modal open, not jus
   const source = readSource();
   // Moving #import-preview-stats out of #import-preview (so it could sit
   // next to the Detected badge) meant it stopped inheriting the parent's
-  // hidden-class reset. openTxImportModal() now hides it explicitly.
+  // hidden-class reset. _hideImportPreview() hides it, and openTxImportModal()
+  // calls _hideImportPreview() on every open.
+  const hideFn = source.match(/function _hideImportPreview\(\)\{[\s\S]*?\}/);
+  assert.ok(hideFn, "_hideImportPreview() should exist");
+  assert.match(
+    hideFn[0],
+    /getElementById\('import-preview-stats'\)[\s\S]*?classList\.add\('hidden'\)/,
+    "_hideImportPreview() should hide #import-preview-stats"
+  );
   const openFn = source.match(/function openTxImportModal\(\)\{[\s\S]*?\n\}/);
   assert.ok(openFn, "openTxImportModal() should exist");
-  assert.match(
-    openFn[0],
-    /getElementById\('import-preview-stats'\)[\s\S]*?classList\.add\('hidden'\)/,
-    "openTxImportModal() should explicitly hide #import-preview-stats so stale stats don't linger on re-open"
-  );
+  assert.match(openFn[0], /_hideImportPreview\(\)/, "openTxImportModal() should call _hideImportPreview()");
 });
 test("the import-preview category pill truncates with the shared .truncate class, so an unusually long custom category name can't blow out the row or misalign the new Amount column header", () => {
   const source = readSource();
@@ -10540,6 +10539,91 @@ test("recurring card: singular 'charge' when subCount is 1", () => {
     source.includes("subCount===1?'':'s'"),
     "recurring pill must pluralize 'charge' conditionally"
   );
+});
+
+// ── _classifyImportFile: detects wrong file types before CSV parsing ────────
+
+test("_classifyImportFile: ZIP magic bytes → 'spreadsheet'", () => {
+  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
+  const bytes = new Uint8Array([0x50, 0x4B, 0x03, 0x04, 0x20, 0x20]);
+  assert.equal(_classifyImportFile("file.xlsx", bytes), "spreadsheet");
+});
+
+test("_classifyImportFile: CFB magic bytes → 'spreadsheet'", () => {
+  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
+  const bytes = new Uint8Array([0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1, 0x20, 0x20]);
+  assert.equal(_classifyImportFile("file.xls", bytes), "spreadsheet");
+});
+
+test("_classifyImportFile: PDF magic bytes → 'pdf'", () => {
+  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
+  const bytes = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E]);
+  assert.equal(_classifyImportFile("statement.pdf", bytes), "pdf");
+});
+
+test("_classifyImportFile: extension fallback — .xlsx with all-zero bytes → 'spreadsheet'", () => {
+  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
+  // All-zero bytes won't match magic, but extension wins — note: zero bytes
+  // would also trigger 'binary', but extension check runs first
+  // Actually, magic bytes check for ZIP: 0x50!=0x00, so magic check fails.
+  // Extension check runs next and matches.
+  const bytes = new Uint8Array([0x00, 0x00, 0x00, 0x00]);
+  assert.equal(_classifyImportFile("file.xlsx", bytes), "spreadsheet");
+});
+
+test("_classifyImportFile: extension fallback — .qfx → 'quicken'", () => {
+  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
+  const bytes = new Uint8Array([0x00, 0x00, 0x00, 0x00]);
+  assert.equal(_classifyImportFile("file.qfx", bytes), "quicken");
+});
+
+test("_classifyImportFile: extension fallback — .pdf with non-PDF bytes → 'pdf'", () => {
+  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
+  const bytes = new Uint8Array([0x00, 0x00, 0x00, 0x00]);
+  assert.equal(_classifyImportFile("file.pdf", bytes), "pdf");
+});
+
+test("_classifyImportFile: text-based Quicken detection — OFXHEADER", () => {
+  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
+  const text = "OFXHEADER:100\nDATA:OFXSGML";
+  const bytes = new TextEncoder().encode(text);
+  assert.equal(_classifyImportFile("download.txt", bytes), "quicken");
+});
+
+test("_classifyImportFile: text-based Quicken detection — <OFX>", () => {
+  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
+  const text = "<?xml version=\"1.0\"?>\n<OFX>";
+  const bytes = new TextEncoder().encode(text);
+  assert.equal(_classifyImportFile("download.txt", bytes), "quicken");
+});
+
+test("_classifyImportFile: text-based Quicken detection — !Type:Cash", () => {
+  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
+  const text = "!Type:Cash\nD01/15/2024\n";
+  const bytes = new TextEncoder().encode(text);
+  assert.equal(_classifyImportFile("download.qif", bytes), "quicken");
+});
+
+test("_classifyImportFile: NUL bytes → 'binary'", () => {
+  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
+  const bytes = new Uint8Array([0x41, 0x42, 0x00, 0x43]);
+  assert.equal(_classifyImportFile("unknown.dat", bytes), "binary");
+});
+
+test("_classifyImportFile: plain CSV header → null (pass-through)", () => {
+  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
+  const text = "Date,Description,Amount\n01/15/2024,COFFEE SHOP,5.00\n";
+  const bytes = new TextEncoder().encode(text);
+  assert.equal(_classifyImportFile("transactions.csv", bytes), null);
+});
+
+test("_classifyImportFile: CSV with UTF-8 BOM → null (BOM is not a NUL byte)", () => {
+  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
+  const csv = "Date,Description,Amount\n01/15/2024,COFFEE,5.00\n";
+  const csvBytes = new TextEncoder().encode(csv);
+  // Prepend UTF-8 BOM: EF BB BF
+  const bytes = new Uint8Array([0xEF, 0xBB, 0xBF, ...csvBytes]);
+  assert.equal(_classifyImportFile("transactions.csv", bytes), null);
 });
 
 // ── end of tests ──

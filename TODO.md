@@ -128,9 +128,9 @@ Show a one-line key (e.g. "Amount: negative = withdrawal") inline in the preview
 header when the detected format is known — saves the user a docs round-trip for
 unfamiliar formats.
 
-### 22. Import error messages for common malformed files
-"This looks like an Excel file — open it in Excel or Sheets, then File → Export → CSV"
-when the magic bytes are XLSX/XLS; similar hint for Quicken QFX/OFX uploads.
+### ~~22. Import error messages for common malformed files~~ ✓ fixed
+~~"This looks like an Excel file — open it in Excel or Sheets, then File → Export → CSV"
+when the magic bytes are XLSX/XLS; similar hint for Quicken QFX/OFX uploads.~~
 
 ### 23. Multi-file drop in a single import session
 Accept 2–5 CSVs dropped at once (e.g. all three Chase accounts at once), parse each,
@@ -162,10 +162,10 @@ When the user manually picks a format (e.g. Chase), show a small "How to export 
 Chase →" link next to the format button that opens the matching /guides/chase page
 in a new tab.
 
-### 29. Trim import panel for first-time users
-Move "Pick your format manually," "Clear all data," and the categorization sentence
+### ~~29. Trim import panel for first-time users~~ ✓ fixed
+~~Move "Pick your format manually," "Clear all data," and the categorization sentence
 into a collapsed "More options" section. First-time users only need the drop zone;
-the advanced controls add noise before they've seen a successful import.
+the advanced controls add noise before they've seen a successful import.~~
 
 ### 30. Bank guide sign-in links
 In each /guides/* page, link the "Log in to your account" step directly to the
@@ -188,12 +188,12 @@ has no spending in any earlier month in the window.
 ### 34. Quicken format support (OFX/QFX)
 Accept OFX/QFX files in the import drop zone and add a note to the Chase guide that
 Chase also supports QFX export (some users hit the CSV option only after hunting
-through settings).
+through settings). The import-wrong-file event count will determine priority.
 
-### 35. First-import onboarding copy
-Show a one-line prompt above the drop zone on first open: "Start with one card and
+### ~~35. First-import onboarding copy~~ ✓ fixed
+~~Show a one-line prompt above the drop zone on first open: "Start with one card and
 one month — about 2 minutes." Sets expectations and reduces abandonment before the
-first successful import.
+first successful import.~~
 
 ### 36. PDF statement import (later, maybe)
 On-device PDF → CSV conversion using a WebAssembly PDF parser. Useful for users
