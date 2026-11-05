@@ -249,7 +249,7 @@ test('backup nudge hidden while banner visible, shows after dismiss', async ({ p
 
   // Export backup — nudge should hide
   const downloadPromise = page.waitForEvent('download');
-  await page.locator('[data-action="exportBackup"]').click();
+  await page.locator('#import-success-backup-nudge [data-action="exportBackup"]').click();
   await downloadPromise;
   await expect(nudge2).toBeHidden();
 });
@@ -437,17 +437,21 @@ const QUOTA_INIT_SCRIPT = `
   })();
 `;
 
-// Generate a Monarch CSV with 200 rows × 10 months (Jan–Oct 2024).
+// Generate a Monarch CSV with 3200 rows (160 months × 20 days).
+// Needs enough rows so the JSON delta exceeds 200KB — the _txsFit fast-path
+// threshold — to actually hit the quota probe. At ~130 chars/row that's
+// ~416KB of new JSON, safely above the 200KB threshold.
 function makeQuotaTestCsv() {
   const os = require('os');
   const fs = require('fs');
   const merchants = ['Netflix', 'Spotify', 'Amazon', 'Target', 'Starbucks'];
   const lines = ['Date,Merchant,Category,Account,Original Statement,Notes,Amount,Tags'];
-  for (let month = 1; month <= 10; month++) {
+  for (let month = 1; month <= 160; month++) {
+    const year = 2010 + Math.floor((month - 1) / 12);
+    const m = String(((month - 1) % 12) + 1).padStart(2, '0');
     for (let day = 1; day <= 20; day++) {
-      const m = String(month).padStart(2, '0');
       const d = String(day).padStart(2, '0');
-      lines.push(`2024-${m}-${d},${merchants[day % 5]},Shopping,Chase Freedom,,,-${10 + (day % 50)},`);
+      lines.push(`${year}-${m}-${d},${merchants[day % 5]},Shopping,Chase Freedom,,,-${10 + (day % 50)},`);
     }
   }
   const csvPath = path.join(os.tmpdir(), `tyd_quota_test_${Date.now()}.csv`);
@@ -581,8 +585,11 @@ test.describe('storage quota', () => {
         if (el) el.classList.add('hidden');
       });
 
-      // Now mock setItem to throw and trigger a save
+      // Now mock setItem to throw and trigger a save.
+      // Remove trakyo_txs_v1 first so saveToLocalStorage() must write it
+      // (the guard skips the write if _txsDirty=false AND the key exists).
       await page.evaluate(() => {
+        localStorage.removeItem('trakyo_txs_v1');
         const orig = Storage.prototype.setItem;
         Storage.prototype.setItem = function(k, v) {
           if (k === 'trakyo_txs_v1') {

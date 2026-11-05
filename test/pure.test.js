@@ -4684,8 +4684,8 @@ test("confirmTxImport()/saveTx()/saveSnapshot()/saveHistoricalSnapshot() all cal
   const doConfirmImportSrc = source.match(/function _doConfirmImport\(incoming\)\{[\s\S]{0,15000}?\n}\n/)[0];
   assert.match(
     doConfirmImportSrc,
-    /state\.hasRealData=true;\s*hideDemoBadge\(\);\s*if\(wasFirstRealSave\)_requestStoragePersist\(\);\s*\/\/[\s\S]{0,1400}?renderAll\(\);\s*\/\/ Show post-import success modal/,
-    "_doConfirmImport() should call renderAll() (not renderSpending()) right after state.hasRealData=true/hideDemoBadge() -- renderAll() itself reads state.hasRealData to decide whether to hide demo notices, so it must run after that flag flips, not right after closeModals() where an earlier version of this fix mistakenly placed it (caught live-testing: the 'Demo accounts' banner stayed stuck visible)"
+    /state\.hasRealData=true;\s*hideDemoBadge\(\);\s*if\(wasFirstRealSave\)_requestStoragePersist\(\);[\s\S]{0,3500}?renderAll\(\);\s*\/\/ Show post-import success modal/,
+    "_doConfirmImport() should call renderAll() (not renderSpending()) after state.hasRealData=true/hideDemoBadge() -- renderAll() itself reads state.hasRealData to decide whether to hide demo notices, so it must run after that flag flips; the save section now sits between them (hasRealData must be true before the write so the persisted blob reflects it)"
   );
   assert.doesNotMatch(
     doConfirmImportSrc,

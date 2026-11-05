@@ -11,7 +11,7 @@
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-8VZeXpnKun+5FLEYq1vwMWKxi+GBvqPJGK5Eg1aSJus=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-kLWu0UHRD/b5NXT7t76l9OPGubLTvKN749KQCLhEexY=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -15523,13 +15523,14 @@ function _measureStorageFreeBytes(){
 }
 
 // Impure: returns true if newJson (the full tx list to save) will fit in localStorage.
-// Fast-paths: if shrinking or small (<1.5MB), skip the probe entirely.
+// Fast-paths: if shrinking or the delta is small (<200KB), skip the probe entirely.
 function _txsFit(newJson){
   const oldJson=localStorage.getItem('trakyo_txs_v1')||'';
-  if(newJson.length-oldJson.length<=0)return true;
-  if(newJson.length<1_500_000)return true;
+  const delta=newJson.length-oldJson.length;
+  if(delta<=0)return true;
+  if(delta<200_000)return true;
   const free=_measureStorageFreeBytes();
-  return(newJson.length-oldJson.length)<=free;
+  return delta<=free;
 }
 
 // Impure: populate and show #import-too-big-msg.
@@ -15699,6 +15700,14 @@ function _doConfirmImport(incoming){
     });
   });
 
+  // Mark real data before saving so the persisted state reflects it correctly.
+  // hasRealData=true must be set before saveToLocalStorage() — the serialized
+  // state blob includes this flag, and saving with it false means a reload
+  // treats real transactions as absent and shows demo data instead.
+  state.hasRealData=true;
+  hideDemoBadge();
+  if(wasFirstRealSave)_requestStoragePersist();
+
   // Save immediately — don't wait for the debounce. mutateTransactions()
   // already called scheduleSave(), but we need to know NOW whether the write
   // succeeded before showing the success modal. Cancel the pending timer and
@@ -15728,10 +15737,6 @@ function _doConfirmImport(incoming){
   // dead code. Confirmed via `git log -S` that this write existed and was
   // removed in commit cb67285. Found in the 163rd adversarial pass.
   try{localStorage.setItem('trakyo_last_import',new Date().toISOString());}catch(e){}
-  // Hide demo notices — real data is now loaded
-  state.hasRealData=true;
-  hideDemoBadge();
-  if(wasFirstRealSave)_requestStoragePersist();
   // renderAll(), not just renderSpending() -- a first-real-import wipes
   // state.accounts via _replaceDemoDataWithReal() above (like every
   // other "first real save" entry point), but only Spending got
