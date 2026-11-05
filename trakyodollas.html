@@ -11,7 +11,7 @@
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-JgSKQMgSqLfoqN925MhWT6Y5tx+A6PjOu5JqhGeVmbw=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-JaI2OEc9RbJeiGnYhgmo0G9PqNc7KwpoRcIbOTHhFO8=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -14222,50 +14222,7 @@ function parseTxFile(file){
   sliceReader.onload=function(e){
     const bytes=new Uint8Array(e.target.result);
     const kind=_classifyImportFile(file.name,bytes);
-    if(kind){
-      // Show appropriate error message
-      const msgs={
-        spreadsheet:'This is a spreadsheet file, not a CSV. Download the CSV from your bank instead, or open this file in Excel, Numbers or Google Sheets and export it as CSV.',
-        zip:'This is a zip archive. If it contains a CSV, unzip it and drag the CSV file here directly.',
-        quicken:'This is a Quicken or QuickBooks file (QFX, OFX, QBO or QIF). Download again and pick the CSV option \u2014 banks label it \u201CSpreadsheet (Excel, CSV)\u201D, \u201CMicrosoft Excel format (.csv)\u201D or \u201CComma Delimited (.csv)\u201D.',
-        pdf:'This is a PDF statement. Use the download or export option on your account\u2019s activity page and pick CSV instead.',
-        binary:'This doesn\u2019t look like a CSV file. The guide below shows how to download one.'
-      };
-      const zeroMsg=document.getElementById('import-zero-msg');
-      const zeroHdr=document.getElementById('import-zero-header');
-      const zeroGuide=document.getElementById('import-zero-guide');
-      if(zeroMsg){
-        if(zeroHdr)zeroHdr.textContent='';
-        if(zeroHdr)zeroHdr.style.display='none';
-        // Replace the "Found 0 transactions" heading with a file-type message
-        const heading=zeroMsg.querySelector('div');
-        if(heading)heading.textContent='\u2717 Wrong file type';
-        // Reuse or create the message div to avoid duplicates on repeated drops
-        let msgDiv=document.getElementById('import-wrong-file-msg');
-        if(!msgDiv){
-          msgDiv=document.createElement('div');
-          msgDiv.id='import-wrong-file-msg';
-          msgDiv.style.cssText='margin-bottom:.45rem';
-          if(zeroGuide)zeroMsg.insertBefore(msgDiv,zeroGuide);
-          else zeroMsg.appendChild(msgDiv);
-        }
-        msgDiv.textContent=msgs[kind];
-        zeroMsg.classList.remove('hidden');
-      }
-      _hideImportPreview();
-      // Clear any stale importParsed from a prior successful parse in this modal
-      // session — without this, a previous file's rows stay in the array, so
-      // the Import button keeps working with old data even though the error panel
-      // is showing. confirmTxImport() guards on importParsed.length, but the UI
-      // still showed the old preview state until the user noticed.
-      importParsed=[];
-      // Hide the auto-detected format badge too — it reflects the previous file
-      // and is meaningless once an error is showing.
-      const _detBadge=document.getElementById('import-detected-fmt');
-      if(_detBadge)_detBadge.classList.add('hidden');
-      _umamiSend('import-wrong-file');
-      return;
-    }
+    if(kind){_showWrongFileMsg(kind);return;}
     // Passed classification — proceed with text parse
     const textReader=new FileReader();
     textReader.onload=function(ev){parseTxText(ev.target.result);};
@@ -15323,6 +15280,13 @@ function showImportPreview(){
     const _zeroHdr=document.getElementById('import-zero-header');
     const _zeroGuide=document.getElementById('import-zero-guide');
     if(_zeroMsg){
+      // Undo any wrong-file mutations from _showWrongFileMsg() so the
+      // heading and header line show correctly for the zero-row case.
+      const _wfm=document.getElementById('import-wrong-file-msg');
+      if(_wfm)_wfm.remove();
+      const _heading=_zeroMsg.querySelector('div');
+      if(_heading)_heading.textContent='\u2717 Found 0 transactions';
+      if(_zeroHdr)_zeroHdr.style.display='';
       if(_zeroHdr)_zeroHdr.textContent=_importRawHeader||'(no header detected)';
       if(_zeroGuide){
         const _guideUrls={ally:'/guides/ally',chase:'/guides/chase',bofa:'/guides/bofa',wellsfargo:'/guides/wellsfargo',discover:'/guides/discover',capitalone360:'/guides/capitalone',citi:'/guides/citi',usbank:'/guides/usbank'};
@@ -15584,6 +15548,54 @@ function _txsFit(newJson){
 
 // Impure: populate and show #import-too-big-msg.
 // offer = {txs, firstMonth, lastMonth, count} or null.
+// Shows the wrong-file error state in #import-zero-msg. Extracted from
+// parseTxFile so there's one owner for all wrong-file DOM mutations, making
+// it straightforward for showImportPreview()'s zero-row branch to undo them.
+function _showWrongFileMsg(kind){
+  const msgs={
+    spreadsheet:'This is a spreadsheet file, not a CSV. Download the CSV from your bank instead, or open this file in Excel, Numbers or Google Sheets and export it as CSV.',
+    zip:'This is a zip archive. If it contains a CSV, unzip it and drag the CSV file here directly.',
+    quicken:'This is a Quicken or QuickBooks file (QFX, OFX, QBO or QIF). Download again and pick the CSV option \u2014 banks label it \u201CSpreadsheet (Excel, CSV)\u201D, \u201CMicrosoft Excel format (.csv)\u201D or \u201CComma Delimited (.csv)\u201D.',
+    pdf:'This is a PDF statement. Use the download or export option on your account\u2019s activity page and pick CSV instead.',
+    binary:'This doesn\u2019t look like a CSV file. The guide below shows how to download one.'
+  };
+  // Clear stale parse state so setImportFmt/setDateFmt don't re-parse old data
+  _importRawRows=null;
+  _importRawHeader='';
+  importParsed=[];
+  _hideImportPreview();
+  const detBadge=document.getElementById('import-detected-fmt');
+  if(detBadge)detBadge.classList.add('hidden');
+  const labelHint=document.getElementById('import-label-hint');
+  if(labelHint)labelHint.classList.add('hidden');
+  const dfRow=document.getElementById('import-date-fmt-row');
+  if(dfRow)dfRow.style.display='none';
+  const pickerPanel=document.getElementById('fmt-picker-panel');
+  if(pickerPanel)pickerPanel.classList.add('hidden');
+  const toggle=document.getElementById('fmt-manual-toggle');
+  if(toggle)toggle.textContent='Having trouble? Pick your format manually \u2192';
+  fmtPickerOpen=false;
+  const zeroMsg=document.getElementById('import-zero-msg');
+  const zeroHdr=document.getElementById('import-zero-header');
+  const zeroGuide=document.getElementById('import-zero-guide');
+  if(zeroMsg){
+    if(zeroHdr){zeroHdr.textContent='';zeroHdr.style.display='none';}
+    const heading=zeroMsg.querySelector('div');
+    if(heading)heading.textContent='\u2717 Wrong file type';
+    let msgDiv=document.getElementById('import-wrong-file-msg');
+    if(!msgDiv){
+      msgDiv=document.createElement('div');
+      msgDiv.id='import-wrong-file-msg';
+      msgDiv.style.cssText='margin-bottom:.45rem';
+      if(zeroGuide)zeroMsg.insertBefore(msgDiv,zeroGuide);
+      else zeroMsg.appendChild(msgDiv);
+    }
+    msgDiv.textContent=msgs[kind]||'';
+    zeroMsg.classList.remove('hidden');
+  }
+  _umamiSend('import-wrong-file');
+}
+
 function _showImportTooBig(totalCount,offer){
   const msg=document.getElementById('import-too-big-msg');
   if(!msg)return;

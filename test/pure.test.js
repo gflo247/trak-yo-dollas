@@ -6027,6 +6027,22 @@ test("showImportPreview: the zero-transactions branch hides any stale preview/Im
   );
 });
 
+test("showImportPreview: zero-row path undoes wrong-file DOM mutations so 'Found 0 transactions' heading shows correctly", () => {
+  const src = fnBody('showImportPreview');
+  const zeroBranch = src.match(/if\(!importParsed\.length\)\{[\s\S]*?\n {4}return;\n {2}\}/);
+  assert.ok(zeroBranch, "showImportPreview() should have a zero-transactions early-return branch");
+  assert.match(
+    zeroBranch[0],
+    /import-wrong-file-msg[\s\S]{0,100}remove\(\)/,
+    "zero-row branch must remove #import-wrong-file-msg if present"
+  );
+  assert.match(
+    zeroBranch[0],
+    /Found 0 transactions/,
+    "zero-row branch must restore the '✗ Found 0 transactions' heading"
+  );
+});
+
 // Requested by Nicholas on launch day (August 2026): the import preview
 // showed transaction count/total/top-categories but not the date range
 // covered, so a bank export that silently only covered part of the period
@@ -10499,14 +10515,19 @@ test("_classifyImportFile: NUL bytes without UTF-16 BOM still return 'binary'", 
 });
 
 test("parseTxFile error path: importParsed is cleared and format badge is hidden when a wrong-file error fires", () => {
-  const source = readSource();
-  // Both fixes are co-located right after _hideImportPreview() in the error path
-  assert.match(source,
-    /_hideImportPreview\(\);\s*\/\/[^\n]*stale importParsed[\s\S]{0,500}?importParsed=\[\];/,
-    "importParsed must be cleared in the error path after _hideImportPreview()");
-  assert.match(source,
-    /importParsed=\[\];\s*\/\/[^\n]*format badge[\s\S]{0,300}?const _detBadge=document\.getElementById\('import-detected-fmt'\);\s*if\(_detBadge\)_detBadge\.classList\.add\('hidden'\);/,
-    "detected-format badge must be hidden after importParsed is cleared");
+  // Logic moved into _showWrongFileMsg(); parseTxFile delegates to it.
+  assert.match(fnBody('parseTxFile'),
+    /if\(kind\)\{_showWrongFileMsg\(kind\);return;\}/,
+    "parseTxFile must delegate wrong-file handling to _showWrongFileMsg()");
+  assert.match(fnBody('_showWrongFileMsg'),
+    /_hideImportPreview\(\)/,
+    "_showWrongFileMsg must call _hideImportPreview()");
+  assert.match(fnBody('_showWrongFileMsg'),
+    /importParsed=\[\]/,
+    "_showWrongFileMsg must clear importParsed");
+  assert.match(fnBody('_showWrongFileMsg'),
+    /import-detected-fmt[\s\S]{0,100}classList\.add\('hidden'\)/,
+    "_showWrongFileMsg must hide the detected-format badge");
 });
 
 test("parseTxFile: UTF-16 encoding path uses readAsText with 'UTF-16LE' or 'UTF-16BE'", () => {

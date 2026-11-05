@@ -473,6 +473,62 @@ test('wrong-file: format badge hidden and Import button gone after dropping bad 
   }
 });
 
+test('wrong-file: label-hint, date-fmt-row, and format picker are hidden after dropping bad file over a successful parse', async ({ page }) => {
+  const QFX_FILE = path.join(__dirname, 'fixtures/wrong_file.qfx');
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+  await page.evaluate(() => openTxImportModal());
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+
+  // Drop a valid CSV first so label-hint, date-fmt-row, and stale _importRawRows are set
+  await page.locator('#tx-csv-file').setInputFiles(SAMPLE_CSV);
+  await page.waitForFunction(() => {
+    const btn = document.getElementById('import-confirm-btn');
+    return btn && !btn.classList.contains('hidden');
+  }, { timeout: 5000 });
+  // Confirm label-hint is visible from the successful parse
+  await expect(page.locator('#import-label-hint')).toBeVisible();
+
+  // Now drop the wrong-file — all three UI elements must hide
+  await page.locator('#tx-csv-file').setInputFiles(QFX_FILE);
+  await page.waitForFunction(() => {
+    const el = document.getElementById('import-zero-msg');
+    return el && !el.classList.contains('hidden');
+  }, { timeout: 3000 });
+  await expect(page.locator('#import-label-hint')).toBeHidden();
+  await expect(page.locator('#import-date-fmt-row')).toHaveCSS('display', 'none');
+  await expect(page.locator('#fmt-picker-panel')).toBeHidden();
+  // _importRawRows must be cleared: calling setImportFmt should not restore the preview
+  await page.evaluate(() => setImportFmt('ally'));
+  await expect(page.locator('#import-confirm-btn')).toBeHidden();
+});
+
+test('wrong-file: dropping a valid CSV after a wrong-file error clears the wrong-file heading', async ({ page }) => {
+  const QFX_FILE = path.join(__dirname, 'fixtures/wrong_file.qfx');
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+  await page.evaluate(() => openTxImportModal());
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+
+  // Drop wrong file first
+  await page.locator('#tx-csv-file').setInputFiles(QFX_FILE);
+  await page.waitForFunction(() => {
+    const el = document.getElementById('import-zero-msg');
+    return el && !el.classList.contains('hidden');
+  }, { timeout: 3000 });
+  expect(await page.locator('#import-zero-msg').innerText()).toContain('Wrong file type');
+
+  // Drop a valid CSV — preview must show, wrong-file message must disappear
+  await page.locator('#tx-csv-file').setInputFiles(SAMPLE_CSV);
+  await page.waitForFunction(() => {
+    const btn = document.getElementById('import-confirm-btn');
+    return btn && !btn.classList.contains('hidden');
+  }, { timeout: 5000 });
+  // zero-msg (and everything inside it, including #import-wrong-file-msg)
+  // is hidden; there's no need to detach the inner div on the success path.
+  await expect(page.locator('#import-zero-msg')).toBeHidden();
+});
+
 // ── Storage quota: too-big imports and banner behavior ───────────────────────
 // initScript that wraps localStorage.setItem to throw QuotaExceededError once
 // total used space exceeds 400,000 characters (well under a real 5MB Safari
