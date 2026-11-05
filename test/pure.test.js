@@ -7,7 +7,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { loadFunctions, readSource } = require("../scripts/extract-testable-fns.js");
+const { extractFunctions, loadFunctions, readSource, fnBody } = require("../scripts/extract-testable-fns.js");
 
 // ── esc() — HTML escaping used everywhere user/CSV-supplied text is
 // rendered into innerHTML. The CSV import preview (finding #1, this
@@ -51,30 +51,28 @@ test("isValidHexColor: accepts standard/shorthand hex, rejects style-attribute b
 // #3, this session). Before the fix, these were two separately-written
 // implementations that could disagree; this is now the one place the
 // over/at-risk rule is decided. ──
-test("classifyBudgetStatus: over budget takes priority regardless of day-of-month", () => {
+test("classifyBudgetStatus: status table (over, atRisk, pct)", () => {
   const { classifyBudgetStatus } = loadFunctions(["classifyBudgetStatus"]);
-  const result = classifyBudgetStatus(150, 100, true, 0.9, 80);
-  assert.equal(result.over, true);
-  assert.equal(result.atRisk, false);
-  assert.equal(result.pct, 150);
-});
-test("classifyBudgetStatus: at-risk requires >= warnPct, current month, and early enough in the month", () => {
-  const { classifyBudgetStatus } = loadFunctions(["classifyBudgetStatus"]);
-  assert.equal(classifyBudgetStatus(85, 100, true, 0.5, 80).atRisk, true);
-});
-test("classifyBudgetStatus: not at-risk once past the day-of-month cutoff, even above warnPct", () => {
-  // Being at 85% used with 90% of the month elapsed isn't a warning sign —
-  // it's just pacing normally toward 100%. The 0.6 cutoff is what makes
-  // that distinction.
-  const { classifyBudgetStatus } = loadFunctions(["classifyBudgetStatus"]);
-  const result = classifyBudgetStatus(85, 100, true, 0.9, 80);
-  assert.equal(result.over, false);
-  assert.equal(result.atRisk, false);
-});
-test("classifyBudgetStatus: not at-risk for a non-current (historical) month", () => {
-  const { classifyBudgetStatus } = loadFunctions(["classifyBudgetStatus"]);
-  const result = classifyBudgetStatus(85, 100, false, 0.5, 80);
-  assert.equal(result.atRisk, false);
+  // [spend, budget, isCurrent, dayFraction, warnPct, label, expected{over,atRisk,pct?}]
+  for (const [spend, budget, isCurrent, dayFrac, warnPct, label, exp] of [
+    [150, 100, true,  0.9, 80, "over budget takes priority regardless of day-of-month",
+      { over: true, atRisk: false, pct: 150 }],
+    [85,  100, true,  0.5, 80, "at-risk: >= warnPct, current month, early enough in month",
+      { atRisk: true }],
+    [85,  100, true,  0.9, 80, "not at-risk once past day-of-month cutoff, even above warnPct",
+      { over: false, atRisk: false }],
+    [85,  100, false, 0.5, 80, "not at-risk for a non-current (historical) month",
+      { atRisk: false }],
+    [50,  100, true,  0.5, 80, "comfortably under budget is on-track",
+      { over: false, atRisk: false }],
+    [0,   0,   true,  0.5, 80, "zero/unset budget returns pct 0 (not Infinity or NaN)",
+      { pct: 0, over: false }],
+  ]) {
+    const result = classifyBudgetStatus(spend, budget, isCurrent, dayFrac, warnPct);
+    for (const [key, val] of Object.entries(exp)) {
+      assert.equal(result[key], val, `${label}: result.${key}`);
+    }
+  }
 });
 
 // ── 141st adversarial pass ──────────────────────────────────────────────
@@ -124,22 +122,6 @@ test("the 3 sibling dot/pct-color render sites (compact badge, buildCondensedDot
     /mSpent>totalBudget\+0\.005\?'#F87171':mPct>=warnPct\?'#FBBF24':'#34D399'/,
     "the hero history dots should use the same epsilon-tolerant comparison"
   );
-});
-test("classifyBudgetStatus: comfortably under budget is on-track", () => {
-  const { classifyBudgetStatus } = loadFunctions(["classifyBudgetStatus"]);
-  const result = classifyBudgetStatus(50, 100, true, 0.5, 80);
-  assert.equal(result.over, false);
-  assert.equal(result.atRisk, false);
-});
-test("classifyBudgetStatus: a zero/unset budget returns pct 0 instead of Infinity or NaN", () => {
-  // undoBudgetCat() can leave a category at budget=0 instead of deleting
-  // it — call sites are expected to filter these out before classifying
-  // (see the budgetCats filter in renderInsights), but the function
-  // itself should still degrade safely if one slips through.
-  const { classifyBudgetStatus } = loadFunctions(["classifyBudgetStatus"]);
-  const result = classifyBudgetStatus(0, 0, true, 0.5, 80);
-  assert.equal(result.pct, 0);
-  assert.equal(result.over, false);
 });
 
 // ── splitCSVLine() / parseCSV() — the first thing that touches a
@@ -469,7 +451,7 @@ test("scheduleSave: demo-preview flag prevents the debounced save from ever firi
   await new Promise((r) => setTimeout(r, 900));
   assert.equal(saveCalled, false);
 });
-test("scheduleSave: awaitingCloudMerge gates only the cloud sync, not the local save — the sign-in-race fix from the 9th pass", async () => {
+test("scheduleSave: awaitingCloudMerge gates only the cloud sync, not the local save", async () => {
   let saveCalled = false, syncCalled = false;
   const ctx = {
     window: { _isDemoPreview: false, _viewingDemoOverReal: false, _fbUser: { uid: "x" }, _fb: {}, _awaitingCloudMerge: true },
@@ -1126,17 +1108,15 @@ test("detectDepositIncome: matches a real transaction's shape (isIncome:true, ex
 // card silently dropped the Spending tab's Savings Rate card from a
 // healthy percentage to a blank "Set up" state with no warning either way.
 test("selectIncomeMethod('auto'): shows a toast, distinguishing whether any deposits were actually detected, both demo-aware like every sibling income action", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function selectIncomeMethod\(method\)\{[\s\S]{0,1700}?\n  \}\n  if\(method==='manual'\)/);
-  assert.ok(fnMatch, "selectIncomeMethod()'s auto branch should exist");
+  const src = fnBody('selectIncomeMethod');
   assert.match(
-    fnMatch[0],
+    src,
     /if\(detected\.avgMonthly>0\)\{\s*showToast\(`💰 Auto-detect enabled — tracking ~\$\{fmt\(detected\.avgMonthly,true\)\}\/mo`\+\(_isLiveDemoSession\(\)\?' \(resets once you add real data\)':''\),'#34D399'\);/,
     "selecting auto with real detected deposits should show a demo-aware success toast, matching saveManualIncome()'s own pattern"
   );
   assert.match(
-    fnMatch[0],
-    /\}else\{\s*showToast\('Auto-detect enabled, but no deposit transactions found yet[\s\S]{0,120}\+\(_isLiveDemoSession\(\)\?' \(resets once you add real data\)':''\),'#FCD34D',5000\);/,
+    src,
+    /\}else\{\s*showToast\('Auto-detect enabled, but no deposit transactions found yet[\s\S]*?\+\(_isLiveDemoSession\(\)\?' \(resets once you add real data\)':''\),'#FCD34D',5000\);/,
     "selecting auto with zero detected deposits should show a distinct, honest amber warning instead of a generic success toast that isn't true yet"
   );
 });
@@ -2487,56 +2467,44 @@ test("addVendorAlias: refuses to re-point an alias in a way that would close a m
 // ── _normalizeVendorDesc: strips variable suffixes so the same merchant
 // doesn't appear as multiple vendors in spending views. ───────────────────
 
-test("_normalizeVendorDesc: strips marketplace order IDs and maps Amazon variants to 'Amazon'", () => {
+test("_normalizeVendorDesc: input → expected output table", () => {
   const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc", "_cleanVendorText"]);
-  // The four variants from the user's bug report — all $25 each, all Amazon
-  assert.equal(_normalizeVendorDesc("AMAZON MKTPL*AB12CD34"), "Amazon");
-  assert.equal(_normalizeVendorDesc("AMAZON MKTPL*ZZ99XX11"), "Amazon");
-  assert.equal(_normalizeVendorDesc("Amazon.com*1A2B3C4D5"), "Amazon");
-  assert.equal(_normalizeVendorDesc("AMZN Mktp US*9K8J7H6G5"), "Amazon");
-  // Other marketplace order-ID patterns
-  assert.equal(_normalizeVendorDesc("AMAZON MKTPLACE PMTS*XY78"), "Amazon");
-  assert.equal(_normalizeVendorDesc("AMAZON.COM*Q1W2E3R4"), "Amazon");
-  // Amazon subscriptions / regional stores without order IDs stay distinct
-  assert.equal(_normalizeVendorDesc("AMAZON MUSIC"), "AMAZON MUSIC", "AMAZON MUSIC has no order ID — stays distinct");
-  assert.equal(_normalizeVendorDesc("AMAZON PRIME"), "AMAZON PRIME", "AMAZON PRIME stays distinct");
-  assert.equal(_normalizeVendorDesc("AMAZON WEB SERVICES"), "AMAZON WEB SERVICES", "AWS stays distinct");
-});
-
-test("_normalizeVendorDesc: strips trailing store/location numbers", () => {
-  const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc", "_cleanVendorText"]);
-  // Hash-prefixed store numbers (KROGER #612, #1045)
-  assert.equal(_normalizeVendorDesc("KROGER #612"), "KROGER");
-  assert.equal(_normalizeVendorDesc("KROGER #1045"), "KROGER");
-  assert.equal(_normalizeVendorDesc("TRADER JOE'S #123"), "TRADER JOE'S");
-  // Long trailing digit runs (5+): SHELL OIL 57444, 12345678
-  assert.equal(_normalizeVendorDesc("SHELL OIL 57444"), "SHELL OIL");
-  assert.equal(_normalizeVendorDesc("SHELL OIL 12345678"), "SHELL OIL");
-  assert.equal(_normalizeVendorDesc("STARBUCKS 12345"), "STARBUCKS");
-});
-
-test("_normalizeVendorDesc: strips payment-processor prefixes", () => {
-  const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc", "_cleanVendorText"]);
-  assert.equal(_normalizeVendorDesc("SQ *STARBUCKS"), "STARBUCKS");
-  assert.equal(_normalizeVendorDesc("SQ * STARBUCKS"), "STARBUCKS");
-  assert.equal(_normalizeVendorDesc("TST* OLIVE GARDEN"), "OLIVE GARDEN");
-  assert.equal(_normalizeVendorDesc("PAYPAL *ETSY"), "ETSY");
-  assert.equal(_normalizeVendorDesc("PP*EBAY"), "EBAY");
-});
-
-test("_normalizeVendorDesc: does NOT strip digits that are part of a name", () => {
-  const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc", "_cleanVendorText"]);
-  // 7-ELEVEN: leading digits are part of the brand name
-  assert.equal(_normalizeVendorDesc("7-ELEVEN"), "7-ELEVEN");
-  assert.equal(_normalizeVendorDesc("7-ELEVEN GAS"), "7-ELEVEN GAS");
-  // 76: short digit name (< 5 chars, no preceding whitespace before digits)
-  assert.equal(_normalizeVendorDesc("76"), "76");
-  assert.equal(_normalizeVendorDesc("76 STATION"), "76 STATION");
-  // 4-digit trailing number (not 5+): leave alone
-  assert.equal(_normalizeVendorDesc("DISCOVER E-PAYMENT 1234"), "DISCOVER E-PAYMENT 1234");
-  // No change for clean descriptions
-  assert.equal(_normalizeVendorDesc("WHOLE FOODS"), "WHOLE FOODS");
-  assert.equal(_normalizeVendorDesc("T-MOBILE PCS SVC"), "T-MOBILE PCS SVC");
+  for (const [input, expected, label] of [
+    // marketplace order IDs → 'Amazon'
+    ["AMAZON MKTPL*AB12CD34",     "Amazon", "AMAZON MKTPL* (bug report variant 1)"],
+    ["AMAZON MKTPL*ZZ99XX11",     "Amazon", "AMAZON MKTPL* (bug report variant 2)"],
+    ["Amazon.com*1A2B3C4D5",      "Amazon", "Amazon.com*"],
+    ["AMZN Mktp US*9K8J7H6G5",   "Amazon", "AMZN Mktp US*"],
+    ["AMAZON MKTPLACE PMTS*XY78", "Amazon", "AMAZON MKTPLACE PMTS*"],
+    ["AMAZON.COM*Q1W2E3R4",       "Amazon", "AMAZON.COM*"],
+    // Amazon sub-brands stay distinct (no order ID)
+    ["AMAZON MUSIC",        "AMAZON MUSIC",        "AMAZON MUSIC stays distinct"],
+    ["AMAZON PRIME",        "AMAZON PRIME",        "AMAZON PRIME stays distinct"],
+    ["AMAZON WEB SERVICES", "AMAZON WEB SERVICES", "AWS stays distinct"],
+    // trailing store/location numbers stripped
+    ["KROGER #612",         "KROGER",       "#N (5-digit)"],
+    ["KROGER #1045",        "KROGER",       "#N (4-digit)"],
+    ["TRADER JOE'S #123",   "TRADER JOE'S", "#N with apostrophe in name"],
+    ["SHELL OIL 57444",     "SHELL OIL",    "5-digit bare num"],
+    ["SHELL OIL 12345678",  "SHELL OIL",    "8-digit bare num"],
+    ["STARBUCKS 12345",     "STARBUCKS",    "5-digit bare num (no hash)"],
+    // payment-processor prefixes stripped
+    ["SQ *STARBUCKS",       "STARBUCKS",    "SQ*"],
+    ["SQ * STARBUCKS",      "STARBUCKS",    "SQ * (space before vendor)"],
+    ["TST* OLIVE GARDEN",   "OLIVE GARDEN", "TST*"],
+    ["PAYPAL *ETSY",        "ETSY",         "PAYPAL*"],
+    ["PP*EBAY",             "EBAY",         "PP*"],
+    // digits that are part of the name must NOT be stripped
+    ["7-ELEVEN",             "7-ELEVEN",             "leading digit brand"],
+    ["7-ELEVEN GAS",         "7-ELEVEN GAS",         "leading digit brand + suffix"],
+    ["76",                   "76",                   "short digit name"],
+    ["76 STATION",           "76 STATION",           "short digit name + suffix"],
+    ["DISCOVER E-PAYMENT 1234", "DISCOVER E-PAYMENT 1234", "4-digit trailing (< 5) left alone"],
+    ["WHOLE FOODS",          "WHOLE FOODS",          "clean desc unchanged"],
+    ["T-MOBILE PCS SVC",     "T-MOBILE PCS SVC",     "clean desc with hyphen unchanged"],
+  ]) {
+    assert.equal(_normalizeVendorDesc(input), expected, label);
+  }
 });
 
 test("resolveVendor: applies normalization when no alias matches the raw description", () => {
@@ -2707,17 +2675,15 @@ test("import-success-modal has a #import-success-no-account nudge box, hidden by
   );
 });
 test("confirmTxImport: shows the no-matching-account nudge only when no account's name matches this import's source label (case-insensitively)", () => {
-  const source = readSource();
   // confirmTxImport() is now a thin wrapper; the logic lives in _doConfirmImport().
-  const fnMatch = source.match(/function _doConfirmImport\(incoming\)\{[\s\S]{0,15000}?\n}\n/);
-  assert.ok(fnMatch, "_doConfirmImport() should exist (confirmTxImport delegates to it)");
+  const src = fnBody('_doConfirmImport');
   assert.match(
-    fnMatch[0],
+    src,
     /const noAcctEl=document\.getElementById\('import-success-no-account'\);\s*if\(noAcctEl\)\{\s*const hasMatchingAccount=state\.accounts\.some\(a=>a\.name\.trim\(\)\.toLowerCase\(\)===source\.trim\(\)\.toLowerCase\(\)\);\s*if\(!hasMatchingAccount\)\{noAcctEl\.textContent=/,
     "_doConfirmImport() should check state.accounts for a case-insensitive name match against this import's source label before deciding whether to show the nudge"
   );
   assert.match(
-    fnMatch[0],
+    src,
     /else\{noAcctEl\.classList\.add\('hidden'\);\}/,
     "_doConfirmImport() should explicitly hide the nudge when a matching account does exist, not just show it when one doesn't -- otherwise it would stay stuck visible from a prior import in the same session"
   );
@@ -2732,21 +2698,19 @@ test("confirmTxImport: shows the no-matching-account nudge only when no account'
 // track and nothing to reset on the demo-to-real transition. renderSpending()
 // is DOM-heavy; source-pattern only. Added August 4, 2026. ──
 test("renderSpending: the Import CSV button gets a one-time glow, gated on !state.hasRealData and a sessionStorage flag rather than a persisted state field", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function renderSpending\(\)\{[\s\S]{0,2400}?\n}\n/);
-  assert.ok(fnMatch, "renderSpending() should exist");
+  const src = fnBody('renderSpending');
   assert.match(
-    fnMatch[0],
+    src,
     /if\(!state\.hasRealData\)\{\s*try\{\s*if\(!sessionStorage\.getItem\('trakyo_import_cta_seen'\)\)\{\s*sessionStorage\.setItem\('trakyo_import_cta_seen','1'\);/,
     "renderSpending() should gate the glow on !state.hasRealData and a sessionStorage flag, set immediately so a second render call in the same session can't re-trigger it"
   );
   assert.match(
-    fnMatch[0],
+    src,
     /const importBtn=document\.getElementById\('toolbar-import-btn'\);\s*if\(importBtn\)\{\s*requestAnimationFrame\(\(\)=>importBtn\.classList\.add\('import-cta-glow'\)\);\s*setTimeout\(\(\)=>importBtn\.classList\.remove\('import-cta-glow'\),2200\);/,
     "renderSpending() should add .import-cta-glow to #toolbar-import-btn via requestAnimationFrame (forcing a fresh animation start) and remove it again after the animation finishes, matching the codebase's existing chip-nudge/sign-in-confirm cleanup pattern"
   );
   assert.doesNotMatch(
-    source,
+    src,
     /state\.\w+\s*=\s*[^;]*trakyo_import_cta_seen/,
     "the glow-seen flag should live only in sessionStorage, never get mirrored into a state.* field"
   );
@@ -3209,16 +3173,13 @@ test("loadUserData: filters malformed snapshot rows before mapping, not after, a
 // coercion is unchanged and still worth guarding against a crafted
 // backup's non-numeric payload.
 test("renderVehicles coerces v.value to a number once, reused across every display site", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function renderVehicles\(\)\{[\s\S]{0,5000}?\n\}/);
-  assert.ok(fnMatch, "renderVehicles() should exist");
-  const fn = fnMatch[0];
+  const src = fnBody('renderVehicles');
   assert.match(
-    fn,
+    src,
     /const vValue=Number\(v\.value\)\|\|0;/,
     "renderVehicles() should coerce v.value into a local const near the top of the map callback"
   );
-  assert.doesNotMatch(fn, /v\.purchase/, "renderVehicles() should no longer reference the removed v.purchase/v.purchaseYear fields at all");
+  assert.doesNotMatch(src, /v\.purchase/, "renderVehicles() should no longer reference the removed v.purchase/v.purchaseYear fields at all");
 });
 test("renderMetrics: allSnaps is null-safe and uses the shared snapshot sort comparator", () => {
   const source = readSource();
@@ -3466,12 +3427,10 @@ test("Sankey link tooltip: the third (real-category) branch has a space after </
 // document.getElementById-driven functions), so this checks the source
 // pattern directly. ──
 test("buildRcList: the early-return branch clears #rc-list's innerHTML, not just hides #recategorize-section", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function buildRcList\(tx,origCat,newCat\)\{[\s\S]{0,3000}?\n\}/);
-  assert.ok(fnMatch, "buildRcList() should exist");
+  const src = fnBody('buildRcList');
   assert.match(
-    fnMatch[0],
-    /if\(!similar\.length\|\|origCat===newCat\)\{\s*sec\.classList\.add\('hidden'\);[\s\S]{0,1200}?document\.getElementById\('rc-list'\)\.innerHTML='';\s*return;\s*\}/,
+    src,
+    /if\(!similar\.length\|\|origCat===newCat\)\{\s*sec\.classList\.add\('hidden'\);[\s\S]*?document\.getElementById\('rc-list'\)\.innerHTML='';\s*return;\s*\}/,
     "buildRcList()'s early-return branch should clear #rc-list's innerHTML before returning, so stale checked checkboxes from an earlier call can't survive into a later, unrelated saveEditTx()"
   );
 });
@@ -3607,11 +3566,9 @@ test("fmt/fmtD/fmtH raw param is applied at every non-D3, non-innerHTML sink: .t
 // first, before any conditional, for the same reason (99th adversarial
 // pass). openBudgetModal() itself is DOM-heavy; source-pattern only. ──
 test("openBudgetModal: coerces cat to a string before checking falsiness, so a category literally named \"0\" isn't mistaken for \"no cat specified\"", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function openBudgetModal\(cat\)\{[\s\S]{0,2000}?\n\}/);
-  assert.ok(fnMatch, "openBudgetModal() should exist");
-  const coerceIdx = fnMatch[0].search(/if\(cat!==undefined\)cat=String\(cat\);/);
-  const falsyCheckIdx = fnMatch[0].search(/if\(!cat\)\{/);
+  const src = fnBody('openBudgetModal');
+  const coerceIdx = src.search(/if\(cat!==undefined\)cat=String\(cat\);/);
+  const falsyCheckIdx = src.search(/if\(!cat\)\{/);
   assert.ok(coerceIdx >= 0, "openBudgetModal() should coerce cat to a string, guarded on undefined so the 'no cat' default path still works when nothing was passed");
   assert.ok(falsyCheckIdx >= 0, "openBudgetModal() should still have its 'no cat specified' default-picking branch");
   assert.ok(coerceIdx < falsyCheckIdx, "the String(cat) coercion must run BEFORE the !cat falsy check -- otherwise coerce()'s Number(\"0\")===0 is indistinguishable from 'no cat specified'");
@@ -3712,12 +3669,10 @@ test("renderSpendChart: the category-filtered (activeCats) branch has its own to
 // only (saveEditTx() reads the row checkboxes directly), but a real
 // mismatch. buildRcList() is DOM-heavy; source-pattern only. ──
 test("buildRcList: the populate branch syncs #rc-select-all's checked state to match the freshly-rebuilt (all-checked) row list", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function buildRcList\(tx,origCat,newCat\)\{[\s\S]{0,3000}?\n\}/);
-  assert.ok(fnMatch, "buildRcList() should exist");
+  const src = fnBody('buildRcList');
   assert.match(
-    fnMatch[0],
-    /document\.getElementById\('rc-list'\)\.innerHTML=similar\.map\([\s\S]{0,500}?\.join\(''\);\s*[\s\S]{0,700}?const selectAll=document\.getElementById\('rc-select-all'\);\s*if\(selectAll\)selectAll\.checked=true;\s*updateRcCount\(\);/,
+    src,
+    /document\.getElementById\('rc-list'\)\.innerHTML=similar\.map\([\s\S]*?\.join\(''\);\s*[\s\S]*?const selectAll=document\.getElementById\('rc-select-all'\);\s*if\(selectAll\)selectAll\.checked=true;\s*updateRcCount\(\);/,
     "buildRcList()'s populate branch should set #rc-select-all's checked=true right alongside rebuilding #rc-list, before updateRcCount()"
   );
 });
@@ -3773,12 +3728,10 @@ test("renderSpendChart: the activeCats branch's 'Peak month' tooltip flag uses a
 // for the demo profile's own categories. confirmTxImport() is DOM-heavy;
 // source-pattern only. ──
 test("confirmTxImport: auto-registers any imported transaction's category that isn't already in getAllCats() as a new custom category", () => {
-  const source = readSource();
   // confirmTxImport() delegates to _doConfirmImport(); the auto-register logic lives inside its mutateTransactions block.
-  const fnMatch = source.match(/function _doConfirmImport\(incoming\)\{[\s\S]{0,15000}?\n}\n/);
-  assert.ok(fnMatch, "_doConfirmImport() (confirmTxImport's implementation) should exist");
+  const src = fnBody('_doConfirmImport');
   assert.match(
-    fnMatch[0],
+    src,
     /const knownCats=new Set\(getAllCats\(\)\.map\(c=>c\.toLowerCase\(\)\)\);\s*newTxs\.forEach\(t=>\{\s*if\(t\.cat&&!knownCats\.has\(t\.cat\.toLowerCase\(\)\)\)\{\s*state\.customCategories\.push\(\{name:t\.cat,color:null\}\);\s*knownCats\.add\(t\.cat\.toLowerCase\(\)\);\s*\}\s*\}\);/,
     "_doConfirmImport() should push {name,color:null} (addCustomCat()'s own shape) for every newly-imported category not already in getAllCats(), deduping case-insensitively (109th pass) via a local Set so a repeated new category isn't pushed twice"
   );
@@ -3827,15 +3780,14 @@ test("confirmTxImport: re-derives catFromUserRule categories via community rules
     "_doConfirmImport() (confirmTxImport's implementation) should capture whether this is a first-real-save transition before _replaceDemoDataWithReal() runs"
   );
   // confirmTxImport() delegates to _doConfirmImport(); the catFromUserRule logic is inside its mutateTransactions block.
-  const fnMatch = source.match(/function _doConfirmImport\(incoming\)\{[\s\S]{0,15000}?\n}\n/);
-  assert.ok(fnMatch, "_doConfirmImport()'s mutateTransactions block should exist");
+  const src = fnBody('_doConfirmImport');
   assert.match(
-    fnMatch[0],
+    src,
     /if\(wasFirstRealSave\)\{\s*newTxs\.forEach\(t=>\{\s*if\(t\.catFromUserRule\)\{/,
     "the catFromUserRule re-derivation should be gated on wasFirstRealSave -- an ordinary (non-demo-transition) import must never second-guess an already-correct user-rule categorization"
   );
   assert.match(
-    fnMatch[0],
+    src,
     /newTxs\.forEach\(t=>\{delete t\.catFromUserRule;\}\);/,
     "catFromUserRule should be stripped from every transaction before it reaches state.transactions -- it's a transient signal, not part of the persisted transaction shape"
   );
@@ -3843,9 +3795,9 @@ test("confirmTxImport: re-derives catFromUserRule categories via community rules
   // auto-register-unknown-category step, or a demo-rule-derived category
   // would already have been permanently registered by the time it's
   // corrected.
-  const rederiveIdx = fnMatch[0].indexOf("if(wasFirstRealSave){");
-  const stripIdx = fnMatch[0].indexOf("delete t.catFromUserRule");
-  const registerIdx = fnMatch[0].indexOf("const knownCats=");
+  const rederiveIdx = src.indexOf("if(wasFirstRealSave){");
+  const stripIdx = src.indexOf("delete t.catFromUserRule");
+  const registerIdx = src.indexOf("const knownCats=");
   assert.ok(rederiveIdx > -1 && stripIdx > -1 && registerIdx > -1, "all three steps should exist");
   assert.ok(rederiveIdx < registerIdx && stripIdx < registerIdx, "re-derivation and stripping must both happen before the auto-register step reads t.cat");
 });
@@ -3924,13 +3876,11 @@ test("loadDemoProfile: vehicles/snapshots/transactions/catRules/customCategories
 // by all 3 prior raw-fmt sweeps (105-107) since those only enumerated DOM
 // sinks. ──
 test("copyYirSummary: every fmt() call feeding the clipboard uses raw=true, not the default esc()'d form", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function copyYirSummary\(\)\{[\s\S]{0,5300}?\n\}/);
-  assert.ok(fnMatch, "copyYirSummary() should exist");
-  const fmtCalls = fnMatch[0].match(/fmt\((?:[^()]|\([^()]*\))*\)/g) || [];
+  const src = fnBody('copyYirSummary');
+  const fmtCalls = src.match(/fmt\((?:[^()]|\([^()]*\))*\)/g) || [];
   const nonRawCalls = fmtCalls.filter(c => !c.endsWith(",true)") && !c.startsWith("fmtMonthShort"));
   assert.equal(nonRawCalls.length, 0, `every fmt(...) call in copyYirSummary() should pass raw=true; found non-raw calls: ${JSON.stringify(nonRawCalls)}`);
-  assert.match(fnMatch[0], /navigator\.clipboard\.writeText\(lines\)/, "should still write to the clipboard");
+  assert.match(src, /navigator\.clipboard\.writeText\(lines\)/, "should still write to the clipboard");
 });
 
 // Finding 5 (LOW, dead code): renderSpendChart()'s top5+Other branch used
@@ -4000,12 +3950,11 @@ test("renderSpendChart: peakIdx is declared let and reassigned from the vendor-f
 // a historical marker that confirmTxImport() itself no longer hand-rolls
 // this reset.
 test("confirmTxImport: the demo-session-wipe branch delegates to the shared _replaceDemoDataWithReal() helper, not its own hand-rolled reset list", () => {
-  const source = readSource();
   // confirmTxImport() is now a thin wrapper; the logic lives in _doConfirmImport().
-  const fnMatch = source.match(/function _doConfirmImport\(incoming\)\{[\s\S]{0,2700}?_replaceDemoDataWithReal\(\);/);
-  assert.ok(fnMatch, "confirmTxImport() should call _replaceDemoDataWithReal() (via _doConfirmImport)");
+  const src = fnBody('_doConfirmImport');
+  assert.match(src, /_replaceDemoDataWithReal\(\);/, "confirmTxImport() should call _replaceDemoDataWithReal() (via _doConfirmImport)");
   assert.doesNotMatch(
-    source.match(/function _doConfirmImport\(incoming\)\{[\s\S]{0,9000}?\n  closeTxImportModal\(\);/)[0],
+    src,
     /state\.income=\{method:null,monthlyAmount:0\};/,
     "_doConfirmImport() itself should no longer hand-roll the income reset -- it's now inside the shared helper"
   );
@@ -4102,10 +4051,8 @@ test("loadDemoProfile: the dead no-op accounts filter (immediately after a full 
 // hand-rolled (and twice-incomplete: 98th, then 109th pass) version of the
 // same reset. A no-op once state.hasRealData is already true. ──
 test("_replaceDemoDataWithReal: resets every field loadDemoProfile() seeds to the same fresh-state defaults, and no-ops once hasRealData is true", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function _replaceDemoDataWithReal\(\)\{[\s\S]{0,2800}?\n\}/);
-  assert.ok(fnMatch, "_replaceDemoDataWithReal() should exist");
-  assert.match(fnMatch[0], /if\(state\.hasRealData\)return;/, "should no-op once real data already exists, never wiping real data");
+  const src = fnBody('_replaceDemoDataWithReal');
+  assert.match(src, /if\(state\.hasRealData\)return;/, "should no-op once real data already exists, never wiping real data");
   for (const line of [
     "state.accounts=[];", "state.vehicles=[];", "state.snapshots=[];", "state.transactions=[];",
     "state.activeSources=new Set();", "state.budgets={};", "state.rangeFrom=null;", "state.rangeTo=null;",
@@ -4114,41 +4061,35 @@ test("_replaceDemoDataWithReal: resets every field loadDemoProfile() seeds to th
     "state.excludedCats=new Set(TRANSFER_LIKE_CATS);", "state.catRules=[];", "state.customCategories=[];",
     "state.hiddenPills=new Set();", "state.vendorAliases={};",
   ]) {
-    assert.ok(fnMatch[0].includes(line), `_replaceDemoDataWithReal() should include: ${line}`);
+    assert.ok(src.includes(line), `_replaceDemoDataWithReal() should include: ${line}`);
   }
-  assert.match(fnMatch[0], /_resetSessionFiltersForDataReplace\(\);/, "should also reset session-scoped filters, matching every other wholesale-replace path");
+  assert.match(src, /_resetSessionFiltersForDataReplace\(\);/, "should also reset session-scoped filters, matching every other wholesale-replace path");
 });
 test("saveAccount: calls _replaceDemoDataWithReal() before adding the account, and falls back to adding as new if editAcctId no longer resolves after the wipe", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function saveAccount\(\)\{[\s\S]{0,4100}?closeModals\(\);renderAll\(\);\}/);
-  assert.ok(fnMatch, "saveAccount() should exist");
-  const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
-  const pushIdx = fnMatch[0].search(/state\.accounts\.push\(/);
+  const src = fnBody('saveAccount');
+  const wipeIdx = src.search(/_replaceDemoDataWithReal\(\);/);
+  const pushIdx = src.search(/state\.accounts\.push\(/);
   assert.ok(wipeIdx >= 0, "saveAccount() should call _replaceDemoDataWithReal()");
   assert.ok(wipeIdx < pushIdx, "the wipe must run BEFORE the account is added, or the new account would be wiped along with the demo data");
   assert.match(
-    fnMatch[0],
+    src,
     /if\(editAcctId\)\{const a=state\.accounts\.find\(x=>x\.id===editAcctId\);if\(a\)\{[^}]*\}else state\.accounts\.push\(/,
     "if editAcctId no longer resolves after the wipe (it pointed at a demo account that just got cleared), saveAccount() should fall back to adding as new rather than silently dropping the save"
   );
 });
 test("saveSnapshot: calls _replaceDemoDataWithReal() before the duplicate-month check and before computing netWorth()/totalAssets()/totalLiab()", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function saveSnapshot\(\)\{[\s\S]{0,4500}?\n\}/);
-  assert.ok(fnMatch, "saveSnapshot() should exist");
-  const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
-  const dupCheckIdx = fnMatch[0].search(/state\.snapshots\.find\(s=>s\.monthKey===ym\)/);
-  const netWorthIdx = fnMatch[0].search(/nw:netWorth\(\)/);
+  const src = fnBody('saveSnapshot');
+  const wipeIdx = src.search(/_replaceDemoDataWithReal\(\);/);
+  const dupCheckIdx = src.search(/state\.snapshots\.find\(s=>s\.monthKey===ym\)/);
+  const netWorthIdx = src.search(/nw:netWorth\(\)/);
   assert.ok(wipeIdx >= 0, "saveSnapshot() should call _replaceDemoDataWithReal()");
   assert.ok(wipeIdx < dupCheckIdx, "the wipe must run before the duplicate-month check, so a demo-scripted monthKey can't false-positive against the real current month");
   assert.ok(wipeIdx < netWorthIdx, "the wipe must run before netWorth()/totalAssets()/totalLiab() are computed, so the snapshot reflects real (possibly zero) account data, not fake demo balances");
 });
 test("parseCsvAccounts: only calls _replaceDemoDataWithReal() once at least one row parses successfully, not unconditionally", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function parseCsvAccounts\(text\)\{[\s\S]{0,2400}?\n\}/);
-  assert.ok(fnMatch, "parseCsvAccounts() should exist");
-  const ifImportedIdx = fnMatch[0].search(/if\(imported>0\)\{/);
-  const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
+  const src = fnBody('parseCsvAccounts');
+  const ifImportedIdx = src.search(/if\(imported>0\)\{/);
+  const wipeIdx = src.search(/_replaceDemoDataWithReal\(\);/);
   assert.ok(ifImportedIdx >= 0 && wipeIdx >= 0, "both the imported>0 guard and the wipe call should exist");
   assert.ok(
     ifImportedIdx < wipeIdx,
@@ -4156,11 +4097,9 @@ test("parseCsvAccounts: only calls _replaceDemoDataWithReal() once at least one 
   );
 });
 test("saveTx: sets state.hasRealData and calls _replaceDemoDataWithReal(), unlike before when it never set hasRealData at all", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function saveTx\(\)\{[\s\S]{0,3900}?\n\}/);
-  assert.ok(fnMatch, "saveTx() should exist");
-  assert.match(fnMatch[0], /_replaceDemoDataWithReal\(\);/, "saveTx() should call the shared wipe helper");
-  assert.match(fnMatch[0], /state\.hasRealData=true;/, "saveTx() should now set state.hasRealData -- previously it never did, so a manual-entry-only user's transactions stayed misclassified as demo data and were silently deleted by confirmTxImport()'s own !state.hasRealData wipe on their first later CSV import");
+  const src = fnBody('saveTx');
+  assert.match(src, /_replaceDemoDataWithReal\(\);/, "saveTx() should call the shared wipe helper");
+  assert.match(src, /state\.hasRealData=true;/, "saveTx() should now set state.hasRealData -- previously it never did, so a manual-entry-only user's transactions stayed misclassified as demo data and were silently deleted by confirmTxImport()'s own !state.hasRealData wipe on their first later CSV import");
 });
 
 // Finding 4 (LOW): applyCurrency()/applyCustomCurrency() only called
@@ -4169,13 +4108,8 @@ test("saveTx: sets state.hasRealData and calls _replaceDemoDataWithReal(), unlik
 // other tab kept showing the old symbol until an unrelated renderAll() or
 // a reload. ──
 test("applyCurrency and applyCustomCurrency both call renderAll(), not just renderSpending()", () => {
-  const source = readSource();
-  const acMatch = source.match(/function applyCurrency\(sym,btn\)\{[\s\S]{0,900}?\n\}/);
-  assert.ok(acMatch, "applyCurrency() should exist");
-  assert.match(acMatch[0], /renderAll\(\);/, "applyCurrency() should call renderAll()");
-  const accMatch = source.match(/function applyCustomCurrency\(val\)\{[\s\S]{0,500}?\n\}/);
-  assert.ok(accMatch, "applyCustomCurrency() should exist");
-  assert.match(accMatch[0], /renderAll\(\);/, "applyCustomCurrency() should call renderAll()");
+  assert.match(fnBody('applyCurrency'), /renderAll\(\);/, "applyCurrency() should call renderAll()");
+  assert.match(fnBody('applyCustomCurrency'), /renderAll\(\);/, "applyCustomCurrency() should call renderAll()");
 });
 
 // ── getBaseTxs() parameter contract ──────────────────────────────────────
@@ -4473,18 +4407,16 @@ test("renderSpendChart: the shared peakIdx is computed from getBaseTxs() (respec
 // and hasRealData together, so this guard also means the wipe below it is
 // always already a no-op by the time it's reached. ──
 test("saveSnapshot: requires state.hasRealAccounts before wiping demo data or computing netWorth()/totalAssets()/totalLiab(), and the old mid-function demo-preview branch it made unreachable is gone", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function saveSnapshot\(\)\{[\s\S]{0,4500}?\n\}/);
-  assert.ok(fnMatch, "saveSnapshot() should exist");
-  const guardIdx = fnMatch[0].search(/if\(!state\.hasRealAccounts\)\{/);
-  const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
-  const nwIdx = fnMatch[0].search(/nw:netWorth\(\)/);
+  const src = fnBody('saveSnapshot');
+  const guardIdx = src.search(/if\(!state\.hasRealAccounts\)\{/);
+  const wipeIdx = src.search(/_replaceDemoDataWithReal\(\);/);
+  const nwIdx = src.search(/nw:netWorth\(\)/);
   assert.ok(guardIdx >= 0, "saveSnapshot() should check state.hasRealAccounts");
   assert.ok(wipeIdx >= 0 && nwIdx >= 0, "the wipe call and netWorth() computation should both exist");
   assert.ok(guardIdx < wipeIdx, "the hasRealAccounts guard must run BEFORE the wipe");
   assert.ok(wipeIdx < nwIdx, "the wipe must still run before netWorth() is computed (for defense-in-depth), but only after the guard above has already ensured real accounts exist");
   assert.doesNotMatch(
-    fnMatch[0],
+    src,
     /if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{\s*showToast\(`✓ Snapshot saved/,
     "the old mid-function demo-preview toast branch should be gone -- the new top-of-function guard already returns before this point during any demo preview"
   );
@@ -4518,12 +4450,10 @@ test("renderSpendChart: the shared peak computation excludes income transactions
 // imported categories (108th pass); saveTx(), the 5th "first real save"
 // entry point the 110th pass added, never got the equivalent. ──
 test("saveTx: auto-registers the selected category as a real custom category if it isn't already registered (matching confirmTxImport()'s equivalent fix)", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function saveTx\(\)\{[\s\S]{0,3900}?\n\}/);
-  assert.ok(fnMatch, "saveTx() should exist");
-  const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
-  const registerIdx = fnMatch[0].search(/if\(cat&&!getAllCats\(\)\.some\(c=>c\.toLowerCase\(\)===cat\.toLowerCase\(\)\)\)\{/);
-  const mutateIdx = fnMatch[0].search(/mutateTransactions\(\(\)=>\{state\.transactions\.unshift/);
+  const src = fnBody('saveTx');
+  const wipeIdx = src.search(/_replaceDemoDataWithReal\(\);/);
+  const registerIdx = src.search(/if\(cat&&!getAllCats\(\)\.some\(c=>c\.toLowerCase\(\)===cat\.toLowerCase\(\)\)\)\{/);
+  const mutateIdx = src.search(/mutateTransactions\(\(\)=>\{state\.transactions\.unshift/);
   assert.ok(wipeIdx >= 0, "saveTx() should call the wipe helper");
   assert.ok(registerIdx >= 0, "saveTx() should auto-register the category if it's not already registered");
   assert.ok(mutateIdx >= 0, "saveTx() should still add the transaction");
@@ -4540,13 +4470,11 @@ test("saveTx: auto-registers the selected category as a real custom category if 
 // saveTx()/confirmTxImport(), so those 3 call sites rendered against
 // caches describing data that no longer existed. ──
 test("_replaceDemoDataWithReal: calls rebuildMonthly() and rebuildCatSelects(), matching loadDemoProfile()'s own wholesale-replace pattern", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function _replaceDemoDataWithReal\(\)\{[\s\S]{0,2800}?\n\}/);
-  assert.ok(fnMatch, "_replaceDemoDataWithReal() should exist");
-  assert.match(fnMatch[0], /rebuildMonthly\(\);/, "should call rebuildMonthly()");
-  assert.match(fnMatch[0], /rebuildCatSelects\(\);/, "should call rebuildCatSelects()");
-  const resetIdx = fnMatch[0].search(/_resetSessionFiltersForDataReplace\(\);/);
-  const rebuildIdx = fnMatch[0].search(/rebuildMonthly\(\);/);
+  const src = fnBody('_replaceDemoDataWithReal');
+  assert.match(src, /rebuildMonthly\(\);/, "should call rebuildMonthly()");
+  assert.match(src, /rebuildCatSelects\(\);/, "should call rebuildCatSelects()");
+  const resetIdx = src.search(/_resetSessionFiltersForDataReplace\(\);/);
+  const rebuildIdx = src.search(/rebuildMonthly\(\);/);
   assert.ok(resetIdx >= 0 && rebuildIdx >= 0 && resetIdx < rebuildIdx, "the rebuilds should come after the session-filter reset, matching loadDemoProfile()'s own ordering");
 });
 
@@ -4560,19 +4488,9 @@ test("_replaceDemoDataWithReal: calls rebuildMonthly() and rebuildCatSelects(), 
 // disappears, a normal success toast fires) that silently reverted on
 // the next reload with no warning it was never actually saved. ──
 test("saveAccount, saveSnapshot, saveTx, handleCsv, and importCsvText all refuse to run during a demo-preview-over-real session", () => {
-  const source = readSource();
   const guardPattern = /if\(blockedInDemoPreview\(\)\)return;/;
-  const fns = [
-    ["saveAccount", /function saveAccount\(\)\{[\s\S]{0,900}/],
-    ["saveSnapshot", /function saveSnapshot\(\)\{[\s\S]{0,900}/],
-    ["saveTx", /function saveTx\(\)\{[\s\S]{0,900}/],
-    ["handleCsv", /function handleCsv\(input\)\{[\s\S]{0,900}/],
-    ["importCsvText", /function importCsvText\(\)\{[\s\S]{0,900}/],
-  ];
-  for (const [name, fnRe] of fns) {
-    const fnMatch = source.match(fnRe);
-    assert.ok(fnMatch, `${name}() should exist`);
-    assert.match(fnMatch[0], guardPattern, `${name}() should have the demo-preview guard`);
+  for (const name of ['saveAccount', 'saveSnapshot', 'saveTx', 'handleCsv', 'importCsvText']) {
+    assert.match(fnBody(name), guardPattern, `${name}() should have the demo-preview guard`);
   }
 });
 
@@ -4621,14 +4539,12 @@ test("confirmTxImport: the dead write-only SOURCES global and its guard are remo
 // saveAccount(). saveVehicle() is DOM-heavy; source-pattern only,
 // matching this suite's established precedent. ──
 test("saveVehicle: has the demo-preview guard, calls _replaceDemoDataWithReal() after validation, and falls back editVehicleId to null if it no longer resolves post-wipe", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function saveVehicle\(\)\{[\s\S]{0,7900}?closeModals\(\);renderAll\(\);\n\}/);
-  assert.ok(fnMatch, "saveVehicle() should exist");
-  const guardIdx = fnMatch[0].search(/if\(blockedInDemoPreview\(\)\)return;/);
-  const valueGuardIdx = fnMatch[0].search(/if\(value<0\|\|!Number\.isFinite\(value\)\)return;/);
-  const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
-  const fallbackIdx = fnMatch[0].search(/if\(editVehicleId&&!state\.vehicles\.find\(x=>x\.id===editVehicleId\)\)editVehicleId=null;/);
-  const editCheckIdx = fnMatch[0].search(/if\(editVehicleId\)\{/);
+  const src = fnBody('saveVehicle');
+  const guardIdx = src.search(/if\(blockedInDemoPreview\(\)\)return;/);
+  const valueGuardIdx = src.search(/if\(value<0\|\|!Number\.isFinite\(value\)\)return;/);
+  const wipeIdx = src.search(/_replaceDemoDataWithReal\(\);/);
+  const fallbackIdx = src.search(/if\(editVehicleId&&!state\.vehicles\.find\(x=>x\.id===editVehicleId\)\)editVehicleId=null;/);
+  const editCheckIdx = src.search(/if\(editVehicleId\)\{/);
   assert.ok(guardIdx >= 0, "saveVehicle() should have the demo-preview guard");
   assert.ok(guardIdx < valueGuardIdx, "the demo-preview guard should be the first check in the function");
   assert.ok(wipeIdx >= 0, "saveVehicle() should call _replaceDemoDataWithReal()");
@@ -4644,14 +4560,12 @@ test("saveVehicle: has the demo-preview guard, calls _replaceDemoDataWithReal() 
 // snapshots" notice visible over fully real history for anyone whose
 // first snapshot came from this "+ Add historical" flow instead. ──
 test("saveHistoricalSnapshot: has the demo-preview guard, wipes demo data before the duplicate-month checks, and sets hasRealData/hasRealSnapshot", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,7700}?_editingSnapshotMonthKey=null;[\s\S]{0,300}?closeModals\(\);renderAll\(\);scheduleSave\(\);/);
-  assert.ok(fnMatch, "saveHistoricalSnapshot() should exist");
-  const guardIdx = fnMatch[0].search(/if\(blockedInDemoPreview\(\)\)return;/);
-  const dateGuardIdx = fnMatch[0].search(/if\(!date\|\|!Number\.isFinite\(nw\)\)/);
-  const wipeIdx = fnMatch[0].search(/_replaceDemoDataWithReal\(\);/);
-  const dupCheckIdx = fnMatch[0].search(/if\(!_editingSnapshotMonthKey&&state\.snapshots\.some/);
-  const hasRealSnapIdx = fnMatch[0].search(/state\.hasRealSnapshot=true;/);
+  const src = fnBody('saveHistoricalSnapshot');
+  const guardIdx = src.search(/if\(blockedInDemoPreview\(\)\)return;/);
+  const dateGuardIdx = src.search(/if\(!date\|\|!Number\.isFinite\(nw\)\)/);
+  const wipeIdx = src.search(/_replaceDemoDataWithReal\(\);/);
+  const dupCheckIdx = src.search(/if\(!_editingSnapshotMonthKey&&state\.snapshots\.some/);
+  const hasRealSnapIdx = src.search(/state\.hasRealSnapshot=true;/);
   assert.ok(guardIdx >= 0 && guardIdx < dateGuardIdx, "the demo-preview guard should be the first check");
   assert.ok(wipeIdx >= 0, "should call _replaceDemoDataWithReal()");
   assert.ok(dateGuardIdx < wipeIdx, "date/net-worth validation must run before the wipe");
@@ -4679,12 +4593,11 @@ test("saveHistoricalSnapshot: has the demo-preview guard, wipes demo data before
 // don't have this problem. Fixed by widening all 4 to renderAll(),
 // matching those three. Found and fixed August 2026. ──
 test("confirmTxImport()/saveTx()/saveSnapshot()/saveHistoricalSnapshot() all call renderAll() after their demo-to-real wipe, not a narrower render subset that omits the Net Worth tab", () => {
-  const source = readSource();
   // confirmTxImport() is now a thin wrapper; the logic lives in _doConfirmImport().
-  const doConfirmImportSrc = source.match(/function _doConfirmImport\(incoming\)\{[\s\S]{0,15000}?\n}\n/)[0];
+  const doConfirmImportSrc = fnBody('_doConfirmImport');
   assert.match(
     doConfirmImportSrc,
-    /state\.hasRealData=true;\s*hideDemoBadge\(\);\s*if\(wasFirstRealSave\)_requestStoragePersist\(\);[\s\S]{0,3500}?renderAll\(\);\s*\/\/ Show post-import success modal/,
+    /state\.hasRealData=true;\s*hideDemoBadge\(\);\s*if\(wasFirstRealSave\)_requestStoragePersist\(\);[\s\S]*?renderAll\(\);\s*\/\/ Show post-import success modal/,
     "_doConfirmImport() should call renderAll() (not renderSpending()) after state.hasRealData=true/hideDemoBadge() -- renderAll() itself reads state.hasRealData to decide whether to hide demo notices, so it must run after that flag flips; the save section now sits between them (hasRealData must be true before the write so the persisted blob reflects it)"
   );
   assert.doesNotMatch(
@@ -4698,18 +4611,18 @@ test("confirmTxImport()/saveTx()/saveSnapshot()/saveHistoricalSnapshot() all cal
     "renderAll() should not sit directly after closeModals() either -- it must come after state.hasRealData=true is set, later in the function"
   );
   assert.match(
-    source.match(/function saveTx\(\)\{[\s\S]{0,3900}?\n\}/)[0],
+    fnBody('saveTx'),
     /closeModals\(\);renderAll\(\);\s*\n\}/,
     "saveTx() should call renderAll() (not renderSpending()) as its final line"
   );
   assert.match(
-    source.match(/function saveSnapshot\(\)\{[\s\S]{0,4500}?\n\}/)?.[0] || "",
-    /hideDemoBadge\(\);[\s\S]{0,900}?renderAll\(\);/,
+    fnBody('saveSnapshot'),
+    /hideDemoBadge\(\);[\s\S]*?renderAll\(\);/,
     "saveSnapshot() should call renderAll(), not the old renderMetrics()/renderNwBreakdown()/renderHistory()/renderNwChart() quartet that omitted the Net Worth tab"
   );
   assert.match(
-    source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,7700}?_editingSnapshotMonthKey=null;[\s\S]{0,300}?closeModals\(\);renderAll\(\);scheduleSave\(\);/)[0],
-    /closeModals\(\);renderAll\(\);scheduleSave\(\);$/,
+    fnBody('saveHistoricalSnapshot'),
+    /closeModals\(\);renderAll\(\);scheduleSave\(\);/,
     "saveHistoricalSnapshot() should call renderAll() (not the old quartet), still followed by scheduleSave() since this path doesn't sync snapshots to Supabase any other way"
   );
 });
@@ -4723,41 +4636,39 @@ test("confirmTxImport()/saveTx()/saveSnapshot()/saveHistoricalSnapshot() all cal
 // mutateTransactions() already; only the DOM re-render was too narrow.
 // Found August 2026. ──
 test("applyRulesToExisting()/saveEditTx()/deleteTx()/toggleTxBiz()/applyVenmoOpt() all call renderAll(), not just renderSpending(), after mutating state.transactions", () => {
-  const source = readSource();
-
-  const applyRulesSrc = source.match(/function applyRulesToExisting\(\)\{[\s\S]{0,1900}?\n\}/)?.[0] || "";
+  const applyRulesSrc = fnBody('applyRulesToExisting');
   assert.match(
     applyRulesSrc,
-    /\}\);\s*\/\/[\s\S]{0,700}?renderAll\(\);\s*const el=document\.getElementById\('apply-rules-result'\);/,
+    /\}\);\s*\/\/[\s\S]*?renderAll\(\);\s*const el=document\.getElementById\('apply-rules-result'\);/,
     "applyRulesToExisting() should call renderAll() right after its mutateTransactions() block, before touching #apply-rules-result"
   );
   assert.doesNotMatch(applyRulesSrc, /\}\);\s*renderSpending\(\);/, "applyRulesToExisting() should no longer call renderSpending() alone");
 
-  const saveEditTxSrc = source.match(/function saveEditTx\(\)\{[\s\S]{0,4400}?\n\}/)?.[0] || "";
+  const saveEditTxSrc = fnBody('saveEditTx');
   assert.match(
     saveEditTxSrc,
-    /\/\/[\s\S]{0,400}?closeModals\(\);renderAll\(\);\s*\/\/ Offer to save a categorization rule/,
+    /\/\/[\s\S]*?closeModals\(\);renderAll\(\);\s*\/\/ Offer to save a categorization rule/,
     "saveEditTx() should call renderAll() (not renderSpending()) right after closeModals()"
   );
 
-  const deleteTxSrc = source.match(/function deleteTx\(\)\{[\s\S]{0,800}?\n\}/)?.[0] || "";
+  const deleteTxSrc = fnBody('deleteTx');
   assert.match(
     deleteTxSrc,
-    /closeModals\(\);\s*\/\/[\s\S]{0,300}?renderAll\(\);\s*\}/,
+    /closeModals\(\);\s*\/\/[\s\S]*?renderAll\(\);\s*\}/,
     "deleteTx() should call renderAll() (not renderSpending()) after closeModals()"
   );
 
-  const toggleTxBizSrc = source.match(/function toggleTxBiz\(id\)\{[\s\S]{0,700}?\n\}/)?.[0] || "";
+  const toggleTxBizSrc = fnBody('toggleTxBiz');
   assert.match(
     toggleTxBizSrc,
-    /\}\);\s*\/\/[\s\S]{0,300}?renderAll\(\);\s*\}/,
+    /\}\);\s*\/\/[\s\S]*?renderAll\(\);\s*\}/,
     "toggleTxBiz() should call renderAll() (not renderSpending()) after its mutateTransactions() block"
   );
 
-  const applyVenmoOptSrc = source.match(/function applyVenmoOpt\(skip\)\{[\s\S]{0,2000}?\n\}/)?.[0] || "";
+  const applyVenmoOptSrc = fnBody('applyVenmoOpt');
   assert.match(
     applyVenmoOptSrc,
-    /close(?:Modals|VenmoCashoutModal)\(\);\s*\/\/[\s\S]{0,400}?renderAll\(\);\s*showToast\('✓ Venmo cashouts updated'\);/,
+    /close(?:Modals|VenmoCashoutModal)\(\);\s*\/\/[\s\S]*?renderAll\(\);\s*showToast\('✓ Venmo cashouts updated'\);/,
     "applyVenmoOpt() should call renderAll() (not renderSpending()) before its success toast"
   );
 });
@@ -4823,13 +4734,8 @@ test("loadUserData: derives hasRealAccounts/hasRealSnapshot/hasRealData from wha
 // 111th pass fixed (saveSnapshot()'s guard checks the flag, not the
 // account list itself). ──
 test("deleteAcct and deleteVehicle: reset hasRealAccounts=false when state.accounts becomes empty, matching confirmDeleteSnapshot()'s existing pattern", () => {
-  const source = readSource();
-  const daMatch = source.match(/function deleteAcct\(\)\{[\s\S]{0,1000}?\n\}/);
-  assert.ok(daMatch, "deleteAcct() should exist");
-  assert.match(daMatch[0], /if\(!state\.accounts\.length\)state\.hasRealAccounts=false;/, "deleteAcct() should reset hasRealAccounts when the last account is deleted");
-  const dvMatch = source.match(/function deleteVehicle\(\)\{[\s\S]{0,1500}?\n\}/);
-  assert.ok(dvMatch, "deleteVehicle() should exist");
-  assert.match(dvMatch[0], /if\(!state\.accounts\.length\)state\.hasRealAccounts=false;/, "deleteVehicle() should reset hasRealAccounts when its paired-account removal leaves state.accounts empty");
+  assert.match(fnBody('deleteAcct'), /if\(!state\.accounts\.length\)state\.hasRealAccounts=false;/, "deleteAcct() should reset hasRealAccounts when the last account is deleted");
+  assert.match(fnBody('deleteVehicle'), /if\(!state\.accounts\.length\)state\.hasRealAccounts=false;/, "deleteVehicle() should reset hasRealAccounts when its paired-account removal leaves state.accounts empty");
 });
 
 // LOW finding (confirmed, with a correction): post-transition demo
@@ -4844,13 +4750,11 @@ test("deleteAcct and deleteVehicle: reset hasRealAccounts=false when state.accou
 // 2 dead-code references to a #demo-notice-history element that doesn't
 // exist anywhere in the DOM. ──
 test("renderAll: per-tab demo notices also hide once state.hasRealData is true, not just their own more-specific flag", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function renderAll\(\)\{[\s\S]{0,3500}?\n\}/);
-  assert.ok(fnMatch, "renderAll() should exist");
-  assert.match(fnMatch[0], /if\(da\)da\.style\.display=\(state\.hasRealAccounts\|\|state\.hasRealData\)\?'none':'';/, "the accounts notice should hide once hasRealData is true too");
-  assert.match(fnMatch[0], /if\(sdn\)sdn\.style\.display=\(state\.hasRealSnapshot\|\|state\.hasRealData\)\?'none':'';/, "the snapshot notice should hide once hasRealData is true too");
+  const src = fnBody('renderAll');
+  assert.match(src, /if\(da\)da\.style\.display=\(state\.hasRealAccounts\|\|state\.hasRealData\)\?'none':'';/, "the accounts notice should hide once hasRealData is true too");
+  assert.match(src, /if\(sdn\)sdn\.style\.display=\(state\.hasRealSnapshot\|\|state\.hasRealData\)\?'none':'';/, "the snapshot notice should hide once hasRealData is true too");
   assert.match(
-    fnMatch[0],
+    src,
     /if\(dn\)dn\.style\.display=\(\(state\.hasRealAccounts&&state\.hasRealSnapshot\)\|\|state\.hasRealData\)\?'none':'';/,
     "the dashboard notice should hide once hasRealData is true too"
   );
@@ -4901,11 +4805,9 @@ test("resetSourceAlign: also clears state.rangeTo, not just sourceAlignDate/rang
 // first one found. checkSourceAlignment() is DOM-heavy; source-pattern
 // only, matching this suite's established precedent. ──
 test("checkSourceAlignment: removes any existing #source-align-modal before creating a new one", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function checkSourceAlignment\(\)\{[\s\S]{0,5000}?document\.body\.appendChild\(modal\);/);
-  assert.ok(fnMatch, "checkSourceAlignment() should exist");
-  const removeIdx = fnMatch[0].search(/const existing=document\.getElementById\('source-align-modal'\);[\s\S]{0,800}?if\(existing\)existing\.remove\(\);/);
-  const createIdx = fnMatch[0].search(/const modal=document\.createElement\('div'\);/);
+  const src = fnBody('checkSourceAlignment');
+  const removeIdx = src.search(/const existing=document\.getElementById\('source-align-modal'\);[\s\S]*?if\(existing\)existing\.remove\(\);/);
+  const createIdx = src.search(/const modal=document\.createElement\('div'\);/);
   assert.ok(removeIdx >= 0, "should remove any existing #source-align-modal");
   assert.ok(removeIdx < createIdx, "the removal should happen before the new element is created");
 });
@@ -4917,15 +4819,13 @@ test("checkSourceAlignment: removes any existing #source-align-modal before crea
 // subscriptions resolving to the same vendor key) undercounted both its
 // own displayed amount and the aggregate subTotal pill. ──
 test("detectSubscriptions: sums ALL of a vendor's entries in the latest month, not just the first match", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function detectSubscriptions\(allMonths,latestFullM\)\{[\s\S]{0,5500}?return\{subVendors,subTotal\};/);
-  assert.ok(fnMatch, "detectSubscriptions() should exist");
+  const src = fnBody('detectSubscriptions');
   assert.match(
-    fnMatch[0],
+    src,
     /const curEntries=entries\.filter\(e=>e\.m===latestM\);\s*if\(curEntries\.length\)\{\s*const curAmt=curEntries\.reduce\(\(s,e\)=>s\+e\.amt,0\);/,
     "should filter+sum all of the vendor's latest-month entries, not .find() the first one"
   );
-  assert.doesNotMatch(fnMatch[0], /entries\.find\(e=>e\.m===latestM\)/, "the old .find()-based single-entry lookup should be gone");
+  assert.doesNotMatch(src, /entries\.find\(e=>e\.m===latestM\)/, "the old .find()-based single-entry lookup should be gone");
 });
 
 // Finding 4 (LOW): the Dashboard's "on pace for..." spend projection
@@ -4971,14 +4871,11 @@ test("loadUserData: hasRealData derivation also includes state.vehicles.length a
 // until later in the same function, so it can't be trusted safe at this
 // point either) -- replaced with a locally-computed collision-safe id. ──
 test("showAllPills and togglePill: no longer repeat classList.remove('hidden') after openPillCustomizer() already does it, and the unused labels query is removed", () => {
-  const source = readSource();
-  const saMatch = source.match(/function showAllPills\(\)\{[\s\S]{0,400}?\n\}/);
-  assert.ok(saMatch, "showAllPills() should exist");
-  assert.doesNotMatch(saMatch[0], /document\.getElementById\('pill-customizer-modal'\)\.classList\.remove\('hidden'\);/, "showAllPills() should not repeat the redundant classList.remove('hidden')");
-  const tpMatch = source.match(/function togglePill\(key,visible\)\{[\s\S]{0,600}?\n\}/);
-  assert.ok(tpMatch, "togglePill() should exist");
-  assert.doesNotMatch(tpMatch[0], /document\.getElementById\('pill-customizer-modal'\)\.classList\.remove\('hidden'\);/, "togglePill() should not repeat the redundant classList.remove('hidden')");
-  assert.doesNotMatch(tpMatch[0], /querySelectorAll\('#pill-toggle-list label span'\)/, "the unused labels query should be removed");
+  const saMatch = fnBody('showAllPills');
+  assert.doesNotMatch(saMatch, /document\.getElementById\('pill-customizer-modal'\)\.classList\.remove\('hidden'\);/, "showAllPills() should not repeat the redundant classList.remove('hidden')");
+  const tpMatch = fnBody('togglePill');
+  assert.doesNotMatch(tpMatch, /document\.getElementById\('pill-customizer-modal'\)\.classList\.remove\('hidden'\);/, "togglePill() should not repeat the redundant classList.remove('hidden')");
+  assert.doesNotMatch(tpMatch, /querySelectorAll\('#pill-toggle-list label span'\)/, "the unused labels query should be removed");
 });
 test("checkSourceAlignment: longMonths reuses monthDiff instead of recomputing the identical formula", () => {
   const source = readSource();
@@ -5100,10 +4997,8 @@ test("theme-color meta tag updates on both initial load and toggleTheme(), match
     /const tc=document\.querySelector\('meta\[name="theme-color"\]'\);\s*if\(tc\)tc\.setAttribute\('content',t==='light'\?'#F8FAFC':'#111720'\);/,
     "the boot-time restore should also set theme-color to match the restored theme"
   );
-  const toggleMatch = source.match(/function toggleTheme\(\)\{[\s\S]{0,1200}/);
-  assert.ok(toggleMatch, "toggleTheme() should exist");
   assert.match(
-    toggleMatch[0],
+    fnBody('toggleTheme'),
     /const tc=document\.querySelector\('meta\[name="theme-color"\]'\);\s*if\(tc\)tc\.setAttribute\('content',isLight\?'#111720':'#F8FAFC'\);/,
     "toggleTheme() should also update theme-color when live-toggling"
   );
@@ -5162,16 +5057,14 @@ test("body-script theme IIFE no longer redundantly re-sets data-theme (the head 
 // Found in the 117th adversarial pass, a regression escaped from the
 // 112th pass's own demo-transition fix. ──
 test("saveHistoricalSnapshot: only clears _editingSnapshotMonthKey when the demo-data wipe actually ran, not unconditionally", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function saveHistoricalSnapshot\(\)\{[\s\S]{0,5000}?if\(_wasDemoData\)_editingSnapshotMonthKey=null;/);
-  assert.ok(fnMatch, "saveHistoricalSnapshot() should exist and reach the fixed clear site");
+  const src = fnBody('saveHistoricalSnapshot');
   assert.match(
-    fnMatch[0],
+    src,
     /const _wasDemoData=!state\.hasRealData;\s*_replaceDemoDataWithReal\(\);\s*if\(_wasDemoData\)_editingSnapshotMonthKey=null;/,
     "should capture whether real data existed before the wipe, and only clear the editing flag when the wipe actually ran"
   );
   assert.doesNotMatch(
-    fnMatch[0],
+    src,
     /_replaceDemoDataWithReal\(\);\s*_editingSnapshotMonthKey=null;/,
     "should no longer unconditionally clear _editingSnapshotMonthKey right after the wipe call"
   );
@@ -5192,10 +5085,8 @@ test("saveHistoricalSnapshot: only clears _editingSnapshotMonthKey when the demo
 test("the 8 manual-entry save functions (saveTx, saveEditTx, saveAccount, saveVehicle, saveBudget, saveHistoricalSnapshot, saveDeclaredIncome, saveManualIncome) all reject non-finite (Infinity/1e400) values, not just falsy/NaN ones", () => {
   const source = readSource();
 
-  const saveTxMatch = source.match(/function saveTx\(\)\{[\s\S]{0,1600}/);
-  assert.ok(saveTxMatch, "saveTx() should exist");
   assert.match(
-    saveTxMatch[0],
+    fnBody('saveTx'),
     /if\(!desc\|\|!amount\|\|!Number\.isFinite\(amount\)\)\{/,
     "saveTx should reject a non-finite amount alongside the existing falsy check"
   );
@@ -5262,7 +5153,7 @@ test("the 8 manual-entry save functions (saveTx, saveEditTx, saveAccount, saveVe
 // the 87th or 119th pass), and the custom net-worth-goal input (whose
 // type="number" field accepts scientific notation like '1e400'). Found
 // in the 120th adversarial pass. ──
-test("parseCsvAccounts and confirmCustomGoal (the 120th pass's extension of the 119th pass's Number.isFinite sweep) both reject non-finite (Infinity/1e400) values, not just NaN", () => {
+test("parseCsvAccounts and confirmCustomGoal both reject non-finite (Infinity/1e400) values, not just NaN", () => {
   const source = readSource();
   assert.match(
     source,
@@ -5313,16 +5204,14 @@ test("normalizeTxRow's 'trakyodollas' import branch reads the per-row Source col
 // one level broader (a substring conflict, not just an exact one). Found
 // in the 122nd adversarial pass. ──
 test("_checkSrpKeywordConflict: also warns when the new keyword would shadow (not just exactly duplicate) an existing rule", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function _checkSrpKeywordConflict\(keyword\)\{[\s\S]{0,1600}?\n\}/);
-  assert.ok(fnMatch, "_checkSrpKeywordConflict() should exist");
+  const src = fnBody('_checkSrpKeywordConflict');
   assert.match(
-    fnMatch[0],
+    src,
     /const shadowed=state\.catRules\.find\(r=>r\.keyword\.toUpperCase\(\)\.includes\(kw\)\);/,
     "should also check for an existing rule whose keyword contains the new (shorter) keyword as a substring"
   );
-  const exactIdx = fnMatch[0].search(/const conflict=state\.catRules\.find\(r=>r\.keyword\.toUpperCase\(\)===kw\);/);
-  const shadowIdx = fnMatch[0].search(/const shadowed=state\.catRules\.find/);
+  const exactIdx = src.search(/const conflict=state\.catRules\.find\(r=>r\.keyword\.toUpperCase\(\)===kw\);/);
+  const shadowIdx = src.search(/const shadowed=state\.catRules\.find/);
   assert.ok(exactIdx >= 0 && exactIdx < shadowIdx, "the exact-match check should still run first (its own more specific, more actionable warning)");
 });
 
@@ -5420,18 +5309,14 @@ test("a focused <input type=number> is blurred on wheel scroll, preventing the b
 // returning focus to <body> instead of the trigger on the new modal's
 // eventual close. Found in the 125th adversarial pass. ──
 test("checkSourceAlignment: re-opening while a prior instance is already tracked-open preserves the ORIGINAL pre-modal return-focus target", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function checkSourceAlignment\(\)\{[\s\S]{0,5000}?document\.body\.appendChild\(modal\);/);
-  assert.ok(fnMatch, "checkSourceAlignment() should exist");
+  const src = fnBody('checkSourceAlignment');
   assert.match(
-    fnMatch[0],
+    src,
     /const _priorReturnFocusEl=\(_a11yOpenModalEl===existing\)\?_a11yReturnFocusEl:null;\s*if\(existing\)existing\.remove\(\);/,
     "should capture the prior modal's own already-correct return-focus target before removing it"
   );
-  const afterMatch = source.match(/document\.body\.appendChild\(modal\);[\s\S]{0,1300}?\n\}/);
-  assert.ok(afterMatch, "should find the code after appendChild through the function's closing brace");
   assert.match(
-    afterMatch[0],
+    src,
     /if\(_a11yOpenModalEl!==modal\)_a11yHandleOpen\(modal\);\s*if\(_priorReturnFocusEl\)_a11yReturnFocusEl=_priorReturnFocusEl;/,
     "should restore the preserved return-focus target after _a11yHandleOpen() runs, overriding its own (now-wrong) document.activeElement capture"
   );
@@ -5602,7 +5487,7 @@ test("dark theme's --text-dim reaches at least WCAG AA contrast against --bg-car
 // getComputedStyle()/getPropertyValue() call so nothing reads them from
 // JS either) -- the same class pass 139 only partially cleaned up when
 // it removed --text-faint. Found in the 140th adversarial pass. ──
-test("dead CSS custom properties from the 140th pass's sweep are removed from both theme blocks", () => {
+test("dead CSS custom properties are removed from both theme blocks", () => {
   const source = readSource();
   const deadTokens = [
     "--bg-elevated", "--chart-bg", "--chart-grid", "--chart-tick",
@@ -5969,7 +5854,7 @@ test("nw-item-name and account-name CSS classes truncate overlong text, and thei
 // category label, the category manager list's category name, and the
 // vehicle "other asset" card's name. Found in the 168th adversarial
 // pass. ──
-test("the .truncate utility class exists and is applied to the 5 sites the 168th pass's systematic search found sharing the overflow/ellipsis gap", () => {
+test("the .truncate utility class exists and is applied to the 5 sites sharing the overflow/ellipsis gap", () => {
   const source = readSource();
   assert.match(
     source,
@@ -6022,7 +5907,7 @@ test("the .truncate utility class exists and is applied to the 5 sites the 168th
 // competing sibling to force a shrink, so .truncate alone would be a
 // no-op -- each also gets an explicit max-width so the ellipsis has
 // something to actually truncate against.
-test("the rules-manager keyword chip and vendor-alias chips truncate with the same .truncate+title pattern as the 168th pass's 5 sites", () => {
+test("the rules-manager keyword chip and vendor-alias chips truncate with the same .truncate+title pattern", () => {
   const source = readSource();
   assert.match(
     source,
@@ -6136,10 +6021,8 @@ test("parseTxFile: UK midata auto-detect is checked before the generic debit+cre
 // stale data -- but the UI kept claiming a file was "ready to import" when
 // nothing had actually parsed.
 test("showImportPreview: the zero-transactions branch hides any stale preview/Import button left over from an earlier file in the same modal session", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "showImportPreview() should exist");
-  const zeroBranch = fnMatch[0].match(/if\(!importParsed\.length\)\{[\s\S]*?\n {4}return;\n {2}\}/);
+  const src = fnBody('showImportPreview');
+  const zeroBranch = src.match(/if\(!importParsed\.length\)\{[\s\S]*?\n {4}return;\n {2}\}/);
   assert.ok(zeroBranch, "showImportPreview() should have a zero-transactions early-return branch");
   assert.match(
     zeroBranch[0],
@@ -6154,21 +6037,19 @@ test("showImportPreview: the zero-transactions branch hides any stale preview/Im
 // a user expected (or the wrong account's history) wasn't obvious until
 // after the data was already merged in.
 test("showImportPreview: the preview stats line includes the imported date range, computed the same way confirmTxImport()'s post-import success modal already does", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "showImportPreview() should exist");
+  const src = fnBody('showImportPreview');
   assert.match(
-    fnMatch[0],
+    src,
     /const importMonths=\[\.\.\.new Set\(importParsed\.map\(t=>t\.date\.slice\(0,7\)\)\)\]\.sort\(\);/,
     "should collect the distinct YYYY-MM months present in importParsed"
   );
   assert.match(
-    fnMatch[0],
+    src,
     /const dateRangeStr=importMonths\.length>1\?`\$\{fmtMonthShort\(importMonths\[0\]\)\} – \$\{fmtMonthShort\(importMonths\[importMonths\.length-1\]\)\}`:fmtMonthShort\(importMonths\[0\]\);/,
     "should format as a 'Jul '25 – Jul '26' range for multi-month imports, or a single fmtMonthShort() label for a one-month import"
   );
   assert.match(
-    fnMatch[0],
+    src,
     /stats\.innerHTML=`<strong[^`]*importParsed\.length[^`]*<\/strong> · <span[^`]*>\$\{esc\(dateRangeStr\)\}<\/span> ·/,
     "dateRangeStr should be escaped and rendered into the stats line, right after the transaction count"
   );
@@ -6203,36 +6084,31 @@ test("showImportPreview's date-range formula: single-month imports show one labe
 // date range without trusting the summary line -- the 8-row sample only
 // ever showed whichever end the file happened to list first.
 test("showImportPreview: the Detected badge no longer repeats the transaction count already shown in the PREVIEW stats line", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "showImportPreview() should exist");
+  const src = fnBody('showImportPreview');
   assert.match(
-    fnMatch[0],
+    src,
     /detFmtTxt\.textContent=`Detected: \$\{_FMT_LABELS\[importFmt\]\|\|importFmt\}`;/,
     "the Detected badge should only name the format, not repeat the transaction count"
   );
   assert.doesNotMatch(
-    fnMatch[0],
+    src,
     /detFmtTxt\.textContent=`Detected: \$\{_FMT_LABELS\[importFmt\]\|\|importFmt\} —/,
     "the Detected badge should not re-introduce a trailing '-- N transactions ready' clause"
   );
 });
 test("showImportPreview: the stats line's date-range/total spans use --text-muted, not the hardcoded #475569 hex removed elsewhere for failing WCAG AA; preview row dates use the higher-contrast --text-secondary", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "showImportPreview() should exist");
-
-  const statsLine = fnMatch[0].match(/stats\.innerHTML=`[^\n]*`;/);
+  const src = fnBody('showImportPreview');
+  const statsLine = src.match(/stats\.innerHTML=`[^\n]*`;/);
   assert.ok(statsLine, "the stats.innerHTML assignment should exist");
   assert.doesNotMatch(statsLine[0], /#475569/, "the actual stats.innerHTML line should not contain the known-failing hardcoded hex color the 139th adversarial pass removed everywhere else for failing WCAG AA (1.93:1 in dark theme) -- a nearby explanatory comment mentioning it for context is fine");
   assert.match(
-    fnMatch[0],
+    src,
     /<span style="color:var\(--text-muted\)">\$\{esc\(dateRangeStr\)\}<\/span> · <span style="color:var\(--text-muted\)">\$\{fmtD\(total\)\} total<\/span>/,
     "both the date-range and total spans should use var(--text-muted) instead"
   );
 
   assert.match(
-    fnMatch[0],
+    src,
     /<span style="font-size:11px;color:var\(--text-secondary\);min-width:72px">\$\{esc\(t\.date\)\}<\/span>/,
     "the row date span should use --text-secondary (5.71:1 against dark theme's --bg-card, vs --text-muted's 4.78:1) -- bumped after a direct 'hard to read, too faint' report"
   );
@@ -6245,42 +6121,35 @@ test("showImportPreview: the stats line's date-range/total spans use --text-mute
 // #import-preview to sit right next to the Detected badge near the top of
 // the modal, instead of below the format-picker/reset links.
 test("setImportPreviewSort(): clicking a new column sorts by it with a sensible default direction; clicking the same column again flips direction", () => {
+  const src = fnBody('setImportPreviewSort');
+  assert.match(src, /if\(_importPreviewSortCol===col\)\{\s*_importPreviewSortAsc=!_importPreviewSortAsc;/, "clicking the already-active column should flip direction");
+  assert.match(src, /_importPreviewSortCol=col;/, "clicking a different column should switch to it");
+  assert.match(src, /_importPreviewSortAsc=\(col==='desc'\|\|col==='cat'\);/, "switching to a new column should default date/amount to descending and desc/cat to ascending");
+  assert.match(src, /showImportPreview\(\);/, "should re-render after changing the sort");
   const source = readSource();
-  const fnMatch = source.match(/function setImportPreviewSort\(col\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "setImportPreviewSort() should exist");
-  assert.match(fnMatch[0], /if\(_importPreviewSortCol===col\)\{\s*_importPreviewSortAsc=!_importPreviewSortAsc;/, "clicking the already-active column should flip direction");
-  assert.match(fnMatch[0], /_importPreviewSortCol=col;/, "clicking a different column should switch to it");
-  assert.match(fnMatch[0], /_importPreviewSortAsc=\(col==='desc'\|\|col==='cat'\);/, "switching to a new column should default date/amount to descending and desc/cat to ascending");
-  assert.match(fnMatch[0], /showImportPreview\(\);/, "should re-render after changing the sort");
   assert.match(source, /let _importPreviewSortCol='date';/, "should default to sorting by date");
   assert.match(source, /let _importPreviewSortAsc=false;/, "date should default to descending (newest first), matching the original single-purpose toggle's default");
   // Reset on both a fresh modal open and a new file dropped into an
   // already-open modal -- same two entry points every other per-file
   // import flag (importFmt, _importDateFmt, etc.) already resets at.
-  const openModalFn = source.match(/function openTxImportModal\(\)\{[\s\S]*?\n\}/);
-  assert.ok(openModalFn, "openTxImportModal() should exist");
-  assert.match(openModalFn[0], /_importPreviewSortCol='date';\s*_importPreviewSortAsc=false;/, "opening the modal fresh should reset the sort column/direction");
-  const parseTxtFn = source.match(/function parseTxText\(rawText\)\{[\s\S]{0,800}/);
-  assert.ok(parseTxtFn, "parseTxText() should exist (parseTxFile delegates to it)");
-  assert.match(parseTxtFn[0], /_importPreviewSortCol='date';\s*_importPreviewSortAsc=false;/, "loading a new file into an already-open modal should also reset the sort, not carry over the prior file's setting");
+  assert.match(fnBody('openTxImportModal'), /_importPreviewSortCol='date';\s*_importPreviewSortAsc=false;/, "opening the modal fresh should reset the sort column/direction");
+  assert.match(fnBody('parseTxText'), /_importPreviewSortCol='date';\s*_importPreviewSortAsc=false;/, "loading a new file into an already-open modal should also reset the sort, not carry over the prior file's setting");
 });
 test("showImportPreview: the 8-row sample is sorted by whichever column/direction is active, over the full importParsed set, with visible sort-direction arrows", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "showImportPreview() should exist");
+  const src = fnBody('showImportPreview');
   assert.match(
-    fnMatch[0],
+    src,
     /date:\(a,b\)=>a\.date\.localeCompare\(b\.date\),\s*desc:\(a,b\)=>a\.desc\.localeCompare\(b\.desc\),\s*cat:\(a,b\)=>a\.cat\.localeCompare\(b\.cat\),\s*amount:\(a,b\)=>a\.amount-b\.amount,/,
     "should define a comparator for all 4 sortable columns"
   );
   assert.match(
-    fnMatch[0],
+    src,
     /const sorted=\[\.\.\.importParsed\]\.sort\(\(a,b\)=>\{\s*const cmp=sortCmp\[_importPreviewSortCol\]\(a,b\);\s*return _importPreviewSortAsc\?cmp:-cmp;\s*\}\);/,
     "the sample should be sorted by the active column/direction over the full importParsed array, not sliced straight from file order"
   );
-  assert.match(fnMatch[0], /const sample=sorted\.slice\(0,8\);/, "the 8-row sample should come from the freshly-sorted array");
+  assert.match(src, /const sample=sorted\.slice\(0,8\);/, "the 8-row sample should come from the freshly-sorted array");
   assert.match(
-    fnMatch[0],
+    src,
     /arrow\.textContent=col===_importPreviewSortCol\?\(_importPreviewSortAsc\?' ▲':' ▼'\):'';/,
     "the active column's header should show a direction arrow; every other column's arrow should be cleared"
   );
@@ -6304,10 +6173,9 @@ test("the import summary line (#import-preview-stats) now sits right after the D
   // showImportPreview() must now explicitly show/hide it itself in both
   // directions, since it's a sibling of #import-preview, not a child that
   // inherits visibility from the parent's hidden class toggling anymore.
-  const fnMatch = source.match(/function showImportPreview\(\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "showImportPreview() should exist");
-  assert.match(fnMatch[0], /stats\.classList\.remove\('hidden'\);/, "showImportPreview()'s success path should explicitly un-hide the relocated stats element");
-  const zeroBranch = fnMatch[0].match(/if\(!importParsed\.length\)\{[\s\S]*?\n {4}return;\n {2}\}/);
+  const sipSrc = fnBody('showImportPreview');
+  assert.match(sipSrc, /stats\.classList\.remove\('hidden'\);/, "showImportPreview()'s success path should explicitly un-hide the relocated stats element");
+  const zeroBranch = sipSrc.match(/if\(!importParsed\.length\)\{[\s\S]*?\n {4}return;\n {2}\}/);
   assert.ok(zeroBranch, "showImportPreview() should have a zero-transactions early-return branch");
   assert.match(zeroBranch[0], /_hideImportPreview\(\)/, "the zero-transactions branch should call _hideImportPreview() to hide preview/stats/confirm-btn");
 });
@@ -6315,21 +6183,16 @@ test("the import summary line (#import-preview-stats) now sits right after the D
 // Two findings from the adversarial pass run immediately after the
 // relocation/column-sort work above, both fixed same day.
 test("the relocated #import-preview-stats is hidden on every modal open, not just when #import-preview itself is hidden", () => {
-  const source = readSource();
   // Moving #import-preview-stats out of #import-preview (so it could sit
   // next to the Detected badge) meant it stopped inheriting the parent's
   // hidden-class reset. _hideImportPreview() hides it, and openTxImportModal()
   // calls _hideImportPreview() on every open.
-  const hideFn = source.match(/function _hideImportPreview\(\)\{[\s\S]*?\}/);
-  assert.ok(hideFn, "_hideImportPreview() should exist");
   assert.match(
-    hideFn[0],
+    fnBody('_hideImportPreview'),
     /getElementById\('import-preview-stats'\)[\s\S]*?classList\.add\('hidden'\)/,
     "_hideImportPreview() should hide #import-preview-stats"
   );
-  const openFn = source.match(/function openTxImportModal\(\)\{[\s\S]*?\n\}/);
-  assert.ok(openFn, "openTxImportModal() should exist");
-  assert.match(openFn[0], /_hideImportPreview\(\)/, "openTxImportModal() should call _hideImportPreview()");
+  assert.match(fnBody('openTxImportModal'), /_hideImportPreview\(\)/, "openTxImportModal() should call _hideImportPreview()");
 });
 test("the import-preview category pill truncates with the shared .truncate class, so an unusually long custom category name can't blow out the row or misalign the new Amount column header", () => {
   const source = readSource();
@@ -6403,24 +6266,20 @@ test("_chartTableView/TABLE_VIEW_LS_KEYS: all 4 modes persist independently, san
 });
 
 test("toggleChartTableView(): flips the current mode's own boolean, persists it, resyncs the button, and re-renders via the existing renderActiveChart() dispatcher", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function toggleChartTableView\(\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "toggleChartTableView() should exist");
-  assert.match(fnMatch[0], /if\(!\(mode in TABLE_VIEW_LS_KEYS\)\)return;/, "should no-op outside the 4 eligible modes as a safety net");
-  assert.match(fnMatch[0], /_chartTableView\[mode\]=!_chartTableView\[mode\];/, "should flip only the current mode's own entry, not a single shared boolean");
-  assert.match(fnMatch[0], /localStorage\.setItem\(TABLE_VIEW_LS_KEYS\[mode\],_chartTableView\[mode\]\);/, "should persist to that mode's own key");
-  assert.match(fnMatch[0], /_syncChartTableBtn\(\);/, "should resync the shared button");
-  assert.match(fnMatch[0], /renderActiveChart\(\);/, "should re-render through the existing mode dispatcher rather than calling a specific render function directly");
+  const src = fnBody('toggleChartTableView');
+  assert.match(src, /if\(!\(mode in TABLE_VIEW_LS_KEYS\)\)return;/, "should no-op outside the 4 eligible modes as a safety net");
+  assert.match(src, /_chartTableView\[mode\]=!_chartTableView\[mode\];/, "should flip only the current mode's own entry, not a single shared boolean");
+  assert.match(src, /localStorage\.setItem\(TABLE_VIEW_LS_KEYS\[mode\],_chartTableView\[mode\]\);/, "should persist to that mode's own key");
+  assert.match(src, /_syncChartTableBtn\(\);/, "should resync the shared button");
+  assert.match(src, /renderActiveChart\(\);/, "should re-render through the existing mode dispatcher rather than calling a specific render function directly");
 });
 
 test("_syncChartTableBtn(): shows/hides #chart-table-btn and #chart-table-export-btn together based on mode eligibility, syncs the toggle button's label/color to the current mode's own state", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function _syncChartTableBtn\(\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "_syncChartTableBtn() should exist");
-  assert.match(fnMatch[0], /const eligible=mode in TABLE_VIEW_LS_KEYS;/, "eligibility should be derived from the same TABLE_VIEW_LS_KEYS map toggleChartTableView() uses, not a separate hardcoded list that could drift out of sync");
-  assert.match(fnMatch[0], /btn\.style\.display=eligible\?'':'none';/, "the toggle button should show only in the 4 eligible modes");
-  assert.match(fnMatch[0], /exportBtn\.style\.display=eligible\?'':'none';/, "the export button should show/hide in lockstep with the toggle button, not independently");
-  assert.match(fnMatch[0], /const active=_chartTableView\[mode\];/, "label/color sync should read the CURRENT mode's own entry, not a stale single boolean");
+  const src = fnBody('_syncChartTableBtn');
+  assert.match(src, /const eligible=mode in TABLE_VIEW_LS_KEYS;/, "eligibility should be derived from the same TABLE_VIEW_LS_KEYS map toggleChartTableView() uses, not a separate hardcoded list that could drift out of sync");
+  assert.match(src, /btn\.style\.display=eligible\?'':'none';/, "the toggle button should show only in the 4 eligible modes");
+  assert.match(src, /exportBtn\.style\.display=eligible\?'':'none';/, "the export button should show/hide in lockstep with the toggle button, not independently");
+  assert.match(src, /const active=_chartTableView\[mode\];/, "label/color sync should read the CURRENT mode's own entry, not a stale single boolean");
 });
 
 // Each of the 4 render functions builds the identical table unconditionally
@@ -6435,17 +6294,15 @@ for (const [renderFn, tableViewKey, tableVarName] of [
   ["renderDailyCal", "daily", "dailyTableHtml"],
 ]) {
   test(`${renderFn}(): swaps its table between sr-only and .chart-data-table based on _chartTableView.${tableViewKey}, and skips its own visual chart entirely in table-view mode`, () => {
-    const source = readSource();
-    const fnMatch = source.match(new RegExp(`function ${renderFn}\\([^)]*\\)\\{[\\s\\S]*?\\n\\}`));
-    assert.ok(fnMatch, `${renderFn}() should exist`);
+    const src = fnBody(renderFn);
     assert.match(
-      fnMatch[0],
+      src,
       new RegExp(`class="\\$\\{_chartTableView\\.${tableViewKey}\\?'chart-data-table':'sr-only'\\}"`),
       `${renderFn}()'s table should swap classes based on _chartTableView.${tableViewKey}`
     );
     assert.match(
-      fnMatch[0],
-      new RegExp(`if\\(_chartTableView\\.${tableViewKey}\\)\\{[\\s\\S]{0,200}?return;\\s*\\}`),
+      src,
+      new RegExp(`if\\(_chartTableView\\.${tableViewKey}\\)\\{[\\s\\S]*?return;\\s*\\}`),
       `${renderFn}() should return early in table-view mode, before building its own visual chart`
     );
   });
@@ -6464,13 +6321,11 @@ for (const [renderFn, tableViewKey, tableVarName] of [
 // lives on the Income node's own label ("Nmo income"), independent of
 // the title. Removed rather than added to the other 6.
 test("renderSankey() no longer builds a standalone period/title label above the diagram -- the Income node's own '${monthCount}mo income' label already carries the duration context a title provided", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function renderSankey\(\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "renderSankey() should exist");
-  assert.doesNotMatch(fnMatch[0], /periodLabelHtml/, "periodLabelHtml (the standalone title div) should no longer exist");
-  assert.doesNotMatch(fnMatch[0], /INCOME → SPENDING FLOW/, "the title text itself should be gone");
-  assert.match(fnMatch[0], /name:`\$\{monthCount\}mo income`/, "the Income node's own label should still carry the multi-month duration context the removed title used to also state");
-  assert.match(fnMatch[0], /if\(_chartTableView\.sankey\)\{\s*wrap\.innerHTML=flowTableHtml;\s*return;\s*\}/, "table-view mode should render just the table now, with no title prefix");
+  const sankeySrc = fnBody('renderSankey');
+  assert.doesNotMatch(sankeySrc, /periodLabelHtml/, "periodLabelHtml (the standalone title div) should no longer exist");
+  assert.doesNotMatch(sankeySrc, /INCOME → SPENDING FLOW/, "the title text itself should be gone");
+  assert.match(sankeySrc, /name:`\$\{monthCount\}mo income`/, "the Income node's own label should still carry the multi-month duration context the removed title used to also state");
+  assert.match(sankeySrc, /if\(_chartTableView\.sankey\)\{\s*wrap\.innerHTML=flowTableHtml;\s*return;\s*\}/, "table-view mode should render just the table now, with no title prefix");
 });
 
 test("renderSpendChart()'s trend branch: same table/skip-chart pattern as the other 3, but writes into #trend-table-wrap rather than replacing its own wrap (Trend's canvas is a persistent element, unlike the other 3's self-owned wrap divs)", () => {
@@ -6484,11 +6339,9 @@ test("renderSpendChart()'s trend branch: same table/skip-chart pattern as the ot
 });
 
 test("Daily's table lists only days with spend (matching the stats bar's own 'N days with spend'), not one row per calendar day", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function renderDailyCal\(\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "renderDailyCal() should exist");
+  const src = fnBody('renderDailyCal');
   assert.match(
-    fnMatch[0],
+    src,
     /Object\.entries\(byDay\)\.filter\(\(\[,v\]\)=>v>0\)\.sort\(\(a,b\)=>a\[0\]\.localeCompare\(b\[0\]\)\)\.map/,
     "the table's rows should filter byDay to spend>0 entries, sorted chronologically, not iterate every calendar day in range"
   );
@@ -6505,37 +6358,33 @@ test("Daily's table lists only days with spend (matching the stats bar's own 'N 
 // behind the Weekends stat card above the table without cross-referencing
 // a calendar themselves.
 test("Daily's table splits Date (raw YYYY-MM-DD, matching every other CSV export in this file) and Day (weekday name) into their own columns, not one combined human-readable string", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function renderDailyCal\(\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "renderDailyCal() should exist");
+  const src = fnBody('renderDailyCal');
   assert.match(
-    fnMatch[0],
+    src,
     /<th scope="col">Date<\/th><th scope="col">Day<\/th><th scope="col">Amount<\/th><th scope="col">Transactions<\/th>/,
     "the table should have 4 columns in this order: Date, Day, Amount, Transactions"
   );
   assert.match(
-    fnMatch[0],
+    src,
     /<tr><td>\$\{esc\(d\)\}<\/td><td>\$\{esc\(dayName\)\}<\/td>/,
     "Date should render the raw `d` key (YYYY-MM-DD) unformatted, with weekday in its own separate Day cell"
   );
   assert.match(
-    fnMatch[0],
+    src,
     /const dayName=new Date\(d\+'T12:00:00'\)\.toLocaleDateString\('default',\{weekday:'short'\}\);/,
     "the table's own Day cell should format only the weekday, not the old combined month/day/year string (that combined format is still legitimately used elsewhere in this function, by #cal-tip's hover tooltip, so a whole-function negative check would be a false positive there)"
   );
 });
 
 test("Split's table reflects whichever level the treemap itself is currently on (top-level categories vs. drillCat's vendors), matching the breadcrumb", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function renderTreemap\(drillCat\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "renderTreemap() should exist");
+  const src = fnBody('renderTreemap');
   assert.match(
-    fnMatch[0],
+    src,
     /<th scope="col">\$\{drillCat\?'Vendor':'Category'\}<\/th>/,
     "the table's first column header should say Vendor when drilled in, Category otherwise"
   );
   assert.match(
-    fnMatch[0],
+    src,
     /const tmTableRows=data\.map\(d=>\{/,
     "the table's rows should be built from the same `data` array the diagram itself renders (top-level catTotals or drillCat's catVendors), so table view can never contradict the breadcrumb above it"
   );
@@ -6553,14 +6402,11 @@ test("exportChartTable()/exportTableCSV(): maps each of the 4 modes to the wrapp
     /const CHART_TABLE_WRAP_IDS=\{sankey:'sankey-wrap',split:'treemap-wrap',trend:'trend-table-wrap',daily:'daily-cal-wrap'\};/,
     "should map all 4 modes to their table's actual containing wrapper -- trend-table-wrap for Trend specifically, not spend-chart-wrap"
   );
-  const exportFnMatch = source.match(/function exportChartTable\(\)\{[\s\S]*?\n\}/);
-  assert.ok(exportFnMatch, "exportChartTable() should exist");
-  assert.match(exportFnMatch[0], /CHART_TABLE_WRAP_IDS\[state\.chartMode\]/, "should look up the wrapper id for the CURRENT chart mode");
-  const csvFnMatch = source.match(/function exportTableCSV\(tableEl,filenameBase\)\{[\s\S]*?\n\}/);
-  assert.ok(csvFnMatch, "exportTableCSV(tableEl, filenameBase) should exist as the shared generic export, taking any table element");
-  assert.match(csvFnMatch[0], /csvSafeField\(td\.textContent\)/, "cell values should go through the existing csvSafeField() (CSV-injection guard + quote escaping), not a new ad-hoc escape");
-  assert.match(csvFnMatch[0], /downloadCSVFile\(`trak-yo-dollas-\$\{filenameBase\}-\$\{todayDateStr\(\)\}\.csv`,headers,rows\)/, "should trigger the download through the existing shared downloadCSVFile() helper, matching every other CSV export in this file");
-  assert.match(csvFnMatch[0], /if\(!rows\.length\)\{showToast\('No data to export'/, "should toast rather than silently no-op when the table has no data rows (including when tableEl itself is null, e.g. Flow's own 'no income set up' empty state never built a table at all)");
+  assert.match(fnBody('exportChartTable'), /CHART_TABLE_WRAP_IDS\[state\.chartMode\]/, "should look up the wrapper id for the CURRENT chart mode");
+  const csvFnSrc = fnBody('exportTableCSV');
+  assert.match(csvFnSrc, /csvSafeField\(td\.textContent\)/, "cell values should go through the existing csvSafeField() (CSV-injection guard + quote escaping), not a new ad-hoc escape");
+  assert.match(csvFnSrc, /downloadCSVFile\(`trak-yo-dollas-\$\{filenameBase\}-\$\{todayDateStr\(\)\}\.csv`,headers,rows\)/, "should trigger the download through the existing shared downloadCSVFile() helper, matching every other CSV export in this file");
+  assert.match(csvFnSrc, /if\(!rows\.length\)\{showToast\('No data to export'/, "should toast rather than silently no-op when the table has no data rows (including when tableEl itself is null, e.g. Flow's own 'no income set up' empty state never built a table at all)");
 });
 
 test("HTML: #chart-table-btn and #chart-table-export-btn exist, dispatch through the standard data-action mechanism, and #trend-table-wrap exists as Trend's dedicated table container", () => {
@@ -6571,12 +6417,10 @@ test("HTML: #chart-table-btn and #chart-table-export-btn exist, dispatch through
 });
 
 test("setChartMode(): calls _syncChartTableBtn() in all 4 branches (daily/split/sankey/fallthrough) instead of the old hardcoded per-branch button visibility, and shows trend-table-wrap whenever mode is trend", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function setChartMode\(mode\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "setChartMode() should exist");
-  const syncCount = (fnMatch[0].match(/_syncChartTableBtn\(\);/g) || []).length;
+  const src = fnBody('setChartMode');
+  const syncCount = (src.match(/_syncChartTableBtn\(\);/g) || []).length;
   assert.equal(syncCount, 4, "_syncChartTableBtn() should be called once per branch (daily, split, sankey, and the category/vendor/source/trend fallthrough)");
-  assert.match(fnMatch[0], /if\(trendTableWrap\)trendTableWrap\.style\.display=mode==='trend'\?'block':'none';/, "trend-table-wrap should be shown whenever mode is trend, independent of table vs. chart view, so its sr-only copy stays reachable to screen readers even in chart view");
+  assert.match(src, /if\(trendTableWrap\)trendTableWrap\.style\.display=mode==='trend'\?'block':'none';/, "trend-table-wrap should be shown whenever mode is trend, independent of table vs. chart view, so its sr-only copy stays reachable to screen readers even in chart view");
 });
 
 // Found live-testing on dev: toggleChartTableView() re-renders through
@@ -6603,8 +6447,7 @@ test("renderSpendChart()'s trend branch owns chartBorder/chartWrap/chart-texture
   // renderSpendChart() (called synchronously right after, in the same
   // function) is the real source of truth -- leaving both would just be
   // dead, confusing duplication.
-  const setChartModeMatch = source.match(/function setChartMode\(mode\)\{[\s\S]*?\n\}/);
-  assert.doesNotMatch(setChartModeMatch[0], /trendTableActive/, "setChartMode() should no longer compute or reference trendTableActive -- that logic now lives solely in renderSpendChart()'s trend branch");
+  assert.doesNotMatch(fnBody('setChartMode'), /trendTableActive/, "setChartMode() should no longer compute or reference trendTableActive -- that logic now lives solely in renderSpendChart()'s trend branch");
 });
 
 // Found live-testing the original Flow-only toggle: the page-load "restore
@@ -6668,16 +6511,14 @@ test("demo data is version-stamped, persisted, and silently refreshed on load if
 // state, and loadFromLocalStorage()/importBackup() already restored all 5 --
 // only the cloud-sync path was missing them. Found August 2026. ──
 test("syncToCloud()/loadUserData() sync and restore chartGrain/rangeFrom/rangeTo/sourceAlignSkipped/sourceAlignDate, closing check-cloudsync-coverage.py's advisory", () => {
-  const source = readSource();
-
-  const syncSrc = source.match(/async function syncToCloud\(\) \{[\s\S]{0,5500}?\n\}/)?.[0] || "";
+  const syncSrc = fnBody('syncToCloud');
   assert.match(syncSrc, /chartGrain: state\.chartGrain,/, "syncToCloud() should include chartGrain in the savePrefs() payload");
   assert.match(syncSrc, /rangeFrom: state\.rangeFrom,/, "syncToCloud() should include rangeFrom");
   assert.match(syncSrc, /rangeTo: state\.rangeTo,/, "syncToCloud() should include rangeTo");
   assert.match(syncSrc, /sourceAlignSkipped: state\.sourceAlignSkipped,/, "syncToCloud() should include sourceAlignSkipped");
   assert.match(syncSrc, /sourceAlignDate: state\.sourceAlignDate,/, "syncToCloud() should include sourceAlignDate");
 
-  const loadSrc = source.match(/async function loadUserData\(uid\) \{[\s\S]{0,20000}?\n  \} catch/)?.[0] || "";
+  const loadSrc = fnBody('loadUserData');
   assert.match(
     loadSrc,
     /if \(prefs\.chartGrain !== undefined\) state\.chartGrain = prefs\.chartGrain \?\? 'month';/,
@@ -6750,8 +6591,7 @@ test("_fb.loadPrefs(): also returns updatedAt alongside the decrypted data, so c
 });
 
 test("loadUserData() caches _cloudPrefsUpdatedAt from every successful load (even a null one, for a brand-new user) and resets _syncConflictWarned, so a fresh load is what actually recovers from a detected conflict", () => {
-  const source = readSource();
-  const loadSrc = source.match(/async function loadUserData\(uid\) \{[\s\S]{0,20000}?\n  \} catch/)?.[0] || "";
+  const loadSrc = fnBody('loadUserData');
   assert.match(
     loadSrc,
     /const \{ data: prefs, updatedAt: _loadedUpdatedAt \} = await window\._fb\.loadPrefs\(uid\);/,
@@ -6765,8 +6605,7 @@ test("loadUserData() caches _cloudPrefsUpdatedAt from every successful load (eve
 });
 
 test("syncToCloud(): passes the cached baseline and a fresh timestamp to savePrefs(), and when it reports the row already moved, blocks the push, warns once (not on every debounced retry), and leaves the local save (already done by scheduleSave()) untouched", () => {
-  const source = readSource();
-  const syncSrc = source.match(/async function syncToCloud\(\) \{[\s\S]{0,5500}?\n\}/)?.[0] || "";
+  const syncSrc = fnBody('syncToCloud');
   assert.match(syncSrc, /const newUpdatedAt = new Date\(\)\.toISOString\(\);/, "should generate the new timestamp itself, not rely on savePrefs() to generate one internally");
   assert.match(syncSrc, /const wrote = await window\._fb\.savePrefs\(user\.uid, \{/, "should capture savePrefs()'s boolean result");
   assert.match(syncSrc, /\}, _cloudPrefsUpdatedAt, newUpdatedAt\);/, "should pass the cached baseline and the new timestamp as the trailing arguments");
@@ -6803,10 +6642,9 @@ test("signing out resets _cloudPrefsUpdatedAt/_syncConflictWarned, so a stale ba
 // while still silently accepting any case typed.
 test("confirmForgotPassphraseReset(): lowercases before comparing (matching validateClearConfirm()'s style) and prompts/errors in lowercase, with no claim of a case requirement", () => {
   const source = readSource();
-  const fnMatch = source.match(/async function confirmForgotPassphraseReset\(\) \{[\s\S]{0,4500}?\n\}/);
-  assert.ok(fnMatch, "confirmForgotPassphraseReset() should exist");
-  assert.match(fnMatch[0], /resetInput\.value\.trim\(\)\.toLowerCase\(\)/, "should lowercase the typed value before comparing, matching validateClearConfirm()'s own normalization direction");
-  assert.match(fnMatch[0], /if \(typed !== 'reset'\) \{ showResetError\('Type reset to confirm\.'\); return; \}/, "should compare against and prompt lowercase 'reset', not uppercase 'RESET'");
+  const confirmResetSrc = fnBody('confirmForgotPassphraseReset');
+  assert.match(confirmResetSrc, /resetInput\.value\.trim\(\)\.toLowerCase\(\)/, "should lowercase the typed value before comparing, matching validateClearConfirm()'s own normalization direction");
+  assert.match(confirmResetSrc, /if \(typed !== 'reset'\) \{ showResetError\('Type reset to confirm\.'\); return; \}/, "should compare against and prompt lowercase 'reset', not uppercase 'RESET'");
   assert.doesNotMatch(source, /Type RESET to confirm/, "the old uppercase label/error text should be gone from the file entirely");
   assert.match(source, /<label class="form-label" for="sync-pp-reset-input">Type reset to confirm<\/label>/, "the modal's own label should also prompt lowercase, not just the error text");
   // Folded in from a since-removed test that otherwise just re-verified, via
@@ -6853,11 +6691,10 @@ test("toggleSyncPassphraseVisibility(): renders as an icon button inside the inp
     /<div style="position:relative">\s*<input type="password" id="sync-pp-input"[\s\S]{0,400}?<button type="button" id="sync-pp-visibility-btn" data-action="toggleSyncPassphraseVisibility" aria-label="Show passphrase" title="Show passphrase"[\s\S]{0,200}?><svg[\s\S]{0,600}?<\/svg><\/button>/,
     "the toggle should be an icon button absolutely positioned inside the same wrapper as sync-pp-input, not a text link in the label row above it"
   );
-  const fnMatch = source.match(/function toggleSyncPassphraseVisibility\(_, btn\) \{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "toggleSyncPassphraseVisibility() should exist");
-  assert.match(fnMatch[0], /input\.type = newType;/, "should set sync-pp-input's type");
-  assert.match(fnMatch[0], /if \(confirmInput\) confirmInput\.type = newType;/, "should set sync-pp-confirm's type too, in the same call -- not a separate toggle a user has to click twice");
-  assert.match(fnMatch[0], /btn\.setAttribute\('aria-label', label\);/, "should update the accessible label to reflect whichever action comes next");
+  const toggleSrc = fnBody('toggleSyncPassphraseVisibility');
+  assert.match(toggleSrc, /input\.type = newType;/, "should set sync-pp-input's type");
+  assert.match(toggleSrc, /if \(confirmInput\) confirmInput\.type = newType;/, "should set sync-pp-confirm's type too, in the same call -- not a separate toggle a user has to click twice");
+  assert.match(toggleSrc, /btn\.setAttribute\('aria-label', label\);/, "should update the accessible label to reflect whichever action comes next");
   const promptMatch = source.match(/async function promptSyncPassphrase\(uid[^)]*\) \{[\s\S]{0,3500}?visBtn\.setAttribute\('aria-label', 'Show passphrase'\);[\s\S]{0,500}?\}/);
   assert.ok(promptMatch, "promptSyncPassphrase() should exist");
   assert.match(promptMatch[0], /input\.type = 'password';/, "should reset the main field to hidden on every fresh open");
@@ -6905,15 +6742,9 @@ test("syncToCloud()'s conflict guard shows a persistent, dismissible banner inst
     /<button data-action="dismissSyncConflictBanner"[^>]*title="Dismiss"[^>]*>✕<\/button>/,
     "the banner should be dismissible, unlike the demo-preview banner it sits next to"
   );
-  const fnMatch = source.match(/function showSyncConflictBanner\(\)\{[\s\S]{0,200}?\n\}/);
-  assert.ok(fnMatch, "showSyncConflictBanner() should be defined");
-  assert.match(fnMatch[0], /setSyncConflictBannerVisible\(true\)/, "should delegate to the shared visibility helper to unhide the banner");
-  const hideMatch = source.match(/function hideSyncConflictBanner\(\)\{[\s\S]{0,200}?\n\}/);
-  assert.ok(hideMatch, "hideSyncConflictBanner() should be defined");
-  assert.match(hideMatch[0], /setSyncConflictBannerVisible\(false\)/, "should delegate to the shared visibility helper to hide the banner");
-  const dismissMatch = source.match(/function dismissSyncConflictBanner\(\)\{[\s\S]{0,100}?\n\}/);
-  assert.ok(dismissMatch, "dismissSyncConflictBanner() should be defined");
-  assert.match(dismissMatch[0], /hideSyncConflictBanner\(\)/, "dismissing should delegate to the same hide helper used on recovery");
+  assert.match(fnBody('showSyncConflictBanner'), /setSyncConflictBannerVisible\(true\)/, "should delegate to the shared visibility helper to unhide the banner");
+  assert.match(fnBody('hideSyncConflictBanner'), /setSyncConflictBannerVisible\(false\)/, "should delegate to the shared visibility helper to hide the banner");
+  assert.match(fnBody('dismissSyncConflictBanner'), /hideSyncConflictBanner\(\)/, "dismissing should delegate to the same hide helper used on recovery");
   assert.doesNotMatch(
     source,
     /showToast\('⚠ Your synced data changed on another device/,
@@ -6951,20 +6782,18 @@ test("the sync-conflict banner is position:fixed (so it survives scrolling, unli
     Number(bannerZIndexMatch[1]) > Number(navZIndexMatch[1]),
     "the banner's z-index should be higher than .nav's, so it renders above the nav it's meant to sit on top of, not underneath it"
   );
-  const offsetFnMatch = source.match(/function updateBannerOffset\(\)\{[\s\S]{0,1500}?\n\}/);
-  assert.ok(offsetFnMatch, "updateBannerOffset() should be defined");
+  const offsetSrc = fnBody('updateBannerOffset');
   assert.match(
-    offsetFnMatch[0],
+    offsetSrc,
     /const conflictBanner=document\.getElementById\('sync-conflict-banner'\);/,
     "should also measure the sync-conflict banner, not just the pre-existing (and always-empty) #demo-chip"
   );
   assert.match(
-    offsetFnMatch[0],
+    offsetSrc,
     /conflictBanner\.offsetHeight/,
     "should factor the conflict banner's real rendered height into the offset, since fixed positioning takes it out of flow and nothing else would push .nav/body down for it"
   );
-  const setVisFn = source.match(/function setSyncConflictBannerVisible\(visible\)\{[\s\S]{0,300}?\n\}/)?.[0] || "";
-  assert.match(setVisFn, /updateBannerOffset\(\);/, "showing/hiding the banner -- both showSyncConflictBanner and hideSyncConflictBanner delegate here -- should immediately recompute the nav/body offset, not wait for a resize, or nav/body would keep a stale gap after the banner's gone");
+  assert.match(fnBody('setSyncConflictBannerVisible'), /updateBannerOffset\(\);/, "showing/hiding the banner -- both showSyncConflictBanner and hideSyncConflictBanner delegate here -- should immediately recompute the nav/body offset, not wait for a resize, or nav/body would keep a stale gap after the banner's gone");
 });
 
 // ── A self-review pass on the fix above caught this: the original guard
@@ -6976,13 +6805,11 @@ test("the sync-conflict banner is position:fixed (so it survives scrolling, unli
 // with zero visible connection between the two. Caught before it shipped,
 // not after. ──
 test("updateBannerOffset() only requires .nav to exist -- #demo-chip and the sync-conflict banner are each independently optional, so removing one can't silently break the other's offset", () => {
-  const source = readSource();
-  const offsetFnMatch = source.match(/function updateBannerOffset\(\)\{[\s\S]{0,1500}?\n\}/);
-  assert.ok(offsetFnMatch, "updateBannerOffset() should be defined");
-  assert.match(offsetFnMatch[0], /if\(!nav\)return;/, "the early-return guard should check only nav, not #demo-chip");
-  assert.doesNotMatch(offsetFnMatch[0], /if\(!banner\|\|!nav\)return;/, "should no longer bail the whole function when #demo-chip alone is missing");
+  const offsetSrc = fnBody('updateBannerOffset');
+  assert.match(offsetSrc, /if\(!nav\)return;/, "the early-return guard should check only nav, not #demo-chip");
+  assert.doesNotMatch(offsetSrc, /if\(!banner\|\|!nav\)return;/, "should no longer bail the whole function when #demo-chip alone is missing");
   assert.match(
-    offsetFnMatch[0],
+    offsetSrc,
     /banner&&banner\.style\.display!=='none'\?banner\.offsetHeight:0/,
     "#demo-chip's own height should be computed independently (0 if missing or hidden), not gate the function's early return"
   );
@@ -7099,19 +6926,14 @@ test("the mac-safari-banner exists in the DOM, hidden by default, with matching 
 });
 
 test("maybeShowLocalDataNotice: routes Mac Safari to mac-safari-banner, iOS Safari to ios-home-screen-banner, others to local-data-notice-banner", () => {
-  const source = readSource();
-  const fnBody = source.match(/function maybeShowLocalDataNotice\(\)\{[\s\S]{0,700}?\n\}/)?.[0];
-  assert.ok(fnBody, "maybeShowLocalDataNotice() should be defined");
-  assert.match(fnBody, /_isIosSafari\(\)/, "should check iOS Safari");
-  assert.match(fnBody, /_isMacSafari\(\)/, "should check Mac Safari");
-  assert.match(fnBody, /mac-safari-banner/, "should show Mac Safari banner for Mac Safari");
+  const noticeSrc = fnBody('maybeShowLocalDataNotice');
+  assert.match(noticeSrc, /_isIosSafari\(\)/, "should check iOS Safari");
+  assert.match(noticeSrc, /_isMacSafari\(\)/, "should check Mac Safari");
+  assert.match(noticeSrc, /mac-safari-banner/, "should show Mac Safari banner for Mac Safari");
 });
 
 test("exportBackup: stores trakyo_last_backup_date in localStorage on each successful export", () => {
-  const source = readSource();
-  const fnBody = source.match(/function exportBackup\(\)\{[\s\S]{0,1500}?\n\}/)?.[0];
-  assert.ok(fnBody, "exportBackup() should be defined");
-  assert.match(fnBody, /trakyo_last_backup_date/, "should write the backup date to localStorage");
+  assert.match(fnBody('exportBackup'), /trakyo_last_backup_date/, "should write the backup date to localStorage");
 });
 
 test("import-success-backup-nudge: element exists in success modal, hidden by default", () => {
@@ -7143,26 +6965,28 @@ test("the local-data notice banner exists, is signed-in-aware, and fires exactly
     /<button data-action="exportBackup\|dismissLocalDataNotice"[^>]*>Export a backup<\/button>/,
     "should also offer a one-click backup export as the no-sign-in alternative"
   );
-  const fnMatch = source.match(/function maybeShowLocalDataNotice\(\)\{[\s\S]{0,900}?\n\}/);
-  assert.ok(fnMatch, "maybeShowLocalDataNotice() should be defined");
-  assert.match(fnMatch[0], /if\(window\._fbUser\)return;/, "should skip entirely for a signed-in user, since sync already covers them");
+  const noticeSrc2 = fnBody('maybeShowLocalDataNotice');
+  assert.match(noticeSrc2, /if\(window\._fbUser\)return;/, "should skip entirely for a signed-in user, since sync already covers them");
   assert.match(
-    fnMatch[0],
+    noticeSrc2,
     /localStorage\.getItem\('trakyo_local_data_notice_shown'\)==='1'/,
     "should gate on a raw localStorage flag, not a state.* field -- this is per-browser UI chrome, not financial data that belongs in the cloud sync payload"
   );
   assert.match(
-    fnMatch[0],
+    noticeSrc2,
     /localStorage\.setItem\('trakyo_local_data_notice_shown','1'\)/,
     "should set the flag at show-time, not only on dismiss -- otherwise closing the tab without clicking anything would show it again next session"
   );
 });
 
 test("_replaceDemoDataWithReal() calls maybeShowLocalDataNotice() right after its own once-only guard, so the notice fires at the same single choke point every 'first real save' entry point already shares", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function _replaceDemoDataWithReal\(\)\{[\s\S]{0,600}?maybeShowLocalDataNotice\(\);/);
-  assert.ok(fnMatch, "_replaceDemoDataWithReal() should call maybeShowLocalDataNotice() near its top");
-  assert.match(fnMatch[0], /if\(state\.hasRealData\)return;/, "the call should come after the existing once-only guard, not before it");
+  const src = fnBody('_replaceDemoDataWithReal');
+  assert.match(src, /maybeShowLocalDataNotice\(\);/, "_replaceDemoDataWithReal() should call maybeShowLocalDataNotice()");
+  assert.match(src, /if\(state\.hasRealData\)return;/, "the call should come after the existing once-only guard, not before it");
+  assert.ok(
+    src.indexOf('if(state.hasRealData)return;') < src.indexOf('maybeShowLocalDataNotice();'),
+    "the once-only guard should come before maybeShowLocalDataNotice()"
+  );
 });
 
 // ── Two more #334155-as-text instances found sweeping for the same
@@ -7316,10 +7140,8 @@ test("updateSourceOptionsForType() filters #f-source to real-estate sources only
     /<select id="f-type" data-change="updateSourceOptionsForType">/,
     "#f-type should call updateSourceOptionsForType() on change, so switching Type live re-filters #f-source"
   );
-  const fnMatch = source.match(/function updateSourceOptionsForType\(\)\{[\s\S]{0,1100}?\n\}/);
-  assert.ok(fnMatch, "updateSourceOptionsForType() should exist");
   assert.match(
-    fnMatch[0],
+    fnBody('updateSourceOptionsForType'),
     /REAL_ESTATE_SOURCES\.map\(s=>`<option>\$\{s\}<\/option>`\)\.join\(''\)\+'<option>Other<\/option>'/,
     "when #f-type is 'home', #f-source's options should be replaced with just the real-estate sources plus Other"
   );
@@ -7385,14 +7207,11 @@ test("vehicle valuation links are region-aware (US/CA/AU/UK) and persistently vi
     /const vr=document\.getElementById\('v-region'\);if\(vr\)vr\.value=v\.region\|\|'US';/,
     "editVehicle() should restore the vehicle's own stored region (defaulting to US for pre-existing vehicles saved before this field existed)"
   );
-  const editVehicleMatch = source.match(/function editVehicle\(id\)\{[\s\S]*?\n\}/);
-  assert.ok(editVehicleMatch, "editVehicle() should exist");
-  assert.match(editVehicleMatch[0], /updateVehicleValuationLink\(\);/, "editVehicle() should refresh the valuation link so it's visible immediately on reopen, not just after a fresh VIN lookup");
-  const saveVehicleMatch = source.match(/function saveVehicle\(\)\{[\s\S]*?\n\}/);
-  assert.ok(saveVehicleMatch, "saveVehicle() should exist");
-  assert.match(saveVehicleMatch[0], /region=\(document\.getElementById\('v-region'\)\|\|\{\}\)\.value\|\|'US';/, "saveVehicle() should read #v-region");
-  assert.match(saveVehicleMatch[0], /Object\.assign\(v,\{year,make,model,condition,miles,value,vin,assetType,name,region\}\);/, "editing an existing vehicle should persist the updated region");
-  assert.match(saveVehicleMatch[0], /state\.vehicles\.push\(\{id:vehId,year,make,model,condition,miles,value,vin,assetType,name,acctId,region\}\);/, "creating a new vehicle should persist its region");
+  assert.match(fnBody('editVehicle'), /updateVehicleValuationLink\(\);/, "editVehicle() should refresh the valuation link so it's visible immediately on reopen, not just after a fresh VIN lookup");
+  const saveVehicleSrc2 = fnBody('saveVehicle');
+  assert.match(saveVehicleSrc2, /region=\(document\.getElementById\('v-region'\)\|\|\{\}\)\.value\|\|'US';/, "saveVehicle() should read #v-region");
+  assert.match(saveVehicleSrc2, /Object\.assign\(v,\{year,make,model,condition,miles,value,vin,assetType,name,region\}\);/, "editing an existing vehicle should persist the updated region");
+  assert.match(saveVehicleSrc2, /state\.vehicles\.push\(\{id:vehId,year,make,model,condition,miles,value,vin,assetType,name,acctId,region\}\);/, "creating a new vehicle should persist its region");
   assert.match(
     source,
     /data-action="openValuationLink" data-arg="\$\{esc\(String\(v\.year\)\)\}" data-arg2="\$\{esc\(v\.make\|\|''\)\}" data-arg3="\$\{esc\(String\(v\.model\|\|''\)\.split\(' '\)\[0\]\)\}" data-region="\$\{esc\(v\.region\|\|'US'\)\}"[^>]*>🔍 Check value on \$\{esc\(valuationInfo\(v\.region\|\|'US'\)\.label\)\} ↗<\/a>/,
@@ -7414,11 +7233,10 @@ test("Purchase price/year fields are gone from the vehicle modal; Other-asset en
   assert.doesNotMatch(source, /id="v-purchase"/, "#v-purchase should no longer exist");
   assert.doesNotMatch(source, /id="v-purchase-year"/, "#v-purchase-year should no longer exist");
   assert.doesNotMatch(source, /\.depn-bg|\.depn-fill/, "the now-meaningless depreciation progress bar's CSS should be removed too, not left dead");
-  const saveVehicleMatch = source.match(/function saveVehicle\(\)\{[\s\S]{0,7900}?closeModals\(\);renderAll\(\);\n\}/);
-  assert.ok(saveVehicleMatch, "saveVehicle() should exist");
-  assert.doesNotMatch(saveVehicleMatch[0], /v-purchase/, "saveVehicle() should no longer read #v-purchase/#v-purchase-year");
+  const saveVehicleSrc = fnBody('saveVehicle');
+  assert.doesNotMatch(saveVehicleSrc, /v-purchase/, "saveVehicle() should no longer read #v-purchase/#v-purchase-year");
   assert.match(
-    saveVehicleMatch[0],
+    saveVehicleSrc,
     /if\(!oName\)return;name=oName;make=oCat;model='';year=new Date\(\)\.getFullYear\(\);condition='good';miles=0;assetType='other';/,
     "an Other-asset entry's year should fall back to the current year, not a removed purchaseYear variable"
   );
@@ -7467,9 +7285,7 @@ test("Dashboard tier of the legibility sweep: demo notice, trend-chart explanati
 // Dashboard tier. Requested directly by Nicholas, August 2026. ──
 test("Legibility sweep Tier 1: Spending tab's Insights sub-lines are at least 12px", () => {
   const source = readSource();
-  const insightsMatch = source.match(/function renderInsights\(\)\{[\s\S]*?\n\}/);
-  assert.ok(insightsMatch, "renderInsights() should exist");
-  const insights = insightsMatch[0];
+  const insights = fnBody('renderInsights');
   assert.match(insights, /<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.35">See what % of your income you save each month<\/div>/, "the savings-rate nudge's explanatory line should be at least 12px");
   assert.match(insights, /<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.35">That's \$\{fmtC\(subTotal\*12\)\}\/yr/, "the subscriptions pill's stat line should be at least 12px");
   assert.match(insights, /<div style="font-size:12px;color:var\(--text-secondary\);margin-top:3px;line-height:1\.45">Nothing needs attention right now\. Nice work\.<\/div>/, "the positive empty-state subtitle should be at least 12px");
@@ -7495,9 +7311,7 @@ test("Legibility sweep Tier 2: every remaining 11px paragraph line in the Income
   assert.match(modal, /<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.5">Most accurate\. Enter your monthly after-tax income/, "Method A's description should be at least 12px");
   assert.match(modal, /<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.5">Scans your imported transactions for deposits/, "Method B's description should be at least 12px");
   assert.match(modal, /<div id="income-auto-preview" class="hidden" style="margin-top:\.65rem;background:var\(--bg-card\);border-radius:8px;padding:\.5rem \.75rem;font-size:12px;color:var\(--text-secondary\);line-height:1\.6"><\/div>/, "#income-auto-preview's container should be at least 12px, so its 'Detected $X/mo...' content inherits that instead of 11px");
-  const previewFnMatch = source.match(/function updateIncomePreview\(incomeVal\)\{[\s\S]*?\n\}/);
-  assert.ok(previewFnMatch, "updateIncomePreview() should exist");
-  assert.match(previewFnMatch[0], /<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.6">\$\{fmt\(saved\)\} kept of \$\{fmt\(incomeVal\)\} take-home/, "the live preview's stat line should be at least 12px");
+  assert.match(fnBody('updateIncomePreview'), /<div style="font-size:12px;color:var\(--text-muted\);line-height:1\.6">\$\{fmt\(saved\)\} kept of \$\{fmt\(incomeVal\)\} take-home/, "the live preview's stat line should be at least 12px");
 });
 
 // ── The Net Worth tab's Financial assets/Liabilities lists were flat --
@@ -7564,11 +7378,8 @@ test("renderAccountLists: zero accounts shows 'No financial accounts yet'/'No li
 // why Save wasn't working. Confirmed live: clicking Save on an empty Add
 // Account form left the modal open with zero visible feedback.
 test("saveAccount: shows an error toast when name or type is missing, instead of failing silently", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function saveAccount\(\)\{[\s\S]{0,4100}?closeModals\(\);renderAll\(\);\}/);
-  assert.ok(fnMatch, "saveAccount() should exist");
   assert.match(
-    fnMatch[0],
+    fnBody('saveAccount'),
     /if\(!name\|\|!type\)\{\s*showToast\(!name\?'Enter an account name':'Choose an account type','#F87171',4000\);\s*return;\s*\}/,
     "saveAccount() should show an error toast naming the missing field, matching the established error-toast color used elsewhere (e.g. saveEditTx()'s invalid-date guard)"
   );
@@ -7580,11 +7391,8 @@ test("saveAccount: shows an error toast when name or type is missing, instead of
 // -- $0" header with nothing under it, reading like something was broken
 // rather than "you have none of these."
 test("renderNwBreakdown: skips empty groups instead of rendering a bare '$0' header with no accounts under it", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function renderNwBreakdown\(\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "renderNwBreakdown() should exist");
   assert.match(
-    fnMatch[0],
+    fnBody('renderNwBreakdown'),
     /const visible=\(f==='assets'\?GROUPS\.filter\(g=>g\.label!=='Liabilities'\):f==='liabilities'\?GROUPS\.filter\(g=>g\.label==='Liabilities'\):GROUPS\)\.filter\(g=>g\.accts\.length\);/,
     "the visible groups list should be filtered to only groups with at least one account"
   );
@@ -7597,11 +7405,8 @@ test("renderNwBreakdown: skips empty groups instead of rendering a bare '$0' hea
 // CSV without adding any accounts and the Net Worth tab shows this exact
 // state.
 test("renderNwBreakdown: a fully-empty accounts list shows 'No accounts yet' instead of a blank body under 'Accounts &amp; assets'", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function renderNwBreakdown\(\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "renderNwBreakdown() should exist");
   assert.match(
-    fnMatch[0],
+    fnBody('renderNwBreakdown'),
     /if\(!visible\.length\)\{[\s\S]*?No accounts yet[\s\S]*?return;\s*\}/,
     "renderNwBreakdown() should short-circuit to an explanatory empty state when every group is empty"
   );
@@ -8265,10 +8070,8 @@ test("detectSubscriptions: excludes Gas and Home categories entirely (mortgage/r
 // not just an in-memory state mutation).
 test("#demo-nav-badge is reliably shown by showDemoNudge() (not just loadDemoProfile()'s callback) with an explicit visible display value (not the no-op '')", () => {
   const source = readSource();
-  const fnMatch = source.match(/function showDemoNudge\(\)\{[\s\S]{0,2500}?\n\}/);
-  assert.ok(fnMatch, "showDemoNudge() should exist");
   assert.match(
-    fnMatch[0],
+    fnBody('showDemoNudge'),
     /const badge=document\.getElementById\('demo-nav-badge'\);\s*if\(badge&&!state\.hasRealData\)badge\.style\.display=hasDemoData\?'inline-block':'none';/,
     "showDemoNudge() should manage #demo-nav-badge's visibility with an explicit 'inline-block', matching the same condition #demo-nudge/#spending-start-here already use"
   );
@@ -8382,16 +8185,14 @@ test("Outside net worth (Net Worth tab) uses the tight .account-row-grouped form
 });
 
 test("renderVehicles() (Physical assets) wraps entries in one shared .nw-group with border-top dividers, not each getting its own standalone bordered card", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function renderVehicles\(\)\{[\s\S]{0,3500}?\n\}/);
-  assert.ok(fnMatch, "renderVehicles() should exist");
+  const renderVehiclesSrc = fnBody('renderVehicles');
   assert.match(
-    fnMatch[0],
+    renderVehiclesSrc,
     /el\.innerHTML=`<div class="nw-group">\$\{state\.vehicles\.map\(v=>\{/,
     "renderVehicles() should wrap all entries in one shared .nw-group"
   );
   assert.doesNotMatch(
-    fnMatch[0],
+    renderVehiclesSrc,
     /border:1px solid var\(--border-mid\);border-radius:10px;(overflow:hidden;)?(padding:\.7rem 1rem;)?margin-bottom:8px/,
     "no vehicle/asset row should still get its own standalone bordered+margined card"
   );
@@ -8932,11 +8733,10 @@ test("Manage categories: the '(built-in)' tag meets the 12px legibility floor, b
 // side-by-side use on a phone regardless.
 test("Tips & shortcuts opens as a persistent, non-blocking panel on wide viewports (drops .modal-overlay, flips aria-modal) instead of always being a blocking modal", () => {
   const source = readSource();
-  const fnMatch = source.match(/function openShortcutsModal\(\)\{[\s\S]*?\n\}/);
-  assert.ok(fnMatch, "openShortcutsModal() should exist");
-  assert.match(fnMatch[0], /window\.innerWidth>=900/, "should gate persistent mode on a viewport-width check");
-  assert.match(fnMatch[0], /classList\.toggle\('modal-overlay',!persistent\)/, "should drop .modal-overlay in persistent mode -- that's the single lever every other piece of shared modal machinery keys off");
-  assert.match(fnMatch[0], /setAttribute\('aria-modal',persistent\?'false':'true'\)/, "aria-modal should track whether it's genuinely blocking, not stay hardcoded true once it isn't");
+  const shortcutsSrc = fnBody('openShortcutsModal');
+  assert.match(shortcutsSrc, /window\.innerWidth>=900/, "should gate persistent mode on a viewport-width check");
+  assert.match(shortcutsSrc, /classList\.toggle\('modal-overlay',!persistent\)/, "should drop .modal-overlay in persistent mode -- that's the single lever every other piece of shared modal machinery keys off");
+  assert.match(shortcutsSrc, /setAttribute\('aria-modal',persistent\?'false':'true'\)/, "aria-modal should track whether it's genuinely blocking, not stay hardcoded true once it isn't");
   assert.match(source, /function closeShortcutsModal\(\)\{hideModalById\('shortcuts-modal'\)/, "needs its own dedicated close function -- the shared closeModals() sweep only finds .modal-overlay elements, which this one no longer is in persistent mode");
   assert.match(source, /function toggleShortcutsModal\(\)/, "the '?' key and any other single entry point should toggle rather than only ever open, so re-pressing '?' closes it");
 });
@@ -9415,46 +9215,44 @@ test("removeSimulatorOverride: removes the right entry even when the dispatcher 
 });
 
 test("renderSimulatorTab: sources its income figure from sumIncomeForMonths(histMonths), not computePeriodSpendVsIncome()'s own independently-filtered window", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,14000}?\n\}/);
-  assert.ok(fnMatch, "renderSimulatorTab() should exist");
+  const simSrc = fnBody('renderSimulatorTab');
   assert.match(
-    fnMatch[0],
+    simSrc,
     /const income=histMonths\.length\?sumIncomeForMonths\(histMonths,false\)/,
     "income should be computed over this tab's own histMonths (its 'Look back' horizon) via sumIncomeForMonths(), not the Spending tab's separately-filtered date range -- otherwise the displayed income and projected-spend figures can silently come from two different time windows"
   );
   assert.doesNotMatch(
-    fnMatch[0],
+    simSrc,
     /const\s*\{\s*income\s*\}\s*=\s*computePeriodSpendVsIncome\(\)/,
     "should no longer derive income from computePeriodSpendVsIncome(), whose totalIncome is scoped to getFilteredMonths() (the Spending tab's own filter), not this tab's horizon -- a mere comment mentioning that function's name for context is fine, an actual call/destructure from it is not"
   );
   assert.match(
-    fnMatch[0],
+    simSrc,
     /\(a\.avg-b\.avg\)\*sortMul/,
     "the Amount sort should compare each row's real historical avg, not its (possibly overridden) projected figure -- otherwise adding an override would jump that row to a new position in the list instead of keeping row order stable while you add changes"
   );
   assert.match(
-    fnMatch[0],
+    simSrc,
     /<option value="custom"\$\{showCustomHorizon\?' selected':''\}>Custom&hellip;<\/option>/,
     "the horizon dropdown should offer a 'Custom...' option alongside the fixed presets"
   );
   assert.match(
-    fnMatch[0],
+    simSrc,
     /id="simulator-horizon-custom"/,
     "picking 'Custom...' should reveal a plain number input for a horizon that doesn't land on one of the fixed presets"
   );
   assert.match(
-    fnMatch[0],
+    simSrc,
     /data-action="openSimulatorCarPreset"/,
     "should offer a car-payment preset alongside Rent -> Mortgage and Add Childcare"
   );
   assert.match(
-    fnMatch[0],
+    simSrc,
     /data-action="openIncomeModal"/,
     "should link to the existing income modal inline next to the income summary line, not bury it elsewhere"
   );
   assert.match(
-    fnMatch[0],
+    simSrc,
     /data-action="commitSimulatorOverrideAsBudget"/,
     "an active override should offer a way to commit it as a real Budget-tab limit, not just preview or remove it"
   );
@@ -9467,16 +9265,14 @@ test("renderSimulatorTab: sources its income figure from sumIncomeForMonths(hist
 // as "delete," not "set to $0," so committing one would have deleted an
 // existing budget while the toast still claimed "$0/mo" was saved.
 test("renderSimulatorTab: an already-committed override shows 'Budgeted' instead of a re-clickable button, and a $0 override never offers to commit at all", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,14000}?\n\}/);
-  assert.ok(fnMatch, "renderSimulatorTab() should exist");
+  const simSrc = fnBody('renderSimulatorTab');
   assert.match(
-    fnMatch[0],
+    simSrc,
     /state\.budgets\[r\.cat\]===r\.projected/,
     "should detect that this override already matches the real budget rather than always offering to re-commit it"
   );
   assert.match(
-    fnMatch[0],
+    simSrc,
     /:r\.projected>0\s*\?`<button data-action="commitSimulatorOverrideAsBudget"/,
     "the commit button should only ever render for a positive projected amount -- there's no such thing as a real '$0 budget' to commit to"
   );
@@ -9497,21 +9293,19 @@ test("undoBudgetButtonHTML: produces one shared Undo control, not a copy-pasted 
 // select's own bottom edge, flex-wrap so it degrades to multiple lines on
 // a narrow viewport) instead of wasting that vertical space on nothing.
 test("renderSimulatorTab: 'Look back' (select + custom input) and the preset/add buttons share one wrapping flex row instead of two stacked ones", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,14000}?\n\}/);
-  assert.ok(fnMatch, "renderSimulatorTab() should exist");
+  const simSrc = fnBody('renderSimulatorTab');
   assert.match(
-    fnMatch[0],
+    simSrc,
     /<div style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:1rem">\s*<div class="form-group" style="max-width:180px;margin-bottom:0">/,
     "the horizon form-group and the preset buttons should open inside one shared flex row"
   );
   assert.match(
-    fnMatch[0],
+    simSrc,
     /<\/select>\s*<\/div>\s*\$\{showCustomHorizon\?`<input type="number" id="simulator-horizon-custom"[^`]*style="width:90px"\/>`:''\}/,
     "the custom-horizon input should sit inline in the same row as the preset buttons (fixed width, no label), not stacked under the select"
   );
   assert.match(
-    fnMatch[0],
+    simSrc,
     /data-action="openSimulatorRentMortgagePreset"/,
     "the Rent→Mortgage preset button should be present in the template (conditionally hidden for homeowners, but defined)"
   );
@@ -9525,16 +9319,14 @@ test("renderSimulatorTab: 'Look back' (select + custom input) and the preset/add
 // layout (which deliberately stays outside .list-col; its progress-bar
 // cards use extra width well, unlike a plain row).
 test("renderSimulatorTab: wraps the sort controls, override list, and summary box in .list-col, matching Spending/Net Worth/Accounts", () => {
-  const source = readSource();
-  const fnMatch = source.match(/function renderSimulatorTab\(\)\{[\s\S]{0,14000}?\n\}/);
-  assert.ok(fnMatch, "renderSimulatorTab() should exist");
+  const simSrc = fnBody('renderSimulatorTab');
   assert.match(
-    fnMatch[0],
+    simSrc,
     /<div class="list-col">\s*<div style="padding:1rem;border-radius:10px;background:var\(--bg-card\);margin-bottom:\.75rem">/,
     "the summary box should be the first thing inside .list-col (result at top, stage 1 layout)"
   );
   assert.match(
-    fnMatch[0],
+    simSrc,
     /\$\{goalLineHTML\}\s*<\/div>\s*\$\{simChartHTML\}\s*<div style="display:flex;justify-content:flex-end;margin-bottom:\.6rem">[\s\S]{0,500}?\$\{rowsHTML\|\|/,
     "the summary box (with goal line) should come before the sort controls and override rows inside .list-col"
   );
@@ -9552,16 +9344,15 @@ test("setSimulatorSort: defaults to Amount descending, and mirrors setBudgetSort
     /let _simulatorSortDir='desc';/,
     "should default to descending"
   );
-  const fnMatch = source.match(/function setSimulatorSort\(s\)\{[\s\S]{0,300}?\n\}/);
-  assert.ok(fnMatch, "setSimulatorSort() should exist");
+  const simSortSrc = fnBody('setSimulatorSort');
   // Same toggle-on-repeat-click / reset-on-new-key shape as setBudgetSort()
   // (line ~9476): clicking the already-active sort flips its direction;
   // clicking a different one switches to it and resets direction (alpha
   // starts ascending, everything else starts descending).
-  assert.match(fnMatch[0], /if\(_simulatorSort===s\)\{/, "re-clicking the active sort should flip direction, not reset it");
-  assert.match(fnMatch[0], /_simulatorSortDir=_simulatorSortDir==='asc'\?'desc':'asc';/, "should flip 'asc'<->'desc' on repeat click");
-  assert.match(fnMatch[0], /_simulatorSort=s;/, "switching to a new sort key should update _simulatorSort");
-  assert.match(fnMatch[0], /_simulatorSortDir=s==='alpha'\?'asc':'desc';/, "switching to a new sort key should reset direction (alpha starts ascending, amount starts descending), not carry over the previous sort's direction");
+  assert.match(simSortSrc, /if\(_simulatorSort===s\)\{/, "re-clicking the active sort should flip direction, not reset it");
+  assert.match(simSortSrc, /_simulatorSortDir=_simulatorSortDir==='asc'\?'desc':'asc';/, "should flip 'asc'<->'desc' on repeat click");
+  assert.match(simSortSrc, /_simulatorSort=s;/, "switching to a new sort key should update _simulatorSort");
+  assert.match(simSortSrc, /_simulatorSortDir=s==='alpha'\?'asc':'desc';/, "switching to a new sort key should reset direction (alpha starts ascending, amount starts descending), not carry over the previous sort's direction");
 });
 
 // ── computeEmergencyCushionMonths() — Net Worth tab's emergency cushion
@@ -10401,96 +10192,64 @@ test("import modal JS: focusImportLabel and _onImportLabelInput functions are de
 });
 
 // ── _cleanVendorText — strips bank noise without any Amazon mapping ──────────
-test("_cleanVendorText: payment-processor prefixes SQ*, TST*, PAYPAL*, PP*", () => {
+test("_cleanVendorText: input → expected output table", () => {
   const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
-  assert.equal(_cleanVendorText("SQ *STARBUCKS"), "STARBUCKS");
-  assert.equal(_cleanVendorText("TST* OLIVE GARDEN"), "OLIVE GARDEN");
-  assert.equal(_cleanVendorText("PAYPAL *ETSY"), "ETSY");
-  assert.equal(_cleanVendorText("PP*ETSY"), "ETSY");
-});
-
-test("_cleanVendorText: CHECKCARD prefix stripped", () => {
-  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
-  assert.equal(_cleanVendorText("CHECKCARD 0927 PAYPAL *NETFLIX 4029357733 CA 24692166270100123456789"), "NETFLIX");
-});
-
-test("_cleanVendorText: PURCHASE AUTHORIZED prefix and trailing CARD suffix stripped", () => {
-  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
-  assert.equal(_cleanVendorText("PURCHASE AUTHORIZED ON 09/27 STARBUCKS STORE 03456 ANN ARBOR MI S386270123456789 CARD 1234"), "STARBUCKS STORE");
-  assert.equal(_cleanVendorText("PURCHASE AUTHORIZED ON 09/27 PAYPAL *SPOTIFYUSA 402-935-7733 CA"), "SPOTIFYUSA");
-});
-
-test("_cleanVendorText: DES: cuts Bank of America ACH transfers", () => {
-  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
-  assert.equal(_cleanVendorText("OAKWOOD APTS DES:RENT ID:XXXXX INDN:JOHN DOE CO ID:XXXXX WEB"), "OAKWOOD APTS");
-});
-
-test("_cleanVendorText: amzn.com/bill suffix stripped", () => {
-  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
-  assert.equal(_cleanVendorText("AMAZON.COM AMZN.COM/BILL WA"), "AMAZON.COM");
-  assert.equal(_cleanVendorText("Amazon Digital Svcs amzn.com/bill"), "Amazon Digital Svcs");
-  assert.equal(_cleanVendorText("AMAZON PRIME*A1B2C3D4Eamzn.com/bill"), "AMAZON PRIME");
-});
-
-test("_cleanVendorText: Amazon-family heads strip any tail after *", () => {
-  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
-  assert.equal(_cleanVendorText("AMAZON MKTPL*AB12CD34"), "AMAZON MKTPL");
-  assert.equal(_cleanVendorText("AMAZON MKTPL*RETURN"), "AMAZON MKTPL");
-  assert.equal(_cleanVendorText("Amazon.com*1A2B3C4D5"), "Amazon.com");
-  assert.equal(_cleanVendorText("AMZN Mktp US*9K8J7H6G5"), "AMZN Mktp US");
-  assert.equal(_cleanVendorText("AMZN Mktp US *A1B2C3D4E"), "AMZN Mktp US");
-  assert.equal(_cleanVendorText("Amazon Prime*RT5YH6TT1"), "Amazon Prime");
-  assert.equal(_cleanVendorText("Amazon Prime*RTBNLZGCJ"), "Amazon Prime");
-});
-
-test("_cleanVendorText: non-Amazon * tail stripped only if it contains a digit", () => {
-  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
-  // Tail has digits — stripped
-  assert.equal(_cleanVendorText("UBER *EATS"), "UBER *EATS", "no digit in EATS → kept");
-  assert.equal(_cleanVendorText("UBER *TRIP"), "UBER *TRIP", "no digit in TRIP → kept");
-  assert.equal(_cleanVendorText("DOORDASH*CHIPOTLE"), "DOORDASH*CHIPOTLE", "no digit in CHIPOTLE → kept");
-  assert.equal(_cleanVendorText("GOOGLE *YOUTUBEPREMIUM"), "GOOGLE *YOUTUBEPREMIUM", "no digit → kept");
-  assert.equal(_cleanVendorText("GOOGLE *DUOLINGO"), "GOOGLE *DUOLINGO", "no digit → kept");
-});
-
-test("_cleanVendorText: store numbers and city/state stripped", () => {
-  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
-  assert.equal(_cleanVendorText("STARBUCKS STORE 03456 ANN ARBOR MI"), "STARBUCKS STORE");
-  assert.equal(_cleanVendorText("KROGER #123 ANN ARBOR MI"), "KROGER");
-  assert.equal(_cleanVendorText("KROGER #456 YPSILANTI MI"), "KROGER");
-  assert.equal(_cleanVendorText("MEIJER # 223 ANN ARBOR MI"), "MEIJER");
-  assert.equal(_cleanVendorText("TARGET 00012345 ANN ARBOR MI"), "TARGET");
-  assert.equal(_cleanVendorText("SHELL OIL 57444 ANN ARBOR MI"), "SHELL OIL");
-});
-
-test("_cleanVendorText: bare trailing store numbers (no city/state)", () => {
-  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
-  assert.equal(_cleanVendorText("KROGER #612"), "KROGER");
-  assert.equal(_cleanVendorText("SHELL OIL 57444"), "SHELL OIL");
-});
-
-test("_cleanVendorText: mid-description date cut", () => {
-  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
-  assert.equal(_cleanVendorText("KROGER #123 09/04 PURCHASE ANN ARBOR MI"), "KROGER");
-  assert.equal(_cleanVendorText("NETFLIX.COM 09/07 PURCHASE 866-579-7172 CA"), "NETFLIX.COM");
-  assert.equal(_cleanVendorText("SHELL OIL 57444 07/09 PURCHASE ANN ARBOR MI"), "SHELL OIL");
-});
-
-test("_cleanVendorText: phone numbers in trailing city/state pattern", () => {
-  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
-  // The CHECKCARD + PAYPAL prefix are stripped first, then trailing phone+state
-  assert.equal(_cleanVendorText("CHECKCARD 0927 PAYPAL *NETFLIX 4029357733 CA 24692166270100123456789"), "NETFLIX");
-});
-
-test("_cleanVendorText: strings that must stay unchanged", () => {
-  const { _cleanVendorText } = loadFunctions(["_cleanVendorText"]);
-  assert.equal(_cleanVendorText("NETFLIX.COM"), "NETFLIX.COM");
-  assert.equal(_cleanVendorText("7-ELEVEN"), "7-ELEVEN");
-  assert.equal(_cleanVendorText("76"), "76");
-  assert.equal(_cleanVendorText("PIER 1 IMPORTS"), "PIER 1 IMPORTS");
-  assert.equal(_cleanVendorText("FOREVER 21"), "FOREVER 21");
-  assert.equal(_cleanVendorText("AT&T"), "AT&T");
-  assert.equal(_cleanVendorText("AMAZON MUSIC UNLIMITED"), "AMAZON MUSIC UNLIMITED");
+  for (const [input, expected, label] of [
+    // payment-processor prefixes
+    ["SQ *STARBUCKS",                                                     "STARBUCKS",          "SQ*"],
+    ["TST* OLIVE GARDEN",                                                 "OLIVE GARDEN",       "TST*"],
+    ["PAYPAL *ETSY",                                                       "ETSY",               "PAYPAL*"],
+    ["PP*ETSY",                                                            "ETSY",               "PP*"],
+    // CHECKCARD prefix
+    ["CHECKCARD 0927 PAYPAL *NETFLIX 4029357733 CA 24692166270100123456789", "NETFLIX",          "CHECKCARD + PAYPAL → phone+state stripped"],
+    // PURCHASE AUTHORIZED prefix / trailing CARD suffix
+    ["PURCHASE AUTHORIZED ON 09/27 STARBUCKS STORE 03456 ANN ARBOR MI S386270123456789 CARD 1234", "STARBUCKS STORE", "PURCHASE AUTHORIZED + CARD suffix"],
+    ["PURCHASE AUTHORIZED ON 09/27 PAYPAL *SPOTIFYUSA 402-935-7733 CA",   "SPOTIFYUSA",         "PURCHASE AUTHORIZED + PAYPAL"],
+    // DES: Bank of America ACH cut
+    ["OAKWOOD APTS DES:RENT ID:XXXXX INDN:JOHN DOE CO ID:XXXXX WEB",      "OAKWOOD APTS",       "DES: cut"],
+    // amzn.com/bill suffix
+    ["AMAZON.COM AMZN.COM/BILL WA",                                       "AMAZON.COM",         "amzn.com/bill (all-caps)"],
+    ["Amazon Digital Svcs amzn.com/bill",                                 "Amazon Digital Svcs", "amzn.com/bill (mixed-case)"],
+    ["AMAZON PRIME*A1B2C3D4Eamzn.com/bill",                               "AMAZON PRIME",       "amzn.com/bill with * code"],
+    // Amazon-family * tail stripped
+    ["AMAZON MKTPL*AB12CD34",   "AMAZON MKTPL",    "AMAZON MKTPL* alphanum code"],
+    ["AMAZON MKTPL*RETURN",     "AMAZON MKTPL",    "AMAZON MKTPL* word tail"],
+    ["Amazon.com*1A2B3C4D5",    "Amazon.com",      "Amazon.com*"],
+    ["AMZN Mktp US*9K8J7H6G5",  "AMZN Mktp US",   "AMZN Mktp US*"],
+    ["AMZN Mktp US *A1B2C3D4E", "AMZN Mktp US",   "AMZN Mktp US * (space before *)"],
+    ["Amazon Prime*RT5YH6TT1",  "Amazon Prime",    "Amazon Prime* alphanum"],
+    ["Amazon Prime*RTBNLZGCJ",  "Amazon Prime",    "Amazon Prime* all-alpha code"],
+    // non-Amazon * tail kept if no digit in tail
+    ["UBER *EATS",           "UBER *EATS",           "no digit in EATS → kept"],
+    ["UBER *TRIP",           "UBER *TRIP",            "no digit in TRIP → kept"],
+    ["DOORDASH*CHIPOTLE",    "DOORDASH*CHIPOTLE",     "no digit in CHIPOTLE → kept"],
+    ["GOOGLE *YOUTUBEPREMIUM", "GOOGLE *YOUTUBEPREMIUM", "no digit → kept"],
+    ["GOOGLE *DUOLINGO",     "GOOGLE *DUOLINGO",      "no digit → kept"],
+    // store numbers + city/state
+    ["STARBUCKS STORE 03456 ANN ARBOR MI",  "STARBUCKS STORE", "store num + city/state"],
+    ["KROGER #123 ANN ARBOR MI",            "KROGER",          "#N city/state"],
+    ["KROGER #456 YPSILANTI MI",            "KROGER",          "#N city/state (2nd city)"],
+    ["MEIJER # 223 ANN ARBOR MI",           "MEIJER",          "# N (space between # and num)"],
+    ["TARGET 00012345 ANN ARBOR MI",        "TARGET",          "bare num + city/state"],
+    ["SHELL OIL 57444 ANN ARBOR MI",        "SHELL OIL",       "5-digit num + city/state"],
+    // bare trailing store numbers (no city/state)
+    ["KROGER #612",    "KROGER",    "bare #N no city/state"],
+    ["SHELL OIL 57444", "SHELL OIL", "bare 5-digit num no city/state"],
+    // mid-description date cut
+    ["KROGER #123 09/04 PURCHASE ANN ARBOR MI",        "KROGER",      "mid-date + city/state"],
+    ["NETFLIX.COM 09/07 PURCHASE 866-579-7172 CA",     "NETFLIX.COM", "mid-date + phone + state"],
+    ["SHELL OIL 57444 07/09 PURCHASE ANN ARBOR MI",    "SHELL OIL",   "mid-date after store num"],
+    // strings that must stay unchanged
+    ["NETFLIX.COM",          "NETFLIX.COM",          "NETFLIX.COM unchanged"],
+    ["7-ELEVEN",             "7-ELEVEN",             "7-ELEVEN unchanged"],
+    ["76",                   "76",                   "76 unchanged"],
+    ["PIER 1 IMPORTS",       "PIER 1 IMPORTS",       "PIER 1 IMPORTS unchanged"],
+    ["FOREVER 21",           "FOREVER 21",           "FOREVER 21 unchanged"],
+    ["AT&T",                 "AT&T",                 "AT&T unchanged"],
+    ["AMAZON MUSIC UNLIMITED", "AMAZON MUSIC UNLIMITED", "AMAZON MUSIC UNLIMITED unchanged"],
+  ]) {
+    assert.equal(_cleanVendorText(input), expected, label);
+  }
 });
 
 test("_cleanVendorText: CHURCH'S variants stay different from each other", () => {
@@ -10501,25 +10260,27 @@ test("_cleanVendorText: CHURCH'S variants stay different from each other", () =>
 });
 
 // ── _normalizeVendorDesc — applies Amazon mapping after cleaning ─────────────
-test("_normalizeVendorDesc: Amazon marketplace variants all map to 'Amazon'", () => {
+test("_normalizeVendorDesc: Amazon marketplace and sub-brand cases", () => {
   const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc", "_cleanVendorText"]);
-  assert.equal(_normalizeVendorDesc("AMAZON MKTPL*AB12CD34"), "Amazon");
-  assert.equal(_normalizeVendorDesc("Amazon.com*1A2B3C4D5"), "Amazon");
-  assert.equal(_normalizeVendorDesc("AMZN Mktp US*9K8J7H6G5"), "Amazon");
-  assert.equal(_normalizeVendorDesc("AMZN Mktp US *A1B2C3D4E"), "Amazon");
-  assert.equal(_normalizeVendorDesc("AMAZON.COM AMZN.COM/BILL WA"), "Amazon");
-  assert.equal(_normalizeVendorDesc("AMAZON MARKETPLACE NA PA"), "Amazon");
-  assert.equal(_normalizeVendorDesc("AMAZON MKTPLACE PMTS"), "Amazon");
-  assert.equal(_normalizeVendorDesc("AMAZON MKTPL*RETURN"), "Amazon");
-});
-
-test("_normalizeVendorDesc: Amazon sub-brands stay separate", () => {
-  const { _normalizeVendorDesc } = loadFunctions(["_normalizeVendorDesc", "_cleanVendorText"]);
-  assert.equal(_normalizeVendorDesc("Amazon Prime*RT5YH6TT1"), "Amazon Prime");
-  assert.equal(_normalizeVendorDesc("Amazon Prime*RTBNLZGCJ"), "Amazon Prime");
-  assert.equal(_normalizeVendorDesc("AMAZON PRIME*A1B2C3D4Eamzn.com/bill"), "AMAZON PRIME");
-  assert.equal(_normalizeVendorDesc("AMAZON MUSIC*AB12CD34"), "AMAZON MUSIC");
-  assert.equal(_normalizeVendorDesc("Amazon Digital Svcs amzn.com/bill"), "Amazon Digital Svcs");
+  for (const [input, expected, label] of [
+    // marketplace → 'Amazon'
+    ["AMAZON MKTPL*AB12CD34",         "Amazon",             "AMAZON MKTPL* (code)"],
+    ["Amazon.com*1A2B3C4D5",          "Amazon",             "Amazon.com*"],
+    ["AMZN Mktp US*9K8J7H6G5",        "Amazon",             "AMZN Mktp US*"],
+    ["AMZN Mktp US *A1B2C3D4E",       "Amazon",             "AMZN Mktp US * (space)"],
+    ["AMAZON.COM AMZN.COM/BILL WA",   "Amazon",             "AMAZON.COM amzn.com/bill"],
+    ["AMAZON MARKETPLACE NA PA",       "Amazon",             "AMAZON MARKETPLACE"],
+    ["AMAZON MKTPLACE PMTS",           "Amazon",             "AMAZON MKTPLACE PMTS"],
+    ["AMAZON MKTPL*RETURN",            "Amazon",             "AMAZON MKTPL* (word tail)"],
+    // sub-brands stay distinct
+    ["Amazon Prime*RT5YH6TT1",         "Amazon Prime",       "Amazon Prime* (alphanum)"],
+    ["Amazon Prime*RTBNLZGCJ",         "Amazon Prime",       "Amazon Prime* (all-alpha)"],
+    ["AMAZON PRIME*A1B2C3D4Eamzn.com/bill", "AMAZON PRIME", "AMAZON PRIME* + amzn.com/bill"],
+    ["AMAZON MUSIC*AB12CD34",          "AMAZON MUSIC",       "AMAZON MUSIC*"],
+    ["Amazon Digital Svcs amzn.com/bill", "Amazon Digital Svcs", "Amazon Digital Svcs + amzn.com/bill"],
+  ]) {
+    assert.equal(_normalizeVendorDesc(input), expected, label);
+  }
 });
 
 // ── resolveVendor — full pipeline (clean → normalize → alias) ────────────────
@@ -10594,87 +10355,25 @@ test("recurring card: singular 'charge' when subCount is 1", () => {
 
 // ── _classifyImportFile: detects wrong file types before CSV parsing ────────
 
-test("_classifyImportFile: ZIP magic bytes → 'spreadsheet'", () => {
+test("_classifyImportFile: magic bytes, extension fallback, text markers, and pass-through cases", () => {
   const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
-  const bytes = new Uint8Array([0x50, 0x4B, 0x03, 0x04, 0x20, 0x20]);
-  assert.equal(_classifyImportFile("file.xlsx", bytes), "spreadsheet");
-});
-
-test("_classifyImportFile: CFB magic bytes → 'spreadsheet'", () => {
-  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
-  const bytes = new Uint8Array([0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1, 0x20, 0x20]);
-  assert.equal(_classifyImportFile("file.xls", bytes), "spreadsheet");
-});
-
-test("_classifyImportFile: PDF magic bytes → 'pdf'", () => {
-  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
-  const bytes = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E]);
-  assert.equal(_classifyImportFile("statement.pdf", bytes), "pdf");
-});
-
-test("_classifyImportFile: extension fallback — .xlsx with all-zero bytes → 'spreadsheet'", () => {
-  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
-  // All-zero bytes won't match magic, but extension wins — note: zero bytes
-  // would also trigger 'binary', but extension check runs first
-  // Actually, magic bytes check for ZIP: 0x50!=0x00, so magic check fails.
-  // Extension check runs next and matches.
-  const bytes = new Uint8Array([0x00, 0x00, 0x00, 0x00]);
-  assert.equal(_classifyImportFile("file.xlsx", bytes), "spreadsheet");
-});
-
-test("_classifyImportFile: extension fallback — .qfx → 'quicken'", () => {
-  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
-  const bytes = new Uint8Array([0x00, 0x00, 0x00, 0x00]);
-  assert.equal(_classifyImportFile("file.qfx", bytes), "quicken");
-});
-
-test("_classifyImportFile: extension fallback — .pdf with non-PDF bytes → 'pdf'", () => {
-  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
-  const bytes = new Uint8Array([0x00, 0x00, 0x00, 0x00]);
-  assert.equal(_classifyImportFile("file.pdf", bytes), "pdf");
-});
-
-test("_classifyImportFile: text-based Quicken detection — OFXHEADER", () => {
-  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
-  const text = "OFXHEADER:100\nDATA:OFXSGML";
-  const bytes = new TextEncoder().encode(text);
-  assert.equal(_classifyImportFile("download.txt", bytes), "quicken");
-});
-
-test("_classifyImportFile: text-based Quicken detection — <OFX>", () => {
-  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
-  const text = "<?xml version=\"1.0\"?>\n<OFX>";
-  const bytes = new TextEncoder().encode(text);
-  assert.equal(_classifyImportFile("download.txt", bytes), "quicken");
-});
-
-test("_classifyImportFile: text-based Quicken detection — !Type:Cash", () => {
-  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
-  const text = "!Type:Cash\nD01/15/2024\n";
-  const bytes = new TextEncoder().encode(text);
-  assert.equal(_classifyImportFile("download.qif", bytes), "quicken");
-});
-
-test("_classifyImportFile: NUL bytes → 'binary'", () => {
-  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
-  const bytes = new Uint8Array([0x41, 0x42, 0x00, 0x43]);
-  assert.equal(_classifyImportFile("unknown.dat", bytes), "binary");
-});
-
-test("_classifyImportFile: plain CSV header → null (pass-through)", () => {
-  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
-  const text = "Date,Description,Amount\n01/15/2024,COFFEE SHOP,5.00\n";
-  const bytes = new TextEncoder().encode(text);
-  assert.equal(_classifyImportFile("transactions.csv", bytes), null);
-});
-
-test("_classifyImportFile: CSV with UTF-8 BOM → null (BOM is not a NUL byte)", () => {
-  const { _classifyImportFile } = loadFunctions(["_classifyImportFile"]);
-  const csv = "Date,Description,Amount\n01/15/2024,COFFEE,5.00\n";
-  const csvBytes = new TextEncoder().encode(csv);
-  // Prepend UTF-8 BOM: EF BB BF
-  const bytes = new Uint8Array([0xEF, 0xBB, 0xBF, ...csvBytes]);
-  assert.equal(_classifyImportFile("transactions.csv", bytes), null);
+  const enc = (s) => new TextEncoder().encode(s);
+  for (const [label, filename, bytes, expected] of [
+    ["ZIP magic → spreadsheet",    "file.xlsx",          new Uint8Array([0x50, 0x4B, 0x03, 0x04, 0x20, 0x20]), "spreadsheet"],
+    ["CFB magic → spreadsheet",    "file.xls",           new Uint8Array([0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1, 0x20, 0x20]), "spreadsheet"],
+    ["PDF magic → pdf",            "statement.pdf",      new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E]), "pdf"],
+    [".xlsx ext fallback",         "file.xlsx",          new Uint8Array([0x00, 0x00, 0x00, 0x00]), "spreadsheet"],
+    [".qfx ext fallback",          "file.qfx",           new Uint8Array([0x00, 0x00, 0x00, 0x00]), "quicken"],
+    [".pdf ext fallback",          "file.pdf",           new Uint8Array([0x00, 0x00, 0x00, 0x00]), "pdf"],
+    ["OFXHEADER text → quicken",   "download.txt",       enc("OFXHEADER:100\nDATA:OFXSGML"), "quicken"],
+    ["<OFX> text → quicken",       "download.txt",       enc('<?xml version="1.0"?>\n<OFX>'), "quicken"],
+    ["!Type:Cash text → quicken",  "download.qif",       enc("!Type:Cash\nD01/15/2024\n"), "quicken"],
+    ["NUL bytes → binary",         "unknown.dat",        new Uint8Array([0x41, 0x42, 0x00, 0x43]), "binary"],
+    ["plain CSV → null",           "transactions.csv",   enc("Date,Description,Amount\n01/15/2024,COFFEE SHOP,5.00\n"), null],
+    ["UTF-8 BOM CSV → null",       "transactions.csv",   new Uint8Array([0xEF, 0xBB, 0xBF, ...enc("Date,Description,Amount\n01/15/2024,COFFEE,5.00\n")]), null],
+  ]) {
+    assert.equal(_classifyImportFile(filename, bytes), expected, label);
+  }
 });
 
 // ── _groupByMonth ──────────────────────────────────────────────────────────

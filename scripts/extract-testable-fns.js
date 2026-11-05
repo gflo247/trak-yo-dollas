@@ -73,4 +73,12 @@ function loadFunctions(names, context) {
   return factory(...ctxKeys.map((k) => context[k]));
 }
 
-module.exports = { extractFunctions, loadFunctions, readSource };
+// Returns the full source text of a single named function from trakyodollas.html.
+// Use this in pattern-matching tests instead of hand-written regexes with
+// arbitrary length caps — the brace-matcher finds the real closing brace, so
+// the test never needs to be updated when the function grows.
+function fnBody(name) {
+  return extractFunctions(readSource(), [name])[name];
+}
+
+module.exports = { extractFunctions, loadFunctions, readSource, fnBody };
