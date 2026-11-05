@@ -11,7 +11,7 @@
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-cY369+Mw9TLp6MR83J3ZREmD28K4B34/lDMoSdWzZq8=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-JgSKQMgSqLfoqN925MhWT6Y5tx+A6PjOu5JqhGeVmbw=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -118,6 +118,14 @@
   --amber-bg-mid:#D9770630;
   --amber-border:#D9770688;
   --amber-border-strong:#FBBF24;
+  /* Error/danger red tokens — mirrors amber family */
+  --red-text:#FCA5A5;
+  --red-text-strong:#EF4444;
+  --red-bg:#7F1D1D18;
+  --red-bg-mid:#7F1D1D30;
+  --red-border:#7F1D1D55;
+  --red-border-strong:#EF4444;
+  --red-btn-bg:#B91C1C;
 }
 
 [data-theme="light"]{
@@ -133,6 +141,14 @@
   --amber-bg-mid:#FEF3C740;
   --amber-border:#D9770655;
   --amber-border-strong:#D97706;
+  /* Red tokens — darker for contrast on white */
+  --red-text:#991B1B;
+  --red-text-strong:#DC2626;
+  --red-bg:#FEF2F220;
+  --red-bg-mid:#FEF2F240;
+  --red-border:#DC262655;
+  --red-border-strong:#DC2626;
+  --red-btn-bg:#DC2626;
 
   /* Backgrounds */
   --bg-page:#F8FAFC;
@@ -1040,7 +1056,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
      it stays until a save actually succeeds (_showStorageFullBanner / saveToLocalStorage). -->
 <div id="storage-full-banner" role="alert" style="display:none;position:fixed;top:0;left:0;right:0;z-index:26;background:linear-gradient(rgba(248,113,113,.12),rgba(248,113,113,.12)),var(--bg-page);border-bottom:1px solid rgba(248,113,113,.4);padding:8px 1rem;font-size:12px;color:var(--accent-red);text-align:center;letter-spacing:.01em">
   ⚠ <strong>Your browser's storage for this site is full, so recent changes aren't saved.</strong> Export a backup now.
-  <button data-action="exportBackup" style="background:#F87171;color:#fff;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 6px" type="button">Export backup</button>
+  <button data-action="exportBackup" style="background:var(--red-btn-bg);color:#fff;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 6px" type="button">Export backup</button>
 </div>
 <!-- Stays up until dismissed or reloaded, unlike a toast -- the underlying
      "your edits aren't syncing" condition doesn't go away on its own after
@@ -1506,8 +1522,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <span id="import-detected-fmt-text"></span>
     </div>
     <!-- Zero-row message — shown when CSV parses to 0 transactions -->
-    <div id="import-zero-msg" class="hidden" style="margin-top:.55rem;background:#1C0A0A;border:1px solid #7F1D1D55;border-radius:8px;padding:.6rem .85rem;font-size:12px;color:var(--text-muted);line-height:1.55">
-      <div style="color:#FCA5A5;font-weight:700;margin-bottom:.35rem">✗ Found 0 transactions</div>
+    <div id="import-zero-msg" class="hidden" style="margin-top:.55rem;background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;padding:.6rem .85rem;font-size:12px;color:var(--text-muted);line-height:1.55">
+      <div style="color:var(--red-text);font-weight:700;margin-bottom:.35rem">✗ Found 0 transactions</div>
       <div id="import-zero-header" style="font-family:'DM Mono',monospace;font-size:11px;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:4px;padding:3px 7px;margin-bottom:.45rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
       <a id="import-zero-guide" href="/guides" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">See export guides →</a>
       <div style="margin-top:.45rem"><button data-action="openMoreOptions" style="background:none;border:none;color:var(--accent-blue-light);font-size:11px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">Pick your format manually →</button></div>
@@ -1515,8 +1531,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <!-- import-too-big-msg: shown when the full incoming data won't fit in localStorage.
          Offers a trim-to-recent-months button when at least one month fits, or a plain
          export-backup link when storage is completely full. -->
-    <div id="import-too-big-msg" class="hidden" style="margin-top:.55rem;background:#1C0A0A;border:1px solid #7F1D1D55;border-radius:8px;padding:.6rem .85rem;font-size:12px;color:var(--text-muted);line-height:1.55">
-      <div id="import-too-big-heading" style="color:#FCA5A5;font-weight:700;margin-bottom:.35rem"></div>
+    <div id="import-too-big-msg" class="hidden" style="margin-top:.55rem;background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;padding:.6rem .85rem;font-size:12px;color:var(--text-muted);line-height:1.55">
+      <div id="import-too-big-heading" style="color:var(--red-text);font-weight:700;margin-bottom:.35rem"></div>
       <div id="import-too-big-offer" class="hidden" style="margin-top:.4rem">
         <button id="import-trim-btn" data-action="acceptTrimmedImport" type="button" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit"></button>
       </div>
@@ -1585,8 +1601,8 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <span style="font-size:11px;color:var(--text-muted)">Want to start fresh?&nbsp;</span>
       <button data-action="showImportFreshConfirm" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" data-mouseover="hoverRed" data-mouseout="unhoverRed" type="button">Clear all data →</button>
     </div>
-    <div id="import-fresh-confirm" style="display:none;align-items:center;gap:8px;justify-content:center;margin-top:.45rem;background:#1C0A0A;border:1px solid #7F1D1D55;border-radius:8px;padding:.4rem .75rem">
-      <span style="font-size:11px;color:#FCA5A5">Remove <span id="import-fresh-count">0</span> transactions and start over?</span>
+    <div id="import-fresh-confirm" style="display:none;align-items:center;gap:8px;justify-content:center;margin-top:.45rem;background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;padding:.4rem .75rem">
+      <span style="font-size:11px;color:var(--red-text)">Remove <span id="import-fresh-count">0</span> transactions and start over?</span>
       <button data-action="confirmClearAllData" style="background:none;border:none;color:var(--accent-red);font-size:11px;font-weight:700;cursor:pointer;padding:0;font-family:inherit" type="button">Yes, clear all</button>
       <button data-action="hideImportFreshConfirm" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;padding:0;font-family:inherit" type="button">Cancel</button>
     </div>
@@ -1618,7 +1634,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
         <button data-action="setImportPreviewSort" data-arg="cat" style="text-align:left;background:none;border:none;color:inherit;cursor:pointer;font:inherit;padding:0" type="button">Category<span id="import-sort-arrow-cat"></span></button>
         <button data-action="setImportPreviewSort" data-arg="amount" style="min-width:52px;text-align:right;background:none;border:none;color:inherit;cursor:pointer;font:inherit;padding:0" type="button">Amount<span id="import-sort-arrow-amount"></span></button>
       </div>
-      <div id="import-preview-rows" style="max-height:160px;overflow-y:auto;border:1px solid var(--border-mid);border-radius:0 0 8px 8px;font-size:12px"></div>
+      <div id="import-preview-rows" tabindex="0" aria-label="Transaction preview" style="max-height:160px;overflow-y:auto;border:1px solid var(--border-mid);border-radius:0 0 8px 8px;font-size:12px"></div>
       <div style="margin-top:.6rem;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:8px;padding:.5rem .65rem;display:flex;align-items:flex-start;gap:8px">
         <input type="checkbox" id="import-replace" style="accent-color:#2563EB;width:14px;height:14px;margin-top:2px;flex-shrink:0">
         <div>
@@ -6131,7 +6147,7 @@ function renderSpendSummary(){
   const badge=document.getElementById('cat-filter-badge');
   if(state.activeCats.size>0){
     badge.classList.remove('hidden');
-    const pills=[...state.activeCats].map(c=>`<span data-action="toggleCatFilter" data-arg="${esc(c)}" tabindex="0" role="button" aria-label="Remove ${esc(c)} filter" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:${getCatColor(c)}22;color:${getCatColor(c)};border:1px solid ${getCatColor(c)}44;border-radius:99px;padding:3px 8px;font-size:11px;font-weight:700">${esc(c)} <span style="opacity:.6">✕</span></span>`).join('');
+    const pills=[...state.activeCats].map(c=>`<span data-action="toggleCatFilter" data-arg="${esc(c)}" tabindex="0" role="button" aria-label="Remove ${esc(c)} filter" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:${getCatColor(c)}22;color:var(--text-primary);border:1px solid ${getCatColor(c)}44;border-radius:99px;padding:3px 8px;font-size:11px;font-weight:700">${esc(c)} <span style="opacity:.6">✕</span></span>`).join('');
     badge.innerHTML=`<div class="cat-badge" style="flex-wrap:wrap;gap:5px"><span class="text-muted-xs">Filtering:</span>${pills}<button data-action="clearCatFilter" style="font-size:11px;background:none;border:none;color:var(--text-muted);cursor:pointer;margin-left:2px;padding:3px 6px" type="button">clear all</button></div>`;
   } else {
     badge.classList.add('hidden');
@@ -8661,7 +8677,7 @@ function openSrcMenu(arg,el){
   const count=state.transactions.filter(t=>t.card===src).length;
   const safe=esc(src);
   const isActive=state.activeSources.has(src);
-  pop.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:.5rem">${safe}</div><div style="display:flex;gap:6px"><button data-action="toggleSource" data-arg="${safe}" class="btn" style="font-size:11px;padding:4px 12px" type="button">${isActive?'Hide':'Show'}</button><button data-action="openSrcRemoveConfirm" data-arg="${safe}" style="background:#450A0A;border:1px solid #7F1D1D;border-radius:6px;color:#FCA5A5;font-size:11px;font-weight:700;cursor:pointer;padding:4px 10px;font-family:inherit" type="button">Remove ${count}</button></div>`;
+  pop.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:.5rem">${safe}</div><div style="display:flex;gap:6px"><button data-action="toggleSource" data-arg="${safe}" class="btn" style="font-size:11px;padding:4px 12px" type="button">${isActive?'Hide':'Show'}</button><button data-action="openSrcRemoveConfirm" data-arg="${safe}" style="background:var(--red-bg-mid);border:1px solid var(--red-border-strong);border-radius:6px;color:var(--red-text);font-size:11px;font-weight:700;cursor:pointer;padding:4px 10px;font-family:inherit" type="button">Remove ${count}</button></div>`;
   pop.style.display='block';
   setTimeout(()=>document.addEventListener('click',_srcPopOutside,{once:true}),0);
 }
@@ -8671,7 +8687,7 @@ function openSrcRemoveConfirm(arg,el){
   const pop=el.closest('.src-chip-wrap')?.querySelector('.src-remove-pop');
   if(!pop)return;
   const count=state.transactions.filter(t=>t.card===src).length;
-  pop.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:.35rem">Remove ${count} transaction${count===1?'':'s'}?</div><div style="font-size:11px;color:var(--text-muted);margin-bottom:.5rem">${safe}</div><div style="display:flex;gap:6px"><button data-action="confirmSrcRemove" data-arg="${safe}" style="background:#450A0A;border:1px solid #7F1D1D;border-radius:6px;color:#FCA5A5;font-size:11px;font-weight:700;cursor:pointer;padding:4px 10px;font-family:inherit" type="button">Remove</button><button data-action="closeSrcRemovePop" class="btn" style="font-size:11px;padding:4px 10px" type="button">Cancel</button></div>`;
+  pop.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:.35rem">Remove ${count} transaction${count===1?'':'s'}?</div><div style="font-size:11px;color:var(--text-muted);margin-bottom:.5rem">${safe}</div><div style="display:flex;gap:6px"><button data-action="confirmSrcRemove" data-arg="${safe}" style="background:var(--red-bg-mid);border:1px solid var(--red-border-strong);border-radius:6px;color:var(--red-text);font-size:11px;font-weight:700;cursor:pointer;padding:4px 10px;font-family:inherit" type="button">Remove</button><button data-action="closeSrcRemovePop" class="btn" style="font-size:11px;padding:4px 10px" type="button">Cancel</button></div>`;
 }
 function _srcPopOutside(e){
   // Use composedPath() rather than e.target.closest(): if an action handler
@@ -15430,7 +15446,7 @@ function showImportPreview(){
     <div style="display:flex;gap:8px;padding:.3rem .6rem;border-bottom:1px solid var(--border-mid);align-items:center">
       <span style="font-size:11px;color:var(--text-secondary);min-width:72px">${esc(t.date)}</span>
       <span style="flex:1;font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.desc)}</span>
-      <span class="truncate" style="font-size:11px;padding:1px 6px;border-radius:99px;background:${getCatColor(t.cat)}22;color:${getCatColor(t.cat)};max-width:100px;flex-shrink:0" title="${esc(t.cat)}">${esc(t.cat)}</span>
+      <span class="truncate" style="font-size:11px;padding:1px 6px;border-radius:99px;background:${getCatColor(t.cat)}22;color:var(--text-primary);max-width:100px;flex-shrink:0" title="${esc(t.cat)}">${esc(t.cat)}</span>
       <span style="font-size:13px;font-weight:700;color:var(--accent-red);min-width:52px;text-align:right">${fmtD(t.amount)}</span>
     </div>`).join('')+(importParsed.length>8?`<div style="padding:.3rem .6rem;font-size:12px;color:var(--text-muted)">…and ${importParsed.length-8} more</div>`:'');
 

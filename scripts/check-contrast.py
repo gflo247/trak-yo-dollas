@@ -43,7 +43,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
 
-ACCENT_TOKEN_RE = re.compile(r'--((?:accent|clr|amber-text)[\w-]*)\s*:\s*(#[0-9A-Fa-f]{6})\b')
+ACCENT_TOKEN_RE = re.compile(r'--((?:accent|clr|amber-text|red-text)[\w-]*)\s*:\s*(#[0-9A-Fa-f]{6})\b')
 BG_TOKEN_RE = re.compile(r'--(bg-page|bg-card|bg-deep)\s*:\s*(#[0-9A-Fa-f]{6})\b')
 COLOR_USE_RE = re.compile(r'(?<![\w-])color:(#[0-9A-Fa-f]{6})\b')
 MIN_RATIO = 4.5
@@ -143,7 +143,7 @@ def scan_file(path):
         return any(start <= pos < end for start, end in light_scoped_ranges)
 
     used_as_text_dark, used_as_text_light = set(), set()
-    for m in re.finditer(r'(?<![\w-])color:var\(--((?:accent|clr|amber-text)[\w-]*)\)', text):
+    for m in re.finditer(r'(?<![\w-])color:var\(--((?:accent|clr|amber-text|red-text)[\w-]*)\)', text):
         used_as_text_light.add(m.group(1))
         if not in_light_scope(m.start()):
             used_as_text_dark.add(m.group(1))
@@ -206,7 +206,7 @@ def main():
             for f in findings:
                 print(f"  FAIL: {f}")
         else:
-            print("  PASS: all accent/clr/amber-text tokens clear 4.5:1 in both themes, no hardcoded bypasses found")
+            print("  PASS: all accent/clr/amber-text/red-text tokens clear 4.5:1 in both themes, no hardcoded bypasses found")
     sys.exit(1 if any_fail else 0)
 
 

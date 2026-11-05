@@ -193,6 +193,113 @@ async function main() {
           await ctx.close();
         }
       }
+      // --- Import panel states: desktop + 390px × dark + light ---
+      if (!EXPLICIT_FILE) {
+        const IMPORT_VPS = [
+          { width: 1280, height: 800, label: 'desktop' },
+          { width: 390,  height: 844, label: '390px'   },
+        ];
+        const fixtureCsv = fs.readFileSync(
+          path.join(__dirname, '..', 'e2e', 'fixtures', 'sample.csv'), 'utf8');
+
+        // Helper: open a fresh page in a given state, run axe, close.
+        async function auditImportState(label, setupFn, initScript) {
+          const ctxOpts = {
+            bypassCSP: true,
+            colorScheme: label.includes('dark') ? 'dark' : 'light',
+            viewport: { width: label.includes('390px') ? 390 : 1280,
+                        height: label.includes('390px') ? 844 : 800 },
+          };
+          const ctx = await browser.newContext(ctxOpts);
+          const page = await ctx.newPage();
+          page.on('console', () => {});
+          page.on('pageerror', () => {});
+          await ctx.addInitScript(t => document.documentElement.setAttribute('data-theme', t),
+            label.includes('dark') ? 'dark' : 'light');
+          if (initScript) await ctx.addInitScript(initScript);
+          await page.goto(`${BASE_URL}/${APP_FILE}`, { waitUntil: 'load' });
+          await page.addScriptTag({ content: axeSource });
+          await page.waitForTimeout(400);
+          await setupFn(page);
+          await page.waitForTimeout(400);
+          const results = await page.evaluate(() =>
+            axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21aa'] } }));
+          if (reportViolations(label, results)) failed = true;
+          await ctx.close();
+        }
+
+        const QUOTA_SCRIPT = `(function(){
+  const LIMIT=400000,orig=Storage.prototype.setItem;
+  Object.defineProperty(Storage.prototype,'setItem',{value:function(k,v){
+    let t=k.length+String(v).length;
+    for(let i=0;i<this.length;i++){const ek=this.key(i);if(ek!==k)t+=ek.length+(this.getItem(ek)||'').length;}
+    if(t>LIMIT){const e=new DOMException('QuotaExceededError','QuotaExceededError');throw e;}
+    return orig.call(this,k,v);},configurable:true,writable:true});})();`;
+
+        for (const vp of IMPORT_VPS) {
+          for (const theme of ['dark', 'light']) {
+            const pfx = `${theme} / ${vp.label} / import`;
+
+            // 1. Import panel open (empty)
+            await auditImportState(`${pfx}: panel open`, async page => {
+              await page.evaluate(() => openTxImportModal());
+            });
+
+            // 2. Import panel with preview
+            await auditImportState(`${pfx}: panel with preview`, async (page) => {
+              await page.evaluate(async csv => {
+                openTxImportModal();
+                const file = new File([csv], 'sample.csv', { type: 'text/csv' });
+                parseTxFile(file);
+                await new Promise(r => setTimeout(r, 350));
+              }, fixtureCsv);
+            });
+
+            // 3. Can't-read message (zero rows from a valid CSV)
+            await auditImportState(`${pfx}: zero-row message`, async page => {
+              await page.evaluate(() => {
+                openTxImportModal();
+                window._importRawHeader = 'Col1,Col2,Col3';
+                window._importRawRows  = [];
+                showImportPreview([]);
+              });
+            });
+
+            // 4. Wrong-file message (QFX file)
+            await auditImportState(`${pfx}: wrong-file message`, async page => {
+              await page.evaluate(async () => {
+                openTxImportModal();
+                const file = new File(['OFXHEADER:100\nDATA:OFXSGML\n'], 'statement.qfx');
+                parseTxFile(file);
+                await new Promise(r => setTimeout(r, 350));
+              });
+            });
+
+            // 5. Too-big message (call _showImportTooBig directly — avoids
+            //    needing a large file; audits the UI state axe would see)
+            await auditImportState(`${pfx}: too-big message`, async page => {
+              await page.evaluate(() => {
+                openTxImportModal();
+                _showImportTooBig(5000, null);
+              });
+            });
+
+            // 6. Storage-full banner
+            await auditImportState(`${pfx}: storage-full banner`, async page => {
+              await page.evaluate(() => _showStorageFullBanner());
+            });
+
+            // 7. Category filter applied (uses demo data already loaded)
+            await auditImportState(`${pfx}: category filter`, async page => {
+              await page.evaluate(() => {
+                // Pick the first visible category chip and activate it
+                const chip = document.querySelector('[data-action="toggleCatFilter"]');
+                if (chip) chip.click();
+              });
+            });
+          }
+        }
+      }
     } finally {
       await browser.close();
     }
