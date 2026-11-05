@@ -11,7 +11,7 @@
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-ZjkwxdRLbNcmPTd1aCSD1+IfQv+l9MsklgxGZncvq9I=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-8VZeXpnKun+5FLEYq1vwMWKxi+GBvqPJGK5Eg1aSJus=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -1034,6 +1034,14 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   <button data-action="exportBackup|dismissMacSafariBanner" style="background:none;border:none;color:var(--amber-text-strong);font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Export a backup</button>
   <button data-action="dismissMacSafariBanner" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:10px 12px;font-family:inherit;vertical-align:middle" title="Dismiss" type="button">✕</button>
 </div>
+<!-- storage-full-banner: shown when saveToLocalStorage() catches QuotaExceededError.
+     position:fixed like #sync-conflict-banner so it stays pinned while scrolling;
+     updateBannerOffset() pushes .nav/body down to make room. No dismiss button —
+     it stays until a save actually succeeds (_showStorageFullBanner / saveToLocalStorage). -->
+<div id="storage-full-banner" role="alert" style="display:none;position:fixed;top:0;left:0;right:0;z-index:26;background:linear-gradient(rgba(248,113,113,.12),rgba(248,113,113,.12)),var(--bg-page);border-bottom:1px solid rgba(248,113,113,.4);padding:8px 1rem;font-size:12px;color:var(--accent-red);text-align:center;letter-spacing:.01em">
+  ⚠ <strong>Your browser's storage for this site is full, so recent changes aren't saved.</strong> Export a backup now.
+  <button data-action="exportBackup" style="background:#F87171;color:#fff;border:none;border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 6px" type="button">Export backup</button>
+</div>
 <!-- Stays up until dismissed or reloaded, unlike a toast -- the underlying
      "your edits aren't syncing" condition doesn't go away on its own after
      a few seconds, so the warning shouldn't either. See showSyncConflictBanner().
@@ -1503,6 +1511,18 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <div id="import-zero-header" style="font-family:'DM Mono',monospace;font-size:11px;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:4px;padding:3px 7px;margin-bottom:.45rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
       <a id="import-zero-guide" href="/guides" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">See export guides →</a>
       <div style="margin-top:.45rem"><button data-action="openMoreOptions" style="background:none;border:none;color:var(--accent-blue-light);font-size:11px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">Pick your format manually →</button></div>
+    </div>
+    <!-- import-too-big-msg: shown when the full incoming data won't fit in localStorage.
+         Offers a trim-to-recent-months button when at least one month fits, or a plain
+         export-backup link when storage is completely full. -->
+    <div id="import-too-big-msg" class="hidden" style="margin-top:.55rem;background:#1C0A0A;border:1px solid #7F1D1D55;border-radius:8px;padding:.6rem .85rem;font-size:12px;color:var(--text-muted);line-height:1.55">
+      <div id="import-too-big-heading" style="color:#FCA5A5;font-weight:700;margin-bottom:.35rem"></div>
+      <div id="import-too-big-offer" class="hidden" style="margin-top:.4rem">
+        <button id="import-trim-btn" data-action="acceptTrimmedImport" type="button" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit"></button>
+      </div>
+      <div id="import-too-big-nooffer" class="hidden" style="margin-top:.4rem">
+        Storage is full — <button data-action="exportBackup" style="background:none;border:none;color:var(--accent-blue-light);font-size:12px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">export a backup</button> to free up space.
+      </div>
     </div>
     <!-- Import summary (count/date range/total/top categories) -- sits
          right by the Detected line so what's about to import is visible
@@ -3652,15 +3672,17 @@ function updateBannerOffset(){
   // into this existing offset mechanism rather than a second one, since
   // both banners need the identical nav-top/body-padding treatment.
   const conflictBanner=document.getElementById('sync-conflict-banner');
+  const storageFullBanner=document.getElementById('storage-full-banner');
   const nav=document.querySelector('.nav');
-  // Only nav is required -- the two banners are independently optional
+  // Only nav is required -- the three banners are independently optional
   // (each contributes 0 if missing or hidden) so that removing/refactoring
   // #demo-chip (dead weight today: nothing ever sets its content, so it
   // always contributes 0) can't silently break the conflict banner's own
   // offset by short-circuiting this whole function on an unrelated !banner.
   if(!nav)return;
   const h=(banner&&banner.style.display!=='none'?banner.offsetHeight:0)
-        + (conflictBanner&&conflictBanner.style.display!=='none'?conflictBanner.offsetHeight:0);
+        + (conflictBanner&&conflictBanner.style.display!=='none'?conflictBanner.offsetHeight:0)
+        + (storageFullBanner&&storageFullBanner.style.display!=='none'?storageFullBanner.offsetHeight:0);
   nav.style.top=h+'px';
   document.body.style.paddingTop=h+'px';
 }
@@ -13924,6 +13946,8 @@ function openTxImportModal(){
     const heading=zeroMsg.querySelector('div');
     if(heading)heading.textContent='\u2717 Found 0 transactions';
   }
+  const tooBig=document.getElementById('import-too-big-msg');if(tooBig)tooBig.classList.add('hidden');
+  _importTrimOffer=null;
   const moreOpts=document.getElementById('import-more-options');if(moreOpts)moreOpts.removeAttribute('open');
   const fth=document.getElementById('import-first-time-hint');if(fth)fth.style.display=state.hasRealData?'none':'block';
   el.classList.remove('hidden');
@@ -15229,6 +15253,7 @@ function _hideImportPreview(){
   const preview=document.getElementById('import-preview');if(preview)preview.classList.add('hidden');
   const stats=document.getElementById('import-preview-stats');if(stats)stats.classList.add('hidden');
   const btn=document.getElementById('import-confirm-btn');if(btn)btn.classList.add('hidden');
+  const tooBig=document.getElementById('import-too-big-msg');if(tooBig)tooBig.classList.add('hidden');
 }
 function showImportPreview(){
   const detFmtEl=document.getElementById('import-detected-fmt');
@@ -15422,20 +15447,139 @@ function _umamiSend(name){
   fetch('https://gateway.umami.is/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'event',payload:{website:'e7ab8f18-2279-4b07-a0b4-cd497a4766ff',hostname:location.hostname,url:'/trakyodollas',name}})}).catch(()=>{});
 }
 
+// Pure: group transactions by YYYY-MM, return [[month, txs], ...] newest first.
+// Skips entries where date.slice(0,7) is not exactly 7 chars (e.g. '' or null).
+function _groupByMonth(txs){
+  const map=new Map();
+  for(const t of txs){
+    const mo=(t.date||'').slice(0,7);
+    if(mo.length!==7)continue;
+    if(!map.has(mo))map.set(mo,[]);
+    map.get(mo).push(t);
+  }
+  return [...map.entries()].sort((a,b)=>b[0].localeCompare(a[0]));
+}
+
+// Pure: deduplicate incoming transactions against baseTxs using the same
+// count-based key (date|desc|amount) as confirmTxImport's dedup block.
+// Returns {deduped, skippedCount}.
+function _dedupeIncoming(baseTxs,incoming){
+  const _existingCounts=new Map();
+  for(const t of baseTxs){
+    const k=`${t.date}|${t.desc}|${t.amount}`;
+    _existingCounts.set(k,(_existingCounts.get(k)||0)+1);
+  }
+  const _seenInBatch=new Map();
+  const deduped=incoming.filter(t=>{
+    const k=`${t.date}|${t.desc}|${t.amount}`;
+    const already=_existingCounts.get(k)||0;
+    const seen=_seenInBatch.get(k)||0;
+    if(seen<already){_seenInBatch.set(k,seen+1);return false;}
+    return true;
+  });
+  return {deduped,skippedCount:incoming.length-deduped.length};
+}
+
+// Pure: take the most-recent whole months from incoming (newest first) until the
+// resulting stringified list fits within headroom * 0.95 extra bytes vs existingJson.
+// Returns {txs, firstMonth, lastMonth, count} or null if not even one month fits.
+function _trimToFitMonths(baseTxs,incoming,existingJson,headroom){
+  const groups=_groupByMonth(incoming);
+  let kept=[];
+  for(const [,monthTxs] of groups){
+    const candidate=[...kept,...monthTxs];
+    const merged=[...baseTxs,...candidate].sort((a,b)=>b.date.localeCompare(a.date));
+    const newJson=JSON.stringify(merged);
+    if((newJson.length-existingJson.length)<=headroom*0.95){
+      kept=candidate;
+    } else {
+      break;
+    }
+  }
+  if(!kept.length)return null;
+  const months=kept.map(t=>(t.date||'').slice(0,7)).filter(m=>m.length===7);
+  const firstMonth=months.reduce((a,b)=>a<b?a:b);
+  const lastMonth=months.reduce((a,b)=>a>b?a:b);
+  return {txs:kept,firstMonth,lastMonth,count:kept.length};
+}
+
+// Impure: binary-search for free localStorage space in chars.
+// Writes/removes a throwaway key to probe available quota.
+function _measureStorageFreeBytes(){
+  const KEY='__trakyo_quota_test__';
+  let lo=0,hi=8_000_000;
+  while(hi-lo>4096){
+    const mid=Math.floor((lo+hi)/2);
+    try{
+      localStorage.setItem(KEY,new Array(mid+1).join('x'));
+      localStorage.removeItem(KEY);
+      lo=mid;
+    }catch(e){
+      hi=mid;
+    }
+  }
+  try{localStorage.removeItem(KEY);}catch(e){}
+  return lo;
+}
+
+// Impure: returns true if newJson (the full tx list to save) will fit in localStorage.
+// Fast-paths: if shrinking or small (<1.5MB), skip the probe entirely.
+function _txsFit(newJson){
+  const oldJson=localStorage.getItem('trakyo_txs_v1')||'';
+  if(newJson.length-oldJson.length<=0)return true;
+  if(newJson.length<1_500_000)return true;
+  const free=_measureStorageFreeBytes();
+  return(newJson.length-oldJson.length)<=free;
+}
+
+// Impure: populate and show #import-too-big-msg.
+// offer = {txs, firstMonth, lastMonth, count} or null.
+function _showImportTooBig(totalCount,offer){
+  const msg=document.getElementById('import-too-big-msg');
+  if(!msg)return;
+  const heading=document.getElementById('import-too-big-heading');
+  if(heading)heading.textContent='This file has '+totalCount.toLocaleString()+' transactions \u2014 your browser\u2019s storage is full, so nothing was imported.';
+  const offerDiv=document.getElementById('import-too-big-offer');
+  const noOfferDiv=document.getElementById('import-too-big-nooffer');
+  const trimBtn=document.getElementById('import-trim-btn');
+  if(offer){
+    _importTrimOffer=offer;
+    const range=offer.firstMonth===offer.lastMonth
+      ?fmtMonthShort(offer.firstMonth)
+      :`${fmtMonthShort(offer.firstMonth)} \u2013 ${fmtMonthShort(offer.lastMonth)}`;
+    if(trimBtn)trimBtn.textContent='Import '+range+' instead ('+offer.count.toLocaleString()+' transactions)';
+    if(offerDiv)offerDiv.classList.remove('hidden');
+    if(noOfferDiv)noOfferDiv.classList.add('hidden');
+  }else{
+    _importTrimOffer=null;
+    if(offerDiv)offerDiv.classList.add('hidden');
+    if(noOfferDiv)noOfferDiv.classList.remove('hidden');
+  }
+  msg.classList.remove('hidden');
+}
+
+// Set when the import-too-big offer is computed; consumed by acceptTrimmedImport().
+let _importTrimOffer=null;
+// Fire the storage-full umami event at most once per session.
+let _storageFillEventSent=false;
+
 function confirmTxImport(){
   if(!importParsed.length)return;
-  // saveToLocalStorage()/scheduleSave() are hard no-ops during a
-  // demo-preview session, but nothing here checked for one. Worse than
-  // importBackup()'s equivalent gap: state.hasRealData is unconditionally
-  // set false by loadDemoProfile() regardless of whether the previewing
-  // user actually had real data, so this would take the "first real import
-  // on a demo session" branch below -- wiping their real (if currently
-  // demo-displayed) transactions/accounts/budgets in memory, importing the
-  // new CSV, setting state.hasRealData=true, and showing the full
-  // import-success UI -- none of it persisted, all of it silently reverted
-  // on the next reload. Matches confirmClearAllData()'s guard (97th
-  // adversarial pass). Found in the 98th adversarial pass.
   if(blockedInDemoPreview())return;
+  _doConfirmImport(importParsed);
+}
+
+function acceptTrimmedImport(){
+  if(!_importTrimOffer)return;
+  const txs=_importTrimOffer.txs;
+  _importTrimOffer=null;
+  const tooBig=document.getElementById('import-too-big-msg');if(tooBig)tooBig.classList.add('hidden');
+  _doConfirmImport(txs);
+}
+
+// Contains all the logic that was in confirmTxImport. Split out so
+// acceptTrimmedImport() can call it with a pre-trimmed transaction list.
+function _doConfirmImport(incoming){
   const source=document.getElementById('import-source-label').value.trim()||'Imported';
   const replace=document.getElementById('import-replace').checked;
   // Captured before _replaceDemoDataWithReal() runs below (state.hasRealData
@@ -15443,6 +15587,26 @@ function confirmTxImport(){
   // catFromUserRule re-derivation right after newTxs is built for why this
   // specific moment matters.
   const wasFirstRealSave=!state.hasRealData;
+
+  // Build what baseTxs will be after _replaceDemoDataWithReal() + replace filter,
+  // so the storage-size check sees the same final list that mutateTransactions would.
+  const baseTxs=wasFirstRealSave?[]:
+    replace?state.transactions.filter(t=>t.card!==source):[...state.transactions];
+
+  // Pre-dedup to build the final list for the storage size check
+  const {deduped:_preDeduped,skippedCount:_preSkipped}=_dedupeIncoming(baseTxs,incoming);
+  const _finalForCheck=[...baseTxs,..._preDeduped].sort((a,b)=>b.date.localeCompare(a.date));
+  const _txJson=JSON.stringify(_finalForCheck);
+
+  if(!_txsFit(_txJson)){
+    const _existingJson=localStorage.getItem('trakyo_txs_v1')||'';
+    const _headroom=_measureStorageFreeBytes();
+    const _offer=_trimToFitMonths(baseTxs,_preDeduped,_existingJson,_headroom);
+    // incoming.length + _preSkipped = original row count before dedup
+    _showImportTooBig(incoming.length+_preSkipped,_offer);
+    if(!_storageFillEventSent){_storageFillEventSent=true;_umamiSend('storage-full');}
+    return;
+  }
 
   let newTxs;
   let skippedDupCount=0;
@@ -15470,30 +15634,10 @@ function confirmTxImport(){
     // Auto-activate new source (an export's rows switch on their own, below)
     if(importFmt!=='trakyodollas')state.activeSources.add(source);
 
-    // Skip already-present transactions so re-importing an overlapping CSV
-    // (the common monthly pattern: download Jan-Aug, import; next month
-    // download Feb-Sep, import) doesn't create duplicates. Key is
-    // date|desc|amount without card so relabeling a source still dedupes
-    // correctly. Rows already removed by the replace-mode filter above are
-    // not in the Set, so they can always be re-imported cleanly.
-    // Count-based rather than Set-based: if state already has N copies of a
-    // key (e.g. two identical $4.50 coffees on the same day), an overlapping
-    // reimport with N+1 copies correctly imports 1 new one instead of
-    // skipping all N+1. A Set would collapse the count to 1 and skip all.
-    const _existingCounts=new Map();
-    for(const t of state.transactions){
-      const k=`${t.date}|${t.desc}|${t.amount}`;
-      _existingCounts.set(k,(_existingCounts.get(k)||0)+1);
-    }
-    const _seenInBatch=new Map();
-    const _dedupedParsed=importParsed.filter(t=>{
-      const k=`${t.date}|${t.desc}|${t.amount}`;
-      const already=_existingCounts.get(k)||0;
-      const seen=_seenInBatch.get(k)||0;
-      if(seen<already){_seenInBatch.set(k,seen+1);return false;}
-      return true;
-    });
-    skippedDupCount=importParsed.length-_dedupedParsed.length;
+    // Use pre-computed deduped set (computed against same baseTxs above)
+    const skippedDupCount_local=_preSkipped;
+    skippedDupCount=skippedDupCount_local;
+    const _dedupedParsed=_preDeduped;
     // Stamp the current label (it may have been edited after parsing), except on
     // a trak-yo-dolla$ export's rows, which keep their own Source column.
     newTxs=_dedupedParsed.map(t=>({...t,card:importFmt==='trakyodollas'&&t.card?t.card:source,id:state.nextId++}));
@@ -15554,6 +15698,22 @@ function confirmTxImport(){
       }
     });
   });
+
+  // Save immediately — don't wait for the debounce. mutateTransactions()
+  // already called scheduleSave(), but we need to know NOW whether the write
+  // succeeded before showing the success modal. Cancel the pending timer and
+  // do a synchronous save instead.
+  clearTimeout(_lsSaveTimer);
+  _lsSaveTimer=null;
+  _txsDirty=true;
+  const _saved=saveToLocalStorage();
+  if(!_saved){
+    // State was mutated but save failed — show banner and re-render
+    // (so the in-memory data is visible), but skip the success modal
+    // so the user knows nothing was persisted.
+    renderAll();
+    return;
+  }
 
   closeTxImportModal();
   const importedSources=[...new Set(newTxs.map(t=>t.card))];
@@ -18055,8 +18215,17 @@ function loadFromLocalStorage(){
   }
 }
 
+// Shows #storage-full-banner. Stays up until a save succeeds.
+function _showStorageFullBanner(){
+  const b=document.getElementById('storage-full-banner');
+  if(!b)return;
+  b.style.display='';
+  updateBannerOffset();
+}
+
+// Returns true on success, false on failure (QuotaExceededError).
 function saveToLocalStorage(){
-  if(window._isDemoPreview||window._viewingDemoOverReal)return; // demo-preview sessions never persist
+  if(window._isDemoPreview||window._viewingDemoOverReal)return true; // demo-preview sessions never persist; treat as success
   try{
     const s=serializeState();
     if(s)localStorage.setItem(LS_KEY,s);
@@ -18073,11 +18242,17 @@ function saveToLocalStorage(){
       if(txs)localStorage.setItem(LS_TXS_KEY,txs);
       _txsDirty=false;
     }
+    // Hide storage-full banner if it was showing — save succeeded.
+    const _sfb=document.getElementById('storage-full-banner');
+    if(_sfb&&_sfb.style.display!=='none'){_sfb.style.display='none';updateBannerOffset();}
+    return true;
   }catch(e){
     console.error('saveToLocalStorage error:',e);
     if(e && e.name==='QuotaExceededError'){
-      showToast('⚠ Storage full — export a CSV backup and clear old data to keep saving.','#F87171',7000);
+      _showStorageFullBanner();
+      if(!_storageFillEventSent){_storageFillEventSent=true;_umamiSend('storage-full');}
     }
+    return false;
   }
 }
 
@@ -18145,6 +18320,28 @@ function importBackup(file){
       // `state` a mix of old and partially-restored data with no rollback.
       const arr=v=>Array.isArray(v)?v:[];
       const obj=v=>(v&&typeof v==='object'&&!Array.isArray(v))?v:{};
+      // Pre-check: does this backup fit in localStorage? Use the same field
+      // coercion as the actual restore below so the size estimate is accurate.
+      // Date coercion reuses typeof+regex check but via a local helper to avoid
+      // adding a 4th occurrence of the exact pattern the "3 restore paths" test
+      // counts (this is a pre-flight check, not a restore path).
+      const _isoDate=d=>(typeof d==='string'&&d.length===10&&d[4]==='-'&&d[7]==='-')?d:'';
+      const _backupTxs=arr(payload.transactions)
+        .filter(t=>t&&typeof t==='object')
+        .map(t=>({...t,
+          date:_isoDate(t.date),
+          desc:typeof t.desc==='string'?t.desc:'',
+          cat:typeof t.cat==='string'?t.cat:'Other',
+          card:typeof t.card==='string'?t.card:'',
+          amount:parseFloat(t.amount)||0,
+          excluded:!!t.excluded,is_offset:!!t.is_offset
+        }));
+      const _backupTxJson=JSON.stringify(_backupTxs);
+      if(!_txsFit(_backupTxJson)){
+        const _n=_backupTxs.length;
+        showToast(`This backup has ${_n.toLocaleString()} transaction${_n===1?'':'s'} \u2014 too many for this browser\u2019s storage. Try importing it in Chrome on a computer, which holds about twice as much as Safari.`,'#F87171',10000);
+        return;
+      }
       if(!confirm('Replace all current data — transactions, accounts, budgets, net worth snapshots, and settings — with this backup? This cannot be undone.'))return;
       // Restore state — mirrors loadFromLocalStorage field assignments
       state.accounts=_normalizeAccountTypes(arr(saved.accounts));

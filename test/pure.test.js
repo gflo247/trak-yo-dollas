@@ -2708,17 +2708,18 @@ test("import-success-modal has a #import-success-no-account nudge box, hidden by
 });
 test("confirmTxImport: shows the no-matching-account nudge only when no account's name matches this import's source label (case-insensitively)", () => {
   const source = readSource();
-  const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,15000}?\n}\n/);
-  assert.ok(fnMatch, "confirmTxImport() should exist");
+  // confirmTxImport() is now a thin wrapper; the logic lives in _doConfirmImport().
+  const fnMatch = source.match(/function _doConfirmImport\(incoming\)\{[\s\S]{0,15000}?\n}\n/);
+  assert.ok(fnMatch, "_doConfirmImport() should exist (confirmTxImport delegates to it)");
   assert.match(
     fnMatch[0],
     /const noAcctEl=document\.getElementById\('import-success-no-account'\);\s*if\(noAcctEl\)\{\s*const hasMatchingAccount=state\.accounts\.some\(a=>a\.name\.trim\(\)\.toLowerCase\(\)===source\.trim\(\)\.toLowerCase\(\)\);\s*if\(!hasMatchingAccount\)\{noAcctEl\.textContent=/,
-    "confirmTxImport() should check state.accounts for a case-insensitive name match against this import's source label before deciding whether to show the nudge"
+    "_doConfirmImport() should check state.accounts for a case-insensitive name match against this import's source label before deciding whether to show the nudge"
   );
   assert.match(
     fnMatch[0],
     /else\{noAcctEl\.classList\.add\('hidden'\);\}/,
-    "confirmTxImport() should explicitly hide the nudge when a matching account does exist, not just show it when one doesn't -- otherwise it would stay stuck visible from a prior import in the same session"
+    "_doConfirmImport() should explicitly hide the nudge when a matching account does exist, not just show it when one doesn't -- otherwise it would stay stuck visible from a prior import in the same session"
   );
 });
 
@@ -3773,12 +3774,13 @@ test("renderSpendChart: the activeCats branch's 'Peak month' tooltip flag uses a
 // source-pattern only. ──
 test("confirmTxImport: auto-registers any imported transaction's category that isn't already in getAllCats() as a new custom category", () => {
   const source = readSource();
-  const fnMatch = source.match(/_existingCounts=new Map[\s\S]{0,4400}?\n  \}\);/);
-  assert.ok(fnMatch, "confirmTxImport()'s mutateTransactions block should exist");
+  // confirmTxImport() delegates to _doConfirmImport(); the auto-register logic lives inside its mutateTransactions block.
+  const fnMatch = source.match(/function _doConfirmImport\(incoming\)\{[\s\S]{0,15000}?\n}\n/);
+  assert.ok(fnMatch, "_doConfirmImport() (confirmTxImport's implementation) should exist");
   assert.match(
     fnMatch[0],
     /const knownCats=new Set\(getAllCats\(\)\.map\(c=>c\.toLowerCase\(\)\)\);\s*newTxs\.forEach\(t=>\{\s*if\(t\.cat&&!knownCats\.has\(t\.cat\.toLowerCase\(\)\)\)\{\s*state\.customCategories\.push\(\{name:t\.cat,color:null\}\);\s*knownCats\.add\(t\.cat\.toLowerCase\(\)\);\s*\}\s*\}\);/,
-    "confirmTxImport() should push {name,color:null} (addCustomCat()'s own shape) for every newly-imported category not already in getAllCats(), deduping case-insensitively (109th pass) via a local Set so a repeated new category isn't pushed twice"
+    "_doConfirmImport() should push {name,color:null} (addCustomCat()'s own shape) for every newly-imported category not already in getAllCats(), deduping case-insensitively (109th pass) via a local Set so a repeated new category isn't pushed twice"
   );
 });
 
@@ -3822,10 +3824,11 @@ test("confirmTxImport: re-derives catFromUserRule categories via community rules
   assert.match(
     source,
     /const wasFirstRealSave=!state\.hasRealData;/,
-    "confirmTxImport() should capture whether this is a first-real-save transition before _replaceDemoDataWithReal() runs"
+    "_doConfirmImport() (confirmTxImport's implementation) should capture whether this is a first-real-save transition before _replaceDemoDataWithReal() runs"
   );
-  const fnMatch = source.match(/_existingCounts=new Map[\s\S]{0,4400}?\n  \}\);/);
-  assert.ok(fnMatch, "confirmTxImport()'s mutateTransactions block should exist");
+  // confirmTxImport() delegates to _doConfirmImport(); the catFromUserRule logic is inside its mutateTransactions block.
+  const fnMatch = source.match(/function _doConfirmImport\(incoming\)\{[\s\S]{0,15000}?\n}\n/);
+  assert.ok(fnMatch, "_doConfirmImport()'s mutateTransactions block should exist");
   assert.match(
     fnMatch[0],
     /if\(wasFirstRealSave\)\{\s*newTxs\.forEach\(t=>\{\s*if\(t\.catFromUserRule\)\{/,
@@ -3854,17 +3857,18 @@ test("confirmTxImport: re-derives catFromUserRule categories via community rules
 // Source-pattern only -- confirmTxImport() is DOM-heavy.
 test("confirmTxImport dedup: uses count-based Map, not a Set, so N existing + N+1 incoming imports exactly 1 new row", () => {
   const source = readSource();
-  // Count-based approach: _existingCounts tracks how many of each key exist
-  // in state, _seenInBatch tracks how many of that key have already been
-  // allowed through in this import pass.
+  // Dedup logic lives in _dedupeIncoming() (extracted from confirmTxImport for
+  // testability and pre-flight size checks). Count-based: _existingCounts tracks
+  // how many of each key exist in baseTxs, _seenInBatch tracks how many have
+  // already been allowed through in this import pass.
   assert.match(
     source,
-    /_existingCounts=new Map\(\);\s*for\(const t of state\.transactions\)\{[\s\S]{0,200}?_existingCounts\.set\(k,\(_existingCounts\.get\(k\)\|\|0\)\+1\)/,
-    "dedup should build a count Map from state.transactions, not a Set"
+    /_existingCounts=new Map\(\);\s*for\(const t of baseTxs\)\{[\s\S]{0,200}?_existingCounts\.set\(k,\(_existingCounts\.get\(k\)\|\|0\)\+1\)/,
+    "dedup should build a count Map from baseTxs (the base transaction list), not a Set"
   );
   assert.match(
     source,
-    /_seenInBatch=new Map\(\);\s*const _dedupedParsed=importParsed\.filter/,
+    /_seenInBatch=new Map\(\);\s*const deduped=incoming\.filter/,
     "dedup should track how many of each key have been let through in the current batch"
   );
   assert.match(
@@ -3997,12 +4001,13 @@ test("renderSpendChart: peakIdx is declared let and reassigned from the vendor-f
 // this reset.
 test("confirmTxImport: the demo-session-wipe branch delegates to the shared _replaceDemoDataWithReal() helper, not its own hand-rolled reset list", () => {
   const source = readSource();
-  const fnMatch = source.match(/function confirmTxImport\(\)\{[\s\S]{0,2700}?_replaceDemoDataWithReal\(\);/);
-  assert.ok(fnMatch, "confirmTxImport() should call _replaceDemoDataWithReal()");
+  // confirmTxImport() is now a thin wrapper; the logic lives in _doConfirmImport().
+  const fnMatch = source.match(/function _doConfirmImport\(incoming\)\{[\s\S]{0,2700}?_replaceDemoDataWithReal\(\);/);
+  assert.ok(fnMatch, "confirmTxImport() should call _replaceDemoDataWithReal() (via _doConfirmImport)");
   assert.doesNotMatch(
-    source.match(/function confirmTxImport\(\)\{[\s\S]{0,7800}?\n  closeTxImportModal\(\);/)[0],
+    source.match(/function _doConfirmImport\(incoming\)\{[\s\S]{0,7800}?\n  closeTxImportModal\(\);/)[0],
     /state\.income=\{method:null,monthlyAmount:0\};/,
-    "confirmTxImport() itself should no longer hand-roll the income reset -- it's now inside the shared helper"
+    "_doConfirmImport() itself should no longer hand-roll the income reset -- it's now inside the shared helper"
   );
 });
 
@@ -4675,19 +4680,20 @@ test("saveHistoricalSnapshot: has the demo-preview guard, wipes demo data before
 // matching those three. Found and fixed August 2026. ──
 test("confirmTxImport()/saveTx()/saveSnapshot()/saveHistoricalSnapshot() all call renderAll() after their demo-to-real wipe, not a narrower render subset that omits the Net Worth tab", () => {
   const source = readSource();
-  const confirmTxImportSrc = source.match(/function confirmTxImport\(\)\{[\s\S]{0,15000}?\n}\n/)[0];
+  // confirmTxImport() is now a thin wrapper; the logic lives in _doConfirmImport().
+  const doConfirmImportSrc = source.match(/function _doConfirmImport\(incoming\)\{[\s\S]{0,15000}?\n}\n/)[0];
   assert.match(
-    confirmTxImportSrc,
+    doConfirmImportSrc,
     /state\.hasRealData=true;\s*hideDemoBadge\(\);\s*if\(wasFirstRealSave\)_requestStoragePersist\(\);\s*\/\/[\s\S]{0,1400}?renderAll\(\);\s*\/\/ Show post-import success modal/,
-    "confirmTxImport() should call renderAll() (not renderSpending()) right after state.hasRealData=true/hideDemoBadge() -- renderAll() itself reads state.hasRealData to decide whether to hide demo notices, so it must run after that flag flips, not right after closeModals() where an earlier version of this fix mistakenly placed it (caught live-testing: the 'Demo accounts' banner stayed stuck visible)"
+    "_doConfirmImport() should call renderAll() (not renderSpending()) right after state.hasRealData=true/hideDemoBadge() -- renderAll() itself reads state.hasRealData to decide whether to hide demo notices, so it must run after that flag flips, not right after closeModals() where an earlier version of this fix mistakenly placed it (caught live-testing: the 'Demo accounts' banner stayed stuck visible)"
   );
   assert.doesNotMatch(
-    confirmTxImportSrc,
+    doConfirmImportSrc,
     /closeModals\(\);\s*renderSpending\(\);/,
-    "confirmTxImport() should no longer call renderSpending() alone after closeModals()"
+    "_doConfirmImport() should no longer call renderSpending() alone after closeModals()"
   );
   assert.doesNotMatch(
-    confirmTxImportSrc,
+    doConfirmImportSrc,
     /closeModals\(\);\s*renderAll\(\);/,
     "renderAll() should not sit directly after closeModals() either -- it must come after state.hasRealData=true is set, later in the function"
   );
@@ -10624,6 +10630,97 @@ test("_classifyImportFile: CSV with UTF-8 BOM → null (BOM is not a NUL byte)",
   // Prepend UTF-8 BOM: EF BB BF
   const bytes = new Uint8Array([0xEF, 0xBB, 0xBF, ...csvBytes]);
   assert.equal(_classifyImportFile("transactions.csv", bytes), null);
+});
+
+// ── _groupByMonth ──────────────────────────────────────────────────────────
+test('_groupByMonth: groups by YYYY-MM, returns newest first', () => {
+  const {_groupByMonth} = loadFunctions(['_groupByMonth'], {});
+  const txs = [
+    {date:'2024-01-15', desc:'A', amount:10},
+    {date:'2024-01-25', desc:'B', amount:20},
+    {date:'2024-02-05', desc:'C', amount:30},
+  ];
+  const groups = _groupByMonth(txs);
+  assert.strictEqual(groups.length, 2);
+  assert.strictEqual(groups[0][0], '2024-02'); // newest first
+  assert.strictEqual(groups[1][0], '2024-01');
+  assert.strictEqual(groups[1][1].length, 2);
+});
+
+test('_groupByMonth: skips entries with invalid or missing dates', () => {
+  const {_groupByMonth} = loadFunctions(['_groupByMonth'], {});
+  const txs = [{date:'',desc:'X',amount:1},{date:'2024-03-01',desc:'Y',amount:2}];
+  const groups = _groupByMonth(txs);
+  assert.strictEqual(groups.length, 1);
+  assert.strictEqual(groups[0][0], '2024-03');
+});
+
+// ── _dedupeIncoming ────────────────────────────────────────────────────────
+test('_dedupeIncoming: drops rows already in baseTxs (count-based)', () => {
+  const {_dedupeIncoming} = loadFunctions(['_dedupeIncoming'], {});
+  const base = [{date:'2024-01-10',desc:'Coffee',amount:4.5}];
+  const incoming = [
+    {date:'2024-01-10',desc:'Coffee',amount:4.5},  // dup
+    {date:'2024-01-11',desc:'Lunch',amount:12},
+  ];
+  const {deduped,skippedCount} = _dedupeIncoming(base, incoming);
+  assert.strictEqual(deduped.length, 1);
+  assert.strictEqual(deduped[0].desc, 'Lunch');
+  assert.strictEqual(skippedCount, 1);
+});
+
+test('_dedupeIncoming: allows N+1 copies when base has N', () => {
+  const {_dedupeIncoming} = loadFunctions(['_dedupeIncoming'], {});
+  const base = [{date:'2024-01-10',desc:'Coffee',amount:4.5},{date:'2024-01-10',desc:'Coffee',amount:4.5}];
+  const incoming = [
+    {date:'2024-01-10',desc:'Coffee',amount:4.5},
+    {date:'2024-01-10',desc:'Coffee',amount:4.5},
+    {date:'2024-01-10',desc:'Coffee',amount:4.5}, // third copy = new
+  ];
+  const {deduped} = _dedupeIncoming(base, incoming);
+  assert.strictEqual(deduped.length, 1);
+});
+
+// ── _trimToFitMonths ───────────────────────────────────────────────────────
+test('_trimToFitMonths: returns null when headroom is 0', () => {
+  const {_trimToFitMonths,_groupByMonth} = loadFunctions(['_trimToFitMonths','_groupByMonth'], {});
+  const incoming = [{date:'2024-01-10',desc:'X',amount:5}];
+  assert.strictEqual(_trimToFitMonths([], incoming, '', 0), null);
+});
+
+test('_trimToFitMonths: returns all months when headroom is generous', () => {
+  const {_trimToFitMonths,_groupByMonth} = loadFunctions(['_trimToFitMonths','_groupByMonth'], {});
+  const incoming = [
+    {date:'2024-01-10',desc:'A',amount:10},
+    {date:'2024-02-10',desc:'B',amount:20},
+  ];
+  const json = JSON.stringify([...incoming].sort((a,b)=>b.date.localeCompare(a.date)));
+  const result = _trimToFitMonths([], incoming, '', json.length * 2);
+  assert.ok(result !== null);
+  assert.strictEqual(result.count, 2);
+  assert.strictEqual(result.firstMonth, '2024-01');
+  assert.strictEqual(result.lastMonth, '2024-02');
+});
+
+test('_trimToFitMonths: takes only newest month when only one fits', () => {
+  const {_trimToFitMonths,_groupByMonth} = loadFunctions(['_trimToFitMonths','_groupByMonth'], {});
+  const baseTxs = [];
+  const incoming = [
+    {date:'2024-01-10',desc:'A',amount:10},
+    {date:'2024-01-20',desc:'B',amount:20},
+    {date:'2024-02-10',desc:'C',amount:30},
+    {date:'2024-02-20',desc:'D',amount:40},
+  ];
+  // Measure how big Feb-only result would be
+  const febTxs = incoming.filter(t=>t.date.startsWith('2024-02'));
+  const febJson = JSON.stringify([...febTxs].sort((a,b)=>b.date.localeCompare(a.date)));
+  // headroom = just enough for Feb (with 5% room) but not Jan+Feb
+  const headroom = Math.ceil(febJson.length / 0.95);
+  const result = _trimToFitMonths(baseTxs, incoming, '', headroom);
+  assert.ok(result !== null, 'should find at least one month');
+  assert.strictEqual(result.firstMonth, '2024-02');
+  assert.strictEqual(result.lastMonth, '2024-02');
+  assert.strictEqual(result.count, 2);
 });
 
 // ── end of tests ──

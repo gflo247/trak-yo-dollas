@@ -199,3 +199,6 @@ first successful import.~~
 On-device PDF → CSV conversion using a WebAssembly PDF parser. Useful for users
 whose bank only offers PDF statements. High complexity — revisit after the CSV
 experience is solid.
+
+### 37. Move transactions to IndexedDB
+Safari limits localStorage to 5 megabytes (interpreted as UTF-16, so ~2.5 million characters), capping imports at ~14,000 transactions. IndexedDB gets a share of available disk space — WebKit gives each origin up to ~60% of total disk — so the limit becomes the device, not an arbitrary quota. The storage-full event count determines priority.

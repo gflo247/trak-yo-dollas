@@ -410,3 +410,209 @@ test('wrong-file: XLSX file shows spreadsheet error message', async ({ page }) =
   // Cleanup
   fs.unlinkSync(tmpXlsx);
 });
+
+// ── Storage quota: too-big imports and banner behavior ───────────────────────
+// initScript that wraps localStorage.setItem to throw QuotaExceededError once
+// total used space exceeds 400,000 characters (well under a real 5MB Safari
+// quota, but enough to simulate the limit for testing purposes).
+const QUOTA_INIT_SCRIPT = `
+  (function(){
+    const LIMIT = 400000;
+    const orig = Storage.prototype.setItem;
+    Object.defineProperty(Storage.prototype, 'setItem', {
+      value: function(key, value) {
+        let total = key.length + String(value).length;
+        for (let i = 0; i < this.length; i++) {
+          const k = this.key(i);
+          if (k !== key) total += k.length + (this.getItem(k) || '').length;
+        }
+        if (total > LIMIT) {
+          const e = new DOMException('QuotaExceededError', 'QuotaExceededError');
+          throw e;
+        }
+        return orig.call(this, key, value);
+      },
+      configurable: true, writable: true
+    });
+  })();
+`;
+
+// Generate a Monarch CSV with 200 rows × 10 months (Jan–Oct 2024).
+function makeQuotaTestCsv() {
+  const os = require('os');
+  const fs = require('fs');
+  const merchants = ['Netflix', 'Spotify', 'Amazon', 'Target', 'Starbucks'];
+  const lines = ['Date,Merchant,Category,Account,Original Statement,Notes,Amount,Tags'];
+  for (let month = 1; month <= 10; month++) {
+    for (let day = 1; day <= 20; day++) {
+      const m = String(month).padStart(2, '0');
+      const d = String(day).padStart(2, '0');
+      lines.push(`2024-${m}-${d},${merchants[day % 5]},Shopping,Chase Freedom,,,-${10 + (day % 50)},`);
+    }
+  }
+  const csvPath = path.join(os.tmpdir(), `tyd_quota_test_${Date.now()}.csv`);
+  fs.writeFileSync(csvPath, lines.join('\n'));
+  return csvPath;
+}
+
+test.describe('storage quota', () => {
+  test('too-big import shows offer and changes nothing', async ({ page }) => {
+    const fs = require('fs');
+    await page.addInitScript(QUOTA_INIT_SCRIPT);
+    await page.goto(APP);
+    await page.waitForFunction(() => typeof openTxImportModal === 'function');
+
+    const csvPath = makeQuotaTestCsv();
+    try {
+      await page.evaluate(() => openTxImportModal());
+      await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+      await page.locator('#import-source-label').fill('Chase Freedom');
+      await page.locator('#tx-csv-file').setInputFiles(csvPath);
+      // Wait for preview to appear, then click Import
+      await page.waitForFunction(() => {
+        const btn = document.getElementById('import-confirm-btn');
+        return btn && !btn.classList.contains('hidden');
+      }, { timeout: 5000 });
+      await page.locator('#import-confirm-btn').click();
+
+      // #import-too-big-msg should become visible
+      await page.waitForFunction(() => {
+        const el = document.getElementById('import-too-big-msg');
+        return el && !el.classList.contains('hidden');
+      }, { timeout: 5000 });
+
+      // Trim button should be visible and contain expected text
+      const trimBtn = page.locator('#import-trim-btn');
+      await trimBtn.waitFor({ state: 'visible' });
+      const trimText = await trimBtn.textContent();
+      expect(trimText).toContain('Import');
+      expect(trimText).toContain('instead');
+
+      // Success modal should NOT be visible
+      const successVisible = await page.locator('#import-success-modal').isVisible();
+      expect(successVisible).toBe(false);
+
+      // localStorage should have no transactions (nothing was imported)
+      const txJson = await page.evaluate(() => localStorage.getItem('trakyo_txs_v1'));
+      expect(!txJson || txJson === '[]' || JSON.parse(txJson || '[]').length === 0).toBe(true);
+    } finally {
+      fs.unlinkSync(csvPath);
+    }
+  });
+
+  test('accepting trim offer imports only fitting months and survives reload', async ({ page }) => {
+    const fs = require('fs');
+    await page.addInitScript(QUOTA_INIT_SCRIPT);
+    await page.goto(APP);
+    await page.waitForFunction(() => typeof openTxImportModal === 'function');
+
+    const csvPath = makeQuotaTestCsv();
+    try {
+      await page.evaluate(() => openTxImportModal());
+      await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+      await page.locator('#import-source-label').fill('Chase Freedom');
+      await page.locator('#tx-csv-file').setInputFiles(csvPath);
+      await page.waitForFunction(() => {
+        const btn = document.getElementById('import-confirm-btn');
+        return btn && !btn.classList.contains('hidden');
+      }, { timeout: 5000 });
+      await page.locator('#import-confirm-btn').click();
+
+      // Wait for the too-big message
+      await page.waitForFunction(() => {
+        const el = document.getElementById('import-too-big-msg');
+        return el && !el.classList.contains('hidden');
+      }, { timeout: 5000 });
+
+      // Click the trim button
+      await page.locator('#import-trim-btn').click();
+
+      // Success modal should appear
+      await page.waitForFunction(() => {
+        const el = document.getElementById('import-success-modal');
+        return el && !el.classList.contains('hidden');
+      }, { timeout: 5000 });
+
+      // localStorage should have some transactions
+      const txJson = await page.evaluate(() => localStorage.getItem('trakyo_txs_v1'));
+      expect(txJson).toBeTruthy();
+      expect(JSON.parse(txJson).length).toBeGreaterThan(0);
+
+      // Reload the page
+      await page.reload();
+      await page.waitForFunction(() => typeof openTxImportModal === 'function');
+
+      // Transactions should still be there
+      const txJsonAfterReload = await page.evaluate(() => localStorage.getItem('trakyo_txs_v1'));
+      expect(txJsonAfterReload).toBeTruthy();
+      expect(JSON.parse(txJsonAfterReload).length).toBeGreaterThan(0);
+    } finally {
+      fs.unlinkSync(csvPath);
+    }
+  });
+
+  test('save failure after import shows storage-full banner', async ({ page }) => {
+    const fs = require('fs');
+    // Load page normally (no quota initScript) — first import saves fine
+    await page.goto(APP);
+    await page.waitForFunction(() => typeof openTxImportModal === 'function');
+
+    // Import a small CSV that fits
+    const smallCsvPath = path.join(require('os').tmpdir(), `tyd_small_${Date.now()}.csv`);
+    fs.writeFileSync(smallCsvPath, 'Date,Merchant,Category,Account,Original Statement,Notes,Amount,Tags\n2024-01-15,Coffee,Food,Chase Freedom,,,-5,\n2024-01-16,Lunch,Food,Chase Freedom,,,-12,\n');
+    try {
+      await page.evaluate(() => openTxImportModal());
+      await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+      await page.locator('#import-source-label').fill('Chase Freedom');
+      await page.locator('#tx-csv-file').setInputFiles(smallCsvPath);
+      await page.waitForFunction(() => {
+        const btn = document.getElementById('import-confirm-btn');
+        return btn && !btn.classList.contains('hidden');
+      }, { timeout: 5000 });
+      await page.locator('#import-confirm-btn').click();
+      // Wait for success modal
+      await page.waitForFunction(() => {
+        const el = document.getElementById('import-success-modal');
+        return el && !el.classList.contains('hidden');
+      }, { timeout: 5000 });
+      // Close the success modal
+      await page.evaluate(() => {
+        const el = document.getElementById('import-success-modal');
+        if (el) el.classList.add('hidden');
+      });
+
+      // Now mock setItem to throw and trigger a save
+      await page.evaluate(() => {
+        const orig = Storage.prototype.setItem;
+        Storage.prototype.setItem = function(k, v) {
+          if (k === 'trakyo_txs_v1') {
+            const err = new DOMException('QuotaExceededError', 'QuotaExceededError');
+            throw err;
+          }
+          return orig.call(this, k, v);
+        };
+        // Trigger a save
+        if (typeof saveToLocalStorage === 'function') saveToLocalStorage();
+      });
+
+      // #storage-full-banner should become visible
+      await page.waitForFunction(() => {
+        const b = document.getElementById('storage-full-banner');
+        return b && b.style.display !== 'none';
+      }, { timeout: 3000 });
+
+      // Restore setItem and trigger a successful save — banner should hide
+      await page.evaluate(() => {
+        delete Storage.prototype.setItem;
+        if (typeof saveToLocalStorage === 'function') saveToLocalStorage();
+      });
+
+      await page.waitForFunction(() => {
+        const b = document.getElementById('storage-full-banner');
+        return b && b.style.display === 'none';
+      }, { timeout: 3000 });
+    } finally {
+      fs.unlinkSync(smallCsvPath);
+    }
+  });
+});
