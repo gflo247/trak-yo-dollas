@@ -176,12 +176,14 @@ async function main() {
           }, theme);
 
           await page.goto(`${BASE_URL}/${staticPage}`, { waitUntil: 'load' });
+          // Freeze staggered fade-in animations so axe never sees an element
+          // mid-animation (opacity:0, contrast:0). Setting duration to a tiny
+          // value lets the browser fire the animation and reach its fill-mode
+          // final state (opacity:1) in the same paint, removing the timing race
+          // that caused intermittent contrast false-positives on .fu/.fu3 nodes.
+          await page.addStyleTag({ content: '*, *::before, *::after { animation-duration: 0.0001s !important; animation-delay: 0s !important; }' });
           await page.addScriptTag({ content: axeSource });
-          // Wait for fade-in animations to complete — the longest staggered
-          // delay is .fu5 at 360ms, animation duration is 550ms, so elements
-          // with animation-fill-mode:both are still opacity:0 at 200ms and
-          // axe would report spurious contrast failures on those nodes.
-          await page.waitForTimeout(1000);
+          await page.waitForTimeout(200);
 
           const results = await page.evaluate(() => axe.run(document, {
             runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21aa'] },
