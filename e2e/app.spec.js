@@ -285,6 +285,7 @@ test('bofa_checking_debit: recurring includes Netflix and Spotify; Kroger appear
 
   await importFile(page, BOFA_CHECKING_CSV);
   await page.locator('[data-action="importSuccessAndAlign"]').click();
+  await page.locator('#import-success-modal').waitFor({ state: 'hidden' });
   await page.locator('[data-action="showPageSpending"]').click();
 
   // Check subscriptions
