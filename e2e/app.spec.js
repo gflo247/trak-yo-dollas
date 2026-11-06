@@ -562,12 +562,21 @@ test('replace: re-importing same source with replace checked removes old transac
 });
 
 // ── Storage quota: too-big imports and banner behavior ───────────────────────
-// initScript that wraps localStorage.setItem to throw QuotaExceededError once
-// total used space exceeds 400,000 characters (well under a real 5MB Safari
-// quota, but enough to simulate the limit for testing purposes).
+// initScript that pre-fills localStorage with ~3.9MB of padding, then wraps
+// setItem to throw QuotaExceededError once total used space exceeds 4,200,000
+// characters (simulating a nearly-full 5MB quota). The pre-fill is necessary
+// because _txsFit()'s fast-path skips the probe when projected total storage
+// is under 4MB -- without pre-fill, the test CSV's ~420KB of JSON would be
+// under that threshold and the probe would never run.
 const QUOTA_INIT_SCRIPT = `
   (function(){
-    const LIMIT = 400000;
+    const LIMIT = 4200000;
+    // Pre-fill with ~3.9MB of dummy data before installing the quota hook so
+    // the hook's own setItem calls don't trigger a re-entrant check.
+    const chunk = 'x'.repeat(50000);
+    for (let i = 0; i < 78; i++) {
+      try { localStorage.setItem('_quota_pad_' + i, chunk); } catch(e) { break; }
+    }
     const orig = Storage.prototype.setItem;
     Object.defineProperty(Storage.prototype, 'setItem', {
       value: function(key, value) {
@@ -588,9 +597,9 @@ const QUOTA_INIT_SCRIPT = `
 `;
 
 // Generate a Monarch CSV with 3200 rows (160 months × 20 days).
-// Needs enough rows so the JSON delta exceeds 200KB — the _txsFit fast-path
-// threshold — to actually hit the quota probe. At ~130 chars/row that's
-// ~416KB of new JSON, safely above the 200KB threshold.
+// Produces ~420KB of transaction JSON -- enough that projectedTotal (CSV JSON
+// + ~3.9MB pre-fill padding) exceeds _txsFit()'s 4MB fast-path threshold and
+// hits the actual binary-search probe, which then detects insufficient space.
 function makeQuotaTestCsv() {
   const os = require('os');
   const fs = require('fs');
