@@ -2959,7 +2959,7 @@ test("renderNwGoalWidget: shows a custom-goal prompt instead of NaN/Invalid Date
 // injection, via (v.model||'').split(' ') -- a crafted backup storing
 // v.model as a truthy non-string bypasses the ||'' fallback.
 test("renderVehicles: escapes v.id and v.year in data-arg attributes, and coerces v.model to a string before .split()", () => {
-  const source = readSource();
+  const source = fnBody('renderVehicles');
   const idMatches = source.match(/data-action="editVehicle" data-arg="\$\{esc\(String\(v\.id\)\)\}"/g) || [];
   assert.equal(idMatches.length, 2, "both editVehicle buttons (the 'other' asset branch and the regular vehicle branch) should esc(String(v.id))");
   assert.match(
@@ -3439,7 +3439,7 @@ test("buildRcList: the early-return branch clears #rc-list's innerHTML, not just
 // state-heavy function with established source-pattern-only test precedent
 // in this suite (see the 87th pass's date-validation test above). ──
 test("normalizeTxRow: chase/debitcredit branches route their raw-category fallback through mapImportedCategory(), not the unvalidated bank string", () => {
-  const source = readSource();
+  const source = fnBody('normalizeTxRow');
   const chaseMatch = source.match(/\}\s*else if\(importFmt==='chase'\)\{[\s\S]{0,1400}?\n\n  \} else if\(importFmt==='debitcredit'\)/);
   assert.ok(chaseMatch, "the chase import branch should exist");
   assert.match(
@@ -3633,7 +3633,7 @@ test("Sankey income-node label uses raw fmtC, matching the category-node labels 
 // currency symbol, no %-of-month/MoM/peak context), unlike every sibling
 // branch. renderSpendChart() is D3/Chart.js-heavy; source-pattern only. ──
 test("renderSpendChart: the category-filtered (activeCats) branch has its own tooltip label callback, not Chart.js's bare default", () => {
-  const source = readSource();
+  const source = fnBody('renderSpendChart');
   const branchMatch = source.match(/if\(state\.activeCats\.size>0\)\{\n      const catsToShow[\s\S]{0,2700}?\n    \}/);
   assert.ok(branchMatch, "the activeCats>0 branch should exist");
   assert.match(
@@ -3684,7 +3684,7 @@ test("buildRcList: the populate branch syncs #rc-select-all's checked state to m
 // is D3/Chart.js-heavy; source-pattern only, matching this suite's
 // established precedent. ──
 test("renderSpendChart: the activeCats branch's 'Peak month' tooltip flag uses a branch-local peak (only the selected categories), not the shared all-category peakIdx", () => {
-  const source = readSource();
+  const source = fnBody('renderSpendChart');
   const branchMatch = source.match(/if\(state\.activeCats\.size>0\)\{\n      const catsToShow[\s\S]{0,2700}?\n    \}/);
   assert.ok(branchMatch, "the activeCats>0 branch should exist");
   assert.match(
@@ -3823,7 +3823,7 @@ test("confirmTxImport dedup: uses count-based Map, not a Set, so N existing + N+
 });
 
 test("confirmTxImport dedup: key is date|desc|amount with no card field, so relabeling a source does not create duplicates", () => {
-  const source = readSource();
+  const source = fnBody('_dedupeIncoming');
   assert.match(
     source,
     /const k=`\$\{t\.date\}\|\$\{t\.desc\}\|\$\{t\.amount\}`/,
@@ -3883,7 +3883,7 @@ test("copyYirSummary: every fmt() call feeding the clipboard uses raw=true, not 
 // trap for a future fix landing in the shadowed block. Removed, folding
 // into a single assignment. ──
 test("renderSpendChart: the top5+Other branch's tooltip label callback is assigned exactly once, not shadowed by a second assignment", () => {
-  const source = readSource();
+  const source = fnBody('renderSpendChart');
   const assignmentCount = (source.match(/customOpts\.plugins\.tooltip[.=]/g) || []).length;
   assert.equal(assignmentCount, 1, "customOpts.plugins.tooltip should be referenced exactly once (a single assignment), not assigned then immediately reassigned");
   assert.match(
@@ -4706,7 +4706,7 @@ test("Sign-out handler: only re-shows the demo nudge if the user hasn't transiti
 // Supabase-heavy; source-pattern only, matching this suite's established
 // precedent. ──
 test("loadUserData: derives hasRealAccounts/hasRealSnapshot/hasRealData from what was actually restored", () => {
-  const source = readSource();
+  const source = fnBody('loadUserData');
   const fnMatch = source.match(/\/\/ Ensure activeSources is populated after cloud restore[\s\S]{0,2500}?renderAll\(\);/);
   assert.ok(fnMatch, "the post-restore block in loadUserData() should exist");
   assert.match(fnMatch[0], /if\(state\.accounts\.length>0\)state\.hasRealAccounts=true;/, "should set hasRealAccounts when real accounts were restored");
