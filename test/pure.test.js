@@ -1888,10 +1888,10 @@ test("normalizeTxRow: an unparseable date is rejected outright, not silently rep
 // value, just element mutation) -- checking the source pattern directly,
 // matching this suite's precedent for DOM-mutation-only functions. ──
 test("openAddModal: resets #f-type to its first option and #f-source to 'Other' (not the alphabetically-first bank), not leaving editAccount()'s stale selection behind", () => {
-  const source = readSource();
+  const src = fnBody('openAddModal');
   assert.match(
-    source,
-    /function openAddModal\(type\)\{[\s\S]{0,300}?const ft=document\.getElementById\('f-type'\);if\(ft\)\{ft\.selectedIndex=0;if\(type\)ft\.value=type;\}updateSourceOptionsForType\(\);const fs=document\.getElementById\('f-source'\);if\(fs\)fs\.value='Other';/,
+    src,
+    /const ft=document\.getElementById\('f-type'\);if\(ft\)\{ft\.selectedIndex=0;if\(type\)ft\.value=type;\}updateSourceOptionsForType\(\);const fs=document\.getElementById\('f-source'\);if\(fs\)fs\.value='Other';/,
     "openAddModal(type) should reset #f-type to selectedIndex=0 (then optionally set the passed type), call updateSourceOptionsForType(), and set #f-source to 'Other'"
   );
 });
@@ -1906,10 +1906,10 @@ test("openAddModal: resets #f-type to its first option and #f-source to 'Other' 
 // as openVehicleModal()'s #v-other-cat (45th pass), openAcctCsvModal()
 // (77th pass), and openAddModal() (87th pass). ──
 test("openCatModal: resets _editingCatName, not just _confirmingDeleteCatName, so a category can't reopen stuck in rename mode", () => {
-  const source = readSource();
+  const src = fnBody('openCatModal');
   assert.match(
-    source,
-    /function openCatModal\(\)\{[\s\S]{0,200}?_confirmingDeleteCatName=null;[\s\S]{0,1200}?_editingCatName=null;\s*renderCatManagerList\(\);/,
+    src,
+    /_confirmingDeleteCatName=null;[\s\S]{0,1200}?_editingCatName=null;\s*renderCatManagerList\(\);/,
     "openCatModal() should reset _editingCatName alongside _confirmingDeleteCatName, before rendering the category list"
   );
 });
@@ -2010,10 +2010,10 @@ test("detectSubscriptions: still detects an ordinary, genuinely consistent posit
 // wrong one -- no warning shown. openTxImportModal() itself is DOM-only
 // (no return value) -- checking the source pattern directly. ──
 test("openTxImportModal: resets #import-source-label and #import-replace, not leaving a prior import session's destructive settings behind", () => {
-  const source = readSource();
+  const src = fnBody('openTxImportModal');
   assert.match(
-    source,
-    /function openTxImportModal\(\)\{[\s\S]{0,2000}?const isl=document\.getElementById\('import-source-label'\);if\(isl\)isl\.value='Checking';[\s\S]{0,200}?const irc=document\.getElementById\('import-replace'\);if\(irc\)irc\.checked=false;/,
+    src,
+    /const isl=document\.getElementById\('import-source-label'\);if\(isl\)isl\.value='Checking';[\s\S]{0,200}?const irc=document\.getElementById\('import-replace'\);if\(irc\)irc\.checked=false;/,
     "openTxImportModal() should reset #import-source-label to its default value and #import-replace to unchecked"
   );
 });
@@ -2035,10 +2035,10 @@ test("openTxImportModal: resets #import-source-label and #import-replace, not le
 // rely on source-pattern checks + live verification instead), this
 // checks the source pattern directly. ──
 test("loadDemoProfile: resets state.sourceAlignDate/sourceAlignSkipped, not leaving a real user's source-alignment choice bleeding into the demo preview", () => {
-  const source = readSource();
+  const src = fnBody('loadDemoProfile');
   assert.match(
-    source,
-    /function loadDemoProfile\(n, silent=false, skipRender=false\)\{[\s\S]{0,3700}?state\.sourceAlignDate=null;\s*state\.sourceAlignSkipped=false;/,
+    src,
+    /state\.sourceAlignDate=null;\s*state\.sourceAlignSkipped=false;/,
     "loadDemoProfile() should reset both state.sourceAlignDate and state.sourceAlignSkipped, matching its existing reset of rangeFrom/rangeTo/declaredIncome/etc."
   );
 });
@@ -2638,10 +2638,10 @@ test("loadUserData: the transactions-replace branch calls only _clearVendorDayFi
 // confirm() dialog, a full success toast/modal) while persisting nothing,
 // silently reverting on the next reload. ──
 test("importBackup: refuses to run during a demo-preview session instead of appearing to succeed and persisting nothing", () => {
-  const source = readSource();
+  const src = fnBody('importBackup');
   assert.match(
-    source,
-    /function importBackup\(file\)\{\s*if\(!file\)return;[\s\S]{0,600}?if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{\s*showToast\('Not available while previewing demo data/,
+    src,
+    /if\(!file\)return;[\s\S]{0,600}?if\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\{\s*showToast\('Not available while previewing demo data/,
     "importBackup() should early-return with the standard demo-preview toast before ever reading the file"
   );
 });
@@ -6608,13 +6608,13 @@ test("syncToCloud(): passes the cached baseline and a fresh timestamp to savePre
 });
 
 test("signing out resets _cloudPrefsUpdatedAt/_syncConflictWarned, so a stale baseline from whoever was signed in before can't leak into the next sign-in on the same tab", () => {
-  const source = readSource();
   // After the Supabase→Worker migration, the reset logic moved from an
   // onAuthStateChange callback into _doSignOutCleanup(). Verify all three
   // resets are still present in that function.
+  const src = fnBody('_doSignOutCleanup');
   assert.match(
-    source,
-    /function _doSignOutCleanup\(\)[\s\S]{0,800}?window\._awaitingCloudMerge = false;[\s\S]{0,400}?_cloudPrefsUpdatedAt = null;[\s\S]{0,200}?_syncConflictWarned = false;/,
+    src,
+    /window\._awaitingCloudMerge = false;[\s\S]{0,400}?_cloudPrefsUpdatedAt = null;[\s\S]{0,200}?_syncConflictWarned = false;/,
     "_doSignOutCleanup() should reset _awaitingCloudMerge, _cloudPrefsUpdatedAt, and _syncConflictWarned"
   );
 });
