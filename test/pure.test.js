@@ -10581,4 +10581,32 @@ test("showImportPreview: label hint for Mint/YNAB/Monarch shows per-row account 
     "showImportPreview must show 'keeps its own account name from the file' for per-row formats");
 });
 
+test("_sumMonthlyByCard: a refund that cancels a purchase nets to zero, not a phantom positive", () => {
+  const { _sumMonthlyByCard } = loadFunctions(['_sumMonthlyByCard']);
+  // $100 purchase followed by a $100 refund on the same card in the same month
+  const txs = [
+    { date:'2026-01-10', card:'Visa', amount:100, excluded:false, isIncome:false, cat:'Shopping' },
+    { date:'2026-01-20', card:'Visa', amount:-100, excluded:false, isIncome:false, cat:'Shopping' },
+  ];
+  const m = _sumMonthlyByCard(txs, new Set(), null);
+  assert.equal(m['2026-01']?.['Visa'] ?? 0, 0,
+    "a purchase followed by its full refund should net to $0, not $100");
+});
+
+test("_sumMonthlyByCard: shuffling transactions doesn't change the monthly total", () => {
+  const { _sumMonthlyByCard } = loadFunctions(['_sumMonthlyByCard']);
+  const txs = [
+    { date:'2026-01-05', card:'Visa', amount:50,  excluded:false, isIncome:false, cat:'Food' },
+    { date:'2026-01-10', card:'Visa', amount:-25, excluded:false, isIncome:false, cat:'Food' },
+    { date:'2026-01-15', card:'Visa', amount:30,  excluded:false, isIncome:false, cat:'Food' },
+  ];
+  const shuffled = [txs[2], txs[0], txs[1]];
+  const m1 = _sumMonthlyByCard(txs, new Set(), null);
+  const m2 = _sumMonthlyByCard(shuffled, new Set(), null);
+  assert.equal(m1['2026-01']?.['Visa'], 55,
+    "50 - 25 + 30 = 55, floor applied once after summing");
+  assert.equal(m1['2026-01']?.['Visa'], m2['2026-01']?.['Visa'],
+    "result must be order-independent");
+});
+
 // ── end of tests ──

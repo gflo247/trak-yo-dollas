@@ -562,6 +562,35 @@ test('replace: re-importing same source with replace checked removes old transac
   expect(afterReplace).toBe(countBefore);
 });
 
+test('refunds: Total spend equals the sum of category tiles after importing capitalone_card_refunds.csv', async ({ page }) => {
+  const CAPITALONE_REFUNDS_CSV = path.join(__dirname, '..', 'test', 'fixtures', 'banks', 'capitalone_card_refunds.csv');
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+  await importFile(page, CAPITALONE_REFUNDS_CSV);
+  await page.waitForFunction(() => typeof renderAll === 'function');
+
+  // Read Total spend from the header card
+  const totalSpend = await page.evaluate(() => {
+    const el = document.getElementById('spend-total-val');
+    if (!el) return null;
+    return parseFloat(el.textContent.replace(/[$,]/g, ''));
+  });
+
+  // Sum all visible category bucket tile amounts (.bucket-total inside #bucket-grid)
+  const tileSum = await page.evaluate(() => {
+    const grid = document.getElementById('bucket-grid');
+    if (!grid) return null;
+    const tiles = grid.querySelectorAll('.bucket-total');
+    let sum = 0;
+    tiles.forEach(t => { sum += parseFloat(t.textContent.replace(/[$,]/g, '')) || 0; });
+    return Math.round(sum * 100) / 100;
+  });
+
+  expect(totalSpend).not.toBeNull();
+  expect(tileSum).not.toBeNull();
+  expect(Math.abs(totalSpend - tileSum)).toBeLessThanOrEqual(0.01);
+});
+
 // ── Storage quota: too-big imports and banner behavior ───────────────────────
 // initScript that pre-fills localStorage with ~2.2MB of padding, then wraps
 // setItem to throw QuotaExceededError once total used space exceeds 2,500,000

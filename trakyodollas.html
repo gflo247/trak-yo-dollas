@@ -5298,6 +5298,31 @@ function _requestStoragePersist(){
   if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
 }
 
+// Pure helper: sum transactions by month → card, then apply the zero floor
+// once to each month-card total. Applying Math.max(0,...) per transaction
+// (the old pattern) loses refunds that are larger than the remaining purchases
+// on that card that month because the floor fires before the purchases arrive.
+// beforeMonth: if set, skip months >= that key (used by avgTotalMonthlySpend).
+function _sumMonthlyByCard(txs,excludedCats,beforeMonth){
+  const raw={};
+  txs.forEach(t=>{
+    if(t.excluded||t.isIncome)return;
+    if(excludedCats&&excludedCats.has(t.cat))return;
+    const mo=t.date.slice(0,7);
+    if(beforeMonth&&mo>=beforeMonth)return;
+    raw[mo]=raw[mo]||{};
+    raw[mo][t.card]=(raw[mo][t.card]||0)+t.amount;
+  });
+  const m={};
+  for(const mo of Object.keys(raw)){
+    m[mo]={};
+    for(const card of Object.keys(raw[mo])){
+      m[mo][card]=Math.max(0,raw[mo][card]);
+    }
+  }
+  return m;
+}
+
 // Real trailing-12-month average total spend (all imported sources, all
 // categories) -- deliberately ignores both state.activeSources (the Spending
 // tab's source filter) and _bizFilter (the Spending tab's business/personal
@@ -5309,15 +5334,7 @@ function _requestStoragePersist(){
 function avgTotalMonthlySpend(){
   const today=new Date();
   const currentMonthKey=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
-  const m={};
-  state.transactions.forEach(t=>{
-    if(t.excluded||t.isIncome)return;
-    if(state.excludedCats&&state.excludedCats.has(t.cat))return;
-    const mo=t.date.slice(0,7);
-    if(mo>=currentMonthKey)return;
-    m[mo]=m[mo]||{};
-    m[mo][t.card]=Math.max(0,((m[mo][t.card]||0)+t.amount));
-  });
+  const m=_sumMonthlyByCard(state.transactions,state.excludedCats,currentMonthKey);
   const months=Object.keys(m).sort().slice(-12);
   return months.length?months.map(mo=>Object.values(m[mo]).reduce((s,v)=>s+v,0)).reduce((a,b)=>a+b,0)/months.length:0;
 }
@@ -15956,28 +15973,12 @@ function rebuildMonthly(){
   // time in getMonthlyFiltered(), getAggregatedData(), and sumMonth() so
   // that switching the filter requires no cache rebuild. ALL_MONTHS is
   // kept in sync and also unfiltered.
-  const m={};
-  state.transactions.forEach(t=>{
-    if(t.excluded)return;
-    // Every other spend-aggregating function in the file (getBaseTxs() and
-    // its many callers) already excludes income via !t.isIncome directly,
-    // not just via excludedCats.has('Income') — this one didn't, so a
-    // transaction whose .cat stops being 'Income' for any reason (deleting
-    // the category via the now-fixed deleteCustomCat() cascade, or simply
-    // hand-editing one income row's category) silently added its full
-    // (positive-signed) amount into MONTHLY as spend instead of disappearing
-    // as intended. isIncome is the durable signal; cat can drift.
-    if(t.isIncome)return;
-    if(state.excludedCats&&state.excludedCats.has(t.cat))return;
-    const mo=t.date.slice(0,7);
-    m[mo]=m[mo]||{};
-    m[mo][t.card]=Math.max(0,((m[mo][t.card]||0)+t.amount));
-  });
+  const m=_sumMonthlyByCard(state.transactions,state.excludedCats);
   // Mutate the MONTHLY object in place
   Object.keys(MONTHLY).forEach(k=>delete MONTHLY[k]);
   Object.assign(MONTHLY,m);
   // Keep ALL_MONTHS in sync — it's used everywhere for horizon/chart ranges.
-  // Filter set matches rebuildMonthly's (excluded, isIncome, excludedCats).
+  // Filter set matches _sumMonthlyByCard's (excluded, isIncome, excludedCats).
   ALL_MONTHS.length=0;
   const _allMonthSet=new Set();
   state.transactions.forEach(t=>{
