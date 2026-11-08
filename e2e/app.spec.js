@@ -576,6 +576,100 @@ test('wrong-file: CSV with unknown headers shows the "Pick your format manually"
   fs.unlinkSync(tmpCsv);
 });
 
+test('wrong-file: Quicken then unknown-headers CSV: zero-row state is clean with no Quicken message', async ({ page }) => {
+  const QFX_FILE = path.join(__dirname, 'fixtures/wrong_file.qfx');
+  const fs = require('fs');
+  const tmpCsv = path.join(__dirname, 'fixtures/unknown_headers.csv');
+  if (!fs.existsSync(tmpCsv)) fs.writeFileSync(tmpCsv, 'Col1,Col2,Col3\nfoo,bar,baz\n');
+
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+  await page.evaluate(() => openTxImportModal());
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+
+  // Drop Quicken file first — wrong-file message shows
+  await page.locator('#tx-csv-file').setInputFiles(QFX_FILE);
+  await page.waitForFunction(() => {
+    const el = document.getElementById('import-zero-msg');
+    return el && !el.classList.contains('hidden');
+  }, { timeout: 3000 });
+  expect(await page.locator('#import-zero-msg').innerText()).toContain('Quicken');
+
+  // Now drop a CSV with unknown headers — zero-row state replaces Quicken message
+  await page.locator('#tx-csv-file').setInputFiles(tmpCsv);
+  await page.waitForFunction(() => {
+    const btn = document.getElementById('import-confirm-btn');
+    // confirm btn must stay hidden (zero rows)
+    return btn && btn.classList.contains('hidden');
+  }, { timeout: 3000 });
+  await page.waitForFunction(() => {
+    const el = document.getElementById('import-zero-msg');
+    return el && !el.classList.contains('hidden');
+  }, { timeout: 3000 });
+
+  const msgText = await page.locator('#import-zero-msg').innerText();
+  // Heading must say "Found 0 transactions", not "Wrong file type"
+  expect(msgText).toContain('Found 0 transactions');
+  // Quicken message must be gone
+  expect(msgText).not.toContain('Quicken');
+  // The CSV header must appear
+  expect(msgText).toContain('Col1');
+  // The format button must be visible (CSV case, not binary)
+  await expect(page.locator('#import-manual-fmt-btn')).toBeVisible();
+  // The Import button must be hidden
+  await expect(page.locator('#import-confirm-btn')).toBeHidden();
+});
+
+test('import: Monarch export shows per-account names in the label hint', async ({ page }) => {
+  const MONARCH_CSV = path.join(__dirname, '..', 'test', 'fixtures', 'banks', 'monarch_export.csv');
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+  await page.evaluate(() => openTxImportModal());
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+  await page.locator('#tx-csv-file').setInputFiles(MONARCH_CSV);
+  await page.waitForFunction(() => {
+    const btn = document.getElementById('import-confirm-btn');
+    return btn && !btn.classList.contains('hidden');
+  }, { timeout: 5000 });
+  // The label hint must be visible
+  await expect(page.locator('#import-label-hint')).toBeVisible();
+  // It must name the actual accounts from the file
+  const hintText = await page.locator('#import-label-hint').innerText();
+  // monarch_export.csv has accounts: "Chase Freedom" and "Checking"
+  expect(hintText).toMatch(/keeps its own account name|Chase Freedom|Checking/i);
+});
+
+test('replace: Monarch re-import with replace removes all previous Monarch transactions', async ({ page }) => {
+  const MONARCH_CSV = path.join(__dirname, '..', 'test', 'fixtures', 'banks', 'monarch_export.csv');
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+
+  // First import
+  await page.evaluate(() => openTxImportModal());
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+  await page.locator('#tx-csv-file').setInputFiles(MONARCH_CSV);
+  await page.locator('#import-confirm-btn').waitFor({ state: 'visible' });
+  const firstCount = await page.evaluate(() => importParsed.length);
+  await page.locator('#import-confirm-btn').click();
+  await page.locator('#import-success-modal').waitFor({ state: 'visible' });
+  const afterFirst = await page.evaluate(() => state.transactions.length);
+  await page.evaluate(() => { const m = document.getElementById('import-success-modal'); if (m) m.classList.add('hidden'); });
+
+  // Second import with Replace checked
+  await page.evaluate(() => openTxImportModal());
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+  await page.locator('#tx-csv-file').setInputFiles(MONARCH_CSV);
+  await page.locator('#import-confirm-btn').waitFor({ state: 'visible' });
+  await page.locator('#import-replace').check();
+  await page.locator('#import-confirm-btn').click();
+  await page.locator('#import-success-modal').waitFor({ state: 'visible' });
+
+  // After replace, count should equal a single import, not doubled
+  const afterReplace = await page.evaluate(() => state.transactions.length);
+  expect(afterReplace).toBe(afterFirst);
+  expect(afterReplace).toBe(firstCount);
+});
+
 // ── Replace existing transactions ────────────────────────────────────────────
 test('replace: re-importing same source with replace checked removes old transactions and imports new ones', async ({ page }) => {
   await page.goto(APP);

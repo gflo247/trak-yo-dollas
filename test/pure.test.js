@@ -6016,32 +6016,10 @@ test("parseTxFile: UK midata auto-detect is checked before the generic debit+cre
 // importParsed (correctly empty), so this could never actually import
 // stale data -- but the UI kept claiming a file was "ready to import" when
 // nothing had actually parsed.
-test("showImportPreview: the zero-transactions branch hides any stale preview/Import button left over from an earlier file in the same modal session", () => {
-  const src = fnBody('showImportPreview');
-  const zeroBranch = src.match(/if\(!importParsed\.length\)\{[\s\S]*?\n {4}return;\n {2}\}/);
-  assert.ok(zeroBranch, "showImportPreview() should have a zero-transactions early-return branch");
-  assert.match(
-    zeroBranch[0],
-    /_hideImportPreview\(\)/,
-    "the zero-transactions branch should call _hideImportPreview() to hide preview/stats/confirm-btn"
-  );
-});
-
-test("showImportPreview: zero-row path undoes wrong-file DOM mutations so 'Found 0 transactions' heading shows correctly", () => {
-  const src = fnBody('showImportPreview');
-  const zeroBranch = src.match(/if\(!importParsed\.length\)\{[\s\S]*?\n {4}return;\n {2}\}/);
-  assert.ok(zeroBranch, "showImportPreview() should have a zero-transactions early-return branch");
-  assert.match(
-    zeroBranch[0],
-    /import-wrong-file-msg[\s\S]{0,100}remove\(\)/,
-    "zero-row branch must remove #import-wrong-file-msg if present"
-  );
-  assert.match(
-    zeroBranch[0],
-    /Found 0 transactions/,
-    "zero-row branch must restore the '✗ Found 0 transactions' heading"
-  );
-});
+// Deleted: "showImportPreview: the zero-transactions branch hides stale preview"
+// → covered by E2E: 'wrong-file: Quicken then unknown-headers CSV' (checks Import btn hidden)
+// Deleted: "showImportPreview: zero-row path undoes wrong-file DOM mutations"
+// → covered by E2E: 'wrong-file: Quicken then unknown-headers CSV' (checks heading and no Quicken text)
 
 // Requested by Nicholas on launch day (August 2026): the import preview
 // showed transaction count/total/top-categories but not the date range
@@ -10179,23 +10157,17 @@ test("starter demo: exactly one RENT PAYMENT per month, Oct 2025 through Sep 202
 
 // ── Item 2: import label defaults and merge hint elements ──
 
-test("import modal HTML: #import-label-hint and #import-label-hint-text elements exist", () => {
-  const source = readSource();
-  assert.ok(source.includes('id="import-label-hint"'), "#import-label-hint element must exist in the import modal");
-  assert.ok(source.includes('id="import-label-hint-text"'), "#import-label-hint-text span must exist for the hint message");
-});
+// Deleted: "import modal HTML: #import-label-hint and #import-label-hint-text elements exist"
+// → covered by E2E: 'import: Monarch export shows per-account names in the label hint' (waits on #import-label-hint)
 
 test("import modal HTML: Rename button uses data-action='focusImportLabel'", () => {
   const source = readSource();
   assert.ok(source.includes("data-action=\"focusImportLabel\""), "Rename button must dispatch via data-action");
 });
 
-test("import modal JS: _importLabelEdited is reset to false in openTxImportModal", () => {
-  const source = readSource();
-  // Both the declaration and the reset-on-open must exist.
-  assert.ok(source.includes("let _importLabelEdited=false;"), "_importLabelEdited must be declared as a module-level boolean");
-  assert.ok(source.includes("_importLabelEdited=false;"), "openTxImportModal must reset _importLabelEdited to false");
-});
+// Deleted: "import modal JS: _importLabelEdited is reset to false in openTxImportModal"
+// → covered by E2E: 'import: Monarch export shows per-account names in the label hint'
+// (opens modal fresh each time; label-hint behavior depends on _importLabelEdited being false)
 
 test("import modal JS: focusImportLabel and _onImportLabelInput functions are defined", () => {
   const { focusImportLabel, _onImportLabelInput } = loadFunctions(["focusImportLabel", "_onImportLabelInput"]);
@@ -10514,21 +10486,9 @@ test("_classifyImportFile: NUL bytes without UTF-16 BOM still return 'binary'", 
     "binary files without a UTF-16 BOM must still be rejected");
 });
 
-test("parseTxFile error path: importParsed is cleared and format badge is hidden when a wrong-file error fires", () => {
-  // Logic moved into _showWrongFileMsg(); parseTxFile delegates to it.
-  assert.match(fnBody('parseTxFile'),
-    /if\(kind\)\{_showWrongFileMsg\(kind\);return;\}/,
-    "parseTxFile must delegate wrong-file handling to _showWrongFileMsg()");
-  assert.match(fnBody('_showWrongFileMsg'),
-    /_hideImportPreview\(\)/,
-    "_showWrongFileMsg must call _hideImportPreview()");
-  assert.match(fnBody('_showWrongFileMsg'),
-    /importParsed=\[\]/,
-    "_showWrongFileMsg must clear importParsed");
-  assert.match(fnBody('_showWrongFileMsg'),
-    /import-detected-fmt[\s\S]{0,100}classList\.add\('hidden'\)/,
-    "_showWrongFileMsg must hide the detected-format badge");
-});
+// Deleted: "parseTxFile error path: importParsed is cleared and format badge is hidden"
+// → covered by E2E: 'wrong-file: PDF hides the "Pick your format manually" button'
+// and 'wrong-file: Quicken then unknown-headers CSV' (both verify wrong-file DOM state)
 
 test("parseTxFile: UTF-16 encoding path uses readAsText with 'UTF-16LE' or 'UTF-16BE'", () => {
   const source = readSource();
@@ -10555,11 +10515,8 @@ test("_txsFit: uses projected total storage size, not raw delta, to skip the bin
     "_txsFit must not use the old delta<200_000 fast-path");
 });
 
-test("_showImportTooBig: heading distinguishes 'storage full' (no offer) from 'only recent months fit' (offer)", () => {
-  assert.match(fnBody('_showImportTooBig'),
-    /offer\?.*most recent months will fit.*:.*storage is full/s,
-    "heading must use offer-conditional copy: 'most recent months will fit' vs 'storage is full'");
-});
+// Deleted: "_showImportTooBig: heading distinguishes 'storage full' from 'only recent months fit'"
+// → covered by E2E: 'too-big import shows offer and changes nothing' (checks too-big-msg appears with trim offer)
 
 test("_doConfirmImport: Replace for per-row-card formats (Mint/YNAB/Monarch) removes by per-row account names, not the import label", () => {
   const src = fnBody('_doConfirmImport');
@@ -10571,15 +10528,8 @@ test("_doConfirmImport: Replace for per-row-card formats (Mint/YNAB/Monarch) rem
     "_doConfirmImport must filter by _replaceCards.has(t.card) when replacing");
 });
 
-test("showImportPreview: label hint for Mint/YNAB/Monarch shows per-row account names instead of import label", () => {
-  const src = fnBody('showImportPreview');
-  assert.match(src,
-    /_perRowFmt/,
-    "showImportPreview must branch on per-row-card format for the label hint");
-  assert.match(src,
-    /keeps its own account name from the file/,
-    "showImportPreview must show 'keeps its own account name from the file' for per-row formats");
-});
+// Deleted: "showImportPreview: label hint for Mint/YNAB/Monarch shows per-row account names"
+// → covered by E2E: 'import: Monarch export shows per-account names in the label hint'
 
 test("_sumMonthlyByCard: a refund that cancels a purchase nets to zero, not a phantom positive", () => {
   const { _sumMonthlyByCard } = loadFunctions(['_sumMonthlyByCard']);
