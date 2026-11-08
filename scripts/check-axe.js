@@ -301,6 +301,82 @@ async function main() {
             });
           }
         }
+
+        // --- Source chips: audit with 7 accounts (one per chip color) ---
+        // Covers chip-grn, chip-rose, chip-ora, chip-sky which had no light-mode
+        // styles before this fix — axe would have reported contrast violations.
+        const CHIP_VPS = [
+          { width: 1280, height: 800, label: 'desktop' },
+          { width: 390,  height: 844, label: '390px'   },
+        ];
+        // Build a CSV with 7 unique source labels so each gets a distinct chip color.
+        const sevenSources = ['Chase Freedom','Discover','Ally Checking','Wells Fargo','Apple Card','Navy Federal','BECU'];
+        const chipCsvLines = ['Date,Merchant,Category,Account,Original Statement,Notes,Amount,Tags'];
+        sevenSources.forEach((src, i) => {
+          chipCsvLines.push(`2026-0${(i % 9) + 1}-01,Coffee,Shopping,${src},,,-10,`);
+        });
+        const chipCsv = chipCsvLines.join('\n');
+        const os = require('os');
+        const chipCsvPath = path.join(os.tmpdir(), `tyd_chip_axe_${Date.now()}.csv`);
+        fs.writeFileSync(chipCsvPath, chipCsv);
+
+        async function auditChipState(label, chipsOn) {
+          const ctxOpts = {
+            bypassCSP: true,
+            colorScheme: label.includes('dark') ? 'dark' : 'light',
+            viewport: { width: label.includes('390px') ? 390 : 1280,
+                        height: label.includes('390px') ? 844 : 800 },
+          };
+          const ctx = await browser.newContext(ctxOpts);
+          const page = await ctx.newPage();
+          page.on('console', () => {});
+          page.on('pageerror', () => {});
+          await ctx.addInitScript(t => document.documentElement.setAttribute('data-theme', t),
+            label.includes('dark') ? 'dark' : 'light');
+          await page.goto(`${BASE_URL}/${APP_FILE}`, { waitUntil: 'load' });
+          await page.addScriptTag({ content: axeSource });
+          await page.waitForTimeout(400);
+          // Import the 7-source CSV to populate the chip row
+          await page.evaluate(async csv => {
+            openTxImportModal();
+            const file = new File([csv], 'chips.csv', { type: 'text/csv' });
+            parseTxFile(file);
+            await new Promise(r => setTimeout(r, 350));
+          }, chipCsv);
+          await page.evaluate(async () => {
+            // Confirm the import so chips appear in the main UI
+            if (typeof confirmTxImport === 'function') {
+              if (importParsed && importParsed.length > 0) {
+                confirmTxImport();
+                await new Promise(r => setTimeout(r, 300));
+              }
+            }
+            // close import modal if open
+            const m = document.getElementById('tx-import-modal');
+            if (m) m.classList.add('hidden');
+          });
+          if (!chipsOn) {
+            // Remove all sources from activeSources so chips render in the off state
+            await page.evaluate(() => {
+              state.activeSources = new Set();
+              renderSourceChips();
+            });
+            await page.waitForTimeout(200);
+          }
+          const results = await page.evaluate(root =>
+            axe.run(document.getElementById(root) || document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21aa'] } }), 'source-chips');
+          if (reportViolations(label, results)) failed = true;
+          await ctx.close();
+        }
+
+        for (const vp of CHIP_VPS) {
+          for (const theme of ['dark', 'light']) {
+            const pfx = `${theme} / ${vp.label} / chips`;
+            await auditChipState(`${pfx}: on`, true);
+            await auditChipState(`${pfx}: off`, false);
+          }
+        }
+        fs.unlinkSync(chipCsvPath);
       }
     } finally {
       await browser.close();
