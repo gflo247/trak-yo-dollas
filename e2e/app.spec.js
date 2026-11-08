@@ -530,6 +530,52 @@ test('wrong-file: dropping a valid CSV after a wrong-file error clears the wrong
   await expect(page.locator('#import-zero-msg')).toBeHidden();
 });
 
+test('wrong-file: PDF hides the "Pick your format manually" button', async ({ page }) => {
+  const fs = require('fs');
+  const tmpPdf = path.join(__dirname, 'fixtures/wrong_file.pdf');
+  // PDF magic bytes: %PDF-
+  fs.writeFileSync(tmpPdf, Buffer.from([0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34]));
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+  await page.evaluate(() => openTxImportModal());
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+  await page.locator('#tx-csv-file').setInputFiles(tmpPdf);
+  await page.waitForFunction(() => {
+    const el = document.getElementById('import-zero-msg');
+    return el && !el.classList.contains('hidden');
+  }, { timeout: 3000 });
+  // The "Pick your format manually" button must be hidden
+  await expect(page.locator('#import-manual-fmt-btn')).toBeHidden();
+  // Cleanup
+  fs.unlinkSync(tmpPdf);
+});
+
+test('wrong-file: CSV with unknown headers shows the "Pick your format manually" button', async ({ page }) => {
+  const fs = require('fs');
+  const tmpCsv = path.join(__dirname, 'fixtures/unknown_headers.csv');
+  fs.writeFileSync(tmpCsv, 'Col1,Col2,Col3\nfoo,bar,baz\n');
+  await page.goto(APP);
+  await page.waitForFunction(() => typeof openTxImportModal === 'function');
+  await page.evaluate(() => openTxImportModal());
+  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+  await page.locator('#tx-csv-file').setInputFiles(tmpCsv);
+  // Wait for zero-transactions UI to appear
+  await page.waitForFunction(() => {
+    const el = document.getElementById('import-zero-msg');
+    return el && !el.classList.contains('hidden');
+  }, { timeout: 3000 });
+  // "Found 0 transactions" heading
+  const heading = await page.locator('#import-zero-msg div').first().textContent();
+  expect(heading).toContain('0 transactions');
+  // The "Pick your format manually" button must be visible
+  await expect(page.locator('#import-manual-fmt-btn')).toBeVisible();
+  // Clicking it must open the format picker
+  await page.locator('#import-manual-fmt-btn').click();
+  await expect(page.locator('#fmt-picker-panel')).toBeVisible();
+  // Cleanup
+  fs.unlinkSync(tmpCsv);
+});
+
 // ── Replace existing transactions ────────────────────────────────────────────
 test('replace: re-importing same source with replace checked removes old transactions and imports new ones', async ({ page }) => {
   await page.goto(APP);

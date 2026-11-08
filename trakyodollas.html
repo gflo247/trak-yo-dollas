@@ -1535,7 +1535,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <div style="color:var(--red-text);font-weight:700;margin-bottom:.35rem">✗ Found 0 transactions</div>
       <div id="import-zero-header" style="font-family:'DM Mono',monospace;font-size:11px;background:var(--bg-deep);border:1px solid var(--border-mid);border-radius:4px;padding:3px 7px;margin-bottom:.45rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
       <a id="import-zero-guide" href="/guides" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">See export guides →</a>
-      <div style="margin-top:.45rem"><button data-action="openMoreOptions" style="background:none;border:none;color:var(--accent-blue-light);font-size:11px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">Pick your format manually →</button></div>
+      <div style="margin-top:.45rem"><button id="import-manual-fmt-btn" data-action="openMoreOptions" style="background:none;border:none;color:var(--accent-blue-light);font-size:11px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline" type="button">Pick your format manually →</button></div>
     </div>
     <!-- import-too-big-msg: shown when the full incoming data won't fit in localStorage.
          Offers a trim-to-recent-months button when at least one month fits, or a plain
@@ -15344,6 +15344,11 @@ function showImportPreview(){
       const detected=_FMT_LABELS[importFmt]||importFmt;
       showToast(`No transactions found with "${detected}" format — try a different option`,'#FCD34D');
     }
+    // Show the "Pick your format manually" button — it was hidden by _showWrongFileMsg()
+    // for binary/PDF/Quicken/zip files where picking a format can't help, but IS
+    // useful here because the file looks like a CSV, just with an unrecognized header.
+    const _manualFmtBtn=document.getElementById('import-manual-fmt-btn');
+    if(_manualFmtBtn)_manualFmtBtn.closest('div').style.display='';
     return;
   }
   // Hide zero-row message from any prior failed attempt in this modal session
@@ -15646,6 +15651,8 @@ function _showWrongFileMsg(kind){
   const toggle=document.getElementById('fmt-manual-toggle');
   if(toggle)toggle.textContent='Having trouble? Pick your format manually \u2192';
   fmtPickerOpen=false;
+  const manualFmtBtn=document.getElementById('import-manual-fmt-btn');
+  if(manualFmtBtn)manualFmtBtn.closest('div').style.display='none';
   const zeroMsg=document.getElementById('import-zero-msg');
   const zeroHdr=document.getElementById('import-zero-header');
   const zeroGuide=document.getElementById('import-zero-guide');
