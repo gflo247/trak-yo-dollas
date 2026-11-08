@@ -10542,13 +10542,14 @@ test("parseTxFile: UTF-16 encoding path uses readAsText with 'UTF-16LE' or 'UTF-
 
 test("_txsFit: uses projected total storage size, not raw delta, to skip the binary-search probe", () => {
   // The old fast-path (delta < 200_000) was replaced by a projected-total check
-  // so a small delta can't silently push total usage over quota.
+  // so a small delta can't silently push total usage over quota. The 2MB cutoff
+  // is set for Safari's ~2.5M-character limit (2 bytes/char × 5 MB quota).
   assert.match(fnBody('_txsFit'),
     /projectedTotal/,
     "_txsFit must compute projected total storage size");
   assert.match(fnBody('_txsFit'),
-    /4_000_000/,
-    "_txsFit must compare projected total against a 4MB threshold");
+    /2_000_000/,
+    "_txsFit must compare projected total against a 2MB threshold (Safari's ~2.5M-character limit)");
   assert.doesNotMatch(fnBody('_txsFit'),
     /delta<200_000/,
     "_txsFit must not use the old delta<200_000 fast-path");

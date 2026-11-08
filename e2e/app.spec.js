@@ -563,19 +563,19 @@ test('replace: re-importing same source with replace checked removes old transac
 });
 
 // ── Storage quota: too-big imports and banner behavior ───────────────────────
-// initScript that pre-fills localStorage with ~3.9MB of padding, then wraps
-// setItem to throw QuotaExceededError once total used space exceeds 4,200,000
-// characters (simulating a nearly-full 5MB quota). The pre-fill is necessary
-// because _txsFit()'s fast-path skips the probe when projected total storage
-// is under 4MB -- without pre-fill, the test CSV's ~420KB of JSON would be
-// under that threshold and the probe would never run.
+// initScript that pre-fills localStorage with ~2.2MB of padding, then wraps
+// setItem to throw QuotaExceededError once total used space exceeds 2,500,000
+// characters (simulating Safari's ~2.5M-character limit — Safari stores 2 bytes
+// per character, so its 5 MB quota holds about 2.5M characters). The pre-fill
+// is necessary because _txsFit()'s fast-path skips the probe when projected
+// total storage is under 2MB -- without pre-fill, the test CSV's ~540KB of JSON
+// would be under that threshold and the probe would never run.
 const QUOTA_INIT_SCRIPT = `
   (function(){
-    const LIMIT = 4200000;
-    // Pre-fill with ~3.9MB of dummy data before installing the quota hook so
-    // the hook's own setItem calls don't trigger a re-entrant check.
+    const LIMIT = 2500000;
+    // Pre-fill with ~2.2MB of dummy data before installing the quota hook.
     const chunk = 'x'.repeat(50000);
-    for (let i = 0; i < 78; i++) {
+    for (let i = 0; i < 44; i++) {
       try { localStorage.setItem('_quota_pad_' + i, chunk); } catch(e) { break; }
     }
     const orig = Storage.prototype.setItem;
@@ -597,9 +597,33 @@ const QUOTA_INIT_SCRIPT = `
   })();
 `;
 
+// Safari-limit simulation with no pre-fill — used to test that the Safari
+// fast-path fix catches a large import in empty storage.
+const SAFARI_LIMIT_SCRIPT = `
+  (function(){
+    const LIMIT = 2500000;
+    const orig = Storage.prototype.setItem;
+    Object.defineProperty(Storage.prototype, 'setItem', {
+      value: function(key, value) {
+        let total = key.length + String(value).length;
+        for (let i = 0; i < this.length; i++) {
+          const k = this.key(i);
+          if (k !== key) total += k.length + (this.getItem(k) || '').length;
+        }
+        if (total > LIMIT) {
+          const e = new DOMException('QuotaExceededError', 'QuotaExceededError');
+          throw e;
+        }
+        return orig.call(this, key, value);
+      },
+      configurable: true, writable: true
+    });
+  })();
+`;
+
 // Generate a Monarch CSV with 3200 rows (160 months × 20 days).
-// Produces ~420KB of transaction JSON -- enough that projectedTotal (CSV JSON
-// + ~3.9MB pre-fill padding) exceeds _txsFit()'s 4MB fast-path threshold and
+// Produces ~540KB of transaction JSON -- enough that projectedTotal (CSV JSON
+// + ~2.2MB pre-fill padding) exceeds _txsFit()'s 2MB fast-path threshold and
 // hits the actual binary-search probe, which then detects insufficient space.
 function makeQuotaTestCsv() {
   const os = require('os');
@@ -619,7 +643,68 @@ function makeQuotaTestCsv() {
   return csvPath;
 }
 
+// Generate a Monarch CSV with 16,000 rows (160 months × 100 entries each).
+// Each parsed row is ~170 characters of JSON; 16,000 rows ≈ 2.72MB, which
+// exceeds Safari's 2.5M-character simulated limit when storage is otherwise
+// empty. With the old 4MB fast-path, projectedTotal (2.72M) < 4M so the
+// check was skipped and the import silently failed at the browser level.
+// With the new 2MB cutoff, 2.72M > 2M runs the check, which detects that
+// the data doesn't fit and shows the too-big message instead.
+function makeSafariLimitCsv() {
+  const os = require('os');
+  const fs = require('fs');
+  const merchants = ['Netflix', 'Spotify', 'Amazon', 'Target', 'Starbucks'];
+  const lines = ['Date,Merchant,Category,Account,Original Statement,Notes,Amount,Tags'];
+  for (let month = 1; month <= 160; month++) {
+    const year = 2010 + Math.floor((month - 1) / 12);
+    const m = String(((month - 1) % 12) + 1).padStart(2, '0');
+    for (let day = 1; day <= 100; day++) {
+      const d = String(((day - 1) % 28) + 1).padStart(2, '0');
+      lines.push(`${year}-${m}-${d},${merchants[day % 5]},Shopping,Chase Freedom,,,-${10 + (day % 50)},`);
+    }
+  }
+  const csvPath = path.join(os.tmpdir(), `tyd_safari_test_${Date.now()}.csv`);
+  fs.writeFileSync(csvPath, lines.join('\n'));
+  return csvPath;
+}
+
 test.describe('storage quota', () => {
+  test('Safari-limit: 16,000-tx import in empty storage shows too-big message', async ({ page }) => {
+    const fs = require('fs');
+    await page.addInitScript(SAFARI_LIMIT_SCRIPT);
+    await page.goto(APP);
+    await page.waitForFunction(() => typeof openTxImportModal === 'function');
+
+    const csvPath = makeSafariLimitCsv();
+    try {
+      await page.evaluate(() => openTxImportModal());
+      await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+      await page.locator('#import-source-label').fill('Chase Freedom');
+      await page.locator('#tx-csv-file').setInputFiles(csvPath);
+      // Wait for preview
+      await page.waitForFunction(() => {
+        const btn = document.getElementById('import-confirm-btn');
+        return btn && !btn.classList.contains('hidden');
+      }, { timeout: 10000 });
+      await page.locator('#import-confirm-btn').click();
+
+      // #import-too-big-msg must appear (not the storage-full banner)
+      await page.waitForFunction(() => {
+        const el = document.getElementById('import-too-big-msg');
+        return el && !el.classList.contains('hidden');
+      }, { timeout: 10000 });
+
+      // Trim offer must be present (at least some months fit)
+      await page.locator('#import-trim-btn').waitFor({ state: 'visible' });
+
+      // Nothing must have been saved
+      const txJson = await page.evaluate(() => localStorage.getItem('trakyo_txs_v1'));
+      expect(!txJson || txJson === '[]' || JSON.parse(txJson || '[]').length === 0).toBe(true);
+    } finally {
+      fs.unlinkSync(csvPath);
+    }
+  });
+
   test('too-big import shows offer and changes nothing', async ({ page }) => {
     const fs = require('fs');
     await page.addInitScript(QUOTA_INIT_SCRIPT);

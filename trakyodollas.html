@@ -1452,6 +1452,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     </div>
     <p class="modal-sub" style="margin-bottom:.35rem">Drop your bank's CSV. Format is detected automatically. Nothing leaves your device.</p>
     <p style="font-size:11px;color:var(--text-muted);margin-bottom:.85rem">Also accepts Mint, YNAB, and Monarch Money exports.</p>
+    <p style="font-size:11px;color:var(--text-muted);margin-bottom:.85rem">Fits about 12,000 transactions in any browser, about twice that in Chrome or Edge. Have more? Export your most recent years.</p>
 
     <!-- Source label -->
     <div class="form-group">
@@ -15584,10 +15585,11 @@ function _txsFit(newJson){
     if(k==='trakyo_txs_v1')continue; // new value already counted above
     projectedTotal+=(k?.length||0)+(localStorage.getItem(k)?.length||0);
   }
-  // 4MB is safely below every browser's minimum localStorage quota (all
-  // major browsers guarantee at least 5MB), so we can skip the expensive
-  // binary-search probe when total would stay under it.
-  if(projectedTotal<4_000_000)return true;
+  // 2MB is well clear of Safari's ~2.5M-character limit (Safari stores
+  // 2 bytes per character, so its 5 MB quota holds about 2.5M characters;
+  // Chrome and Edge hold about 5.2M). Skip the expensive binary-search probe
+  // only when the total stays safely under the tightest browser's limit.
+  if(projectedTotal<2_000_000)return true;
   const free=_measureStorageFreeBytes();
   return delta<=free;
 }
