@@ -153,9 +153,11 @@ TRAKYODOLLAS_KNOWN_FALSE_POSITIVES = {
     # re-confirmed and re-keyed.
     ('(sub||cta)?`<div style="font-size:12px;color:var(--text-muted);line-height:1.35">${sub}${cta?` · <button data-action="${', '.label'),
 
-    # renderNwBreakdown()'s GROUPS array is a hardcoded literal
+    # renderNwBreakdown()'s GROUPS array and renderAccountLists()'s
+    # ASSET_GROUPS array are hardcoded literals
     # ({label:'Investments',color:'#34D399',...}), never user-settable.
     ('g.color', '.color'),
+    ('g.tc||g.color', '.color'),
     ("isNeg?'#F87171':g.color", '.color'),
     ("g.isLiab?'#F87171':g.color", '.color'),
     ('g.label', '.label'),

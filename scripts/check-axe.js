@@ -88,6 +88,61 @@ function reportViolations(label, results) {
   return true;
 }
 
+// Escalate incomplete color-contrast results inside #bucket-grid and
+// #insights-card to full violations. Axe reports these as "incomplete"
+// (needs-review) rather than "violation" because:
+//   - Tile cards have gradient or tinted backgrounds axe can't measure against
+//   - The .bucket-hit stretch-button overlaps tile text, triggering axe's
+//     "element is obscured" heuristic
+// The audit CSS injected before each run flattens gradients to their lighter
+// stop and hides .bucket-hit so axe can measure directly. Any contrast result
+// that remains "incomplete" after that flattening is treated as a failure here.
+function checkIncompleteContrast(label, results) {
+  const ESCALATE_ROOTS = ['#bucket-grid', '#insights-card'];
+  const contrastIncomplete = results.incomplete.filter(item =>
+    item.id === 'color-contrast' &&
+    item.nodes.some(n =>
+      ESCALATE_ROOTS.some(sel => {
+        // n.target is an array of CSS selector strings
+        const target = Array.isArray(n.target) ? n.target.join(' ') : String(n.target);
+        return target.includes(sel.replace('#', '')) || (n.html && (
+          sel === '#bucket-grid'
+            ? n.html.includes('bucket-total') || n.html.includes('bucket-name')
+            : n.html.includes('insights-card') || n.html.includes('insights-pills')
+        ));
+      })
+    )
+  );
+  if (contrastIncomplete.length === 0) return false;
+  console.error(`\n  ❌ ${contrastIncomplete.length} escalated incomplete contrast result(s) in ${label}:`);
+  for (const item of contrastIncomplete) {
+    console.error(`  [${item.impact||'serious'}] ${item.id} (escalated from incomplete): ${item.description}`);
+    for (const n of item.nodes.slice(0, 2)) {
+      const snippet = n.html.length > 120 ? n.html.slice(0, 120) + '…' : n.html;
+      console.error(`    → ${snippet}`);
+    }
+  }
+  return true;
+}
+
+// CSS injected before every axe run on the app. Flattens gradients so axe
+// can measure contrast directly (instead of marking them "incomplete"), and
+// hides the .bucket-hit full-card stretch button that axe flags as an
+// obscuring element over the tile text. Neither change affects production.
+const AXE_AUDIT_CSS = `
+  /* Flatten #insights-card gradient to its lighter stop (#F0F9FF) so axe
+     can measure contrast against a solid background. */
+  #insights-card { background: #F0F9FF !important; }
+  /* Flatten tile gradient to lighter stop (the light theme uses solid
+     --bg-card; dark mode tiles use a solid dark hex too — the inline
+     background from renderBucketGrid is solid not gradient, so this only
+     needs to handle the light-theme gradient rule). */
+  [data-theme="light"] #bucket-grid .bucket-card { background: #F8FAFC !important; }
+  /* Hide the full-card stretch button so axe sees the tile text directly
+     without the overlap-obscures-element heuristic firing. */
+  #bucket-grid .bucket-hit { display: none !important; }
+`;
+
 async function main() {
   if (!fs.existsSync(AXE_PATH)) {
     console.error('axe-core not found — run: npm install');
@@ -132,6 +187,11 @@ async function main() {
 
           await page.goto(`${BASE_URL}/${APP_FILE}`, { waitUntil: 'load' });
           await page.addScriptTag({ content: axeSource });
+          // Inject audit-only CSS: flatten gradients so axe can measure
+          // contrast directly, hide .bucket-hit overlaps. Must be added
+          // before the axe run (not before page load) so it applies on top
+          // of the already-rendered demo state.
+          await page.addStyleTag({ content: AXE_AUDIT_CSS });
           // Brief pause for JS to finish rendering the initial demo state
           await page.waitForTimeout(400);
 
@@ -152,6 +212,8 @@ async function main() {
 
             const label = `${theme} / ${vp.label} / ${tab.label}`;
             if (reportViolations(label, results)) failed = true;
+            // Escalate incomplete color-contrast in bucket-grid / insights-card
+            if (checkIncompleteContrast(label, results)) failed = true;
           }
 
           await ctx.close();
