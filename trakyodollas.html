@@ -1396,7 +1396,6 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <!-- Bank export quicklinks -->
     <div style="margin-bottom:.65rem;font-size:12px"><span style="color:var(--text-muted)">Export from: </span><a href="/guides/chase" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">Chase</a> · <a href="/guides/ally" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">Ally</a> · <a href="/guides/bofa" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">BofA</a> · <a href="/guides/wellsfargo" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">Wells Fargo</a> · <a href="/guides/capitalone" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">Capital One</a> · <a href="/guides/discover" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">Discover</a> · <a href="/guides" target="_blank" rel="noopener" style="color:var(--accent-blue-light)">more →</a></div>
 
-    <div id="import-first-time-hint" style="display:none;font-size:12px;color:var(--text-muted);text-align:center;padding:6px 0 2px;line-height:1.4">Start with one card and one month — about 2 minutes.</div>
     <!-- Drop zone — hero -->
     <div class="csv-zone" id="tx-drop-zone" style="position:relative;padding:2rem 1rem"
          data-dragover="dragOverHighlight"
@@ -12813,7 +12812,6 @@ function openTxImportModal(){
   const tooBig=document.getElementById('import-too-big-msg');if(tooBig)tooBig.classList.add('hidden');
   _importTrimOffer=null;
   const moreOpts=document.getElementById('import-more-options');if(moreOpts)moreOpts.removeAttribute('open');
-  const fth=document.getElementById('import-first-time-hint');if(fth)fth.style.display=state.hasRealData?'none':'block';
   el.classList.remove('hidden');
   _umamiSend('import-opened');
 }
