@@ -15,14 +15,13 @@ Import a CSV from your bank, credit union, or credit card. Your browser translat
 
 - **"This month" narrative** — a plain-English summary of your most recent month: lighter or heavier than usual, biggest category mover, savings rate vs your own average. Reads conversationally, not like a data report.
 - **Several ways to see your spending** — category bar charts, income flow chart, daily heatmap, vendor breakdown, trend view, and split treemap. Click any tile to filter transactions instantly. Switch grain to Monthly, Quarterly, or Yearly — category cards and sparklines update to match. Income deposits collapse to a monthly summary by default — click to expand.
-- **"At a Glance" insights** — curated monthly insights surfaced by urgency: savings rate, budget health, top mover, largest charge, subscriptions, possible duplicate charges, weekend spending patterns. Each compares against your own history.
-- **Budget tab** — set monthly limits and see them alongside your 12-month average and year-to-date pace in one view. Category rows show how much you're over (red) or how much runway remains (amber when close, green when comfortable) inline with the category name, plus 12-month history dots. Sort by % used, amount, how unusual vs. your average, or A–Z — each ascending or descending. Flags a budget that's run over for 3 straight months so a stale limit doesn't sit there quietly out of date. Transfers, CC payments, and investment contributions are excluded from the unbudgeted section — they're not spending you should cap.
-- **Life Changes tab** — preview a hypothetical against your real spending history and income: rent becoming a mortgage, a new car payment, childcare starting. Non-destructive until you decide to make it real — one click turns a preview into your actual Budget-tab limit.
+- **"At a Glance" insights** — curated monthly insights surfaced by urgency: savings rate, top mover, largest charge, subscriptions, possible duplicate charges, weekend spending patterns. Each compares against your own history.
+- **Life Changes tab** — preview a hypothetical against your real spending history and income: rent becoming a mortgage, a new car payment, childcare starting. Non-destructive — set a projected amount and see it reflected in your spending view.
 - **Full picture net worth** — checking, savings, investments, loans, real estate, and vehicles in one place. Save monthly snapshots and track your trajectory toward a goal. Shows annualized growth rate alongside dollar change. Includes an emergency cushion estimate (liquid assets ÷ 12-month average spending) so you can see how many months of expenses you're holding.
-- **Smart auto-categorization** — four-tier system: your keyword rules → built-in merchant keywords → community-contributed patterns → MCC codes from your bank. Vendor names display in proper case (Starbucks, not STARBUCKS) without changing your underlying data. You can rename categories (including your own custom ones) in-place anytime — updates every transaction, budget, rule, and exclusion that referenced the old name.
+- **Smart auto-categorization** — four-tier system: your keyword rules → built-in merchant keywords → community-contributed patterns → MCC codes from your bank. Vendor names display in proper case (Starbucks, not STARBUCKS) without changing your underlying data. You can rename categories (including your own custom ones) in-place anytime — updates every transaction, rule, and exclusion that referenced the old name.
 - **Multi-source import** — import from multiple banks and credit cards. Sources with different date ranges prompt optional alignment to overlapping coverage.
 - **Spending exclusions** — hide categories like transfers and CC payments from spending totals. Reversible, per-category or per-transaction.
-- **Export anytime** — one click to export transactions or budget history as CSV, or export a full JSON backup of everything in the app: transactions, accounts, net worth snapshots, budgets, categories, and settings, all in one file.
+- **Export anytime** — one click to export transactions as CSV, or export a full JSON backup of everything in the app: transactions, accounts, net worth snapshots, categories, and settings, all in one file.
 - **Works offline, installs as an app** — service worker caches the full app; install to your home screen on Android or iPhone, or via Chrome on desktop.
 - **Freelancer-friendly** — opt-in income tracking alongside spending; tag transactions as business or personal to separate your spending totals by context, all without a separate bookkeeping app.
 - **Two demo profiles** — explore every feature before touching your own data.
@@ -60,7 +59,7 @@ Open the app, click ⬆ Import CSV. Works with Chase, Ally, Fidelity, Vanguard, 
 Import CSVs from other accounts — each gets its own color pill. If sources cover different date ranges, the app offers to align them to the overlapping period.
 
 **4. Explore**
-Transactions auto-categorize on import. Switch between chart views, set budgets, add your accounts for net worth tracking.
+Transactions auto-categorize on import. Switch between chart views, add your accounts for net worth tracking.
 
 ---
 

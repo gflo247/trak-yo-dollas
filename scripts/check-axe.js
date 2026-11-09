@@ -55,7 +55,6 @@ const STATIC_PAGES = EXPLICIT_FILE ? [] : [
 
 const APP_TABS = [
   { label: 'Spending',     action: null },
-  { label: 'Budget',       action: 'showPageBudget' },
   { label: 'Net Worth',    action: 'showPageDashboard' },
   { label: 'Life Changes', action: 'showPageSimulator' },
 ];
@@ -136,8 +135,8 @@ async function main() {
           // Brief pause for JS to finish rendering the initial demo state
           await page.waitForTimeout(400);
 
-          // Run axe on every tab so contrast/ARIA violations in Budget, Net
-          // Worth, and Life Changes are caught — previously only Spending was
+          // Run axe on every tab so contrast/ARIA violations in Net Worth
+          // and Life Changes are caught — previously only Spending was
           // checked (the initial active tab), so hardcoded hex colors that
           // failed on the light theme in other tabs went undetected until
           // this was widened.

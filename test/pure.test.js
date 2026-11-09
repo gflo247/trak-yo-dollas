@@ -46,83 +46,6 @@ test("isValidHexColor: accepts standard/shorthand hex, rejects style-attribute b
   assert.equal(isValidHexColor("blue"), false, "non-hex color name");
 });
 
-// ── classifyBudgetStatus() — shared by the Spending tab's "Budget health"
-// pill and the Budget tab's needs-attention/on-track grouping (finding
-// #3, this session). Before the fix, these were two separately-written
-// implementations that could disagree; this is now the one place the
-// over/at-risk rule is decided. ──
-test("classifyBudgetStatus: status table (over, atRisk, pct)", () => {
-  const { classifyBudgetStatus } = loadFunctions(["classifyBudgetStatus"]);
-  // [spend, budget, isCurrent, dayFraction, warnPct, label, expected{over,atRisk,pct?}]
-  for (const [spend, budget, isCurrent, dayFrac, warnPct, label, exp] of [
-    [150, 100, true,  0.9, 80, "over budget takes priority regardless of day-of-month",
-      { over: true, atRisk: false, pct: 150 }],
-    [85,  100, true,  0.5, 80, "at-risk: >= warnPct, current month, early enough in month",
-      { atRisk: true }],
-    [85,  100, true,  0.9, 80, "not at-risk once past day-of-month cutoff, even above warnPct",
-      { over: false, atRisk: false }],
-    [85,  100, false, 0.5, 80, "not at-risk for a non-current (historical) month",
-      { atRisk: false }],
-    [50,  100, true,  0.5, 80, "comfortably under budget is on-track",
-      { over: false, atRisk: false }],
-    [0,   0,   true,  0.5, 80, "zero/unset budget returns pct 0 (not Infinity or NaN)",
-      { pct: 0, over: false }],
-  ]) {
-    const result = classifyBudgetStatus(spend, budget, isCurrent, dayFrac, warnPct);
-    for (const [key, val] of Object.entries(exp)) {
-      assert.equal(result[key], val, `${label}: result.${key}`);
-    }
-  }
-});
-
-// ── 141st adversarial pass ──────────────────────────────────────────────
-// LOW: spendByCat accumulates raw floats across every transaction in a
-// category with no re-rounding to cents (spendByCat[t.cat]=(spendByCat
-// [t.cat]||0)+t.amount), so a month whose spend totals exactly the
-// budget can land a hair above it purely from float noise (the classic
-// 0.1+0.2 shape). The old bare spend>budget comparison flipped `over`
-// true with no real overspend, showing a red "OVER" badge and a
-// nonsensical "$0 over budget" label (fmt() rounds to whole dollars,
-// so the sub-cent difference renders as $0). Found in the 141st
-// adversarial pass. ──
-test("classifyBudgetStatus: a sub-cent float-accumulation overshoot doesn't flip a category to OVER, but a genuine overspend (well beyond the epsilon) still does", () => {
-  const { classifyBudgetStatus } = loadFunctions(["classifyBudgetStatus"]);
-  // The classic 0.1+0.2 float-noise shape: spend lands a hair above
-  // budget purely from accumulated floating-point error, not a real
-  // overspend.
-  const noisySpend = 0.1 + 0.2 + 299.7; // === 300.00000000000006, not exactly 300
-  assert.equal(classifyBudgetStatus(noisySpend, 300, true, 0.9, 80).over, false, "a sub-cent float overshoot should not be classified as over budget");
-  assert.equal(classifyBudgetStatus(300.5, 300, true, 0.9, 80).over, true, "a real 50-cent overspend should still be classified as over budget");
-});
-
-// ── 142nd adversarial pass ──────────────────────────────────────────────
-// LOW: the 141st pass added the float-noise epsilon only INSIDE
-// classifyBudgetStatus() -- sibling sites (the compact budget badge,
-// buildCondensedDots(), buildPctDots(), and the hero 12-month history
-// dots) all read the identical unrounded getCatMonthSpend()/spendByCat-
-// style float sums via their own bare > comparisons, so a category
-// exactly at budget could now show green in classifyBudgetStatus()'s
-// own callers but red in every one of these -- the exact cross-UI
-// inconsistency classifyBudgetStatus() was extracted to eliminate (see
-// its own header comment and the 44th pass's near-identical fix for the
-// warnPct boundary). Found in the 142nd adversarial pass, re-verifying
-// the 141st pass's own fix. ──
-test("the 3 sibling dot/pct-color render sites (compact badge, buildCondensedDots/buildPctDots, hero history dots) all use the same float-noise epsilon as classifyBudgetStatus()", () => {
-  const source = readSource();
-  // Dot background still uses raw hex (background color, not text — no contrast issue):
-  const badgeDotMatches = source.match(/curAmt>budget\+0\.005\?'#F87171':curAmt\/budget>0\.8\?'#FBBF24':'#34D399'/g) || [];
-  assert.equal(badgeDotMatches.length, 1, "the compact badge's dot background should use the epsilon-tolerant comparison");
-  // % text uses CSS variables (theme-aware) with the same epsilon condition:
-  const badgeTextMatches = source.match(/curAmt>budget\+0\.005\?'var\(--accent-red\)':curAmt\/budget>0\.8\?'var\(--accent-amber\)':'var\(--accent-green\)'/g) || [];
-  assert.equal(badgeTextMatches.length, 1, "the compact badge's % text should use theme-aware CSS variable colors with the same epsilon condition");
-  const condensedMatches = source.match(/ms>limit\+0\.005\?'#F87171':mp>=warnPct\?'#FBBF24':'#34D399'/g) || [];
-  assert.equal(condensedMatches.length, 2, "both buildCondensedDots() and buildPctDots() should use the same epsilon-tolerant comparison");
-  assert.match(
-    source,
-    /mSpent>totalBudget\+0\.005\?'#F87171':mPct>=warnPct\?'#FBBF24':'#34D399'/,
-    "the hero history dots should use the same epsilon-tolerant comparison"
-  );
-});
 
 // ── splitCSVLine() / parseCSV() — the first thing that touches a
 // user-uploaded bank CSV. ──
@@ -817,69 +740,6 @@ test("triggerPwaInstall: a synchronous double-call only invokes .prompt() once",
   assert.equal(promptCalls, 1);
 });
 
-// ── 15th adversarial pass: openBudgetModal(cat) was the one budget-related
-// handler in the "name-based data-action argument" family (see the 13th
-// pass's coerce() note above) that never re-stringified its argument. A
-// custom category literally named "2024" arrives as the Number 2024 from
-// the dispatcher; the modal's <select> compares `c===cat` against real
-// string category names, so the wrong (or no) <option> showed as selected
-// even though the budget itself still saved correctly (object bracket-key
-// access auto-stringifies). Fixed with the same String(cat) pattern used
-// elsewhere. ──
-test("openBudgetModal: a numeric-looking category name (coerced to a Number by the dispatcher) is compared as a string, so the matching <option> is marked selected", () => {
-  let selHTML = "";
-  const fakeSel = {
-    set innerHTML(v) { selHTML = v; },
-    get innerHTML() { return selHTML; },
-    onchange: null,
-  };
-  const fakePanel = { setAttribute: () => {} };
-  const fakeModal = { classList: { remove: () => {}, toggle: () => {} }, querySelector: () => fakePanel };
-  const fakeAmountInput = { focus: () => {} };
-  const fakeBody = { classList: { toggle: () => {} }, style: { setProperty: () => {} } };
-  const ctx = {
-    getAllCats: () => ["Groceries", "2024"],
-    state: { budgets: {} },
-    MONTHLY: {},
-    getCatMonthSpend: () => 0,
-    esc: (s) => String(s),
-    fmt: (n) => String(n),
-    _refreshBudgetModalContext: () => {},
-    _closeOtherPersistentPanels: () => {},
-    window: { innerWidth: 800 },
-    document: {
-      getElementById: (id) => {
-        if (id === "budget-cat-select") return fakeSel;
-        if (id === "budget-modal") return fakeModal;
-        if (id === "budget-amount") return fakeAmountInput;
-        return null;
-      },
-      body: fakeBody,
-    },
-  };
-  const { openBudgetModal } = loadFunctions(["openBudgetModal"], ctx);
-  openBudgetModal(2024); // dispatcher would pass the Number 2024, not the string "2024"
-  assert.match(selHTML, /<option value="2024" selected>/);
-});
-
-// ── 15th adversarial pass: budgetWarnPct is clamped to [50,99] on every live
-// edit via setBudgetWarnPct(), but both restore paths (localStorage load and
-// JSON-backup import) only NaN-guarded it, never clamped the range. A
-// corrupted or hand-edited backup with e.g. budgetWarnPct:-20 restored
-// unmodified, making classifyBudgetStatus()'s atRisk check (pct>=warnPct)
-// true for nearly any nonzero spend -- flooding the Budget tab with false
-// "AT RISK" badges. Fixed by mirroring setBudgetWarnPct()'s own clamp at
-// both restore sites. ──
-test("all budgetWarnPct restore sites (localStorage load, JSON-backup import, cloud-sync restore) clamp to the same [50,99] range as setBudgetWarnPct()", () => {
-  const source = readSource();
-  const clampPattern = /Math\.min\(99,Math\.max\(50,n\)\)/g;
-  const matches = source.match(clampPattern) || [];
-  // setBudgetWarnPct() itself, plus 3 restore sites (localStorage load,
-  // JSON-backup import, and loadUserData()'s cloud-sync restore -- added
-  // in the 38th adversarial pass alongside budgetWarnPct/currency finally
-  // being added to the cloud sync payload at all) -- 4 total.
-  assert.equal(matches.length, 4, `expected 4 uses of the [50,99] clamp (setBudgetWarnPct + 3 restore sites), found ${matches.length}`);
-});
 
 // ── 80th adversarial pass: the 76th pass's own fix for the one-time "press ?
 // for tips" toast, tc('#334155','#CBD5E1'), had tc(dark,light)'s arguments
@@ -1292,245 +1152,7 @@ test("renderAccountLists: two ambiguous same-named legacy 'Other' assets both ge
   assert.doesNotMatch(getAssetHTML(), /1000|2000/, "neither legacy Boat account should appear in Financial assets -- both are paired to Physical assets, not just the first-matched one");
 });
 
-test("_refreshBudgetModalContext: '% under/above avg' divides by avg, not the budget amount", () => {
-  let contextHTML = "";
-  const ctx = {
-    window: {},
-    document: {
-      getElementById: (id) => {
-        if (id === "budget-modal") return { style: { setProperty: () => {} } };
-        if (id === "budget-amount") return { value: "" };
-        if (id === "budget-modal-context") return { set innerHTML(v) { contextHTML = v; }, get innerHTML() { return contextHTML; } };
-        return null;
-      },
-    },
-    getCatColor: () => "#000",
-    getBudgetMonth: () => "2026-07",
-    getBudgetHistMonths: () => [],
-    avgSpendOverMonths: () => 200,
-    getCatMonthSpend: () => 0,
-    fmt: (n) => String(n),
-    _budgetBizFilter: 'all',
-    state: { budgets: { Groceries: 100 } },
-  };
-  const { _refreshBudgetModalContext } = loadFunctions(["_refreshBudgetModalContext"], ctx);
-  _refreshBudgetModalContext("Groceries");
-  // avg=200, budget=100 -- old buggy formula divided by cur (100): (200-100)/100*100 = 100%.
-  // Correct formula divides by avg (200): (200-100)/200*100 = 50%.
-  assert.match(contextHTML, /50% under avg/, "should read 50% under avg (divided by the $200 average), not 100% (divided by the $100 budget)");
-  assert.doesNotMatch(contextHTML, /100% under avg/);
-});
 
-function refreshBudgetModalContextCtx(budgets, avg) {
-  const amountEl = { value: "" };
-  return {
-    amountEl,
-    ctx: {
-      window: {},
-      document: {
-        getElementById: (id) => {
-          if (id === "budget-modal") return { style: { setProperty: () => {} } };
-          if (id === "budget-amount") return amountEl;
-          if (id === "budget-modal-context") return { set innerHTML(v) {}, get innerHTML() { return ""; } };
-          return null;
-        },
-      },
-      getCatColor: () => "#000",
-      getBudgetMonth: () => "2026-07",
-      getBudgetHistMonths: () => [],
-      avgSpendOverMonths: () => avg,
-      getCatMonthSpend: () => 0,
-      fmt: (n) => String(n),
-      _budgetBizFilter: 'all',
-      state: { budgets },
-    },
-  };
-}
-test("_refreshBudgetModalContext: prefills the amount field from the category's real average when no budget is set yet", () => {
-  const { ctx, amountEl } = refreshBudgetModalContextCtx({}, 237.6);
-  const { _refreshBudgetModalContext } = loadFunctions(["_refreshBudgetModalContext"], ctx);
-  _refreshBudgetModalContext("Groceries");
-  assert.equal(amountEl.value, 238, "should prefill with the rounded average, matching openSimulatorOverrideModal()'s identical convention");
-});
-test("_refreshBudgetModalContext: an existing budget still wins over the average", () => {
-  const { ctx, amountEl } = refreshBudgetModalContextCtx({ Groceries: 100 }, 237.6);
-  const { _refreshBudgetModalContext } = loadFunctions(["_refreshBudgetModalContext"], ctx);
-  _refreshBudgetModalContext("Groceries");
-  assert.equal(amountEl.value, 100, "an already-set budget should never be silently overwritten by the average");
-});
-test("_refreshBudgetModalContext: no budget and no history leaves the field blank rather than prefilling 0", () => {
-  const { ctx, amountEl } = refreshBudgetModalContextCtx({}, 0);
-  const { _refreshBudgetModalContext } = loadFunctions(["_refreshBudgetModalContext"], ctx);
-  _refreshBudgetModalContext("Groceries");
-  assert.equal(amountEl.value, "", "a category with zero spending history should stay blank, not prefill a meaningless $0 budget");
-});
-
-function openStaleBudgetModalCtx(existingBudget) {
-  const amountEl = { value: "", focus: () => {} };
-  const fakePanel = { setAttribute: () => {} };
-  const fakeBody = { classList: { toggle: () => {} }, style: { setProperty: () => {} } };
-  return {
-    amountEl,
-    ctx: {
-      window: { innerWidth: 800 },
-      state: { budgets: existingBudget !== undefined ? { Groceries: existingBudget } : {} },
-      getAllCats: () => ["Groceries", "Shopping"],
-      getCatColor: () => "#000",
-      getBudgetMonth: () => "2026-07",
-      getBudgetHistMonths: () => [],
-      avgSpendOverMonths: () => 0,
-      getCatMonthSpend: () => 0,
-      esc: (s) => String(s),
-      fmt: (n) => String(n),
-      _budgetBizFilter: 'all',
-      MONTHLY: {},
-      _closeOtherPersistentPanels: () => {},
-      document: {
-        getElementById: (id) => {
-          if (id === "budget-amount") return amountEl;
-          if (id === "budget-cat-select") return { innerHTML: "", onchange: null };
-          if (id === "budget-modal") return { classList: { remove: () => {}, toggle: () => {} }, style: { setProperty: () => {} }, querySelector: () => fakePanel };
-          if (id === "budget-modal-context") return { set innerHTML(v) {}, get innerHTML() { return ""; } };
-          if (id === "budget-remove-btn") return { classList: { toggle: () => {} } };
-          if (id === "budget-remove-confirm") return { classList: { add: () => {} } };
-          return null;
-        },
-        body: fakeBody,
-      },
-    },
-  };
-}
-test("openStaleBudgetModal: overrides the modal's own prefill (the existing stale budget) with the suggested average", () => {
-  const { ctx, amountEl } = openStaleBudgetModalCtx(50);
-  const { openStaleBudgetModal } = loadFunctions(["openStaleBudgetModal", "openBudgetModal", "_refreshBudgetModalContext"], ctx);
-  openStaleBudgetModal("Groceries", 237.6);
-  assert.equal(amountEl.value, 238, "should land on the rounded suggested average, not the stale $50 budget openBudgetModal would have prefilled");
-});
-test("openStaleBudgetModal: a non-finite suggested amount leaves openBudgetModal's own prefill alone", () => {
-  const { ctx, amountEl } = openStaleBudgetModalCtx(50);
-  const { openStaleBudgetModal } = loadFunctions(["openStaleBudgetModal", "openBudgetModal", "_refreshBudgetModalContext"], ctx);
-  openStaleBudgetModal("Groceries", "not-a-number");
-  assert.equal(amountEl.value, 50, "should fall back to whatever openBudgetModal already prefilled rather than clobbering it with garbage");
-});
-test("openStaleBudgetModal: a suggested amount of exactly 0 also leaves openBudgetModal's own prefill alone", () => {
-  const { ctx, amountEl } = openStaleBudgetModalCtx(50);
-  const { openStaleBudgetModal } = loadFunctions(["openStaleBudgetModal", "openBudgetModal", "_refreshBudgetModalContext"], ctx);
-  openStaleBudgetModal("Groceries", 0);
-  assert.equal(amountEl.value, 50, "amt>0 excludes 0 same as it excludes NaN/negative -- must be asserted directly, not assumed from the non-finite case alone");
-});
-
-function commitSimulatorOverrideAsBudgetCtx(overrides, existingBudget) {
-  let toastMsg = "";
-  let simRenders = 0;
-  const amountEl = { value: "" };
-  return {
-    toast: () => toastMsg,
-    simRenders: () => simRenders,
-    ctx: {
-      window: {},
-      state: { simulator: { horizonMonths: 12, overrides }, budgets: existingBudget !== undefined ? { Rent: existingBudget } : {} },
-      document: {
-        getElementById: (id) => {
-          if (id === "budget-amount") return amountEl;
-          if (id === "page-budget") return { classList: { contains: () => false } };
-          return null;
-        },
-      },
-      closeModals: () => {},
-      renderBucketGrid: () => {},
-      renderInsights: () => {},
-      renderBudgetTab: () => {},
-      renderSimulatorTab: () => { simRenders++; },
-      scheduleSave: () => {},
-      _isLiveDemoSession: () => false,
-      esc: (s) => String(s),
-      fmt: (n) => "$" + n,
-      showToast: (msg) => { toastMsg = msg; },
-    },
-  };
-}
-test("commitSimulatorOverrideAsBudget: writes the override's hypothetical amount into state.budgets via saveBudget(), and re-renders the Life Changes tab", () => {
-  const { ctx, simRenders } = commitSimulatorOverrideAsBudgetCtx([{ cat: "Rent", newMonthly: 2400 }]);
-  const { commitSimulatorOverrideAsBudget } = loadFunctions(["commitSimulatorOverrideAsBudget", "saveBudget", "undoBudgetButtonHTML"], ctx);
-  commitSimulatorOverrideAsBudget("Rent");
-  assert.equal(ctx.state.budgets.Rent, 2400);
-  assert.equal(simRenders(), 1, "should re-render the Life Changes tab so the row reflects the now-matching real budget, not look untouched");
-});
-test("commitSimulatorOverrideAsBudget: the confirmation toast offers an Undo back to whatever the budget was before", () => {
-  const { ctx, toast } = commitSimulatorOverrideAsBudgetCtx([{ cat: "Rent", newMonthly: 2400 }], 1350);
-  const { commitSimulatorOverrideAsBudget } = loadFunctions(["commitSimulatorOverrideAsBudget", "saveBudget", "undoBudgetButtonHTML"], ctx);
-  commitSimulatorOverrideAsBudget("Rent");
-  assert.match(toast(), /data-action="undoBudgetCat" data-arg="Rent" data-arg2="1350"/, "Undo should restore the exact prior budget, not just clear it");
-});
-test("commitSimulatorOverrideAsBudget: does nothing if the category has no active override", () => {
-  const { ctx } = commitSimulatorOverrideAsBudgetCtx([{ cat: "Groceries", newMonthly: 500 }]);
-  const { commitSimulatorOverrideAsBudget } = loadFunctions(["commitSimulatorOverrideAsBudget", "saveBudget", "undoBudgetButtonHTML"], ctx);
-  commitSimulatorOverrideAsBudget("Rent");
-  assert.equal(ctx.state.budgets.Rent, undefined, "should be a no-op when there's no override for this category to commit");
-});
-test("commitSimulatorOverrideAsBudget: a $0 override is a no-op, not a fake '$0 budget' -- saveBudget() would delete instead of setting 0, and the toast would lie about what happened", () => {
-  const { ctx, toast, simRenders } = commitSimulatorOverrideAsBudgetCtx([{ cat: "Rent", newMonthly: 0 }], 1350);
-  const { commitSimulatorOverrideAsBudget } = loadFunctions(["commitSimulatorOverrideAsBudget", "saveBudget", "undoBudgetButtonHTML"], ctx);
-  commitSimulatorOverrideAsBudget("Rent");
-  assert.equal(ctx.state.budgets.Rent, 1350, "the existing budget should be left completely untouched, not deleted");
-  assert.equal(toast(), "", "no toast should fire for a no-op -- a $0 override has nothing meaningful to commit to");
-  assert.equal(simRenders(), 0, "no re-render should fire for a no-op");
-});
-
-test("isBudgetStale: flags a category only when every one of the last 3 tracked months ran meaningfully over budget", () => {
-  const source = readSource();
-  const spendByMonth = { Groceries: { "2026-04": 300, "2026-05": 320, "2026-06": 310 } };
-  const ctx = { getCatMonthSpend: (cat, m) => spendByMonth[cat]?.[m] || 0 };
-  const { isBudgetStale } = loadFunctions(["isBudgetStale"], ctx);
-  assert.equal(isBudgetStale("Groceries", 200, ["2026-04", "2026-05", "2026-06"]), true, "consistently ~50% over budget for 3 straight months should flag");
-  assert.equal(isBudgetStale("Groceries", 400, ["2026-04", "2026-05", "2026-06"]), false, "a budget comfortably above real spend should never flag -- that's a deliberate cushion, not a mistake");
-  assert.equal(isBudgetStale("Groceries", 305, ["2026-04", "2026-05", "2026-06"]), false, "a trivial overage (within the 1.05x buffer) shouldn't flag a budget that's still basically on target");
-  assert.equal(isBudgetStale("Groceries", 200, ["2026-05", "2026-06"]), false, "fewer than 3 tracked months should never flag off a partial pattern");
-  assert.ok(source.includes("function isBudgetStale(cat,budget,last3Months,bizFilter){"), "isBudgetStale() should exist as its own named function, not inlined, so this exact behavior stays independently testable");
-});
-
-// ── 72nd adversarial pass: exportBudgetCSV()'s Status column used to judge
-// "AT RISK" against pct>=warnPct with no isCurrentMonth gate at all -- a
-// fully-completed PAST month (the only one with any spend, e.g. exporting
-// early in a new month before this category has posted a transaction yet)
-// landing in the warn-to-100% band got labeled "AT RISK" even though that
-// risk window had already closed. Now delegates to classifyBudgetStatus(),
-// the same function the live Budget tab uses, which already requires
-// isCurrentMonth for atRisk (see the "not at-risk for a non-current
-// (historical) month" test above). ──
-test("exportBudgetCSV: a completed PAST month landing in the warn-to-100% band reads On track, not AT RISK", () => {
-  const now = new Date();
-  const todayYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const pastDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const pastYM = `${pastDate.getFullYear()}-${String(pastDate.getMonth() + 1).padStart(2, "0")}`;
-
-  let capturedCsv = null;
-  const ctx = {
-    state: {
-      budgets: { Groceries: 100 }, budgetWarnPct: 80,
-      // exportBudgetCSV now builds the month list from transactions instead
-      // of Object.keys(MONTHLY); one transaction in pastYM is enough to
-      // produce the expected single-month column list.
-      transactions: [{ date: `${pastYM}-15`, card: "chase", excluded: false, isIncome: false, biz: false, cat: "Groceries", amount: 85 }],
-      activeSources: new Set(["chase"]),
-    },
-    _budgetBizFilter: 'all',
-    getCatMonthSpend: (cat, m) => (m === pastYM ? 85 : 0), // 85% of $100 budget -- inside the warn-to-100% band
-    csvSafeField: (s) => s,
-    showToast: () => {},
-    document: { createElement: () => ({ click: () => {} }) },
-    Blob: function (parts) {
-      capturedCsv = parts[0];
-    },
-    URL: { createObjectURL: () => "blob:fake", revokeObjectURL: () => {} },
-  };
-  const { exportBudgetCSV } = loadFunctions(["exportBudgetCSV", "classifyBudgetStatus"], ctx);
-  exportBudgetCSV();
-  const groceriesRow = capturedCsv.split("\n").find((l) => l.startsWith("Groceries"));
-  assert.ok(groceriesRow, "Groceries row should exist in the exported CSV");
-  assert.match(groceriesRow, /On track$/, "a completed past month at 85% of budget should read On track -- the risk window already closed");
-  assert.doesNotMatch(groceriesRow, /AT RISK/);
-});
 
 // ── 74th adversarial pass: confirmCatExclusion()/undoCatExclusion() are both
 // invoked fresh from the dispatcher via a data-arg attribute (the "Hide"
@@ -1569,36 +1191,6 @@ test("confirmCatExclusion/undoCatExclusion: a numeric-looking category name (coe
   assert.equal(undoCtx.state.excludedCats.size, 0, "undoCatExclusion should remove the string entry confirmCatExclusion() actually stored, not silently fail to match a Number against it");
 });
 
-// ── 74th adversarial pass: removeBudget()'s Undo toast only ever passed 2
-// arguments to showToast(msg,color,duration) -- (msg, 4000) -- so 4000
-// landed in the `color` slot (an invalid CSS value, silently rejected,
-// leaving the toast's color at whatever the previous toast left it) and
-// `duration` fell through to showToast()'s 2800ms default instead of the
-// clearly-intended 4000ms, the only recovery path for an accidental
-// budget deletion. ──
-test("removeBudget: showToast is called with an explicit color and the intended 4000ms duration, not with 4000 landing in the color slot", () => {
-  let toastArgs = null;
-  const ctx = {
-    state: { budgets: { Groceries: 100 } },
-    scheduleSave: () => {},
-    renderBucketGrid: () => {},
-    renderBudgetTab: () => {},
-    esc: (s) => String(s),
-    // tc(dark,light) -- the 75th pass replaced the hardcoded '#94A3B8'
-    // (this file's dark-theme --text-secondary, ~2.5:1 contrast on the
-    // light theme's toast background) with a real tc() call; mocked here
-    // as identity-on-dark since this test only cares about argument
-    // position, not theme switching itself.
-    tc: (dark) => dark,
-    showToast: (...args) => {
-      toastArgs = args;
-    },
-  };
-  const { removeBudget } = loadFunctions(["removeBudget", "undoBudgetButtonHTML"], ctx);
-  removeBudget("Groceries");
-  assert.equal(toastArgs[1], "#94A3B8", "color should be an explicit value, not the number 4000");
-  assert.equal(toastArgs[2], 4000, "duration should be 4000ms in its own argument slot");
-});
 
 // ── 81st adversarial pass: renderNwChart()'s Y-axis domain padding,
 // Math.min(...vals)*0.98 / Math.max(...vals)*1.02, pads outward correctly
@@ -1750,35 +1342,6 @@ test("renderNwGoalWidget: progress fraction is clamped to [0,1], not just <=1 --
   assert.equal(clamp(150000, 100000), 1, "still clamped at 1 for net worth exceeding the goal");
 });
 
-// ── 85th adversarial pass: two sibling instances of the same missing-floor
-// shape found in ringHTML() (the Budget tab's YTD ring) and barTicksHTML()
-// (the per-category fill bar) -- spendByCat's raw sum has no sign
-// filtering (established by the 82nd pass's fmtH() fix), so a category
-// net-refunded this month produces a negative `spent`/`ytd`. barTicksHTML's
-// fillPct fed a CSS width%, and ringHTML's arcPct fed a conic-gradient
-// stop -- both invalid when negative, silently breaking the visual fill
-// (a "full" bar or a blank ring) instead of correctly showing empty. ──
-test("barTicksHTML/ringHTML: fillPct/arcPct both floor at 0 for a net-refunded (negative spend/ytd) category, instead of a negative CSS width%/conic-gradient stop", () => {
-  const { barTicksHTML } = loadFunctions(["barTicksHTML"], { fmt: (n) => "$" + Math.abs(n).toLocaleString(), COMBO_TICK_PCT: 6 });
-  assert.equal(barTicksHTML(100, 80, -50, true).fillPct, 0, "negative spend should floor fillPct at 0, not produce a negative CSS width%");
-  assert.ok(barTicksHTML(100, 80, 50, true).fillPct > 0, "positive spend below the scale max is unaffected");
-
-  // ringHTML() takes a destructured `{ytd,ytdPace}` parameter, which the
-  // extraction harness's brace-counter can't handle (it stops at the
-  // destructured param's own closing brace, mistaking it for the function
-  // body's end) -- a pre-existing loadFunctions() limitation unrelated to
-  // this fix. Checking the source pattern directly instead, then
-  // re-deriving the same formula to exercise the actual floor behavior.
-  const source = readSource();
-  assert.match(
-    source,
-    /const arcPct=ratio==null\?0:Math\.max\(0,Math\.min\(ratio,1\)\)\*100;/,
-    "ringHTML()'s arcPct should be clamped on both ends, not just Math.min(ratio,1)*100"
-  );
-  const arcPct = (ratio) => (ratio == null ? 0 : Math.max(0, Math.min(ratio, 1)) * 100);
-  assert.equal(arcPct(-0.5), 0, "negative ytd/ytdPace ratio should floor arcPct at 0, not go negative");
-  assert.equal(arcPct(0.5), 50, "a normal in-range ratio is unaffected");
-});
 
 // ── 85th adversarial pass: importBackup()'s 'Internal Transfer' backfill
 // (mirroring runMigrations()'s one-time version-gated equivalent) had no
@@ -2154,8 +1717,8 @@ test("_resetSessionFiltersForDataReplace: resets every session-scoped filter fie
   const source = readSource();
   assert.match(
     source,
-    /function _resetSessionFiltersForDataReplace\(\)\{\s*_bizFilter='all';\s*_budgetBizFilter='all';\s*state\.activeCats=new Set\(\);\s*state\.dashFilter=null;\s*state\.searchQuery='';\s*const searchEl=document\.getElementById\('tx-search'\);\s*if\(searchEl\)searchEl\.value='';\s*document\.getElementById\('search-clear-btn'\)\?\.classList\.add\('hidden'\);\s*state\.showExcluded=false;[\s\S]{0,700}?if\(!\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\)\{\s*try\{localStorage\.removeItem\('trakyo_show_excl'\);\}catch\(e\)\{\}\s*\}\s*_clearVendorDayFiltersForDataReplace\(\);\s*_expandedIncomeMonths\.clear\(\);\s*\}/,
-    "_resetSessionFiltersForDataReplace() should reset _bizFilter/_budgetBizFilter/activeCats/dashFilter/searchQuery (+ DOM), showExcluded (+ localStorage key), call _clearVendorDayFiltersForDataReplace(), and clear _expandedIncomeMonths"
+    /function _resetSessionFiltersForDataReplace\(\)\{\s*_bizFilter='all';\s*state\.activeCats=new Set\(\);\s*state\.dashFilter=null;\s*state\.searchQuery='';\s*const searchEl=document\.getElementById\('tx-search'\);\s*if\(searchEl\)searchEl\.value='';\s*document\.getElementById\('search-clear-btn'\)\?\.classList\.add\('hidden'\);\s*state\.showExcluded=false;[\s\S]{0,700}?if\(!\(window\._isDemoPreview\|\|window\._viewingDemoOverReal\)\)\{\s*try\{localStorage\.removeItem\('trakyo_show_excl'\);\}catch\(e\)\{\}\s*\}\s*_clearVendorDayFiltersForDataReplace\(\);\s*_expandedIncomeMonths\.clear\(\);\s*\}/,
+    "_resetSessionFiltersForDataReplace() should reset _bizFilter/activeCats/dashFilter/searchQuery (+ DOM), showExcluded (+ localStorage key), call _clearVendorDayFiltersForDataReplace(), and clear _expandedIncomeMonths"
   );
 });
 test("importBackup, confirmTxImport, and loadDemoProfile all call the shared _resetSessionFiltersForDataReplace() helper", () => {
@@ -3369,11 +2932,9 @@ test("transaction ingestion: desc/cat/card are string-coerced (with cat defaulti
   assert.match(source, /const displayVendor=name=>\{\s*if\(!name\)return name;/, "displayVendor()'s guard is falsy-only, same reasoning");
 });
 
-test("loadUserData and loadFromLocalStorage object-shape-guard state.budgets/state.income, matching importBackup()'s existing obj()-based guard", () => {
+test("loadUserData and loadFromLocalStorage object-shape-guard state.income, matching importBackup()'s existing obj()-based guard", () => {
   const source = readSource();
-  assert.match(source, /if \(prefs\.budgets && typeof prefs\.budgets === 'object' && !Array\.isArray\(prefs\.budgets\)\) state\.budgets = prefs\.budgets;/, "loadUserData() should object-shape-guard budgets");
   assert.match(source, /if \(prefs\.income && typeof prefs\.income === 'object' && !Array\.isArray\(prefs\.income\)\) state\.income = prefs\.income;/, "loadUserData() should object-shape-guard income");
-  assert.match(source, /if\(saved\.budgets&&typeof saved\.budgets==='object'&&!Array\.isArray\(saved\.budgets\)&&Object\.keys\(saved\.budgets\)\.length>0\)state\.budgets=saved\.budgets;/, "loadFromLocalStorage() should object-shape-guard budgets (Object.keys().length>0 alone is true for a non-empty string too)");
   assert.match(source, /state\.income=\(saved\.income&&typeof saved\.income==='object'&&!Array\.isArray\(saved\.income\)\)\?saved\.income:\{method:null,monthlyAmount:0\};/, "loadFromLocalStorage() should object-shape-guard income");
 });
 
@@ -3549,22 +3110,6 @@ test("fmt/fmtD/fmtH raw param is applied at every non-D3, non-innerHTML sink: .t
   assert.match(source, /totalEl\.textContent=fmtD\(total,true\)/, "the Venmo cashout total should use raw fmtD");
 });
 
-// Finding 6 (LOW): the event-delegation dispatcher's coerce() turns a
-// data-arg string of "0" into the JS Number 0 -- falsy. openBudgetModal(cat)
-// checked `if(!cat)` (to pick a default category when none was specified)
-// BEFORE `cat=String(cat)`, so a category literally named "0" hit the
-// "no cat specified" branch and silently opened the wrong category's budget
-// modal. toggleCatExclusion()/confirmSrcRemove() both coerce to a string
-// first, before any conditional, for the same reason (99th adversarial
-// pass). openBudgetModal() itself is DOM-heavy; source-pattern only. ──
-test("openBudgetModal: coerces cat to a string before checking falsiness, so a category literally named \"0\" isn't mistaken for \"no cat specified\"", () => {
-  const src = fnBody('openBudgetModal');
-  const coerceIdx = src.search(/if\(cat!==undefined\)cat=String\(cat\);/);
-  const falsyCheckIdx = src.search(/if\(!cat\)\{/);
-  assert.ok(coerceIdx >= 0, "openBudgetModal() should coerce cat to a string, guarded on undefined so the 'no cat' default path still works when nothing was passed");
-  assert.ok(falsyCheckIdx >= 0, "openBudgetModal() should still have its 'no cat specified' default-picking branch");
-  assert.ok(coerceIdx < falsyCheckIdx, "the String(cat) coercion must run BEFORE the !cat falsy check -- otherwise coerce()'s Number(\"0\")===0 is indistinguishable from 'no cat specified'");
-});
 
 // ── 107th adversarial pass ──────────────────────────────────────────────
 
@@ -4047,7 +3592,7 @@ test("_replaceDemoDataWithReal: resets every field loadDemoProfile() seeds to th
   assert.match(src, /if\(state\.hasRealData\)return;/, "should no-op once real data already exists, never wiping real data");
   for (const line of [
     "state.accounts=[];", "state.vehicles=[];", "state.snapshots=[];", "state.transactions=[];",
-    "state.activeSources=new Set();", "state.budgets={};", "state.rangeFrom=null;", "state.rangeTo=null;",
+    "state.activeSources=new Set();", "state.rangeFrom=null;", "state.rangeTo=null;",
     "state.sourceAlignDate=null;", "state.sourceAlignSkipped=false;", "state.nwGoal=null;",
     "state.income={method:null,monthlyAmount:0};", "state.declaredIncome=0;", "state.includeIncome=false;",
     "state.excludedCats=new Set(TRANSFER_LIKE_CATS);", "state.catRules=[];", "state.customCategories=[];",
@@ -5078,7 +4623,7 @@ test("saveHistoricalSnapshot: only clears _editingSnapshotMonthKey when the demo
 // (JSON.stringify(Infinity)==="null", and every loader's `||0`
 // coercion turns null back into 0) -- so not a crash, but a real
 // silent-data-corruption path. Found in the 119th adversarial pass. ──
-test("the 8 manual-entry save functions (saveTx, saveEditTx, saveAccount, saveVehicle, saveBudget, saveHistoricalSnapshot, saveDeclaredIncome, saveManualIncome) all reject non-finite (Infinity/1e400) values, not just falsy/NaN ones", () => {
+test("the 7 manual-entry save functions (saveTx, saveEditTx, saveAccount, saveVehicle, saveHistoricalSnapshot, saveDeclaredIncome, saveManualIncome) all reject non-finite (Infinity/1e400) values, not just falsy/NaN ones", () => {
   const source = readSource();
 
   assert.match(
@@ -5105,11 +4650,6 @@ test("the 8 manual-entry save functions (saveTx, saveEditTx, saveAccount, saveVe
     "saveVehicle should reject a non-finite value alongside the existing negative-value guard (the equivalent purchase-price guard was removed alongside the field itself, August 2026)"
   );
 
-  assert.match(
-    source,
-    /if\(val>0&&Number\.isFinite\(val\)\)state\.budgets\[cat\]=Math\.round\(val\);/,
-    "saveBudget should require Number.isFinite alongside val>0 before saving"
-  );
 
   assert.match(
     source,
@@ -5279,10 +4819,8 @@ test("checkSourceAlignment's modal is wired into the shared a11y focus-managemen
 
 // LOW: Chrome (and some other browsers) silently increments/decrements a
 // focused <input type="number">'s value when the mouse wheel scrolls over
-// it. #budget-warn-input sits inline in the scrollable Budget tab (not a
-// modal), so a user scrolling the page with that field still focused from
-// a prior edit gets their near-limit warning threshold silently altered
-// with zero intent. Found in the 124th adversarial pass. ──
+// it. A focused numeric input can get its value silently altered while the
+// user scrolls the page. Found in the 124th adversarial pass. ──
 test("a focused <input type=number> is blurred on wheel scroll, preventing the browser's native scroll-to-change behavior", () => {
   const source = readSource();
   assert.match(
@@ -5858,7 +5396,7 @@ test("the .truncate utility class exists and is applied to the 5 sites sharing t
     "the shared .truncate utility class should be defined"
   );
   const truncateUsages = source.match(/class="truncate"/g) || [];
-  assert.equal(truncateUsages.length, 8, "the .truncate class should be applied at the 5 sites this pass fixed, plus 3 more added in a later small-fixes round (see the dedicated test below), plus the CSV import preview's category pill (an unbounded-length custom category name could otherwise misalign the new column-sort header, found in the adversarial pass right after that header was added), minus 1: renderVehicles()'s 'other asset' row switched from a bare class=\"truncate\" div to .account-name (which already carries the identical overflow:hidden;text-overflow:ellipsis;white-space:nowrap truncation, plus the account-row-grouped layout this row was rebuilt around), when Physical assets was rebuilt to match the rest of the Net Worth tab's tighter row format");
+  assert.equal(truncateUsages.length, 7, "the .truncate class should be applied at the 4 surviving sites from the original 5 (the budget row's category label was removed with the Budget tab), plus 3 more added in a later small-fixes round (see the dedicated test below), plus the CSV import preview's category pill, minus 1: renderVehicles()'s 'other asset' row switched from a bare class=\"truncate\" div to .account-name (which already carries the identical overflow:hidden;text-overflow:ellipsis;white-space:nowrap truncation, plus the account-row-grouped layout this row was rebuilt around), when Physical assets was rebuilt to match the rest of the Net Worth tab's tighter row format");
   assert.match(
     source,
     /<div class="truncate" style="font-size:12px;font-weight:700;color:var\(--amber-text\)" title="\$\{esc\(a\.name\)\}">\$\{esc\(a\.name\)\}<\/div>/,
@@ -5868,11 +5406,6 @@ test("the .truncate utility class exists and is applied to the 5 sites sharing t
     source,
     /<span class="truncate" style="color:var\(--text-primary\)" title="\$\{esc\(displayVendor\(t\.desc\)\)\}">\$\{esc\(displayVendor\(t\.desc\)\)\}<\/span>/,
     "the recategorize list should truncate the vendor name"
-  );
-  assert.match(
-    source,
-    /<span class="truncate" style="font-size:13px;font-weight:700;color:var\(--text-primary\)" title="\$\{esc\(cat\)\}">\$\{esc\(cat\)\}<\/span>/,
-    "the budget row should truncate the category label"
   );
   assert.match(
     source,
@@ -7531,23 +7064,6 @@ test("Account management is inline in the NW breakdown list-col: breakdown, excl
   );
 });
 
-// Finding: Nicholas asked whether the Budget tab's support text was too
-// small, quoting the subtitle sentence directly. It and the gate notice
-// below it were both 11px, under the 12px legibility floor established
-// earlier this session for genuine reading/instructional text.
-test("Budget tab's subtitle and gate notice meet the 12px legibility floor, not 11px", () => {
-  const source = readSource();
-  assert.match(
-    source,
-    /<div id="budget-view-subtitle" style="font-size:12px;/,
-    "#budget-view-subtitle should be 12px"
-  );
-  assert.match(
-    source,
-    /<div id="budget-view-gate" style="display:none;background:var\(--bg-card\);border:1px solid var\(--border-mid\);border-left:3px solid #FBBF24;border-radius:6px;padding:\.5rem \.75rem;margin-bottom:\.5rem;font-size:12px;/,
-    "#budget-view-gate should be 12px"
-  );
-});
 
 // Finding: fixing deleteSnapshot's icon to 🗑️ earlier this session only
 // compared it against removeBudget (2 data points) -- when Nicholas asked
@@ -7678,13 +7194,13 @@ test("Top 5 Categories stays screen-right on mobile, matching desktop's side-by-
 // Bumped the 8 genuine-reading-text sites to 12px: .bucket-name/
 // .bucket-meta (the category tile's name and "Avg: $X/mo · Peak: ..."
 // line -- both shared classes touching every tile on the page), the
-// in-tile budget line ("$X of $Y budget"), two transaction-list empty
+// two transaction-list empty
 // states, the "select a source" hint, the calendar legend's click hint,
 // and the "Hidden from spending" note. Live-verified all 8 in the
 // browser, including triggering both empty states and the calendar
 // hint directly via state -- no wrapping/clipping in the now-taller
 // category tiles.
-test("Spending tab's category tile name/meta/budget line, both empty states, the no-source hint, calendar hint, and hidden-transactions note are all 12px, not 9-11px", () => {
+test("Spending tab's category tile name/meta, both empty states, the no-source hint, calendar hint, and hidden-transactions note are all 12px, not 9-11px", () => {
   const source = readSource();
   assert.match(
     source,
@@ -7695,11 +7211,6 @@ test("Spending tab's category tile name/meta/budget line, both empty states, the
     source,
     /\.bucket-meta\{font-size:12px;color:var\(--text-muted\);margin-top:3px;line-height:1\.4\}/,
     ".bucket-meta (the tile's 'Avg: $X/mo · Peak: ...' line) should be 12px"
-  );
-  assert.match(
-    source,
-    /<span style="font-size:12px;color:var\(--text-muted\)">\$\{fmtS\(curAmt\)\} \/ \$\{fmt\(budget\)\}<\/span>/,
-    "the in-tile budget line should be 12px, formatted as '$X / $Y' matching the Budget tab's own convention"
   );
   assert.match(
     source,
@@ -7728,33 +7239,6 @@ test("Spending tab's category tile name/meta/budget line, both empty states, the
   );
 });
 
-// Finding: bumping the in-tile budget line to 12px in the previous
-// commit introduced a real wrap -- "$1,269 of $1,200 budget" (a 4-digit
-// budget, e.g. the Home tile) no longer fit in a 170px tile at the
-// larger size and wrapped to 2 lines, confirmed live via a height
-// measurement (28px vs. 14px for a single line) before and after.
-// Nicholas asked whether switching to a compact "$X / $Y" fraction
-// format was worth it; checked first and found the Budget tab's own
-// per-category row already displays this same data as "$518 / $200"
-// (see the sibling amountHTML template a few hundred lines below) --
-// so this wasn't just a space-saving nicety, it was fixing both the
-// wrap and an inconsistency with the app's own primary budget UI in
-// one move. Dropped "of"/"budget" since the tile's colored status dot,
-// its own tooltip, and its position under a budget-tracking header
-// already carry that context.
-test("the in-tile budget line uses a compact '$X / $Y' fraction instead of '$X of $Y budget', preventing 4-digit budgets from wrapping to 2 lines", () => {
-  const source = readSource();
-  assert.match(
-    source,
-    /<span style="font-size:12px;color:var\(--text-muted\)">\$\{fmtS\(curAmt\)\} \/ \$\{fmt\(budget\)\}<\/span>/,
-    "the budget line should read '$X / $Y', matching the Budget tab's own format"
-  );
-  assert.doesNotMatch(
-    source,
-    /\$\{fmtS?\(curAmt\)\} of \$\{fmt\(budget\)\} budget/,
-    "the old verbose 'of ... budget' wording should be gone"
-  );
-});
 
 // Finding: even after switching the budget line to a compact fraction,
 // every single category tile's "Avg/Peak" meta line was still wrapping
@@ -7820,24 +7304,6 @@ test("the Spending breakdown tab strip, the Patterns toggle, and both range-chip
   );
 });
 
-// Finding: Nicholas asked whether the in-tile "% of budget" badge
-// (e.g. "106%", "259%") was worth making bigger. It was 10px, smaller
-// than the 12px "$X / $Y" fraction sitting right next to it, even
-// though it's the more important signal in that row -- bold,
-// color-coded red/amber/green, the actual "am I over budget" answer.
-// Tested live first: bumping it to 12px keeps every tile on one line,
-// including the tightest case ("$1,269 / $1,200 106%" on the Home
-// tile, confirmed via rowHeight staying at 14px/single-line rather
-// than the 28px this exact row hit during the earlier Peak-line
-// wrapping investigation).
-test("the in-tile '% of budget' badge is 12px, matching the '$X / $Y' fraction next to it instead of being smaller than its own less-important neighbor", () => {
-  const source = readSource();
-  assert.match(
-    source,
-    /<span style="font-size:12px;font-weight:700;color:\$\{curAmt>budget\+0\.005\?'var\(--accent-red\)':curAmt\/budget>0\.8\?'var\(--accent-amber\)':'var\(--accent-green\)'\}">\$\{Math\.round\(curAmt\/budget\*100\)\}%<\/span>/,
-    "the budget percentage badge should be 12px"
-  );
-});
 
 // Finding: fixing the Subscriptions pill's score=0 default surfaced a
 // deeper bug -- score had NEVER been used to choose the 2 visible
@@ -8087,7 +7553,7 @@ test("#demo-nudge's banner text uses 'Switch profiles' in place of 'explore them
   const source = readSource();
   assert.match(
     source,
-    /Demo data fills all 4 tabs —\s*<button data-action="openDemoPicker" data-arg="false" style="background:none;border:none;color:var\(--accent-amber\);font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Switch profiles<\/button>\s*to explore, then\s*<button data-action="openTxImportModal"/,
+    /Demo data fills all 3 tabs —\s*<button data-action="openDemoPicker" data-arg="false" style="background:none;border:none;color:var\(--accent-amber\);font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit" type="button">Switch profiles<\/button>\s*to explore, then\s*<button data-action="openTxImportModal"/,
     "the banner should read 'Switch profiles' (as a secondary text-link button) positioned before 'Import a CSV', not adjacent to it at the end"
   );
   assert.doesNotMatch(
@@ -8745,7 +8211,6 @@ for (const [openFn, closeFn, modalId] of [
   ["openAddModal", "closeAddModal", "add-modal"],
   ["openAddTxModal", "closeAddTxModal", "add-tx-modal"],
   ["openEditTxModal", "closeEditTxModal", "edit-tx-modal"],
-  ["openBudgetModal", "closeBudgetModal", "budget-modal"],
   ["openHistoricalSnapshotModal", "closeHistoricalSnapshotModal", "historical-snapshot-modal"],
 ]) {
   test(`${openFn}() opens as a persistent, non-blocking panel on wide viewports (drops .modal-overlay, flips aria-modal), matching shortcuts-modal's mechanism`, () => {
@@ -8760,7 +8225,7 @@ for (const [openFn, closeFn, modalId] of [
   });
 }
 
-test("Every one of the 10 persistent panels' Done/×/Got it/Cancel buttons uses its own dedicated close function, not the generic closeModals() -- a real regression risk once .modal-overlay can be dropped at runtime", () => {
+test("Every one of the 9 persistent panels' Done/×/Got it/Cancel buttons uses its own dedicated close function, not the generic closeModals() -- a real regression risk once .modal-overlay can be dropped at runtime", () => {
   const source = readSource();
   const catBlock = source.match(/<!-- Category manager modal -->[\s\S]*?<\/div>\s*<\/div>\s*<\/div>\s*\n\n<!-- Transaction CSV import drawer -->/);
   assert.ok(catBlock, "cat-modal's markup block should exist");
@@ -8786,10 +8251,6 @@ test("Every one of the 10 persistent panels' Done/×/Got it/Cancel buttons uses 
   assert.ok(editTxBlock, "edit-tx-modal's markup block should exist");
   assert.match(editTxBlock[0], /data-action="closeEditTxModal"/, "edit-tx-modal's Cancel button should use the dedicated close function");
   assert.doesNotMatch(editTxBlock[0], /data-action="closeModals"/, "edit-tx-modal should have no remaining buttons wired to the generic sweep");
-  const budgetBlock = source.match(/<!-- Budget modal -->[\s\S]*?<\/div>\s*<\/div>\s*\n\n<!-- Life Changes/);
-  assert.ok(budgetBlock, "budget-modal's markup block should exist");
-  assert.match(budgetBlock[0], /data-action="closeBudgetModal"/, "budget-modal's Cancel button should use the dedicated close function");
-  assert.doesNotMatch(budgetBlock[0], /data-action="closeModals"/, "budget-modal should have no remaining buttons wired to the generic sweep");
   const histSnapBlock = source.match(/<div class="modal-overlay drawer-overlay hidden" id="historical-snapshot-modal">[\s\S]*?<\/div>\s*<\/div>\s*\n\n<!-- Other vendors modal -->/);
   assert.ok(histSnapBlock, "historical-snapshot-modal's markup block should exist");
   assert.match(histSnapBlock[0], /data-action="closeHistoricalSnapshotModal"/, "historical-snapshot-modal's Cancel button should use the dedicated close function");
@@ -8807,12 +8268,12 @@ test("Every one of the 10 persistent panels' Done/×/Got it/Cancel buttons uses 
 // mobile) -- which is exactly why this gap only opened up as a side
 // effect of the persistence feature itself, not something the original
 // blocking-modal design ever had to guard against.
-test("_closeOtherPersistentPanels() is called at the start of all 10 open functions, so opening one persistent panel closes any other that's already open instead of silently stacking on top of it", () => {
+test("_closeOtherPersistentPanels() is called at the start of all 9 open functions, so opening one persistent panel closes any other that's already open instead of silently stacking on top of it", () => {
   const source = readSource();
   assert.match(
     source,
-    /function _closeOtherPersistentPanels\(exceptId\)\{\s*\['shortcuts-modal','community-rules-modal','year-review-modal','cat-modal','tx-import-modal','add-modal','add-tx-modal','edit-tx-modal','budget-modal','historical-snapshot-modal','rules-modal','income-modal','declared-income-modal','save-rule-modal','venmo-cashout-modal','other-vendors-modal','vendor-alias-modal','subscriptions-modal','duplicate-charges-modal','vehicle-modal','acct-csv-modal','pill-customizer-modal','custom-goal-modal','simulator-override-modal','sync-passphrase-modal','currency-modal'\]\.forEach/,
-    "the helper should exist and enumerate all 26 persistent-eligible panels"
+    /function _closeOtherPersistentPanels\(exceptId\)\{\s*\['shortcuts-modal','community-rules-modal','year-review-modal','cat-modal','tx-import-modal','add-modal','add-tx-modal','edit-tx-modal','historical-snapshot-modal','rules-modal','income-modal','declared-income-modal','save-rule-modal','venmo-cashout-modal','other-vendors-modal','vendor-alias-modal','subscriptions-modal','duplicate-charges-modal','vehicle-modal','acct-csv-modal','pill-customizer-modal','custom-goal-modal','simulator-override-modal','sync-passphrase-modal','currency-modal'\]\.forEach/,
+    "the helper should exist and enumerate all 25 persistent-eligible panels"
   );
   for (const [openFn, exceptId] of [
     ["openShortcutsModal", "shortcuts-modal"],
@@ -8823,7 +8284,6 @@ test("_closeOtherPersistentPanels() is called at the start of all 10 open functi
     ["openAddModal", "add-modal"],
     ["openAddTxModal", "add-tx-modal"],
     ["openEditTxModal", "edit-tx-modal"],
-    ["openBudgetModal", "budget-modal"],
     ["openHistoricalSnapshotModal", "historical-snapshot-modal"],
   ]) {
     const fnMatch = source.match(new RegExp(`function ${openFn}\\([^)]*\\)\\{[\\s\\S]*?\\n\\}`));
@@ -8876,7 +8336,6 @@ for (const [openFn, closeFn, width] of [
   ["openAddModal", "closeAddModal", "440px"],
   ["openAddTxModal", "closeAddTxModal", "480px"],
   ["openEditTxModal", "closeEditTxModal", "480px"],
-  ["openBudgetModal", "closeBudgetModal", "400px"],
   ["openHistoricalSnapshotModal", "closeHistoricalSnapshotModal", "420px"],
 ]) {
   test(`${openFn}()/${closeFn}() set and clear persistent-panel-open + --pp-width:${width}, matching this panel's own drawer width`, () => {
@@ -9011,7 +8470,7 @@ test("avgSpendOverMonths: averages a category's spend over a given list of month
   assert.equal(avgSpendOverMonths("Nonexistent", ["2026-06", "2026-07"]), 0);
 });
 
-test("getBudgetHistMonths: defaults to 12 trailing months, honors a custom count, respects bizFilter", () => {
+test("getCatSpendHistory: defaults to 12 trailing months, honors a custom count, respects bizFilter", () => {
   // Build one transaction per month (2024-01 through 2026-07), plus a
   // biz-flagged variant for each month so the bizFilter='biz' path can be
   // tested independently.
@@ -9024,22 +8483,22 @@ test("getBudgetHistMonths: defaults to 12 trailing months, honors a custom count
     ...txMonths.slice(-6).map((m) => ({ date: `${m}-20`, card: "chase", excluded: false, isIncome: false, biz: true, amount: 50, cat: "Office" })),
   ];
   const ctx = { state: { transactions, activeSources: new Set(["chase"]) } };
-  const { getBudgetHistMonths } = loadFunctions(["getBudgetHistMonths"], ctx);
+  const { getCatSpendHistory } = loadFunctions(["getCatSpendHistory"], ctx);
 
-  const default12 = getBudgetHistMonths("2026-08");
+  const default12 = getCatSpendHistory("2026-08");
   assert.equal(default12.length, 12, "should default to 12 months when count is omitted");
   assert.equal(default12[0], "2025-08", "should be oldest-first");
   assert.equal(default12[default12.length - 1], "2026-07", "should end strictly before ym");
 
-  const six = getBudgetHistMonths("2026-08", 6);
+  const six = getCatSpendHistory("2026-08", 6);
   assert.equal(six.length, 6);
   assert.equal(six[0], "2026-02");
 
-  const twentyFour = getBudgetHistMonths("2026-08", 24);
+  const twentyFour = getCatSpendHistory("2026-08", 24);
   assert.equal(twentyFour.length, 24);
 
   // bizFilter='biz' — only the last 6 months have biz transactions
-  const bizSix = getBudgetHistMonths("2026-08", 12, "biz");
+  const bizSix = getCatSpendHistory("2026-08", 12, "biz");
   assert.equal(bizSix.length, 6, "bizFilter='biz' should only return months that have at least one biz transaction");
   assert.equal(bizSix[0], "2026-02");
 });
@@ -9241,39 +8700,6 @@ test("renderSimulatorTab: sources its income figure from sumIncomeForMonths(hist
     /data-action="openIncomeModal"/,
     "should link to the existing income modal inline next to the income summary line, not bury it elsewhere"
   );
-  assert.match(
-    simSrc,
-    /data-action="commitSimulatorOverrideAsBudget"/,
-    "an active override should offer a way to commit it as a real Budget-tab limit, not just preview or remove it"
-  );
-});
-
-// Finding (adversarial pass, after this feature first shipped): the "Set as
-// budget" button stayed identically clickable after a successful commit,
-// with no indication anything happened beyond a transient toast, and it
-// was offered even for a $0 override -- which saveBudget() silently treats
-// as "delete," not "set to $0," so committing one would have deleted an
-// existing budget while the toast still claimed "$0/mo" was saved.
-test("renderSimulatorTab: an already-committed override shows 'Budgeted' instead of a re-clickable button, and a $0 override never offers to commit at all", () => {
-  const simSrc = fnBody('renderSimulatorTab');
-  assert.match(
-    simSrc,
-    /state\.budgets\[r\.cat\]===r\.projected/,
-    "should detect that this override already matches the real budget rather than always offering to re-commit it"
-  );
-  assert.match(
-    simSrc,
-    /:r\.projected>0\s*\?`<button data-action="commitSimulatorOverrideAsBudget"/,
-    "the commit button should only ever render for a positive projected amount -- there's no such thing as a real '$0 budget' to commit to"
-  );
-});
-
-test("undoBudgetButtonHTML: produces one shared Undo control, not a copy-pasted string per call site", () => {
-  const source = readSource();
-  const occurrences = source.match(/data-action="undoBudgetCat" data-arg="\$\{esc\(cat\)\}" data-arg2="\$\{prev\}"/g) || [];
-  assert.equal(occurrences.length, 1, "the Undo button markup should be defined exactly once (inside undoBudgetButtonHTML), not duplicated inline at each call site");
-  const { undoBudgetButtonHTML } = loadFunctions(["undoBudgetButtonHTML"], { esc: (s) => String(s) });
-  assert.match(undoBudgetButtonHTML("Groceries", 100), /data-action="undoBudgetCat" data-arg="Groceries" data-arg2="100"/);
 });
 
 // Finding: Nicholas pointed out the "Look back" control and the preset
@@ -9322,7 +8748,7 @@ test("renderSimulatorTab: wraps the sort controls, override list, and summary bo
   );
 });
 
-test("setSimulatorSort: defaults to Amount descending, and mirrors setBudgetSort()'s toggle-direction-on-repeat-click convention", () => {
+test("setSimulatorSort: defaults to Amount descending, using the same toggle-direction-on-repeat-click convention", () => {
   const source = readSource();
   assert.match(
     source,
@@ -9335,8 +8761,8 @@ test("setSimulatorSort: defaults to Amount descending, and mirrors setBudgetSort
     "should default to descending"
   );
   const simSortSrc = fnBody('setSimulatorSort');
-  // Same toggle-on-repeat-click / reset-on-new-key shape as setBudgetSort()
-  // (line ~9476): clicking the already-active sort flips its direction;
+  // Same toggle-on-repeat-click / reset-on-new-key shape as the old budget sort:
+  // clicking the already-active sort flips its direction;
   // clicking a different one switches to it and resets direction (alpha
   // starts ascending, everything else starts descending).
   assert.match(simSortSrc, /if\(_simulatorSort===s\)\{/, "re-clicking the active sort should flip direction, not reset it");
@@ -9973,11 +9399,6 @@ test("spend displays that can net negative use fmtS, not fmt", () => {
   for (const snippet of [
     '${fmtS(s.total)}</div>',                // category tile total
     '${fmtS(data.total)}</div>',             // vendor tile total
-    '${fmtS(curAmt)} / ${fmt(budget)}',      // category tile budget badge
-    '${fmtS(spent)}</span><span class="text-muted-sm"> / ${fmt(budget)}', // Budget tab row
-    'budget: ${fmtS(spent)} of ${fmt(budget)}', // Budget tab row label for screen readers
-    'YTD ${fmtS(ytd)} of',                   // YTD ring tooltip
-    '${cat}: ${fmtS(spend)} / ${fmt(budget)}', // budget summary tooltip
   ]) assert.ok(source.includes(snippet), `expected ${snippet}`);
 });
 
