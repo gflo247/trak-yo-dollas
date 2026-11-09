@@ -6,8 +6,8 @@ serializeState() (local persistence, via localStorage) but syncToCloud()'s
 savePrefs() payload and/or loadUserData()'s restore logic are never
 updated to match, so the field silently doesn't round-trip across
 devices. First found for nwGoal/hideNwGoal, then excludedCats and
-declaredIncome (37th pass), then budgetWarnPct and currency (38th pass,
-found via this scanner's own first run) -- excludedCats in particular
+declaredIncome (37th pass), then currency (38th pass, found via this
+scanner's own first run) -- excludedCats in particular
 gates spend totals at dozens of call sites app-wide, so this isn't a
 cosmetic gap: a user who customizes it on one device sees every headline
 number disagree on another, with no error or warning either way.
@@ -54,10 +54,10 @@ This is a heuristic, not a JS parser -- it WILL have false positives:
   reads a synced value at all -- deliberate design, the same treatment
   as _bizFilter/date-range filters (also device-local view state).
 
-Two other first-run candidates (budgetWarnPct, currency) were
-investigated by the same pass and found to be real gaps of the exact
-"nwGoal" shape -- both fixed (added to syncToCloud()'s payload and
-loadUserData()'s restore). currency in particular turned out to be a
+currency was another first-run candidate: investigated by the same pass
+and found to be a real gap of the exact "nwGoal" shape -- fixed (added to
+syncToCloud()'s payload and loadUserData()'s restore). currency in
+particular turned out to be a
 security-relevant miss, not just a sync gap: it was never sanitized at
 ANY of its write sites (the currency-modal input's maxlength="4" is a
 UI attribute, not a data-layer guard), and flows unescaped into dozens
@@ -86,7 +86,7 @@ KEY_RE = re.compile(r'^\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*:', re.MULTILINE)
 # by field name. NOT exhaustive of every field the docstring discusses --
 # only fields with a settled, documented reason belong here; a field
 # reappearing after a schema refactor should still surface for a fresh
-# look (see the docstring's own warning about budgetWarnPct/currency).
+# look (see the docstring's own warning about currency).
 NEVER_SYNCED_KNOWN_FALSE_POSITIVES = {
     'snapshots',       # separate sync path via saveSnapshot()/loadSnapshots(), not the prefs payload
     'hasRealData', 'hasRealAccounts', 'hasRealSnapshot',  # loadUserData() re-derives these from what it just restored

@@ -2,8 +2,8 @@
 // trakyodollas.html — see extract.js for why this loads the real shipped
 // source instead of a hand-copied duplicate. Scope is deliberately narrow
 // for this first pass: functions with no DOM dependency, covering the
-// bugs found in this session's review (XSS escaping, the budget
-// over/at-risk classification split, and the sync passphrase crypto).
+// bugs found in this session's review (XSS escaping and the sync passphrase
+// crypto).
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
@@ -960,7 +960,7 @@ test("detectDepositIncome: matches a real transaction's shape (isIncome:true, ex
 // Found live-testing the demo-to-real transition (August 2026):
 // selectIncomeMethod('auto') commits state.income.method='auto' and
 // scheduleSave()s immediately on click, exactly like every sibling
-// income-modal action (saveManualIncome(), setNwGoal(), saveBudget(),
+// income-modal action (saveManualIncome(), setNwGoal(),
 // toggleIncludeIncome(), etc.) -- but unlike all of them, it had no toast
 // at all, and no _isLiveDemoSession()-aware "(resets once you add real
 // data)" messaging from the July 28 pass. Live-verified the concrete harm:
@@ -1815,13 +1815,13 @@ test("confirmRenameCat: updates state.treemapDrillCat and the _treemapPrevActive
 });
 
 // ── Life Changes simulator's own overrides list is a category-name holder
-// of the exact same shape as budgets/catRules/excludedCats/activeCats
-// above -- deleteCustomCat()/confirmRenameCat() must cascade to it too, or
-// a Life Changes override on a renamed/deleted custom category becomes a
-// permanent orphaned entry: invisible in computeSimulatorProjection() (it
-// only iterates getAllCats()) and unreachable through the UI (no row
-// renders for it, so there's no way to remove it). ──
-test("deleteCustomCat: removes a Life Changes override on the deleted category, not just its budget/rule/filter entries", () => {
+// of the same shape as catRules/excludedCats/activeCats above --
+// deleteCustomCat()/confirmRenameCat() must cascade to it too, or a Life
+// Changes override on a renamed/deleted custom category becomes a permanent
+// orphaned entry: invisible in computeSimulatorProjection() (it only
+// iterates getAllCats()) and unreachable through the UI (no row renders for
+// it, so there's no way to remove it). ──
+test("deleteCustomCat: removes a Life Changes override on the deleted category, not just its rule/filter entries", () => {
   const ctx = {
     state: {
       customCategories: [{ name: "Rent", color: null }],
@@ -3472,7 +3472,7 @@ test("renderSpendChart: peakIdx is declared let and reassigned from the vendor-f
 // Finding 2 (MEDIUM): confirmTxImport()'s "first real import on a demo
 // session" branch (state.hasRealData was false, meaning every field is
 // still the scripted DEMO_PROFILE_1/2 value) wiped transactions/
-// activeSources/budgets but left income/catRules/vendorAliases/nwGoal/
+// activeSources but left income/catRules/vendorAliases/nwGoal/
 // customCategories untouched -- state.hasRealData=true plus scheduleSave()
 // afterward then permanently persisted all 5 as if the user had entered
 // them themselves (a fabricated manual income, demo cat-rules silently
@@ -3644,9 +3644,8 @@ test("parseCsvAccounts: only calls _replaceDemoDataWithReal() once at least one 
 
 // Finding 4 (LOW): applyCurrency()/applyCustomCurrency() only called
 // renderSpending(), but a currency symbol appears on every tab (Dashboard
-// metrics/NW breakdown, Accounts, Vehicles, History, Budget) -- every
-// other tab kept showing the old symbol until an unrelated renderAll() or
-// a reload. ──
+// metrics/NW breakdown, Accounts, Vehicles, History) -- every other tab
+// kept showing the old symbol until an unrelated renderAll() or a reload. ──
 test("applyCurrency and applyCustomCurrency both call renderAll(), not just renderSpending()", () => {
   assert.match(fnBody('applyCurrency'), /renderAll\(\);/, "applyCurrency() should call renderAll()");
   assert.match(fnBody('applyCustomCurrency'), /renderAll\(\);/, "applyCustomCurrency() should call renderAll()");
@@ -6028,7 +6027,7 @@ test("demo data is version-stamped, persisted, and silently refreshed on load if
 // ── check-cloudsync-coverage.py flagged 5 fields as persisted locally
 // (serializeState()) but missing from syncToCloud()'s savePrefs() payload --
 // the same "real preference, never synced" gap already fixed for nwGoal/
-// excludedCats/budgetWarnPct/currency in earlier passes. All 5 are set via a
+// excludedCats/currency in earlier passes. All 5 are set via a
 // deliberate user action (the chart-grain toggle, the range chips/date
 // pickers, checkSourceAlignment()'s own resolution), not incidental view
 // state, and loadFromLocalStorage()/importBackup() already restored all 5 --
@@ -7066,9 +7065,9 @@ test("Account management is inline in the NW breakdown list-col: breakdown, excl
 
 
 // Finding: fixing deleteSnapshot's icon to 🗑️ earlier this session only
-// compared it against removeBudget (2 data points) -- when Nicholas asked
-// "did we settle on garbage cans or X as our site wide delete icon?", a
-// full site-wide grep showed ✕/× was still used at 4 other delete sites.
+// compared it against 2 data points -- when Nicholas asked "did we settle
+// on garbage cans or X as our site wide delete icon?", a full site-wide
+// grep showed ✕/× was still used at 4 other delete sites.
 // ✕ conventionally signals "close/dismiss", but all 6 of these actions are
 // permanent deletions, so standardized every one on 🗑️.
 test("deleteRule, startDeleteCat, and deleteVendorAlias all use 🗑️, not a mismatched ✕/×", () => {
@@ -7240,8 +7239,7 @@ test("Spending tab's category tile name/meta, both empty states, the no-source h
 });
 
 
-// Finding: even after switching the budget line to a compact fraction,
-// every single category tile's "Avg/Peak" meta line was still wrapping
+// Finding: every single category tile's "Avg/Peak" meta line was wrapping
 // to 2 lines (34px vs. 17px for one line, confirmed live across all 8
 // visible tiles) -- the 12px bump alone wasn't enough once "Peak: 'YY
 // Mon" was in the mix too. Nicholas asked whether adding the peak
@@ -7784,7 +7782,7 @@ test("Export all transactions (CSV) and Export CSV (Net Worth snapshots) are wir
 // Finding: Nicholas asked whether the overflow menu's cross-tab items
 // (currency, backup/restore, CSV export, clear data, PWA install) should
 // be reachable from every tab, not just Spending -- they weren't; a user
-// on Budget/Net Worth/Accounts had to switch to Spending first to reach
+// on Net Worth/Accounts/other tabs had to switch to Spending first to reach
 // "Export data backup" or "Clear all data." Moved those 6 items out of
 // Spending's own overflow menu into a new ⚙ menu inside <nav> (present on
 // every tab, since it's one shared element, not per-page markup), leaving
@@ -7888,8 +7886,7 @@ test("The sync-passphrase warning uses amber (warning) styling, not green (succe
 });
 
 // Finding: the Spending tab's "⬇ Export CSV" button (next to the
-// Transactions header) is one of three visually-identical inline export
-// buttons (Budget and Net Worth have their own) -- considered folding it
+// Transactions header) -- considered folding it
 // into the "Transactions" header text itself to save mobile width, but
 // that would overload a label that's also a live transaction-count display
 // with an undiscoverable click target, undoing the same kind of
@@ -8434,10 +8431,9 @@ test("Tips & shortcuts' Keyboard section is hidden on mobile -- '?' and Esc need
 });
 
 // ── Life Changes simulator — non-destructive "what if this category cost
-// $X/mo instead" projection, added alongside a new tab. avgSpendOverMonths()
-// was extracted out of getBudgetRowMetrics()'s own inline avg12 one-liner so
-// both share the exact same averaging math; computeSimulatorProjection()
-// composes it with getAllCats() into a per-category override preview. ──
+// $X/mo instead" projection. avgSpendOverMonths() provides the shared
+// averaging math; computeSimulatorProjection() composes it with getAllCats()
+// into a per-category override preview. ──
 function simulatorTxCtx(entriesByCatMonth) {
   // entriesByCatMonth: { cat: { 'YYYY-MM': amount, ... }, ... }
   const transactions = [];
@@ -8643,7 +8639,7 @@ test("saveSimulatorOverride: a blank field removes an existing override instead 
   const ctx = saveSimulatorOverrideCtx("", [{ cat: "Home", newMonthly: 2400 }]);
   const { saveSimulatorOverride } = loadFunctions(["saveSimulatorOverride"], ctx);
   saveSimulatorOverride();
-  assert.deepEqual(ctx.state.simulator.overrides, [], "a blank amount should remove the override, matching openBudgetModal's own blank-clears convention");
+  assert.deepEqual(ctx.state.simulator.overrides, [], "a blank amount should remove the override — blank clears, matching the convention used throughout the app");
 });
 test("saveSimulatorOverride: a positive amount still saves/updates normally", () => {
   const ctx = saveSimulatorOverrideCtx("1800", []);
@@ -8730,10 +8726,7 @@ test("renderSimulatorTab: 'Look back' (select + custom input) and the preset/add
 // Finding: Nicholas pointed out the override list here is the same dense
 // name/avg/button row shape .list-col already targets on Spending/Net
 // Worth/Accounts (see the .list-col CSS comment) -- wrapping it the same
-// way keeps Life Changes consistent with those tabs on a wide monitor
-// instead of stretching its rows full-bleed like Budget's card-based
-// layout (which deliberately stays outside .list-col; its progress-bar
-// cards use extra width well, unlike a plain row).
+// way keeps Life Changes consistent with those tabs on a wide monitor.
 test("renderSimulatorTab: wraps the sort controls, override list, and summary box in .list-col, matching Spending/Net Worth/Accounts", () => {
   const simSrc = fnBody('renderSimulatorTab');
   assert.match(
@@ -8761,8 +8754,8 @@ test("setSimulatorSort: defaults to Amount descending, using the same toggle-dir
     "should default to descending"
   );
   const simSortSrc = fnBody('setSimulatorSort');
-  // Same toggle-on-repeat-click / reset-on-new-key shape as the old budget sort:
-  // clicking the already-active sort flips its direction;
+  // Toggle-on-repeat-click / reset-on-new-key: clicking the already-active
+  // sort flips its direction;
   // clicking a different one switches to it and resets direction (alpha
   // starts ascending, everything else starts descending).
   assert.match(simSortSrc, /if\(_simulatorSort===s\)\{/, "re-clicking the active sort should flip direction, not reset it");

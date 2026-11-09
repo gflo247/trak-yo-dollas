@@ -92,28 +92,20 @@ KNOWN_FALSE_POSITIVES = {
     # instead of reading the shared MONTHLY cache precisely to avoid this leak.
     't=>{ if(t.excluded||t.isIncome)return; if(state.excludedCats&&state.excludedCats.has(t.cat))return; const mo=t.date.slice(0,7); if(mo>=curre',
     # getTxForMonth() -- the function that enforces _bizFilter IS this function;
-    # it now accepts a `bizFilter` parameter so Budget and Life Changes callers
+    # it now accepts a `bizFilter` parameter so Life Changes and other callers
     # can pass their own value. The pattern checks bizFilter (the param) rather
     # than the global _bizFilter -- this is the correct implementation, not a
     # missing guard. Every call site that should respect Spending's _bizFilter
     # still calls getTxForMonth() without a third arg (defaulting to _bizFilter).
     't=>t.date.slice(0,7)===m&&!t.excluded&&!t.isIncome&&state.activeSources.has(t.card)&&(bizFilter!==\'biz\'||t.biz)&&(bizFilter!==\'personal\'||!t',
-    # getBudgetHistMonths() -- scans transactions to build the month list with
+    # getCatSpendHistory() -- scans transactions to build the month list with
     # its own `bizFilter` parameter (same rationale as getTxForMonth() above).
-    # Budget passes _budgetBizFilter; Life Changes and the cushion pass 'all'.
+    # Life Changes and the cushion pass 'all'.
     't=>{ if(t.excluded||t.isIncome)return; if(!state.activeSources.has(t.card))return; if(bizFilter===\'biz\'&&!t.biz)return; if(bizFilter===\'pers',
-    # renderBudgetTab() monthTx -- Budget has its own independent _budgetBizFilter
-    # separate from Spending's _bizFilter. Using _budgetBizFilter here is correct:
-    # the two tabs' filters are intentionally decoupled so switching Spending's
-    # filter doesn't silently change what the Budget tab counts.
-    't=>t.date.slice(0,7)===ym&&isRealSpend(t)&&state.activeSources.has(t.card)&&(_budgetBizFilter!==\'biz\'||t.biz)&&(_budgetBizFilter!==\'personal',
-    # exportBudgetCSV() -- same _budgetBizFilter rationale as renderBudgetTab()
-    # above; the CSV export follows Budget's own filter, not Spending's.
-    't=>{ if(t.excluded||t.isIncome)return; if(!state.activeSources.has(t.card))return; if(_budgetBizFilter===\'biz\'&&!t.biz)return; if(_budgetBiz',
     # getLatestDataMonth() -- intentionally reads all transactions unfiltered;
     # the fix for the MONTHLY filter-leak class. Reading _bizFilter here would
-    # reintroduce exactly the bug being fixed (Budget tab navigating to the
-    # wrong month when Business is active). Matches rebuildMonthly's filter set
+    # cause deselecting a source to change which month is "latest", breaking
+    # Life Changes. Matches rebuildMonthly's filter set
     # (excluded, isIncome, excludedCats) but deliberately omits _bizFilter.
     't=>{ if(t.excluded||t.isIncome)return; if(state.excludedCats&&state.excludedCats.has(t.cat))return; const mo=t.date.slice(0,7); if(mo>latest',
     # rebuildMonthly() MONTHLY build -- intentionally unfiltered by _bizFilter;

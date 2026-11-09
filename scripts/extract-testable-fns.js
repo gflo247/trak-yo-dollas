@@ -55,7 +55,7 @@ function extractFunctions(source, names) {
 }
 
 // Loads the named functions from trakyodollas.html into a real, callable
-// object — e.g. loadFunctions(['esc','classifyBudgetStatus']).esc('<x>').
+// object — e.g. loadFunctions(['esc','computeEmergencyCushionMonths']).esc('<x>').
 // `context` lets a caller pre-seed variables the functions close over
 // (e.g. `_getOrCreateSalt`, `sessionStorage`).
 //

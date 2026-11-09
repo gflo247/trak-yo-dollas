@@ -6,8 +6,7 @@ hand-rolling its own loop over state.transactions — reimplementing
 getBaseTxs()'s exclusion logic (isRealSpend/t.excluded/excludedCats) inline
 — instead of calling getBaseTxs() itself, and in doing so quietly drops
 state.activeSources (the deselected card/account filter) that
-getBaseTxs() already checks. Concretely: getTxForMonth() (feeding most of
-the Budget tab), renderInsights()'s sumMonth and 6 more of its own pill
+getBaseTxs() already checks. Concretely: getTxForMonth(), renderInsights()'s sumMonth and 6 more of its own pill
 computations, renderYearInReview()/copyYirSummary(), and
 renderBucketGrid()'s tile sparklines/"vs average" badges all had their own
 separate transaction loops that never referenced activeSources at all —
@@ -130,7 +129,7 @@ KNOWN_FALSE_POSITIVES = {
     # getLatestDataMonth() -- intentionally omits activeSources to match
     # rebuildMonthly()'s filter set exactly. rebuildMonthly never filtered by
     # activeSources (it's a per-source cache builder); adding activeSources here
-    # would cause deselecting a card to hide its months from Budget navigation,
+    # would cause deselecting a card to hide its months from the month navigator,
     # which is a regression. Omitting it is deliberate, confirmed in the
     # principal SWE adversarial pass.
     't=>{ if(t.excluded||t.isIncome)return; if(state.excludedCats&&state.excludedCats.has(t.cat))return; const mo=t.date.slice(0,7); if(mo>latest',

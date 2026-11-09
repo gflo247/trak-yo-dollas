@@ -11,7 +11,7 @@
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-q7FCRE6SWQ9au0cHLJPKZvjtbJvrj/gkApAE6joWAOc=' 'sha256-gObtUnA+/owiCpshTC8ewaPFVrFZA3ikIqmvDAcTc/w=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-IJuhlWOV5PRg3b66HAx1U8TKnuSGl+ZmEMutOsX81dE=' 'sha256-z8HlInhULrQbCGvTjdFDcLz2RP4O/aQ9q6WyRUIN0fU=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -427,7 +427,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg-page)
 /* The tile's click/keyboard-filter affordance lives on .bucket-hit, a
    button stretched to cover the whole card (see its render site) rather
    than on .bucket-card itself -- .bucket-card also contains several
-   genuinely independent controls (hide, budget, info tooltip), and an
+   genuinely independent controls (hide, info tooltip), and an
    outer role=button/tabindex wrapping all of them is invalid nested-
    interactive markup (confirmed via an axe-core audit), unreliable for
    assistive tech regardless of whether axe catches it. Focus/active
@@ -1062,9 +1062,9 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       <button id="pwa-install-btn" data-action="triggerPwaInstall|closeGlobalSettings" class="overflow-item" style="display:none" type="button">📲 Add to Home Screen</button>
       <button data-action="openCurrencyModal|closeGlobalSettings" class="overflow-item" type="button">🌍 Set currency symbol</button>
       <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-      <button data-action="exportAllTransactionsCSV|closeGlobalSettings" class="overflow-item" title="All transactions, unfiltered — readable in Excel/Sheets, but no accounts/budgets/settings. For a full-fidelity backup, use Export data backup (JSON) below." type="button">⬇ Export all transactions (CSV)</button>
-      <button data-action="exportBackup|closeGlobalSettings" class="overflow-item" title="Everything, from every tab — transactions, accounts, net worth snapshots, budgets, categories, and settings — in one file." type="button">⬇ Export data backup (JSON)</button>
-      <button data-action="triggerImportBackup|closeGlobalSettings" class="overflow-item" title="Replaces everything currently in the app with what's in the backup file — transactions, accounts, budgets, snapshots, and settings." type="button">⬆ Import data backup (JSON)</button>
+      <button data-action="exportAllTransactionsCSV|closeGlobalSettings" class="overflow-item" title="All transactions, unfiltered — readable in Excel/Sheets, but no accounts/settings. For a full-fidelity backup, use Export data backup (JSON) below." type="button">⬇ Export all transactions (CSV)</button>
+      <button data-action="exportBackup|closeGlobalSettings" class="overflow-item" title="Everything, from every tab — transactions, accounts, net worth snapshots, categories, and settings — in one file." type="button">⬇ Export data backup (JSON)</button>
+      <button data-action="triggerImportBackup|closeGlobalSettings" class="overflow-item" title="Replaces everything currently in the app with what's in the backup file — transactions, accounts, snapshots, and settings." type="button">⬆ Import data backup (JSON)</button>
       <div id="settings-sync-divider" style="display:none;border-top:1px solid var(--border);margin:4px 0"></div>
       <button id="settings-sync-reset-btn" data-action="openSyncPassphraseReset|closeGlobalSettings" class="overflow-item" style="display:none" type="button">Forgot your sync passphrase?</button>
       <div style="border-top:1px solid var(--border);margin:4px 0"></div>
@@ -1633,7 +1633,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 <div class="modal-overlay hidden" id="auth-modal">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" tabindex="-1" style="max-width:380px">
     <h3 id="auth-modal-title">Save your progress</h3>
-    <p class="modal-sub" id="auth-modal-desc" style="margin-bottom:.75rem">Sign in to sync your data — accounts, transactions, budgets, and snapshots — across devices.</p>
+    <p class="modal-sub" id="auth-modal-desc" style="margin-bottom:.75rem">Sign in to sync your data — accounts, transactions, and snapshots — across devices.</p>
 
     <div id="auth-demo-warning" style="display:none;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.4);border-radius:8px;padding:.5rem .85rem;margin-bottom:.65rem;font-size:12px;color:var(--amber-text-strong);text-align:center">
       ⚠️ Signing in will replace the demo data on this device with your account data.
@@ -1750,7 +1750,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
     <div class="hidden" id="sync-pp-reset-panel">
       <div style="background:#7F1D1D22;border:1px solid #DC262644;border-radius:8px;padding:.6rem .85rem">
         <p style="font-size:12px;color:var(--accent-red);font-weight:700;margin:0 0 .35rem">This permanently deletes your synced data</p>
-        <p style="font-size:12px;color:var(--accent-red);margin:0;line-height:1.5">Nobody can decrypt it without the passphrase, so resetting is the only way back in. Everything on this device — transactions, accounts, budgets, net worth history — stays exactly as it is; only the encrypted cloud backup used for syncing gets deleted. Set a new passphrase and this device's data starts syncing fresh under it.</p>
+        <p style="font-size:12px;color:var(--accent-red);margin:0;line-height:1.5">Nobody can decrypt it without the passphrase, so resetting is the only way back in. Everything on this device — transactions, accounts, net worth history — stays exactly as it is; only the encrypted cloud backup used for syncing gets deleted. Set a new passphrase and this device's data starts syncing fresh under it.</p>
       </div>
       <div class="form-group" style="margin-top:.6rem">
         <label class="form-label" for="sync-pp-reset-input">Type reset to confirm</label>
@@ -2350,7 +2350,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
 <div class="modal-overlay hidden" id="clear-data-modal">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="clear-data-modal-title" tabindex="-1" style="max-width:380px">
     <h3 id="clear-data-modal-title" style="color:var(--accent-red);margin-bottom:.5rem">Clear all data?</h3>
-    <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:1rem">This will permanently delete all your transactions, accounts, budgets, rules, and snapshots on this device. This cannot be undone.</p>
+    <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:1rem">This will permanently delete all your transactions, accounts, rules, and snapshots on this device. This cannot be undone.</p>
     <p id="clear-data-cloud-caveat" class="hidden" style="font-size:12px;color:var(--text-muted);line-height:1.5;margin-bottom:1.25rem">Your cloud-synced backup isn't affected by this — signing back in with your sync passphrase will restore it. To delete your synced data too, <button type="button" data-action="openSyncPassphraseReset" style="background:none;border:none;color:var(--accent-blue-light);font-size:12px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline">delete your synced data</button>.</p>
     <div style="background:#F8717118;border:1px solid #F8717133;border-radius:8px;padding:.6rem .85rem;margin-bottom:1.25rem">
       <div style="font-size:12px;color:var(--accent-red);font-weight:600">To confirm, type <strong>clear</strong> below:</div>
@@ -2766,12 +2766,9 @@ function getTxForMonth(m,extraFilter,bizFilter){
   // relying on excludedCats.has('Income'), since a transaction's category
   // can drift (a bulk-applied rule, or a hand-edit via Edit Transaction)
   // while isIncome stays the durable signal. This helper backs
-  // getCatMonthSpend() -- the Budget tab's 12-month average/YTD pace/
-  // history dots, the Insights "Budget health" pill, and
-  // exportBudgetCSV() -- so a recategorized income transaction was
-  // silently counted as spend in all of them, contradicting the
-  // currently-displayed month's correctly-filtered hero figure. Found in
-  // the 57th adversarial pass.
+  // getCatMonthSpend() -- so a recategorized income transaction was
+  // silently counted as spend, contradicting the currently-displayed
+  // month's correctly-filtered hero figure. Found in the 57th adversarial pass.
   return state.transactions.filter(t=>t.date.slice(0,7)===m&&!t.excluded&&!t.isIncome&&state.activeSources.has(t.card)&&(bizFilter!=='biz'||t.biz)&&(bizFilter!=='personal'||!t.biz)&&(!extraFilter||extraFilter(t)));
 }
 
@@ -2932,10 +2929,9 @@ let state={
   // FOCUSED <input type="number">'s value when the mouse wheel scrolls
   // over it -- there's no confirmation, no visual distinction from an
   // intentional edit, and the resulting change fires like any other
-  // (data-change handlers, live previews). #budget-warn-input sits inline
-  // in the scrollable Budget tab (not a modal), so a user scrolling the
-  // page with that field still focused from a prior edit gets their
-  // near-limit warning threshold silently altered with zero intent.
+  // (data-change handlers, live previews). Any number input inside a
+  // scrollable region can have its value silently altered with zero user
+  // intent while the user is just scrolling past.
   // {passive:true} -- this only blurs, never preventDefault()s, so the
   // page still scrolls normally; blurring before the wheel event's own
   // value-mutation step is what stops the value from changing. Found in
@@ -3332,14 +3328,14 @@ function _replaceDemoDataWithReal(){
 // real data yet -- excludes read-only preview mode (_isDemoPreview/
 // _viewingDemoOverReal), where nothing persists either way and this notice
 // would just be noise. Used to make success toasts for setNwGoal(),
-// confirmCustomGoal(), saveBudget(), saveDeclaredIncome(), saveManualIncome(),
+// confirmCustomGoal(), saveDeclaredIncome(), saveManualIncome(),
 // toggleIncludeIncome(), addCatRule()'s two callers, addCustomCat(), and
 // addVendorAlias() honest about the fact that _replaceDemoDataWithReal()
 // above will wipe every one of these fields the moment a real save happens
 // -- previously several of these either showed an unconditional
 // permanent-sounding toast (e.g. "Goal set to $500,000") or no toast at all,
-// so a user exploring the demo who set a real goal/income/budget first lost
-// it silently, with no warning before or after. Found in an audit
+// so a user exploring the demo who set a real goal or income first lost it
+// silently, with no warning before or after. Found in an audit
 // conversation, July 2026 -- see _HANDOFF.md.
 function _isLiveDemoSession(){
   return !state.hasRealData&&!window._isDemoPreview&&!window._viewingDemoOverReal;
@@ -3369,7 +3365,7 @@ const fmt=(n,raw)=>(raw?(state.currency||'$'):esc(state.currency||'$'))+Math.abs
 // fmt() with a leading '-' once the amount rounds to at least -$1. For spend
 // totals by category, vendor or month, which go negative when refunds in the
 // window exceed purchases: fmt() alone shows a $450 refund as "$450", which
-// reads as spending ("$450 / $300" on a budget).
+// reads as spending rather than a negative number.
 const fmtS=(n,raw)=>(n<=-0.5?'-':'')+(raw?(state.currency||'$'):esc(state.currency||'$'))+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
 // a>=999500, not a>=1e6, picks the 'M' branch -- for a in [999500,999999],
 // the 'k' branch's Math.round(a/1e3) itself rounds up to 1000, producing
@@ -5621,12 +5617,11 @@ function getAggregatedData(){
 // A transaction counts as real spend only if it's not manually excluded and
 // not flagged as income — single source of truth for a check that recurred
 // independently (and was repeatedly forgotten) across ~15 call sites this
-// session: rebuildMonthly, the Budget tab, Sankey, getMonthlyFiltered,
-// renderTreemap, renderDailyCal, several dashboard insights, subscription
-// detection, and Year-in-Review. Route any new spend-aggregating code
-// through this instead of reinventing `!t.excluded&&!t.isIncome` from
-// scratch — that's exactly the pattern that kept getting written without
-// the isIncome half.
+// session: rebuildMonthly, Sankey, getMonthlyFiltered, renderTreemap,
+// renderDailyCal, several dashboard insights, subscription detection, and
+// Year-in-Review. Route any new spend-aggregating code through this instead
+// of reinventing `!t.excluded&&!t.isIncome` from scratch — that's exactly
+// the pattern that kept getting written without the isIncome half.
 function isRealSpend(t){
   return !t.excluded&&!t.isIncome;
 }
@@ -6332,8 +6327,8 @@ function renderBucketGrid(){
     const signal=curAmt>0?(vsAvg>=_bucketArrowThreshold?`<span class="text-danger">↑${vsAvg}%</span>`:vsAvg<=-_bucketArrowThreshold?`<span class="text-success">↓${Math.abs(vsAvg)}%</span>`:(Math.abs(vsAvg)>=_bucketHideThreshold?`<span style="color:var(--text-dim)">${vsAvg>=0?'+':''}${vsAvg}%</span>`:'')):'';
     // .bucket-card itself is no longer a role=button/tabindex element -- it
     // contains several genuinely independent interactive controls (hide,
-    // budget, info tooltip), and nesting all of those inside one more
-    // interactive ancestor is invalid (axe's nested-interactive rule,
+    // info tooltip), and nesting all of those inside one more interactive
+    // ancestor is invalid (axe's nested-interactive rule,
     // confirmed via an axe-core audit) and unreliable for assistive tech.
     // The "click anywhere on the card to filter" behavior instead comes
     // from .bucket-hit, a single button stretched to cover the whole card
@@ -8250,7 +8245,7 @@ document.addEventListener('click',function(e){
 
 // Nav's ⚙ menu — the cross-tab items (currency, backup/restore, CSV export,
 // clear data, PWA install) that used to live only inside the Spending tab's
-// overflow menu, unreachable from Budget/Net Worth/Accounts without
+// overflow menu, unreachable from Net Worth/Accounts/other tabs without
 // switching tabs first. Same toggle/outside-click-close shape as
 // toggleSpendingOverflow() above, kept as a separate menu/listener rather
 // than merged into it since the two buttons live in different DOM
@@ -8541,11 +8536,11 @@ function closeSrcRemovePop(){
 function confirmSrcRemove(src){
   // A numeric-looking source label (e.g. a card's last-4 digits, "4783") is
   // coerced to a Number by the event-delegation dispatcher's coerce() --
-  // same pattern fixed for toggleSource()/openBudgetModal()/etc. in the
-  // 13th adversarial pass, missed here. Without this, t.card===src (t.card
-  // is always a string) matched zero transactions, silently making "Remove
-  // source" a no-op for any numeric-looking label. Found in the 99th
-  // adversarial pass.
+  // same pattern fixed for toggleSource() and several other numeric-arg
+  // handlers in the 13th adversarial pass, missed here. Without this,
+  // t.card===src (t.card is always a string) matched zero transactions,
+  // silently making "Remove source" a no-op for any numeric-looking label.
+  // Found in the 99th adversarial pass.
   src=String(src);
   const count=state.transactions.filter(t=>t.card===src).length;
   mutateTransactions(()=>{
@@ -8724,19 +8719,19 @@ function confirmCatExclusion(cat){
   // it looks purpose-built for, the same landmine shape as onSearch()
   // (73rd adversarial pass). restoreCat() (the hidden-categories popover's
   // "Show" button, ~line 6425) already provides a working way to undo this,
-  // so nothing was ever a dead end -- but removeBudget()'s toast (~line
-  // 7414) already ships a one-click Undo button for the structurally
-  // identical "removed something, offer to put it back" action, and this
-  // toast had no such button at all. pointer-events:all matches that same
-  // button's own override, needed for the same reason (#toast's inline
-  // style sets pointer-events:none, inherited by any child button unless
-  // overridden -- 53rd adversarial pass). Found in the 74th adversarial pass.
+  // so nothing was ever a dead end -- but other hide/remove toasts already
+  // ship a one-click Undo button for the structurally identical "removed
+  // something, offer to put it back" action, and this toast had no such
+  // button at all. pointer-events:all matches that same button's own
+  // override, needed for the same reason (#toast's inline style sets
+  // pointer-events:none, inherited by any child button unless overridden --
+  // 53rd adversarial pass). Found in the 74th adversarial pass.
   // tc('#94A3B8','#4B5563'), not the hardcoded dark-theme value alone --
   // #94A3B8 is this file's own dark-theme --text-secondary; on the light
   // theme's near-white --toast-bg (#FFFEFB) it computes to ~2.5:1 contrast,
   // well under WCAG AA's 4.5:1 minimum. Found in the 75th adversarial pass
   // (a regression in the 74th pass's own new toast, which introduced this
-  // exact hardcoded value here and in removeBudget() below).
+  // exact hardcoded value here and in similar toasts).
   showToast(`${esc(cat)} hidden from spending · <button data-action="undoCatExclusion" data-arg="${esc(cat)}" style="background:none;border:none;color:var(--accent-blue-light);font-size:12px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit;pointer-events:all" type="button">Undo</button>`,tc('#94A3B8','#4B5563'),4000);
 }
 function undoCatExclusion(cat){
@@ -9047,8 +9042,8 @@ function saveEditTx(){
   });
   // renderAll(), not just renderSpending() -- see applyRulesToExisting()'s
   // matching comment; this edit (and the "recategorize similar
-  // transactions" checklist just above, when checked) can shift Budget
-  // tab/Dashboard/Year in Review totals too. Found August 2026.
+  // transactions" checklist just above, when checked) can shift
+  // Dashboard/Year in Review totals too. Found August 2026.
   closeModals();renderAll();
   // Offer to save a categorization rule if the category changed
   if(newCat!==origCat&&newCat!=='Other'){
@@ -9075,7 +9070,7 @@ function deleteTx(){
   closeModals();
   // renderAll(), not just renderSpending() -- see applyRulesToExisting()'s
   // matching comment; a deleted transaction's category/month total shifts
-  // Budget tab/Dashboard/Year in Review too. Found August 2026.
+  // Dashboard/Year in Review too. Found August 2026.
   renderAll();
 }
 function confirmDeleteAcct(){showDeleteConfirm('delete-acct-confirm');}
@@ -9877,9 +9872,8 @@ function applyRulesToExisting(){
     });
   });
   // renderAll(), not just renderSpending() -- this can bulk-recategorize
-  // transactions across every month at once, which shifts Budget tab
-  // per-category totals/YTD pace/history dots, Dashboard insights, and
-  // Year in Review too, not just the Spending tab. Same bug class as the
+  // transactions across every month at once, which shifts Dashboard insights
+  // and Year in Review too, not just the Spending tab. Same bug class as the
   // demo-to-real render gap found and fixed elsewhere this week, just
   // triggered by ordinary daily use instead of the one-time demo
   // transition -- swept every other state.transactions mutator for the
@@ -10116,8 +10110,8 @@ async function confirmClearAllData(){
     // below), so onAuthStateChange's INITIAL_SESSION handler fires for the
     // still-valid session, finds the still-cached passphrase, and
     // promptSyncPassphrase() silently calls loadUserData() with no prompt
-    // -- fully repopulating every deleted transaction/account/budget/
-    // rule/snapshot from the cloud within about a second, directly
+    // -- fully repopulating every deleted transaction/account/rule/snapshot
+    // from the cloud within about a second, directly
     // contradicting this feature's own confirmation copy ("This cannot be
     // undone"). Awaited (not fire-and-forget like doSignOut()'s other
     // callers) so the reload below can't race ahead of Supabase's own
@@ -10161,7 +10155,7 @@ async function confirmClearAllData(){
       // by the load-time IIFE right after boot) that bypasses exclusion
       // filters app-wide: (state.showExcluded||!t.excluded) and
       // (state.showExcluded||!state.excludedCats.has(t.cat)) at 10+ call
-      // sites across the dashboard, budget tab, and every spend chart. A
+      // sites across the dashboard and every spend chart. A
       // user who'd enabled "show excluded/transfers in totals" at some
       // point, then clicked "Clear all data" (explicitly promised as
       // irreversible), got a genuinely empty state.showExcluded=false on
@@ -10181,12 +10175,12 @@ async function confirmClearAllData(){
 }
 function getLatestDataMonth(){
   // Scan transactions directly rather than reading Object.keys(MONTHLY) —
-  // Budget needs the true latest month across all transactions regardless of
-  // Spending's _bizFilter. Filters match rebuildMonthly(): excluded, isIncome,
-  // excludedCats (so a month with only CC-payment transactions isn't seen as
-  // the "latest month"). Deliberately omits activeSources — rebuildMonthly
-  // never filtered by source, so deselecting a card must not hide its months
-  // from the Budget navigator.
+  // callers (Life Changes, income widget) need the true latest month across
+  // all transactions regardless of Spending's _bizFilter. Filters match
+  // rebuildMonthly(): excluded, isIncome, excludedCats (so a month with only
+  // CC-payment transactions isn't seen as the "latest month"). Deliberately
+  // omits activeSources — rebuildMonthly never filtered by source, so
+  // deselecting a card must not hide its months from the month navigator.
   let latest='';
   state.transactions.forEach(t=>{
     if(t.excluded||t.isIncome)return;
@@ -10216,8 +10210,8 @@ function getCatSpendHistory(ym,count=12,bizFilter){
 }
 
 // Average monthly spend for one category over a given list of months.
-// Extracted out of getBudgetRowMetrics() so the Life Changes simulator can
-// share the exact same averaging math instead of re-deriving it.
+// Shared by the Life Changes simulator and the cushion calculation so both
+// use the exact same averaging math without re-deriving it.
 function avgSpendOverMonths(cat,months,bizFilter){
   return months.length?months.reduce((s,m)=>s+getCatMonthSpend(cat,m,bizFilter),0)/months.length:0;
 }
@@ -10272,7 +10266,7 @@ function computeSimulatorProjection(overrides,histMonths,bizFilter){
   return{rows,baselineTotal,projectedTotal,delta:projectedTotal-baselineTotal};
 }
 
-// Session-only, not persisted (matches _budgetSort/_simulatorSort's own
+// Session-only, not persisted (matches _simulatorSort's own session-only
 // precedent) -- true once the user picks "Custom..." from the preset
 // dropdown, so the number input stays visible across re-renders until a
 // real horizon value comes in (which also closes it back down if that
@@ -10292,14 +10286,11 @@ function setSimulatorHorizon(n,el){
   renderSimulatorTab();
 }
 
-// Mirrors setBudgetSort()'s toggle-direction-on-repeat-click convention,
-// but only carrying over the two Budget-tab sorts that have a real
-// equivalent here: Amount (this tab's own real per-category average) and
-// A-Z. '% Used' and 'Unusual' are both budget-target/anomaly-vs-history
-// concepts specific to the Budget tab -- most categories here have no
-// budget at all, and this tab isn't about spotting an unusual month, so
-// neither carries over with any real meaning. Not persisted, matching
-// _budgetSort/_budgetSortDir's own session-only precedent.
+// Toggle-direction-on-repeat-click convention: clicking the already-active
+// sort flips its direction; clicking a new sort key switches to it and resets
+// direction (alpha starts ascending, amount starts descending). Only Amount
+// and A-Z are supported — '% Used' and 'Unusual' are anomaly-vs-history
+// concepts with no meaningful equivalent here. Not persisted, session-only.
 let _insightsMonth=null; // null = auto (latestFullM); set by navInsightsMonth()
 let _simulatorSort='amount'; // 'amount' | 'alpha'
 let _simulatorSortDir='desc'; // 'asc' | 'desc' -- meaning depends on _simulatorSort
@@ -10314,8 +10305,7 @@ function setSimulatorSort(s){
 }
 
 // cat undefined -> generic "+ Add another change" flow: defaults to the
-// first category with no override yet, same fallback shape as
-// openBudgetModal()'s "first unbudgeted category with spend" default.
+// first category with no override yet (skips already-overridden categories).
 function openSimulatorOverrideModal(cat){
   _closeOtherPersistentPanels('simulator-override-modal');
   if(cat!==undefined)cat=String(cat);
@@ -10681,10 +10671,9 @@ function applyCurrency(sym,btn){
   const ci=document.getElementById('currency-custom-input');if(ci)ci.value='';
   // renderAll(), not just renderSpending() -- a currency symbol appears on
   // every tab (Dashboard metrics/NW breakdown, Accounts lists, Vehicles,
-  // History/snapshots, Budget tab), not just Spending. Previously only
-  // Spending updated immediately; every other tab kept showing the old
-  // symbol until an unrelated renderAll() or a reload. Found in the 110th
-  // adversarial pass.
+  // History/snapshots), not just Spending. Previously only Spending updated
+  // immediately; every other tab kept showing the old symbol until an
+  // unrelated renderAll() or a reload. Found in the 110th adversarial pass.
   renderAll();
 }
 function applyCustomCurrency(val){
@@ -10803,8 +10792,8 @@ function selectIncomeMethod(method){
     scheduleSave();
     renderInsights();
     // Every sibling income-modal action (saveManualIncome(), setNwGoal(),
-    // saveBudget(), toggleIncludeIncome(), etc.) shows a toast, and one
-    // that's _isLiveDemoSession()-aware ("resets once you add real data")
+    // toggleIncludeIncome(), etc.) shows a toast, and one that's
+    // _isLiveDemoSession()-aware ("resets once you add real data")
     // since the July 28 pass -- this commits state.income.method='auto'
     // and scheduleSave()s just as immediately as any of them, but had
     // neither. Live-testing the demo-to-real transition surfaced the
@@ -11692,8 +11681,8 @@ function toggleTxBiz(id){
     t.biz=!t.biz;
   });
   // renderAll(), not just renderSpending() -- see applyRulesToExisting()'s
-  // matching comment; Budget tab's own Business/Personal filter
-  // (_bizFilter) reads this same flag. Found August 2026.
+  // matching comment; the Business/Personal filter reads this flag across
+  // multiple tabs. Found August 2026.
   renderAll();
 }
 function toggleTxSelect(id){
@@ -12362,8 +12351,8 @@ function openCatModal(){
 function closeCatModal(){hideModalById('cat-modal');}
 let _editingCatName=null;
 // Category deletion previously had zero confirmation — a single click on
-// the ✕ button immediately deleted, cascading through budgets/rules/
-// transactions with no way back, unlike every other destructive action in
+// the ✕ button immediately deleted, cascading through rules/transactions
+// with no way back, unlike every other destructive action in
 // the app (accounts, vehicles, snapshots all have an inline confirm step).
 // Mirrors the existing inline-rename pattern (_editingCatName) rather than
 // a full modal, since this list has no per-item modal to embed a confirm
@@ -12461,7 +12450,7 @@ function deleteCustomCat(name){
   // failure shape as the 'Internal Transfer' bug above).
   state.catRules=state.catRules.filter(r=>r.cat!==name);
   state.excludedCats.delete(name);
-  // Same stale-reference shape as budgets/catRules above, for the Life
+  // Same stale-reference shape as catRules above, for the Life
   // Changes simulator's own category-keyed overrides list.
   state.simulator.overrides=state.simulator.overrides.filter(o=>o.cat!==name);
   // Found in the 26th adversarial pass: without this, filtering by a
@@ -12521,7 +12510,7 @@ function confirmRenameCat(oldName){
   _txsDirty=true;
   state.catRules.forEach(r=>{if(r.cat===oldName)r.cat=newName;});
   if(state.excludedCats.has(oldName)){state.excludedCats.delete(oldName);state.excludedCats.add(newName);}
-  // Same "update not clear" shape as budgets/catRules above, for the Life
+  // Same "update not clear" shape as catRules above, for the Life
   // Changes simulator's own category-keyed overrides list.
   state.simulator.overrides.forEach(o=>{if(o.cat===oldName)o.cat=newName;});
   // Same activeCats-goes-stale shape deleteCustomCat() was fixed for in the
@@ -14581,7 +14570,7 @@ function _doConfirmImport(incoming){
   mutateTransactions(()=>{
     // If this is the first real import on a demo session, wipe all demo
     // data first -- previously this hand-rolled its own reset list here
-    // (transactions/activeSources/budgets, then income/catRules/
+    // (transactions/activeSources, then income/catRules/
     // vendorAliases/nwGoal/customCategories added at the 109th pass), which
     // had already drifted twice (missing 5 fields, found 98th->109th pass)
     // and still didn't cover accounts/vehicles/snapshots (found 110th
@@ -15037,8 +15026,8 @@ function applyVenmoOpt(skip){
   closeVenmoCashoutModal();
   // renderAll(), not just renderSpending() -- see applyRulesToExisting()'s
   // matching comment; this can recategorize/re-amount every pending
-  // cashout at once, shifting Budget tab/Dashboard/Year in Review totals
-  // too. Found August 2026.
+  // cashout at once, shifting Dashboard/Year in Review totals too.
+  // Found August 2026.
   renderAll();
   showToast('✓ Venmo cashouts updated');
 }
@@ -17135,8 +17124,8 @@ function loadFromLocalStorage(){
     // Show non-alarming notice after DOM is ready
     // showToast(msg,color,duration) -- this only ever passed 2 arguments
     // (msg, 5000), so 5000 landed in the `color` slot instead of `duration`,
-    // the same argument-order mistake the 74th pass fixed in removeBudget().
-    // t.style.color=5000 is an invalid CSS value, silently rejected, and
+    // the same argument-order mistake the 74th pass fixed in similar toast
+    // calls. t.style.color=5000 is an invalid CSS value, silently rejected, and
     // duration fell through to the 2800ms default instead of the clearly-
     // intended 5000ms -- less time to read a message explaining that some
     // settings were just silently reset, exactly the kind of notice that
@@ -17204,9 +17193,9 @@ function exportBackup(){
     const a=document.createElement('a');
     // Local-time components, not toISOString() -- same UTC-shift-back-a-day
     // straggler the 56th adversarial pass already fixed for
-    // exportTransactionsCSV()/exportBudgetCSV()'s filenames, just missed
-    // here. Cosmetic only (filename, not the payload's exportedAt
-    // metadata), but a US-evening backup was silently dated tomorrow.
+    // exportTransactionsCSV()'s filename, just missed here. Cosmetic only
+    // (filename, not the payload's exportedAt metadata), but a US-evening
+    // backup was silently dated tomorrow.
     const _now=new Date();
     const dateStr=`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
     a.href=url;a.download=`trak-yo-dollas-backup-${dateStr}.json`;
@@ -17273,7 +17262,7 @@ function importBackup(file){
         showToast(`This backup has ${_n.toLocaleString()} transaction${_n===1?'':'s'} \u2014 too many for this browser\u2019s storage. Try importing it in Chrome on a computer, which holds about twice as much as Safari.`,'#F87171',10000);
         return;
       }
-      if(!confirm('Replace all current data — transactions, accounts, budgets, net worth snapshots, and settings — with this backup? This cannot be undone.'))return;
+      if(!confirm('Replace all current data — transactions, accounts, net worth snapshots, and settings — with this backup? This cannot be undone.'))return;
       // Restore state — mirrors loadFromLocalStorage field assignments
       state.accounts=_normalizeAccountTypes(arr(saved.accounts));
       state.vehicles=_arrOfObj(saved.vehicles);
@@ -17378,8 +17367,8 @@ function importBackup(file){
       // it is a well-formed object. A null/undefined entry threw on
       // t.amount below; a non-string date survived the map and threw
       // later in rebuildMonthly()'s t.date.slice(0,7) -- both landing
-      // after accounts/vehicles/snapshots/customCategories/budgets/
-      // catRules/income/etc. above had already been replaced, the exact
+      // after accounts/vehicles/snapshots/customCategories/catRules/
+      // income/etc. above had already been replaced, the exact
       // "corrupted hybrid, no rollback" failure mode the type-guard block
       // at the top of this function exists to prevent. Dropping a
       // genuinely null entry is the only sane option (nothing to recover);
@@ -17503,9 +17492,8 @@ function scheduleSave(){
     // That silently turned "Clear all data" (which removes the localStorage
     // keys then calls location.reload()) into a no-op for everything except
     // transactions: the resulting pagehide event re-ran saveToLocalStorage()
-    // with the untouched in-memory state, writing accounts/budgets/rules/
-    // snapshots straight back moments after the user was told the deletion
-    // was permanent.
+    // with the untouched in-memory state, writing accounts/rules/snapshots
+    // straight back moments after the user was told the deletion was permanent.
     _lsSaveTimer=null;
     saveToLocalStorage();
     // Also sync to Supabase if signed in — but not while the initial cloud

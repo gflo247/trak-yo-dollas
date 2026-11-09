@@ -18,9 +18,9 @@ confirmed shapes:
     (pass 16) was the same shape, minus even being patch-listed.
 
 (B) A function mutates one of the other persisted state fields (accounts,
-    vehicles, budgets, customCategories, catRules, vendorAliases,
-    excludedCats, snapshots, income, nwGoal, declaredIncome, hiddenPills,
-    includeIncome -- all serialized into trakyo_state_v2 by
+    vehicles, customCategories, catRules, vendorAliases, excludedCats,
+    snapshots, income, nwGoal, declaredIncome, hiddenPills, includeIncome
+    -- all serialized into trakyo_state_v2 by
     serializeState(), called unconditionally by saveToLocalStorage() on
     every invocation) but never calls scheduleSave() (or saveToLocalStorage()
     directly, the pattern loadUserData() uses to force an immediate write
@@ -31,8 +31,7 @@ confirmed shapes:
 
 The patch list itself, for reference (trakyodollas.html, right before
 DOMContentLoaded finishes):
-    ['saveAccount','saveVehicle','saveTx','confirmTxImport',
-     'confirmDeleteSnapshot','saveSnapshot','saveBudget','importCsvText']
+    ['saveAccount','saveVehicle','confirmDeleteSnapshot','saveSnapshot','importCsvText']
 Being in this list satisfies requirement (B) -- scheduleSave() genuinely
 fires after the function runs. It does NOT satisfy requirement (A) for a
 transaction-mutating function, since _txsDirty is a separate, explicit
