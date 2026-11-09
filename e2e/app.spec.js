@@ -171,7 +171,11 @@ test('import label hints: first shows tag hint, second shows merge hint', async 
   await page.locator('[data-action="importSuccessAndReopen"]').click();
   await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
   await page.locator('#tx-csv-file').setInputFiles(CAPITALONE_CARD_CSV);
-  await page.locator('#import-confirm-btn').waitFor({ state: 'visible' });
+  // #import-confirm-btn is already visible from the first import, so waitFor resolves before
+  // the second file is processed. Use #import-preview-stats instead: it is hidden when the
+  // modal reopens (openTxImportModal() calls _hideImportPreview()) and only becomes visible
+  // once showImportPreview() runs after the second file parses successfully.
+  await expect(page.locator('#import-preview-stats')).toBeVisible();
 
   // Hint should now say "merge" since Capital One is a new source but "Checking" is default
   // and Discover already exists — actually Capital One auto-labels as "Capital One"
@@ -197,7 +201,10 @@ test('import label resets from auto-name when new file has no auto-name', async 
   // Now load the generic sample.csv — no bank-specific auto-label.
   // The label should reset from "Chase" back to "Checking".
   await page.locator('#tx-csv-file').setInputFiles(SAMPLE_CSV);
-  await page.locator('#import-confirm-btn').waitFor({ state: 'visible' });
+  // #import-confirm-btn is already visible from the Chase file load, so waitFor resolves
+  // before sample.csv is processed. Wait for the label to change to "Checking" instead —
+  // that only happens once _resetAutoLabelIfStale() runs after the new file parses.
+  await expect(page.locator('#import-source-label')).toHaveValue('Checking');
   const labelAfterSample = await page.locator('#import-source-label').inputValue();
   expect(labelAfterSample).toBe('Checking');
 });
@@ -237,7 +244,10 @@ test('backup nudge hidden while banner visible, shows after dismiss', async ({ p
   // Small delay for the modal to fully initialize
   await page.waitForTimeout(200);
   await page.locator('#tx-csv-file').setInputFiles(CAPITALONE_CARD_CSV);
-  await page.locator('#import-confirm-btn').waitFor({ state: 'visible', timeout: 10000 });
+  // #import-confirm-btn is already visible from the first import, so waitFor resolves before
+  // the second file is processed. Use #import-preview-stats instead: it is hidden when the
+  // modal reopens and only becomes visible once the second file parses successfully.
+  await expect(page.locator('#import-preview-stats')).toBeVisible();
   await page.locator('#import-confirm-btn').click();
   await page.locator('#import-success-modal').waitFor({ state: 'visible' });
 
@@ -659,7 +669,10 @@ test('replace: Monarch re-import with replace removes all previous Monarch trans
   await page.evaluate(() => openTxImportModal());
   await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
   await page.locator('#tx-csv-file').setInputFiles(MONARCH_CSV);
-  await page.locator('#import-confirm-btn').waitFor({ state: 'visible' });
+  // #import-confirm-btn is already visible from the first import, so waitFor resolves before
+  // the second file is processed. MONARCH_CSV auto-labels as "Monarch Import"; wait for that
+  // label value — it is only set once showImportPreview() runs after the second file parses.
+  await expect(page.locator('#import-source-label')).toHaveValue('Monarch Import');
   await page.locator('#import-replace').check();
   await page.locator('#import-confirm-btn').click();
   await page.locator('#import-success-modal').waitFor({ state: 'visible' });
@@ -691,7 +704,12 @@ test('replace: re-importing same source with replace checked removes old transac
   await page.evaluate(() => openTxImportModal());
   await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
   await page.locator('#tx-csv-file').setInputFiles(DISCOVER_CSV);
-  await page.locator('#import-confirm-btn').waitFor({ state: 'visible' });
+  // #import-confirm-btn is already visible from the first import, so waitFor resolves before
+  // the second file is processed. DISCOVER_CSV is detected as generic format (no bank-specific
+  // auto-label), so the label stays "Checking". Use #import-preview-stats instead: it is
+  // hidden when the modal reopens (openTxImportModal() calls _hideImportPreview()) and only
+  // becomes visible once showImportPreview() runs after the second file parses successfully.
+  await expect(page.locator('#import-preview-stats')).toBeVisible();
   await page.locator('#import-replace').check();
   await page.locator('#import-confirm-btn').click();
   await page.locator('#import-success-modal').waitFor({ state: 'visible' });
