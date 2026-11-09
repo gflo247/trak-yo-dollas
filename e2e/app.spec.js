@@ -1057,3 +1057,107 @@ test.describe('storage quota', () => {
     }
   });
 });
+
+// ─── Test: stale-data nudge lifecycle ────────────────────────────────────────
+// Imports a CSV whose newest transaction is 40 days before today, verifies the
+// nudge appears with the account name and correct day count, dismisses it,
+// verifies the dismissal persists across a reload, then imports a fresh CSV for
+// the same source and verifies the nudge disappears.
+test('stale-data nudge: appears after stale import, dismisses, persists, clears on fresh import', async ({ page }) => {
+  const fs = require('fs');
+  const os = require('os');
+
+  // Build a Monarch Money CSV with a newest transaction exactly 40 days ago.
+  // Monarch format: Date,Merchant,Category,Account,Original Statement,Notes,Amount,Tags
+  // Amount is negative for spending.
+  const nowMs = Date.now();
+  const staleDateMs = nowMs - 40 * 864e5;
+  const staleDate = new Date(staleDateMs);
+  const staleDateStr = `${staleDate.getFullYear()}-${String(staleDate.getMonth()+1).padStart(2,'0')}-${String(staleDate.getDate()).padStart(2,'0')}`;
+  // A second transaction 5 days older so there's >1 row.
+  const olderDateMs = nowMs - 45 * 864e5;
+  const olderDate = new Date(olderDateMs);
+  const olderDateStr = `${olderDate.getFullYear()}-${String(olderDate.getMonth()+1).padStart(2,'0')}-${String(olderDate.getDate()).padStart(2,'0')}`;
+
+  const staleCsv = [
+    'Date,Merchant,Category,Account,Original Statement,Notes,Amount,Tags',
+    `${staleDateStr},Coffee Shop,Food & Drink,Chase Freedom,COFFEE SHOP,,-5.00,`,
+    `${olderDateStr},Grocery Store,Groceries,Chase Freedom,GROCERY STORE,,-42.00,`,
+  ].join('\n');
+
+  // Also build a fresh CSV (transactions dated today) for the same source.
+  const todayDate = new Date(nowMs);
+  const todayDateStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth()+1).padStart(2,'0')}-${String(todayDate.getDate()).padStart(2,'0')}`;
+  const freshCsv = [
+    'Date,Merchant,Category,Account,Original Statement,Notes,Amount,Tags',
+    `${todayDateStr},Pharmacy,Health,Chase Freedom,PHARMACY,,-15.00,`,
+  ].join('\n');
+
+  const staleCsvPath = path.join(os.tmpdir(), `tyd_stale_nudge_${Date.now()}.csv`);
+  const freshCsvPath = path.join(os.tmpdir(), `tyd_fresh_nudge_${Date.now()}.csv`);
+  fs.writeFileSync(staleCsvPath, staleCsv);
+  fs.writeFileSync(freshCsvPath, freshCsv);
+
+  try {
+    // Start fresh — no demo data needed.
+    await page.goto(APP);
+    await page.waitForFunction(() => typeof openTxImportModal === 'function');
+
+    // Import the stale CSV.
+    await page.evaluate(() => openTxImportModal());
+    await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+    await page.locator('#tx-csv-file').setInputFiles(staleCsvPath);
+    await page.locator('#import-confirm-btn').waitFor({ state: 'visible' });
+    await page.locator('#import-confirm-btn').click();
+    await page.locator('#import-success-modal').waitFor({ state: 'visible' });
+    // Close the success modal via "View my spending".
+    await page.locator('[data-action="importSuccessAndAlign"]').click();
+    await page.locator('#import-success-modal').waitFor({ state: 'hidden' });
+
+    // The nudge should now be visible with "Chase Freedom" and "40d".
+    const nudge = page.locator('#stale-nudge');
+    await nudge.waitFor({ state: 'visible' });
+    const nudgeText = await nudge.textContent();
+    expect(nudgeText).toContain('Chase Freedom');
+    // The day count should be 40 (±1 for timezone boundary edge cases).
+    expect(nudgeText).toMatch(/3[89]d|40d|41d/);
+
+    // Reload — nudge should still appear (no dismissal yet).
+    await page.reload();
+    await page.waitForFunction(() => typeof state !== 'undefined' && state.transactions.length > 0);
+    await nudge.waitFor({ state: 'visible' });
+
+    // Dismiss the nudge.
+    await page.locator('#stale-nudge .stale-nudge-dismiss').click();
+    await nudge.waitFor({ state: 'hidden' });
+
+    // Reload again — dismissal should persist (14-day window).
+    await page.reload();
+    await page.waitForFunction(() => typeof state !== 'undefined' && state.transactions.length > 0);
+    // The nudge element exists but must be hidden.
+    await expect(nudge).toBeHidden();
+
+    // Clear the dismissal so we can test the fresh-import path.
+    await page.evaluate(() => localStorage.removeItem('trakyo_stale_dismissed'));
+    // Re-render spending tab to pick up the cleared dismissal.
+    await page.evaluate(() => { if (typeof renderSpending === 'function') renderSpending(); });
+    await nudge.waitFor({ state: 'visible' });
+
+    // Import a fresh CSV for the same source — the nudge must disappear after
+    // renderAll() runs (called at the end of the import success path).
+    await page.evaluate(() => openTxImportModal());
+    await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+    await page.locator('#tx-csv-file').setInputFiles(freshCsvPath);
+    await page.locator('#import-confirm-btn').waitFor({ state: 'visible' });
+    await page.locator('#import-confirm-btn').click();
+    await page.locator('#import-success-modal').waitFor({ state: 'visible' });
+    // Close modal — renderAll() has already run, nudge should be hidden.
+    await page.locator('[data-action="importSuccessAndAlign"]').click();
+    await page.locator('#import-success-modal').waitFor({ state: 'hidden' });
+    await expect(nudge).toBeHidden();
+
+  } finally {
+    fs.unlinkSync(staleCsvPath);
+    fs.unlinkSync(freshCsvPath);
+  }
+});

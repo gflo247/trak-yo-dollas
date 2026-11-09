@@ -9974,4 +9974,105 @@ test("_sumMonthlyByCard: shuffling transactions doesn't change the monthly total
     "result must be order-independent");
 });
 
+// ── staleSources() — pure helper for the stale-data nudge ─────────────────
+// Builds a "YYYY-MM-DD" date string that is exactly `days` days before the
+// given `nowMs` timestamp, anchored at noon to match staleSources() rounding.
+function _dateStringDaysAgo(days, nowMs) {
+  const ms = nowMs - days * 864e5;
+  const d = new Date(ms);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+}
+
+test("staleSources: 34-day-old source is excluded (below 35-day threshold)", () => {
+  const { staleSources } = loadFunctions(["staleSources"]);
+  const nowMs = Date.now();
+  const txs = [
+    { card: "Checking", date: _dateStringDaysAgo(34, nowMs), excluded: false, isIncome: false, amount: 10 },
+  ];
+  assert.deepEqual(staleSources(txs, nowMs), [], "34 days old — not stale yet");
+});
+
+test("staleSources: 35-day-old source is included (at the threshold)", () => {
+  const { staleSources } = loadFunctions(["staleSources"]);
+  const nowMs = Date.now();
+  const txs = [
+    { card: "Checking", date: _dateStringDaysAgo(35, nowMs), excluded: false, isIncome: false, amount: 10 },
+  ];
+  const result = staleSources(txs, nowMs);
+  assert.equal(result.length, 1, "35 days old — stale");
+  assert.equal(result[0].source, "Checking");
+  assert.equal(result[0].daysOld, 35);
+});
+
+test("staleSources: 180-day-old source is included (at the upper bound)", () => {
+  const { staleSources } = loadFunctions(["staleSources"]);
+  const nowMs = Date.now();
+  const txs = [
+    { card: "Visa", date: _dateStringDaysAgo(180, nowMs), excluded: false, isIncome: false, amount: 10 },
+  ];
+  const result = staleSources(txs, nowMs);
+  assert.equal(result.length, 1, "180 days old — still included");
+  assert.equal(result[0].daysOld, 180);
+});
+
+test("staleSources: 181-day-old source is excluded (above upper bound)", () => {
+  const { staleSources } = loadFunctions(["staleSources"]);
+  const nowMs = Date.now();
+  const txs = [
+    { card: "Visa", date: _dateStringDaysAgo(181, nowMs), excluded: false, isIncome: false, amount: 10 },
+  ];
+  assert.deepEqual(staleSources(txs, nowMs), [], "181 days old — excluded");
+});
+
+test("staleSources: sorts stalest source first", () => {
+  const { staleSources } = loadFunctions(["staleSources"]);
+  const nowMs = Date.now();
+  const txs = [
+    { card: "Fresh-ish", date: _dateStringDaysAgo(40, nowMs), excluded: false, isIncome: false, amount: 10 },
+    { card: "Stalest",   date: _dateStringDaysAgo(90, nowMs), excluded: false, isIncome: false, amount: 10 },
+    { card: "Middle",    date: _dateStringDaysAgo(60, nowMs), excluded: false, isIncome: false, amount: 10 },
+  ];
+  const result = staleSources(txs, nowMs);
+  assert.equal(result.length, 3);
+  assert.equal(result[0].source, "Stalest", "stalest first");
+  assert.equal(result[1].source, "Middle");
+  assert.equal(result[2].source, "Fresh-ish");
+});
+
+test("staleSources: given 4 stale sources, nudge text names 3 and appends 'and 1 more'", () => {
+  const { staleSources } = loadFunctions(["staleSources"]);
+  const nowMs = Date.now();
+  const txs = [
+    { card: "A", date: _dateStringDaysAgo(40, nowMs), excluded: false, isIncome: false, amount: 10 },
+    { card: "B", date: _dateStringDaysAgo(50, nowMs), excluded: false, isIncome: false, amount: 10 },
+    { card: "C", date: _dateStringDaysAgo(60, nowMs), excluded: false, isIncome: false, amount: 10 },
+    { card: "D", date: _dateStringDaysAgo(70, nowMs), excluded: false, isIncome: false, amount: 10 },
+  ];
+  const result = staleSources(txs, nowMs);
+  assert.equal(result.length, 4, "all 4 returned from helper");
+  // Simulate the nudge text truncation (up to 3, then 'and N more').
+  const shown = result.slice(0, 3);
+  const overflow = result.length - shown.length;
+  assert.equal(shown.length, 3, "first 3 shown");
+  assert.equal(overflow, 1, "1 overflow");
+  // Build nudge text the same way renderStaleNudge() does.
+  const parts = shown.map(r => `${r.source}: last data … (${r.daysOld}d)`);
+  const nudgeText = parts.join('. ') + `. and ${overflow} more.`;
+  assert.ok(nudgeText.includes("and 1 more"), "nudge text includes 'and 1 more'");
+});
+
+test("staleSources: excluded and income transactions are ignored when finding newest date", () => {
+  const { staleSources } = loadFunctions(["staleSources"]);
+  const nowMs = Date.now();
+  // The only recent transaction for "Savings" is excluded — the non-excluded
+  // one is 50 days old, so the account should be stale.
+  const txs = [
+    { card: "Savings", date: _dateStringDaysAgo(1, nowMs),  excluded: true,  isIncome: false, amount: 10 },
+    { card: "Savings", date: _dateStringDaysAgo(50, nowMs), excluded: false, isIncome: false, amount: 10 },
+  ];
+  const result = staleSources(txs, nowMs);
+  assert.equal(result.length, 1, "excluded row doesn't count as fresh");
+  assert.equal(result[0].daysOld, 50);
+});
+
 // ── end of tests ──

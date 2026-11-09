@@ -208,6 +208,14 @@
 .import-cta-glow{animation:import-cta-glow .7s ease-in-out 3}
 @media (prefers-reduced-motion:reduce){.import-cta-glow{animation:none}}
 
+/* Stale-data nudge — appears below source chips when accounts have no recent data */
+#stale-nudge{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:var(--text-muted);padding:.4rem .6rem .4rem .7rem;border-left:3px solid var(--accent-amber);border-radius:0 6px 6px 0;background:rgba(251,191,36,.07);margin-bottom:.5rem;line-height:1.5}
+#stale-nudge a{color:var(--accent-blue-light);text-decoration:none}
+#stale-nudge a:hover{text-decoration:underline}
+#stale-nudge .stale-nudge-dismiss{margin-left:auto;flex-shrink:0;background:none;border:none;color:var(--text-muted);font-size:14px;cursor:pointer;padding:2px 4px;line-height:1;border-radius:4px;font-family:inherit}
+#stale-nudge .stale-nudge-dismiss:hover{color:var(--text-primary)}
+@media(max-width:390px){#stale-nudge{font-size:11px;padding:.35rem .5rem .35rem .6rem}}
+
 /* Light mode card surfaces and active nav */
 [data-theme="light"] .section-box,[data-theme="light"] .section-box-sm{border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.05),0 1px 8px rgba(0,0,0,.03)}
 [data-theme="light"] .nav-btn.active{color:var(--accent-blue-light);border-bottom-color:var(--accent-blue-light)}
@@ -1221,6 +1229,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
       </div>
     </div>
   </div>
+  <div id="stale-nudge" style="display:none"></div>
   <span id="source-align-link" data-action="resumeSourceAlign" tabindex="0" role="button" style="display:none;font-size:11px;color:var(--accent-blue-light);cursor:pointer;margin-left:4px">↔ Align sources</span>
   <span id="source-align-active" style="display:none;font-size:11px;color:var(--accent-green);margin-left:4px">✓ Aligned to <span id="source-align-date-label"></span> · <span data-action="resetSourceAlign" tabindex="0" role="button" style="cursor:pointer;color:var(--accent-blue-light)">show all</span></span>
   <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:.85rem">
@@ -5814,6 +5823,7 @@ function renderSpending(){
 }
 
 function renderSourceChips(){
+  renderStaleNudge();
   const sources=[...new Set(state.transactions.map(t=>t.card))].filter(Boolean).sort();
   // Show appropriate alignment indicator
   const alignLink=document.getElementById('source-align-link');
@@ -9224,6 +9234,60 @@ function renderAccountLists(){
   renderTxSourcesPanel();
 }
 
+// Pure helper: given a transactions array and a "now" timestamp (ms), returns
+// the sources whose newest transaction is 35–180 days old, sorted stalest
+// first. Each entry is {source, newestDate, daysOld}. The caller decides
+// whether to suppress results for demo data — this function never reads state.
+function staleSources(txs,nowMs){
+  const sourceMax={};
+  txs.forEach(t=>{
+    if(!t.card||t.excluded||t.isIncome)return;
+    if(!sourceMax[t.card]||t.date>sourceMax[t.card])sourceMax[t.card]=t.date;
+  });
+  return Object.keys(sourceMax)
+    .map(source=>{
+      const newestDate=sourceMax[source];
+      // Anchor at noon to reduce timezone-shift off-by-ones; clamp at 0.
+      const daysOld=Math.max(0,Math.floor((nowMs-new Date(newestDate+'T12:00:00').getTime())/864e5));
+      return{source,newestDate,daysOld};
+    })
+    .filter(r=>r.daysOld>=35&&r.daysOld<=180)
+    .sort((a,b)=>b.daysOld-a.daysOld);
+}
+
+// Renders the stale-data nudge below the source chips in the Spending tab.
+// No-ops if the nudge element is absent (non-spending-tab DOM).
+function renderStaleNudge(){
+  const el=document.getElementById('stale-nudge');
+  if(!el)return;
+  // Never show for demo data.
+  if(!state.hasRealData){el.style.display='none';return;}
+  // Check 14-day dismissal.
+  try{
+    const d=localStorage.getItem('trakyo_stale_dismissed');
+    if(d&&(Date.now()-new Date(d).getTime())<14*24*60*60*1000){el.style.display='none';return;}
+  }catch(e){}
+  const stale=staleSources(state.transactions,Date.now());
+  if(!stale.length){el.style.display='none';return;}
+  const shown=stale.slice(0,3);
+  const overflow=stale.length-shown.length;
+  const parts=shown.map(r=>{
+    const slug=guideSlugForSource(r.source);
+    const name=slug?`<a href="/guides/${slug}" target="_blank" rel="noopener">${esc(r.source)}</a>`:esc(r.source);
+    return`${name}: last data ${fmtDate(r.newestDate)} (${r.daysOld}d)`;
+  });
+  const summary=parts.join('. ')+(overflow>0?`. and ${overflow} more`:'.')+' ';
+  el.innerHTML=summary+`<button class="btn btn-sm btn-primary" data-action="openTxImportModal" type="button" style="font-size:11px;padding:2px 8px;min-height:0;white-space:nowrap">[Import]</button>`+
+    `<button class="stale-nudge-dismiss" data-action="dismissStaleNudge" aria-label="Dismiss stale data reminder" type="button">✕</button>`;
+  el.style.display='flex';
+}
+
+function dismissStaleNudge(){
+  try{localStorage.setItem('trakyo_stale_dismissed',new Date().toISOString());}catch(e){}
+  const el=document.getElementById('stale-nudge');
+  if(el)el.style.display='none';
+}
+
 // Maps a free-text source label to its export guide slug. Substring match so
 // "Chase Checking", "Chase Visa", etc. all resolve to /guides/chase.
 function guideSlugForSource(name){
@@ -9244,10 +9308,12 @@ function guideSlugForSource(name){
 // distinct source label (t.card), showing the latest transaction date and
 // how stale it is. The amber threshold matches the landing page's "25+ days"
 // nudge, rounded up to a more natural 35 so it fires roughly monthly.
+// Uses staleSources() for stale detection so the two displays always agree.
 function renderTxSourcesPanel(){
   const el=document.getElementById('tx-sources-panel');
   if(!el)return;
   if(!state.hasRealData||!state.transactions.length){el.innerHTML='';return;}
+  // Build a full per-source map (all ages, not just 35–180) for the panel.
   const sourceMax={};
   state.transactions.forEach(t=>{
     if(!t.card||t.excluded||t.isIncome)return;
@@ -9255,13 +9321,15 @@ function renderTxSourcesPanel(){
   });
   const sources=Object.keys(sourceMax).sort();
   if(!sources.length){el.innerHTML='';return;}
+  // Build a lookup from staleSources() so the stale flag agrees with the nudge.
+  const staleSet=new Set(staleSources(state.transactions,Date.now()).map(r=>r.source));
   const todayMs=Date.now();
   const rows=sources.map(card=>{
     const maxDate=sourceMax[card];
     // Anchor at noon to reduce timezone-shift off-by-ones; clamp at 0 so a
     // transaction dated today never produces a negative count in UTC+ zones.
     const days=Math.max(0,Math.floor((todayMs-new Date(maxDate+'T12:00:00').getTime())/864e5));
-    const stale=days>=35;
+    const stale=staleSet.has(card);
     const slug=guideSlugForSource(card);
     const guideLink=slug?`<a href="/guides/${slug}" target="_blank" rel="noopener" style="font-size:11px;color:var(--accent-blue-light);white-space:nowrap;text-decoration:none">Update →</a>`:'';
     return`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:.45rem 0;border-bottom:1px solid var(--border-dim)">
