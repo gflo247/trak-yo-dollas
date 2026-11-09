@@ -919,6 +919,7 @@ details.csv-help[open]>summary::before{transform:rotate(90deg)}
   color:var(--text-primary)!important;
 }
 [data-theme="light"] #bucket-grid .bucket-name{color:inherit!important}
+[data-theme="light"] #bucket-grid .bucket-total{color:inherit!important}
 
 /* Other vendors / categories tiles */
 [data-theme="light"] #bucket-grid > div[style*="0F172A"]{background:var(--bg-deep)!important}
@@ -3723,16 +3724,20 @@ function renderInsights(){
   }
 
   // ── Pill template with sub-label ─────────────────────────────
-  const pillWithTip=(icon,label,value,color,sub,tip,cta='')=>`
+  // color = hex used for the pill tint background/border (keeps alpha-append working).
+  // textColor = accessible text color; defaults to color so existing callers that
+  // already pass a hex are unchanged, but callers passing a CSS variable for
+  // accessible light-mode text supply it separately here.
+  const pillWithTip=(icon,label,value,color,sub,tip,cta='',textColor=color)=>`
     <div data-action="showPillTip" data-tip="${tip.replace(/"/g,'&quot;')}" style="position:relative;cursor:pointer;display:flex;flex-direction:column;justify-content:center;background:${color}15;border:1.5px solid ${color}55;border-radius:12px;padding:.75rem .9rem;gap:.4rem">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
         <div style="display:flex;align-items:center;gap:7px;flex-shrink:1;min-width:0;overflow:hidden">
           <span style="font-size:16px;flex-shrink:0">${icon}</span>
           <span style="font-size:11px;font-weight:700;color:var(--text-secondary)">${label}</span>
         </div>
-        <div style="font-size:18px;font-weight:900;color:${color};line-height:1;letter-spacing:-.02em;white-space:nowrap;flex-shrink:0">${value}</div>
+        <div style="font-size:18px;font-weight:900;color:${textColor};line-height:1;letter-spacing:-.02em;white-space:nowrap;flex-shrink:0">${value}</div>
       </div>
-      ${(sub||cta)?`<div style="font-size:12px;color:var(--text-muted);line-height:1.35">${sub}${cta?` · <button data-action="${_ctaAction(cta)}"${_ctaArg(cta)!==null?` data-arg="${esc(_ctaArg(cta))}"`:''} data-stop="1" style="background:none;border:none;color:${color};font-size:12px;font-weight:700;cursor:pointer;padding:0;min-height:24px;font-family:inherit;text-decoration:underline" type="button">${cta.label} →</button>`:''}</div>`:''}
+      ${(sub||cta)?`<div style="font-size:12px;color:var(--text-muted);line-height:1.35">${sub}${cta?` · <button data-action="${_ctaAction(cta)}"${_ctaArg(cta)!==null?` data-arg="${esc(_ctaArg(cta))}"`:''} data-stop="1" style="background:none;border:none;color:${textColor};font-size:12px;font-weight:700;cursor:pointer;padding:0;min-height:24px;font-family:inherit;text-decoration:underline" type="button">${cta.label} →</button>`:''}</div>`:''}
     </div>`;
 
   // ── Spend pill pre-computation ────────────────────────────────
@@ -3784,12 +3789,14 @@ function renderInsights(){
       addPill('savings','Savings rate',pillWithTip('🔴','Savings rate',`Spent ${fmtC(over)} over income (${monthCount}mo)`,'#F87171',
         `Spending exceeded income by ${fmtC(over)} this ${periodLabel} · ${fmt(avgMonthlySpend)}/mo avg spend vs ${fmt(income)}/mo income`,
         overspendTip,
-        {label:'Review income',action:'openDeclaredIncomeModal'}
+        {label:'Review income',action:'openDeclaredIncomeModal'},
+        'var(--accent-red)'
       ),100);
     } else {
     const saved=Math.max(0,effectiveIncome-spent);
     const savingsRate=Math.round(saved/effectiveIncome*100);
     const rateColor=savingsRate>=20?'var(--accent-green)':savingsRate>=10?'var(--accent-amber)':'var(--accent-red)';
+    const rateTintHex=savingsRate>=20?'#34D399':savingsRate>=10?'#FBBF24':'#F87171';
     const incomeMethod=state.declaredIncome>0?'declared':state.income.method==='manual'?'manual':'estimated from deposits';
     const savingsTooltip=`Income (${incomeMethod}): ${fmt(effectiveIncome)}&#10;Spent in ${latestLabel}: ${fmt(spent)}&#10;Kept: ${fmt(saved)}&#10;Savings rate: ${savingsRate}%&#10;&#10;Rule of thumb: 20%+ is healthy, 10-20% is ok, under 10% is tight.`;
     // Build emotionally resonant savings sub-label
@@ -3808,7 +3815,7 @@ function renderInsights(){
     } else {
       savingsSub=`Only ${fmt(saved)} left after spending — tighter than usual`;
     }
-    addPill('savings','Savings rate',pillWithTip(savingsRate>=20?'🟢':savingsRate>=10?'🟡':'🔴',`Savings rate`,`${savingsRate}%`,rateColor,savingsSub,savingsTooltip,savingsRate<10?{label:'Set income',action:'openIncomeModal'}:''),savingsRate<10?100:savingsRate<20?50:10);
+    addPill('savings','Savings rate',pillWithTip(savingsRate>=20?'🟢':savingsRate>=10?'🟡':'🔴',`Savings rate`,`${savingsRate}%`,rateTintHex,savingsSub,savingsTooltip,savingsRate<10?{label:'Set income',action:'openIncomeModal'}:'',rateColor),savingsRate<10?100:savingsRate<20?50:10);
     } // end else (not overspend)
   } else if(!state.hiddenPills.has('savings')){
     pillsArr.push({key:'savings-nudge',label:'Savings rate',score:0,html:`<div data-action="openIncomeModal" tabindex="0" role="button" style="display:flex;flex-direction:column;justify-content:center;background:var(--card-nudge-bg);border:1.5px dashed var(--border-mid);border-radius:12px;padding:.75rem .9rem;gap:.4rem;cursor:pointer;position:relative">
@@ -3883,7 +3890,7 @@ function renderInsights(){
         :`↓ ${fmt(Math.abs(nwDiff))} over ${daysSince} days — worth a look`;
     }
     const nwSub=nwSubLine;
-    addPill('networth','Net worth',pillWithTip(nwUp?'📊':'📉',`Net worth vs ${snapRef}`,pillValue,nwUp?'#34D399':'#F87171',nwSub,tooltip,{label:'Go to Net Worth tab',action:'showPageDashboard'}),nwUp?10:55);
+    addPill('networth','Net worth',pillWithTip(nwUp?'📊':'📉',`Net worth vs ${snapRef}`,pillValue,nwUp?'#34D399':'#F87171',nwSub,tooltip,{label:'Go to Net Worth tab',action:'showPageDashboard'},nwUp?'var(--accent-green)':'var(--accent-red)'),nwUp?10:55);
   }
 
   // Pill 3 — Subscriptions
@@ -3968,7 +3975,7 @@ function renderInsights(){
       :`↓ ${fmt(Math.abs(biggestCat.diff))} vs last month${vsNormStr}${topVendorStr}`;
     const catValue=`${esc(biggestCat.cat)} · ${catUp?'↑':'↓'} ${fmt(Math.abs(biggestCat.diff))}`;
     const catScore=catUp&&vsNorm!==null&&vsNorm>=20?75:catUp?25:15;
-    addPill('topmover','Top mover',pillWithTip(catUp?'⬆️':'⬇️',`Top mover`,catValue,catUp?'#FBBF24':'#34D399',catSub,tooltip,{label:`See ${esc(biggestCat.cat)} transactions`,action:'filterToCatAndScroll',arg:biggestCat.cat}),catScore);
+    addPill('topmover','Top mover',pillWithTip(catUp?'⬆️':'⬇️',`Top mover`,catValue,catUp?'#FBBF24':'#34D399',catSub,tooltip,{label:`See ${esc(biggestCat.cat)} transactions`,action:'filterToCatAndScroll',arg:biggestCat.cat},catUp?'var(--accent-amber)':'var(--accent-green)'),catScore);
   }
 
   // Pill 6 — Largest single transaction
@@ -3987,7 +3994,7 @@ function renderInsights(){
       const chargeSub=isHighVsNorm
         ?`${esc(displayVendor(biggest.desc))} · ${Math.round((biggest.amount/avgBiggest-1)*100)}% higher than your typical largest charge`
         :`${esc(displayVendor(biggest.desc))} · ${esc(biggest.cat)}`;
-      addPill('largest-tx','Largest charge',pillWithTip('💥','Largest charge',`${fmt(biggest.amount)}`,isHighVsNorm?'#F87171':'#64748B',chargeSub,tooltip),isHighVsNorm?65:8);
+      addPill('largest-tx','Largest charge',pillWithTip('💥','Largest charge',`${fmt(biggest.amount)}`,isHighVsNorm?'#F87171':'#64748B',chargeSub,tooltip,'',isHighVsNorm?'var(--accent-red)':'var(--text-muted)'),isHighVsNorm?65:8);
     }
   }
 
@@ -4001,7 +4008,8 @@ function renderInsights(){
     addPill('weekend','Weekend spending',pillWithTip('🗓','Weekend spending',`${higher?'↑':'↓'} ${Math.abs(pct)}%/day`,wkColor,
       wkSub,
       `Based on last 6 months · avg spend per weekend day vs weekday&#10;Only shows when difference is 15%+`,
-      {label:'See Daily chart',action:'navToDailyChart'}),higher?20:5);
+      {label:'See Daily chart',action:'navToDailyChart'},
+      higher?'var(--accent-red)':'var(--accent-green)'),higher?20:5);
   }
 
   // ── Monthly narrative card ──────────────────────────────────────
@@ -4922,7 +4930,7 @@ function renderNwGoalWidget(){
       </div>
       <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:9px;padding:.5rem .85rem;display:flex;align-items:center;gap:.75rem;min-width:0;flex-shrink:1">
         <div class="label-upper nowrap">On track for</div>
-        <div style="font-size:17px;font-weight:800;color:${isClose?'#34D399':'var(--text-bright)'};line-height:1;white-space:nowrap">${etaStr}</div>
+        <div style="font-size:17px;font-weight:800;color:${isClose?'var(--accent-green)':'var(--text-bright)'};line-height:1;white-space:nowrap">${etaStr}</div>
         <div class="text-muted-sm nowrap">${etaSub}</div>
       </div>
       <div style="background:var(--bg-card);border:1px solid var(--border-mid);border-radius:9px;padding:.5rem .85rem;display:flex;align-items:center;gap:.75rem;min-width:0;flex-shrink:1" title="Net worth change between your oldest and newest data points, divided by the number of months between them.">
@@ -9142,8 +9150,8 @@ function deleteVehicle(){
 
 /* ── ACCOUNTS ── */
 const TL_M={cash:'Cash',investment:'Investment',home:'Real estate',vehicle:'Vehicle',mortgage:'Mortgage',credit:'Credit card','other-asset':'Other asset','other-liability':'Other liab'};
-const TC_M={cash:'#60A5FA',investment:'#34D399',home:'#A78BFA',vehicle:'#2DD4BF',mortgage:'#F87171',credit:'#F97316','other-asset':tc('#8595A8','#64748B'),'other-liability':'#F87171'};
-const SC_M={Ally:{bg:tc('#1E3A5F','#EFF6FF'),fg:'#60A5FA'},Amex:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},Vanguard:{bg:'#7F1D1D22',fg:'#F87171'},Fidelity:{bg:'#7F1D1D22',fg:'#F87171'},Chase:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},'Old National':{bg:'#065F4622',fg:'#34D399'},Zillow:{bg:'#1E3A5F22',fg:'#60A5FA'},Redfin:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},'Bank of America':{bg:tc('#1E3A5F','#EFF6FF'),fg:'#F87171'},Barclays:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},'Capital One':{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Discover:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},'E*TRADE':{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Marcus:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Alliant:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},BMO:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},BECU:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},CIBC:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},'Navy Federal':{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},RBC:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},PenFed:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Scotiabank:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Schwab:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},SoFi:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},Tangerine:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},'TD Bank':{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Truist:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},USAA:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},'Wells Fargo':{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},ANZ:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},BNZ:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},CommBank:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},ING:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Westpac:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},Starling:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},Halifax:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},HSBC:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Lloyds:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},Nationwide:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Santander:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},Domain:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},'homes.co.nz':{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Zoopla:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},Zolo:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},SRX:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},Other:{bg:tc('#334155','#E2E8F0'),fg:tc('#94A3B8','#64748B')}};
+const TC_M={cash:tc('#60A5FA','#1D4ED8'),investment:tc('#34D399','#065F46'),home:tc('#A78BFA','#6D28D9'),vehicle:tc('#2DD4BF','#115E59'),mortgage:tc('#F87171','#B91C1C'),credit:tc('#F97316','#C2410C'),'other-asset':tc('#8595A8','#64748B'),'other-liability':tc('#F87171','#B91C1C')};
+const SC_M={Ally:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},Amex:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},Vanguard:{bg:tc('#7F1D1D22','#FEF2F2'),fg:tc('#F87171','#DC2626')},Fidelity:{bg:tc('#7F1D1D22','#FEF2F2'),fg:tc('#F87171','#DC2626')},Chase:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},'Old National':{bg:tc('#065F4622','#ECFDF5'),fg:tc('#34D399','#059669')},Zillow:{bg:tc('#1E3A5F22','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},Redfin:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},'Bank of America':{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#F87171','#DC2626')},Barclays:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},'Capital One':{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Discover:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},'E*TRADE':{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Marcus:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Alliant:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},BMO:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},BECU:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},CIBC:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},'Navy Federal':{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},RBC:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},PenFed:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Scotiabank:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Schwab:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},SoFi:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},Tangerine:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},'TD Bank':{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Truist:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},USAA:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},'Wells Fargo':{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},ANZ:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},BNZ:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},CommBank:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},ING:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Westpac:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},Starling:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},Halifax:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},HSBC:{bg:tc('#7F1D1D','#FEF2F2'),fg:tc('#F87171','#DC2626')},Lloyds:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},Nationwide:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Santander:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},Domain:{bg:tc('#2E1065','#EDE9FE'),fg:tc('#A78BFA','#7C3AED')},'homes.co.nz':{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},Zoopla:{bg:tc('#7C2D12','#FFF7ED'),fg:tc('#FB923C','#EA580C')},Zolo:{bg:tc('#065F46','#ECFDF5'),fg:tc('#34D399','#059669')},SRX:{bg:tc('#1E3A5F','#EFF6FF'),fg:tc('#60A5FA','#2563EB')},Other:{bg:tc('#334155','#E2E8F0'),fg:tc('#94A3B8','#64748B')}};
 const SA_M={Ally:'AL',Amex:'AX',Vanguard:'VG',Fidelity:'FD',Chase:'CH',Barclays:'BC','Old National':'ON',Zillow:'ZL',Redfin:'RF','Bank of America':'BA','Capital One':'CO',Discover:'DV','E*TRADE':'ET',Marcus:'MC',Alliant:'AT',BMO:'BM',BECU:'BU',CIBC:'CB','Navy Federal':'NV',RBC:'RB',PenFed:'PF',Scotiabank:'SK',Schwab:'SC',SoFi:'SF',Tangerine:'TN','TD Bank':'TD',Truist:'TR',USAA:'UA','Wells Fargo':'WF',ANZ:'AZ',BNZ:'BZ',CommBank:'CM',ING:'IG',Westpac:'WP',Starling:'SL',Halifax:'HX',HSBC:'HS',Lloyds:'LL',Nationwide:'NW',Santander:'SN',Domain:'DM','homes.co.nz':'HZ',Zoopla:'ZP',Zolo:'ZO',SRX:'SX',Other:'OT'};
 // Grouped by type, matching renderNwBreakdown()'s "Where your wealth
 // lives" convention on the Net Worth tab -- same labels/colors, so the
@@ -9162,18 +9170,18 @@ const SA_M={Ally:'AL',Amex:'AX',Vanguard:'VG',Fidelity:'FD',Chase:'CH',Barclays:
 // list the way a strict-match miss would. Requested directly by
 // Nicholas, August 2026.
 const ASSET_GROUPS=[
-  {label:'Investments',color:'#34D399',hdr:'#065F4618',match:a=>a.type==='investment'},
-  {label:'Real estate',color:'#A78BFA',hdr:'#4C1D9518',match:a=>a.type==='home'},
-  {label:'Cash',color:'#60A5FA',hdr:'#1E40AF18',match:a=>a.type==='cash'},
-  {label:'Other assets',color:'#FBBF24',hdr:'#78350F18',match:a=>!['investment','home','cash'].includes(a.type)},
+  {label:'Investments',color:'#34D399',tc:tc('#34D399','#065F46'),hdr:'#065F4618',match:a=>a.type==='investment'},
+  {label:'Real estate',color:'#A78BFA',tc:tc('#A78BFA','#6D28D9'),hdr:'#4C1D9518',match:a=>a.type==='home'},
+  {label:'Cash',color:'#60A5FA',tc:tc('#60A5FA','#1D4ED8'),hdr:'#1E40AF18',match:a=>a.type==='cash'},
+  {label:'Other assets',color:'#FBBF24',tc:tc('#FBBF24','#92400E'),hdr:'#78350F18',match:a=>!['investment','home','cash'].includes(a.type)},
 ];
 function renderAccountLists(){
   const row=(a,i)=>{const sc=SC_M[a.source]||SC_M.Other,tc=TC_M[a.type]||'var(--text-muted)';
     const bal=isLiab(a.type)?-a.balance:a.balance;
     return`<div class="account-row account-row-grouped${i%2===1?' row-alt':''}"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="acct-icon" style="background:${sc.bg};color:${sc.fg};flex-shrink:0">${SA_M[a.source]||'??'}</div><div class="account-name" title="${esc(a.name)} — ${esc(a.source)}">${esc(a.name)}<span class="account-inst">${esc(a.source)}</span></div></div>
-      <div class="flex-center gap-8"><div style="font-size:13px;font-weight:700;color:${bal<0?'#F87171':tc}">${bal<0?'-':''}${fmt(a.balance)}</div><button class="btn btn-sm" data-action="editAccount" data-arg="${a.id}" type="button">Edit</button></div></div>`;};
+      <div class="flex-center gap-8"><div style="font-size:13px;font-weight:700;color:${bal<0?'var(--accent-red)':tc}">${bal<0?'-':''}${fmt(a.balance)}</div><button class="btn btn-sm" data-action="editAccount" data-arg="${a.id}" type="button">Edit</button></div></div>`;};
   const group=(g,accts)=>accts.length?`<div class="nw-group">
-    <div class="nw-group-header" style="background:${g.hdr}"><div style="display:flex;align-items:center;gap:7px"><div style="width:9px;height:9px;border-radius:2px;background:${g.color}"></div><span style="font-size:11px;font-weight:700;color:${g.color}">${g.label}</span></div></div>${accts.map(row).join('')}</div>`:'';
+    <div class="nw-group-header" style="background:${g.hdr}"><div style="display:flex;align-items:center;gap:7px"><div style="width:9px;height:9px;border-radius:2px;background:${g.color}"></div><span style="font-size:11px;font-weight:700;color:${g.tc||g.color}">${g.label}</span></div></div>${accts.map(row).join('')}</div>`:'';
   const vehicleAcctIds=new Set(state.vehicles.filter(v=>v.acctId!=null).map(v=>v.acctId));
   // Legacy vehicles/physical assets saved before acctId existed (35th pass)
   // have no acctId to match by. That's harmless for 'vehicle'-type accounts
@@ -9212,7 +9220,7 @@ function renderAccountLists(){
   const assetEl=document.getElementById('asset-list');
   if(assetEl)assetEl.innerHTML=baseAssets.length?ASSET_GROUPS.map(g=>group(g,baseAssets.filter(g.match))).join(''):'<p style="font-size:12px;color:var(--text-muted);padding:.4rem 0">No financial accounts yet — add one above.</p>';
   const liabEl=document.getElementById('liability-list');
-  if(liabEl)liabEl.innerHTML=liabAccts.length?group({label:'Liabilities',color:'#F87171',hdr:'#7F1D1D18'},liabAccts):'<p style="font-size:12px;color:var(--text-muted);padding:.4rem 0">No liabilities yet.</p>';
+  if(liabEl)liabEl.innerHTML=liabAccts.length?group({label:'Liabilities',color:'#F87171',tc:tc('#F87171','#B91C1C'),hdr:'#7F1D1D18'},liabAccts):'<p style="font-size:12px;color:var(--text-muted);padding:.4rem 0">No liabilities yet.</p>';
   renderTxSourcesPanel();
 }
 

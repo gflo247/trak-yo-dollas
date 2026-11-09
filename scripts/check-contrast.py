@@ -36,6 +36,41 @@ This does two independent, deterministic checks, both exit 1 on failure:
 Run manually:
     python3 scripts/check-contrast.py [file ...]
 Defaults to trakyodollas.html, index.html, privacy.html.
+
+LIMITATION — hex colors passed as JS function arguments:
+
+This script catches hardcoded hex bypasses that appear literally as
+`color:#RRGGBB` in CSS or inline-style attribute strings (via
+COLOR_USE_RE). It does NOT catch hex strings passed as arguments to JS
+helper functions whose output eventually becomes a `color:` value in
+dynamically-generated HTML.
+
+Example of the escaping pattern:
+    pillWithTip('💥', 'Largest charge', amt, '#F87171', ...)
+                                          ^^^^^^^^^^
+    The fourth argument here controls `color:${color}` in the generated
+    HTML, but it appears in the source as a bare string literal — not
+    prefixed by `color:`, so COLOR_USE_RE never matches it.
+
+Why extending this script to catch it is non-trivial:
+
+1. Finding the hex is easy (scan for `'#RRGGBB'` or `"#RRGGBB"` literals).
+   Knowing whether it ends up as a text-color CSS value requires knowing
+   which function receives it and what that function does with it — static
+   JS semantics, not CSS token analysis.
+
+2. The fix is function-specific: `pillWithTip` has a `color` param that
+   becomes `background:${color}15` (tint) AND `color:${color}` (text),
+   so both roles need separate accessible values. A generic "any hex
+   string arg → text color" assumption would fire false positives for
+   the tint/border uses of the same value.
+
+What a future fix would require: either (a) an AST-based JS linter rule
+that knows `pillWithTip`'s signature and flags arg 3 (zero-indexed) when
+it's a bare dark-theme hex, or (b) refactor `pillWithTip` to always
+accept a CSS variable for text color (a `textColor` param, as the Nov
+2026 fix does) so the bypass pattern is eliminated at the callsite and
+this script's existing hardcoded-bypass check covers any regressions.
 """
 import re
 import sys

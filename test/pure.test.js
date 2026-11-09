@@ -1110,6 +1110,7 @@ function renderAccountListsCtx(vehicles, accounts) {
       // last entry (see SC_M's real definition), and throws on .bg/.fg if
       // that fallback itself is missing.
       SC_M: { Other: { bg: "#334155", fg: "#94A3B8" } }, TC_M: {}, SA_M: {}, TL_M: {},
+      tc: (dark) => dark,
       // ASSET_GROUPS is a top-level const, not a `function` declaration,
       // so loadFunctions()'s brace-matching extractor can't pull it from
       // the real source -- seeded via context instead, matching this
