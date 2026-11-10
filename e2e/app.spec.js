@@ -170,6 +170,9 @@ test('import label hints: first shows tag hint, second shows merge hint', async 
   // "Import another CSV" — capitalone_card.csv
   await page.locator('[data-action="importSuccessAndReopen"]').click();
   await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+  // Small delay for the modal to fully initialize (openTxImportModal calls
+  // _hideImportPreview async; without this, setInputFiles races it).
+  await page.waitForTimeout(200);
   await page.locator('#tx-csv-file').setInputFiles(CAPITALONE_CARD_CSV);
   // #import-confirm-btn is already visible from the first import, so waitFor resolves before
   // the second file is processed. Use #import-preview-stats instead: it is hidden when the
