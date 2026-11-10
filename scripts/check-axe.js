@@ -130,9 +130,13 @@ function checkIncompleteContrast(label, results) {
 // hides the .bucket-hit full-card stretch button that axe flags as an
 // obscuring element over the tile text. Neither change affects production.
 const AXE_AUDIT_CSS = `
-  /* Flatten #insights-card gradient to its lighter stop (#F0F9FF) so axe
-     can measure contrast against a solid background. */
-  #insights-card { background: #F0F9FF !important; }
+  /* Flatten #insights-card gradient so axe can measure contrast directly
+     (gradients make axe mark text "incomplete" — can't determine BG).
+     Dark mode: flatten to the gradient's darker stop (#111827).
+     Light mode: flatten to the lighter stop (#EFF6FF) so light-mode text
+     colors (designed for light backgrounds) are audited correctly. */
+  #insights-card { background: #111827 !important; }
+  [data-theme="light"] #insights-card { background: #EFF6FF !important; }
   /* Flatten tile gradient to lighter stop (the light theme uses solid
      --bg-card; dark mode tiles use a solid dark hex too — the inline
      background from renderBucketGrid is solid not gradient, so this only

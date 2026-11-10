@@ -3783,7 +3783,7 @@ function renderInsights(){
 
   // ── Build pills — filtered by user's hiddenPills set ─────────
   const pillsArr=[];
-  const addPill=(key,label,html,score=0)=>{if(!state.hiddenPills.has(key))pillsArr.push({key,label,html,score});};
+  const addPill=(key,label,html,score=0,accentColor=null)=>{if(!state.hiddenPills.has(key))pillsArr.push({key,label,html,score,accentColor});};
 
   // Pill 1 — Savings rate (or nudge if not configured)
   // Use period-level data (same source of truth as Flow chart) for overspend detection
@@ -3800,7 +3800,7 @@ function renderInsights(){
         overspendTip,
         {label:'Review income',action:'openDeclaredIncomeModal'},
         'var(--accent-red)'
-      ),100);
+      ),100,'var(--accent-red)');
     } else {
     const saved=Math.max(0,effectiveIncome-spent);
     const savingsRate=Math.round(saved/effectiveIncome*100);
@@ -3824,7 +3824,7 @@ function renderInsights(){
     } else {
       savingsSub=`Only ${fmt(saved)} left after spending — tighter than usual`;
     }
-    addPill('savings','Savings rate',pillWithTip(savingsRate>=20?'🟢':savingsRate>=10?'🟡':'🔴',`Savings rate`,`${savingsRate}%`,rateTintHex,savingsSub,savingsTooltip,savingsRate<10?{label:'Set income',action:'openIncomeModal'}:'',rateColor),savingsRate<10?100:savingsRate<20?50:10);
+    addPill('savings','Savings rate',pillWithTip(savingsRate>=20?'🟢':savingsRate>=10?'🟡':'🔴',`Savings rate`,`${savingsRate}%`,rateTintHex,savingsSub,savingsTooltip,savingsRate<10?{label:'Set income',action:'openIncomeModal'}:'',rateColor),savingsRate<10?100:savingsRate<20?50:10,rateColor);
     } // end else (not overspend)
   } else if(!state.hiddenPills.has('savings')){
     pillsArr.push({key:'savings-nudge',label:'Savings rate',score:0,html:`<div data-action="openIncomeModal" tabindex="0" role="button" style="display:flex;flex-direction:column;justify-content:center;background:var(--card-nudge-bg);border:1.5px dashed var(--border-mid);border-radius:12px;padding:.75rem .9rem;gap:.4rem;cursor:pointer;position:relative">
@@ -3899,7 +3899,7 @@ function renderInsights(){
         :`↓ ${fmt(Math.abs(nwDiff))} over ${daysSince} days — worth a look`;
     }
     const nwSub=nwSubLine;
-    addPill('networth','Net worth',pillWithTip(nwUp?'📊':'📉',`Net worth vs ${snapRef}`,pillValue,nwUp?'#34D399':'#F87171',nwSub,tooltip,{label:'Go to Net Worth tab',action:'showPageDashboard'},nwUp?'var(--accent-green)':'var(--accent-red)'),nwUp?10:55);
+    addPill('networth','Net worth',pillWithTip(nwUp?'📊':'📉',`Net worth vs ${snapRef}`,pillValue,nwUp?'#34D399':'#F87171',nwSub,tooltip,{label:'Go to Net Worth tab',action:'showPageDashboard'},nwUp?'var(--accent-green)':'var(--accent-red)'),nwUp?10:55,nwUp?'var(--accent-green)':'var(--accent-red)');
   }
 
   // Pill 3 — Subscriptions
@@ -3929,7 +3929,7 @@ function renderInsights(){
         <div style="font-size:18px;font-weight:900;color:var(--accent-purple);line-height:1;letter-spacing:-.02em;white-space:nowrap;flex-shrink:0">${fmtC(subTotal)} · ${subCount} charge${subCount===1?'':'s'}</div>
       </div>
       <div style="font-size:12px;color:var(--text-muted);line-height:1.35">That's ${fmtC(subTotal*12)}/yr · largest: ${esc(displayVendor(topSub.vendor))} at ${fmtC(topSub.amt)}/mo · <span style="color:var(--accent-purple);font-weight:600">view all →</span></div>
-    </div>`,subScore);
+    </div>`,subScore,tc('#A78BFA','#6D28D9'));
   }
 
   // Pill — Possible duplicate charges. Same shape as the Subscriptions
@@ -3953,7 +3953,7 @@ function renderInsights(){
         <div style="font-size:18px;font-weight:900;color:var(--accent-red);line-height:1;letter-spacing:-.02em;white-space:nowrap;flex-shrink:0">${fmtC(dupTotal)}</div>
       </div>
       <div style="font-size:12px;color:var(--text-muted);line-height:1.35">${esc(displayVendor(topDup.vendor))} charged ${topDup.txs.length}× at ${fmtC(topDup.amount)} within days · <span style="color:var(--accent-red);font-weight:600">view all →</span></div>
-    </div>`,dupScore);
+    </div>`,dupScore,tc('#F87171','#B91C1C'));
   }
 
   // Pill 5 — Top mover
@@ -3984,7 +3984,7 @@ function renderInsights(){
       :`↓ ${fmt(Math.abs(biggestCat.diff))} vs last month${vsNormStr}${topVendorStr}`;
     const catValue=`${esc(biggestCat.cat)} · ${catUp?'↑':'↓'} ${fmt(Math.abs(biggestCat.diff))}`;
     const catScore=catUp&&vsNorm!==null&&vsNorm>=20?75:catUp?25:15;
-    addPill('topmover','Top mover',pillWithTip(catUp?'⬆️':'⬇️',`Top mover`,catValue,catUp?'#FBBF24':'#34D399',catSub,tooltip,{label:`See ${esc(biggestCat.cat)} transactions`,action:'filterToCatAndScroll',arg:biggestCat.cat},catUp?'var(--accent-amber)':'var(--accent-green)'),catScore);
+    addPill('topmover','Top mover',pillWithTip(catUp?'⬆️':'⬇️',`Top mover`,catValue,catUp?'#FBBF24':'#34D399',catSub,tooltip,{label:`See ${esc(biggestCat.cat)} transactions`,action:'filterToCatAndScroll',arg:biggestCat.cat},catUp?'var(--accent-amber)':'var(--accent-green)'),catScore,catUp?'var(--accent-amber)':'var(--accent-green)');
   }
 
   // Pill 6 — Largest single transaction
@@ -4003,7 +4003,7 @@ function renderInsights(){
       const chargeSub=isHighVsNorm
         ?`${esc(displayVendor(biggest.desc))} · ${Math.round((biggest.amount/avgBiggest-1)*100)}% higher than your typical largest charge`
         :`${esc(displayVendor(biggest.desc))} · ${esc(biggest.cat)}`;
-      addPill('largest-tx','Largest charge',pillWithTip('💥','Largest charge',`${fmt(biggest.amount)}`,isHighVsNorm?'#F87171':'#64748B',chargeSub,tooltip,'',isHighVsNorm?'var(--accent-red)':'var(--text-muted)'),isHighVsNorm?65:8);
+      addPill('largest-tx','Largest charge',pillWithTip('💥','Largest charge',`${fmt(biggest.amount)}`,isHighVsNorm?'#F87171':'#64748B',chargeSub,tooltip,'',isHighVsNorm?'var(--accent-red)':'var(--text-muted)'),isHighVsNorm?65:8,isHighVsNorm?'var(--accent-red)':'var(--text-muted)');
     }
   }
 
@@ -4018,7 +4018,7 @@ function renderInsights(){
       wkSub,
       `Based on last 6 months · avg spend per weekend day vs weekday&#10;Only shows when difference is 15%+`,
       {label:'See Daily chart',action:'navToDailyChart'},
-      higher?'var(--accent-red)':'var(--accent-green)'),higher?20:5);
+      higher?'var(--accent-red)':'var(--accent-green)'),higher?20:5,higher?'var(--accent-red)':'var(--accent-green)');
   }
 
   // ── Monthly narrative card ──────────────────────────────────────
@@ -4148,9 +4148,10 @@ function renderInsights(){
         )
       :null;
 
-    // Extract the pill's color from its HTML for the attention label
+    // Use the pill's stored accent color when available; otherwise extract from
+    // its border hex. Pills that pass a tc() accent are always theme-safe.
     const leadColorMatch=leadPill.html.match(/border:1\.5px solid ([^;]+)55/);
-    const leadColor=leadColorMatch?leadColorMatch[1]:'var(--accent-blue-light)';
+    const leadColor=leadPill.accentColor||(leadColorMatch?leadColorMatch[1]:'var(--accent-blue-light)');
 
     let html='';
     if(leadHtml){
