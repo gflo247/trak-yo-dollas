@@ -9247,8 +9247,8 @@ function staleSources(txs,nowMs){
   return Object.keys(sourceMax)
     .map(source=>{
       const newestDate=sourceMax[source];
-      // Anchor at noon to reduce timezone-shift off-by-ones; clamp at 0.
-      const daysOld=Math.max(0,Math.floor((nowMs-new Date(newestDate+'T12:00:00').getTime())/864e5));
+      // Parse as midnight UTC so the day count is consistent with UTC date strings; clamp at 0.
+      const daysOld=Math.max(0,Math.floor((nowMs-new Date(newestDate+'T00:00:00Z').getTime())/864e5));
       return{source,newestDate,daysOld};
     })
     .filter(r=>r.daysOld>=35&&r.daysOld<=180)
