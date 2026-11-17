@@ -1117,13 +1117,17 @@ test('stale-data nudge: appears after stale import, dismisses, persists, clears 
     await page.locator('[data-action="importSuccessAndAlign"]').click();
     await page.locator('#import-success-modal').waitFor({ state: 'hidden' });
 
-    // The nudge should now be visible with "Chase Freedom" and "40d".
+    // The nudge should now be visible with "Chase Freedom" and "40 days".
     const nudge = page.locator('#stale-nudge');
     await nudge.waitFor({ state: 'visible' });
     const nudgeText = await nudge.textContent();
     expect(nudgeText).toContain('Chase Freedom');
     // The day count should be 40 (±1 for timezone boundary edge cases).
-    expect(nudgeText).toMatch(/3[89]d|40d|41d/);
+    expect(nudgeText).toMatch(/\((3[89]|4[01]) days\)/);
+    // The whole sentence sits in one <span>, so the flex gap can't split
+    // the linked source name from ": last data".
+    expect(await nudge.locator(':scope > span').textContent()).toMatch(/^Chase Freedom: last data /);
+    await expect(nudge.locator('[data-action="openTxImportModal"]')).toHaveText('Import');
 
     // Reload — nudge should still appear (no dismissal yet).
     await page.reload();

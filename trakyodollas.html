@@ -11,7 +11,7 @@
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-IJuhlWOV5PRg3b66HAx1U8TKnuSGl+ZmEMutOsX81dE=' 'sha256-7pMZC3Cf+VLNhSs+EbFg/NKNh906C7wo5kbuH3mPtbY=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
+  script-src 'self' 'sha256-dmXQ+QjQ3Wl9HdTkQSBmRIeA8nESOYXZOwOGEIfCJ3A=' 'sha256-IJuhlWOV5PRg3b66HAx1U8TKnuSGl+ZmEMutOsX81dE=' 'sha256-Hp4IcOtpBKizATgCetIMErLAWQklf9BY7A75D6lhk+A=' 'sha256-Jp/TRNcBIkAipfXme2qLh7knm2NapHmJtUdLtyQGrY0=' 'sha256-uLxeqvGVzOCCgY3sq19DQiucBGpkDky9dVnQRxWhYcA=' 'sha256-Q94Vbs2/gMUt+fh5nPmE1dAMfKAc7rXMZXhIGf+chNk=';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
   img-src 'self' data: https://vpic.nhtsa.dot.gov;
@@ -9275,10 +9275,13 @@ function renderStaleNudge(){
   const parts=shown.map(r=>{
     const slug=guideSlugForSource(r.source);
     const name=slug?`<a href="/guides/${slug}" target="_blank" rel="noopener">${esc(r.source)}</a>`:esc(r.source);
-    return`${name}: last data ${fmtDate(r.newestDate)} (${r.daysOld}d)`;
+    return`${name}: last data ${fmtDate(r.newestDate)} (${r.daysOld} ${r.daysOld===1?'day':'days'})`;
   });
-  const summary=parts.join('. ')+(overflow>0?`. and ${overflow} more`:'.')+' ';
-  el.innerHTML=summary+`<button class="btn btn-sm btn-primary" data-action="openTxImportModal" type="button" style="font-size:11px;padding:2px 8px;min-height:0;white-space:nowrap">[Import]</button>`+
+  // One <span> for the whole sentence: #stale-nudge is a flex container with
+  // a gap, so bare text and <a> nodes would each become separate flex items,
+  // splitting "Chase" from ": last data" and wrapping between fragments.
+  const summary=`<span>${parts.join('. ')}${overflow>0?`. and ${overflow} more`:'.'}</span>`;
+  el.innerHTML=summary+`<button class="btn btn-sm btn-primary" data-action="openTxImportModal" type="button" style="font-size:11px;padding:2px 8px;min-height:0;white-space:nowrap">Import</button>`+
     `<button class="stale-nudge-dismiss" data-action="dismissStaleNudge" aria-label="Dismiss stale data reminder" type="button">✕</button>`;
   el.style.display='flex';
 }
@@ -17813,7 +17816,7 @@ document.addEventListener('DOMContentLoaded',function(){
           // fine at ~10.33:1 pre-fix). Corrected to tc('#CBD5E1','#334155')
           // in the 80th adversarial pass -- now ~9.85:1 dark / ~10.27:1
           // light, both well over WCAG AA.
-          showToast('💡 Press <strong style="color:#fff">?</strong> anytime for tips & shortcuts',tc('#CBD5E1','#334155'),5000);
+          showToast('💡 Press <strong>?</strong> anytime for tips & shortcuts',tc('#CBD5E1','#334155'),5000);
           localStorage.setItem('trakyo_tips_seen','1');
         },4000);
       }

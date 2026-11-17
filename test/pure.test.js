@@ -763,8 +763,9 @@ test("tips-toast color: tc('#CBD5E1','#334155') meets WCAG AA (4.5:1) against bo
   const source = readSource();
   assert.match(
     source,
-    /Press <strong style="color:#fff">\?<\/strong> anytime for tips & shortcuts',tc\('#CBD5E1','#334155'\)/,
-    "tips toast should call tc('#CBD5E1','#334155') -- dark theme first, matching tc(dark,light)'s signature"
+    /Press <strong>\?<\/strong> anytime for tips & shortcuts',tc\('#CBD5E1','#334155'\)/,
+    "tips toast should call tc('#CBD5E1','#334155') -- dark theme first, matching tc(dark,light)'s signature -- " +
+      "and the '?' must inherit that color (a hardcoded #fff made it invisible on light theme's near-white --toast-bg)"
   );
   const DARK_TOAST_BG = "#1E293B";
   const LIGHT_TOAST_BG = "#FFFEFB";
@@ -10056,7 +10057,7 @@ test("staleSources: given 4 stale sources, nudge text names 3 and appends 'and 1
   assert.equal(shown.length, 3, "first 3 shown");
   assert.equal(overflow, 1, "1 overflow");
   // Build nudge text the same way renderStaleNudge() does.
-  const parts = shown.map(r => `${r.source}: last data … (${r.daysOld}d)`);
+  const parts = shown.map(r => `${r.source}: last data … (${r.daysOld} ${r.daysOld === 1 ? 'day' : 'days'})`);
   const nudgeText = parts.join('. ') + `. and ${overflow} more.`;
   assert.ok(nudgeText.includes("and 1 more"), "nudge text includes 'and 1 more'");
 });
