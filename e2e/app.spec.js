@@ -593,44 +593,51 @@ test('wrong-file: Quicken then unknown-headers CSV: zero-row state is clean with
   const QFX_FILE = path.join(__dirname, 'fixtures/wrong_file.qfx');
   const fs = require('fs');
   const tmpCsv = path.join(__dirname, 'fixtures/unknown_headers.csv');
-  if (!fs.existsSync(tmpCsv)) fs.writeFileSync(tmpCsv, 'Col1,Col2,Col3\nfoo,bar,baz\n');
+  // Written fresh and removed in finally -- this test used to create the
+  // file only if missing and never delete it, so every e2e run left an
+  // untracked fixture behind in the repo.
+  fs.writeFileSync(tmpCsv, 'Col1,Col2,Col3\nfoo,bar,baz\n');
 
-  await page.goto(APP);
-  await page.waitForFunction(() => typeof openTxImportModal === 'function');
-  await page.evaluate(() => openTxImportModal());
-  await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
+  try {
+    await page.goto(APP);
+    await page.waitForFunction(() => typeof openTxImportModal === 'function');
+    await page.evaluate(() => openTxImportModal());
+    await page.locator('#tx-import-modal').waitFor({ state: 'visible' });
 
-  // Drop Quicken file first — wrong-file message shows
-  await page.locator('#tx-csv-file').setInputFiles(QFX_FILE);
-  await page.waitForFunction(() => {
-    const el = document.getElementById('import-zero-msg');
-    return el && !el.classList.contains('hidden');
-  }, { timeout: 3000 });
-  expect(await page.locator('#import-zero-msg').innerText()).toContain('Quicken');
+    // Drop Quicken file first — wrong-file message shows
+    await page.locator('#tx-csv-file').setInputFiles(QFX_FILE);
+    await page.waitForFunction(() => {
+      const el = document.getElementById('import-zero-msg');
+      return el && !el.classList.contains('hidden');
+    }, { timeout: 3000 });
+    expect(await page.locator('#import-zero-msg').innerText()).toContain('Quicken');
 
-  // Now drop a CSV with unknown headers — zero-row state replaces Quicken message
-  await page.locator('#tx-csv-file').setInputFiles(tmpCsv);
-  await page.waitForFunction(() => {
-    const btn = document.getElementById('import-confirm-btn');
-    // confirm btn must stay hidden (zero rows)
-    return btn && btn.classList.contains('hidden');
-  }, { timeout: 3000 });
-  await page.waitForFunction(() => {
-    const el = document.getElementById('import-zero-msg');
-    return el && !el.classList.contains('hidden');
-  }, { timeout: 3000 });
+    // Now drop a CSV with unknown headers — zero-row state replaces Quicken message
+    await page.locator('#tx-csv-file').setInputFiles(tmpCsv);
+    await page.waitForFunction(() => {
+      const btn = document.getElementById('import-confirm-btn');
+      // confirm btn must stay hidden (zero rows)
+      return btn && btn.classList.contains('hidden');
+    }, { timeout: 3000 });
+    await page.waitForFunction(() => {
+      const el = document.getElementById('import-zero-msg');
+      return el && !el.classList.contains('hidden');
+    }, { timeout: 3000 });
 
-  const msgText = await page.locator('#import-zero-msg').innerText();
-  // Heading must say "Found 0 transactions", not "Wrong file type"
-  expect(msgText).toContain('Found 0 transactions');
-  // Quicken message must be gone
-  expect(msgText).not.toContain('Quicken');
-  // The CSV header must appear
-  expect(msgText).toContain('Col1');
-  // The format button must be visible (CSV case, not binary)
-  await expect(page.locator('#import-manual-fmt-btn')).toBeVisible();
-  // The Import button must be hidden
-  await expect(page.locator('#import-confirm-btn')).toBeHidden();
+    const msgText = await page.locator('#import-zero-msg').innerText();
+    // Heading must say "Found 0 transactions", not "Wrong file type"
+    expect(msgText).toContain('Found 0 transactions');
+    // Quicken message must be gone
+    expect(msgText).not.toContain('Quicken');
+    // The CSV header must appear
+    expect(msgText).toContain('Col1');
+    // The format button must be visible (CSV case, not binary)
+    await expect(page.locator('#import-manual-fmt-btn')).toBeVisible();
+    // The Import button must be hidden
+    await expect(page.locator('#import-confirm-btn')).toBeHidden();
+  } finally {
+    fs.unlinkSync(tmpCsv);
+  }
 });
 
 test('import: Monarch export shows per-account names in the label hint', async ({ page }) => {
